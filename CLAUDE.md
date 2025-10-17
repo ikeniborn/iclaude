@@ -85,9 +85,53 @@ Examples:
 - `socks5://user:pass@proxy.example.com:1080`
 
 ### Security Considerations
+
+**General:**
 - Credentials file has 600 permissions (owner read/write only)
 - Passwords are masked in output by default (use `--show-password` to reveal)
 - The credentials file is automatically excluded from git
+
+**HTTPS Proxy Security:**
+
+⚠️ **Important:** The `--proxy-insecure` flag disables TLS certificate verification for ALL Node.js connections, not just the proxy. This creates security risks:
+
+**Current Issue with `--proxy-insecure`:**
+```bash
+# ⚠️  INSECURE (NOT RECOMMENDED)
+init_claude --proxy https://proxy:8118 --proxy-insecure
+```
+- ❌ Proxy connection: No TLS verification (needed for self-signed cert)
+- ❌ **Claude Code → Anthropic API: NO TLS VERIFICATION (DANGEROUS!)**
+- ❌ Vulnerable to Man-in-the-Middle attacks on API connections
+
+**Secure Solution with `--proxy-ca` (RECOMMENDED):**
+```bash
+# ✅ SECURE (RECOMMENDED)
+init_claude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
+```
+- ✅ Proxy connection: Uses proxy CA certificate
+- ✅ **Claude Code → Anthropic API: FULL TLS VERIFICATION (SECURE)**
+- ✅ Protected from Man-in-the-Middle attacks
+
+**How to Export Proxy Certificate:**
+```bash
+# Get help
+init_claude --help-export-cert
+
+# Method 1: Using openssl
+openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/null | \
+  openssl x509 -outform PEM > proxy-cert.pem
+
+# Method 2: From browser (connect via proxy, view certificate, export as PEM)
+
+# Then use it
+init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca proxy-cert.pem
+```
+
+**Technical Details:**
+- `--proxy-ca` uses `NODE_EXTRA_CA_CERTS` to add ONLY the proxy certificate to trusted CAs
+- `--proxy-insecure` uses `NODE_TLS_REJECT_UNAUTHORIZED=0` which disables verification globally
+- The script uses `curl --proxy-cacert` for testing when `--proxy-ca` is provided
 
 ### Script Behavior
 - Uses `set -euo pipefail` for strict error handling

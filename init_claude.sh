@@ -62,6 +62,82 @@ validate_proxy_url() {
 }
 
 #######################################
+# Validate certificate file (PEM format)
+#######################################
+validate_certificate_file() {
+    local cert_path=$1
+
+    # Check if file exists
+    if [[ ! -f "$cert_path" ]]; then
+        print_error "Certificate file not found: $cert_path"
+        return 1
+    fi
+
+    # Check if file is readable
+    if [[ ! -r "$cert_path" ]]; then
+        print_error "Certificate file not readable: $cert_path"
+        return 1
+    fi
+
+    # Check if file contains PEM certificate markers
+    if ! grep -q "BEGIN CERTIFICATE" "$cert_path" 2>/dev/null; then
+        print_error "Invalid certificate format (PEM expected): $cert_path"
+        echo ""
+        echo "Expected PEM format with '-----BEGIN CERTIFICATE-----' marker"
+        return 1
+    fi
+
+    # Optionally verify with openssl (if available)
+    if command -v openssl &> /dev/null; then
+        if ! openssl x509 -in "$cert_path" -noout 2>/dev/null; then
+            print_error "Certificate validation failed (openssl): $cert_path"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+#######################################
+# Show help for exporting proxy certificate
+#######################################
+export_proxy_certificate_help() {
+    local proxy_host=${1:-proxy.example.com}
+    local proxy_port=${2:-8118}
+
+    cat << EOF
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Как экспортировать сертификат HTTPS прокси
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${BLUE}Метод 1: Используя openssl${NC}
+
+  openssl s_client -showcerts -connect ${proxy_host}:${proxy_port} < /dev/null 2>/dev/null | \\
+    openssl x509 -outform PEM > proxy-cert.pem
+
+${BLUE}Метод 2: Используя браузер${NC}
+
+  1. Откройте настройки прокси в браузере
+  2. Подключитесь через прокси к любому HTTPS сайту
+  3. Нажмите на иконку замка в адресной строке
+  4. Просмотр сертификата → Экспорт → Выберите формат PEM
+  5. Сохраните как proxy-cert.pem
+
+${BLUE}Метод 3: Если у вас есть доступ к прокси-серверу${NC}
+
+  Найдите файл сертификата (обычно .crt, .pem, .cer) в конфигурации
+  прокси-сервера и скопируйте его.
+
+${BLUE}После экспорта используйте:${NC}
+
+  init_claude --proxy https://user:pass@${proxy_host}:${proxy_port} \\
+              --proxy-ca /path/to/proxy-cert.pem
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EOF
+}
+
+#######################################
 # Parse proxy URL and extract components
 #######################################
 parse_proxy_url() {
@@ -221,15 +297,17 @@ get_nvm_claude_path() {
 save_credentials() {
     local proxy_url=$1
     local insecure=${2:-false}
+    local ca_path=${3:-}
 
     # Create credentials file with restricted permissions
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL and insecure flag
+    # Save URL, insecure flag, and CA path
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
 PROXY_INSECURE=$insecure
+PROXY_CA_PATH=$ca_path
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE"
@@ -251,6 +329,7 @@ load_credentials() {
         # Old format: first line is the URL
         PROXY_URL=$(head -n 1 "$CREDENTIALS_FILE")
         PROXY_INSECURE=false
+        PROXY_CA_PATH=""
     fi
 
     if [[ -z "$PROXY_URL" ]]; then
@@ -263,8 +342,17 @@ load_credentials() {
         return 1
     fi
 
-    # Return both URL and insecure flag (space-separated)
-    echo "$PROXY_URL ${PROXY_INSECURE:-false}"
+    # Validate CA path if present
+    if [[ -n "${PROXY_CA_PATH:-}" ]] && [[ "$PROXY_CA_PATH" != "" ]]; then
+        if [[ ! -f "$PROXY_CA_PATH" ]]; then
+            print_warning "Saved CA certificate not found: $PROXY_CA_PATH"
+            print_info "Will ignore CA certificate setting"
+            PROXY_CA_PATH=""
+        fi
+    fi
+
+    # Return URL, insecure flag, and CA path (space-separated)
+    echo "$PROXY_URL ${PROXY_INSECURE:-false} ${PROXY_CA_PATH:-}"
     return 0
 }
 
@@ -276,17 +364,22 @@ prompt_proxy_url() {
 
     # Check if credentials exist
     if saved_credentials=$(load_credentials); then
-        # Parse space-separated output: URL INSECURE_FLAG
+        # Parse space-separated output: URL INSECURE_FLAG CA_PATH
         local saved_url=$(echo "$saved_credentials" | cut -d' ' -f1)
         local saved_insecure=$(echo "$saved_credentials" | cut -d' ' -f2)
+        local saved_ca=$(echo "$saved_credentials" | cut -d' ' -f3-)
 
         print_info "Saved proxy found" >&2
         echo "" >&2
         # Hide password in display
         local display_url=$(echo "$saved_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
         echo "  URL: $display_url" >&2
-        if [[ "$saved_insecure" == "true" ]]; then
-            echo "  Options: --proxy-insecure" >&2
+
+        # Display security options
+        if [[ -n "$saved_ca" ]] && [[ "$saved_ca" != "" ]]; then
+            echo "  CA Certificate: $saved_ca" >&2
+        elif [[ "$saved_insecure" == "true" ]]; then
+            echo "  Options: --proxy-insecure (⚠️  небезопасно)" >&2
         fi
         echo "" >&2
 
@@ -299,7 +392,7 @@ prompt_proxy_url() {
         fi
 
         if [[ -z "$use_saved" ]] || [[ "$use_saved" =~ ^[Yy] ]]; then
-            echo "$saved_url $saved_insecure"
+            echo "$saved_url $saved_insecure $saved_ca"
             return 0
         fi
     fi
@@ -336,7 +429,7 @@ prompt_proxy_url() {
             continue
         fi
 
-        # Return URL with default insecure=false
+        # Return URL with default insecure=false and no CA
         echo "$proxy_url false"
         return 0
     done
@@ -348,27 +441,52 @@ prompt_proxy_url() {
 configure_proxy_from_url() {
     local proxy_url=$1
     local insecure=${2:-false}
+    local ca_path=${3:-}
 
     # Set environment variables
     export HTTPS_PROXY="$proxy_url"
     export HTTP_PROXY="$proxy_url"
     export NO_PROXY="localhost,127.0.0.1"
 
-    # Set PROXY_INSECURE flag for test_proxy()
+    # Set flags for test_proxy()
     export PROXY_INSECURE="$insecure"
+    export PROXY_CA_PATH="$ca_path"
 
-    # If proxy uses HTTPS and insecure flag is set, disable Node.js TLS verification for proxy
-    if [[ "$proxy_url" =~ ^https:// ]] && [[ "$insecure" == "true" ]]; then
-        export NODE_TLS_REJECT_UNAUTHORIZED=0
-        print_warning "TLS certificate verification disabled for proxy connection"
-        echo ""
+    # Security configuration for HTTPS proxies
+    if [[ "$proxy_url" =~ ^https:// ]]; then
+        # Priority 1: Use CA certificate (SECURE)
+        if [[ -n "$ca_path" ]] && [[ -f "$ca_path" ]]; then
+            export NODE_EXTRA_CA_CERTS="$ca_path"
+            print_success "Using proxy CA certificate: $ca_path"
+            print_info "TLS verification enabled for all connections"
+            echo ""
+        # Priority 2: Use insecure mode (INSECURE - with warning)
+        elif [[ "$insecure" == "true" ]]; then
+            export NODE_TLS_REJECT_UNAUTHORIZED=0
+            echo ""
+            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            print_warning "  ВНИМАНИЕ: РЕЖИМ НЕБЕЗОПАСНОГО ПОДКЛЮЧЕНИЯ"
+            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "  Отключена проверка TLS сертификатов для ВСЕХ соединений:"
+            echo "  • Прокси-сервер (это нужно)"
+            echo "  • Claude Code → Anthropic API (⚠️  НЕБЕЗОПАСНО!)"
+            echo ""
+            echo "  Возможна атака Man-in-the-Middle на API соединения!"
+            echo ""
+            print_info "Рекомендация: используйте --proxy-ca вместо --proxy-insecure"
+            echo ""
+            echo "  Для экспорта сертификата прокси см.: init_claude --help-export-cert"
+            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+        fi
     fi
 
     # Configure git to ignore proxy
     configure_git_no_proxy
 
     # Save credentials
-    save_credentials "$proxy_url" "$insecure"
+    save_credentials "$proxy_url" "$insecure" "$ca_path"
 }
 
 #######################################
@@ -482,9 +600,17 @@ test_proxy() {
     # Prepare curl command with proxy
     local curl_opts=(-x "$proxy_url" -s -m 5 -o /dev/null -w "%{http_code}")
 
-    # Add --proxy-insecure for HTTPS proxies if PROXY_INSECURE is set
-    if [[ "$proxy_url" =~ ^https:// ]] && [[ "${PROXY_INSECURE:-false}" == "true" ]]; then
-        curl_opts+=(--proxy-insecure)
+    # Configure TLS for HTTPS proxies
+    if [[ "$proxy_url" =~ ^https:// ]]; then
+        # Priority 1: Use CA certificate (secure)
+        if [[ -n "${PROXY_CA_PATH:-}" ]] && [[ -f "${PROXY_CA_PATH}" ]]; then
+            curl_opts+=(--proxy-cacert "${PROXY_CA_PATH}")
+            print_info "Using CA certificate for proxy validation"
+        # Priority 2: Use insecure mode (insecure)
+        elif [[ "${PROXY_INSECURE:-false}" == "true" ]]; then
+            curl_opts+=(--proxy-insecure)
+            print_info "Using insecure mode (no certificate validation)"
+        fi
     fi
 
     # Test connection through proxy
@@ -500,6 +626,9 @@ test_proxy() {
         echo "  - Proxy server is unreachable or down"
         echo "  - Incorrect credentials"
         echo "  - Firewall blocking the connection"
+        if [[ "$proxy_url" =~ ^https:// ]] && [[ -z "${PROXY_CA_PATH:-}" ]] && [[ "${PROXY_INSECURE:-false}" != "true" ]]; then
+            echo "  - Self-signed proxy certificate (use --proxy-ca or --proxy-insecure)"
+        fi
         echo ""
         echo "  Claude Code may still work if proxy becomes available"
         return 1
@@ -1212,11 +1341,13 @@ Initialize Claude Code with HTTP proxy settings
 
 OPTIONS:
   -h, --help                        Show this help message
+  --help-export-cert                Show instructions for exporting proxy certificate
   -p, --proxy URL                   Set proxy URL directly (skip prompt)
+  --proxy-ca PATH                   Path to proxy CA certificate (PEM format) - SECURE
+  --proxy-insecure                  Ignore TLS certs for HTTPS proxy - ⚠️  INSECURE (NOT recommended)
   -t, --test                        Test proxy and exit (don't launch Claude)
   -c, --clear                       Clear saved credentials
   --no-proxy                        Launch Claude Code without proxy
-  --proxy-insecure                  Ignore self-signed proxy certificates (for HTTPS proxies)
   --restore-git-proxy               Restore git proxy settings from backup
   --install                         Install script globally (requires sudo)
   --uninstall                       Uninstall script from system (requires sudo)
@@ -1239,8 +1370,14 @@ EXAMPLES:
   # Set proxy URL directly
   init_claude --proxy http://user:pass@127.0.0.1:8118
 
-  # Set HTTPS proxy with self-signed certificate
+  # Set HTTPS proxy with CA certificate (SECURE - recommended)
+  init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca /path/to/proxy-cert.pem
+
+  # Set HTTPS proxy WITHOUT certificate validation (⚠️  INSECURE - not recommended)
   init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
+
+  # Get help exporting proxy certificate
+  init_claude --help-export-cert
 
   # Test proxy without launching Claude
   init_claude --test
@@ -1271,13 +1408,30 @@ EXAMPLES:
 
 PROXY URL FORMAT:
   http://username:password@host:port
-  https://username:password@host:port  (use with --proxy-insecure for self-signed certs)
+  https://username:password@host:port  (recommended: use with --proxy-ca)
   socks5://username:password@host:port
 
   Examples:
     http://alice:secret123@127.0.0.1:8118
-    https://alice:secret123@proxy.example.com:8118  (requires --proxy-insecure)
+    https://alice:secret123@proxy.example.com:8118 --proxy-ca /path/to/cert.pem  (SECURE)
+    https://alice:secret123@proxy.example.com:8118 --proxy-insecure  (⚠️  INSECURE)
     socks5://bob:pass456@proxy.example.com:1080
+
+HTTPS PROXY SECURITY:
+  When using HTTPS proxies with self-signed certificates, you have two options:
+
+  1. --proxy-ca /path/to/cert.pem (✅ RECOMMENDED - SECURE)
+     - Adds ONLY the proxy certificate to trusted CAs
+     - TLS verification remains ENABLED for all other connections
+     - Claude Code → Anthropic API connections are SECURE
+     - Use: init_claude --help-export-cert for certificate export instructions
+
+  2. --proxy-insecure (⚠️  NOT RECOMMENDED - INSECURE)
+     - Disables TLS certificate verification for ALL Node.js connections
+     - Proxy connection: no verification (needed)
+     - Claude Code → Anthropic API: NO VERIFICATION (⚠️  DANGEROUS!)
+     - Vulnerable to Man-in-the-Middle attacks on API calls
+     - Only use with trusted networks and as last resort
 
 CREDENTIALS:
   - Saved to: ${CREDENTIALS_FILE}
@@ -1317,6 +1471,7 @@ main() {
     local skip_permissions=false
     local no_proxy=false
     local proxy_insecure=false
+    local proxy_ca_path=""
     local claude_args=()
 
     # Parse arguments
@@ -1326,8 +1481,16 @@ main() {
                 show_usage
                 exit 0
                 ;;
+            --help-export-cert)
+                export_proxy_certificate_help
+                exit 0
+                ;;
             -p|--proxy)
                 proxy_url="$2"
+                shift 2
+                ;;
+            --proxy-ca)
+                proxy_ca_path="$2"
                 shift 2
                 ;;
             -t|--test)
@@ -1423,20 +1586,34 @@ main() {
         exit 0
     fi
 
+    # Validate proxy CA certificate if provided
+    if [[ -n "$proxy_ca_path" ]]; then
+        if ! validate_certificate_file "$proxy_ca_path"; then
+            exit 1
+        fi
+    fi
+
     # Get proxy URL (from argument, saved file, or prompt)
     local proxy_credentials
     if [[ -z "$proxy_url" ]]; then
         proxy_credentials=$(prompt_proxy_url)
-        # Parse space-separated output: URL INSECURE_FLAG
+        # Parse space-separated output: URL INSECURE_FLAG CA_PATH
         proxy_url=$(echo "$proxy_credentials" | cut -d' ' -f1)
         local saved_insecure=$(echo "$proxy_credentials" | cut -d' ' -f2)
-        # Override with command-line flag if provided
+        local saved_ca=$(echo "$proxy_credentials" | cut -d' ' -f3-)
+
+        # Override with command-line flags if provided
         if [[ "$proxy_insecure" == true ]]; then
             saved_insecure="true"
         elif [[ "$saved_insecure" != "true" ]]; then
             saved_insecure="false"
         fi
         proxy_insecure="$saved_insecure"
+
+        # Use saved CA if no command-line CA provided
+        if [[ -z "$proxy_ca_path" ]] && [[ -n "$saved_ca" ]] && [[ "$saved_ca" != "" ]]; then
+            proxy_ca_path="$saved_ca"
+        fi
     else
         # Validate provided URL
         if ! validate_proxy_url "$proxy_url"; then
@@ -1448,7 +1625,7 @@ main() {
 
     # Configure proxy
     print_info "Configuring proxy..."
-    configure_proxy_from_url "$proxy_url" "$proxy_insecure"
+    configure_proxy_from_url "$proxy_url" "$proxy_insecure" "$proxy_ca_path"
 
     # Display configuration
     display_proxy_info "$show_password"
