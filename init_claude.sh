@@ -1008,9 +1008,12 @@ update_claude_code() {
     if npm install -g @anthropic-ai/claude-code@latest; then
         echo ""
 
-        # Verify installation success by checking for cli.js
-        local claude_path=$(get_nvm_claude_path 2>/dev/null)
-        if [[ -z "$claude_path" ]] || [[ "$claude_path" == *"not found"* ]]; then
+        # Clear bash command hash cache BEFORE checking version
+        hash -r 2>/dev/null || true
+
+        # Verify installation success using universal get_claude_version (works for NVM and system)
+        local new_version=$(get_claude_version)
+        if [[ "$new_version" == "not installed" ]] || [[ "$new_version" == "unknown" ]]; then
             print_error "Update installed but Claude Code not found"
             echo ""
             echo "The npm install succeeded but Claude Code is not accessible."
@@ -1027,22 +1030,14 @@ update_claude_code() {
 
         print_success "Claude Code updated successfully"
         echo ""
+        print_info "New version: $new_version"
 
-        # Clear bash command hash cache to ensure new version is used
-        hash -r 2>/dev/null || true
-
-        # Show new version
-        local new_version=$(get_claude_version)
-        if [[ "$new_version" != "not installed" ]] && [[ "$new_version" != "unknown" ]]; then
-            print_info "New version: $new_version"
-
-            # Check if version actually updated
-            if [[ "$new_version" != *"$latest_version"* ]]; then
-                print_warning "Version still shows: $new_version"
-                echo ""
-                echo "The update was installed but your shell may be using a cached version."
-                echo "Please restart your terminal or run: hash -r"
-            fi
+        # Check if version actually updated
+        if [[ "$new_version" != *"$latest_version"* ]]; then
+            print_warning "Version still shows: $new_version"
+            echo ""
+            echo "The update was installed but your shell may be using a cached version."
+            echo "Please restart your terminal or run: hash -r"
         fi
 
         return 0
