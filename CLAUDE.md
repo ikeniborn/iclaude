@@ -6,6 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a utility tool for launching Claude Code through HTTP/SOCKS5 proxies with automatic credential management. The project consists of a single bash script that can be installed globally.
 
+## Available Skills
+
+The project uses Claude Skills to automate common development tasks. See [SKILLS.md](SKILLS.md) for detailed documentation.
+
+### 🔧 [Bash Development](/.claude/skills/bash-development/SKILL.md)
+Автоматизирует создание bash-функций, добавление флагов, рефакторинг кода, обработку ошибок.
+
+**Use when:** Adding new features, refactoring functions, working with environment variables.
+
+**Example requests:**
+- "Добавь новый флаг --timeout для ограничения времени ожидания"
+- "Создай функцию для ротации credentials backups"
+- "Рефактори функцию launch_claude() для улучшения читаемости"
+
+### 🌐 [Proxy Management](/.claude/skills/proxy-management/SKILL.md)
+Автоматизирует настройку прокси, тестирование подключений, отладку TLS проблем.
+
+**Use when:** Debugging proxy issues, adding proxy protocols, working with certificates.
+
+**Example requests:**
+- "Отладь проблему с HTTPS прокси и самоподписанным сертификатом"
+- "Добавь поддержку SOCKS4 прокси"
+- "Почему proxy test failed с HTTP 407?"
+
 ## Architecture
 
 The codebase is a standalone bash script (`init_claude.sh`) that:
@@ -18,25 +42,67 @@ The codebase is a standalone bash script (`init_claude.sh`) that:
 
 ### Key Components
 
-- **Proxy URL Parsing** (lines 66-103): Extracts protocol, username, password, host, port from URLs
-- **Credential Persistence** (lines 166-203): Saves/loads proxy settings from `.claude_proxy_credentials`
-- **Git Proxy Management** (lines 290-349): Automatically saves/restores git proxy settings
-  - `save_git_proxy_settings()`: Backs up current git proxy config
-  - `configure_git_no_proxy()`: Disables proxy for git operations
-  - `restore_git_proxy()`: Restores original git proxy settings
-- **Proxy Configuration** (lines 274-288): Sets environment variables and configures git
-- **Proxy Testing** (lines 391-403): Validates connectivity via curl before launching
-- **Dependency Installation** (lines 426-570): Auto-installs Node.js, npm, and Claude Code if missing
-- **Claude Detection** (lines 597-643): Finds global Claude Code binary, avoiding local npm installations
+For detailed implementation guidance, use the **bash-development** skill.
+
+- **Proxy URL Parsing** (lines 143-180): Extracts protocol, username, password, host, port from URLs
+- **Credential Persistence** (lines 332-392): Saves/loads proxy settings from `.claude_proxy_credentials`
+- **Git Proxy Management** (lines 519-580): Automatically saves/restores git proxy settings
+- **Proxy Configuration** (lines 467-515): Sets environment variables and configures git
+- **Proxy Testing** (lines 615-667): Validates connectivity via curl before launching
+- **Dependency Installation** (lines 684-740): Auto-installs Node.js, npm, and Claude Code if missing
+- **Claude Detection** (lines 745-790, 1419-1506): Finds global Claude Code binary, avoiding local npm installations
+
+## Development Workflows
+
+### Workflow 1: Adding New Features
+
+Use the **bash-development** skill for:
+
+```
+Добавь новый флаг --retry <count> для повторных попыток подключения к прокси
+```
+
+The skill will guide you through:
+1. Adding the flag to the argument parser
+2. Implementing the retry logic
+3. Adding validation
+4. Updating `show_usage()`
+5. Checking the completion checklist
+
+### Workflow 2: Proxy Configuration & Debugging
+
+Use the **proxy-management** skill for:
+
+```
+Отладь проблему: Test proxy failed с ошибкой "SSL certificate problem: self signed certificate"
+```
+
+The skill will guide you through:
+1. Analyzing the TLS error
+2. Explaining --proxy-ca vs --proxy-insecure
+3. Providing certificate export commands
+4. Testing the solution
+
+### Workflow 3: Combined Tasks
+
+For complex tasks, Claude will automatically combine skills:
+
+```
+Добавь поддержку SOCKS4 прокси в init_claude.sh с полной валидацией и тестированием
+```
+
+Claude uses:
+- **proxy-management** → validates and parses SOCKS4 URLs
+- **bash-development** → creates bash functions with proper error handling
+- **proxy-management** → adds curl tests for SOCKS4
+- **bash-development** → updates documentation
 
 ## Common Commands
 
 ### Installation
 ```bash
 # Install globally (creates /usr/local/bin/init_claude)
-# Automatically checks and installs dependencies:
-# - Node.js and npm (if missing)
-# - Claude Code (if missing)
+# Automatically checks and installs dependencies
 sudo ./init_claude.sh --install
 
 # Uninstall
@@ -45,7 +111,7 @@ sudo init_claude --uninstall
 
 ### Usage
 ```bash
-# Launch with saved credentials (interactive prompt if none exist)
+# Launch with saved credentials
 init_claude
 
 # Set proxy directly
@@ -57,21 +123,15 @@ init_claude --test
 # Clear saved credentials
 init_claude --clear
 
-# Restore git proxy settings from backup
-init_claude --restore-git-proxy
-
-# Launch without proxy (also restores git proxy if backup exists)
+# Launch without proxy
 init_claude --no-proxy
 
-# Skip connectivity test
-init_claude --no-test
-
-# Pass arguments to Claude Code
-init_claude -- --model claude-3-opus
-
-# Skip permission checks (use with caution)
-init_claude --dangerously-skip-permissions
+# Update Claude Code
+init_claude --update  # For NVM installations
+sudo init_claude --update  # For system installations
 ```
+
+For detailed usage information, see [README.md](README.md).
 
 ## Development Notes
 
@@ -80,89 +140,41 @@ Supported formats: `http://`, `https://`, `socks5://`
 
 Pattern: `protocol://[username:password@]host:port`
 
-Examples:
-- `http://alice:secret@127.0.0.1:8118`
-- `socks5://user:pass@proxy.example.com:1080`
+For detailed proxy management, use the **proxy-management** skill.
 
 ### Security Considerations
 
-**General:**
-- Credentials file has 600 permissions (owner read/write only)
-- Passwords are masked in output by default (use `--show-password` to reveal)
-- The credentials file is automatically excluded from git
-
 **HTTPS Proxy Security:**
 
-⚠️ **Important:** The `--proxy-insecure` flag disables TLS certificate verification for ALL Node.js connections, not just the proxy. This creates security risks:
-
-**Current Issue with `--proxy-insecure`:**
-```bash
-# ⚠️  INSECURE (NOT RECOMMENDED)
-init_claude --proxy https://proxy:8118 --proxy-insecure
-```
-- ❌ Proxy connection: No TLS verification (needed for self-signed cert)
-- ❌ **Claude Code → Anthropic API: NO TLS VERIFICATION (DANGEROUS!)**
-- ❌ Vulnerable to Man-in-the-Middle attacks on API connections
+⚠️ **Important:** The `--proxy-insecure` flag disables TLS certificate verification for ALL Node.js connections.
 
 **Secure Solution with `--proxy-ca` (RECOMMENDED):**
 ```bash
-# ✅ SECURE (RECOMMENDED)
+# ✅ SECURE
 init_claude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
 ```
 - ✅ Proxy connection: Uses proxy CA certificate
-- ✅ **Claude Code → Anthropic API: FULL TLS VERIFICATION (SECURE)**
-- ✅ Protected from Man-in-the-Middle attacks
+- ✅ Claude Code → Anthropic API: FULL TLS VERIFICATION (SECURE)
 
 **How to Export Proxy Certificate:**
 ```bash
 # Get help
 init_claude --help-export-cert
 
-# Method 1: Using openssl
+# Using openssl
 openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/null | \
   openssl x509 -outform PEM > proxy-cert.pem
-
-# Method 2: From browser (connect via proxy, view certificate, export as PEM)
-
-# Then use it
-init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca proxy-cert.pem
 ```
 
-**Technical Details:**
-- `--proxy-ca` uses `NODE_EXTRA_CA_CERTS` to add ONLY the proxy certificate to trusted CAs
-- `--proxy-insecure` uses `NODE_TLS_REJECT_UNAUTHORIZED=0` which disables verification globally
-- The script uses `curl --proxy-cacert` for testing when `--proxy-ca` is provided
+For troubleshooting TLS issues, use the **proxy-management** skill.
 
 ### Script Behavior
 - Uses `set -euo pipefail` for strict error handling
 - Follows symlinks to resolve the script's actual directory
 - **NVM Support**: Automatically detects and uses Claude Code installed via NVM
-  - Searches for standard `claude` binary
-  - Handles temporary npm binaries (`.claude-*`)
-  - Falls back to direct `cli.js` execution if binaries not found
-  - Supports temporary installation folders (`.claude-code-*`)
 - Prioritizes NVM installations over system installations
-- Warns if local Claude installation detected and attempts to find global installation
 
-### Dependency Installation
-During `--install`, the script automatically checks and installs missing dependencies:
-
-1. **Node.js and npm** (if missing):
-   - Uses NodeSource official repository (Node.js 18 LTS)
-   - Command: `curl -fsSL https://deb.nodesource.com/setup_18.x | bash -`
-   - Then: `apt-get install -y nodejs`
-   - Prompts for confirmation before installing
-
-2. **Claude Code** (if missing):
-   - Installs globally via npm
-   - Command: `npm install -g @anthropic-ai/claude-code`
-   - Prompts for confirmation before installing
-
-3. **Installation Flow**:
-   - Checks npm → if missing, offers to install Node.js
-   - Checks Claude Code → if missing, offers to install
-   - Only proceeds with script installation if dependencies are satisfied
-   - Can skip dependency installation but warns about missing requirements
+For adding new bash functions or modifying behavior, use the **bash-development** skill.
 
 ### Git and Proxy Considerations
 
@@ -173,40 +185,17 @@ The script uses **environment variables** (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) to
 - **Do NOT modify global git configuration**
 - Git automatically respects NO_PROXY for localhost and 127.0.0.1
 
-**How it works:**
-1. When proxy is configured, the script:
-   - Sets environment variables: HTTPS_PROXY, HTTP_PROXY, NO_PROXY
-   - These variables are inherited by Claude Code when launched
-   - Git automatically uses NO_PROXY to bypass proxy for local addresses
-
-2. Git operations work normally:
-   - Git respects the NO_PROXY environment variable
-   - Local operations (localhost, 127.0.0.1) bypass proxy automatically
-   - Remote operations use your existing git config (not modified by this script)
-
-3. Claude Code uses the proxy:
-   - Reads HTTPS_PROXY and HTTP_PROXY from environment
-   - Uses proxy for API calls to Anthropic
-
 **Important Notes:**
 - The script does **NOT** modify `git config --global` settings
 - Your system's git configuration remains unchanged
 - Proxy settings only apply to the `init_claude` session and Claude Code
 
-**Files:**
-- `.claude_proxy_credentials` - Proxy credentials for Claude Code (chmod 600)
-- `.claude_git_proxy_backup` - Deprecated (kept for compatibility)
-
 ### Updating Claude Code
 
-**Check for updates:**
 ```bash
-# Check if updates are available (no installation)
+# Check if updates are available
 init_claude --check-update
-```
 
-**Update Claude Code:**
-```bash
 # Update to latest version
 init_claude --update  # For NVM installations
 sudo init_claude --update  # For system installations
@@ -215,40 +204,16 @@ sudo init_claude --update  # For system installations
 **NVM-specific behavior:**
 - Automatically detects and cleans up old temporary installations (`.claude-code-*`)
 - Removes broken symlinks (`.claude-*`) before updating
-- Removes incomplete installations (folders without `cli.js`)
 - Verifies update success by checking for working `cli.js`
 
 **Troubleshooting ENOTEMPTY errors:**
 
-If you see `npm error ENOTEMPTY` during update:
+If you see `npm error ENOTEMPTY` during update, the script will offer automatic cleanup or you can do it manually.
 
-1. **Automatic cleanup (recommended):**
-   ```bash
-   init_claude --update
-   # The script will offer to clean up old installations automatically
-   ```
-
-2. **Manual cleanup:**
-   ```bash
-   # Remove old temporary installations
-   rm -rf ~/.nvm/versions/node/*/lib/node_modules/@anthropic-ai/.claude-code-*
-
-   # Remove broken symlinks
-   find ~/.nvm/versions/node/*/bin -type l -name ".claude-*" ! -exec test -e {} \; -delete
-
-   # Then update
-   npm install -g @anthropic-ai/claude-code@latest
-   ```
-
-3. **Nuclear option (complete reinstall):**
-   ```bash
-   npm uninstall -g @anthropic-ai/claude-code
-   npm install -g @anthropic-ai/claude-code@latest
-   ```
-
-**Note:** Updates are never automatic - they only happen when you explicitly run `--update` or `--check-update`.
+For detailed update procedures and troubleshooting, use the **bash-development** skill.
 
 ### Testing
+
 No automated tests exist. Test manually:
 ```bash
 # Test proxy connectivity
@@ -257,3 +222,59 @@ init_claude --test
 # Test full flow
 init_claude --proxy http://test:test@127.0.0.1:8118 --no-test
 ```
+
+For creating test cases or debugging issues, use the **bash-development** and **proxy-management** skills together.
+
+## Quick Reference
+
+### When to Use Which Skill
+
+| Task | Skill | Example Request |
+|------|-------|----------------|
+| Add new flag/option | bash-development | "Добавь флаг --retry" |
+| Create bash function | bash-development | "Создай функцию rotate_credentials()" |
+| Refactor code | bash-development | "Рефактори launch_claude()" |
+| Debug proxy issue | proxy-management | "Почему proxy test failed?" |
+| Configure TLS | proxy-management | "Настрой --proxy-ca" |
+| Add proxy protocol | proxy-management + bash-development | "Добавь SOCKS4" |
+| Update documentation | bash-development | "Обнови show_usage()" |
+
+### Common Request Patterns
+
+Instead of reading lengthy documentation, just ask Claude with these patterns:
+
+**Development:**
+- "Добавь новый флаг --{name} для {purpose}"
+- "Создай функцию {name}() которая {description}"
+- "Рефактори {function_name}() для {improvement}"
+- "Добавь валидацию для {parameter}"
+
+**Proxy Management:**
+- "Отладь проблему с {proxy_type} прокси"
+- "Почему test proxy failed с ошибкой '{error_message}'?"
+- "Как настроить HTTPS прокси с самоподписанным сертификатом?"
+- "Добавь поддержку {protocol} прокси"
+
+**Combined:**
+- "Добавь поддержку {feature} с полной валидацией и тестированием"
+- "Оптимизируй {component} для лучшей производительности"
+- "Исправь баг: {description}"
+
+## Additional Resources
+
+- **SKILLS.md**: Comprehensive documentation on available skills
+- **README.md**: User-facing documentation and usage examples
+- **Skill Files**:
+  - `.claude/skills/bash-development/SKILL.md`: Bash development patterns and templates
+  - `.claude/skills/proxy-management/SKILL.md`: Proxy configuration and troubleshooting
+
+---
+
+**Note:** This document has been optimized to work with Claude Skills. Instead of providing exhaustive details here, we reference specialized skills that contain:
+- Step-by-step implementation guides
+- Code templates
+- Checklists
+- Troubleshooting guides
+- Real-world examples
+
+Simply describe what you want to Claude, and it will automatically use the appropriate skill to help you.
