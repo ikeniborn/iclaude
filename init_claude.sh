@@ -225,9 +225,9 @@ get_nvm_claude_path() {
 				return 0
 			fi
 
-			# Then try temporary .claude-* binaries
+			# Then try temporary .claude-* binaries (sorted by modification time, newest first)
 			if ls "$nvm_bin/.claude-"* &>/dev/null; then
-				local temp_claude=$(ls "$nvm_bin/.claude-"* 2>/dev/null | head -n 1)
+				local temp_claude=$(ls -t "$nvm_bin/.claude-"* 2>/dev/null | head -n 1)
 				if [[ -x "$temp_claude" ]]; then
 					echo "$temp_claude"
 					return 0
@@ -242,8 +242,8 @@ get_nvm_claude_path() {
 					return 0
 				fi
 
-				# Then try temporary .claude-code-* folders
-				local temp_cli=$(find "$nvm_lib" -maxdepth 2 -name "cli.js" -path "*/.claude-code-*/cli.js" 2>/dev/null | head -n 1)
+				# Then try temporary .claude-code-* folders (sorted by modification time, newest first)
+				local temp_cli=$(find "$nvm_lib" -maxdepth 2 -name "cli.js" -path "*/.claude-code-*/cli.js" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-)
 				if [[ -n "$temp_cli" ]] && [[ -f "$temp_cli" ]]; then
 					echo "node $temp_cli"
 					return 0
@@ -261,9 +261,9 @@ get_nvm_claude_path() {
 			return 0
 		fi
 
-		# Then try temporary .claude-* binaries
+		# Then try temporary .claude-* binaries (sorted by modification time, newest first)
 		if ls "$npm_prefix/bin/.claude-"* &>/dev/null; then
-			local temp_claude=$(ls "$npm_prefix/bin/.claude-"* 2>/dev/null | head -n 1)
+			local temp_claude=$(ls -t "$npm_prefix/bin/.claude-"* 2>/dev/null | head -n 1)
 			if [[ -x "$temp_claude" ]]; then
 				echo "$temp_claude"
 				return 0
@@ -279,8 +279,8 @@ get_nvm_claude_path() {
 				return 0
 			fi
 
-			# Then try temporary .claude-code-* folders
-			local temp_cli=$(find "$npm_lib" -maxdepth 2 -name "cli.js" -path "*/.claude-code-*/cli.js" 2>/dev/null | head -n 1)
+			# Then try temporary .claude-code-* folders (sorted by modification time, newest first)
+			local temp_cli=$(find "$npm_lib" -maxdepth 2 -name "cli.js" -path "*/.claude-code-*/cli.js" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-)
 			if [[ -n "$temp_cli" ]] && [[ -f "$temp_cli" ]]; then
 				echo "node $temp_cli"
 				return 0
@@ -289,6 +289,41 @@ get_nvm_claude_path() {
 	fi
 
 	return 1
+}
+
+#######################################
+# Get version from cli.js installation
+#######################################
+get_cli_version() {
+	local cli_path=$1
+
+	# If it's a "node /path/to/cli.js" command, extract the cli.js path
+	if [[ "$cli_path" == node* ]]; then
+		cli_path=$(echo "$cli_path" | awk '{print $2}')
+	fi
+
+	# If it's a full path to cli.js, get the directory
+	if [[ "$cli_path" == *"cli.js" ]]; then
+		cli_path=$(dirname "$cli_path")
+	fi
+
+	# Check if package.json exists
+	local package_json="$cli_path/package.json"
+	if [[ ! -f "$package_json" ]]; then
+		echo "unknown"
+		return 1
+	fi
+
+	# Extract version from package.json
+	local version=$(grep -oP '(?<="version":\s")[^"]+' "$package_json" 2>/dev/null)
+
+	if [[ -z "$version" ]]; then
+		echo "unknown"
+		return 1
+	fi
+
+	echo "$version"
+	return 0
 }
 
 #######################################
@@ -383,18 +418,9 @@ prompt_proxy_url() {
         fi
         echo "" >&2
 
-        local use_saved=""
-        if [ -t 0 ]; then
-            read -p "Use saved proxy? (Y/n): " use_saved >&2
-        else
-            # Non-interactive mode: auto-use saved proxy
-            use_saved="y"
-        fi
-
-        if [[ -z "$use_saved" ]] || [[ "$use_saved" =~ ^[Yy] ]]; then
-            echo "$saved_url $saved_insecure $saved_ca"
-            return 0
-        fi
+        # Auto-use saved proxy (no confirmation needed)
+        echo "$saved_url $saved_insecure $saved_ca"
+        return 0
     fi
 
     # Prompt for new URL
@@ -847,15 +873,36 @@ cleanup_old_claude_installations() {
 	local temp_folders=$(find "$lib_dir" -maxdepth 1 -type d -name ".claude-code-*" 2>/dev/null)
 
 	if [[ -n "$temp_folders" ]]; then
-		print_info "Found old temporary Claude installations:"
-		echo "$temp_folders" | while read folder; do
-			echo "  - $(basename "$folder")"
-		done
-		echo ""
+		local old_folders=""
+		local recent_folders=""
+		local current_time=$(date +%s)
+		local seven_days_ago=$((current_time - 7*24*60*60))
 
-		read -p "Remove old temporary installations? (Y/n): " confirm
-		if [[ -z "$confirm" ]] || [[ "$confirm" =~ ^[Yy]$ ]]; then
-			echo "$temp_folders" | while read folder; do
+		# Separate old (>7 days) and recent folders
+		while read folder; do
+			[[ -z "$folder" ]] && continue
+			local mod_time=$(stat -c %Y "$folder" 2>/dev/null || echo "0")
+			local folder_version=$(get_cli_version "$folder")
+			local folder_name=$(basename "$folder")
+
+			if [[ $mod_time -lt $seven_days_ago ]]; then
+				old_folders+="$folder|$folder_version"$'\n'
+			else
+				recent_folders+="$folder|$folder_version"$'\n'
+			fi
+		done <<< "$temp_folders"
+
+		# Auto-remove old folders (>7 days)
+		if [[ -n "$old_folders" ]]; then
+			print_info "Found old temporary installations (>7 days, auto-removing):"
+			echo "$old_folders" | while IFS='|' read folder version; do
+				[[ -z "$folder" ]] && continue
+				echo "  - $(basename "$folder") (version: $version)"
+			done
+			echo ""
+
+			echo "$old_folders" | while IFS='|' read folder version; do
+				[[ -z "$folder" ]] && continue
 				if rm -rf "$folder" 2>/dev/null; then
 					print_success "Removed: $(basename "$folder")"
 					cleaned=true
@@ -864,6 +911,30 @@ cleanup_old_claude_installations() {
 				fi
 			done
 			echo ""
+		fi
+
+		# Ask for confirmation for recent folders
+		if [[ -n "$recent_folders" ]]; then
+			print_info "Found recent temporary installations (<7 days):"
+			echo "$recent_folders" | while IFS='|' read folder version; do
+				[[ -z "$folder" ]] && continue
+				echo "  - $(basename "$folder") (version: $version)"
+			done
+			echo ""
+
+			read -p "Remove recent installations? (Y/n): " confirm
+			if [[ -z "$confirm" ]] || [[ "$confirm" =~ ^[Yy]$ ]]; then
+				echo "$recent_folders" | while IFS='|' read folder version; do
+					[[ -z "$folder" ]] && continue
+					if rm -rf "$folder" 2>/dev/null; then
+						print_success "Removed: $(basename "$folder")"
+						cleaned=true
+					else
+						print_warning "Failed to remove: $(basename "$folder")"
+					fi
+				done
+				echo ""
+			fi
 		fi
 	fi
 
@@ -909,6 +980,66 @@ cleanup_old_claude_installations() {
 	if [[ "$cleaned" == true ]]; then
 		print_success "Cleanup completed"
 		echo ""
+	fi
+
+	return 0
+}
+
+#######################################
+# Recreate Claude symlinks after update (NVM only)
+#######################################
+recreate_claude_symlinks() {
+	if [[ -z "${NVM_DIR:-}" ]]; then
+		return 0  # Only for NVM installations
+	fi
+
+	local npm_prefix=$(npm prefix -g 2>/dev/null)
+	if [[ -z "$npm_prefix" ]] || [[ "$npm_prefix" != *".nvm"* ]]; then
+		return 0  # Not NVM environment
+	fi
+
+	local bin_dir="$npm_prefix/bin"
+	local lib_dir="$npm_prefix/lib/node_modules/@anthropic-ai"
+
+	if [[ ! -d "$lib_dir" ]]; then
+		return 0  # No installations
+	fi
+
+	# Find the actual cli.js (prioritize standard installation)
+	local cli_path=""
+	if [[ -f "$lib_dir/claude-code/cli.js" ]]; then
+		cli_path="$lib_dir/claude-code/cli.js"
+		print_info "Found standard installation: claude-code"
+	else
+		# Find newest temporary installation
+		cli_path=$(find "$lib_dir" -maxdepth 2 -name "cli.js" -path "*/.claude-code-*/cli.js" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n 1 | cut -d' ' -f2-)
+		if [[ -n "$cli_path" ]]; then
+			local temp_name=$(basename $(dirname "$cli_path"))
+			print_info "Found temporary installation: $temp_name"
+		fi
+	fi
+
+	if [[ -z "$cli_path" ]] || [[ ! -f "$cli_path" ]]; then
+		print_error "Cannot find Claude Code cli.js"
+		return 1
+	fi
+
+	print_info "Recreating Claude symlinks..."
+
+	# Remove all old Claude symlinks (both standard and temporary)
+	rm -f "$bin_dir/claude" "$bin_dir/.claude-"* 2>/dev/null
+
+	# Create new standard symlink
+	ln -sf "$cli_path" "$bin_dir/claude"
+	chmod +x "$bin_dir/claude"
+
+	local install_name=$(basename $(dirname "$cli_path"))
+	print_success "Symlink created: claude -> $install_name/cli.js"
+
+	# Show version
+	local version=$(get_cli_version "$cli_path")
+	if [[ "$version" != "unknown" ]]; then
+		print_info "Symlink points to version: $version"
 	fi
 
 	return 0
@@ -992,9 +1123,41 @@ update_claude_code() {
 
     echo ""
 
-    # Cleanup old installations if using NVM
+    # Pre-update cleanup: Remove ALL symlinks and temporary installations (NVM only)
     if [[ "$using_nvm" == true ]]; then
-        cleanup_old_claude_installations
+        local npm_prefix=$(npm prefix -g 2>/dev/null)
+        if [[ -n "$npm_prefix" ]] && [[ "$npm_prefix" == *".nvm"* ]]; then
+            local bin_dir="$npm_prefix/bin"
+            local lib_dir="$npm_prefix/lib/node_modules/@anthropic-ai"
+
+            print_info "Pre-update cleanup..."
+
+            # Remove ALL Claude symlinks (both broken and working) to avoid EEXIST errors
+            if [[ -d "$bin_dir" ]]; then
+                rm -f "$bin_dir/claude" "$bin_dir/.claude-"* 2>/dev/null
+                print_info "Removed existing symlinks"
+            fi
+
+            # Remove ALL temporary .claude-code-* folders to avoid ENOTEMPTY errors
+            if [[ -d "$lib_dir" ]]; then
+                local temp_folders=$(find "$lib_dir" -maxdepth 1 -type d -name ".claude-code-*" 2>/dev/null)
+                if [[ -n "$temp_folders" ]]; then
+                    echo "$temp_folders" | while read folder; do
+                        [[ -z "$folder" ]] && continue
+                        rm -rf "$folder" 2>/dev/null
+                        print_info "Removed old temporary installation: $(basename "$folder")"
+                    done
+                fi
+            fi
+
+            # Remove incomplete claude-code installation (without cli.js)
+            if [[ -d "$lib_dir/claude-code" ]] && [[ ! -f "$lib_dir/claude-code/cli.js" ]]; then
+                print_info "Removing incomplete installation: claude-code"
+                rm -rf "$lib_dir/claude-code" 2>/dev/null
+            fi
+
+            echo ""
+        fi
     fi
 
     if [[ "$using_nvm" == true ]]; then
@@ -1031,6 +1194,17 @@ update_claude_code() {
         print_success "Claude Code updated successfully"
         echo ""
         print_info "New version: $new_version"
+        echo ""
+
+        # Cleanup old installations after successful update (NVM only)
+        if [[ "$using_nvm" == true ]]; then
+            cleanup_old_claude_installations
+            echo ""
+
+            # Recreate symlinks to point to the newest installation
+            recreate_claude_symlinks
+            echo ""
+        fi
 
         # Check if version actually updated
         if [[ "$new_version" != *"$latest_version"* ]]; then
@@ -1314,6 +1488,12 @@ launch_claude() {
     fi
 
     print_info "Using Claude Code: $claude_cmd"
+
+    # Show version of the installation being used
+    local used_version=$(get_cli_version "$claude_cmd")
+    if [[ "$used_version" != "unknown" ]]; then
+        print_info "Version: $used_version"
+    fi
     echo ""
 
     # Pass through any additional arguments
