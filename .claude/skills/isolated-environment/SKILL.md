@@ -25,6 +25,9 @@ dependencies: [bash-development]
 - "Как передать установку init_claude через git?"
 - "Избежать конфликтов с системным NVM"
 - "Cleanup изолированной установки"
+- "Почему симлинки не работают после git clone?"
+- "Исправь broken symlinks в изолированном окружении"
+- "Проверь статус симлинков"
 
 ## Контекст проекта
 
@@ -69,8 +72,12 @@ dependencies: [bash-development]
 5. ✅ **Безопасность**: Изоляция npm пакетов от системы
 
 **Компромисс:**
-- ⚠️ Размер: `.nvm-isolated/` занимает ~200-300 MB (добавить в .gitignore)
-- ✅ Решение: Коммитим только `.nvm-isolated-lockfile.json` (воспроизводство установки)
+- ⚠️ Размер: `.nvm-isolated/` занимает ~200-300 MB (можно коммитить в git или использовать lockfile)
+- ⚠️ Симлинки: После git clone нужно восстановить симлинки (`--repair-isolated`)
+  - Git хранит симлинки как blob references, не реальные symlinks
+  - 4 критичных симлинка: npm, npx, corepack, claude
+- ✅ Решение 1: Коммитим `.nvm-isolated/` и запускаем `--repair-isolated` после clone
+- ✅ Решение 2: Коммитим только `.nvm-isolated-lockfile.json` и используем `--install-from-lockfile`
 
 ## Шаблоны кода
 
@@ -348,6 +355,168 @@ check_isolated_status() {
 }
 ```
 
+### Шаблон 5: Восстановление симлинков после git clone
+
+```bash
+#######################################
+# Repair symlinks and permissions after git clone
+# Returns:
+#   0 - success (all symlinks repaired)
+#   N - number of errors
+#######################################
+repair_isolated_environment() {
+    local isolated_nvm_dir="${SCRIPT_DIR}/.nvm-isolated"
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Repairing Isolated Environment"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Check if isolated environment exists
+    if [[ ! -d "$isolated_nvm_dir" ]]; then
+        print_error "Isolated environment not found: $isolated_nvm_dir"
+        echo "Run: ./init_claude.sh --isolated-install"
+        return 1
+    fi
+
+    local errors=0
+    local fixed=0
+
+    # Find Node.js version directory
+    local node_version_dir=$(find "$isolated_nvm_dir/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+
+    if [[ -z "$node_version_dir" ]]; then
+        print_error "Node.js installation not found"
+        return 1
+    fi
+
+    print_info "Node.js directory: $(basename "$node_version_dir")"
+    echo ""
+
+    # Check Node.js binary permissions
+    local node_bin="$node_version_dir/bin/node"
+    if [[ -f "$node_bin" ]]; then
+        if [[ ! -x "$node_bin" ]]; then
+            chmod +x "$node_bin"
+            print_success "  ✓ Fixed: Made node binary executable"
+            fixed=$((fixed + 1))
+        else
+            print_success "  ✓ OK: node binary is executable"
+        fi
+    else
+        print_error "  ✗ MISSING: node binary not found"
+        errors=$((errors + 1))
+    fi
+
+    # Symlinks to check/repair (path => target)
+    declare -A symlinks=(
+        ["$node_version_dir/bin/npm"]="../lib/node_modules/npm/bin/npm-cli.js"
+        ["$node_version_dir/bin/npx"]="../lib/node_modules/npm/bin/npx-cli.js"
+        ["$node_version_dir/bin/corepack"]="../lib/node_modules/corepack/dist/corepack.js"
+    )
+
+    echo ""
+    print_info "Checking Node.js symlinks..."
+
+    # Check and repair each symlink
+    for link_path in "${!symlinks[@]}"; do
+        local target="${symlinks[$link_path]}"
+        local link_name=$(basename "$link_path")
+
+        if [[ -L "$link_path" ]]; then
+            # Symlink exists, verify target
+            local current_target=$(readlink "$link_path")
+            local target_full=$(dirname "$link_path")/$current_target
+
+            if [[ "$current_target" == "$target" ]] && [[ -f "$target_full" ]]; then
+                print_success "  ✓ OK: $link_name → $target"
+            else
+                # Wrong target or broken, recreate
+                rm -f "$link_path"
+                ln -s "$target" "$link_path"
+                print_success "  ✓ Fixed: $link_name → $target"
+                fixed=$((fixed + 1))
+            fi
+        elif [[ -e "$link_path" ]]; then
+            # File exists but not a symlink, replace
+            rm -f "$link_path"
+            ln -s "$target" "$link_path"
+            print_success "  ✓ Fixed: $link_name → $target (was a file)"
+            fixed=$((fixed + 1))
+        else
+            # Missing, create
+            ln -s "$target" "$link_path"
+            print_success "  ✓ Created: $link_name → $target"
+            fixed=$((fixed + 1))
+        fi
+    done
+
+    # Check Claude Code symlink
+    echo ""
+    print_info "Checking Claude Code symlink..."
+
+    local claude_link="$isolated_nvm_dir/npm-global/bin/claude"
+    local claude_target="../lib/node_modules/@anthropic-ai/claude-code/cli.js"
+
+    if [[ -L "$claude_link" ]]; then
+        local current_target=$(readlink "$claude_link")
+        local target_full=$(dirname "$claude_link")/$current_target
+
+        if [[ "$current_target" == "$claude_target" ]] && [[ -f "$target_full" ]]; then
+            print_success "  ✓ OK: claude → $claude_target"
+        else
+            rm -f "$claude_link"
+            ln -s "$claude_target" "$claude_link"
+            print_success "  ✓ Fixed: claude → $claude_target"
+            fixed=$((fixed + 1))
+        fi
+    elif [[ -e "$claude_link" ]]; then
+        rm -f "$claude_link"
+        ln -s "$claude_target" "$claude_link"
+        print_success "  ✓ Fixed: claude → $claude_target (was a file)"
+        fixed=$((fixed + 1))
+    else
+        ln -s "$claude_target" "$claude_link"
+        print_success "  ✓ Created: claude → $claude_target"
+        fixed=$((fixed + 1))
+    fi
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    if [[ $errors -eq 0 ]]; then
+        if [[ $fixed -gt 0 ]]; then
+            print_success "Repair complete! Fixed $fixed issue(s)"
+        else
+            print_success "All checks passed! No repairs needed"
+        fi
+        echo ""
+        print_info "Isolated environment is ready to use"
+        return 0
+    else
+        print_error "Repair failed! $errors error(s) found"
+        return $errors
+    fi
+}
+```
+
+**Использование:**
+```bash
+# After git clone - repair all symlinks
+./init_claude.sh --repair-isolated
+
+# Check symlink status first
+./init_claude.sh --check-isolated
+```
+
+**Когда нужен repair:**
+- ✅ После git clone репозитория с `.nvm-isolated/`
+- ✅ После обновления через git pull
+- ✅ После копирования директории между машинами
+- ✅ При ошибках "command not found" для npm/claude
+- ✅ Автоматически вызывается при `--update`
+
 ## Проверочный чеклист
 
 После установки изолированного окружения проверь:
@@ -357,10 +526,13 @@ check_isolated_status() {
 - [ ] npm установлен и доступен через `npm --version`
 - [ ] Claude Code установлен и доступен через `claude --version`
 - [ ] Lockfile `.nvm-isolated-lockfile.json` создан
-- [ ] `.gitignore` содержит `.nvm-isolated/` (директория не коммитится)
+- [ ] Все 4 симлинка работают (npm, npx, corepack, claude)
+- [ ] `--check-isolated` показывает ✓ OK для всех симлинков
+- [ ] `.gitignore` содержит `.nvm-isolated/` (если не коммитим) или настроен правильно
 - [ ] Lockfile добавлен в git для воспроизводства
 - [ ] `init_claude` запускается с использованием изолированной установки
 - [ ] Системный NVM не затронут (если есть)
+- [ ] После git clone `--repair-isolated` успешно восстанавливает симлинки (если коммитили)
 
 ## Связанные скилы
 
@@ -458,25 +630,188 @@ check_isolated_status() {
 3. Удаляет `.nvm-isolated/`
 4. Сохраняет `.nvm-isolated-lockfile.json` для переустановки
 
+### Пример 5: Восстановление симлинков после git clone
+
+**Сценарий:** Разработчик клонировал репозиторий с `.nvm-isolated/`, но симлинки не работают
+
+**Запрос:**
+```
+Почему симлинки не работают после git clone?
+```
+
+**Claude использует isolated-environment skill:**
+
+1. Объясняет проблему:
+```
+Git хранит symlinks как blob references (mode 120000), а не реальные symlinks.
+После git clone они не восстанавливаются автоматически.
+```
+
+2. Проверяет статус:
+```bash
+./init_claude.sh --check-isolated
+
+# Вывод:
+Symlinks Status:
+  ✗ npm (broken - target missing)
+  ✗ npx (broken - target missing)
+  ✗ corepack (missing)
+  ✗ claude (missing)
+
+Found 4 symlink issue(s)
+Run: ./init_claude.sh --repair-isolated
+```
+
+3. Восстанавливает симлинки:
+```bash
+./init_claude.sh --repair-isolated
+
+# Вывод:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Repairing Isolated Environment
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Node.js directory: v18.20.8
+
+  ✓ OK: node binary is executable
+
+Checking Node.js symlinks...
+  ✓ Fixed: npm → ../lib/node_modules/npm/bin/npm-cli.js
+  ✓ Fixed: npx → ../lib/node_modules/npm/bin/npx-cli.js
+  ✓ Created: corepack → ../lib/node_modules/corepack/dist/corepack.js
+
+Checking Claude Code symlink...
+  ✓ Created: claude → ../lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Repair complete! Fixed 4 issue(s)
+
+Isolated environment is ready to use
+```
+
+4. Проверяет что все работает:
+```bash
+./init_claude.sh --check-isolated
+
+# Все симлинки теперь ✓ OK
+```
+
+### Пример 6: Автоматический repair при обновлении
+
+**Запрос:**
+```
+Обнови Claude Code в изолированном окружении
+```
+
+**Claude использует isolated-environment skill:**
+
+1. Запускает обновление:
+```bash
+./init_claude.sh --update
+```
+
+2. После обновления автоматически:
+   - Обновляет lockfile с новой версией
+   - Вызывает `repair_isolated_environment()` для восстановления симлинков
+   - Проверяет что все работает
+
+3. Результат:
+```
+Updating Claude Code...
+✓ Claude Code updated to 1.5.0
+
+Updating lockfile...
+✓ Lockfile saved
+
+Repairing symlinks and permissions...
+  ✓ OK: npm
+  ✓ OK: npx
+  ✓ OK: corepack
+  ✓ OK: claude
+
+✓ All checks passed! No repairs needed
+```
+
 ## Часто задаваемые вопросы
 
 **Q: Можно ли коммитить `.nvm-isolated/` в git?**
 
-A: **НЕ рекомендуется**. Директория занимает ~200-300 MB.
+A: **Да, можно!** После недавних улучшений проект поддерживает коммит полного изолированного окружения.
 
-**Правильный подход:**
+**Вариант 1 (коммитим `.nvm-isolated/`):**
+```bash
+# .nvm-isolated/.gitignore настроен на исключение только cache/log файлов
+# Коммитим полное окружение (~278MB)
+git add .nvm-isolated/
+git add .nvm-isolated-lockfile.json
+git commit -m "Add isolated environment"
+git push
+
+# На другой машине после clone:
+git clone <repo>
+./init_claude.sh --repair-isolated  # Восстанавливаем симлинки
+./init_claude.sh                     # Готово!
+```
+
+**Вариант 2 (только lockfile, легче для git):**
 ```bash
 # .gitignore
 .nvm-isolated/
-.claude_proxy_credentials
 
-# Git - только lockfile
+# Коммитим только lockfile (~1KB)
 git add .nvm-isolated-lockfile.json
 git commit -m "Add isolated environment lockfile"
+
+# На другой машине:
+git clone <repo>
+./init_claude.sh --install-from-lockfile  # Устанавливаем из lockfile
 ```
 
-**Альтернатива (для маленьких команд):**
-Можно коммитить, но используйте Git LFS для больших файлов.
+**Выбор варианта:**
+- **Вариант 1**: Быстрее для других разработчиков (нет установки), но тяжелее для git
+- **Вариант 2**: Легче для git, но требует установки на каждой машине
+
+---
+
+**Q: Почему симлинки не работают после git clone?**
+
+A: **Git хранит symlinks как blob references (mode 120000), а не реальные symlinks.**
+
+**Проблема:**
+```bash
+git clone <repo>
+cd claude
+./init_claude.sh
+# Error: npm: command not found
+# Error: claude: command not found
+```
+
+**Решение:**
+```bash
+# Проверить статус симлинков
+./init_claude.sh --check-isolated
+
+# Восстановить все симлинки
+./init_claude.sh --repair-isolated
+
+# Готово!
+./init_claude.sh
+```
+
+**Что делает --repair-isolated:**
+- ✅ Проверяет и восстанавливает 4 симлинка (npm, npx, corepack, claude)
+- ✅ Исправляет permissions (chmod +x) для Node.js бинарника
+- ✅ Показывает детальный статус (✓ OK / ✗ BROKEN)
+- ✅ Безопасно (не удаляет данные, только восстанавливает симлинки)
+
+**Автоматизация:**
+Repair автоматически вызывается при `--update`, поэтому симлинки всегда актуальны.
+
+**Windows:**
+На Windows может потребоваться включить поддержку symlinks в git:
+```bash
+git config --global core.symlinks true
+```
 
 ---
 

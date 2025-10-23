@@ -651,6 +651,175 @@ cleanup_isolated_nvm() {
 }
 
 #######################################
+# Repair isolated environment after git clone
+# Restores symlinks and file permissions
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+repair_isolated_environment() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Repairing Isolated Environment"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Check if isolated environment exists
+	if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
+		print_error "Isolated environment not found"
+		echo ""
+		echo "Directory: $ISOLATED_NVM_DIR"
+		echo ""
+		echo "Install first with: ./init_claude.sh --isolated-install"
+		return 1
+	fi
+
+	print_info "Checking isolated environment: $ISOLATED_NVM_DIR"
+	echo ""
+
+	local errors=0
+	local fixed=0
+
+	# Find Node.js version directory
+	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+
+	if [[ -z "$node_version_dir" ]]; then
+		print_error "No Node.js version found in isolated environment"
+		errors=$((errors + 1))
+	else
+		local node_version=$(basename "$node_version_dir")
+		print_info "Found Node.js version: $node_version"
+		echo ""
+
+		# Check and repair Node.js binary permissions
+		print_info "Checking Node.js binary..."
+		local node_bin="$node_version_dir/bin/node"
+		if [[ -f "$node_bin" ]]; then
+			if [[ ! -x "$node_bin" ]]; then
+				chmod +x "$node_bin"
+				print_success "  ✓ Fixed: Made node binary executable"
+				fixed=$((fixed + 1))
+			else
+				print_success "  ✓ OK: node binary is executable"
+			fi
+		else
+			print_error "  ✗ MISSING: node binary not found"
+			errors=$((errors + 1))
+		fi
+
+		# Array of symlinks to check/repair: [link_path]=[target_path]
+		declare -A symlinks=(
+			["$node_version_dir/bin/npm"]="../lib/node_modules/npm/bin/npm-cli.js"
+			["$node_version_dir/bin/npx"]="../lib/node_modules/npm/bin/npx-cli.js"
+			["$node_version_dir/bin/corepack"]="../lib/node_modules/corepack/dist/corepack.js"
+		)
+
+		echo ""
+		print_info "Checking Node.js symlinks..."
+
+		for link_path in "${!symlinks[@]}"; do
+			local target="${symlinks[$link_path]}"
+			local link_name=$(basename "$link_path")
+
+			# Check if symlink exists and is correct
+			if [[ -L "$link_path" ]]; then
+				local current_target=$(readlink "$link_path")
+				if [[ "$current_target" == "$target" ]]; then
+					print_success "  ✓ OK: $link_name → $target"
+				else
+					print_warning "  ! WRONG: $link_name → $current_target (expected $target)"
+					rm -f "$link_path"
+					ln -s "$target" "$link_path"
+					print_success "  ✓ Fixed: $link_name"
+					fixed=$((fixed + 1))
+				fi
+			elif [[ -e "$link_path" ]]; then
+				print_error "  ✗ NOT SYMLINK: $link_name is a regular file"
+				errors=$((errors + 1))
+			else
+				print_warning "  ! MISSING: $link_name"
+				ln -s "$target" "$link_path"
+				print_success "  ✓ Created: $link_name"
+				fixed=$((fixed + 1))
+			fi
+
+			# Verify target exists
+			local target_full_path=$(dirname "$link_path")/$target
+			if [[ ! -f "$target_full_path" ]]; then
+				print_error "  ✗ TARGET MISSING: $target_full_path"
+				errors=$((errors + 1))
+			fi
+		done
+	fi
+
+	# Check Claude Code symlink in npm-global
+	echo ""
+	print_info "Checking Claude Code symlink..."
+
+	local claude_link="$ISOLATED_NVM_DIR/npm-global/bin/claude"
+	local claude_target="../lib/node_modules/@anthropic-ai/claude-code/cli.js"
+
+	if [[ -L "$claude_link" ]]; then
+		local current_target=$(readlink "$claude_link")
+		if [[ "$current_target" == "$claude_target" ]]; then
+			print_success "  ✓ OK: claude → $claude_target"
+		else
+			print_warning "  ! WRONG: claude → $current_target"
+			rm -f "$claude_link"
+			ln -s "$claude_target" "$claude_link"
+			print_success "  ✓ Fixed: claude symlink"
+			fixed=$((fixed + 1))
+		fi
+	elif [[ -e "$claude_link" ]]; then
+		print_error "  ✗ NOT SYMLINK: claude is a regular file"
+		errors=$((errors + 1))
+	else
+		print_warning "  ! MISSING: claude symlink"
+		mkdir -p "$(dirname "$claude_link")"
+		ln -s "$claude_target" "$claude_link"
+		print_success "  ✓ Created: claude symlink"
+		fixed=$((fixed + 1))
+	fi
+
+	# Verify Claude Code cli.js exists and is executable
+	local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	if [[ -f "$claude_cli" ]]; then
+		if [[ ! -x "$claude_cli" ]]; then
+			chmod +x "$claude_cli"
+			print_success "  ✓ Fixed: Made cli.js executable"
+			fixed=$((fixed + 1))
+		fi
+	else
+		print_error "  ✗ MISSING: Claude Code cli.js not found"
+		errors=$((errors + 1))
+	fi
+
+	# Summary
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	if [[ $errors -eq 0 ]]; then
+		print_success "Repair completed successfully"
+		if [[ $fixed -gt 0 ]]; then
+			echo "  Fixed: $fixed issue(s)"
+		else
+			echo "  No issues found"
+		fi
+	else
+		print_error "Repair completed with errors"
+		echo "  Fixed: $fixed issue(s)"
+		echo "  Errors: $errors issue(s)"
+		echo ""
+		echo "You may need to reinstall:"
+		echo "  ./init_claude.sh --cleanup-isolated"
+		echo "  ./init_claude.sh --isolated-install"
+	fi
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return $errors
+}
+
+#######################################
 # Check isolated environment status
 # Returns:
 #   0 - success
@@ -684,6 +853,60 @@ check_isolated_status() {
 
 			if command -v claude &>/dev/null; then
 				echo "  Claude Code: $(claude --version 2>/dev/null | head -n 1 || echo 'unknown')"
+			fi
+		fi
+
+		# Check symlinks status
+		echo ""
+		print_info "Symlinks Status:"
+
+		local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+		local symlink_issues=0
+
+		if [[ -n "$node_version_dir" ]]; then
+			# Check Node.js symlinks
+			local symlinks=(
+				"$node_version_dir/bin/npm"
+				"$node_version_dir/bin/npx"
+				"$node_version_dir/bin/corepack"
+			)
+
+			for link in "${symlinks[@]}"; do
+				if [[ -L "$link" ]]; then
+					local target=$(readlink "$link")
+					local target_full=$(dirname "$link")/$target
+					if [[ -f "$target_full" ]]; then
+						echo "  ✓ $(basename "$link")"
+					else
+						echo "  ✗ $(basename "$link") (broken - target missing)"
+						symlink_issues=$((symlink_issues + 1))
+					fi
+				else
+					echo "  ✗ $(basename "$link") (missing)"
+					symlink_issues=$((symlink_issues + 1))
+				fi
+			done
+
+			# Check Claude symlink
+			local claude_link="$ISOLATED_NVM_DIR/npm-global/bin/claude"
+			if [[ -L "$claude_link" ]]; then
+				local target=$(readlink "$claude_link")
+				local target_full=$(dirname "$claude_link")/$target
+				if [[ -f "$target_full" ]]; then
+					echo "  ✓ claude"
+				else
+					echo "  ✗ claude (broken - target missing)"
+					symlink_issues=$((symlink_issues + 1))
+				fi
+			else
+				echo "  ✗ claude (missing)"
+				symlink_issues=$((symlink_issues + 1))
+			fi
+
+			if [[ $symlink_issues -gt 0 ]]; then
+				echo ""
+				print_warning "  Found $symlink_issues symlink issue(s)"
+				echo "  Run: ./init_claude.sh --repair-isolated"
 			fi
 		fi
 	else
@@ -1583,12 +1806,29 @@ update_claude_code() {
 
         # Cleanup old installations after successful update (NVM only)
         if [[ "$using_nvm" == true ]]; then
-            cleanup_old_claude_installations
-            echo ""
+            # Check if this is isolated environment
+            local is_isolated=false
+            if [[ -d "$ISOLATED_NVM_DIR" ]] && [[ "${NVM_DIR:-}" == "$ISOLATED_NVM_DIR" ]]; then
+                is_isolated=true
+            fi
 
-            # Recreate symlinks to point to the newest installation
-            recreate_claude_symlinks
-            echo ""
+            if [[ "$is_isolated" == true ]]; then
+                # Isolated environment: Update lockfile and repair
+                print_info "Updating lockfile..."
+                save_isolated_lockfile
+                echo ""
+
+                print_info "Repairing symlinks and permissions..."
+                repair_isolated_environment
+            else
+                # System NVM: Standard cleanup
+                cleanup_old_claude_installations
+                echo ""
+
+                # Recreate symlinks to point to the newest installation
+                recreate_claude_symlinks
+                echo ""
+            fi
         fi
 
         # Check if version actually updated
@@ -1917,6 +2157,7 @@ OPTIONS:
   --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup)
   --check-isolated                  Show status of isolated environment
   --cleanup-isolated                Remove isolated environment (keeps lockfile)
+  --repair-isolated                 Repair symlinks and permissions after git clone
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --dangerously-skip-permissions    Pass --dangerously-skip-permissions to Claude Code
@@ -1974,11 +2215,17 @@ ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time)
   init_claude --isolated-install
 
-  # Check isolated environment status
+  # Check isolated environment status (includes symlink check)
   init_claude --check-isolated
 
   # Install from lockfile (reproducible setup on another machine)
   init_claude --install-from-lockfile
+
+  # After git clone - repair symlinks and permissions
+  ./init_claude.sh --repair-isolated
+
+  # Update Claude Code in isolated environment
+  ./init_claude.sh --update
 
   # Clean up isolated environment (keeps lockfile for reinstall)
   init_claude --cleanup-isolated
@@ -2114,6 +2361,10 @@ main() {
                 ;;
             --cleanup-isolated)
                 cleanup_isolated_nvm
+                exit $?
+                ;;
+            --repair-isolated)
+                repair_isolated_environment
                 exit $?
                 ;;
             --check-isolated)

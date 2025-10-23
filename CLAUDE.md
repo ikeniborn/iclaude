@@ -60,6 +60,11 @@ For detailed implementation guidance, use the **bash-development** skill.
 - **Git Proxy Management** (lines 519-580): Automatically saves/restores git proxy settings
 - **Proxy Configuration** (lines 467-515): Sets environment variables and configures git
 - **Proxy Testing** (lines 615-667): Validates connectivity via curl before launching
+- **Isolated Environment Repair** (lines 660-820): Restores symlinks and permissions after git clone
+  - Fixes 4 critical symlinks (npm, npx, corepack, claude)
+  - Verifies Node.js binary permissions
+  - Provides detailed status output with ✓/✗ indicators
+  - Automatically called during updates
 - **Dependency Installation** (lines 684-740): Auto-installs Node.js, npm, and Claude Code if missing
 - **Claude Detection** (lines 745-790, 1419-1506): Finds global Claude Code binary, avoiding local npm installations
 
@@ -135,12 +140,29 @@ The script supports **isolated installation** where NVM, Node.js, and Claude Cod
 ```
 
 **Setup on Another Machine:**
+
+*Option 1: Full environment from git (includes .nvm-isolated/)*
 ```bash
-# Clone repository (includes lockfile)
+# Clone repository
+git clone <repo>
+
+# Repair symlinks after git clone
+./init_claude.sh --repair-isolated
+
+# Ready to use
+./init_claude.sh
+```
+
+*Option 2: Install from lockfile (lighter for git)*
+```bash
+# Clone repository (includes lockfile only)
 git clone <repo>
 
 # Install exact same versions from lockfile
 ./init_claude.sh --install-from-lockfile
+
+# Ready to use
+./init_claude.sh
 ```
 
 **Cleanup (preserves lockfile):**
@@ -154,6 +176,10 @@ git clone <repo>
 - **Priority**: Isolated environment > System NVM > System Node.js
 - **Lockfile**: Records exact versions (Node.js, Claude Code, NVM)
 - **Git workflow**: Commit entire `.nvm-isolated/` directory (cache files excluded)
+- **Symlinks**: After git clone, symlinks need restoration (use `--repair-isolated`)
+  - Git stores symlinks as blob references, not actual symlinks
+  - 4 critical symlinks: npm, npx, corepack, claude
+  - Automatic repair during updates
 
 ### Files
 
@@ -195,6 +221,12 @@ init_claude --no-proxy
 # Update Claude Code
 init_claude --update  # For NVM installations
 sudo init_claude --update  # For system installations
+
+# Check isolated environment status
+./init_claude.sh --check-isolated
+
+# Repair symlinks after git clone
+./init_claude.sh --repair-isolated
 ```
 
 For detailed usage information, see [README.md](README.md).
@@ -276,6 +308,30 @@ sudo init_claude --update  # For system installations
 
 If you see `npm error ENOTEMPTY` during update, the script will offer automatic cleanup or you can do it manually.
 
+**Symlink Issues After Git Clone:**
+
+After cloning a repository with `.nvm-isolated/`, symlinks may not work properly:
+
+**Symptoms:**
+- `./init_claude.sh` fails with command not found errors
+- npm/npx commands don't work
+- Claude Code not detected
+
+**Solution:**
+```bash
+# Check symlink status
+./init_claude.sh --check-isolated
+
+# Repair all symlinks and permissions
+./init_claude.sh --repair-isolated
+```
+
+The repair function:
+- Verifies and recreates 4 critical symlinks (npm, npx, corepack, claude)
+- Fixes Node.js binary permissions (chmod +x)
+- Provides detailed status output (✓ OK / ✗ BROKEN)
+- Automatically runs during updates
+
 For detailed update procedures and troubleshooting, use the **bash-development** skill.
 
 ### Testing
@@ -303,6 +359,8 @@ For creating test cases or debugging issues, use the **bash-development** and **
 | Debug proxy issue | proxy-management | "Почему proxy test failed?" |
 | Configure TLS | proxy-management | "Настрой --proxy-ca" |
 | Add proxy protocol | proxy-management + bash-development | "Добавь SOCKS4" |
+| Setup isolated environment | isolated-environment | "Установи изолированное окружение" |
+| Fix symlink issues | isolated-environment | "Почему симлинки не работают после git clone?" |
 | Update documentation | bash-development | "Обнови show_usage()" |
 
 ### Common Request Patterns
@@ -320,6 +378,12 @@ Instead of reading lengthy documentation, just ask Claude with these patterns:
 - "Почему test proxy failed с ошибкой '{error_message}'?"
 - "Как настроить HTTPS прокси с самоподписанным сертификатом?"
 - "Добавь поддержку {protocol} прокси"
+
+**Isolated Environment:**
+- "Установи изолированное окружение"
+- "Почему симлинки не работают после git clone?"
+- "Как проверить статус изолированного окружения?"
+- "Создай lockfile текущей установки"
 
 **Combined:**
 - "Добавь поддержку {feature} с полной валидацией и тестированием"
