@@ -30,15 +30,26 @@ The project uses Claude Skills to automate common development tasks. See [SKILLS
 - "Добавь поддержку SOCKS4 прокси"
 - "Почему proxy test failed с HTTP 407?"
 
+### 📦 [Isolated Environment](/.claude/skills/isolated-environment/SKILL.md)
+Управляет изолированным NVM окружением в директории проекта для воспроизводимых установок.
+
+**Use when:** Setting up isolated environment, working with lockfiles, managing reproducible installations.
+
+**Example requests:**
+- "Установи Claude Code в изолированное окружение"
+- "Создай lockfile текущей установки"
+- "Почему isolated environment не обнаруживается?"
+
 ## Architecture
 
 The codebase is a standalone bash script (`init_claude.sh`) that:
 
-1. **Credential Management**: Stores proxy credentials in `.claude_proxy_credentials` (chmod 600, git-ignored)
-2. **Proxy Configuration**: Sets environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) for Claude Code
-3. **Git Proxy Management**: Automatically disables proxy for git operations while keeping it enabled for Claude Code
-4. **Global Installation**: Creates symlink at `/usr/local/bin/init_claude` for system-wide access
-5. **Proxy Detection**: Prioritizes global Claude Code installation over local installations
+1. **Isolated Environment** (NEW): Installs NVM + Node.js + Claude Code in project directory (`.nvm-isolated/`) by default
+2. **Lockfile-based Reproducibility**: Saves exact versions to `.nvm-isolated-lockfile.json` for consistent setup across machines
+3. **Credential Management**: Stores proxy credentials in `.claude_proxy_credentials` (chmod 600, git-ignored)
+4. **Proxy Configuration**: Sets environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) for Claude Code
+5. **Git Proxy Management**: Automatically disables proxy for git operations while keeping it enabled for Claude Code
+6. **Global Installation**: Creates symlink at `/usr/local/bin/init_claude` for system-wide access
 
 ### Key Components
 
@@ -96,6 +107,61 @@ Claude uses:
 - **bash-development** → creates bash functions with proper error handling
 - **proxy-management** → adds curl tests for SOCKS4
 - **bash-development** → updates documentation
+
+## Isolated Environment (Recommended)
+
+The script supports **isolated installation** where NVM, Node.js, and Claude Code are installed in the project directory (`.nvm-isolated/`) instead of globally. This approach:
+
+✅ **Avoids conflicts** with system NVM installations
+✅ **Enables reproducible setups** via lockfile (`.nvm-isolated-lockfile.json`)
+✅ **Portable across machines** - commit lockfile, not 200MB+ binaries
+✅ **Used by default** when available
+
+### Isolated Installation Workflow
+
+**Initial Setup:**
+```bash
+# Install everything in isolated environment
+./init_claude.sh --isolated-install
+
+# This creates:
+# - .nvm-isolated/          (git-ignored, ~200-300MB)
+# - .nvm-isolated-lockfile.json (commit this!)
+```
+
+**Check Status:**
+```bash
+./init_claude.sh --check-isolated
+```
+
+**Setup on Another Machine:**
+```bash
+# Clone repository (includes lockfile)
+git clone <repo>
+
+# Install exact same versions from lockfile
+./init_claude.sh --install-from-lockfile
+```
+
+**Cleanup (preserves lockfile):**
+```bash
+./init_claude.sh --cleanup-isolated
+```
+
+### Isolated Environment Behavior
+
+- **By default**: Script automatically uses `.nvm-isolated/` if it exists
+- **Priority**: Isolated environment > System NVM > System Node.js
+- **Lockfile**: Records exact versions (Node.js, Claude Code, NVM)
+- **Git workflow**: Commit entire `.nvm-isolated/` directory (cache files excluded)
+
+### Files
+
+- `.nvm-isolated/` - Isolated NVM installation (~200-300MB, committed to git)
+- `.nvm-isolated-lockfile.json` - Version lockfile (committed to git)
+- `.claude_proxy_credentials` - Proxy credentials (chmod 600, git-ignored)
+
+**Note:** Only cache and temporary files are git-ignored (`.cache/`, `.npm/`, `*.log`)
 
 ## Common Commands
 

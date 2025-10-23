@@ -87,7 +87,7 @@ dependencies: []
 
 ## Доступные Skills
 
-В проекте init_claude доступно **2 skills**:
+В проекте init_claude доступно **3 skills**:
 
 ### 1. [Bash Development](/.claude/skills/bash-development/SKILL.md)
 
@@ -129,6 +129,27 @@ dependencies: []
 ```
 
 **Tags:** `proxy, http, https, socks5, curl, tls, certificates, debugging`
+
+---
+
+### 3. [Isolated Environment](/.claude/skills/isolated-environment/SKILL.md)
+
+**Управление изолированным NVM окружением в директории проекта**
+
+- ✅ Установка NVM в изолированную директорию (.nvm-isolated/)
+- ✅ Установка Node.js и Claude Code в изолированное окружение
+- ✅ Создание и работа с lockfile (.nvm-isolated-lockfile.json)
+- ✅ Воспроизводимая установка из lockfile на других машинах
+- ✅ Управление версиями (точные версии Node.js, Claude Code, NVM)
+- ✅ Очистка изолированного окружения
+- ✅ Проверка статуса изолированного окружения
+
+**Использование:**
+```
+Установи Claude Code в изолированное окружение с сохранением lockfile
+```
+
+**Tags:** `nvm, nodejs, isolation, lockfile, reproducibility, versioning`
 
 ---
 

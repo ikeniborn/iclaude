@@ -41,6 +41,15 @@ qr_codes/
 .claude_proxy_credentials
 scripts/.claude_proxy_credentials
 
+# Isolated NVM environment - temporary/cache files only
+.nvm-isolated/.cache/
+.nvm-isolated/.npm/
+.nvm-isolated/.nvm/.cache/
+.nvm-isolated/versions/node/*/include/
+.nvm-isolated/versions/node/*/.npm/
+.nvm-isolated/npm-global/.npm/
+*.log
+
 # Docker
 docker-compose.override.yml
 

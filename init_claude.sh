@@ -27,6 +27,9 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 CREDENTIALS_FILE="${SCRIPT_DIR}/.claude_proxy_credentials"
 GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
+ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
+ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
+USE_ISOLATED_BY_DEFAULT=true  # Use isolated environment by default
 
 #######################################
 # Print colored message
@@ -181,14 +184,24 @@ parse_proxy_url() {
 
 #######################################
 # Detect if NVM is installed and active
+# Prioritizes isolated environment when USE_ISOLATED_BY_DEFAULT=true
 #######################################
 detect_nvm() {
-	# Check if NVM_DIR is set and nvm.sh exists
+	# Priority 1: Check for isolated environment (if enabled by default)
+	if [[ "$USE_ISOLATED_BY_DEFAULT" == "true" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		# Isolated environment exists, set it up
+		if [[ -s "${ISOLATED_NVM_DIR}/nvm.sh" ]]; then
+			setup_isolated_nvm
+			return 0
+		fi
+	fi
+
+	# Priority 2: Check if NVM_DIR is set and nvm.sh exists (system NVM)
 	if [[ -n "${NVM_DIR:-}" ]] && [[ -s "${NVM_DIR}/nvm.sh" ]]; then
 		return 0
 	fi
 
-	# Check if npm/node is from NVM by examining the path
+	# Priority 3: Check if npm/node is from NVM by examining the path
 	local npm_path=$(command -v npm 2>/dev/null)
 	if [[ -n "$npm_path" ]] && [[ "$npm_path" == *".nvm"* ]]; then
 		return 0
@@ -323,6 +336,378 @@ get_cli_version() {
 	fi
 
 	echo "$version"
+	return 0
+}
+
+#######################################
+# Setup isolated NVM environment in project directory
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+setup_isolated_nvm() {
+	# Export isolated environment
+	export NVM_DIR="$ISOLATED_NVM_DIR"
+	export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
+
+	# Add isolated paths to PATH (prepend to prioritize isolated over system)
+	export PATH="$NPM_CONFIG_PREFIX/bin:$NVM_DIR/versions/node/*/bin:$PATH"
+
+	return 0
+}
+
+#######################################
+# Install NVM to isolated directory
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_nvm() {
+	setup_isolated_nvm
+
+	# Create isolated NVM directory
+	mkdir -p "$NVM_DIR"
+
+	# Check if NVM already installed
+	if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+		print_info "NVM already installed in isolated environment"
+		return 0
+	fi
+
+	print_info "Installing NVM to isolated directory..."
+	print_info "Location: $NVM_DIR"
+	echo ""
+
+	# Download and install NVM
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | \
+		NVM_DIR="$NVM_DIR" bash
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install NVM"
+		return 1
+	fi
+
+	print_success "NVM installed to isolated environment"
+	return 0
+}
+
+#######################################
+# Install Node.js in isolated NVM
+# Arguments:
+#   $1 - Node.js version (default: 18)
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_nodejs() {
+	local node_version=${1:-18}
+
+	setup_isolated_nvm
+
+	# Source NVM
+	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+		print_error "NVM not found in isolated environment"
+		echo "Run: init_claude --isolated-install first"
+		return 1
+	fi
+
+	source "$NVM_DIR/nvm.sh"
+
+	# Check if Node.js already installed
+	if nvm ls "$node_version" &>/dev/null; then
+		print_info "Node.js $node_version already installed"
+		nvm use "$node_version"
+		return 0
+	fi
+
+	print_info "Installing Node.js $node_version to isolated environment..."
+	echo ""
+
+	# Install and use Node.js
+	nvm install "$node_version"
+	nvm use "$node_version"
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install Node.js"
+		return 1
+	fi
+
+	print_success "Node.js $node_version installed"
+	node --version
+	npm --version
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Install Claude Code in isolated environment
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_claude() {
+	setup_isolated_nvm
+
+	# Source NVM
+	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+		print_error "NVM not found in isolated environment"
+		return 1
+	fi
+
+	source "$NVM_DIR/nvm.sh"
+
+	# Ensure Node.js is available
+	if ! command -v npm &>/dev/null; then
+		print_error "Node.js not found in isolated environment"
+		echo "Run: init_claude --isolated-install first"
+		return 1
+	fi
+
+	print_info "Installing Claude Code to isolated environment..."
+	echo ""
+
+	# Install Claude Code globally (in isolated prefix)
+	npm install -g @anthropic-ai/claude-code
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install Claude Code"
+		return 1
+	fi
+
+	# Clear bash command hash cache
+	hash -r 2>/dev/null || true
+
+	# Verify installation
+	local claude_version=""
+	if command -v claude &>/dev/null; then
+		claude_version=$(claude --version 2>/dev/null | head -n 1)
+	fi
+
+	if [[ -n "$claude_version" ]]; then
+		print_success "Claude Code installed: $claude_version"
+	else
+		print_success "Claude Code installed"
+	fi
+
+	echo ""
+
+	# Save lockfile for reproducibility
+	save_isolated_lockfile
+
+	return 0
+}
+
+#######################################
+# Save lockfile with installed versions
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+save_isolated_lockfile() {
+	setup_isolated_nvm
+
+	# Source NVM
+	[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+
+	# Get versions
+	local node_version=$(node --version 2>/dev/null | sed 's/v//')
+	local claude_version=""
+
+	# Try to get Claude version
+	if command -v claude &>/dev/null; then
+		claude_version=$(claude --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+	else
+		claude_version="unknown"
+	fi
+
+	local installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+	# Create lockfile
+	cat > "$ISOLATED_LOCKFILE" << EOF
+{
+  "nodeVersion": "$node_version",
+  "claudeCodeVersion": "$claude_version",
+  "installedAt": "$installed_at",
+  "nvmVersion": "0.39.7"
+}
+EOF
+
+	chmod 644 "$ISOLATED_LOCKFILE"
+	print_success "Lockfile saved: $ISOLATED_LOCKFILE"
+	print_info "Commit this file to git for reproducibility"
+	echo ""
+}
+
+#######################################
+# Install from lockfile
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_from_lockfile() {
+	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
+		print_error "Lockfile not found: $ISOLATED_LOCKFILE"
+		echo ""
+		echo "Create lockfile first with: init_claude --isolated-install"
+		return 1
+	fi
+
+	print_info "Installing from lockfile..."
+	echo ""
+
+	# Parse lockfile (using grep for portability)
+	local node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "18")
+	local claude_version=$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
+
+	print_info "Node.js version from lockfile: $node_version"
+	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
+		print_info "Claude Code version from lockfile: $claude_version"
+	fi
+	echo ""
+
+	# Install NVM if needed
+	if [[ ! -s "$ISOLATED_NVM_DIR/nvm.sh" ]]; then
+		install_isolated_nvm
+		if [[ $? -ne 0 ]]; then
+			return 1
+		fi
+	fi
+
+	# Install Node.js
+	setup_isolated_nvm
+	source "$NVM_DIR/nvm.sh"
+
+	# Remove 'v' prefix if present
+	node_version=$(echo "$node_version" | sed 's/^v//')
+
+	nvm install "$node_version"
+	nvm use "$node_version"
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install Node.js $node_version"
+		return 1
+	fi
+
+	# Install Claude Code with specific version if available
+	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
+		npm install -g "@anthropic-ai/claude-code@$claude_version"
+	else
+		npm install -g "@anthropic-ai/claude-code"
+	fi
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install Claude Code"
+		return 1
+	fi
+
+	print_success "Installation from lockfile complete"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Cleanup isolated NVM installation
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+cleanup_isolated_nvm() {
+	if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
+		print_info "No isolated installation found"
+		return 0
+	fi
+
+	# Show info
+	echo ""
+	print_warning "This will delete the isolated NVM installation:"
+	echo "  Directory: $ISOLATED_NVM_DIR"
+	local size=$(du -sh "$ISOLATED_NVM_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+	echo "  Size: $size"
+	echo ""
+	echo "Lockfile will be preserved for reinstallation:"
+	echo "  $ISOLATED_LOCKFILE"
+	echo ""
+
+	# Confirm cleanup
+	read -p "Continue? (y/N): " confirm
+
+	if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+		print_info "Cleanup cancelled"
+		return 0
+	fi
+
+	# Remove directory
+	rm -rf "$ISOLATED_NVM_DIR"
+
+	print_success "Isolated installation removed"
+
+	if [[ -f "$ISOLATED_LOCKFILE" ]]; then
+		print_info "Lockfile preserved: $ISOLATED_LOCKFILE"
+	fi
+
+	echo ""
+}
+
+#######################################
+# Check isolated environment status
+# Returns:
+#   0 - success
+#######################################
+check_isolated_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Isolated Environment Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Check if isolated NVM exists
+	if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		print_success "Isolated NVM: INSTALLED"
+		echo "  Location: $ISOLATED_NVM_DIR"
+		local size=$(du -sh "$ISOLATED_NVM_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+		echo "  Size: $size"
+
+		# Check Node.js version
+		setup_isolated_nvm
+		if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+			source "$NVM_DIR/nvm.sh"
+
+			if command -v node &>/dev/null; then
+				echo "  Node.js: $(node --version)"
+			fi
+
+			if command -v npm &>/dev/null; then
+				echo "  npm: $(npm --version)"
+			fi
+
+			if command -v claude &>/dev/null; then
+				echo "  Claude Code: $(claude --version 2>/dev/null | head -n 1 || echo 'unknown')"
+			fi
+		fi
+	else
+		print_warning "Isolated NVM: NOT INSTALLED"
+		echo "  Run: init_claude --isolated-install"
+	fi
+
+	echo ""
+
+	# Check if lockfile exists
+	if [[ -f "$ISOLATED_LOCKFILE" ]]; then
+		print_success "Lockfile: PRESENT"
+		echo "  File: $ISOLATED_LOCKFILE"
+		echo "  Content:"
+		cat "$ISOLATED_LOCKFILE" | grep -E "(nodeVersion|claudeCodeVersion|installedAt)" | sed 's/^/    /'
+	else
+		print_warning "Lockfile: NOT FOUND"
+		echo "  Will be created after: init_claude --isolated-install"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
 	return 0
 }
 
@@ -1528,6 +1913,10 @@ OPTIONS:
   --uninstall                       Uninstall script from system (requires sudo)
   --update                          Update Claude Code to latest version (requires sudo)
   --check-update                    Check for available updates without installing
+  --isolated-install                Install NVM + Node.js + Claude in isolated environment
+  --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup)
+  --check-isolated                  Show status of isolated environment
+  --cleanup-isolated                Remove isolated environment (keeps lockfile)
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --dangerously-skip-permissions    Pass --dangerously-skip-permissions to Claude Code
@@ -1580,6 +1969,19 @@ EXAMPLES:
 
   # Skip permission checks (use with caution)
   init_claude --dangerously-skip-permissions
+
+ISOLATED ENVIRONMENT (Recommended):
+  # Install in isolated environment (first time)
+  init_claude --isolated-install
+
+  # Check isolated environment status
+  init_claude --check-isolated
+
+  # Install from lockfile (reproducible setup on another machine)
+  init_claude --install-from-lockfile
+
+  # Clean up isolated environment (keeps lockfile for reinstall)
+  init_claude --cleanup-isolated
 
 PROXY URL FORMAT:
   http://username:password@host:port
@@ -1699,6 +2101,24 @@ main() {
             --check-update)
                 check_update
                 exit $?
+                ;;
+            --isolated-install)
+                install_isolated_nvm
+                install_isolated_nodejs
+                install_isolated_claude
+                exit $?
+                ;;
+            --install-from-lockfile)
+                install_from_lockfile
+                exit $?
+                ;;
+            --cleanup-isolated)
+                cleanup_isolated_nvm
+                exit $?
+                ;;
+            --check-isolated)
+                check_isolated_status
+                exit 0
                 ;;
             --no-test)
                 skip_test=true
