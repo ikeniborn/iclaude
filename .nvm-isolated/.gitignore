@@ -1,7 +1,7 @@
 # gitignore
 HEAD
 .cache
-v*
+# v* - commented out to allow committing Node.js versions to git
 alias
 
 # For testing
@@ -11,6 +11,10 @@ test/bak
 test/**/test_output
 
 node_modules/
+# Allow Node.js built-in modules in versions directory
+!versions/node/*/lib/node_modules/
+# Allow globally installed npm packages (including Claude Code)
+!npm-global/lib/node_modules/
 npm-debug.log
 
 .DS_Store
