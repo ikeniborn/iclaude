@@ -851,8 +851,12 @@ check_isolated_status() {
 				echo "  npm: $(npm --version)"
 			fi
 
-			if command -v claude &>/dev/null; then
-				echo "  Claude Code: $(claude --version 2>/dev/null | head -n 1 || echo 'unknown')"
+			# Use explicit path to isolated Claude (avoid PATH conflicts with system NVM)
+			local claude_bin="$ISOLATED_NVM_DIR/npm-global/bin/claude"
+			if [[ -x "$claude_bin" ]]; then
+				echo "  Claude Code: $($claude_bin --version 2>/dev/null | head -n 1 || echo 'unknown')"
+			else
+				echo "  Claude Code: not installed"
 			fi
 		fi
 
