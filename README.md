@@ -112,9 +112,18 @@ cd claude
 ./init_claude.sh --update
 
 # После обновления автоматически:
-# - Обновляется lockfile
-# - Восстанавливаются симлинки
+# ✅ Обновляется Claude Code к последней версии
+# ✅ Обновляется lockfile с новой версией
+# ✅ Восстанавливаются симлинки и права доступа
+
+# Проверить что lockfile обновился корректно
+./init_claude.sh --check-isolated
+# Должны совпадать:
+# - Claude Code: X.X.X
+# - claudeCodeVersion: "X.X.X" (в lockfile)
 ```
+
+**Примечание:** Начиная с версии от 24.10.2025, проблема с обновлением lockfile исправлена. Lockfile теперь всегда обновляется автоматически вместе с Claude Code.
 
 #### Очистка
 
@@ -271,13 +280,19 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 ./init_claude.sh --update
 
 # Автоматически:
-# - Обновляет Claude Code к последней версии
-# - Обновляет lockfile
-# - Восстанавливает симлинки
+# ✅ Обновляет Claude Code к последней версии
+# ✅ Обновляет lockfile с новой версией
+# ✅ Восстанавливает симлинки и права доступа
 
 # Проверить статус после обновления
 ./init_claude.sh --check-isolated
+
+# Проверьте, что версии совпадают:
+# Claude Code: 2.0.26
+# claudeCodeVersion: "2.0.26" (в lockfile)
 ```
+
+**✨ Исправление (24.10.2025):** Проблема с обновлением lockfile в изолированной среде была исправлена. Теперь lockfile всегда обновляется автоматически при запуске `--update`.
 
 ### Системная установка
 
@@ -356,6 +371,33 @@ openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
 ```bash
 # Отключить проверку TLS (не рекомендуется)
 ./init_claude.sh --proxy https://proxy:8118 --proxy-insecure
+```
+
+### Lockfile не обновляется после обновления
+
+**Симптомы:**
+- Claude Code обновился, но версия в lockfile осталась старой
+- `./init_claude.sh --check-isolated` показывает разные версии:
+  ```
+  Claude Code: 2.0.26
+  claudeCodeVersion: "2.0.25"  ← НЕ СОВПАДАЕТ
+  ```
+
+**Решение:**
+
+✅ **Исправлено в версии от 24.10.2025** - обновите скрипт:
+```bash
+git pull
+./init_claude.sh --update
+```
+
+Для старых версий скрипта:
+```bash
+# Вручную обновить lockfile
+bash -c 'source ./init_claude.sh && save_isolated_lockfile'
+
+# Проверить результат
+./init_claude.sh --check-isolated
 ```
 
 ### Обновление не работает (NVM)
