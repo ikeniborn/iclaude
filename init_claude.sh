@@ -1006,8 +1006,8 @@ load_credentials() {
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
-    # Return URL, insecure flag, CA path, and NO_PROXY (space-separated)
-    echo "$PROXY_URL ${PROXY_INSECURE:-false} ${PROXY_CA_PATH:-} ${NO_PROXY}"
+    # Return URL, insecure flag, CA path, and NO_PROXY (pipe-separated for reliable parsing)
+    echo "$PROXY_URL|${PROXY_INSECURE:-false}|${PROXY_CA_PATH:-}|${NO_PROXY}"
     return 0
 }
 
@@ -1019,11 +1019,11 @@ prompt_proxy_url() {
 
     # Check if credentials exist
     if saved_credentials=$(load_credentials); then
-        # Parse space-separated output: URL INSECURE_FLAG CA_PATH NO_PROXY
-        local saved_url=$(echo "$saved_credentials" | awk '{print $1}')
-        local saved_insecure=$(echo "$saved_credentials" | awk '{print $2}')
-        local saved_ca=$(echo "$saved_credentials" | awk '{print $3}')
-        local saved_no_proxy=$(echo "$saved_credentials" | awk '{print $4}')
+        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY
+        local saved_url=$(echo "$saved_credentials" | cut -d'|' -f1)
+        local saved_insecure=$(echo "$saved_credentials" | cut -d'|' -f2)
+        local saved_ca=$(echo "$saved_credentials" | cut -d'|' -f3)
+        local saved_no_proxy=$(echo "$saved_credentials" | cut -d'|' -f4)
 
         print_info "Saved proxy found" >&2
         echo "" >&2
@@ -1040,7 +1040,7 @@ prompt_proxy_url() {
         echo "" >&2
 
         # Auto-use saved proxy (no confirmation needed)
-        echo "$saved_url $saved_insecure $saved_ca $saved_no_proxy"
+        echo "$saved_url|$saved_insecure|$saved_ca|$saved_no_proxy"
         return 0
     fi
 
@@ -1076,8 +1076,8 @@ prompt_proxy_url() {
             continue
         fi
 
-        # Return URL with default insecure=false, no CA, and default NO_PROXY
-        echo "$proxy_url false  localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+        # Return URL with default insecure=false, no CA, and default NO_PROXY (pipe-separated)
+        echo "$proxy_url|false||localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
         return 0
     done
 }
@@ -2485,11 +2485,11 @@ main() {
     local proxy_no_proxy=""
     if [[ -z "$proxy_url" ]]; then
         proxy_credentials=$(prompt_proxy_url)
-        # Parse space-separated output: URL INSECURE_FLAG CA_PATH NO_PROXY
-        proxy_url=$(echo "$proxy_credentials" | awk '{print $1}')
-        local saved_insecure=$(echo "$proxy_credentials" | awk '{print $2}')
-        local saved_ca=$(echo "$proxy_credentials" | awk '{print $3}')
-        proxy_no_proxy=$(echo "$proxy_credentials" | awk '{print $4}')
+        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY
+        proxy_url=$(echo "$proxy_credentials" | cut -d'|' -f1)
+        local saved_insecure=$(echo "$proxy_credentials" | cut -d'|' -f2)
+        local saved_ca=$(echo "$proxy_credentials" | cut -d'|' -f3)
+        proxy_no_proxy=$(echo "$proxy_credentials" | cut -d'|' -f4)
 
         # Override with command-line flags if provided
         if [[ "$proxy_insecure" == true ]]; then
