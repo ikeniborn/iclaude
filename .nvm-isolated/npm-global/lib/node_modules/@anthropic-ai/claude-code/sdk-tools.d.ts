@@ -72,7 +72,7 @@ export interface BashInput {
   /**
    * Set this to true to dangerously override sandbox mode and run commands without sandboxing.
    */
-  dangerouslyOverrideSandbox?: boolean;
+  dangerouslyDisableSandbox?: boolean;
 }
 export interface BashOutputInput {
   /**
