@@ -945,16 +945,18 @@ save_credentials() {
     local proxy_url=$1
     local insecure=${2:-false}
     local ca_path=${3:-}
+    local no_proxy=${4:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
 
     # Create credentials file with restricted permissions
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL, insecure flag, and CA path
+    # Save URL, insecure flag, CA path, and NO_PROXY
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
 PROXY_INSECURE=$insecure
 PROXY_CA_PATH=$ca_path
+NO_PROXY=$no_proxy
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE"
@@ -977,6 +979,7 @@ load_credentials() {
         PROXY_URL=$(head -n 1 "$CREDENTIALS_FILE")
         PROXY_INSECURE=false
         PROXY_CA_PATH=""
+        NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
     if [[ -z "$PROXY_URL" ]]; then
@@ -998,8 +1001,13 @@ load_credentials() {
         fi
     fi
 
-    # Return URL, insecure flag, and CA path (space-separated)
-    echo "$PROXY_URL ${PROXY_INSECURE:-false} ${PROXY_CA_PATH:-}"
+    # Set default NO_PROXY if not present (backward compatibility)
+    if [[ -z "${NO_PROXY:-}" ]]; then
+        NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+    fi
+
+    # Return URL, insecure flag, CA path, and NO_PROXY (space-separated)
+    echo "$PROXY_URL ${PROXY_INSECURE:-false} ${PROXY_CA_PATH:-} ${NO_PROXY}"
     return 0
 }
 
@@ -1011,10 +1019,11 @@ prompt_proxy_url() {
 
     # Check if credentials exist
     if saved_credentials=$(load_credentials); then
-        # Parse space-separated output: URL INSECURE_FLAG CA_PATH
-        local saved_url=$(echo "$saved_credentials" | cut -d' ' -f1)
-        local saved_insecure=$(echo "$saved_credentials" | cut -d' ' -f2)
-        local saved_ca=$(echo "$saved_credentials" | cut -d' ' -f3-)
+        # Parse space-separated output: URL INSECURE_FLAG CA_PATH NO_PROXY
+        local saved_url=$(echo "$saved_credentials" | awk '{print $1}')
+        local saved_insecure=$(echo "$saved_credentials" | awk '{print $2}')
+        local saved_ca=$(echo "$saved_credentials" | awk '{print $3}')
+        local saved_no_proxy=$(echo "$saved_credentials" | awk '{print $4}')
 
         print_info "Saved proxy found" >&2
         echo "" >&2
@@ -1031,7 +1040,7 @@ prompt_proxy_url() {
         echo "" >&2
 
         # Auto-use saved proxy (no confirmation needed)
-        echo "$saved_url $saved_insecure $saved_ca"
+        echo "$saved_url $saved_insecure $saved_ca $saved_no_proxy"
         return 0
     fi
 
@@ -1067,8 +1076,8 @@ prompt_proxy_url() {
             continue
         fi
 
-        # Return URL with default insecure=false and no CA
-        echo "$proxy_url false"
+        # Return URL with default insecure=false, no CA, and default NO_PROXY
+        echo "$proxy_url false  localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
         return 0
     done
 }
@@ -1080,11 +1089,12 @@ configure_proxy_from_url() {
     local proxy_url=$1
     local insecure=${2:-false}
     local ca_path=${3:-}
+    local no_proxy=${4:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
 
     # Set environment variables
     export HTTPS_PROXY="$proxy_url"
     export HTTP_PROXY="$proxy_url"
-    export NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+    export NO_PROXY="$no_proxy"
 
     # Set flags for test_proxy()
     export PROXY_INSECURE="$insecure"
@@ -1123,8 +1133,8 @@ configure_proxy_from_url() {
     # Configure git to ignore proxy
     configure_git_no_proxy
 
-    # Save credentials
-    save_credentials "$proxy_url" "$insecure" "$ca_path"
+    # Save credentials (including NO_PROXY)
+    save_credentials "$proxy_url" "$insecure" "$ca_path" "$no_proxy"
 }
 
 #######################################
@@ -2281,13 +2291,20 @@ CREDENTIALS:
   - File permissions: 600 (owner read/write only)
   - Automatically excluded from git (.gitignore)
   - Reused on subsequent runs (prompt to confirm/change)
+  - Includes: PROXY_URL, PROXY_INSECURE, PROXY_CA_PATH, NO_PROXY
 
 ENVIRONMENT:
   After loading proxy, these variables are set:
     HTTPS_PROXY, HTTP_PROXY, NO_PROXY
 
+NO_PROXY CONFIGURATION:
+  - Default value: localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org
+  - Stored in ${CREDENTIALS_FILE}
+  - Can be edited manually to add custom domains
+  - Format: comma-separated list of hosts/domains to bypass proxy
+
 GIT PROXY:
-  When proxy is configured, git automatically bypasses proxy for:
+  When proxy is configured, git automatically bypasses proxy for hosts in NO_PROXY:
     - localhost, 127.0.0.1 (local addresses)
     - github.com, githubusercontent.com (GitHub)
     - gitlab.com (GitLab)
@@ -2465,12 +2482,14 @@ main() {
 
     # Get proxy URL (from argument, saved file, or prompt)
     local proxy_credentials
+    local proxy_no_proxy=""
     if [[ -z "$proxy_url" ]]; then
         proxy_credentials=$(prompt_proxy_url)
-        # Parse space-separated output: URL INSECURE_FLAG CA_PATH
-        proxy_url=$(echo "$proxy_credentials" | cut -d' ' -f1)
-        local saved_insecure=$(echo "$proxy_credentials" | cut -d' ' -f2)
-        local saved_ca=$(echo "$proxy_credentials" | cut -d' ' -f3-)
+        # Parse space-separated output: URL INSECURE_FLAG CA_PATH NO_PROXY
+        proxy_url=$(echo "$proxy_credentials" | awk '{print $1}')
+        local saved_insecure=$(echo "$proxy_credentials" | awk '{print $2}')
+        local saved_ca=$(echo "$proxy_credentials" | awk '{print $3}')
+        proxy_no_proxy=$(echo "$proxy_credentials" | awk '{print $4}')
 
         # Override with command-line flags if provided
         if [[ "$proxy_insecure" == true ]]; then
@@ -2491,11 +2510,13 @@ main() {
             echo "Expected format: protocol://[user:pass@]host:port"
             exit 1
         fi
+        # Use default NO_PROXY if not loaded from saved credentials
+        proxy_no_proxy="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
     # Configure proxy
     print_info "Configuring proxy..."
-    configure_proxy_from_url "$proxy_url" "$proxy_insecure" "$proxy_ca_path"
+    configure_proxy_from_url "$proxy_url" "$proxy_insecure" "$proxy_ca_path" "$proxy_no_proxy"
 
     # Display configuration
     display_proxy_info "$show_password"
