@@ -1666,6 +1666,26 @@ update_claude_code() {
         echo ""
     fi
 
+    # Check if this is isolated environment and source nvm.sh
+    local is_isolated=false
+    if [[ -d "$ISOLATED_NVM_DIR" ]] && [[ "${NVM_DIR:-}" == "$ISOLATED_NVM_DIR" ]]; then
+        is_isolated=true
+        # Source NVM for isolated environment (required for correct npm operation)
+        if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+            source "$NVM_DIR/nvm.sh"
+            print_info "Using isolated NVM environment"
+            echo ""
+        else
+            print_error "NVM not found in isolated environment"
+            echo ""
+            echo "Directory: $ISOLATED_NVM_DIR"
+            echo "Expected: $NVM_DIR/nvm.sh"
+            echo ""
+            echo "Try reinstalling with: ./init_claude.sh --isolated-install"
+            exit 1
+        fi
+    fi
+
     # Check if running with sudo (only required for system installations)
     if [[ "$using_nvm" == false ]] && [[ $EUID -ne 0 ]]; then
         print_error "Update requires sudo privileges for system installation"
@@ -1806,12 +1826,7 @@ update_claude_code() {
 
         # Cleanup old installations after successful update (NVM only)
         if [[ "$using_nvm" == true ]]; then
-            # Check if this is isolated environment
-            local is_isolated=false
-            if [[ -d "$ISOLATED_NVM_DIR" ]] && [[ "${NVM_DIR:-}" == "$ISOLATED_NVM_DIR" ]]; then
-                is_isolated=true
-            fi
-
+            # Use is_isolated variable set at the beginning of function
             if [[ "$is_isolated" == true ]]; then
                 # Isolated environment: Update lockfile and repair
                 print_info "Updating lockfile..."
