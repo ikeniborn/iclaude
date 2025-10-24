@@ -1080,7 +1080,7 @@ configure_proxy_from_url() {
     # Set environment variables
     export HTTPS_PROXY="$proxy_url"
     export HTTP_PROXY="$proxy_url"
-    export NO_PROXY="localhost,127.0.0.1"
+    export NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
 
     # Set flags for test_proxy()
     export PROXY_INSECURE="$insecure"
@@ -1150,7 +1150,7 @@ configure_git_no_proxy() {
     # Git will automatically use NO_PROXY environment variable if set
 
     # Just log for information
-    print_info "Git will use NO_PROXY for localhost/127.0.0.1"
+    print_info "Git will use NO_PROXY for localhost/127.0.0.1 and git hosting services"
 
     # Note: We keep save_git_proxy_settings call for compatibility with restore function
     # but we don't actually modify git config anymore
@@ -1213,7 +1213,7 @@ display_proxy_info() {
 
     # Note: We no longer modify git proxy settings
     # Git respects NO_PROXY environment variable automatically
-    print_info "Git will use NO_PROXY environment variable (localhost, 127.0.0.1 bypassed)"
+    print_info "Git will bypass proxy for: localhost, 127.0.0.1, github.com, gitlab.com, bitbucket.org"
     echo ""
 }
 
@@ -2268,7 +2268,12 @@ ENVIRONMENT:
     HTTPS_PROXY, HTTP_PROXY, NO_PROXY
 
 GIT PROXY:
-  When proxy is configured, git is automatically set to bypass proxy.
+  When proxy is configured, git automatically bypasses proxy for:
+    - localhost, 127.0.0.1 (local addresses)
+    - github.com, githubusercontent.com (GitHub)
+    - gitlab.com (GitLab)
+    - bitbucket.org (Bitbucket)
+
   This prevents issues with git push/pull through HTTP proxies.
 
   Your original git proxy settings are backed up to:
