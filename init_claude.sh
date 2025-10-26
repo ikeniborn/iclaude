@@ -518,11 +518,30 @@ save_isolated_lockfile() {
 	local node_version=$(node --version 2>/dev/null | sed 's/v//')
 	local claude_version=""
 
-	# Try to get Claude version
-	if command -v claude &>/dev/null; then
-		claude_version=$(claude --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
-	else
-		claude_version="unknown"
+	# Clear bash command hash cache (ensures fresh command lookup)
+	hash -r 2>/dev/null || true
+
+	# Try multiple methods to get Claude version (most reliable first)
+
+	# Method 1: Direct path to cli.js (most reliable - works even with broken symlinks)
+	local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	if [[ -f "$claude_cli" ]]; then
+		claude_version=$(node "$claude_cli" --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "")
+	fi
+
+	# Method 2: Fallback to command lookup (requires working symlink)
+	if [[ -z "$claude_version" ]] && command -v claude &>/dev/null; then
+		claude_version=$(claude --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "")
+	fi
+
+	# Method 3: Fallback to package.json (last resort)
+	if [[ -z "$claude_version" ]]; then
+		local package_json="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
+		if [[ -f "$package_json" ]]; then
+			claude_version=$(grep -oP '"version":\s*"\K[^"]+' "$package_json" 2>/dev/null || echo "unknown")
+		else
+			claude_version="unknown"
+		fi
 	fi
 
 	local installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -538,9 +557,33 @@ save_isolated_lockfile() {
 EOF
 
 	chmod 644 "$ISOLATED_LOCKFILE"
+
+	# Validate lockfile was created successfully
+	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
+		print_error "Failed to create lockfile: $ISOLATED_LOCKFILE"
+		return 1
+	fi
+
 	print_success "Lockfile saved: $ISOLATED_LOCKFILE"
+
+	# Show lockfile content for verification
+	echo ""
+	print_info "Lockfile content:"
+	cat "$ISOLATED_LOCKFILE" | grep -E "(nodeVersion|claudeCodeVersion|installedAt)" | sed 's/^/  /'
+	echo ""
+
+	# Warn if Claude version is unknown
+	if [[ "$claude_version" == "unknown" ]]; then
+		print_warning "Claude Code version could not be determined"
+		echo "  This may indicate Claude Code is not properly installed."
+		echo "  Try: ./init_claude.sh --repair-isolated"
+		echo ""
+	fi
+
 	print_info "Commit this file to git for reproducibility"
 	echo ""
+
+	return 0
 }
 
 #######################################
@@ -1763,6 +1806,14 @@ update_claude_code() {
     # Check if already up to date
     if [[ "$current_version" == *"$latest_version"* ]]; then
         print_success "Already running the latest version"
+        echo ""
+
+        # For isolated environment, update lockfile even if version is current
+        if [[ "$using_nvm" == true ]] && [[ "$is_isolated" == true ]]; then
+            print_info "Updating lockfile to reflect current state..."
+            save_isolated_lockfile
+        fi
+
         return 0
     fi
 
@@ -1852,13 +1903,13 @@ update_claude_code() {
         if [[ "$using_nvm" == true ]]; then
             # Use is_isolated variable set at the beginning of function
             if [[ "$is_isolated" == true ]]; then
-                # Isolated environment: Update lockfile and repair
-                print_info "Updating lockfile..."
-                save_isolated_lockfile
-                echo ""
-
+                # Isolated environment: Repair FIRST, then update lockfile
                 print_info "Repairing symlinks and permissions..."
                 repair_isolated_environment
+                echo ""
+
+                print_info "Updating lockfile..."
+                save_isolated_lockfile
             else
                 # System NVM: Standard cleanup
                 cleanup_old_claude_installations
