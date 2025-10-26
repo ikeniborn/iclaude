@@ -222,6 +222,12 @@ init_claude --no-proxy
 init_claude --update  # For NVM installations
 sudo init_claude --update  # For system installations
 
+# Update system installation (skip isolated)
+init_claude --system --update
+
+# Launch from system installation (skip isolated)
+init_claude --system
+
 # Check isolated environment status
 ./init_claude.sh --check-isolated
 
@@ -270,7 +276,21 @@ For troubleshooting TLS issues, use the **proxy-management** skill.
 - Uses `set -euo pipefail` for strict error handling
 - Follows symlinks to resolve the script's actual directory
 - **NVM Support**: Automatically detects and uses Claude Code installed via NVM
-- Prioritizes NVM installations over system installations
+
+**Environment Priority (without `--system`):**
+1. Isolated environment (`.nvm-isolated/`) - if exists and `USE_ISOLATED_BY_DEFAULT=true`
+2. System NVM - if `NVM_DIR` is set
+3. System Node.js - fallback
+
+**Environment Priority (with `--system`):**
+1. System NVM - if `NVM_DIR` is set
+2. System Node.js - fallback
+3. Isolated environment is skipped
+
+**Note:** The `--system` flag allows you to explicitly choose system installation even when isolated environment exists. This is useful for:
+- Testing system installation while isolated exists
+- Updating system installation separately
+- Temporary switch without removing isolated environment
 
 For adding new bash functions or modifying behavior, use the **bash-development** skill.
 

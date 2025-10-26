@@ -185,10 +185,14 @@ parse_proxy_url() {
 #######################################
 # Detect if NVM is installed and active
 # Prioritizes isolated environment when USE_ISOLATED_BY_DEFAULT=true
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment check
 #######################################
 detect_nvm() {
-	# Priority 1: Check for isolated environment (if enabled by default)
-	if [[ "$USE_ISOLATED_BY_DEFAULT" == "true" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+	local skip_isolated="${1:-false}"
+
+	# Priority 1: Check for isolated environment (if enabled by default and not skipped)
+	if [[ "$skip_isolated" != "true" ]] && [[ "$USE_ISOLATED_BY_DEFAULT" == "true" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
 		# Isolated environment exists, set it up
 		if [[ -s "${ISOLATED_NVM_DIR}/nvm.sh" ]]; then
 			setup_isolated_nvm
@@ -1413,14 +1417,17 @@ get_claude_version() {
 
 #######################################
 # Check for available updates
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
 #######################################
 check_update() {
+    local skip_isolated="${1:-false}"
     print_info "Checking for Claude Code updates..."
     echo ""
 
     # Detect NVM environment
     local using_nvm=false
-    if detect_nvm; then
+    if detect_nvm "$skip_isolated"; then
         using_nvm=true
     fi
 
@@ -1669,12 +1676,15 @@ recreate_claude_symlinks() {
 
 #######################################
 # Update Claude Code
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
 #######################################
 update_claude_code() {
+    local skip_isolated="${1:-false}"
     local using_nvm=false
 
     # Detect NVM environment
-    if detect_nvm; then
+    if detect_nvm "$skip_isolated"; then
         using_nvm=true
         print_info "Detected NVM environment"
         echo ""
@@ -2069,8 +2079,14 @@ uninstall_script() {
 
 #######################################
 # Launch Claude Code
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
+#   Remaining arguments: passed to Claude Code
 #######################################
 launch_claude() {
+    local skip_isolated="${1:-false}"
+    shift  # Remove first argument, rest are Claude args
+
     echo ""
     print_info "Launching Claude Code..."
     echo ""
@@ -2079,7 +2095,7 @@ launch_claude() {
     local claude_cmd=""
 
     # Priority 1: Check NVM environment first (user's active version)
-    if detect_nvm; then
+    if detect_nvm "$skip_isolated"; then
         local nvm_claude=$(get_nvm_claude_path)
         if [[ -n "$nvm_claude" ]]; then
             claude_cmd="$nvm_claude"
@@ -2190,6 +2206,7 @@ OPTIONS:
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --dangerously-skip-permissions    Pass --dangerously-skip-permissions to Claude Code
+  --system                          Force system installation (skip isolated environment)
 
 EXAMPLES:
   # Install globally (run once)
@@ -2255,6 +2272,12 @@ ISOLATED ENVIRONMENT (Recommended):
 
   # Update Claude Code in isolated environment
   ./init_claude.sh --update
+
+  # Update system installation instead of isolated (with --system)
+  ./init_claude.sh --system --update
+
+  # Run Claude Code from system installation (skip isolated)
+  init_claude --system
 
   # Clean up isolated environment (keeps lockfile for reinstall)
   init_claude --cleanup-isolated
@@ -2337,6 +2360,7 @@ main() {
     local no_proxy=false
     local proxy_insecure=false
     local proxy_ca_path=""
+    local use_system=false
     local claude_args=()
 
     # Parse arguments
@@ -2383,32 +2407,67 @@ main() {
                 exit $?
                 ;;
             --update)
-                update_claude_code
+                update_claude_code "$use_system"
                 exit $?
                 ;;
             --check-update)
-                check_update
+                check_update "$use_system"
                 exit $?
                 ;;
             --isolated-install)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --isolated-install"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --isolated-install"
+                    echo "is specifically for installing isolated environment."
+                    exit 1
+                fi
                 install_isolated_nvm
                 install_isolated_nodejs
                 install_isolated_claude
                 exit $?
                 ;;
             --install-from-lockfile)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-from-lockfile"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --install-from-lockfile"
+                    echo "is specifically for installing isolated environment from lockfile."
+                    exit 1
+                fi
                 install_from_lockfile
                 exit $?
                 ;;
             --cleanup-isolated)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --cleanup-isolated"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --cleanup-isolated"
+                    echo "is specifically for cleaning isolated environment."
+                    exit 1
+                fi
                 cleanup_isolated_nvm
                 exit $?
                 ;;
             --repair-isolated)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --repair-isolated"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --repair-isolated"
+                    echo "is specifically for repairing isolated environment."
+                    exit 1
+                fi
                 repair_isolated_environment
                 exit $?
                 ;;
             --check-isolated)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --check-isolated"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --check-isolated"
+                    echo "is specifically for checking isolated environment status."
+                    exit 1
+                fi
                 check_isolated_status
                 exit 0
                 ;;
@@ -2426,6 +2485,10 @@ main() {
                 ;;
             --proxy-insecure)
                 proxy_insecure=true
+                shift
+                ;;
+            --system)
+                use_system=true
                 shift
                 ;;
             --)
@@ -2469,7 +2532,7 @@ main() {
         fi
 
         # Launch Claude Code without proxy
-        launch_claude "${claude_args[@]}"
+        launch_claude "$use_system" "${claude_args[@]}"
         exit 0
     fi
 
@@ -2569,7 +2632,7 @@ main() {
     fi
 
     # Launch Claude Code
-    launch_claude "${claude_args[@]}"
+    launch_claude "$use_system" "${claude_args[@]}"
 }
 
 # Run main if executed directly
