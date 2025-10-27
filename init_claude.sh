@@ -2256,7 +2256,7 @@ OPTIONS:
   --repair-isolated                 Repair symlinks and permissions after git clone
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
-  --dangerously-skip-permissions    Pass --dangerously-skip-permissions to Claude Code
+  --save                            Enable permission checks (disables default --dangerously-skip-permissions)
   --system                          Force system installation (skip isolated environment)
 
 EXAMPLES:
@@ -2305,8 +2305,8 @@ EXAMPLES:
   # Pass arguments to Claude Code
   init_claude -- --model claude-3-opus
 
-  # Skip permission checks (use with caution)
-  init_claude --dangerously-skip-permissions
+  # Enable permission checks (safe mode)
+  init_claude --save
 
 ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time)
@@ -2407,7 +2407,7 @@ main() {
     local skip_test=false
     local show_password=false
     local proxy_url=""
-    local skip_permissions=false
+    local skip_permissions=true  # По умолчанию используется --dangerously-skip-permissions
     local no_proxy=false
     local proxy_insecure=false
     local proxy_ca_path=""
@@ -2530,8 +2530,8 @@ main() {
                 show_password=true
                 shift
                 ;;
-            --dangerously-skip-permissions)
-                skip_permissions=true
+            --save)
+                skip_permissions=false  # Отключаем --dangerously-skip-permissions для безопасного режима
                 shift
                 ;;
             --proxy-insecure)
@@ -2575,11 +2575,9 @@ main() {
             restore_git_proxy
         fi
 
-        # Add --dangerously-skip-permissions flag if requested
+        # Add --dangerously-skip-permissions by default (unless --save is used)
         if [[ "$skip_permissions" == true ]]; then
             claude_args+=("--dangerously-skip-permissions")
-            print_warning "Skipping permission checks (--dangerously-skip-permissions)"
-            echo ""
         fi
 
         # Launch Claude Code without proxy
@@ -2675,11 +2673,9 @@ main() {
         echo ""
     fi
 
-    # Add --dangerously-skip-permissions flag if requested
+    # Add --dangerously-skip-permissions by default (unless --save is used)
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
-        print_warning "Skipping permission checks (--dangerously-skip-permissions)"
-        echo ""
     fi
 
     # Launch Claude Code
