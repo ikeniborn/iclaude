@@ -1,4 +1,4 @@
-# init_claude - Запуск Claude Code через прокси
+# iclaude - Запуск Claude Code через прокси
 
 > Автоматическая настройка прокси и запуск Claude Code. Введите настройки один раз - используйте многократно.
 
@@ -57,7 +57,7 @@ git clone https://github.com/ikeniborn/claude.git
 cd claude
 
 # Установить в изолированное окружение
-./init_claude.sh --isolated-install
+./iclaude.sh --isolated-install
 
 # Это создаст:
 # - .nvm-isolated/                  (~278MB, в git)
@@ -74,10 +74,10 @@ git clone https://github.com/ikeniborn/claude.git
 cd claude
 
 # 2. Восстановить симлинки после git clone
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 
 # 3. Готово! Запуск
-./init_claude.sh
+./iclaude.sh
 ```
 
 **Вариант 2: Установка из lockfile (легче для git)**
@@ -88,17 +88,17 @@ git clone https://github.com/ikeniborn/claude.git
 cd claude
 
 # 2. Установить из lockfile (точные версии)
-./init_claude.sh --install-from-lockfile
+./iclaude.sh --install-from-lockfile
 
 # 3. Готово! Запуск
-./init_claude.sh
+./iclaude.sh
 ```
 
 #### Проверка статуса
 
 ```bash
 # Проверить статус изолированного окружения
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Вывод:
 # - Версии Node.js, npm, Claude Code
@@ -110,7 +110,7 @@ cd claude
 
 ```bash
 # Обновить Claude Code в изолированном окружении
-./init_claude.sh --update
+./iclaude.sh --update
 
 # После обновления автоматически:
 # ✅ Обновляется Claude Code к последней версии
@@ -118,7 +118,7 @@ cd claude
 # ✅ Восстанавливаются симлинки и права доступа
 
 # Проверить что lockfile обновился корректно
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 # Должны совпадать:
 # - Claude Code: X.X.X
 # - claudeCodeVersion: "X.X.X" (в lockfile)
@@ -130,17 +130,65 @@ cd claude
 
 ```bash
 # Удалить изолированное окружение (сохраняет lockfile)
-./init_claude.sh --cleanup-isolated
+./iclaude.sh --cleanup-isolated
 
 # Для переустановки:
-./init_claude.sh --install-from-lockfile
+./iclaude.sh --install-from-lockfile
 ```
+
+#### 🔐 Изолированная конфигурация
+
+По умолчанию Claude Code хранит все данные (историю, сессии, credentials) в общей директории `~/.claude/`, которая используется всеми установками (изолированной и системной). Это может привести к потере данных при переключении между установками.
+
+**Изолированная конфигурация** решает эту проблему, создавая отдельное хранилище для каждой установки:
+
+```bash
+# Изолированная установка → .nvm-isolated/.claude-isolated/
+# Системная установка → ~/.claude/
+```
+
+**Автоматическое поведение:**
+
+- При использовании изолированной установки конфигурация автоматически изолируется
+- При использовании системной установки (`--system`) используется общая конфигурация `~/.claude/`
+- Можно явно управлять поведением через флаги
+
+**Управление конфигурацией:**
+
+```bash
+# Проверить текущую конфигурацию
+./iclaude.sh --check-config
+
+# Явно использовать изолированную конфигурацию
+./iclaude.sh --isolated-config
+
+# Явно использовать общую конфигурацию (по умолчанию)
+./iclaude.sh --shared-config
+
+# Экспортировать конфигурацию в backup
+./iclaude.sh --export-config /path/to/backup
+
+# Импортировать конфигурацию из backup
+./iclaude.sh --import-config /path/to/backup
+```
+
+**Что изолируется:**
+
+- ✅ История команд (`history.jsonl`)
+- ✅ Активные сессии (`session-env/`)
+- ✅ Credentials (`.credentials.json`)
+- ✅ Настройки (`settings.json`)
+- ✅ Проектные настройки (`projects/`)
+- ✅ TODO-списки (`todos/`)
+- ✅ История файлов (`file-history/`)
+
+**Примечание:** Изолированная конфигурация добавляется в `.gitignore` и не коммитится в git. Используйте `--export-config` для создания backup.
 
 ---
 
 ### 🖥️ Системная установка
 
-Системная установка размещает команду `init_claude` в `/usr/local/bin/` и использует системный или существующий NVM для Claude Code.
+Системная установка размещает команду `iclaude` в `/usr/local/bin/` и использует системный или существующий NVM для Claude Code.
 
 #### Когда использовать:
 
@@ -153,10 +201,10 @@ cd claude
 ```bash
 # Установить глобально (требует sudo)
 cd /path/to/claude
-sudo ./init_claude.sh --install
+sudo ./iclaude.sh --install
 
 # После установки команда доступна из любой директории
-init_claude --help
+iclaude --help
 ```
 
 **Автоматическая установка зависимостей:**
@@ -169,22 +217,22 @@ init_claude --help
 
 ```bash
 # Проверить доступные обновления
-init_claude --check-update
+iclaude --check-update
 
 # Обновить к последней версии
-sudo init_claude --update  # Для системной установки
+sudo iclaude --update  # Для системной установки
 # или
-init_claude --update       # Для NVM установки (без sudo)
+iclaude --update       # Для NVM установки (без sudo)
 ```
 
 #### Удаление
 
 ```bash
 # Удалить команду (сохраняет настройки прокси)
-sudo init_claude --uninstall
+sudo iclaude --uninstall
 
 # Очистить сохраненные настройки прокси
-init_claude --clear
+iclaude --clear
 ```
 
 ---
@@ -197,10 +245,10 @@ init_claude --clear
 
 ```bash
 # Изолированная установка
-./init_claude.sh
+./iclaude.sh
 
 # Системная установка
-init_claude
+iclaude
 ```
 
 Программа попросит ввести proxy URL в формате:
@@ -221,8 +269,8 @@ https://user:pass@proxy.example.com:8118
 
 ```bash
 # Использует сохраненные настройки автоматически
-./init_claude.sh  # изолированная
-init_claude       # системная
+./iclaude.sh  # изолированная
+iclaude       # системная
 ```
 
 ### Безопасная работа с HTTPS прокси
@@ -231,14 +279,14 @@ init_claude       # системная
 
 ```bash
 # SECURE (рекомендуется)
-./init_claude.sh --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
+./iclaude.sh --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
 ```
 
 **Не рекомендуется** использовать `--proxy-insecure` (отключает TLS для всех подключений):
 
 ```bash
 # ⚠️ INSECURE (не рекомендуется)
-./init_claude.sh --proxy https://proxy:8118 --proxy-insecure
+./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
 ```
 
 Как получить сертификат прокси:
@@ -248,7 +296,7 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
   openssl x509 -outform PEM > proxy-cert.pem
 
 # Или получить справку
-./init_claude.sh --help-export-cert
+./iclaude.sh --help-export-cert
 ```
 
 ### 🔍 Выбор протокола прокси: HTTPS vs HTTP vs SOCKS5
@@ -286,10 +334,10 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 **Конфигурация:**
 ```bash
 # С сертификатом (SECURE)
-./init_claude.sh --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
+./iclaude.sh --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 
 # Небезопасно (не рекомендуется)
-./init_claude.sh --proxy https://proxy:8118 --proxy-insecure
+./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
 ```
 
 ---
@@ -316,7 +364,7 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 **Конфигурация:**
 ```bash
 # Только для localhost!
-./init_claude.sh --proxy http://localhost:8118
+./iclaude.sh --proxy http://localhost:8118
 ```
 
 ---
@@ -349,7 +397,7 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
    forward-socks5 / 127.0.0.1:1080 .
 
    # Использовать privoxy как HTTP прокси
-   ./init_claude.sh --proxy http://127.0.0.1:8118
+   ./iclaude.sh --proxy http://127.0.0.1:8118
    ```
 3. **LLM Gateway** (LiteLLM) с поддержкой SOCKS5
 
@@ -362,7 +410,7 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 # ЛУЧШИЙ ВАРИАНТ: HTTPS с корпоративным сертификатом
 export HTTPS_PROXY=https://proxy.company.com:8118
 export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/company-proxy-ca.pem
-./init_claude.sh
+./iclaude.sh
 ```
 
 **Для разработки (localhost):**
@@ -370,7 +418,7 @@ export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/company-proxy-ca.pem
 # ПРИЕМЛЕМО: HTTP для локального прокси
 export HTTP_PROXY=http://localhost:8118
 export NO_PROXY="localhost,127.0.0.1"
-./init_claude.sh
+./iclaude.sh
 ```
 
 **Для production:**
@@ -420,22 +468,22 @@ export NO_PROXY="localhost,127.0.0.1"
 
 ```bash
 # Изменить прокси
-./init_claude.sh --proxy http://new:proxy@host:port
+./iclaude.sh --proxy http://new:proxy@host:port
 
 # Запустить без прокси
-./init_claude.sh --no-proxy
+./iclaude.sh --no-proxy
 
 # Тестировать прокси без запуска Claude
-./init_claude.sh --test
+./iclaude.sh --test
 
 # Очистить сохраненные настройки
-./init_claude.sh --clear
+./iclaude.sh --clear
 
 # Использовать системную установку (игнорируя изолированную)
-./init_claude.sh --system
+./iclaude.sh --system
 
 # Передать аргументы в Claude Code
-./init_claude.sh -- --model claude-3-opus
+./iclaude.sh -- --model claude-3-opus
 ```
 
 ---
@@ -446,7 +494,7 @@ export NO_PROXY="localhost,127.0.0.1"
 
 ```bash
 # Обновить Claude Code
-./init_claude.sh --update
+./iclaude.sh --update
 
 # Автоматически:
 # ✅ Обновляет Claude Code к последней версии
@@ -454,7 +502,7 @@ export NO_PROXY="localhost,127.0.0.1"
 # ✅ Восстанавливает симлинки и права доступа
 
 # Проверить статус после обновления
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Проверьте, что версии совпадают:
 # Claude Code: 2.0.26
@@ -467,13 +515,13 @@ export NO_PROXY="localhost,127.0.0.1"
 
 ```bash
 # Проверить доступные обновления
-init_claude --check-update
+iclaude --check-update
 
 # Обновить (требует sudo для системной установки)
-sudo init_claude --update
+sudo iclaude --update
 
 # Для NVM установки (без sudo)
-init_claude --update
+iclaude --update
 ```
 
 ---
@@ -493,23 +541,23 @@ init_claude --update
 ### После git clone симлинки не работают
 
 **Симптомы:**
-- `./init_claude.sh` выдает ошибки
+- `./iclaude.sh` выдает ошибки
 - Claude Code не найден
 - Команды npm/node не работают
 
 **Решение:**
 ```bash
 # Восстановить симлинки и права
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 
 # Проверить статус
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 ```
 
 ### Проверка симлинков
 
 ```bash
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Вывод покажет статус всех симлинков:
 # Symlinks Status:
@@ -525,11 +573,11 @@ init_claude --update
 
 ```bash
 # Тестировать подключение
-./init_claude.sh --test
+./iclaude.sh --test
 
 # Очистить настройки и ввести заново
-./init_claude.sh --clear
-./init_claude.sh
+./iclaude.sh --clear
+./iclaude.sh
 ```
 
 ### HTTPS прокси с самоподписанным сертификатом
@@ -543,20 +591,20 @@ openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
   openssl x509 -outform PEM > proxy-cert.pem
 
 # Использовать с --proxy-ca
-./init_claude.sh --proxy https://proxy:8118 --proxy-ca ./proxy-cert.pem
+./iclaude.sh --proxy https://proxy:8118 --proxy-ca ./proxy-cert.pem
 ```
 
 **Решение 2 (небезопасно):**
 ```bash
 # Отключить проверку TLS (не рекомендуется)
-./init_claude.sh --proxy https://proxy:8118 --proxy-insecure
+./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
 ```
 
 ### Lockfile не обновляется после обновления
 
 **Симптомы:**
 - Claude Code обновился, но версия в lockfile осталась старой
-- `./init_claude.sh --check-isolated` показывает разные версии:
+- `./iclaude.sh --check-isolated` показывает разные версии:
   ```
   Claude Code: 2.0.26
   claudeCodeVersion: "2.0.25"  ← НЕ СОВПАДАЕТ
@@ -567,16 +615,16 @@ openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
 ✅ **Исправлено в версии от 24.10.2025** - обновите скрипт:
 ```bash
 git pull
-./init_claude.sh --update
+./iclaude.sh --update
 ```
 
 Для старых версий скрипта:
 ```bash
 # Вручную обновить lockfile
-bash -c 'source ./init_claude.sh && save_isolated_lockfile'
+bash -c 'source ./iclaude.sh && save_isolated_lockfile'
 
 # Проверить результат
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 ```
 
 ### Обновление не работает (NVM)
@@ -586,14 +634,14 @@ bash -c 'source ./init_claude.sh && save_isolated_lockfile'
 **Решение для изолированной установки:**
 ```bash
 # Очистить и переустановить
-./init_claude.sh --cleanup-isolated
-./init_claude.sh --install-from-lockfile
+./iclaude.sh --cleanup-isolated
+./iclaude.sh --install-from-lockfile
 ```
 
 **Решение для системного NVM:**
 ```bash
 # Запустить обновление повторно (автоматическая очистка)
-init_claude --update
+iclaude --update
 
 # Или вручную:
 rm -rf ~/.nvm/versions/node/*/lib/node_modules/@anthropic-ai/.claude-code-*
@@ -616,7 +664,7 @@ git clone https://github.com/ikeniborn/claude.git
 cd claude
 
 # Восстановить симлинки
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 ```
 
 ### Конфликт изолированной и системной установки
@@ -628,25 +676,25 @@ cd claude
 **Вариант 1: Флаг `--system` (Рекомендуется)**
 ```bash
 # Проверить какая установка активна
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Принудительно использовать системную установку (игнорируя изолированную)
-./init_claude.sh --system
-./init_claude.sh --system --update
-./init_claude.sh --system --check-update
+./iclaude.sh --system
+./iclaude.sh --system --update
+./iclaude.sh --system --check-update
 
 # Без флага --system (по умолчанию)
-./init_claude.sh          # Использует изолированную (если есть)
-./init_claude.sh --update # Обновит изолированную (если есть)
+./iclaude.sh          # Использует изолированную (если есть)
+./iclaude.sh --update # Обновит изолированную (если есть)
 ```
 
 **Вариант 2: Использовать разные команды**
 ```bash
-# Изолированная установка: ./init_claude.sh (с ./)
-./init_claude.sh
+# Изолированная установка: ./iclaude.sh (с ./)
+./iclaude.sh
 
-# Системная установка: init_claude (без ./)
-init_claude
+# Системная установка: iclaude (без ./)
+iclaude
 ```
 
 **Приоритет окружения (без `--system`):**
@@ -674,7 +722,7 @@ init_claude
 **Вариант 1: Использовать HTTP/HTTPS прокси**
 ```bash
 # Вместо SOCKS5 используйте HTTP/HTTPS
-./init_claude.sh --proxy https://proxy:8118
+./iclaude.sh --proxy https://proxy:8118
 ```
 
 **Вариант 2: Прокси-переходник (Privoxy)**
@@ -689,7 +737,7 @@ echo "forward-socks5 / 127.0.0.1:1080 ." | sudo tee -a /etc/privoxy/config
 sudo systemctl restart privoxy
 
 # Использовать privoxy как HTTP прокси
-./init_claude.sh --proxy http://127.0.0.1:8118
+./iclaude.sh --proxy http://127.0.0.1:8118
 ```
 
 **Вариант 3: LLM Gateway**
@@ -714,18 +762,18 @@ sudo systemctl restart privoxy
 - `.claude_proxy_credentials` - прокси credentials (chmod 600, НЕ в git)
 
 **Системная установка:**
-- `/usr/local/bin/init_claude` - глобальная команда
+- `/usr/local/bin/iclaude` - глобальная команда
 - `~/.claude_proxy_credentials` - прокси credentials (chmod 600)
 
 ### Справка
 
 ```bash
 # Полная справка
-./init_claude.sh --help
-init_claude --help
+./iclaude.sh --help
+iclaude --help
 
 # Справка по экспорту сертификатов
-./init_claude.sh --help-export-cert
+./iclaude.sh --help-export-cert
 ```
 
 ### Поддержка

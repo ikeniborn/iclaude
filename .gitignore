@@ -50,6 +50,9 @@ scripts/.claude_proxy_credentials
 .nvm-isolated/npm-global/.npm/
 *.log
 
+# Isolated Claude Code configuration (session data)
+.nvm-isolated/.claude-isolated/
+
 # Docker
 docker-compose.override.yml
 

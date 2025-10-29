@@ -42,14 +42,14 @@ The project uses Claude Skills to automate common development tasks. See [SKILLS
 
 ## Architecture
 
-The codebase is a standalone bash script (`init_claude.sh`) that:
+The codebase is a standalone bash script (`iclaude.sh`) that:
 
 1. **Isolated Environment** (NEW): Installs NVM + Node.js + Claude Code in project directory (`.nvm-isolated/`) by default
 2. **Lockfile-based Reproducibility**: Saves exact versions to `.nvm-isolated-lockfile.json` for consistent setup across machines
 3. **Credential Management**: Stores proxy credentials in `.claude_proxy_credentials` (chmod 600, git-ignored)
 4. **Proxy Configuration**: Sets environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) for Claude Code
 5. **Git Proxy Management**: Automatically disables proxy for git operations while keeping it enabled for Claude Code
-6. **Global Installation**: Creates symlink at `/usr/local/bin/init_claude` for system-wide access
+6. **Global Installation**: Creates symlink at `/usr/local/bin/iclaude` for system-wide access
 
 ### Key Components
 
@@ -104,7 +104,7 @@ The skill will guide you through:
 For complex tasks, Claude will automatically combine skills:
 
 ```
-Добавь поддержку SOCKS4 прокси в init_claude.sh с полной валидацией и тестированием
+Добавь поддержку SOCKS4 прокси в iclaude.sh с полной валидацией и тестированием
 ```
 
 Claude uses:
@@ -127,7 +127,7 @@ The script supports **isolated installation** where NVM, Node.js, and Claude Cod
 **Initial Setup:**
 ```bash
 # Install everything in isolated environment
-./init_claude.sh --isolated-install
+./iclaude.sh --isolated-install
 
 # This creates:
 # - .nvm-isolated/          (git-ignored, ~200-300MB)
@@ -136,7 +136,7 @@ The script supports **isolated installation** where NVM, Node.js, and Claude Cod
 
 **Check Status:**
 ```bash
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 ```
 
 **Setup on Another Machine:**
@@ -147,10 +147,10 @@ The script supports **isolated installation** where NVM, Node.js, and Claude Cod
 git clone <repo>
 
 # Repair symlinks after git clone
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 
 # Ready to use
-./init_claude.sh
+./iclaude.sh
 ```
 
 *Option 2: Install from lockfile (lighter for git)*
@@ -159,15 +159,15 @@ git clone <repo>
 git clone <repo>
 
 # Install exact same versions from lockfile
-./init_claude.sh --install-from-lockfile
+./iclaude.sh --install-from-lockfile
 
 # Ready to use
-./init_claude.sh
+./iclaude.sh
 ```
 
 **Cleanup (preserves lockfile):**
 ```bash
-./init_claude.sh --cleanup-isolated
+./iclaude.sh --cleanup-isolated
 ```
 
 ### Isolated Environment Behavior
@@ -184,55 +184,118 @@ git clone <repo>
 ### Files
 
 - `.nvm-isolated/` - Isolated NVM installation (~200-300MB, committed to git)
+- `.nvm-isolated/.claude-isolated/` - Isolated Claude Code config (git-ignored)
 - `.nvm-isolated-lockfile.json` - Version lockfile (committed to git)
 - `.claude_proxy_credentials` - Proxy credentials (chmod 600, git-ignored)
 
 **Note:** Only cache and temporary files are git-ignored (`.cache/`, `.npm/`, `*.log`)
 
+## Isolated Configuration
+
+By default, Claude Code stores all data (history, sessions, credentials) in the shared directory `~/.claude/`, which is used by all installations (isolated and system). This can lead to data loss when switching between installations.
+
+**Isolated configuration** solves this problem by creating a separate storage for each installation:
+
+**Architecture:**
+
+```bash
+# Isolated installation → .nvm-isolated/.claude-isolated/
+# System installation → ~/.claude/
+```
+
+**Automatic behavior:**
+
+- When using isolated installation, configuration is automatically isolated
+- When using system installation (`--system`), shared configuration is used (`~/.claude/`)
+- Can be explicitly controlled via flags
+
+**Configuration management:**
+
+```bash
+# Check current configuration
+./iclaude.sh --check-config
+
+# Explicitly use isolated configuration
+./iclaude.sh --isolated-config
+
+# Explicitly use shared configuration (default)
+./iclaude.sh --shared-config
+
+# Export configuration to backup
+./iclaude.sh --export-config /path/to/backup
+
+# Import configuration from backup
+./iclaude.sh --import-config /path/to/backup
+```
+
+**What is isolated:**
+
+- ✅ Command history (`history.jsonl`)
+- ✅ Active sessions (`session-env/`)
+- ✅ Credentials (`.credentials.json`)
+- ✅ Settings (`settings.json`)
+- ✅ Project settings (`projects/`)
+- ✅ TODO lists (`todos/`)
+- ✅ File history (`file-history/`)
+
+**Environment Variable:**
+
+Claude Code uses the `CLAUDE_CONFIG_DIR` environment variable to determine the configuration directory:
+
+```bash
+# Default (if not set)
+CLAUDE_CONFIG_DIR=$HOME/.claude
+
+# Isolated (set by iclaude.sh)
+CLAUDE_CONFIG_DIR=$SCRIPT_DIR/.nvm-isolated/.claude-isolated
+```
+
+**Note:** Isolated configuration is git-ignored. Use `--export-config` to create backups.
+
 ## Common Commands
 
 ### Installation
 ```bash
-# Install globally (creates /usr/local/bin/init_claude)
+# Install globally (creates /usr/local/bin/iclaude)
 # Automatically checks and installs dependencies
-sudo ./init_claude.sh --install
+sudo ./iclaude.sh --install
 
 # Uninstall
-sudo init_claude --uninstall
+sudo iclaude --uninstall
 ```
 
 ### Usage
 ```bash
 # Launch with saved credentials
-init_claude
+iclaude
 
 # Set proxy directly
-init_claude --proxy http://user:pass@host:port
+iclaude --proxy http://user:pass@host:port
 
 # Test proxy without launching Claude
-init_claude --test
+iclaude --test
 
 # Clear saved credentials
-init_claude --clear
+iclaude --clear
 
 # Launch without proxy
-init_claude --no-proxy
+iclaude --no-proxy
 
 # Update Claude Code
-init_claude --update  # For NVM installations
-sudo init_claude --update  # For system installations
+iclaude --update  # For NVM installations
+sudo iclaude --update  # For system installations
 
 # Update system installation (skip isolated)
-init_claude --system --update
+iclaude --system --update
 
 # Launch from system installation (skip isolated)
-init_claude --system
+iclaude --system
 
 # Check isolated environment status
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Repair symlinks after git clone
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 ```
 
 For detailed usage information, see [README.md](README.md).
@@ -255,7 +318,7 @@ For detailed proxy management, use the **proxy-management** skill.
 **Secure Solution with `--proxy-ca` (RECOMMENDED):**
 ```bash
 # ✅ SECURE
-init_claude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
+iclaude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
 ```
 - ✅ Proxy connection: Uses proxy CA certificate
 - ✅ Claude Code → Anthropic API: FULL TLS VERIFICATION (SECURE)
@@ -263,7 +326,7 @@ init_claude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
 **How to Export Proxy Certificate:**
 ```bash
 # Get help
-init_claude --help-export-cert
+iclaude --help-export-cert
 
 # Using openssl
 openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/null | \
@@ -306,17 +369,17 @@ The script uses **environment variables** (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) to
 **Important Notes:**
 - The script does **NOT** modify `git config --global` settings
 - Your system's git configuration remains unchanged
-- Proxy settings only apply to the `init_claude` session and Claude Code
+- Proxy settings only apply to the `iclaude` session and Claude Code
 
 ### Updating Claude Code
 
 ```bash
 # Check if updates are available
-init_claude --check-update
+iclaude --check-update
 
 # Update to latest version
-init_claude --update  # For NVM installations
-sudo init_claude --update  # For system installations
+iclaude --update  # For NVM installations
+sudo iclaude --update  # For system installations
 ```
 
 **NVM-specific behavior:**
@@ -333,17 +396,17 @@ If you see `npm error ENOTEMPTY` during update, the script will offer automatic 
 After cloning a repository with `.nvm-isolated/`, symlinks may not work properly:
 
 **Symptoms:**
-- `./init_claude.sh` fails with command not found errors
+- `./iclaude.sh` fails with command not found errors
 - npm/npx commands don't work
 - Claude Code not detected
 
 **Solution:**
 ```bash
 # Check symlink status
-./init_claude.sh --check-isolated
+./iclaude.sh --check-isolated
 
 # Repair all symlinks and permissions
-./init_claude.sh --repair-isolated
+./iclaude.sh --repair-isolated
 ```
 
 The repair function:
@@ -359,10 +422,10 @@ For detailed update procedures and troubleshooting, use the **bash-development**
 No automated tests exist. Test manually:
 ```bash
 # Test proxy connectivity
-init_claude --test
+iclaude --test
 
 # Test full flow
-init_claude --proxy http://test:test@127.0.0.1:8118 --no-test
+iclaude --proxy http://test:test@127.0.0.1:8118 --no-test
 ```
 
 For creating test cases or debugging issues, use the **bash-development** and **proxy-management** skills together.

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #######################################
-# init_claude.sh - Initialize Claude Code with HTTP Proxy
+# iclaude.sh - Initialize Claude Code with HTTP Proxy
 # Version: 2.0
 # Description: Auto-configure proxy settings and launch Claude Code
 #              Stores credentials for reuse
@@ -133,7 +133,7 @@ ${BLUE}Метод 3: Если у вас есть доступ к прокси-с
 
 ${BLUE}После экспорта используйте:${NC}
 
-  init_claude --proxy https://user:pass@${proxy_host}:${proxy_port} \\
+  iclaude --proxy https://user:pass@${proxy_host}:${proxy_port} \\
               --proxy-ca /path/to/proxy-cert.pem
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -411,7 +411,7 @@ install_isolated_nodejs() {
 	# Source NVM
 	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
 		print_error "NVM not found in isolated environment"
-		echo "Run: init_claude --isolated-install first"
+		echo "Run: iclaude --isolated-install first"
 		return 1
 	fi
 
@@ -464,7 +464,7 @@ install_isolated_claude() {
 	# Ensure Node.js is available
 	if ! command -v npm &>/dev/null; then
 		print_error "Node.js not found in isolated environment"
-		echo "Run: init_claude --isolated-install first"
+		echo "Run: iclaude --isolated-install first"
 		return 1
 	fi
 
@@ -576,7 +576,7 @@ EOF
 	if [[ "$claude_version" == "unknown" ]]; then
 		print_warning "Claude Code version could not be determined"
 		echo "  This may indicate Claude Code is not properly installed."
-		echo "  Try: ./init_claude.sh --repair-isolated"
+		echo "  Try: ./iclaude.sh --repair-isolated"
 		echo ""
 	fi
 
@@ -596,7 +596,7 @@ install_from_lockfile() {
 	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
 		print_error "Lockfile not found: $ISOLATED_LOCKFILE"
 		echo ""
-		echo "Create lockfile first with: init_claude --isolated-install"
+		echo "Create lockfile first with: iclaude --isolated-install"
 		return 1
 	fi
 
@@ -717,7 +717,7 @@ repair_isolated_environment() {
 		echo ""
 		echo "Directory: $ISOLATED_NVM_DIR"
 		echo ""
-		echo "Install first with: ./init_claude.sh --isolated-install"
+		echo "Install first with: ./iclaude.sh --isolated-install"
 		return 1
 	fi
 
@@ -857,8 +857,8 @@ repair_isolated_environment() {
 		echo "  Errors: $errors issue(s)"
 		echo ""
 		echo "You may need to reinstall:"
-		echo "  ./init_claude.sh --cleanup-isolated"
-		echo "  ./init_claude.sh --isolated-install"
+		echo "  ./iclaude.sh --cleanup-isolated"
+		echo "  ./iclaude.sh --isolated-install"
 	fi
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	echo ""
@@ -957,12 +957,12 @@ check_isolated_status() {
 			if [[ $symlink_issues -gt 0 ]]; then
 				echo ""
 				print_warning "  Found $symlink_issues symlink issue(s)"
-				echo "  Run: ./init_claude.sh --repair-isolated"
+				echo "  Run: ./iclaude.sh --repair-isolated"
 			fi
 		fi
 	else
 		print_warning "Isolated NVM: NOT INSTALLED"
-		echo "  Run: init_claude --isolated-install"
+		echo "  Run: iclaude --isolated-install"
 	fi
 
 	echo ""
@@ -975,11 +975,256 @@ check_isolated_status() {
 		cat "$ISOLATED_LOCKFILE" | grep -E "(nodeVersion|claudeCodeVersion|installedAt)" | sed 's/^/    /'
 	else
 		print_warning "Lockfile: NOT FOUND"
-		echo "  Will be created after: init_claude --isolated-install"
+		echo "  Will be created after: iclaude --isolated-install"
 	fi
 
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Setup isolated config directory for Claude Code
+# Sets CLAUDE_CONFIG_DIR to isolated location
+# Returns:
+#   0 - success
+#######################################
+setup_isolated_config() {
+	local isolated_config_dir="${ISOLATED_NVM_DIR}/.claude-isolated"
+
+	# Create isolated config directory if it doesn't exist
+	if [[ ! -d "$isolated_config_dir" ]]; then
+		mkdir -p "$isolated_config_dir"
+		print_info "Created isolated config directory: $isolated_config_dir"
+	fi
+
+	# Export CLAUDE_CONFIG_DIR to isolated location
+	export CLAUDE_CONFIG_DIR="$isolated_config_dir"
+
+	return 0
+}
+
+#######################################
+# Check config directory status
+# Shows current CLAUDE_CONFIG_DIR and its content
+# Returns:
+#   0 - success
+#######################################
+check_config_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Claude Code Configuration Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Determine config directory
+	local config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+
+	print_info "Config directory: $config_dir"
+	echo ""
+
+	# Check if directory exists
+	if [[ ! -d "$config_dir" ]]; then
+		print_warning "Config directory does not exist yet"
+		echo "  Will be created on first Claude Code run"
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	# Show directory size
+	local size=$(du -sh "$config_dir" 2>/dev/null | cut -f1 || echo "unknown")
+	echo "  Size: $size"
+	echo ""
+
+	# Check key files
+	print_info "Key files:"
+
+	local files=(
+		".credentials.json:Credentials"
+		"history.jsonl:History"
+		"settings.json:Settings"
+	)
+
+	for file_info in "${files[@]}"; do
+		local file="${file_info%%:*}"
+		local label="${file_info##*:}"
+		local file_path="$config_dir/$file"
+
+		if [[ -f "$file_path" ]]; then
+			local file_size=$(du -sh "$file_path" 2>/dev/null | cut -f1 || echo "unknown")
+			echo "  ✓ $label ($file): $file_size"
+		else
+			echo "  ✗ $label ($file): not found"
+		fi
+	done
+
+	echo ""
+
+	# Check subdirectories
+	print_info "Key directories:"
+
+	local dirs=(
+		"projects:Projects"
+		"session-env:Sessions"
+		"file-history:File History"
+		"todos:TODOs"
+	)
+
+	for dir_info in "${dirs[@]}"; do
+		local dir="${dir_info%%:*}"
+		local label="${dir_info##*:}"
+		local dir_path="$config_dir/$dir"
+
+		if [[ -d "$dir_path" ]]; then
+			local dir_size=$(du -sh "$dir_path" 2>/dev/null | cut -f1 || echo "unknown")
+			local count=$(find "$dir_path" -maxdepth 1 -mindepth 1 2>/dev/null | wc -l)
+			echo "  ✓ $label ($dir): $dir_size, $count items"
+		else
+			echo "  ✗ $label ($dir): not found"
+		fi
+	done
+
+	echo ""
+
+	# Determine config type
+	if [[ "$config_dir" == "$HOME/.claude" ]]; then
+		print_info "Configuration type: SHARED (system-wide)"
+		echo "  All installations use this config"
+	elif [[ "$config_dir" == *".nvm-isolated/.claude-isolated"* ]]; then
+		print_info "Configuration type: ISOLATED (project-local)"
+		echo "  Only this project uses this config"
+	else
+		print_info "Configuration type: CUSTOM"
+		echo "  Custom CLAUDE_CONFIG_DIR set"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Export config directory to backup location
+# Arguments:
+#   $1 - destination directory (required)
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+export_config() {
+	local dest_dir=$1
+
+	if [[ -z "$dest_dir" ]]; then
+		print_error "Destination directory required"
+		echo ""
+		echo "Usage: $0 --export-config /path/to/backup"
+		return 1
+	fi
+
+	# Determine config directory
+	local config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+
+	# Check if config directory exists
+	if [[ ! -d "$config_dir" ]]; then
+		print_error "Config directory does not exist: $config_dir"
+		echo ""
+		echo "Nothing to export"
+		return 1
+	fi
+
+	print_info "Exporting configuration..."
+	echo "  From: $config_dir"
+	echo "  To: $dest_dir"
+	echo ""
+
+	# Create destination directory
+	mkdir -p "$dest_dir"
+
+	# Copy config directory
+	cp -r "$config_dir"/* "$dest_dir/" 2>/dev/null || {
+		print_error "Failed to export configuration"
+		return 1
+	}
+
+	local size=$(du -sh "$dest_dir" 2>/dev/null | cut -f1 || echo "unknown")
+	print_success "Configuration exported successfully"
+	echo "  Size: $size"
+	echo "  Location: $dest_dir"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Import config directory from backup location
+# Arguments:
+#   $1 - source directory (required)
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+import_config() {
+	local source_dir=$1
+
+	if [[ -z "$source_dir" ]]; then
+		print_error "Source directory required"
+		echo ""
+		echo "Usage: $0 --import-config /path/to/backup"
+		return 1
+	fi
+
+	# Check if source directory exists
+	if [[ ! -d "$source_dir" ]]; then
+		print_error "Source directory does not exist: $source_dir"
+		return 1
+	fi
+
+	# Determine config directory
+	local config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+
+	print_info "Importing configuration..."
+	echo "  From: $source_dir"
+	echo "  To: $config_dir"
+	echo ""
+
+	# Warn if config directory exists
+	if [[ -d "$config_dir" ]]; then
+		print_warning "Config directory already exists"
+		echo "  Existing: $config_dir"
+		echo ""
+		read -p "Overwrite existing configuration? (y/N): " confirm
+
+		if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+			print_info "Import cancelled"
+			return 0
+		fi
+		echo ""
+	fi
+
+	# Create config directory
+	mkdir -p "$config_dir"
+
+	# Copy configuration
+	cp -r "$source_dir"/* "$config_dir/" 2>/dev/null || {
+		print_error "Failed to import configuration"
+		return 1
+	}
+
+	# Fix permissions for credentials file
+	if [[ -f "$config_dir/.credentials.json" ]]; then
+		chmod 600 "$config_dir/.credentials.json"
+	fi
+
+	local size=$(du -sh "$config_dir" 2>/dev/null | cut -f1 || echo "unknown")
+	print_success "Configuration imported successfully"
+	echo "  Size: $size"
+	echo "  Location: $config_dir"
 	echo ""
 
 	return 0
@@ -1108,7 +1353,7 @@ prompt_proxy_url() {
         else
             # Non-interactive mode: cannot prompt for new URL
             print_error "Cannot prompt for proxy URL in non-interactive mode" >&2
-            echo "Use: init_claude --proxy <url>" >&2
+            echo "Use: iclaude --proxy <url>" >&2
             exit 1
         fi
 
@@ -1171,7 +1416,7 @@ configure_proxy_from_url() {
             echo ""
             print_info "Рекомендация: используйте --proxy-ca вместо --proxy-insecure"
             echo ""
-            echo "  Для экспорта сертификата прокси см.: init_claude --help-export-cert"
+            echo "  Для экспорта сертификата прокси см.: iclaude --help-export-cert"
             print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
         fi
@@ -1482,7 +1727,7 @@ check_update() {
         if [[ "$using_nvm" == true ]]; then
             echo "Install with: npm install -g @anthropic-ai/claude-code"
         else
-            echo "Install with: sudo init_claude --install"
+            echo "Install with: sudo iclaude --install"
         fi
         return 1
     fi
@@ -1509,10 +1754,10 @@ check_update() {
         print_warning "An update is available: $latest_version"
         echo ""
         if [[ "$using_nvm" == true ]]; then
-            echo "Run to update: init_claude --update"
+            echo "Run to update: iclaude --update"
             echo "Or directly:   npm install -g @anthropic-ai/claude-code@latest"
         else
-            echo "Run to update: sudo init_claude --update"
+            echo "Run to update: sudo iclaude --update"
         fi
     fi
 
@@ -1748,7 +1993,7 @@ update_claude_code() {
             echo "Directory: $ISOLATED_NVM_DIR"
             echo "Expected: $NVM_DIR/nvm.sh"
             echo ""
-            echo "Try reinstalling with: ./init_claude.sh --isolated-install"
+            echo "Try reinstalling with: ./iclaude.sh --isolated-install"
             exit 1
         fi
     fi
@@ -1771,7 +2016,7 @@ update_claude_code() {
             print_info "Update cancelled"
             echo ""
             echo "Run without sudo to update NVM installation:"
-            echo "  init_claude --update"
+            echo "  iclaude --update"
             exit 0
         fi
         using_nvm=false  # Treat as system installation
@@ -1788,7 +2033,7 @@ update_claude_code() {
         if [[ "$using_nvm" == true ]]; then
             echo "Install first with: npm install -g @anthropic-ai/claude-code"
         else
-            echo "Install first with: sudo init_claude --install"
+            echo "Install first with: sudo iclaude --install"
         fi
         exit 1
     fi
@@ -1886,7 +2131,7 @@ update_claude_code() {
             echo "This might be due to temporary installation files."
             echo ""
             echo "Try running cleanup again:"
-            echo "  init_claude --update"
+            echo "  iclaude --update"
             echo ""
             echo "Or manually:"
             echo "  npm uninstall -g @anthropic-ai/claude-code"
@@ -1938,7 +2183,7 @@ update_claude_code() {
         # Suggest cleanup if it's an NVM installation
         if [[ "$using_nvm" == true ]]; then
             echo "If you see ENOTEMPTY errors, try:"
-            echo "  1. Run: init_claude --update (cleanup will run automatically)"
+            echo "  1. Run: iclaude --update (cleanup will run automatically)"
             echo "  2. Or manually remove old installations:"
             echo "     rm -rf ~/.nvm/versions/node/*/lib/node_modules/@anthropic-ai/.claude-code-*"
             echo ""
@@ -2041,7 +2286,7 @@ check_dependencies() {
             echo "Install manually:"
             echo "  npm install -g @anthropic-ai/claude-code"
             echo ""
-            echo "You can still install init_claude, but it won't work until Claude Code is installed."
+            echo "You can still install iclaude, but it won't work until Claude Code is installed."
             read -p "Continue anyway? (y/N): " continue_anyway
             if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
                 exit 1
@@ -2059,7 +2304,7 @@ check_dependencies() {
 #######################################
 install_script() {
     local script_path="${BASH_SOURCE[0]}"
-    local target_path="/usr/local/bin/init_claude"
+    local target_path="/usr/local/bin/iclaude"
 
     # Check if running with sudo
     if [[ $EUID -ne 0 ]]; then
@@ -2100,14 +2345,14 @@ install_script() {
 
     print_success "Installed to: $target_path"
     echo ""
-    echo "You can now run: init_claude"
+    echo "You can now run: iclaude"
 }
 
 #######################################
 # Uninstall script
 #######################################
 uninstall_script() {
-    local target_path="/usr/local/bin/init_claude"
+    local target_path="/usr/local/bin/iclaude"
 
     # Check if running with sudo
     if [[ $EUID -ne 0 ]]; then
@@ -2231,7 +2476,7 @@ launch_claude() {
 #######################################
 show_usage() {
     cat << EOF
-Usage: init_claude [OPTIONS] [CLAUDE_ARGS...]
+Usage: iclaude [OPTIONS] [CLAUDE_ARGS...]
 
 Initialize Claude Code with HTTP proxy settings
 
@@ -2254,6 +2499,11 @@ OPTIONS:
   --check-isolated                  Show status of isolated environment
   --cleanup-isolated                Remove isolated environment (keeps lockfile)
   --repair-isolated                 Repair symlinks and permissions after git clone
+  --isolated-config                 Use isolated config directory (automatic for isolated install)
+  --shared-config                   Use shared config directory (default: ~/.claude/)
+  --check-config                    Show current configuration directory status
+  --export-config DIR               Export configuration to backup directory
+  --import-config DIR               Import configuration from backup directory
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
@@ -2264,74 +2514,90 @@ EXAMPLES:
   sudo $0 --install
 
   # First run - prompt for proxy URL
-  init_claude
+  iclaude
 
   # Second run - use saved credentials automatically
-  init_claude
+  iclaude
 
   # Set proxy URL directly
-  init_claude --proxy http://user:pass@127.0.0.1:8118
+  iclaude --proxy http://user:pass@127.0.0.1:8118
 
   # Set HTTPS proxy with CA certificate (SECURE - recommended)
-  init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca /path/to/proxy-cert.pem
+  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca /path/to/proxy-cert.pem
 
   # Set HTTPS proxy WITHOUT certificate validation (⚠️  INSECURE - not recommended)
-  init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
+  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
 
   # Get help exporting proxy certificate
-  init_claude --help-export-cert
+  iclaude --help-export-cert
 
   # Test proxy without launching Claude
-  init_claude --test
+  iclaude --test
 
   # Clear saved credentials
-  init_claude --clear
+  iclaude --clear
 
   # Restore git proxy settings from backup
-  init_claude --restore-git-proxy
+  iclaude --restore-git-proxy
 
   # Launch without proxy
-  init_claude --no-proxy
+  iclaude --no-proxy
 
   # Uninstall
-  sudo init_claude --uninstall
+  sudo iclaude --uninstall
 
   # Check for updates
-  init_claude --check-update
+  iclaude --check-update
 
   # Update Claude Code to latest version
-  sudo init_claude --update
+  sudo iclaude --update
 
   # Pass arguments to Claude Code
-  init_claude -- --model claude-3-opus
+  iclaude -- --model claude-3-opus
 
   # Enable permission checks (safe mode)
-  init_claude --save
+  iclaude --save
 
 ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time)
-  init_claude --isolated-install
+  iclaude --isolated-install
 
   # Check isolated environment status (includes symlink check)
-  init_claude --check-isolated
+  iclaude --check-isolated
 
   # Install from lockfile (reproducible setup on another machine)
-  init_claude --install-from-lockfile
+  iclaude --install-from-lockfile
 
   # After git clone - repair symlinks and permissions
-  ./init_claude.sh --repair-isolated
+  ./iclaude.sh --repair-isolated
 
   # Update Claude Code in isolated environment
-  ./init_claude.sh --update
+  ./iclaude.sh --update
 
   # Update system installation instead of isolated (with --system)
-  ./init_claude.sh --system --update
+  ./iclaude.sh --system --update
 
   # Run Claude Code from system installation (skip isolated)
-  init_claude --system
+  iclaude --system
 
   # Clean up isolated environment (keeps lockfile for reinstall)
-  init_claude --cleanup-isolated
+  iclaude --cleanup-isolated
+
+ISOLATED CONFIGURATION:
+  # Check current configuration directory
+  iclaude --check-config
+
+  # Use isolated configuration (automatic with isolated install)
+  iclaude --isolated-config
+
+  # Use shared configuration (default behavior)
+  iclaude --shared-config
+
+  # Export configuration to backup
+  iclaude --export-config /path/to/backup
+
+  # Import configuration from backup
+  iclaude --import-config /path/to/backup
 
 PROXY URL FORMAT:
   http://username:password@host:port
@@ -2351,7 +2617,7 @@ HTTPS PROXY SECURITY:
      - Adds ONLY the proxy certificate to trusted CAs
      - TLS verification remains ENABLED for all other connections
      - Claude Code → Anthropic API connections are SECURE
-     - Use: init_claude --help-export-cert for certificate export instructions
+     - Use: iclaude --help-export-cert for certificate export instructions
 
   2. --proxy-insecure (⚠️  NOT RECOMMENDED - INSECURE)
      - Disables TLS certificate verification for ALL Node.js connections
@@ -2390,11 +2656,11 @@ GIT PROXY:
     ${GIT_BACKUP_FILE}
 
   To restore original git proxy settings:
-    init_claude --restore-git-proxy
+    iclaude --restore-git-proxy
 
 INSTALLATION:
-  After installing with --install, you can run 'init_claude' from anywhere.
-  The script will be available at: /usr/local/bin/init_claude
+  After installing with --install, you can run 'iclaude' from anywhere.
+  The script will be available at: /usr/local/bin/iclaude
 
 EOF
 }
@@ -2412,6 +2678,8 @@ main() {
     local proxy_insecure=false
     local proxy_ca_path=""
     local use_system=false
+    local use_isolated_config=false
+    local use_shared_config=false
     local claude_args=()
 
     # Parse arguments
@@ -2542,6 +2810,26 @@ main() {
                 use_system=true
                 shift
                 ;;
+            --isolated-config)
+                use_isolated_config=true
+                shift
+                ;;
+            --shared-config)
+                use_shared_config=true
+                shift
+                ;;
+            --check-config)
+                check_config_status
+                exit 0
+                ;;
+            --export-config)
+                export_config "$2"
+                exit $?
+                ;;
+            --import-config)
+                import_config "$2"
+                exit $?
+                ;;
             --)
                 shift
                 claude_args=("$@")
@@ -2553,6 +2841,28 @@ main() {
                 ;;
         esac
     done
+
+    # Configure isolated config if needed
+    # Priority:
+    # 1. If --isolated-config is set, use isolated config
+    # 2. If --shared-config is set, use shared config (default)
+    # 3. If isolated environment exists and is default, use isolated config (unless --shared-config)
+    if [[ "$use_isolated_config" == true ]]; then
+        setup_isolated_config
+        print_info "Using isolated configuration: $CLAUDE_CONFIG_DIR"
+        echo ""
+    elif [[ "$use_shared_config" == false ]] && [[ "$use_system" == false ]] && [[ -d "$ISOLATED_NVM_DIR" ]] && [[ "$USE_ISOLATED_BY_DEFAULT" == true ]]; then
+        # Auto-enable isolated config for isolated installations (unless --shared-config)
+        setup_isolated_config
+        print_info "Using isolated configuration (automatic): $CLAUDE_CONFIG_DIR"
+        echo ""
+    else
+        # Use shared config (default)
+        if [[ "$use_shared_config" == true ]]; then
+            print_info "Using shared configuration: ${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+            echo ""
+        fi
+    fi
 
     echo ""
     echo "═══════════════════════════════════════"
@@ -2665,9 +2975,9 @@ main() {
             echo ""
             echo "You can try:"
             echo "  1. Fix proxy configuration and try again"
-            echo "  2. Run without proxy: init_claude --no-proxy"
-            echo "  3. Skip proxy test: init_claude --no-test"
-            echo "  4. Check proxy credentials: init_claude --clear"
+            echo "  2. Run without proxy: iclaude --no-proxy"
+            echo "  3. Skip proxy test: iclaude --no-test"
+            echo "  4. Check proxy credentials: iclaude --clear"
             exit 0
         fi
         echo ""

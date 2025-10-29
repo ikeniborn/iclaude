@@ -40,6 +40,14 @@ export interface AgentInput {
    * The type of specialized agent to use for this task
    */
   subagent_type: string;
+  /**
+   * Optional model to use for this agent. If not specified, inherits from parent. Prefer haiku for quick, straightforward tasks to minimize cost and latency.
+   */
+  model?: "sonnet" | "opus" | "haiku";
+  /**
+   * Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript.
+   */
+  resume?: string;
 }
 export interface BashInput {
   /**
