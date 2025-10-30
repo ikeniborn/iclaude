@@ -503,6 +503,93 @@ install_isolated_claude() {
 }
 
 #######################################
+# Update Claude Code in isolated environment
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+update_isolated_claude() {
+	setup_isolated_nvm
+
+	echo ""
+	print_info "Updating Claude Code in isolated environment..."
+	echo ""
+
+	# Source NVM
+	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+		print_error "NVM not found in isolated environment"
+		echo ""
+		echo "Run: ./iclaude.sh --isolated-install first"
+		return 1
+	fi
+
+	source "$NVM_DIR/nvm.sh"
+
+	# Ensure Node.js is available
+	if ! command -v npm &>/dev/null; then
+		print_error "Node.js not found in isolated environment"
+		echo ""
+		echo "Run: ./iclaude.sh --isolated-install first"
+		return 1
+	fi
+
+	# Get current version before update
+	local current_version=""
+	local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	if [[ -f "$claude_cli" ]]; then
+		current_version=$(node "$claude_cli" --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+		print_info "Current version: $current_version"
+		echo ""
+	else
+		print_warning "Claude Code not found in isolated environment"
+		echo ""
+		echo "Run: ./iclaude.sh --isolated-install first"
+		return 1
+	fi
+
+	# Update Claude Code
+	print_info "Running: npm update -g @anthropic-ai/claude-code"
+	echo ""
+
+	if npm update -g @anthropic-ai/claude-code; then
+		# Clear bash command hash cache
+		hash -r 2>/dev/null || true
+
+		# Get new version
+		local new_version=""
+		if [[ -f "$claude_cli" ]]; then
+			new_version=$(node "$claude_cli" --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+		fi
+
+		echo ""
+		print_success "Claude Code updated successfully"
+		echo ""
+		echo "  Previous version: $current_version"
+		echo "  New version:      $new_version"
+		echo ""
+
+		# Update lockfile with new version
+		print_info "Updating lockfile..."
+		save_isolated_lockfile
+
+		if [[ "$current_version" == "$new_version" ]]; then
+			print_info "Already on latest version"
+		fi
+
+		return 0
+	else
+		echo ""
+		print_error "Failed to update Claude Code"
+		echo ""
+		echo "Try:"
+		echo "  1. Check internet connection"
+		echo "  2. Run: ./iclaude.sh --repair-isolated"
+		echo "  3. Reinstall: ./iclaude.sh --cleanup-isolated && ./iclaude.sh --isolated-install"
+		return 1
+	fi
+}
+
+#######################################
 # Save lockfile with installed versions
 # Returns:
 #   0 - success
@@ -2374,6 +2461,145 @@ uninstall_script() {
 }
 
 #######################################
+# Create global symlink using isolated environment
+# (Does NOT require system npm - uses .nvm-isolated/)
+#######################################
+create_symlink_only() {
+    local script_path="${BASH_SOURCE[0]}"
+    local target_path="/usr/local/bin/iclaude"
+
+    # Check if running with sudo
+    if [[ $EUID -ne 0 ]]; then
+        print_error "Creating symlink requires sudo privileges"
+        echo ""
+        echo "Run: sudo $0 --create-symlink"
+        exit 1
+    fi
+
+    echo ""
+    print_info "Checking isolated environment..."
+    echo ""
+
+    # Check if isolated environment exists
+    if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
+        print_error "Isolated environment not found"
+        echo ""
+        echo "The isolated environment is required for --create-symlink"
+        echo "This allows you to install globally WITHOUT system npm!"
+        echo ""
+        echo "First, install isolated environment:"
+        echo "  ./iclaude.sh --isolated-install"
+        echo ""
+        echo "Then create symlink:"
+        echo "  sudo ./iclaude.sh --create-symlink"
+        exit 1
+    fi
+
+    # Verify isolated environment is functional
+    local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+    if [[ ! -f "$claude_cli" ]]; then
+        print_error "Claude Code not found in isolated environment"
+        echo ""
+        echo "Run: ./iclaude.sh --isolated-install"
+        exit 1
+    fi
+
+    print_success "Isolated environment found and functional"
+    echo "  Location: $ISOLATED_NVM_DIR"
+    echo "  Claude Code: $claude_cli"
+    echo ""
+
+    # Check if already installed
+    if [[ -L "$target_path" ]]; then
+        local current_target=$(readlink -f "$target_path")
+        local script_realpath=$(readlink -f "$script_path")
+
+        if [[ "$current_target" == "$script_realpath" ]]; then
+            print_success "Already installed at: $target_path"
+            echo ""
+            echo "You can now run: iclaude"
+            return 0
+        else
+            print_warning "Different installation found at: $target_path"
+            echo "  Current: $current_target"
+            echo "  New:     $script_realpath"
+            echo ""
+            echo "Remove existing installation first:"
+            echo "  sudo iclaude --uninstall-symlink"
+            return 1
+        fi
+    fi
+
+    # Create symlink
+    ln -sf "$(readlink -f "$script_path")" "$target_path"
+    chmod +x "$target_path"
+
+    echo ""
+    print_success "Global symlink created successfully!"
+    echo ""
+    echo "  Symlink: $target_path"
+    echo "  Target:  $(readlink -f "$script_path")"
+    echo ""
+    print_info "Using isolated environment (NO system npm required):"
+    echo "  Node.js: $(find "$ISOLATED_NVM_DIR/versions/node" -name node -type f 2>/dev/null | head -1)"
+    echo "  Claude Code: $claude_cli"
+    echo ""
+    echo "You can now run: iclaude"
+}
+
+#######################################
+# Remove global symlink only (keeps isolated environment)
+#######################################
+uninstall_symlink_only() {
+    local target_path="/usr/local/bin/iclaude"
+
+    # Check if running with sudo
+    if [[ $EUID -ne 0 ]]; then
+        print_error "Removing symlink requires sudo privileges"
+        echo ""
+        echo "Run: sudo $0 --uninstall-symlink"
+        exit 1
+    fi
+
+    echo ""
+
+    # Check if symlink exists
+    if [[ ! -e "$target_path" ]]; then
+        print_info "Symlink not found at: $target_path"
+        echo ""
+        echo "Nothing to remove"
+        return 0
+    fi
+
+    # Show what will be removed
+    if [[ -L "$target_path" ]]; then
+        local link_target=$(readlink -f "$target_path")
+        print_info "Removing symlink:"
+        echo "  Symlink: $target_path"
+        echo "  Target:  $link_target"
+    else
+        print_warning "File at $target_path is not a symlink"
+        echo ""
+        read -p "Remove anyway? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            print_info "Cancelled"
+            return 1
+        fi
+    fi
+
+    # Remove symlink
+    rm -f "$target_path"
+
+    echo ""
+    print_success "Symlink removed successfully"
+    echo ""
+    print_info "Note: Isolated environment is preserved"
+    echo "  Location: $ISOLATED_NVM_DIR"
+    echo "  To use locally: ./iclaude.sh"
+    echo "  To recreate symlink: sudo ./iclaude.sh --create-symlink"
+}
+
+#######################################
 # Launch Claude Code
 # Arguments:
 #   $1 - skip_isolated (optional): "true" to skip isolated environment
@@ -2490,11 +2716,14 @@ OPTIONS:
   -c, --clear                       Clear saved credentials
   --no-proxy                        Launch Claude Code without proxy
   --restore-git-proxy               Restore git proxy settings from backup
-  --install                         Install script globally (requires sudo)
+  --install                         Install script globally (requires sudo + system npm)
   --uninstall                       Uninstall script from system (requires sudo)
-  --update                          Update Claude Code to latest version (requires sudo)
+  --create-symlink                  Create global symlink using isolated environment (NO system npm)
+  --uninstall-symlink               Remove global symlink only (keeps isolated environment)
+  --update                          Update system Claude Code to latest version
   --check-update                    Check for available updates without installing
   --isolated-install                Install NVM + Node.js + Claude in isolated environment
+  --isolated-update                 Update Claude Code in isolated environment (NO sudo)
   --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup)
   --check-isolated                  Show status of isolated environment
   --cleanup-isolated                Remove isolated environment (keeps lockfile)
@@ -2559,29 +2788,39 @@ EXAMPLES:
   iclaude --save
 
 ISOLATED ENVIRONMENT (Recommended):
-  # Install in isolated environment (first time)
-  iclaude --isolated-install
+  # Install in isolated environment (first time, NO system npm needed)
+  ./iclaude.sh --isolated-install
+
+  # Create global symlink to use 'iclaude' from anywhere (NO system npm!)
+  sudo ./iclaude.sh --create-symlink
 
   # Check isolated environment status (includes symlink check)
-  iclaude --check-isolated
+  ./iclaude.sh --check-isolated
+
+  # Update Claude Code in isolated environment (NO sudo needed)
+  ./iclaude.sh --isolated-update
 
   # Install from lockfile (reproducible setup on another machine)
-  iclaude --install-from-lockfile
+  ./iclaude.sh --install-from-lockfile
 
   # After git clone - repair symlinks and permissions
   ./iclaude.sh --repair-isolated
 
-  # Update Claude Code in isolated environment
-  ./iclaude.sh --update
+  # Remove global symlink only (keeps isolated environment)
+  sudo iclaude --uninstall-symlink
 
-  # Update system installation instead of isolated (with --system)
-  ./iclaude.sh --system --update
+  # Clean up isolated environment (keeps lockfile for reinstall)
+  ./iclaude.sh --cleanup-isolated
+
+SYSTEM INSTALLATION (Alternative):
+  # Update system Claude Code installation (requires sudo for system install)
+  sudo iclaude --update
 
   # Run Claude Code from system installation (skip isolated)
   iclaude --system
 
-  # Clean up isolated environment (keeps lockfile for reinstall)
-  iclaude --cleanup-isolated
+  # Update system installation explicitly (skip isolated)
+  sudo iclaude --system --update
 
 ISOLATED CONFIGURATION:
   # Check current configuration directory
@@ -2725,6 +2964,14 @@ main() {
                 uninstall_script
                 exit $?
                 ;;
+            --create-symlink)
+                create_symlink_only
+                exit $?
+                ;;
+            --uninstall-symlink)
+                uninstall_symlink_only
+                exit $?
+                ;;
             --update)
                 update_claude_code "$use_system"
                 exit $?
@@ -2789,6 +3036,17 @@ main() {
                 fi
                 check_isolated_status
                 exit 0
+                ;;
+            --isolated-update)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --isolated-update"
+                    echo ""
+                    echo "The --system flag skips isolated environment, but --isolated-update"
+                    echo "is specifically for updating Claude Code in isolated environment."
+                    exit 1
+                fi
+                update_isolated_claude
+                exit $?
                 ;;
             --no-test)
                 skip_test=true

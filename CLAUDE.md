@@ -254,14 +254,43 @@ CLAUDE_CONFIG_DIR=$SCRIPT_DIR/.nvm-isolated/.claude-isolated
 
 ## Common Commands
 
-### Installation
+### Isolated Environment (Recommended)
 ```bash
-# Install globally (creates /usr/local/bin/iclaude)
-# Automatically checks and installs dependencies
+# Install isolated environment (NO system npm required!)
+./iclaude.sh --isolated-install
+
+# Create global symlink (NO system npm required!)
+sudo ./iclaude.sh --create-symlink
+
+# Update Claude Code in isolated environment (NO sudo!)
+./iclaude.sh --isolated-update
+
+# Check status
+./iclaude.sh --check-isolated
+
+# Repair after git clone
+./iclaude.sh --repair-isolated
+
+# Remove symlink only (keeps isolated environment)
+sudo iclaude --uninstall-symlink
+```
+
+### System Installation (Alternative)
+```bash
+# Install globally (requires sudo + system npm ~200MB)
 sudo ./iclaude.sh --install
 
 # Uninstall
 sudo iclaude --uninstall
+
+# Update system Claude Code
+sudo iclaude --update
+
+# Launch from system installation (skip isolated)
+iclaude --system
+
+# Update system installation (skip isolated)
+sudo iclaude --system --update
 ```
 
 ### Usage
@@ -281,21 +310,8 @@ iclaude --clear
 # Launch without proxy
 iclaude --no-proxy
 
-# Update Claude Code
-iclaude --update  # For NVM installations
-sudo iclaude --update  # For system installations
-
-# Update system installation (skip isolated)
-iclaude --system --update
-
-# Launch from system installation (skip isolated)
-iclaude --system
-
-# Check isolated environment status
-./iclaude.sh --check-isolated
-
-# Repair symlinks after git clone
-./iclaude.sh --repair-isolated
+# Check updates
+iclaude --check-update
 ```
 
 For detailed usage information, see [README.md](README.md).
