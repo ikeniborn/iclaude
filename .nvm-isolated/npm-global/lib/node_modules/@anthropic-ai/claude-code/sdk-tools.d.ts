@@ -23,9 +23,11 @@ export type ToolInputSchemas =
   | McpInput
   | NotebookEditInput
   | ReadMcpResourceInput
+  | TimeMachineInput
   | TodoWriteInput
   | WebFetchInput
-  | WebSearchInput;
+  | WebSearchInput
+  | MultipleChoiceQuestionInput;
 
 export interface AgentInput {
   /**
@@ -247,6 +249,20 @@ export interface ReadMcpResourceInput {
    */
   uri: string;
 }
+export interface TimeMachineInput {
+  /**
+   * The prefix of the user message to rewind to (searches backwards for first match)
+   */
+  message_prefix: string;
+  /**
+   * The new instructions to inject after rewinding, explaining what to do differently
+   */
+  course_correction: string;
+  /**
+   * Whether to restore code changes using file history (default: true)
+   */
+  restore_code?: boolean;
+}
 export interface TodoWriteInput {
   /**
    * The updated todo list
@@ -280,4 +296,1197 @@ export interface WebSearchInput {
    * Never include search results from these domains
    */
   blocked_domains?: string[];
+}
+export interface MultipleChoiceQuestionInput {
+  /**
+   * Questions to ask the user (1-4 questions)
+   *
+   * @minItems 1
+   * @maxItems 4
+   */
+  questions:
+    | [
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        }
+      ]
+    | [
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        }
+      ]
+    | [
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        }
+      ]
+    | [
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        },
+        {
+          /**
+           * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+           */
+          question: string;
+          /**
+           * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+           */
+          header: string;
+          /**
+           * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+           *
+           * @minItems 2
+           * @maxItems 4
+           */
+          options:
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ]
+            | [
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                },
+                {
+                  /**
+                   * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+                   */
+                  label: string;
+                  /**
+                   * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+                   */
+                  description: string;
+                }
+              ];
+          /**
+           * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+           */
+          multiSelect: boolean;
+        }
+      ];
+  /**
+   * User answers collected by the permission component
+   */
+  answers?: {
+    [k: string]: string;
+  };
 }

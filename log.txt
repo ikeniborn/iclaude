@@ -1,0 +1,33 @@
+[i.y.tischenko@wufdrl012550031 claude]$ ./iclaude.sh
+ℹ Using isolated configuration (automatic): /home/UF.RT.RU/i.y.tischenko/Документы/Git/claude/.nvm-isolated/.claude-isolated
+
+
+═══════════════════════════════════════
+  Claude Code Proxy Initializer v2.0
+═══════════════════════════════════════
+
+ℹ Saved proxy found
+
+  URL: https://ikeniborn:****@proxy.ikeniborn.ru:8118
+
+ℹ Configuring proxy...
+ℹ Git will use NO_PROXY for localhost/127.0.0.1 and git hosting services
+✓ Credentials saved to: /home/UF.RT.RU/i.y.tischenko/Документы/Git/claude/.claude_proxy_credentials
+
+✓ Proxy configured:
+
+  HTTPS_PROXY: https://ikeniborn:****@proxy.ikeniborn.ru:8118
+  HTTP_PROXY:  https://ikeniborn:****@proxy.ikeniborn.ru:8118
+  NO_PROXY:    localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org
+
+ℹ Git will bypass proxy for: localhost, 127.0.0.1, github.com, gitlab.com, bitbucket.org
+
+ℹ Testing proxy connectivity...
+✓ Proxy connection successful
+
+
+ℹ Launching Claude Code...
+
+ℹ Using Claude Code: /home/UF.RT.RU/i.y.tischenko/Документы/Git/claude/.nvm-isolated/npm-global/bin/claude
+
+/usr/bin/env: «node»: Нет такого файла или каталога
