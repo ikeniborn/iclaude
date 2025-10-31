@@ -354,8 +354,17 @@ setup_isolated_nvm() {
 	export NVM_DIR="$ISOLATED_NVM_DIR"
 	export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
 
-	# Add isolated paths to PATH (prepend to prioritize isolated over system)
-	export PATH="$NPM_CONFIG_PREFIX/bin:$NVM_DIR/versions/node/*/bin:$PATH"
+	# Найти установленную версию Node.js (раскрыть глоб)
+	local node_version_dir=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | head -1)
+
+	if [[ -n "$node_version_dir" ]] && [[ -d "$node_version_dir/bin" ]]; then
+		# Add isolated paths to PATH (prepend to prioritize isolated over system)
+		export PATH="$NPM_CONFIG_PREFIX/bin:$node_version_dir/bin:$PATH"
+	else
+		# Fallback: add npm-global/bin only
+		export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+		print_warning "Node.js not found in isolated environment"
+	fi
 
 	return 0
 }
