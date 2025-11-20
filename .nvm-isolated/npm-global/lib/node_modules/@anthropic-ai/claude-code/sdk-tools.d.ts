@@ -27,7 +27,7 @@ export type ToolInputSchemas =
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
-  | MultipleChoiceQuestionInput;
+  | AskUserQuestionInput;
 
 export interface AgentInput {
   /**
@@ -182,7 +182,7 @@ export interface GrepInput {
    */
   "-C"?: number;
   /**
-   * Show line numbers in output (rg -n). Requires output_mode: "content", ignored otherwise.
+   * Show line numbers in output (rg -n). Requires output_mode: "content", ignored otherwise. Defaults to true.
    */
   "-n"?: boolean;
   /**
@@ -194,9 +194,13 @@ export interface GrepInput {
    */
   type?: string;
   /**
-   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). When unspecified, shows all results from ripgrep.
+   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults based on "cap" experiment value: 0 (unlimited), 20, or 100.
    */
   head_limit?: number;
+  /**
+   * Skip first N lines/entries before applying head_limit, equivalent to "| tail -n +N | head -N". Works across all output modes. Defaults to 0.
+   */
+  offset?: number;
   /**
    * Enable multiline mode where . matches newlines and patterns can span lines (rg -U --multiline-dotall). Default: false.
    */
@@ -297,7 +301,7 @@ export interface WebSearchInput {
    */
   blocked_domains?: string[];
 }
-export interface MultipleChoiceQuestionInput {
+export interface AskUserQuestionInput {
   /**
    * Questions to ask the user (1-4 questions)
    *
