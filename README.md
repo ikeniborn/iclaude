@@ -265,7 +265,7 @@ sudo ./iclaude.sh --create-symlink
 - **[.claude/skills/](/.claude/skills/)** - Исходники всех skills
 
 **Templates:**
-- **[task-lite-template-v3.md](task-lite-template-v3.md)** - Simple tasks (одна фаза, <10 steps)
+- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** - Simple tasks (одна фаза, <10 steps) - **РЕКОМЕНДУЕТСЯ**
 - **[task-planning-template-v3.md](task-planning-template-v3.md)** - Планирование (разбиение на 2-5 фаз)
 - **[task-execution-template-v3.md](task-execution-template-v3.md)** - Выполнение одной фазы
 

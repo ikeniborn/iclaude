@@ -223,8 +223,10 @@ Phase 3: Frontend Integration (6 steps)
 
 Проект включает 3 skills-based templates для разных типов задач:
 
-### [task-lite-template-v3.md](task-lite-template-v3.md)
+### [task-lite-template-v3.1.md](task-lite-template-v3.1.md) **← РЕКОМЕНДУЕТСЯ**
 **Назначение:** Simple tasks (одна фаза, <10 steps, один компонент)
+
+**Для пользователя:** Просто опишите задачи в секции "## 📋 Задачи". Claude автоматически применит нужные skills, создаст план, запросит подтверждение и выполнит.
 
 **Когда использовать:**
 - Bug fixes
@@ -232,13 +234,27 @@ Phase 3: Frontend Integration (6 steps)
 - Простой рефакторинг (<5 файлов)
 - Обновление документации
 
-**Skills:** structured-planning, validation-framework, git-workflow, thinking-framework
+**Skills (автоматические):** structured-planning, validation-framework, git-workflow, thinking-framework, approval-gates, error-handling
 
-**Пример запроса:**
+**Ключевые улучшения v3.1:**
+- ✅ Секция "## 📋 Задачи" для пользователя
+- ✅ Skills используются автоматически (скрыты в `<details>`)
+- ✅ Workflow описан естественным языком
+- ✅ Пользователь не должен знать про skills
+
+**Пример использования:**
+```markdown
+## 📋 Задачи
+
+1. Добавить метод calculate_total() в BudgetService
+2. Обновить тесты
+
+Acceptance Criteria:
+- Метод возвращает корректную сумму
+- Все тесты проходят
 ```
-"Добавь метод calculate_total в BudgetService"
-"Исправь bug с null pointer в validator"
-```
+
+Claude автоматически: проанализирует → создаст план → запросит подтверждение → выполнит → создаст commit.
 
 ---
 
@@ -285,13 +301,14 @@ Phase 3: Frontend Integration (6 steps)
 
 **Template Size Comparison:**
 
-| Template | Lines | Reduction vs v2 |
-|----------|-------|----------------|
-| task-lite-template-v3.md | 393 | N/A (new) |
-| task-planning-template-v3.md | 730 | -39% (было 1201) |
-| task-execution-template-v3.md | 541 | -53% (было 1157) |
+| Template | Lines | Notes |
+|----------|-------|-------|
+| task-lite-template-v3.1.md | 505 | **РЕКОМЕНДУЕТСЯ** - User-friendly, skills автоматические |
+| task-lite-template-v3.md | 393 | Legacy - требует знания skills |
+| task-planning-template-v3.md | 730 | -39% vs v2 (было 1201) |
+| task-execution-template-v3.md | 541 | -53% vs v2 (было 1157) |
 
-**Total savings:** 1087 lines (46% reduction) благодаря skills-based architecture.
+**Total savings:** 46% reduction благодаря skills-based architecture.
 
 ---
 

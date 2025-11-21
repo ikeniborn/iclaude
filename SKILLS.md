@@ -40,13 +40,22 @@
 
 ### Skills-Based Templates
 
-Проект включает 3 готовых template, которые используют skills для автоматизации:
+Проект включает готовые templates, которые используют skills для автоматизации:
 
-- **[task-lite-template-v3.md](task-lite-template-v3.md)** (393 строки) - Simple tasks, одна фаза
+- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** (505 строк) - Simple tasks, **РЕКОМЕНДУЕТСЯ**
+  - User-friendly: пользователь пишет только задачи
+  - Skills используются автоматически (скрыты в `<details>`)
+  - Workflow описан естественным языком
+
+- **[task-lite-template-v3.md](task-lite-template-v3.md)** (393 строки) - Legacy версия
+  - Требует знания skills от пользователя
+
 - **[task-planning-template-v3.md](task-planning-template-v3.md)** (730 строк) - Планирование 2-5 фаз
 - **[task-execution-template-v3.md](task-execution-template-v3.md)** (541 строка) - Выполнение одной фазы
 
-**Template optimization:** v3 templates на 46% короче чем v2 (1271 vs 2358 строк) благодаря использованию skills вместо inline инструкций.
+**Template optimization:** v3 templates на 46% короче чем v2 благодаря использованию skills вместо inline инструкций.
+
+**v3.1 улучшения:** User-friendly интерфейс - пользователь не должен знать про skills, Claude применяет их автоматически.
 
 Подробнее см. [CLAUDE.md - Templates](CLAUDE.md#templates)
 
