@@ -49,6 +49,12 @@
   - Skills используются автоматически (скрыты в `<details>`)
   - Workflow описан естественным языком
 
+- **[task-planning-template-v3.1.md](task-planning-template-v3.1.md)** (~850 строк) - Multi-phase planning - **РЕКОМЕНДУЕТСЯ**
+  - User-friendly: пользователь описывает только задачу
+  - Skills используются автоматически (скрыты в `<details>`)
+  - Автоматическая декомпозиция на 2-5 фаз
+  - Примеры вывода для каждого этапа (анализ, JSON, master plan, phase files, approval)
+
 - **[task-execution-template-v3.1.md](task-execution-template-v3.1.md)** (613 строк) - Phase execution - **РЕКОМЕНДУЕТСЯ**
   - User-friendly: пользователь указывает только phase file
   - Автоматические checkpoints, validation, git commit
@@ -59,8 +65,11 @@
 - **[task-lite-template-v3.md](task-lite-template-v3.md)** (393 строки) - Legacy версия
   - Требует знания skills от пользователя
 
-- **[task-planning-template-v3.md](task-planning-template-v3.md)** (730 строк) - Планирование 2-5 фаз
+- **[task-planning-template-v3.md](task-planning-template-v3.md)** (730 строк) - Legacy версия
+  - Требует знания skills от пользователя
+
 - **[task-execution-template-v3.md](task-execution-template-v3.md)** (541 строка) - Legacy версия
+  - Требует знания skills от пользователя
 
 **Template optimization:** v3 templates на 46% короче чем v2 благодаря использованию skills вместо inline инструкций.
 
