@@ -4,813 +4,485 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a utility tool for launching Claude Code through HTTP/SOCKS5 proxies with automatic credential management. The project consists of a single bash script that can be installed globally.
-
-## Available Skills
-
-The project uses Claude Skills to automate common development tasks. See [SKILLS.md](SKILLS.md) for detailed documentation.
-
-### 🔧 [Bash Development](/.claude/skills/bash-development/SKILL.md)
-Автоматизирует создание bash-функций, добавление флагов, рефакторинг кода, обработку ошибок.
-
-**Use when:** Adding new features, refactoring functions, working with environment variables.
-
-**Example requests:**
-- "Добавь новый флаг --timeout для ограничения времени ожидания"
-- "Создай функцию для ротации credentials backups"
-- "Рефактори функцию launch_claude() для улучшения читаемости"
-
-### 🌐 [Proxy Management](/.claude/skills/proxy-management/SKILL.md)
-Автоматизирует настройку прокси, тестирование подключений, отладку TLS проблем.
-
-**Use when:** Debugging proxy issues, adding proxy protocols, working with certificates.
-
-**Example requests:**
-- "Отладь проблему с HTTPS прокси и самоподписанным сертификатом"
-- "Добавь поддержку SOCKS4 прокси"
-- "Почему proxy test failed с HTTP 407?"
-
-### 📦 [Isolated Environment](/.claude/skills/isolated-environment/SKILL.md)
-Управляет изолированным NVM окружением в директории проекта для воспроизводимых установок.
-
-**Use when:** Setting up isolated environment, working with lockfiles, managing reproducible installations.
-
-**Example requests:**
-- "Установи Claude Code в изолированное окружение"
-- "Создай lockfile текущей установки"
-- "Почему isolated environment не обнаруживается?"
-
----
-
-## Universal Skills (для любых проектов)
-
-Проект использует 8 универсальных скилов для оптимизации workflow. Эти скилы применимы к **любым проектам**, не только к init_claude.
-
-### 📋 [Structured Planning](/.claude/skills/structured-planning/SKILL.md)
-Создание структурированных планов с JSON Schema валидацией.
-
-**Use when:** Creating task plans, defining execution steps, identifying risks, planning validation.
-
-**Example requests:**
-- "Создай структурированный план с JSON валидацией"
-- "Спланируй execution steps для добавления функции X"
-
-### ✅ [Validation Framework](/.claude/skills/validation-framework/SKILL.md)
-Комплексная валидация через acceptance criteria, PRD compliance, syntax и functional checks.
-
-**Use when:** Validating results, checking acceptance criteria, syntax checks, PRD compliance.
-
-**Example requests:**
-- "Провалидируй acceptance criteria для выполненной задачи"
-- "Выполни syntax checks для измененных файлов"
-
-### 🔀 [Git Workflow](/.claude/skills/git-workflow/SKILL.md)
-Conventional Commits формат, changelog generation, structured git operations.
-
-**Use when:** Creating commits, generating changelogs, following semantic versioning.
-
-**Example requests:**
-- "Создай commit с Conventional Commits форматом"
-- "Сгенерируй changelog entry для GitHub Release"
-
-### 🧠 [Thinking Framework](/.claude/skills/thinking-framework/SKILL.md)
-Структурированный reasoning для критических решений.
-
-**Use when:** Analyzing tasks, making technical decisions, assessing risks, comparing solutions.
-
-**Example requests:**
-- "Проанализируй выбор между PostgreSQL и MongoDB"
-- "Оцени риски рефакторинга OrderService"
-
-### ⏸️  [Approval Gates](/.claude/skills/approval-gates/SKILL.md)
-Программные approval gates для explicit confirmation.
-
-**Use when:** Getting plan confirmation, preventing automatic execution, requesting approval for destructive operations.
-
-**Example requests:**
-- "Получи подтверждение плана перед выполнением"
-- "Запроси approval для деструктивной операции"
-
-### ❌ [Error Handling](/.claude/skills/error-handling/SKILL.md)
-Типовая обработка ошибок с правильными actions (STOP/RETRY/ASK/BLOCKING).
-
-**Use when:** Handling errors, determining retry logic, structured error messages.
-
-**Example requests:**
-- "Обработай syntax error с правильным action"
-- "Определи retry strategy для validation failure"
-
-### 🔄 [Phase Execution](/.claude/skills/phase-execution/SKILL.md)
-Автоматизация выполнения ОДНОЙ фазы из готового phase file с checkpoint validation.
-
-**Use when:** Executing a specific phase from ready phase file, checkpoint-driven execution, automated parse→validate→execute→commit workflow.
-
-**Example requests:**
-- "Выполни Phase 2 из plans/phase-2-backend-api.md"
-- "Execute следующую фазу"
-
-### 📦 [Task Decomposition](/.claude/skills/task-decomposition/SKILL.md)
-Автоматизация разбиения complex задачи на 2-5 логических фаз с генерацией master plan и phase files.
-
-**Use when:** Task is too large for one commit, logical phases with dependencies, acceptance criteria can be split per phase.
-
-**Example requests:**
-- "Разбей задачу 'Добавить систему аутентификации' на фазы"
-- "Создай multi-phase plan для добавления X"
-
----
-
-## Phase-Based Workflow
-
-Для сложных задач (>10 steps, >5 файлов, multiple компонент) используется **phase-based workflow** - разбиение задачи на 2-5 логических фаз с отдельными commits.
-
-### Когда использовать Phase-Based Workflow
-
-✅ **Используй когда:**
-- Задача затрагивает > 5 файлов или > 10 steps
-- Есть логические этапы с dependencies (database → backend → frontend)
-- Acceptance criteria можно разделить по фазам
-- Нужна возможность rollback отдельных частей
-
-❌ **НЕ используй для:**
-- Simple tasks (< 5 steps, один компонент)
-- Bug fixes (обычно single-phase)
-- Tasks без явных фаз
-
-### Workflow
-
-```
-1. TASK DECOMPOSITION
-   ├─ Decomposition Thinking (thinking-framework)
-   ├─ Создать Task Decomposition JSON (2-5 phases)
-   ├─ Генерировать master plan (plans/master-plan-{slug}.md)
-   ├─ Генерировать phase files (plans/phase-1-{slug}.md, ...)
-   └─ Approval Gate (получить подтверждение)
-
-2. PHASE EXECUTION (для каждой фазы)
-   ├─ Phase Analysis Thinking (thinking-framework)
-   ├─ Checkpoint 1: ЗАГРУЗКА (parse phase file, branch context)
-   ├─ Execute steps from phase_metadata
-   ├─ Checkpoint 2: ВЫПОЛНЕНИЕ (completion criteria validation)
-   ├─ Git Commit (git-workflow)
-   └─ Phase Summary
-
-3. REPEAT
-   └─ Пока все фазы не completed
-```
-
-### Преимущества
-
-- ✅ **Atomic commits:** Каждая фаза = отдельный commit
-- ✅ **Rollback:** Можно откатить отдельные фазы
-- ✅ **Checkpoint validation:** Гарантирует корректность между фазами
-- ✅ **Структурированный процесс:** Не потеряешь контекст
-- ✅ **Параллельная работа:** Multiple developers могут работать над разными фазами
-
-### Пример: JWT Authentication System
-
-**Decomposition:**
-```
-Phase 1: Database Models + Migrations (5 steps)
-Phase 2: Backend API + JWT Logic (7 steps)
-Phase 3: Frontend Integration (6 steps)
-```
-
-**Execution:**
-```bash
-# Phase 1
-"Разбей задачу 'Добавить JWT auth' на фазы"
-# → создает master-plan + 3 phase files
-
-# Phase 2
-"Выполни Phase 1 из plans/phase-1-database-models.md"
-# → checkpoint → execute → validation → commit
-
-# Phase 3
-"Выполни Phase 2 из plans/phase-2-backend-api.md"
-# → проверяет Phase 1 completed → execute → commit
-
-# Phase 4
-"Выполни Phase 3 из plans/phase-3-frontend-integration.md"
-# → execute → commit
-```
-
-**Result:** 3 atomic commits, можно rollback любую фазу отдельно.
-
----
-
-### Quick Reference: Когда использовать какой скил
-
-| Задача | Скил | Примерный запрос |
-|--------|------|------------------|
-| Создать план задачи | structured-planning | "Создай план с JSON валидацией" |
-| Валидировать результаты | validation-framework | "Провалидируй acceptance criteria" |
-| Git commit | git-workflow | "Создай commit с Conventional format" |
-| Анализ перед решением | thinking-framework | "Проанализируй варианты X и Y" |
-| Получить подтверждение | approval-gates | "Получи approval плана" |
-| Обработать ошибку | error-handling | "Обработай syntax error" |
-| **Разбить задачу на фазы** | **task-decomposition** | **"Разбей задачу на 2-5 фаз"** |
-| **Выполнить фазу** | **phase-execution** | **"Выполни Phase 2 из phase-2.md"** |
-| Добавить bash функцию | bash-development | "Добавь флаг --timeout" |
-| Настроить прокси | proxy-management | "Отладь TLS проблему" |
-| Установить изолированно | isolated-environment | "Установи в isolated environment" |
-
-**Подробная документация:** См. [SKILLS.md](SKILLS.md) для полной информации о всех скилах, зависимостях и примерах комбинированного использования.
-
----
-
-## Templates
-
-Проект включает 3 skills-based templates для разных типов задач:
-
-### [task-lite-template-v3.1.md](task-lite-template-v3.1.md) **← РЕКОМЕНДУЕТСЯ**
-**Назначение:** Simple tasks (одна фаза, <10 steps, один компонент)
-
-**Для пользователя:** Просто опишите задачи в секции "## 📋 Задачи". Claude автоматически применит нужные skills, создаст план, запросит подтверждение и выполнит.
-
-**Когда использовать:**
-- Bug fixes
-- Добавление одного метода/функции
-- Простой рефакторинг (<5 файлов)
-- Обновление документации
-
-**Skills (автоматические):** structured-planning, validation-framework, git-workflow, thinking-framework, approval-gates, error-handling
-
-**Ключевые улучшения v3.1:**
-- ✅ Секция "## 📋 Задачи" для пользователя
-- ✅ Skills используются автоматически (скрыты в `<details>`)
-- ✅ Workflow описан естественным языком
-- ✅ Пользователь не должен знать про skills
-
-**Пример использования:**
-```markdown
-## 📋 Задачи
-
-1. Добавить метод calculate_total() в BudgetService
-2. Обновить тесты
-
-Acceptance Criteria:
-- Метод возвращает корректную сумму
-- Все тесты проходят
-```
-
-Claude автоматически: проанализирует → создаст план → запросит подтверждение → выполнит → создаст commit.
-
----
-
-### [task-planning-template-v3.1.md](task-planning-template-v3.1.md) **← РЕКОМЕНДУЕТСЯ**
-**Назначение:** Планирование complex задач (разбиение на 2-5 фаз)
-
-**Для пользователя:** Просто опишите задачу в секции "## 📋 Входные данные". Claude автоматически разобьет на фазы, создаст master plan и phase files, запросит подтверждение.
-
-**Когда использовать:**
-- Задача затрагивает >5 файлов, >10 steps
-- Есть логические фазы с dependencies
-- Acceptance criteria можно разделить по фазам
-- Выполнение займет > 3 часов
-
-**Skills (автоматические):** task-decomposition, thinking-framework, structured-planning, approval-gates, error-handling
-
-**Результат:** Master plan + phase-1.md, phase-2.md, ..., phase-N.md
-
-**Ключевые улучшения v3.1:**
-- ✅ Секция "## 📋 Входные данные" для пользователя
-- ✅ Skills используются автоматически (скрыты в `<details>`)
-- ✅ Workflow описан естественным языком с примерами вывода
-- ✅ Пользователь не должен знать про skills
-
-**Пример использования:**
-```markdown
-## 📋 Входные данные
-
-Добавить систему аутентификации с JWT и refresh tokens
-```
-
-Claude автоматически:
-1. Анализ: Определит 2-5 фаз, dependencies, acceptance criteria mapping
-2. JSON Plan: Создаст структурированный JSON с валидацией
-3. Master Plan: Создаст master-plan-{slug}.md с dependency graph
-4. Phase Files: Создаст phase-{N}-{slug}.md для каждой фазы
-5. Approval Gate: Покажет план и запросит подтверждение
-6. Finalization: Создаст все files → STOP (не выполняет Phase 1 автоматически)
-
-**ВАЖНО:** Этот template ТОЛЬКО планирует, НЕ выполняет код.
-
----
-
-### [task-execution-template-v3.1.md](task-execution-template-v3.1.md) **← РЕКОМЕНДУЕТСЯ**
-**Назначение:** Выполнение ОДНОЙ фазы из готового phase file
-
-**Для пользователя:** Просто укажите путь к phase file. Claude автоматически выполнит фазу с проверками на каждом этапе.
-
-**Когда использовать:**
-- После task-planning-template-v3.md создал phase files
-- Нужно выполнить конкретную фазу с checkpoint validation
-
-**Skills (автоматические):** phase-execution, validation-framework, git-workflow, thinking-framework, error-handling
-
-**Workflow (автоматический):** Checkpoint 1 → Execute → Checkpoint 2 → Git Commit → Phase Summary
-
-**Ключевые улучшения v3.1:**
-- ✅ Секция "## 📋 Входные данные" для пользователя
-- ✅ Skills используются автоматически (скрыты в `<details>`)
-- ✅ Workflow описан естественным языком
-- ✅ Примеры вывода для каждого checkpoint
-
-**Пример использования:**
-```
-## 📋 Входные данные
-
-Выполни Phase 2 из plans/phase-2-backend-api.md
-```
-
-Claude автоматически:
-1. Checkpoint 1: Загрузит phase file → проверит branch context → dependencies
-2. Execute: Выполнит все steps из phase metadata
-3. Checkpoint 2: Проверит completion criteria → syntax checks
-4. Git Commit: Создаст commit с message из phase metadata
-5. Phase Summary: Покажет результат + следующую фазу
-
----
-
-**Template Size Comparison:**
-
-| Template | Lines | Notes |
-|----------|-------|-------|
-| task-lite-template-v3.1.md | 505 | **РЕКОМЕНДУЕТСЯ** - User-friendly, simple tasks |
-| task-lite-template-v3.md | 393 | Legacy - требует знания skills |
-| task-planning-template-v3.md | 730 | -39% vs v2 (было 1201) |
-| task-execution-template-v3.1.md | 613 | **РЕКОМЕНДУЕТСЯ** - User-friendly, phase execution |
-| task-execution-template-v3.md | 541 | Legacy - требует знания skills |
-
-**Total savings:** 46% reduction благодаря skills-based architecture.
+This is a utility tool for launching Claude Code through HTTP/HTTPS proxies with automatic credential management. The project consists of a single bash script (`iclaude.sh`) that can be installed globally or used in an isolated environment.
+
+**Key Features:**
+- ✅ Isolated NVM environment (portable, no system dependencies)
+- ✅ Automatic proxy configuration with credential storage
+- ✅ Lockfile-based reproducibility across machines
+- ✅ HTTPS/HTTP proxy support with certificate management
+- ✅ Git-aware proxy handling (disables proxy for git operations)
 
 ---
 
 ## Architecture
 
-The codebase is a standalone bash script (`iclaude.sh`) that:
+### Core Components
 
-1. **Isolated Environment** (NEW): Installs NVM + Node.js + Claude Code in project directory (`.nvm-isolated/`) by default
-2. **Lockfile-based Reproducibility**: Saves exact versions to `.nvm-isolated-lockfile.json` for consistent setup across machines
-3. **Credential Management**: Stores proxy credentials in `.claude_proxy_credentials` (chmod 600, git-ignored)
-4. **Proxy Configuration**: Sets environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) for Claude Code
-5. **Git Proxy Management**: Automatically disables proxy for git operations while keeping it enabled for Claude Code
-6. **Global Installation**: Creates symlink at `/usr/local/bin/iclaude` for system-wide access
+The script is organized into several key functional areas:
 
-### Key Components
+**1. Proxy Management** (lines 56-183)
+- `validate_proxy_url()` - Validates proxy URL format (http/https/socks5)
+- `parse_proxy_url()` - Extracts protocol, credentials, host, port
+- `validate_certificate_file()` - Validates PEM certificates for HTTPS proxies
+- `export_proxy_certificate_help()` - Displays certificate export instructions
 
-For detailed implementation guidance, use the **bash-development** skill.
+**2. Environment Detection** (lines 185-220)
+- `detect_nvm()` - Detects NVM installation (isolated → system → fallback)
+- Priority: Isolated NVM → System NVM → System Node.js
+- Uses `USE_ISOLATED_BY_DEFAULT=true` to prefer isolated environment
 
-- **Proxy URL Parsing** (lines 143-180): Extracts protocol, username, password, host, port from URLs
-- **Credential Persistence** (lines 332-392): Saves/loads proxy settings from `.claude_proxy_credentials`
-- **Git Proxy Management** (lines 519-580): Automatically saves/restores git proxy settings
-- **Proxy Configuration** (lines 467-515): Sets environment variables and configures git
-- **Proxy Testing** (lines 615-667): Validates connectivity via curl before launching
-- **Isolated Environment Repair** (lines 660-820): Restores symlinks and permissions after git clone
-  - Fixes 4 critical symlinks (npm, npx, corepack, claude)
-  - Verifies Node.js binary permissions
-  - Provides detailed status output with ✓/✗ indicators
-  - Automatically called during updates
-- **Dependency Installation** (lines 684-740): Auto-installs Node.js, npm, and Claude Code if missing
-- **Claude Detection** (lines 745-790, 1419-1506): Finds global Claude Code binary, avoiding local npm installations
+**3. Claude Code Detection** (lines 222-309)
+- `get_nvm_claude_path()` - Finds Claude Code in NVM environment
+- Handles temporary installations (`.claude-*`, `.claude-code-*`)
+- Searches: binary → temporary binary → cli.js → temporary cli.js
 
-## Development Workflows
+**4. Isolated Environment** (lines 347-530)
+- `setup_isolated_nvm()` - Exports environment variables for isolated NVM
+- `install_isolated_nvm()` - Downloads and installs NVM to `.nvm-isolated/`
+- `install_isolated_nodejs()` - Installs Node.js in isolated environment
+- `install_isolated_claude()` - Installs Claude Code in isolated environment
+- `save_isolated_lockfile()` - Saves exact versions to lockfile
 
-### Workflow 1: Adding New Features
+**5. Credential Management** (lines 332-392)
+- `save_credentials()` - Saves proxy settings to `.claude_proxy_credentials` (chmod 600)
+- `load_credentials()` - Loads saved proxy settings
+- `clear_credentials()` - Removes saved credentials
 
-Use the **bash-development** skill for:
+**6. Git Proxy Management** (lines 519-580)
+- `save_git_proxy_settings()` - Backs up existing git proxy config
+- `restore_git_proxy_settings()` - Restores git proxy after Claude exits
+- Uses environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY)
+- Does NOT modify global git config
 
-```
-Добавь новый флаг --retry <count> для повторных попыток подключения к прокси
-```
+**7. Proxy Testing** (lines 615-667)
+- `test_proxy()` - Tests proxy connectivity via curl
+- Validates connection before launching Claude
 
-The skill will guide you through:
-1. Adding the flag to the argument parser
-2. Implementing the retry logic
-3. Adding validation
-4. Updating `show_usage()`
-5. Checking the completion checklist
+**8. Symlink Repair** (lines 660-820)
+- `repair_isolated_symlinks()` - Fixes symlinks after git clone
+- Repairs: npm, npx, corepack, claude (4 critical symlinks)
+- Fixes Node.js binary permissions
 
-### Workflow 2: Proxy Configuration & Debugging
+### Key Constants
 
-Use the **proxy-management** skill for:
-
-```
-Отладь проблему: Test proxy failed с ошибкой "SSL certificate problem: self signed certificate"
-```
-
-The skill will guide you through:
-1. Analyzing the TLS error
-2. Explaining --proxy-ca vs --proxy-insecure
-3. Providing certificate export commands
-4. Testing the solution
-
-### Workflow 3: Combined Tasks
-
-For complex tasks, Claude will automatically combine skills:
-
-```
-Добавь поддержку SOCKS4 прокси в iclaude.sh с полной валидацией и тестированием
-```
-
-Claude uses:
-- **proxy-management** → validates and parses SOCKS4 URLs
-- **bash-development** → creates bash functions with proper error handling
-- **proxy-management** → adds curl tests for SOCKS4
-- **bash-development** → updates documentation
-
-## Isolated Environment (Recommended)
-
-The script supports **isolated installation** where NVM, Node.js, and Claude Code are installed in the project directory (`.nvm-isolated/`) instead of globally. This approach:
-
-✅ **Avoids conflicts** with system NVM installations
-✅ **Enables reproducible setups** via lockfile (`.nvm-isolated-lockfile.json`)
-✅ **Portable across machines** - commit lockfile, not 200MB+ binaries
-✅ **Used by default** when available
-
-### Isolated Installation Workflow
-
-**Initial Setup:**
 ```bash
-# Install everything in isolated environment
-./iclaude.sh --isolated-install
-
-# This creates:
-# - .nvm-isolated/          (git-ignored, ~200-300MB)
-# - .nvm-isolated-lockfile.json (commit this!)
+SCRIPT_DIR                    # Resolved script directory (follows symlinks)
+CREDENTIALS_FILE              # .claude_proxy_credentials
+GIT_BACKUP_FILE              # .claude_git_proxy_backup
+ISOLATED_NVM_DIR             # .nvm-isolated/
+ISOLATED_LOCKFILE            # .nvm-isolated-lockfile.json
+USE_ISOLATED_BY_DEFAULT=true # Use isolated env by default
 ```
 
-**Check Status:**
+### File Structure
+
+```
+iclaude.sh                          # Main script (~2000 lines)
+.claude_proxy_credentials           # Saved proxy settings (chmod 600, git-ignored)
+.nvm-isolated/                      # Isolated NVM installation (~200-300MB, in git)
+  ├── nvm.sh                        # NVM script
+  ├── versions/node/vX.X.X/         # Node.js installation
+  └── .claude-isolated/             # Isolated Claude config (session data git-ignored)
+      ├── CLAUDE.md                 # This file (synced from main project)
+      └── skills/                   # Claude Skills (synced from .claude/skills/)
+.nvm-isolated-lockfile.json         # Version lockfile (in git)
+.claude/                            # Main project Claude config
+  └── skills/                       # Master copy of Skills
+```
+
+---
+
+## Development Commands
+
+### Testing Changes
+
 ```bash
+# Test locally without installation
+./iclaude.sh
+
+# Test with proxy
+./iclaude.sh --proxy http://user:pass@localhost:8118
+
+# Test proxy connectivity only (no launch)
+./iclaude.sh --test
+
+# Check isolated environment status
 ./iclaude.sh --check-isolated
-```
 
-**Setup on Another Machine:**
-
-*Option 1: Full environment from git (includes .nvm-isolated/)*
-```bash
-# Clone repository
-git clone <repo>
-
-# Repair symlinks after git clone
+# Repair symlinks after git operations
 ./iclaude.sh --repair-isolated
-
-# Ready to use
-./iclaude.sh
 ```
 
-*Option 2: Install from lockfile (lighter for git)*
+### Common Development Tasks
+
+**1. Add a new command-line flag:**
 ```bash
-# Clone repository (includes lockfile only)
-git clone <repo>
-
-# Install exact same versions from lockfile
-./iclaude.sh --install-from-lockfile
-
-# Ready to use
-./iclaude.sh
+# Use bash-development skill
+"Добавь новый флаг --timeout <seconds> для ограничения времени подключения"
 ```
 
-**Cleanup (preserves lockfile):**
+**2. Debug proxy issues:**
 ```bash
+# Use proxy-management skill
+"Отладь проблему: proxy test failed с ошибкой 'SSL certificate problem'"
+```
+
+**3. Test isolated installation:**
+```bash
+# Clean and reinstall
 ./iclaude.sh --cleanup-isolated
-```
-
-### Isolated Environment Behavior
-
-- **By default**: Script automatically uses `.nvm-isolated/` if it exists
-- **Priority**: Isolated environment > System NVM > System Node.js
-- **Lockfile**: Records exact versions (Node.js, Claude Code, NVM)
-- **Git workflow**: Commit entire `.nvm-isolated/` directory (cache files excluded)
-- **Symlinks**: After git clone, symlinks need restoration (use `--repair-isolated`)
-  - Git stores symlinks as blob references, not actual symlinks
-  - 4 critical symlinks: npm, npx, corepack, claude
-  - Automatic repair during updates
-
-### Files
-
-- `.nvm-isolated/` - Isolated NVM installation (~200-300MB, committed to git)
-- `.nvm-isolated/.claude-isolated/` - Isolated Claude Code config (git-ignored)
-- `.nvm-isolated-lockfile.json` - Version lockfile (committed to git)
-- `.claude_proxy_credentials` - Proxy credentials (chmod 600, git-ignored)
-
-**Note:** Only cache and temporary files are git-ignored (`.cache/`, `.npm/`, `*.log`)
-
-## Isolated Configuration
-
-By default, Claude Code stores all data (history, sessions, credentials) in the shared directory `~/.claude/`, which is used by all installations (isolated and system). This can lead to data loss when switching between installations.
-
-**Isolated configuration** solves this problem by creating a separate storage for each installation:
-
-**Architecture:**
-
-```bash
-# Isolated installation → .nvm-isolated/.claude-isolated/
-# System installation → ~/.claude/
-```
-
-**Automatic behavior:**
-
-- When using isolated installation, configuration is automatically isolated
-- When using system installation (`--system`), shared configuration is used (`~/.claude/`)
-- Can be explicitly controlled via flags
-
-**Configuration management:**
-
-```bash
-# Check current configuration
-./iclaude.sh --check-config
-
-# Explicitly use isolated configuration
-./iclaude.sh --isolated-config
-
-# Explicitly use shared configuration (default)
-./iclaude.sh --shared-config
-
-# Export configuration to backup
-./iclaude.sh --export-config /path/to/backup
-
-# Import configuration from backup
-./iclaude.sh --import-config /path/to/backup
-```
-
-**What is isolated:**
-
-- ✅ Command history (`history.jsonl`)
-- ✅ Active sessions (`session-env/`)
-- ✅ Credentials (`.credentials.json`)
-- ✅ Settings (`settings.json`)
-- ✅ Project settings (`projects/`)
-- ✅ TODO lists (`todos/`)
-- ✅ File history (`file-history/`)
-
-**Environment Variable:**
-
-Claude Code uses the `CLAUDE_CONFIG_DIR` environment variable to determine the configuration directory:
-
-```bash
-# Default (if not set)
-CLAUDE_CONFIG_DIR=$HOME/.claude
-
-# Isolated (set by iclaude.sh)
-CLAUDE_CONFIG_DIR=$SCRIPT_DIR/.nvm-isolated/.claude-isolated
-```
-
-**Note:** Isolated configuration is git-ignored. Use `--export-config` to create backups.
-
-## Common Commands
-
-### Isolated Environment (Recommended)
-```bash
-# Install isolated environment (NO system npm required!)
 ./iclaude.sh --isolated-install
+./iclaude.sh --check-isolated
+```
 
-# Create global symlink (NO system npm required!)
-sudo ./iclaude.sh --create-symlink
+**4. Update lockfile after changes:**
+```bash
+# Automatic during update
+./iclaude.sh --update
 
-# Update Claude Code in isolated environment (NO sudo!)
-./iclaude.sh --isolated-update
+# Manual update (if needed)
+bash -c 'source ./iclaude.sh && save_isolated_lockfile'
+```
 
-# Check status
+**5. Sync skills to isolated environment:**
+```bash
+# Manual sync (skills auto-sync during isolated-install)
+cp -r .claude/skills/* .nvm-isolated/.claude-isolated/skills/
+```
+
+### Debugging
+
+**Enable bash tracing:**
+```bash
+bash -x ./iclaude.sh [args]
+```
+
+**Check environment variables:**
+```bash
+# After sourcing isolated environment
+source <(./iclaude.sh --check-isolated 2>&1 | grep "export")
+env | grep -E "(NVM_DIR|PATH|HTTPS_PROXY|HTTP_PROXY|NODE_EXTRA_CA_CERTS)"
+```
+
+**Debug Claude Code detection:**
+```bash
+# Test detection logic
+bash -c 'source ./iclaude.sh && setup_isolated_nvm && get_nvm_claude_path'
+```
+
+**Check symlink status:**
+```bash
+# Detailed symlink check
 ./iclaude.sh --check-isolated
 
-# Repair after git clone
-./iclaude.sh --repair-isolated
-
-# Remove symlink only (keeps isolated environment)
-sudo iclaude --uninstall-symlink
+# Manual inspection
+ls -la .nvm-isolated/versions/node/*/bin/{npm,npx,corepack,claude}
 ```
 
-### System Installation (Alternative)
+---
+
+## Skills System
+
+This project uses **Claude Skills** - modular templates for automating development tasks.
+
+### Available Skills
+
+**Project-Specific:**
+- 🔧 **bash-development** - Add features, refactor functions, handle errors
+- 🌐 **proxy-management** - Configure proxies, debug TLS, test connections
+- 📦 **isolated-environment** - Manage isolated NVM, lockfiles, symlinks
+
+**Universal (work in any project):**
+- 📋 **structured-planning** - Create plans with JSON validation
+- ✅ **validation-framework** - Validate acceptance criteria, syntax
+- 🔀 **git-workflow** - Conventional Commits, changelog generation
+- 🧠 **thinking-framework** - Structured reasoning for decisions
+- ⏸️ **approval-gates** - Request confirmation before critical actions
+- ❌ **error-handling** - Handle errors with proper actions (STOP/RETRY/ASK)
+- 🔄 **phase-execution** - Execute single phase from phase file
+- 📦 **task-decomposition** - Break complex tasks into 2-5 phases
+
+**Usage:** Simply describe the task to Claude, and the appropriate skill will be applied automatically.
+
+**Examples:**
+- "Добавь флаг --retry для повторных попыток"
+- "Отладь TLS ошибку с HTTPS прокси"
+- "Создай lockfile для текущей установки"
+
+**Full Documentation:** See [SKILLS.md](SKILLS.md)
+
+---
+
+## Common Development Patterns
+
+### Adding a New Proxy Feature
+
+**Example: Add SOCKS4 support**
+
+1. **Update URL validation** (`validate_proxy_url`):
+   ```bash
+   if [[ ! "$url" =~ ^(http|https|socks4|socks5)://.*:[0-9]+$ ]]; then
+   ```
+
+2. **Update proxy parsing** (`parse_proxy_url`):
+   Already handles all protocols generically.
+
+3. **Test proxy connectivity** (`test_proxy`):
+   Add SOCKS4-specific curl test:
+   ```bash
+   curl --socks4 "$host:$port" --proxy-user "$username:$password" ...
+   ```
+
+4. **Update help text** (`show_usage`):
+   Add SOCKS4 to supported protocols list.
+
+5. **Test:**
+   ```bash
+   ./iclaude.sh --proxy socks4://user:pass@localhost:1080 --test
+   ```
+
+### Adding Environment Management Functions
+
+**Example: Add function to backup isolated environment**
+
+1. **Create function:**
+   ```bash
+   backup_isolated_environment() {
+       local backup_name="nvm-isolated-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+       tar -czf "$backup_name" .nvm-isolated/
+       print_success "Backup created: $backup_name"
+   }
+   ```
+
+2. **Add command-line flag:**
+   ```bash
+   --backup-isolated)
+       backup_isolated_environment
+       exit 0
+       ;;
+   ```
+
+3. **Update help text** (`show_usage`).
+
+4. **Test:**
+   ```bash
+   ./iclaude.sh --backup-isolated
+   ```
+
+### Handling Git Clone Symlink Issues
+
+**Problem:** After git clone, symlinks stored as blob references don't work.
+
+**Solution:** The `repair_isolated_symlinks()` function:
+1. Finds Node.js version directory
+2. Recreates 4 critical symlinks: npm, npx, corepack, claude
+3. Fixes Node.js binary permissions
+4. Provides detailed status output (✓/✗)
+
+**Automatic repair:** Called during:
+- `--update`
+- `--isolated-update`
+- `--repair-isolated` (manual)
+
+---
+
+## Environment Priority
+
+### Without `--system` flag:
+
+1. **Isolated environment** (`.nvm-isolated/`) - if exists and `USE_ISOLATED_BY_DEFAULT=true`
+2. **System NVM** - if `NVM_DIR` is set
+3. **System Node.js** - fallback
+
+### With `--system` flag:
+
+1. **System NVM** - if `NVM_DIR` is set
+2. **System Node.js** - fallback
+3. **Isolated environment** - skipped
+
+This allows testing system installation while isolated environment exists.
+
+---
+
+## Security Considerations
+
+### Proxy Credentials
+
+- Stored in `.claude_proxy_credentials` (chmod 600)
+- Git-ignored
+- Contains: protocol, username, password, host, port, proxy_ca, proxy_insecure
+
+### HTTPS Proxy Security
+
+**Recommended:** Use `--proxy-ca` with proxy certificate:
 ```bash
-# Install globally (requires sudo + system npm ~200MB)
-sudo ./iclaude.sh --install
-
-# Uninstall
-sudo iclaude --uninstall
-
-# Update system Claude Code
-sudo iclaude --update
-
-# Launch from system installation (skip isolated)
-iclaude --system
-
-# Update system installation (skip isolated)
-sudo iclaude --system --update
+iclaude --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 ```
 
-### Usage
+**Not Recommended:** `--proxy-insecure` disables TLS verification for ALL connections:
 ```bash
-# Launch with saved credentials
-iclaude
-
-# Set proxy directly
-iclaude --proxy http://user:pass@host:port
-
-# Test proxy without launching Claude
-iclaude --test
-
-# Clear saved credentials
-iclaude --clear
-
-# Launch without proxy
-iclaude --no-proxy
-
-# Check updates
-iclaude --check-update
+iclaude --proxy https://proxy:8118 --proxy-insecure  # ⚠️ INSECURE
 ```
 
-For detailed usage information, see [README.md](README.md).
-
-## Development Notes
-
-### Proxy URL Format
-Supported formats: `http://`, `https://`, `socks5://`
-
-Pattern: `protocol://[username:password@]host:port`
-
-For detailed proxy management, use the **proxy-management** skill.
-
-### Security Considerations
-
-**HTTPS Proxy Security:**
-
-⚠️ **Important:** The `--proxy-insecure` flag disables TLS certificate verification for ALL Node.js connections.
-
-**Secure Solution with `--proxy-ca` (RECOMMENDED):**
+**Export proxy certificate:**
 ```bash
-# ✅ SECURE
-iclaude --proxy https://proxy:8118 --proxy-ca /path/to/proxy-cert.pem
-```
-- ✅ Proxy connection: Uses proxy CA certificate
-- ✅ Claude Code → Anthropic API: FULL TLS VERIFICATION (SECURE)
-
-**How to Export Proxy Certificate:**
-```bash
-# Get help
-iclaude --help-export-cert
-
-# Using openssl
-openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/null | \
+openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
   openssl x509 -outform PEM > proxy-cert.pem
 ```
 
-For troubleshooting TLS issues, use the **proxy-management** skill.
+### Git Proxy Handling
 
-### Script Behavior
-- Uses `set -euo pipefail` for strict error handling
-- Follows symlinks to resolve the script's actual directory
-- **NVM Support**: Automatically detects and uses Claude Code installed via NVM
+- Script uses **environment variables** (HTTPS_PROXY, HTTP_PROXY, NO_PROXY)
+- Does **NOT** modify `git config --global`
+- Proxy settings only apply to current session
+- Git automatically respects NO_PROXY for localhost/127.0.0.1
 
-**Environment Priority (without `--system`):**
-1. Isolated environment (`.nvm-isolated/`) - if exists and `USE_ISOLATED_BY_DEFAULT=true`
-2. System NVM - if `NVM_DIR` is set
-3. System Node.js - fallback
+---
 
-**Environment Priority (with `--system`):**
-1. System NVM - if `NVM_DIR` is set
-2. System Node.js - fallback
-3. Isolated environment is skipped
+## Testing
 
-**Note:** The `--system` flag allows you to explicitly choose system installation even when isolated environment exists. This is useful for:
-- Testing system installation while isolated exists
-- Updating system installation separately
-- Temporary switch without removing isolated environment
+### Manual Test Cases
 
-For adding new bash functions or modifying behavior, use the **bash-development** skill.
+1. **Fresh installation:**
+   ```bash
+   rm -rf .nvm-isolated .nvm-isolated-lockfile.json
+   ./iclaude.sh --isolated-install
+   ./iclaude.sh --check-isolated
+   ```
 
-### Git and Proxy Considerations
+2. **Proxy connectivity:**
+   ```bash
+   ./iclaude.sh --proxy http://test:test@127.0.0.1:8118 --test
+   ```
 
-**Environment Variable Approach:**
+3. **Symlink repair:**
+   ```bash
+   # Simulate git clone by removing symlinks
+   find .nvm-isolated/versions/node/*/bin -type l -delete
+   ./iclaude.sh --repair-isolated
+   ./iclaude.sh --check-isolated
+   ```
 
-The script uses **environment variables** (HTTPS_PROXY, HTTP_PROXY, NO_PROXY) to configure proxy settings. These variables:
-- Only affect the current process and its child processes (like Claude Code)
-- **Do NOT modify global git configuration**
-- Git automatically respects NO_PROXY for localhost and 127.0.0.1
+4. **Update workflow:**
+   ```bash
+   ./iclaude.sh --update
+   ./iclaude.sh --check-isolated  # Verify lockfile updated
+   ```
 
-**Important Notes:**
-- The script does **NOT** modify `git config --global` settings
-- Your system's git configuration remains unchanged
-- Proxy settings only apply to the `iclaude` session and Claude Code
+5. **System vs Isolated:**
+   ```bash
+   ./iclaude.sh              # Uses isolated (default)
+   ./iclaude.sh --system     # Uses system installation
+   ```
 
-### Updating Claude Code
+### No Automated Tests
 
-```bash
-# Check if updates are available
-iclaude --check-update
+Currently no automated test suite exists. All testing is manual.
 
-# Update to latest version
-iclaude --update  # For NVM installations
-sudo iclaude --update  # For system installations
-```
+**Future improvement:** Add integration tests using bash testing framework (e.g., bats).
 
-**NVM-specific behavior:**
-- Automatically detects and cleans up old temporary installations (`.claude-code-*`)
-- Removes broken symlinks (`.claude-*`) before updating
-- Verifies update success by checking for working `cli.js`
+---
 
-**Troubleshooting ENOTEMPTY errors:**
+## Troubleshooting Common Issues
 
-If you see `npm error ENOTEMPTY` during update, the script will offer automatic cleanup or you can do it manually.
+### Skills not available in isolated environment
 
-**Symlink Issues After Git Clone:**
+**Symptoms:** Skills work in main project but not from other projects.
 
-After cloning a repository with `.nvm-isolated/`, symlinks may not work properly:
-
-**Symptoms:**
-- `./iclaude.sh` fails with command not found errors
-- npm/npx commands don't work
-- Claude Code not detected
+**Cause:** Skills not synced to `.nvm-isolated/.claude-isolated/skills/`
 
 **Solution:**
 ```bash
-# Check symlink status
-./iclaude.sh --check-isolated
+# Automatic sync during install
+./iclaude.sh --isolated-install
 
-# Repair all symlinks and permissions
+# Manual sync
+cp -r .claude/skills/* .nvm-isolated/.claude-isolated/skills/
+git add .nvm-isolated/.claude-isolated/skills/
+```
+
+### Symlinks broken after git clone
+
+**Symptoms:** npm/node/claude commands not found.
+
+**Solution:**
+```bash
 ./iclaude.sh --repair-isolated
 ```
 
-The repair function:
-- Verifies and recreates 4 critical symlinks (npm, npx, corepack, claude)
-- Fixes Node.js binary permissions (chmod +x)
-- Provides detailed status output (✓ OK / ✗ BROKEN)
-- Automatically runs during updates
+### Proxy test fails
 
-For detailed update procedures and troubleshooting, use the **bash-development** skill.
-
-### Testing
-
-No automated tests exist. Test manually:
+**Debug:**
 ```bash
-# Test proxy connectivity
-iclaude --test
-
-# Test full flow
-iclaude --proxy http://test:test@127.0.0.1:8118 --no-test
+# Enable curl verbose output
+CURL_VERBOSE="-v" ./iclaude.sh --test
 ```
 
-For creating test cases or debugging issues, use the **bash-development** and **proxy-management** skills together.
+### Lockfile not updating
+
+**Symptoms:** `claudeCodeVersion` in lockfile doesn't match installed version.
+
+**Solution:**
+```bash
+# Fixed in version from 24.10.2025
+# Manual update if using old version:
+bash -c 'source ./iclaude.sh && save_isolated_lockfile'
+```
+
+---
+
+## Additional Resources
+
+- **README.md** - User-facing documentation and usage examples
+- **SKILLS.md** - Comprehensive Skills documentation
+- **Skill Files** - `.claude/skills/*/SKILL.md` for each skill
+
+---
 
 ## Quick Reference
 
 ### When to Use Which Skill
 
-| Task | Skill | Example Request |
-|------|-------|----------------|
-| Add new flag/option | bash-development | "Добавь флаг --retry" |
-| Create bash function | bash-development | "Создай функцию rotate_credentials()" |
-| Refactor code | bash-development | "Рефактори launch_claude()" |
-| Debug proxy issue | proxy-management | "Почему proxy test failed?" |
-| Configure TLS | proxy-management | "Настрой --proxy-ca" |
-| Add proxy protocol | proxy-management + bash-development | "Добавь SOCKS4" |
-| Setup isolated environment | isolated-environment | "Установи изолированное окружение" |
-| Fix symlink issues | isolated-environment | "Почему симлинки не работают после git clone?" |
-| Update documentation | bash-development | "Обнови show_usage()" |
+| Task | Skill | Example |
+|------|-------|---------|
+| Add bash function | bash-development | "Добавь флаг --retry" |
+| Debug proxy | proxy-management | "Почему test failed?" |
+| Manage isolated env | isolated-environment | "Создай lockfile" |
+| Create plan | structured-planning | "Создай план задачи" |
+| Validate results | validation-framework | "Провалидируй criteria" |
+| Git commit | git-workflow | "Создай commit" |
+| Analyze decision | thinking-framework | "Проанализируй опции" |
+| Get approval | approval-gates | "Запроси подтверждение" |
 
-### Common Request Patterns
+### Common Commands
 
-Instead of reading lengthy documentation, just ask Claude with these patterns:
+```bash
+# Development
+./iclaude.sh                          # Launch with isolated env
+./iclaude.sh --test                   # Test proxy only
+./iclaude.sh --check-isolated         # Check status
 
-**Development:**
-- "Добавь новый флаг --{name} для {purpose}"
-- "Создай функцию {name}() которая {description}"
-- "Рефактори {function_name}() для {improvement}"
-- "Добавь валидацию для {parameter}"
+# Installation
+./iclaude.sh --isolated-install       # Install isolated env
+sudo ./iclaude.sh --create-symlink    # Create global symlink
 
-**Proxy Management:**
-- "Отладь проблему с {proxy_type} прокси"
-- "Почему test proxy failed с ошибкой '{error_message}'?"
-- "Как настроить HTTPS прокси с самоподписанным сертификатом?"
-- "Добавь поддержку {protocol} прокси"
+# Maintenance
+./iclaude.sh --update                 # Update Claude Code
+./iclaude.sh --repair-isolated        # Fix symlinks
+./iclaude.sh --cleanup-isolated       # Remove isolated env
 
-**Isolated Environment:**
-- "Установи изолированное окружение"
-- "Почему симлинки не работают после git clone?"
-- "Как проверить статус изолированного окружения?"
-- "Создай lockfile текущей установки"
+# Proxy
+./iclaude.sh --proxy http://...       # Set proxy
+./iclaude.sh --proxy-ca cert.pem      # Use CA certificate
+./iclaude.sh --clear                  # Clear credentials
+./iclaude.sh --no-proxy               # Disable proxy
 
-**Combined:**
-- "Добавь поддержку {feature} с полной валидацией и тестированием"
-- "Оптимизируй {component} для лучшей производительности"
-- "Исправь баг: {description}"
-
-## Additional Resources
-
-- **SKILLS.md**: Comprehensive documentation on available skills
-- **README.md**: User-facing documentation and usage examples
-- **Skill Files**:
-  - `.claude/skills/bash-development/SKILL.md`: Bash development patterns and templates
-  - `.claude/skills/proxy-management/SKILL.md`: Proxy configuration and troubleshooting
+# System vs Isolated
+./iclaude.sh --system                 # Force system installation
+./iclaude.sh --system --update        # Update system installation
+```
 
 ---
 
-**Note:** This document has been optimized to work with Claude Skills. Instead of providing exhaustive details here, we reference specialized skills that contain:
-- Step-by-step implementation guides
-- Code templates
-- Checklists
-- Troubleshooting guides
-- Real-world examples
-
-Simply describe what you want to Claude, and it will automatically use the appropriate skill to help you.
+**Note:** This document focuses on technical architecture and development workflows. For user-facing documentation, see README.md.

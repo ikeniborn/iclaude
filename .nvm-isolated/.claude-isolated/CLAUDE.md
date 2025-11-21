@@ -1,516 +1,488 @@
 # CLAUDE.md
 
-## LANGUAGE
-- Для описания документации и взаимодейсвии с пользвоателем используем русскиий язык (ru)
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## TABLE OF CONTENTS
+## Project Overview
 
-### UNIVERSAL WORKFLOW EXECUTION RULES
-1. [Critical Principles (P1-P5)](#part-i-universal-workflow-execution-rules)
-2. [High Priority Rules (P6-P10)](#2-high-priority-rules-p6-p10)
-3. [Medium Priority Rules (P11-P13)](#3-medium-priority-rules-p11-p13)
-4. [Prohibited & Mandatory Actions](#4-prohibited--mandatory-actions)
-5. [Standard Formats](#5-standard-formats)
+This is a utility tool for launching Claude Code through HTTP/HTTPS proxies with automatic credential management. The project consists of a single bash script (`iclaude.sh`) that can be installed globally or used in an isolated environment.
 
-# UNIVERSAL WORKFLOW EXECUTION RULES
-
-## 1. CRITICAL PRINCIPLES (P1-P5)
-
-### P1: Sequential Execution (CRITICAL)
-**Правило:** Выполняйте фазы и actions СТРОГО последовательно.
-
-**Обязательно:**
-- ✓ Выполняйте фазы в указанном порядке
-- ✓ Выполняйте все actions внутри фазы по порядку
-- ✓ НЕ пропускайте фазы
-- ✓ НЕ пропускайте actions
-- ✓ НЕ меняйте порядок выполнения
-
-**Нарушение:** FATAL - немедленная остановка
+**Key Features:**
+- ✅ Isolated NVM environment (portable, no system dependencies)
+- ✅ Automatic proxy configuration with credential storage
+- ✅ Lockfile-based reproducibility across machines
+- ✅ HTTPS/HTTP proxy support with certificate management
+- ✅ Git-aware proxy handling (disables proxy for git operations)
 
 ---
 
-### P2: Thinking Requirement (CRITICAL)
-**Правило:** ОБЯЗАТЕЛЬНО используйте `<thinking>` перед критическими решениями.
+## Architecture
 
-**Когда обязателен thinking:**
-- Перед началом каждой фазы
-- Перед actions помеченными `requires_thinking="true"`
-- Перед actions с `validation="critical"`
-- Перед принятием важных технических решений
-- При выборе между альтернативными подходами
+### Core Components
 
-**Что должен содержать thinking:**
-- Анализ текущей ситуации
-- Оценка рисков
-- Обоснование выбранного решения
-- Рассмотрение альтернатив
-- План проверки результата
+The script is organized into several key functional areas:
 
-**Формат thinking:**
-```xml
-<thinking>
-1. АНАЛИЗ: [что имеем]
-2. ОПЦИИ: [какие варианты]
-3. ВЫБОР: [что выбираем и почему]
-4. РИСКИ: [что может пойти не так]
-5. ВАЛИДАЦИЯ: [как проверим]
-</thinking>
+**1. Proxy Management** (lines 56-183)
+- `validate_proxy_url()` - Validates proxy URL format (http/https/socks5)
+- `parse_proxy_url()` - Extracts protocol, credentials, host, port
+- `validate_certificate_file()` - Validates PEM certificates for HTTPS proxies
+- `export_proxy_certificate_help()` - Displays certificate export instructions
+
+**2. Environment Detection** (lines 185-220)
+- `detect_nvm()` - Detects NVM installation (isolated → system → fallback)
+- Priority: Isolated NVM → System NVM → System Node.js
+- Uses `USE_ISOLATED_BY_DEFAULT=true` to prefer isolated environment
+
+**3. Claude Code Detection** (lines 222-309)
+- `get_nvm_claude_path()` - Finds Claude Code in NVM environment
+- Handles temporary installations (`.claude-*`, `.claude-code-*`)
+- Searches: binary → temporary binary → cli.js → temporary cli.js
+
+**4. Isolated Environment** (lines 347-530)
+- `setup_isolated_nvm()` - Exports environment variables for isolated NVM
+- `install_isolated_nvm()` - Downloads and installs NVM to `.nvm-isolated/`
+- `install_isolated_nodejs()` - Installs Node.js in isolated environment
+- `install_isolated_claude()` - Installs Claude Code in isolated environment
+- `save_isolated_lockfile()` - Saves exact versions to lockfile
+
+**5. Credential Management** (lines 332-392)
+- `save_credentials()` - Saves proxy settings to `.claude_proxy_credentials` (chmod 600)
+- `load_credentials()` - Loads saved proxy settings
+- `clear_credentials()` - Removes saved credentials
+
+**6. Git Proxy Management** (lines 519-580)
+- `save_git_proxy_settings()` - Backs up existing git proxy config
+- `restore_git_proxy_settings()` - Restores git proxy after Claude exits
+- Uses environment variables (HTTPS_PROXY, HTTP_PROXY, NO_PROXY)
+- Does NOT modify global git config
+
+**7. Proxy Testing** (lines 615-667)
+- `test_proxy()` - Tests proxy connectivity via curl
+- Validates connection before launching Claude
+
+**8. Symlink Repair** (lines 660-820)
+- `repair_isolated_symlinks()` - Fixes symlinks after git clone
+- Repairs: npm, npx, corepack, claude (4 critical symlinks)
+- Fixes Node.js binary permissions
+
+### Key Constants
+
+```bash
+SCRIPT_DIR                    # Resolved script directory (follows symlinks)
+CREDENTIALS_FILE              # .claude_proxy_credentials
+GIT_BACKUP_FILE              # .claude_git_proxy_backup
+ISOLATED_NVM_DIR             # .nvm-isolated/
+ISOLATED_LOCKFILE            # .nvm-isolated-lockfile.json
+USE_ISOLATED_BY_DEFAULT=true # Use isolated env by default
 ```
 
-**Нарушение:** FATAL - действие НЕ ВЫПОЛНЯЕТСЯ без thinking
+### File Structure
 
----
-
-### P3: Mandatory Output Enforcement (CRITICAL)
-**Правило:** Выводите ВСЕ обязательные outputs в указанных форматах.
-
-**Когда output обязателен:**
-- Action помечен `output="required"`
-- Action имеет `mandatory_output` секцию
-- Action имеет `mandatory_format` секцию
-- Checkpoint требует verification_instruction
-
-**Обязательно:**
-- ✓ Используйте ТОЧНО указанный формат
-- ✓ Заполните ВСЕ секции mandatory_format
-- ✓ НЕ сокращайте форматы
-- ✓ НЕ пропускайте секции
-- ✓ НЕ заменяйте формат на "свой"
-
-**Нарушение:** BLOCKING - нельзя продолжить без output
-
----
-
-### P4: Exit Conditions Verification (CRITICAL)
-**Правило:** Проверяйте exit_conditions перед продолжением.
-
-**Обязательно:**
-- ✓ Проверьте ВСЕ conditions в exit_conditions
-- ✓ НЕ продолжайте если хотя бы одно condition не выполнено
-- ✓ Выведите статус каждого condition явно
-- ✓ При невыполнении - выполните violation_action
-
-**Типичные exit_conditions:**
-- Все обязательные actions выполнены
-- Все mandatory_outputs выведены
-- Validation passed
-- Checkpoint пройден
-
-**Нарушение:** FATAL - блокировка перехода к следующему шагу
-
----
-
-### P5: Checkpoint Verification (HIGH)
-**Правило:** Проходите checkpoints с явной верификацией перед переходом между фазами.
-
-**Обязательно:**
-- ✓ Проверьте ВСЕ checks в checkpoint
-- ✓ Выведите verification_instruction если указана
-- ✓ НЕ переходите к следующей фазе пока ВСЕ checks != ✓
-- ✓ Выводите статус checkpoint явно
-
-**Формат checkpoint verification:**
 ```
-PHASE N CHECKPOINT:
-[✓/✗] Check 1: [статус и детали]
-[✓/✗] Check 2: [статус и детали]
-[✓/✗] Check N: [статус и детали]
-
-РЕЗУЛЬТАТ: ✓ PASSED / ✗ FAILED
-Переход к Phase N+1: [ALLOWED/BLOCKED]
-```
-
-**Нарушение:** BLOCKING - нельзя перейти к следующей фазе
-
----
-
-## 2. HIGH-PRIORITY RULES (P6-P10)
-
-### P6: Entry Conditions Check (HIGH)
-**Правило:** Проверяйте entry_conditions перед входом в фазу.
-
-**Обязательно:**
-- ✓ Проверьте все entry conditions
-- ✓ При невыполнении - выполните violation_action
-- ✓ НЕ начинайте фазу без выполнения conditions
-
----
-
-### P7: Blocking Actions Enforcement (HIGH)
-**Правило:** Для actions с `blocking="true"` - строго следуйте ограничениям.
-
-**Обязательно:**
-- ✓ Завершите action полностью
-- ✓ Выведите mandatory_output
-- ✓ Проверьте exit_condition
-- ✓ НЕ продолжайте до выполнения всех требований
-
----
-
-### P8: Validation Level Respect (HIGH)
-**Правило:** Выполняйте validation в соответствии с уровнем.
-
-**Уровни validation:**
-- `critical`: ОБЯЗАТЕЛЬНАЯ проверка, STOP при failure
-- `standard`: Обычная проверка, retry при failure
-- `micro`: Быстрая проверка, log при failure
-
-**Для validation="critical":**
-- ОБЯЗАТЕЛЬНО thinking перед action
-- ОБЯЗАТЕЛЬНО вывод результата проверки
-- STOP немедленно при failure
-- НЕ продолжать до исправления
-
----
-
-### P9: Error Handling Compliance (HIGH)
-**Правило:** Следуйте error_handling правилам при ошибках.
-
-**Обязательно:**
-- ✓ Определите тип ошибки
-- ✓ Выполните указанный action (STOP/RETRY/ASK)
-- ✓ Выведите указанное error message
-- ✓ НЕ игнорируйте ошибки
-- ✓ НЕ продолжайте при STOP errors
-
----
-
-### P10: Approval Gates Respect (HIGH)
-**Правило:** Для approval_gate с `required="true"` - ждите подтверждения.
-
-**Обязательно:**
-- ✓ Выведите approval gate message
-- ✓ ЖДИТЕ подтверждения пользователя
-- ✓ НЕ продолжайте автоматически
-- ✓ Предложите опции (yes/no/review)
-
----
-
-## 3. MEDIUM-PRIORITY RULES (P11-P13)
-
-### P11: Ask When Unclear (MEDIUM)
-**Правило:** При неясности - ОСТАНОВИТЕСЬ и спросите.
-
-**Когда спрашивать:**
-- Требования неоднозначны
-- Несколько возможных интерпретаций
-- Отсутствует критичная информация
-- Неясен ожидаемый результат
-
-**Формат вопроса:**
-```
-❓ ТРЕБУЕТСЯ УТОЧНЕНИЕ
-Неясно: [что конкретно]
-Варианты: [опции]
-Вопрос: [конкретный вопрос]
+iclaude.sh                          # Main script (~2000 lines)
+.claude_proxy_credentials           # Saved proxy settings (chmod 600, git-ignored)
+.nvm-isolated/                      # Isolated NVM installation (~200-300MB, in git)
+  ├── nvm.sh                        # NVM script
+  ├── versions/node/vX.X.X/         # Node.js installation
+  └── .claude-isolated/             # Isolated Claude config (session data git-ignored)
+      ├── CLAUDE.md                 # This file (synced from main project)
+      └── skills/                   # Claude Skills (synced from .claude/skills/)
+.nvm-isolated-lockfile.json         # Version lockfile (in git)
+.claude/                            # Main project Claude config
+  └── skills/                       # Master copy of Skills
 ```
 
 ---
 
-### P12: Decision Documentation (MEDIUM)
-**Правило:** Документируйте важные технические решения.
+## Development Commands
 
-**Что документировать:**
-- Выбор между альтернативными подходами
-- Отклонение очевидных вариантов
-- Trade-offs и компромиссы
+### Testing Changes
+
+```bash
+# Test locally without installation
+./iclaude.sh
+
+# Test with proxy
+./iclaude.sh --proxy http://user:pass@localhost:8118
+
+# Test proxy connectivity only (no launch)
+./iclaude.sh --test
+
+# Check isolated environment status
+./iclaude.sh --check-isolated
+
+# Repair symlinks after git operations
+./iclaude.sh --repair-isolated
+```
+
+### Common Development Tasks
+
+**1. Add a new command-line flag:**
+```bash
+# Use bash-development skill
+"Добавь новый флаг --timeout <seconds> для ограничения времени подключения"
+```
+
+**2. Debug proxy issues:**
+```bash
+# Use proxy-management skill
+"Отладь проблему: proxy test failed с ошибкой 'SSL certificate problem'"
+```
+
+**3. Test isolated installation:**
+```bash
+# Clean and reinstall
+./iclaude.sh --cleanup-isolated
+./iclaude.sh --isolated-install
+./iclaude.sh --check-isolated
+```
+
+**4. Update lockfile after changes:**
+```bash
+# Automatic during update
+./iclaude.sh --update
+
+# Manual update (if needed)
+bash -c 'source ./iclaude.sh && save_isolated_lockfile'
+```
+
+**5. Sync skills to isolated environment:**
+```bash
+# Manual sync (skills auto-sync during isolated-install)
+cp -r .claude/skills/* .nvm-isolated/.claude-isolated/skills/
+```
+
+### Debugging
+
+**Enable bash tracing:**
+```bash
+bash -x ./iclaude.sh [args]
+```
+
+**Check environment variables:**
+```bash
+# After sourcing isolated environment
+source <(./iclaude.sh --check-isolated 2>&1 | grep "export")
+env | grep -E "(NVM_DIR|PATH|HTTPS_PROXY|HTTP_PROXY|NODE_EXTRA_CA_CERTS)"
+```
+
+**Debug Claude Code detection:**
+```bash
+# Test detection logic
+bash -c 'source ./iclaude.sh && setup_isolated_nvm && get_nvm_claude_path'
+```
+
+**Check symlink status:**
+```bash
+# Detailed symlink check
+./iclaude.sh --check-isolated
+
+# Manual inspection
+ls -la .nvm-isolated/versions/node/*/bin/{npm,npx,corepack,claude}
+```
 
 ---
 
-### P13: Conditional Execution (MEDIUM)
-**Правило:** Выполняйте conditional actions только при выполнении condition.
+## Skills System
+
+This project uses **Claude Skills** - modular templates for automating development tasks.
+
+### Available Skills
+
+**Project-Specific:**
+- 🔧 **bash-development** - Add features, refactor functions, handle errors
+- 🌐 **proxy-management** - Configure proxies, debug TLS, test connections
+- 📦 **isolated-environment** - Manage isolated NVM, lockfiles, symlinks
+
+**Universal (work in any project):**
+- 📋 **structured-planning** - Create plans with JSON validation
+- ✅ **validation-framework** - Validate acceptance criteria, syntax
+- 🔀 **git-workflow** - Conventional Commits, changelog generation
+- 🧠 **thinking-framework** - Structured reasoning for decisions
+- ⏸️ **approval-gates** - Request confirmation before critical actions
+- ❌ **error-handling** - Handle errors with proper actions (STOP/RETRY/ASK)
+- 🔄 **phase-execution** - Execute single phase from phase file
+- 📦 **task-decomposition** - Break complex tasks into 2-5 phases
+
+**Usage:** Simply describe the task to Claude, and the appropriate skill will be applied automatically.
+
+**Examples:**
+- "Добавь флаг --retry для повторных попыток"
+- "Отладь TLS ошибку с HTTPS прокси"
+- "Создай lockfile для текущей установки"
+
+**Full Documentation:** See [SKILLS.md](SKILLS.md)
 
 ---
 
-## 4. PROHIBITED & MANDATORY ACTIONS
+## Common Development Patterns
 
-### НИКОГДА НЕ ДЕЛАЙТЕ:
-❌ НЕ пропускайте фазы / actions / thinking / mandatory_output
-❌ НЕ сокращайте форматы
-❌ НЕ продолжайте при critical failures
-❌ НЕ игнорируйте blocking conditions / exit_conditions / checkpoints
-❌ НЕ делайте assumptions - ASK при неясности
+### Adding a New Proxy Feature
 
-### ВСЕГДА ДЕЛАЙТЕ:
-✓ ВСЕГДА используйте thinking для requires_thinking="true"
-✓ ВСЕГДА выводите mandatory_output для output="required"
-✓ ВСЕГДА проверяйте exit_conditions / checkpoints / conditions
-✓ ВСЕГДА останавливайтесь при critical failures
-✓ ВСЕГДА спрашивайте при неясности
-✓ ВСЕГДА выполняйте последовательно
-✓ ВСЕГДА обрабатывайте ошибки
+**Example: Add SOCKS4 support**
 
----
+1. **Update URL validation** (`validate_proxy_url`):
+   ```bash
+   if [[ ! "$url" =~ ^(http|https|socks4|socks5)://.*:[0-9]+$ ]]; then
+   ```
 
-## 5. STANDARD FORMATS
+2. **Update proxy parsing** (`parse_proxy_url`):
+   Already handles all protocols generically.
 
-### Формат Thinking:
-```xml
-<thinking>
-КОНТЕКСТ: [текущая ситуация]
-ЗАДАЧА: [что нужно сделать]
-ОПЦИИ: [варианты с плюсами/минусами]
-ВЫБОР: [вариант N] потому что [обоснование]
-РИСКИ: [что может пойти не так]
-ПРОВЕРКА: [как валидируем результат]
-</thinking>
-```
+3. **Test proxy connectivity** (`test_proxy`):
+   Add SOCKS4-specific curl test:
+   ```bash
+   curl --socks4 "$host:$port" --proxy-user "$username:$password" ...
+   ```
 
-### Формат Error Message:
-```
-[ICON] ОШИБКА: [Тип]
-Проблема: [описание]
-Контекст: [где произошло]
-Действие: [STOP/RETRY/ASK]
-```
+4. **Update help text** (`show_usage`):
+   Add SOCKS4 to supported protocols list.
 
-### Формат Checkpoint:
-```
-PHASE N CHECKPOINT:
-[✓/✗] Check 1: [детали]
-РЕЗУЛЬТАТ: ✓ PASSED / ✗ FAILED
-Переход: [ALLOWED/BLOCKED]
-```
----
+5. **Test:**
+   ```bash
+   ./iclaude.sh --proxy socks4://user:pass@localhost:1080 --test
+   ```
 
-## Code Style Guidelines
+### Adding Environment Management Functions
 
-### Минималистичный код - ключевые правила
+**Example: Add function to backup isolated environment**
 
-**Философия:** Код должен быть самодокументируемым. Хорошие имена переменных/функций лучше комментариев.
+1. **Create function:**
+   ```bash
+   backup_isolated_environment() {
+       local backup_name="nvm-isolated-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+       tar -czf "$backup_name" .nvm-isolated/
+       print_success "Backup created: $backup_name"
+   }
+   ```
 
-#### 1. Именование (вместо комментариев)
-```python
-# ❌ ПЛОХО
-def calc(d, m, y):  # Вычисляет количество дней
-    ...
+2. **Add command-line flag:**
+   ```bash
+   --backup-isolated)
+       backup_isolated_environment
+       exit 0
+       ;;
+   ```
 
-# ✅ ХОРОШО
-def calculate_days_in_period(start_date, end_date, include_weekends):
-    ...
-```
+3. **Update help text** (`show_usage`).
 
-#### 2. Декомпозиция (вместо комментариев)
-```python
-# ❌ ПЛОХО
-def process_data(data):
-    # Валидация данных
-    if not data or len(data) == 0:
-        raise ValueError()
+4. **Test:**
+   ```bash
+   ./iclaude.sh --backup-isolated
+   ```
 
-    # Фильтрация активных записей
-    active = [d for d in data if d.is_active]
+### Handling Git Clone Symlink Issues
 
-    # Группировка по категориям
-    ...
+**Problem:** After git clone, symlinks stored as blob references don't work.
 
-# ✅ ХОРОШО
-def process_data(data):
-    validate_data(data)
-    active_records = filter_active_records(data)
-    grouped = group_by_category(active_records)
-    ...
-```
+**Solution:** The `repair_isolated_symlinks()` function:
+1. Finds Node.js version directory
+2. Recreates 4 critical symlinks: npm, npx, corepack, claude
+3. Fixes Node.js binary permissions
+4. Provides detailed status output (✓/✗)
 
-#### 3. Комментарии - только "Почему", не "Что"
-```python
-# ❌ ПЛОХО - объясняет ЧТО делает код
-# Получаем текущего пользователя
-current_user = get_current_user()
-
-# ✅ ХОРОШО - объясняет ПОЧЕМУ
-# FIXME: Workaround для bug в SQLAlchemy 1.4.x - нужен explicit refresh
-session.refresh(user)
-
-# ✅ ХОРОШО - объясняет неочевидное решение
-# Use closure table for O(1) hierarchy queries instead of recursive CTE
-descendants = get_subtree(article_id)
-```
-
-#### 4. Type Hints вместо комментариев
-```python
-# ❌ ПЛОХО
-def get_facts(article_id, start, end):
-    """
-    Args:
-        article_id: ID статьи (int)
-        start: Начальная дата (date)
-        end: Конечная дата (date)
-    Returns:
-        Список фактов (list of BudgetFact)
-    """
-    ...
-
-# ✅ ХОРОШО
-def get_facts(
-    article_id: int,
-    start: date,
-    end: date
-) -> list[BudgetFact]:
-    """Get budget facts for article in date range."""
-    ...
-```
-
-#### 5. Docstrings - краткие и полезные
-```python
-# ❌ ПЛОХО - очевидная информация
-def create_user(email: str, password: str) -> User:
-    """
-    Creates a new user.
-
-    This function creates a new user with the provided email and password.
-    It takes an email and password as parameters and returns a User object.
-    """
-    ...
-
-# ✅ ХОРОШО - полезная информация
-def create_user(email: str, password: str) -> User:
-    """Create user with hashed password. Raises ValueError if email exists."""
-    ...
-```
-
-#### 6. Удалять, не комментировать
-```python
-# ❌ ПЛОХО - закомментированный код
-def calculate_total(facts):
-    total = sum(f.amount for f in facts)
-    # old_total = 0
-    # for fact in facts:
-    #     old_total += fact.amount
-    return total
-
-# ✅ ХОРОШО - чистый код (старый код в git history)
-def calculate_total(facts):
-    return sum(f.amount for f in facts)
-```
-
-### Когда комментарии ОБЯЗАТЕЛЬНЫ
-
-1. **Сложные алгоритмы:**
-```python
-def calculate_installment(amount, rate, months):
-    """Calculate monthly installment using annuity formula."""
-    # Annuity coefficient: i * (1 + i)^n / ((1 + i)^n - 1)
-    # where i = monthly rate, n = number of months
-    monthly_rate = rate / 12 / 100
-    coefficient = (monthly_rate * (1 + monthly_rate) ** months) / \
-                  ((1 + monthly_rate) ** months - 1)
-    return amount * coefficient
-```
-
-2. **Workarounds и TODO:**
-```python
-# TODO: Migrate to async SQLAlchemy 2.0 syntax (blocking on library support)
-session.execute(text(query))
-
-# FIXME: Временное решение до рефакторинга hierarchy service
-# Workaround для предотвращения циклических зависимостей
-```
-
-3. **API документация:**
-```python
-@router.post("/facts")
-async def create_fact(data: FactCreate, current_user: CurrentUser):
-    """Create new budget fact. Validates amount > 0 and date <= today."""
-    ...
-```
-
-### Практические советы
-
-✅ **DO:**
-- Используйте описательные имена: `user_active_subscriptions` вместо `uas`
-- Разбивайте большие функции на маленькие с понятными именами
-- Применяйте type hints везде
-- Пишите краткие docstrings для публичных API
-- Объясняйте "почему", не "что"
-
-❌ **DON'T:**
-- Не пишите комментарии, которые дублируют код
-- Не оставляйте закомментированный код (используйте git)
-- Не пишите устаревшие комментарии
-- Не объясняйте очевидное
-- Не используйте комментарии вместо рефакторинга
-
-**Золотое правило:** Если нужен комментарий, чтобы объяснить "что делает код" - улучшите код. Комментарии нужны только для "почему код делает это именно так".
+**Automatic repair:** Called during:
+- `--update`
+- `--isolated-update`
+- `--repair-isolated` (manual)
 
 ---
 
-## Changelog в GitHub
+## Environment Priority
 
-**ОБЯЗАТЕЛЬНОЕ правило:** Каждая завершенная задача ДОЛЖНА иметь changelog entry для GitHub Release.
+### Without `--system` flag:
 
-### Формат Changelog Entry
+1. **Isolated environment** (`.nvm-isolated/`) - if exists and `USE_ISOLATED_BY_DEFAULT=true`
+2. **System NVM** - if `NVM_DIR` is set
+3. **System Node.js** - fallback
 
-```markdown
-### [Категория] Краткое описание (до 80 символов)
+### With `--system` flag:
 
-**Изменения:**
-- ✨ Новая функциональность
-- 🔧 Изменения существующего
-- 🐛 Исправления ошибок
-- 📝 Обновления документации
+1. **System NVM** - if `NVM_DIR` is set
+2. **System Node.js** - fallback
+3. **Isolated environment** - skipped
 
-**Влияние на пользователей:**
-[Что изменится для пользователя]
+This allows testing system installation while isolated environment exists.
 
-**Технические детали:**
-- Файлы: `[список измененных файлов]`
-- PRD: [ссылка на секцию PRD, например FR-015]
-- Commits: [список commit hash]
+---
 
-**Breaking Changes:** [если есть критичные изменения]
+## Security Considerations
+
+### Proxy Credentials
+
+- Stored in `.claude_proxy_credentials` (chmod 600)
+- Git-ignored
+- Contains: protocol, username, password, host, port, proxy_ca, proxy_insecure
+
+### HTTPS Proxy Security
+
+**Recommended:** Use `--proxy-ca` with proxy certificate:
+```bash
+iclaude --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 ```
 
-### Категории
-
-- **Features** - новая функциональность (feat:)
-- **Bug Fixes** - исправления ошибок (fix:)
-- **Performance** - оптимизация производительности (perf:)
-- **Refactoring** - рефакторинг без изменения функциональности (refactor:)
-- **Documentation** - только документация (docs:)
-- **Infrastructure** - DevOps, CI/CD, deployment (chore:)
-
-### Когда создавать Release
-
-**GitHub Releases создаются вручную при:**
-1. Завершении крупной фичи (milestone)
-2. Накоплении нескольких важных изменений
-3. Релизе новой версии (следуя semver)
-
-**Процесс:**
-1. Собрать все changelog entries с последнего релиза
-2. GitHub → Releases → Draft a new release
-3. Создать тег версии (v1.2.0, v1.2.1, v2.0.0)
-4. Скопировать changelog entries, сгруппировать по категориям
-5. Publish release
-
-### Правила версионирования (Semver)
-
-- **MAJOR (v2.0.0)** - breaking changes
-- **MINOR (v1.2.0)** - новая функциональность (backward compatible)
-- **PATCH (v1.2.1)** - bug fixes
-
-### Пример
-
-```markdown
-## v1.3.0 - 2025-11-15
-
-### Features
-#### ✨ Удален фильтр "Неделя" из аналитики
-**Изменения:**
-- Удален preset "week" из фильтров периодов
-- Удалена backend логика обработки weekly фильтра
-- Обновлен UI - остались только: месяц, квартал, год, произвольный
-
-**Влияние на пользователей:**
-Пользователи больше не увидят кнопку "Неделя" в аналитике. Для просмотра недельных данных используйте "Произвольный период".
-
-**Технические детали:**
-- Файлы: `frontend/web/static/js/analytics.js`, `backend/app/api/v1/endpoints/analytics.py`
-- PRD: FR-042
-- Commits: abc123f, def456g
-
-**Breaking Changes:** Нет
+**Not Recommended:** `--proxy-insecure` disables TLS verification for ALL connections:
+```bash
+iclaude --proxy https://proxy:8118 --proxy-insecure  # ⚠️ INSECURE
 ```
 
+**Export proxy certificate:**
+```bash
+openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
+  openssl x509 -outform PEM > proxy-cert.pem
+```
+
+### Git Proxy Handling
+
+- Script uses **environment variables** (HTTPS_PROXY, HTTP_PROXY, NO_PROXY)
+- Does **NOT** modify `git config --global`
+- Proxy settings only apply to current session
+- Git automatically respects NO_PROXY for localhost/127.0.0.1
+
+---
+
+## Testing
+
+### Manual Test Cases
+
+1. **Fresh installation:**
+   ```bash
+   rm -rf .nvm-isolated .nvm-isolated-lockfile.json
+   ./iclaude.sh --isolated-install
+   ./iclaude.sh --check-isolated
+   ```
+
+2. **Proxy connectivity:**
+   ```bash
+   ./iclaude.sh --proxy http://test:test@127.0.0.1:8118 --test
+   ```
+
+3. **Symlink repair:**
+   ```bash
+   # Simulate git clone by removing symlinks
+   find .nvm-isolated/versions/node/*/bin -type l -delete
+   ./iclaude.sh --repair-isolated
+   ./iclaude.sh --check-isolated
+   ```
+
+4. **Update workflow:**
+   ```bash
+   ./iclaude.sh --update
+   ./iclaude.sh --check-isolated  # Verify lockfile updated
+   ```
+
+5. **System vs Isolated:**
+   ```bash
+   ./iclaude.sh              # Uses isolated (default)
+   ./iclaude.sh --system     # Uses system installation
+   ```
+
+### No Automated Tests
+
+Currently no automated test suite exists. All testing is manual.
+
+**Future improvement:** Add integration tests using bash testing framework (e.g., bats).
+
+---
+
+## Troubleshooting Common Issues
+
+### Skills not available in isolated environment
+
+**Symptoms:** Skills work in main project but not from other projects.
+
+**Cause:** Skills not synced to `.nvm-isolated/.claude-isolated/skills/`
+
+**Solution:**
+```bash
+# Automatic sync during install
+./iclaude.sh --isolated-install
+
+# Manual sync
+cp -r .claude/skills/* .nvm-isolated/.claude-isolated/skills/
+git add .nvm-isolated/.claude-isolated/skills/
+```
+
+### Symlinks broken after git clone
+
+**Symptoms:** npm/node/claude commands not found.
+
+**Solution:**
+```bash
+./iclaude.sh --repair-isolated
+```
+
+### Proxy test fails
+
+**Debug:**
+```bash
+# Enable curl verbose output
+CURL_VERBOSE="-v" ./iclaude.sh --test
+```
+
+### Lockfile not updating
+
+**Symptoms:** `claudeCodeVersion` in lockfile doesn't match installed version.
+
+**Solution:**
+```bash
+# Fixed in version from 24.10.2025
+# Manual update if using old version:
+bash -c 'source ./iclaude.sh && save_isolated_lockfile'
+```
+
+---
+
+## Additional Resources
+
+- **README.md** - User-facing documentation and usage examples
+- **SKILLS.md** - Comprehensive Skills documentation
+- **Skill Files** - `.claude/skills/*/SKILL.md` for each skill
+
+---
+
+## Quick Reference
+
+### When to Use Which Skill
+
+| Task | Skill | Example |
+|------|-------|---------|
+| Add bash function | bash-development | "Добавь флаг --retry" |
+| Debug proxy | proxy-management | "Почему test failed?" |
+| Manage isolated env | isolated-environment | "Создай lockfile" |
+| Create plan | structured-planning | "Создай план задачи" |
+| Validate results | validation-framework | "Провалидируй criteria" |
+| Git commit | git-workflow | "Создай commit" |
+| Analyze decision | thinking-framework | "Проанализируй опции" |
+| Get approval | approval-gates | "Запроси подтверждение" |
+
+### Common Commands
+
+```bash
+# Development
+./iclaude.sh                          # Launch with isolated env
+./iclaude.sh --test                   # Test proxy only
+./iclaude.sh --check-isolated         # Check status
+
+# Installation
+./iclaude.sh --isolated-install       # Install isolated env
+sudo ./iclaude.sh --create-symlink    # Create global symlink
+
+# Maintenance
+./iclaude.sh --update                 # Update Claude Code
+./iclaude.sh --repair-isolated        # Fix symlinks
+./iclaude.sh --cleanup-isolated       # Remove isolated env
+
+# Proxy
+./iclaude.sh --proxy http://...       # Set proxy
+./iclaude.sh --proxy-ca cert.pem      # Use CA certificate
+./iclaude.sh --clear                  # Clear credentials
+./iclaude.sh --no-proxy               # Disable proxy
+
+# System vs Isolated
+./iclaude.sh --system                 # Force system installation
+./iclaude.sh --system --update        # Update system installation
+```
+
+---
+
+**Note:** This document focuses on technical architecture and development workflows. For user-facing documentation, see README.md.
