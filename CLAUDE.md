@@ -219,6 +219,82 @@ Phase 3: Frontend Integration (6 steps)
 
 ---
 
+## Templates
+
+Проект включает 3 skills-based templates для разных типов задач:
+
+### [task-lite-template-v3.md](task-lite-template-v3.md)
+**Назначение:** Simple tasks (одна фаза, <10 steps, один компонент)
+
+**Когда использовать:**
+- Bug fixes
+- Добавление одного метода/функции
+- Простой рефакторинг (<5 файлов)
+- Обновление документации
+
+**Skills:** structured-planning, validation-framework, git-workflow, thinking-framework
+
+**Пример запроса:**
+```
+"Добавь метод calculate_total в BudgetService"
+"Исправь bug с null pointer в validator"
+```
+
+---
+
+### [task-planning-template-v3.md](task-planning-template-v3.md)
+**Назначение:** Планирование complex задач (разбиение на 2-5 фаз)
+
+**Когда использовать:**
+- Задача затрагивает >5 файлов, >10 steps
+- Есть логические фазы с dependencies
+- Acceptance criteria можно разделить по фазам
+
+**Skills:** task-decomposition, thinking-framework, structured-planning, approval-gates
+
+**Результат:** Master plan + phase-1.md, phase-2.md, ..., phase-N.md
+
+**Пример запроса:**
+```
+"Разбей задачу 'Добавить JWT auth' на фазы"
+"Создай multi-phase plan для OrderService"
+```
+
+**ВАЖНО:** Этот template ТОЛЬКО планирует, НЕ выполняет код.
+
+---
+
+### [task-execution-template-v3.md](task-execution-template-v3.md)
+**Назначение:** Выполнение ОДНОЙ фазы из готового phase file
+
+**Когда использовать:**
+- После task-planning-template-v3.md создал phase files
+- Нужно выполнить конкретную фазу
+
+**Skills:** phase-execution, validation-framework, git-workflow, thinking-framework
+
+**Workflow:** Checkpoint 1 → Execute → Checkpoint 2 → Git Commit → Phase Summary
+
+**Пример запроса:**
+```
+"Выполни Phase 1 из plans/phase-1-database-models.md"
+"Выполни следующую фазу из plans/phase-2-backend-api.md"
+```
+
+---
+
+**Template Size Comparison:**
+
+| Template | Lines | Reduction vs v2 |
+|----------|-------|----------------|
+| task-lite-template-v3.md | 393 | N/A (new) |
+| task-planning-template-v3.md | 730 | -39% (было 1201) |
+| task-execution-template-v3.md | 541 | -53% (было 1157) |
+
+**Total savings:** 1087 lines (46% reduction) благодаря skills-based architecture.
+
+---
+
 ## Architecture
 
 The codebase is a standalone bash script (`iclaude.sh`) that:

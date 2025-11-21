@@ -38,6 +38,18 @@
 | Сложно поддерживать | Один скил = один файл |
 | Нет переиспользования | Skills работают в любых templates |
 
+### Skills-Based Templates
+
+Проект включает 3 готовых template, которые используют skills для автоматизации:
+
+- **[task-lite-template-v3.md](task-lite-template-v3.md)** (393 строки) - Simple tasks, одна фаза
+- **[task-planning-template-v3.md](task-planning-template-v3.md)** (730 строк) - Планирование 2-5 фаз
+- **[task-execution-template-v3.md](task-execution-template-v3.md)** (541 строка) - Выполнение одной фазы
+
+**Template optimization:** v3 templates на 46% короче чем v2 (1271 vs 2358 строк) благодаря использованию skills вместо inline инструкций.
+
+Подробнее см. [CLAUDE.md - Templates](CLAUDE.md#templates)
+
 ---
 
 ## Universal Skills (применимы к любым проектам)

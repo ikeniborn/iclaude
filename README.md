@@ -206,14 +206,14 @@ sudo ./iclaude.sh --create-symlink
 "Создай функцию для ротации credentials"
 ```
 
-**2. Phase-Based Workflow (task-execution/planning templates)**
+**2. Phase-Based Workflow ([task-planning-template-v3.md](task-planning-template-v3.md) + [task-execution-template-v3.md](task-execution-template-v3.md))**
 Для сложных задач (>10 steps, multiple компоненты):
 ```
-# Шаг 1: Разбить на фазы
+# Шаг 1: Разбить на фазы (task-planning-template-v3.md)
 "Разбей задачу 'Добавить JWT auth' на фазы"
 → Создает master plan + phase-1.md, phase-2.md, phase-3.md
 
-# Шаг 2: Выполнить поэтапно
+# Шаг 2: Выполнить поэтапно (task-execution-template-v3.md)
 "Выполни Phase 1 из plans/phase-1-database-models.md"
 → Checkpoint → Execute → Validation → Commit
 
@@ -260,10 +260,17 @@ sudo ./iclaude.sh --create-symlink
 
 ### Детальная документация
 
+**Skills:**
 - **[SKILLS.md](SKILLS.md)** - Полная документация всех 11 skills с примерами
-- **[CLAUDE.md](CLAUDE.md)** - Архитектура проекта и Phase-Based Workflow
-- **[task-lite-template-v3.md](task-lite-template-v3.md)** - Шаблон для простых задач
 - **[.claude/skills/](/.claude/skills/)** - Исходники всех skills
+
+**Templates:**
+- **[task-lite-template-v3.md](task-lite-template-v3.md)** - Simple tasks (одна фаза, <10 steps)
+- **[task-planning-template-v3.md](task-planning-template-v3.md)** - Планирование (разбиение на 2-5 фаз)
+- **[task-execution-template-v3.md](task-execution-template-v3.md)** - Выполнение одной фазы
+
+**Project Documentation:**
+- **[CLAUDE.md](CLAUDE.md)** - Архитектура проекта и Phase-Based Workflow
 
 ---
 
