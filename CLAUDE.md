@@ -280,22 +280,38 @@ Claude автоматически: проанализирует → создас
 
 ---
 
-### [task-execution-template-v3.md](task-execution-template-v3.md)
+### [task-execution-template-v3.1.md](task-execution-template-v3.1.md) **← РЕКОМЕНДУЕТСЯ**
 **Назначение:** Выполнение ОДНОЙ фазы из готового phase file
+
+**Для пользователя:** Просто укажите путь к phase file. Claude автоматически выполнит фазу с проверками на каждом этапе.
 
 **Когда использовать:**
 - После task-planning-template-v3.md создал phase files
-- Нужно выполнить конкретную фазу
+- Нужно выполнить конкретную фазу с checkpoint validation
 
-**Skills:** phase-execution, validation-framework, git-workflow, thinking-framework
+**Skills (автоматические):** phase-execution, validation-framework, git-workflow, thinking-framework, error-handling
 
-**Workflow:** Checkpoint 1 → Execute → Checkpoint 2 → Git Commit → Phase Summary
+**Workflow (автоматический):** Checkpoint 1 → Execute → Checkpoint 2 → Git Commit → Phase Summary
 
-**Пример запроса:**
+**Ключевые улучшения v3.1:**
+- ✅ Секция "## 📋 Входные данные" для пользователя
+- ✅ Skills используются автоматически (скрыты в `<details>`)
+- ✅ Workflow описан естественным языком
+- ✅ Примеры вывода для каждого checkpoint
+
+**Пример использования:**
 ```
-"Выполни Phase 1 из plans/phase-1-database-models.md"
-"Выполни следующую фазу из plans/phase-2-backend-api.md"
+## 📋 Входные данные
+
+Выполни Phase 2 из plans/phase-2-backend-api.md
 ```
+
+Claude автоматически:
+1. Checkpoint 1: Загрузит phase file → проверит branch context → dependencies
+2. Execute: Выполнит все steps из phase metadata
+3. Checkpoint 2: Проверит completion criteria → syntax checks
+4. Git Commit: Создаст commit с message из phase metadata
+5. Phase Summary: Покажет результат + следующую фазу
 
 ---
 
@@ -303,10 +319,11 @@ Claude автоматически: проанализирует → создас
 
 | Template | Lines | Notes |
 |----------|-------|-------|
-| task-lite-template-v3.1.md | 505 | **РЕКОМЕНДУЕТСЯ** - User-friendly, skills автоматические |
+| task-lite-template-v3.1.md | 505 | **РЕКОМЕНДУЕТСЯ** - User-friendly, simple tasks |
 | task-lite-template-v3.md | 393 | Legacy - требует знания skills |
 | task-planning-template-v3.md | 730 | -39% vs v2 (было 1201) |
-| task-execution-template-v3.md | 541 | -53% vs v2 (было 1157) |
+| task-execution-template-v3.1.md | 613 | **РЕКОМЕНДУЕТСЯ** - User-friendly, phase execution |
+| task-execution-template-v3.md | 541 | Legacy - требует знания skills |
 
 **Total savings:** 46% reduction благодаря skills-based architecture.
 

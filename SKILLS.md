@@ -42,16 +42,25 @@
 
 Проект включает готовые templates, которые используют skills для автоматизации:
 
-- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** (505 строк) - Simple tasks, **РЕКОМЕНДУЕТСЯ**
+**Рекомендуемые templates (user-friendly):**
+
+- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** (505 строк) - Simple tasks - **РЕКОМЕНДУЕТСЯ**
   - User-friendly: пользователь пишет только задачи
   - Skills используются автоматически (скрыты в `<details>`)
   - Workflow описан естественным языком
+
+- **[task-execution-template-v3.1.md](task-execution-template-v3.1.md)** (613 строк) - Phase execution - **РЕКОМЕНДУЕТСЯ**
+  - User-friendly: пользователь указывает только phase file
+  - Автоматические checkpoints, validation, git commit
+  - Примеры вывода для каждого этапа
+
+**Другие templates:**
 
 - **[task-lite-template-v3.md](task-lite-template-v3.md)** (393 строки) - Legacy версия
   - Требует знания skills от пользователя
 
 - **[task-planning-template-v3.md](task-planning-template-v3.md)** (730 строк) - Планирование 2-5 фаз
-- **[task-execution-template-v3.md](task-execution-template-v3.md)** (541 строка) - Выполнение одной фазы
+- **[task-execution-template-v3.md](task-execution-template-v3.md)** (541 строка) - Legacy версия
 
 **Template optimization:** v3 templates на 46% короче чем v2 благодаря использованию skills вместо inline инструкций.
 

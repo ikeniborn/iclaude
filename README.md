@@ -267,7 +267,7 @@ sudo ./iclaude.sh --create-symlink
 **Templates:**
 - **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** - Simple tasks (одна фаза, <10 steps) - **РЕКОМЕНДУЕТСЯ**
 - **[task-planning-template-v3.md](task-planning-template-v3.md)** - Планирование (разбиение на 2-5 фаз)
-- **[task-execution-template-v3.md](task-execution-template-v3.md)** - Выполнение одной фазы
+- **[task-execution-template-v3.1.md](task-execution-template-v3.1.md)** - Выполнение одной фазы - **РЕКОМЕНДУЕТСЯ**
 
 **Project Documentation:**
 - **[CLAUDE.md](CLAUDE.md)** - Архитектура проекта и Phase-Based Workflow
