@@ -40,6 +40,185 @@ The project uses Claude Skills to automate common development tasks. See [SKILLS
 - "Создай lockfile текущей установки"
 - "Почему isolated environment не обнаруживается?"
 
+---
+
+## Universal Skills (для любых проектов)
+
+Проект использует 8 универсальных скилов для оптимизации workflow. Эти скилы применимы к **любым проектам**, не только к init_claude.
+
+### 📋 [Structured Planning](/.claude/skills/structured-planning/SKILL.md)
+Создание структурированных планов с JSON Schema валидацией.
+
+**Use when:** Creating task plans, defining execution steps, identifying risks, planning validation.
+
+**Example requests:**
+- "Создай структурированный план с JSON валидацией"
+- "Спланируй execution steps для добавления функции X"
+
+### ✅ [Validation Framework](/.claude/skills/validation-framework/SKILL.md)
+Комплексная валидация через acceptance criteria, PRD compliance, syntax и functional checks.
+
+**Use when:** Validating results, checking acceptance criteria, syntax checks, PRD compliance.
+
+**Example requests:**
+- "Провалидируй acceptance criteria для выполненной задачи"
+- "Выполни syntax checks для измененных файлов"
+
+### 🔀 [Git Workflow](/.claude/skills/git-workflow/SKILL.md)
+Conventional Commits формат, changelog generation, structured git operations.
+
+**Use when:** Creating commits, generating changelogs, following semantic versioning.
+
+**Example requests:**
+- "Создай commit с Conventional Commits форматом"
+- "Сгенерируй changelog entry для GitHub Release"
+
+### 🧠 [Thinking Framework](/.claude/skills/thinking-framework/SKILL.md)
+Структурированный reasoning для критических решений.
+
+**Use when:** Analyzing tasks, making technical decisions, assessing risks, comparing solutions.
+
+**Example requests:**
+- "Проанализируй выбор между PostgreSQL и MongoDB"
+- "Оцени риски рефакторинга OrderService"
+
+### ⏸️  [Approval Gates](/.claude/skills/approval-gates/SKILL.md)
+Программные approval gates для explicit confirmation.
+
+**Use when:** Getting plan confirmation, preventing automatic execution, requesting approval for destructive operations.
+
+**Example requests:**
+- "Получи подтверждение плана перед выполнением"
+- "Запроси approval для деструктивной операции"
+
+### ❌ [Error Handling](/.claude/skills/error-handling/SKILL.md)
+Типовая обработка ошибок с правильными actions (STOP/RETRY/ASK/BLOCKING).
+
+**Use when:** Handling errors, determining retry logic, structured error messages.
+
+**Example requests:**
+- "Обработай syntax error с правильным action"
+- "Определи retry strategy для validation failure"
+
+### 🔄 [Phase Execution](/.claude/skills/phase-execution/SKILL.md)
+Автоматизация выполнения ОДНОЙ фазы из готового phase file с checkpoint validation.
+
+**Use when:** Executing a specific phase from ready phase file, checkpoint-driven execution, automated parse→validate→execute→commit workflow.
+
+**Example requests:**
+- "Выполни Phase 2 из plans/phase-2-backend-api.md"
+- "Execute следующую фазу"
+
+### 📦 [Task Decomposition](/.claude/skills/task-decomposition/SKILL.md)
+Автоматизация разбиения complex задачи на 2-5 логических фаз с генерацией master plan и phase files.
+
+**Use when:** Task is too large for one commit, logical phases with dependencies, acceptance criteria can be split per phase.
+
+**Example requests:**
+- "Разбей задачу 'Добавить систему аутентификации' на фазы"
+- "Создай multi-phase plan для добавления X"
+
+---
+
+## Phase-Based Workflow
+
+Для сложных задач (>10 steps, >5 файлов, multiple компонент) используется **phase-based workflow** - разбиение задачи на 2-5 логических фаз с отдельными commits.
+
+### Когда использовать Phase-Based Workflow
+
+✅ **Используй когда:**
+- Задача затрагивает > 5 файлов или > 10 steps
+- Есть логические этапы с dependencies (database → backend → frontend)
+- Acceptance criteria можно разделить по фазам
+- Нужна возможность rollback отдельных частей
+
+❌ **НЕ используй для:**
+- Simple tasks (< 5 steps, один компонент)
+- Bug fixes (обычно single-phase)
+- Tasks без явных фаз
+
+### Workflow
+
+```
+1. TASK DECOMPOSITION
+   ├─ Decomposition Thinking (thinking-framework)
+   ├─ Создать Task Decomposition JSON (2-5 phases)
+   ├─ Генерировать master plan (plans/master-plan-{slug}.md)
+   ├─ Генерировать phase files (plans/phase-1-{slug}.md, ...)
+   └─ Approval Gate (получить подтверждение)
+
+2. PHASE EXECUTION (для каждой фазы)
+   ├─ Phase Analysis Thinking (thinking-framework)
+   ├─ Checkpoint 1: ЗАГРУЗКА (parse phase file, branch context)
+   ├─ Execute steps from phase_metadata
+   ├─ Checkpoint 2: ВЫПОЛНЕНИЕ (completion criteria validation)
+   ├─ Git Commit (git-workflow)
+   └─ Phase Summary
+
+3. REPEAT
+   └─ Пока все фазы не completed
+```
+
+### Преимущества
+
+- ✅ **Atomic commits:** Каждая фаза = отдельный commit
+- ✅ **Rollback:** Можно откатить отдельные фазы
+- ✅ **Checkpoint validation:** Гарантирует корректность между фазами
+- ✅ **Структурированный процесс:** Не потеряешь контекст
+- ✅ **Параллельная работа:** Multiple developers могут работать над разными фазами
+
+### Пример: JWT Authentication System
+
+**Decomposition:**
+```
+Phase 1: Database Models + Migrations (5 steps)
+Phase 2: Backend API + JWT Logic (7 steps)
+Phase 3: Frontend Integration (6 steps)
+```
+
+**Execution:**
+```bash
+# Phase 1
+"Разбей задачу 'Добавить JWT auth' на фазы"
+# → создает master-plan + 3 phase files
+
+# Phase 2
+"Выполни Phase 1 из plans/phase-1-database-models.md"
+# → checkpoint → execute → validation → commit
+
+# Phase 3
+"Выполни Phase 2 из plans/phase-2-backend-api.md"
+# → проверяет Phase 1 completed → execute → commit
+
+# Phase 4
+"Выполни Phase 3 из plans/phase-3-frontend-integration.md"
+# → execute → commit
+```
+
+**Result:** 3 atomic commits, можно rollback любую фазу отдельно.
+
+---
+
+### Quick Reference: Когда использовать какой скил
+
+| Задача | Скил | Примерный запрос |
+|--------|------|------------------|
+| Создать план задачи | structured-planning | "Создай план с JSON валидацией" |
+| Валидировать результаты | validation-framework | "Провалидируй acceptance criteria" |
+| Git commit | git-workflow | "Создай commit с Conventional format" |
+| Анализ перед решением | thinking-framework | "Проанализируй варианты X и Y" |
+| Получить подтверждение | approval-gates | "Получи approval плана" |
+| Обработать ошибку | error-handling | "Обработай syntax error" |
+| **Разбить задачу на фазы** | **task-decomposition** | **"Разбей задачу на 2-5 фаз"** |
+| **Выполнить фазу** | **phase-execution** | **"Выполни Phase 2 из phase-2.md"** |
+| Добавить bash функцию | bash-development | "Добавь флаг --timeout" |
+| Настроить прокси | proxy-management | "Отладь TLS проблему" |
+| Установить изолированно | isolated-environment | "Установи в isolated environment" |
+
+**Подробная документация:** См. [SKILLS.md](SKILLS.md) для полной информации о всех скилах, зависимостях и примерах комбинированного использования.
+
+---
+
 ## Architecture
 
 The codebase is a standalone bash script (`iclaude.sh`) that:
