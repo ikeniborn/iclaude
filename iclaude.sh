@@ -1334,17 +1334,19 @@ save_credentials() {
     local insecure=${2:-false}
     local ca_path=${3:-}
     local no_proxy=${4:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+    local api_key=${5:-}
 
     # Create credentials file with restricted permissions
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL, insecure flag, CA path, and NO_PROXY
+    # Save URL, insecure flag, CA path, NO_PROXY, and API key
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
 PROXY_INSECURE=$insecure
 PROXY_CA_PATH=$ca_path
 NO_PROXY=$no_proxy
+API_KEY=$api_key
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE"
@@ -1368,6 +1370,7 @@ load_credentials() {
         PROXY_INSECURE=false
         PROXY_CA_PATH=""
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+        API_KEY=""
     fi
 
     if [[ -z "$PROXY_URL" ]]; then
@@ -1394,8 +1397,13 @@ load_credentials() {
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
-    # Return URL, insecure flag, CA path, and NO_PROXY (pipe-separated for reliable parsing)
-    echo "$PROXY_URL|${PROXY_INSECURE:-false}|${PROXY_CA_PATH:-}|${NO_PROXY}"
+    # Set default API_KEY if not present (backward compatibility)
+    if [[ -z "${API_KEY:-}" ]]; then
+        API_KEY=""
+    fi
+
+    # Return URL, insecure flag, CA path, NO_PROXY, and API key (pipe-separated for reliable parsing)
+    echo "$PROXY_URL|${PROXY_INSECURE:-false}|${PROXY_CA_PATH:-}|${NO_PROXY}|${API_KEY}"
     return 0
 }
 
@@ -1407,11 +1415,12 @@ prompt_proxy_url() {
 
     # Check if credentials exist
     if saved_credentials=$(load_credentials); then
-        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY
+        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY|API_KEY
         local saved_url=$(echo "$saved_credentials" | cut -d'|' -f1)
         local saved_insecure=$(echo "$saved_credentials" | cut -d'|' -f2)
         local saved_ca=$(echo "$saved_credentials" | cut -d'|' -f3)
         local saved_no_proxy=$(echo "$saved_credentials" | cut -d'|' -f4)
+        local saved_api_key=$(echo "$saved_credentials" | cut -d'|' -f5)
 
         print_info "Saved proxy found" >&2
         echo "" >&2
@@ -1425,10 +1434,17 @@ prompt_proxy_url() {
         elif [[ "$saved_insecure" == "true" ]]; then
             echo "  Options: --proxy-insecure (⚠️  небезопасно)" >&2
         fi
+
+        # Display API key if present
+        if [[ -n "$saved_api_key" ]] && [[ "$saved_api_key" != "" ]]; then
+            # Mask API key for security
+            local masked_key="${saved_api_key:0:8}...${saved_api_key: -4}"
+            echo "  API Key: $masked_key" >&2
+        fi
         echo "" >&2
 
         # Auto-use saved proxy (no confirmation needed)
-        echo "$saved_url|$saved_insecure|$saved_ca|$saved_no_proxy"
+        echo "$saved_url|$saved_insecure|$saved_ca|$saved_no_proxy|$saved_api_key"
         return 0
     fi
 
@@ -1464,8 +1480,8 @@ prompt_proxy_url() {
             continue
         fi
 
-        # Return URL with default insecure=false, no CA, and default NO_PROXY (pipe-separated)
-        echo "$proxy_url|false||localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+        # Return URL with default insecure=false, no CA, default NO_PROXY, and no API key (pipe-separated)
+        echo "$proxy_url|false||localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org|"
         return 0
     done
 }
@@ -1686,6 +1702,75 @@ clear_credentials() {
     else
         print_info "No saved credentials found"
     fi
+}
+
+#######################################
+# Check OAuth token expiration
+# Checks both system and isolated credentials
+# Returns:
+#   0 - token valid or not found
+#   1 - token expired
+#   2 - token expiring soon (< 1 hour)
+#######################################
+check_token_expiration() {
+    local warn_threshold=3600  # 1 hour in seconds
+    local credentials_files=()
+
+    # Check system credentials
+    if [[ -f "$HOME/.claude/.credentials.json" ]]; then
+        credentials_files+=("$HOME/.claude/.credentials.json")
+    fi
+
+    # Check isolated credentials if exists
+    if [[ -f "$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json" ]]; then
+        credentials_files+=("$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json")
+    fi
+
+    # If no credentials found, skip check
+    if [[ ${#credentials_files[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    # Check each credentials file
+    local most_critical_status=0
+    for creds_file in "${credentials_files[@]}"; do
+        # Extract expires_at (in milliseconds)
+        local expires_ms=$(jq -r '.claudeAiOauth.expiresAt // 0' "$creds_file" 2>/dev/null)
+
+        # Skip if no expiration found or jq failed
+        if [[ -z "$expires_ms" || "$expires_ms" == "0" || "$expires_ms" == "null" ]]; then
+            continue
+        fi
+
+        # Convert to seconds
+        local expires_sec=$((expires_ms / 1000))
+        local current_sec=$(date +%s)
+        local diff=$((expires_sec - current_sec))
+
+        # Determine status
+        if [[ $diff -lt 0 ]]; then
+            # Token expired
+            print_warning "OAuth token EXPIRED $((-diff / 60)) minutes ago"
+            print_info "File: $creds_file"
+            print_info "Expired at: $(date -d @$expires_sec '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo 'unknown')"
+            echo ""
+            print_info "Run '/login' in Claude Code to refresh authentication"
+            echo ""
+            most_critical_status=1
+        elif [[ $diff -lt $warn_threshold ]]; then
+            # Token expiring soon
+            local minutes=$((diff / 60))
+            print_warning "OAuth token expires in $minutes minutes"
+            print_info "File: $creds_file"
+            print_info "Expires at: $(date -d @$expires_sec '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo 'unknown')"
+            echo ""
+            if [[ $most_critical_status -eq 0 ]]; then
+                most_critical_status=2
+            fi
+        fi
+    done
+
+    return $most_critical_status
 }
 
 #######################################
@@ -2721,6 +2806,7 @@ OPTIONS:
   -p, --proxy URL                   Set proxy URL directly (skip prompt)
   --proxy-ca PATH                   Path to proxy CA certificate (PEM format) - SECURE
   --proxy-insecure                  Ignore TLS certs for HTTPS proxy - ⚠️  INSECURE (NOT recommended)
+  --token KEY, --api-key KEY        Use API key authentication (temporary, not saved)
   -t, --test                        Test proxy and exit (don't launch Claude)
   -c, --clear                       Clear saved credentials
   --no-proxy                        Launch Claude Code without proxy
@@ -2765,6 +2851,13 @@ EXAMPLES:
 
   # Set HTTPS proxy WITHOUT certificate validation (⚠️  INSECURE - not recommended)
   iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
+
+  # Use API key authentication (temporary, not saved)
+  iclaude --token sk-ant-api03-...
+  iclaude --api-key sk-ant-api03-...
+
+  # Use API key with proxy
+  iclaude --proxy http://proxy:8118 --token sk-ant-api03-...
 
   # Get help exporting proxy certificate
   iclaude --help-export-cert
@@ -2879,11 +2972,24 @@ CREDENTIALS:
   - File permissions: 600 (owner read/write only)
   - Automatically excluded from git (.gitignore)
   - Reused on subsequent runs (prompt to confirm/change)
-  - Includes: PROXY_URL, PROXY_INSECURE, PROXY_CA_PATH, NO_PROXY
+  - Includes: PROXY_URL, PROXY_INSECURE, PROXY_CA_PATH, NO_PROXY, API_KEY
+
+AUTHENTICATION:
+  OAuth Token (default):
+    - Stored in ~/.claude/.credentials.json (system) and .nvm-isolated/.claude-isolated/.credentials.json (isolated)
+    - Automatically refreshed every 5 minutes or on HTTP 401
+    - Token expiration checked at startup (warns if < 1 hour remaining)
+    - Run '/login' in Claude Code if token expired
+
+  API Key (alternative):
+    - Use --token or --api-key flag for temporary use (not saved to ${CREDENTIALS_FILE})
+    - Saved to ${CREDENTIALS_FILE} only when used with proxy settings
+    - Bypasses OAuth token expiration checks
+    - Recommended for long-running sessions or CI/CD environments
 
 ENVIRONMENT:
-  After loading proxy, these variables are set:
-    HTTPS_PROXY, HTTP_PROXY, NO_PROXY
+  After loading proxy and authentication, these variables are set:
+    HTTPS_PROXY, HTTP_PROXY, NO_PROXY, ANTHROPIC_API_KEY (if API key provided)
 
 NO_PROXY CONFIGURATION:
   - Default value: localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org
@@ -2905,6 +3011,44 @@ GIT PROXY:
 
   To restore original git proxy settings:
     iclaude --restore-git-proxy
+
+HOW TO GET API KEY (ANTHROPIC API):
+  ⚠️  ВАЖНО: API key от Anthropic API - это ОТДЕЛЬНАЯ услуга от подписки Claude Pro!
+
+  Anthropic API - это программный доступ к модели Claude для разработчиков.
+  Подписка Claude Pro (claude.ai) - это веб-интерфейс для личного использования.
+
+  API key НЕ входит в подписку Claude Pro. Это отдельная платная услуга.
+
+  Как получить API key:
+    1. Перейдите на https://console.anthropic.com
+    2. Нажмите "Sign up" или "Continue with Google"
+    3. В левом нижнем углу нажмите на иконку ключа → API Keys
+    4. Нажмите "Create Key", введите имя ключа
+    5. Скопируйте ключ и сохраните в безопасном месте (его нельзя будет просмотреть повторно)
+
+  Оплата API:
+    - Работает по предоплатной системе кредитов
+    - При создании аккаунта нужно добавить кредитную карту и купить начальную сумму кредитов
+    - Можно настроить автоматическое пополнение кредитов
+    - Цены: https://www.anthropic.com/pricing
+
+  Использование API key в iclaude:
+    # Временное использование (не сохраняется):
+    iclaude --token sk-ant-api03-ваш-ключ
+
+    # Сохранить в credentials вместе с proxy (для постоянного использования):
+    # Просто используйте --token при первом запуске с proxy:
+    iclaude --proxy http://proxy:8118 --token sk-ant-api03-ваш-ключ
+    # API key автоматически сохранится в .claude_proxy_credentials
+
+    # Последующие запуски будут автоматически использовать сохраненный API key:
+    iclaude
+
+  Для пользователей из России:
+    - Прямая оплата российскими картами обычно не работает
+    - Альтернативные варианты: plati.ru, GGSEL, Plati.Market (платные посредники)
+    - См. инструкции: https://habr.com/ru/articles/863216/
 
 INSTALLATION:
   After installing with --install, you can run 'iclaude' from anywhere.
@@ -2928,6 +3072,7 @@ main() {
     local use_system=false
     local use_isolated_config=false
     local use_shared_config=false
+    local api_key=""  # API key for temporary use (--token/--api-key flag)
     local claude_args=()
 
     # Parse arguments
@@ -2942,11 +3087,38 @@ main() {
                 exit 0
                 ;;
             -p|--proxy)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--proxy requires a URL argument"
+                    echo "Usage: iclaude --proxy http://user:pass@host:port"
+                    exit 1
+                fi
                 proxy_url="$2"
                 shift 2
                 ;;
             --proxy-ca)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--proxy-ca requires a certificate path argument"
+                    echo "Usage: iclaude --proxy-ca /path/to/cert.pem"
+                    exit 1
+                fi
                 proxy_ca_path="$2"
+                shift 2
+                ;;
+            --token|--api-key)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--token/--api-key requires an API key argument"
+                    echo "Usage: iclaude --token sk-ant-api03-..."
+                    echo ""
+                    echo "To get an API key:"
+                    echo "  1. Visit https://console.anthropic.com"
+                    echo "  2. Sign up or log in"
+                    echo "  3. Click on Key icon → API Keys"
+                    echo "  4. Create a new key"
+                    echo ""
+                    echo "For more info: iclaude --help"
+                    exit 1
+                fi
+                api_key="$2"
                 shift 2
                 ;;
             -t|--test)
@@ -3152,6 +3324,18 @@ main() {
             restore_git_proxy
         fi
 
+        # Check OAuth token expiration (unless using API key)
+        if [[ -z "$api_key" ]]; then
+            check_token_expiration
+        fi
+
+        # Export API key if provided (from flag or environment)
+        if [[ -n "$api_key" ]]; then
+            export ANTHROPIC_API_KEY="$api_key"
+            print_info "Using API key authentication"
+            echo ""
+        fi
+
         # Add --dangerously-skip-permissions by default (unless --save is used)
         if [[ "$skip_permissions" == true ]]; then
             claude_args+=("--dangerously-skip-permissions")
@@ -3174,11 +3358,12 @@ main() {
     local proxy_no_proxy=""
     if [[ -z "$proxy_url" ]]; then
         proxy_credentials=$(prompt_proxy_url)
-        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY
+        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY|API_KEY
         proxy_url=$(echo "$proxy_credentials" | cut -d'|' -f1)
         local saved_insecure=$(echo "$proxy_credentials" | cut -d'|' -f2)
         local saved_ca=$(echo "$proxy_credentials" | cut -d'|' -f3)
         proxy_no_proxy=$(echo "$proxy_credentials" | cut -d'|' -f4)
+        local saved_api_key=$(echo "$proxy_credentials" | cut -d'|' -f5)
 
         # Override with command-line flags if provided
         if [[ "$proxy_insecure" == true ]]; then
@@ -3191,6 +3376,11 @@ main() {
         # Use saved CA if no command-line CA provided
         if [[ -z "$proxy_ca_path" ]] && [[ -n "$saved_ca" ]] && [[ "$saved_ca" != "" ]]; then
             proxy_ca_path="$saved_ca"
+        fi
+
+        # Use saved API key if no command-line API key provided
+        if [[ -z "$api_key" ]] && [[ -n "$saved_api_key" ]] && [[ "$saved_api_key" != "" ]]; then
+            api_key="$saved_api_key"
         fi
     else
         # Validate provided URL
@@ -3250,9 +3440,26 @@ main() {
         echo ""
     fi
 
+    # Check OAuth token expiration (unless using API key)
+    if [[ -z "$api_key" ]]; then
+        check_token_expiration
+    fi
+
+    # Export API key if provided (from flag or saved credentials)
+    if [[ -n "$api_key" ]]; then
+        export ANTHROPIC_API_KEY="$api_key"
+        print_info "Using API key authentication"
+        echo ""
+    fi
+
     # Add --dangerously-skip-permissions by default (unless --save is used)
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
+    fi
+
+    # Save credentials if API key provided via flag (optional, for future use)
+    if [[ -n "$api_key" ]] && [[ -n "$proxy_url" ]]; then
+        save_credentials "$proxy_url" "$proxy_insecure" "$proxy_ca_path" "$proxy_no_proxy" "$api_key"
     fi
 
     # Launch Claude Code
