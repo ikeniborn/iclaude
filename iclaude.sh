@@ -3214,17 +3214,8 @@ main() {
             restore_git_proxy
         fi
 
-        # Check OAuth token expiration (unless using API key)
-        if [[ -z "$api_key" ]]; then
-            check_token_expiration
-        fi
-
-        # Export API key if provided (from flag or environment)
-        if [[ -n "$api_key" ]]; then
-            export ANTHROPIC_API_KEY="$api_key"
-            print_info "Using API key authentication"
-            echo ""
-        fi
+        # Check OAuth token expiration
+        check_token_expiration
 
         # Add --dangerously-skip-permissions by default (unless --save is used)
         if [[ "$skip_permissions" == true ]]; then
@@ -3310,26 +3301,12 @@ main() {
         echo ""
     fi
 
-    # Check OAuth token expiration (unless using API key)
-    if [[ -z "$api_key" ]]; then
-        check_token_expiration
-    fi
-
-    # Export API key if provided (from flag or saved credentials)
-    if [[ -n "$api_key" ]]; then
-        export ANTHROPIC_API_KEY="$api_key"
-        print_info "Using API key authentication"
-        echo ""
-    fi
+    # Check OAuth token expiration
+    check_token_expiration
 
     # Add --dangerously-skip-permissions by default (unless --save is used)
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
-    fi
-
-    # Save credentials if API key provided via flag (optional, for future use)
-    if [[ -n "$api_key" ]] && [[ -n "$proxy_url" ]]; then
-        save_credentials "$proxy_url" "$proxy_insecure" "$proxy_ca_path" "$proxy_no_proxy" "$api_key"
     fi
 
     # Launch Claude Code
