@@ -3236,13 +3236,6 @@ main() {
         exit 0
     fi
 
-    # Validate proxy CA certificate if provided
-    if [[ -n "$proxy_ca_path" ]]; then
-        if ! validate_certificate_file "$proxy_ca_path"; then
-            exit 1
-        fi
-    fi
-
     # Get proxy URL (from argument, saved file, or prompt)
     local proxy_credentials
     local proxy_no_proxy=""
