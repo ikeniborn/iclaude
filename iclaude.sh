@@ -51,93 +51,102 @@ print_error() {
 }
 
 #######################################
-# Validate proxy URL format
+# Validate proxy URL format (requires IP address)
 #######################################
 validate_proxy_url() {
     local url=$1
 
-    # Regex: http(s)://[user:pass@]host:port
+    # Basic format check: http(s)://[user:pass@]host:port
     if [[ ! "$url" =~ ^(http|https|socks5)://.*:[0-9]+$ ]]; then
         return 1
     fi
 
+    # Extract host from URL
+    local remainder=$(echo "$url" | sed 's|^[^:]*://||')
+    local host
+
+    # Check if credentials present (contains @)
+    if [[ "$remainder" =~ @ ]]; then
+        # Extract host:port after @
+        local hostport=$(echo "$remainder" | sed 's|^[^@]*@||')
+        host=$(echo "$hostport" | cut -d':' -f1)
+    else
+        # No credentials, extract host directly
+        host=$(echo "$remainder" | cut -d':' -f1)
+    fi
+
+    # Validate that host is an IP address
+    if ! is_ip_address "$host"; then
+        return 2  # Return 2 to indicate "domain instead of IP"
+    fi
+
     return 0
 }
 
 #######################################
-# Validate certificate file (PEM format)
+# Check if host is IP address (IPv4)
 #######################################
-validate_certificate_file() {
-    local cert_path=$1
-
-    # Check if file exists
-    if [[ ! -f "$cert_path" ]]; then
-        print_error "Certificate file not found: $cert_path"
-        return 1
+is_ip_address() {
+    local host=$1
+    # Regex for IPv4 address
+    if [[ "$host" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        # Validate each octet is 0-255
+        local IFS='.'
+        local -a octets=($host)
+        for octet in "${octets[@]}"; do
+            if (( octet > 255 )); then
+                return 1
+            fi
+        done
+        return 0
     fi
+    return 1
+}
 
-    # Check if file is readable
-    if [[ ! -r "$cert_path" ]]; then
-        print_error "Certificate file not readable: $cert_path"
-        return 1
-    fi
+#######################################
+# Resolve domain to IP address
+# Returns IP address on success, empty on failure
+#######################################
+resolve_domain_to_ip() {
+    local domain=$1
 
-    # Check if file contains PEM certificate markers
-    if ! grep -q "BEGIN CERTIFICATE" "$cert_path" 2>/dev/null; then
-        print_error "Invalid certificate format (PEM expected): $cert_path"
-        echo ""
-        echo "Expected PEM format with '-----BEGIN CERTIFICATE-----' marker"
-        return 1
-    fi
-
-    # Optionally verify with openssl (if available)
-    if command -v openssl &> /dev/null; then
-        if ! openssl x509 -in "$cert_path" -noout 2>/dev/null; then
-            print_error "Certificate validation failed (openssl): $cert_path"
-            return 1
+    # Try using getent first (most reliable)
+    if command -v getent &> /dev/null; then
+        local ip=$(getent hosts "$domain" 2>/dev/null | awk '{print $1}' | head -n1)
+        if [[ -n "$ip" ]]; then
+            echo "$ip"
+            return 0
         fi
     fi
 
-    return 0
-}
+    # Fallback to host command
+    if command -v host &> /dev/null; then
+        local ip=$(host "$domain" 2>/dev/null | grep "has address" | awk '{print $4}' | head -n1)
+        if [[ -n "$ip" ]]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
 
-#######################################
-# Show help for exporting proxy certificate
-#######################################
-export_proxy_certificate_help() {
-    local proxy_host=${1:-proxy.example.com}
-    local proxy_port=${2:-8118}
+    # Fallback to dig command
+    if command -v dig &> /dev/null; then
+        local ip=$(dig +short "$domain" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+        if [[ -n "$ip" ]]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
 
-    cat << EOF
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Как экспортировать сертификат HTTPS прокси
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Fallback to nslookup
+    if command -v nslookup &> /dev/null; then
+        local ip=$(nslookup "$domain" 2>/dev/null | grep -A1 "Name:" | tail -n1 | awk '{print $2}')
+        if [[ -n "$ip" ]] && is_ip_address "$ip"; then
+            echo "$ip"
+            return 0
+        fi
+    fi
 
-${BLUE}Метод 1: Используя openssl${NC}
-
-  openssl s_client -showcerts -connect ${proxy_host}:${proxy_port} < /dev/null 2>/dev/null | \\
-    openssl x509 -outform PEM > proxy-cert.pem
-
-${BLUE}Метод 2: Используя браузер${NC}
-
-  1. Откройте настройки прокси в браузере
-  2. Подключитесь через прокси к любому HTTPS сайту
-  3. Нажмите на иконку замка в адресной строке
-  4. Просмотр сертификата → Экспорт → Выберите формат PEM
-  5. Сохраните как proxy-cert.pem
-
-${BLUE}Метод 3: Если у вас есть доступ к прокси-серверу${NC}
-
-  Найдите файл сертификата (обычно .crt, .pem, .cer) в конфигурации
-  прокси-сервера и скопируйте его.
-
-${BLUE}После экспорта используйте:${NC}
-
-  iclaude --proxy https://user:pass@${proxy_host}:${proxy_port} \\
-              --proxy-ca /path/to/proxy-cert.pem
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EOF
+    return 1
 }
 
 #######################################
@@ -1328,25 +1337,79 @@ import_config() {
 
 #######################################
 # Save credentials to file
+# Auto-converts domain names to IP addresses
 #######################################
 save_credentials() {
     local proxy_url=$1
-    local insecure=${2:-false}
-    local ca_path=${3:-}
-    local no_proxy=${4:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
-    local api_key=${5:-}
+    local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+
+    # Extract host from URL to check if it's a domain
+    local remainder=$(echo "$proxy_url" | sed 's|^[^:]*://||')
+    local host
+
+    # Check if credentials present (contains @)
+    if [[ "$remainder" =~ @ ]]; then
+        local hostport=$(echo "$remainder" | sed 's|^[^@]*@||')
+        host=$(echo "$hostport" | cut -d':' -f1)
+    else
+        host=$(echo "$remainder" | cut -d':' -f1)
+    fi
+
+    # If host is domain (not IP), try to resolve and offer replacement
+    if ! is_ip_address "$host"; then
+        print_warning "Proxy URL contains domain name instead of IP address: $host"
+        echo ""
+        print_info "Attempting to resolve domain to IP address..."
+
+        local resolved_ip=$(resolve_domain_to_ip "$host")
+
+        if [[ -n "$resolved_ip" ]]; then
+            print_success "Resolved $host → $resolved_ip"
+            echo ""
+            print_info "Recommendation: Use IP address for better reliability"
+            echo ""
+
+            # Offer to replace domain with IP
+            read -p "Replace domain with IP address? (Y/n): " -n 1 -r
+            echo ""
+
+            if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+                # Replace domain with IP in URL
+                if [[ "$remainder" =~ @ ]]; then
+                    # URL has credentials: protocol://user:pass@domain:port
+                    local credentials=$(echo "$remainder" | grep -oP '^[^@]+')
+                    local port=$(echo "$hostport" | cut -d':' -f2)
+                    local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
+                    proxy_url="${protocol}://${credentials}@${resolved_ip}:${port}"
+                else
+                    # URL has no credentials: protocol://domain:port
+                    local port=$(echo "$remainder" | cut -d':' -f2)
+                    local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
+                    proxy_url="${protocol}://${resolved_ip}:${port}"
+                fi
+                print_success "Updated URL to use IP address"
+                # Show new URL with masked password
+                local display_url=$(echo "$proxy_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
+                echo "  New URL: $display_url"
+            else
+                print_warning "Keeping domain name (not recommended)"
+                print_info "Domain resolution may fail or be unreliable"
+            fi
+        else
+            print_error "Failed to resolve domain: $host"
+            print_warning "Saving URL with domain name (may be unreliable)"
+        fi
+        echo ""
+    fi
 
     # Create credentials file with restricted permissions
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL, insecure flag, CA path, NO_PROXY, and API key
+    # Save URL and NO_PROXY
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
-PROXY_INSECURE=$insecure
-PROXY_CA_PATH=$ca_path
 NO_PROXY=$no_proxy
-API_KEY=$api_key
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE"
@@ -1367,29 +1430,26 @@ load_credentials() {
     if [[ -z "${PROXY_URL:-}" ]]; then
         # Old format: first line is the URL
         PROXY_URL=$(head -n 1 "$CREDENTIALS_FILE")
-        PROXY_INSECURE=false
-        PROXY_CA_PATH=""
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
-        API_KEY=""
     fi
 
     if [[ -z "$PROXY_URL" ]]; then
         return 1
     fi
 
-    # Validate URL
-    if ! validate_proxy_url "$PROXY_URL"; then
-        print_warning "Saved credentials are invalid, will prompt for new URL"
-        return 1
-    fi
+    # Validate URL format (allow domains for backward compatibility)
+    local validation_result
+    validate_proxy_url "$PROXY_URL"
+    validation_result=$?
 
-    # Validate CA path if present
-    if [[ -n "${PROXY_CA_PATH:-}" ]] && [[ "$PROXY_CA_PATH" != "" ]]; then
-        if [[ ! -f "$PROXY_CA_PATH" ]]; then
-            print_warning "Saved CA certificate not found: $PROXY_CA_PATH"
-            print_info "Will ignore CA certificate setting"
-            PROXY_CA_PATH=""
-        fi
+    if [[ $validation_result -eq 1 ]]; then
+        # Invalid format
+        print_warning "Saved credentials have invalid format, will prompt for new URL"
+        return 1
+    elif [[ $validation_result -eq 2 ]]; then
+        # Domain instead of IP (warn but allow)
+        print_warning "Saved proxy URL uses domain name instead of IP address"
+        print_info "Consider updating to IP address for better reliability"
     fi
 
     # Set default NO_PROXY if not present (backward compatibility)
@@ -1397,13 +1457,8 @@ load_credentials() {
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
-    # Set default API_KEY if not present (backward compatibility)
-    if [[ -z "${API_KEY:-}" ]]; then
-        API_KEY=""
-    fi
-
-    # Return URL, insecure flag, CA path, NO_PROXY, and API key (pipe-separated for reliable parsing)
-    echo "$PROXY_URL|${PROXY_INSECURE:-false}|${PROXY_CA_PATH:-}|${NO_PROXY}|${API_KEY}"
+    # Return URL and NO_PROXY (pipe-separated for reliable parsing)
+    echo "$PROXY_URL|${NO_PROXY}"
     return 0
 }
 
@@ -1415,36 +1470,19 @@ prompt_proxy_url() {
 
     # Check if credentials exist
     if saved_credentials=$(load_credentials); then
-        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY|API_KEY
+        # Parse pipe-separated output: URL|NO_PROXY
         local saved_url=$(echo "$saved_credentials" | cut -d'|' -f1)
-        local saved_insecure=$(echo "$saved_credentials" | cut -d'|' -f2)
-        local saved_ca=$(echo "$saved_credentials" | cut -d'|' -f3)
-        local saved_no_proxy=$(echo "$saved_credentials" | cut -d'|' -f4)
-        local saved_api_key=$(echo "$saved_credentials" | cut -d'|' -f5)
+        local saved_no_proxy=$(echo "$saved_credentials" | cut -d'|' -f2)
 
         print_info "Saved proxy found" >&2
         echo "" >&2
         # Hide password in display
         local display_url=$(echo "$saved_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
         echo "  URL: $display_url" >&2
-
-        # Display security options
-        if [[ -n "$saved_ca" ]] && [[ "$saved_ca" != "" ]]; then
-            echo "  CA Certificate: $saved_ca" >&2
-        elif [[ "$saved_insecure" == "true" ]]; then
-            echo "  Options: --proxy-insecure (⚠️  небезопасно)" >&2
-        fi
-
-        # Display API key if present
-        if [[ -n "$saved_api_key" ]] && [[ "$saved_api_key" != "" ]]; then
-            # Mask API key for security
-            local masked_key="${saved_api_key:0:8}...${saved_api_key: -4}"
-            echo "  API Key: $masked_key" >&2
-        fi
         echo "" >&2
 
         # Auto-use saved proxy (no confirmation needed)
-        echo "$saved_url|$saved_insecure|$saved_ca|$saved_no_proxy|$saved_api_key"
+        echo "$saved_url|$saved_no_proxy"
         return 0
     fi
 
@@ -1452,9 +1490,10 @@ prompt_proxy_url() {
     echo "" >&2
     print_info "Enter HTTP proxy URL" >&2
     echo "" >&2
-    echo "Format: protocol://username:password@host:port" >&2
-    echo "Example: https://alice:secret123@127.0.0.1:8118" >&2
+    echo "Format: protocol://username:password@IP:port" >&2
+    echo "Example: http://alice:secret123@127.0.0.1:8118" >&2
     echo "" >&2
+    echo "Note: Use IP address instead of domain name for better reliability" >&2
     echo "Supported protocols: http, https, socks5" >&2
     echo "" >&2
 
@@ -1474,14 +1513,23 @@ prompt_proxy_url() {
             continue
         fi
 
-        if ! validate_proxy_url "$proxy_url"; then
+        local validation_result
+        validate_proxy_url "$proxy_url"
+        validation_result=$?
+
+        if [[ $validation_result -eq 1 ]]; then
             print_error "Invalid URL format" >&2
-            echo "Expected: protocol://[user:pass@]host:port" >&2
+            echo "Expected: protocol://[user:pass@]IP:port" >&2
             continue
+        elif [[ $validation_result -eq 2 ]]; then
+            print_warning "URL contains domain name instead of IP address" >&2
+            echo "Domains may be less reliable than IP addresses" >&2
+            echo "Consider using IP address (will be resolved during save)" >&2
+            echo "" >&2
         fi
 
-        # Return URL with default insecure=false, no CA, default NO_PROXY, and no API key (pipe-separated)
-        echo "$proxy_url|false||localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org|"
+        # Return URL with default NO_PROXY (pipe-separated)
+        echo "$proxy_url|localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
         return 0
     done
 }
@@ -1491,54 +1539,21 @@ prompt_proxy_url() {
 #######################################
 configure_proxy_from_url() {
     local proxy_url=$1
-    local insecure=${2:-false}
-    local ca_path=${3:-}
-    local no_proxy=${4:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+    local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
 
     # Set environment variables
     export HTTPS_PROXY="$proxy_url"
     export HTTP_PROXY="$proxy_url"
     export NO_PROXY="$no_proxy"
 
-    # Set flags for test_proxy()
-    export PROXY_INSECURE="$insecure"
-    export PROXY_CA_PATH="$ca_path"
-
-    # Security configuration for HTTPS proxies
-    if [[ "$proxy_url" =~ ^https:// ]]; then
-        # Priority 1: Use CA certificate (SECURE)
-        if [[ -n "$ca_path" ]] && [[ -f "$ca_path" ]]; then
-            export NODE_EXTRA_CA_CERTS="$ca_path"
-            print_success "Using proxy CA certificate: $ca_path"
-            print_info "TLS verification enabled for all connections"
-            echo ""
-        # Priority 2: Use insecure mode (INSECURE - with warning)
-        elif [[ "$insecure" == "true" ]]; then
-            export NODE_TLS_REJECT_UNAUTHORIZED=0
-            echo ""
-            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            print_warning "  ВНИМАНИЕ: РЕЖИМ НЕБЕЗОПАСНОГО ПОДКЛЮЧЕНИЯ"
-            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo ""
-            echo "  Отключена проверка TLS сертификатов для ВСЕХ соединений:"
-            echo "  • Прокси-сервер (это нужно)"
-            echo "  • Claude Code → Anthropic API (⚠️  НЕБЕЗОПАСНО!)"
-            echo ""
-            echo "  Возможна атака Man-in-the-Middle на API соединения!"
-            echo ""
-            print_info "Рекомендация: используйте --proxy-ca вместо --proxy-insecure"
-            echo ""
-            echo "  Для экспорта сертификата прокси см.: iclaude --help-export-cert"
-            print_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo ""
-        fi
-    fi
+    # Always disable TLS verification for proxies (insecure mode by default)
+    export NODE_TLS_REJECT_UNAUTHORIZED=0
 
     # Configure git to ignore proxy
     configure_git_no_proxy
 
     # Save credentials (including NO_PROXY)
-    save_credentials "$proxy_url" "$insecure" "$ca_path" "$no_proxy"
+    save_credentials "$proxy_url" "$no_proxy"
 }
 
 #######################################
@@ -1649,20 +1664,12 @@ test_proxy() {
         return 0
     fi
 
-    # Prepare curl command with proxy
-    local curl_opts=(-x "$proxy_url" -s -m 5 -o /dev/null -w "%{http_code}")
+    # Prepare curl command with proxy (use -k for insecure mode by default)
+    local curl_opts=(-x "$proxy_url" -k -s -m 5 -o /dev/null -w "%{http_code}")
 
-    # Configure TLS for HTTPS proxies
+    # For HTTPS proxies, also use --proxy-insecure
     if [[ "$proxy_url" =~ ^https:// ]]; then
-        # Priority 1: Use CA certificate (secure)
-        if [[ -n "${PROXY_CA_PATH:-}" ]] && [[ -f "${PROXY_CA_PATH}" ]]; then
-            curl_opts+=(--proxy-cacert "${PROXY_CA_PATH}")
-            print_info "Using CA certificate for proxy validation"
-        # Priority 2: Use insecure mode (insecure)
-        elif [[ "${PROXY_INSECURE:-false}" == "true" ]]; then
-            curl_opts+=(--proxy-insecure)
-            print_info "Using insecure mode (no certificate validation)"
-        fi
+        curl_opts+=(--proxy-insecure)
     fi
 
     # Test connection through proxy
@@ -1678,9 +1685,6 @@ test_proxy() {
         echo "  - Proxy server is unreachable or down"
         echo "  - Incorrect credentials"
         echo "  - Firewall blocking the connection"
-        if [[ "$proxy_url" =~ ^https:// ]] && [[ -z "${PROXY_CA_PATH:-}" ]] && [[ "${PROXY_INSECURE:-false}" != "true" ]]; then
-            echo "  - Self-signed proxy certificate (use --proxy-ca or --proxy-insecure)"
-        fi
         echo ""
         echo "  Claude Code may still work if proxy becomes available"
         return 1
@@ -2802,11 +2806,7 @@ Initialize Claude Code with HTTP proxy settings
 
 OPTIONS:
   -h, --help                        Show this help message
-  --help-export-cert                Show instructions for exporting proxy certificate
   -p, --proxy URL                   Set proxy URL directly (skip prompt)
-  --proxy-ca PATH                   Path to proxy CA certificate (PEM format) - SECURE
-  --proxy-insecure                  Ignore TLS certs for HTTPS proxy - ⚠️  INSECURE (NOT recommended)
-  --token KEY, --api-key KEY        Use API key authentication (temporary, not saved)
   -t, --test                        Test proxy and exit (don't launch Claude)
   -c, --clear                       Clear saved credentials
   --no-proxy                        Launch Claude Code without proxy
@@ -2843,24 +2843,8 @@ EXAMPLES:
   # Second run - use saved credentials automatically
   iclaude
 
-  # Set proxy URL directly
+  # Set proxy URL directly (use IP address recommended)
   iclaude --proxy http://user:pass@127.0.0.1:8118
-
-  # Set HTTPS proxy with CA certificate (SECURE - recommended)
-  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca /path/to/proxy-cert.pem
-
-  # Set HTTPS proxy WITHOUT certificate validation (⚠️  INSECURE - not recommended)
-  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
-
-  # Use API key authentication (temporary, not saved)
-  iclaude --token sk-ant-api03-...
-  iclaude --api-key sk-ant-api03-...
-
-  # Use API key with proxy
-  iclaude --proxy http://proxy:8118 --token sk-ant-api03-...
-
-  # Get help exporting proxy certificate
-  iclaude --help-export-cert
 
   # Test proxy without launching Claude
   iclaude --test
@@ -2941,38 +2925,25 @@ ISOLATED CONFIGURATION:
   iclaude --import-config /path/to/backup
 
 PROXY URL FORMAT:
-  http://username:password@host:port
-  https://username:password@host:port  (recommended: use with --proxy-ca)
-  socks5://username:password@host:port
+  http://username:password@IP:port
+  https://username:password@IP:port
+  socks5://username:password@IP:port
+
+  ⚠️  Important: Use IP addresses instead of domain names for better reliability
 
   Examples:
     http://alice:secret123@127.0.0.1:8118
-    https://alice:secret123@proxy.example.com:8118 --proxy-ca /path/to/cert.pem  (SECURE)
-    https://alice:secret123@proxy.example.com:8118 --proxy-insecure  (⚠️  INSECURE)
-    socks5://bob:pass456@proxy.example.com:1080
+    https://alice:secret123@192.168.1.100:8118
+    socks5://bob:pass456@10.0.0.5:1080
 
-HTTPS PROXY SECURITY:
-  When using HTTPS proxies with self-signed certificates, you have two options:
-
-  1. --proxy-ca /path/to/cert.pem (✅ RECOMMENDED - SECURE)
-     - Adds ONLY the proxy certificate to trusted CAs
-     - TLS verification remains ENABLED for all other connections
-     - Claude Code → Anthropic API connections are SECURE
-     - Use: iclaude --help-export-cert for certificate export instructions
-
-  2. --proxy-insecure (⚠️  NOT RECOMMENDED - INSECURE)
-     - Disables TLS certificate verification for ALL Node.js connections
-     - Proxy connection: no verification (needed)
-     - Claude Code → Anthropic API: NO VERIFICATION (⚠️  DANGEROUS!)
-     - Vulnerable to Man-in-the-Middle attacks on API calls
-     - Only use with trusted networks and as last resort
+  Note: TLS certificate verification is disabled by default (NODE_TLS_REJECT_UNAUTHORIZED=0)
 
 CREDENTIALS:
   - Saved to: ${CREDENTIALS_FILE}
   - File permissions: 600 (owner read/write only)
   - Automatically excluded from git (.gitignore)
   - Reused on subsequent runs (prompt to confirm/change)
-  - Includes: PROXY_URL, PROXY_INSECURE, PROXY_CA_PATH, NO_PROXY, API_KEY
+  - Includes: PROXY_URL, NO_PROXY
 
 AUTHENTICATION:
   OAuth Token (default):
@@ -2981,15 +2952,9 @@ AUTHENTICATION:
     - Token expiration checked at startup (warns if < 1 hour remaining)
     - Run '/login' in Claude Code if token expired
 
-  API Key (alternative):
-    - Use --token or --api-key flag for temporary use (not saved to ${CREDENTIALS_FILE})
-    - Saved to ${CREDENTIALS_FILE} only when used with proxy settings
-    - Bypasses OAuth token expiration checks
-    - Recommended for long-running sessions or CI/CD environments
-
 ENVIRONMENT:
-  After loading proxy and authentication, these variables are set:
-    HTTPS_PROXY, HTTP_PROXY, NO_PROXY, ANTHROPIC_API_KEY (if API key provided)
+  After loading proxy, these variables are set:
+    HTTPS_PROXY, HTTP_PROXY, NO_PROXY, NODE_TLS_REJECT_UNAUTHORIZED=0
 
 NO_PROXY CONFIGURATION:
   - Default value: localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org
@@ -3012,44 +2977,6 @@ GIT PROXY:
   To restore original git proxy settings:
     iclaude --restore-git-proxy
 
-HOW TO GET API KEY (ANTHROPIC API):
-  ⚠️  ВАЖНО: API key от Anthropic API - это ОТДЕЛЬНАЯ услуга от подписки Claude Pro!
-
-  Anthropic API - это программный доступ к модели Claude для разработчиков.
-  Подписка Claude Pro (claude.ai) - это веб-интерфейс для личного использования.
-
-  API key НЕ входит в подписку Claude Pro. Это отдельная платная услуга.
-
-  Как получить API key:
-    1. Перейдите на https://console.anthropic.com
-    2. Нажмите "Sign up" или "Continue with Google"
-    3. В левом нижнем углу нажмите на иконку ключа → API Keys
-    4. Нажмите "Create Key", введите имя ключа
-    5. Скопируйте ключ и сохраните в безопасном месте (его нельзя будет просмотреть повторно)
-
-  Оплата API:
-    - Работает по предоплатной системе кредитов
-    - При создании аккаунта нужно добавить кредитную карту и купить начальную сумму кредитов
-    - Можно настроить автоматическое пополнение кредитов
-    - Цены: https://www.anthropic.com/pricing
-
-  Использование API key в iclaude:
-    # Временное использование (не сохраняется):
-    iclaude --token sk-ant-api03-ваш-ключ
-
-    # Сохранить в credentials вместе с proxy (для постоянного использования):
-    # Просто используйте --token при первом запуске с proxy:
-    iclaude --proxy http://proxy:8118 --token sk-ant-api03-ваш-ключ
-    # API key автоматически сохранится в .claude_proxy_credentials
-
-    # Последующие запуски будут автоматически использовать сохраненный API key:
-    iclaude
-
-  Для пользователей из России:
-    - Прямая оплата российскими картами обычно не работает
-    - Альтернативные варианты: plati.ru, GGSEL, Plati.Market (платные посредники)
-    - См. инструкции: https://habr.com/ru/articles/863216/
-
 INSTALLATION:
   After installing with --install, you can run 'iclaude' from anywhere.
   The script will be available at: /usr/local/bin/iclaude
@@ -3067,12 +2994,9 @@ main() {
     local proxy_url=""
     local skip_permissions=true  # По умолчанию используется --dangerously-skip-permissions
     local no_proxy=false
-    local proxy_insecure=false
-    local proxy_ca_path=""
     local use_system=false
     local use_isolated_config=false
     local use_shared_config=false
-    local api_key=""  # API key for temporary use (--token/--api-key flag)
     local claude_args=()
 
     # Parse arguments
@@ -3082,10 +3006,6 @@ main() {
                 show_usage
                 exit 0
                 ;;
-            --help-export-cert)
-                export_proxy_certificate_help
-                exit 0
-                ;;
             -p|--proxy)
                 if [[ -z "${2:-}" ]]; then
                     print_error "--proxy requires a URL argument"
@@ -3093,32 +3013,6 @@ main() {
                     exit 1
                 fi
                 proxy_url="$2"
-                shift 2
-                ;;
-            --proxy-ca)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--proxy-ca requires a certificate path argument"
-                    echo "Usage: iclaude --proxy-ca /path/to/cert.pem"
-                    exit 1
-                fi
-                proxy_ca_path="$2"
-                shift 2
-                ;;
-            --token|--api-key)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--token/--api-key requires an API key argument"
-                    echo "Usage: iclaude --token sk-ant-api03-..."
-                    echo ""
-                    echo "To get an API key:"
-                    echo "  1. Visit https://console.anthropic.com"
-                    echo "  2. Sign up or log in"
-                    echo "  3. Click on Key icon → API Keys"
-                    echo "  4. Create a new key"
-                    echo ""
-                    echo "For more info: iclaude --help"
-                    exit 1
-                fi
-                api_key="$2"
                 shift 2
                 ;;
             -t|--test)
@@ -3241,10 +3135,6 @@ main() {
                 skip_permissions=false  # Отключаем --dangerously-skip-permissions для безопасного режима
                 shift
                 ;;
-            --proxy-insecure)
-                proxy_insecure=true
-                shift
-                ;;
             --system)
                 use_system=true
                 shift
@@ -3358,44 +3248,31 @@ main() {
     local proxy_no_proxy=""
     if [[ -z "$proxy_url" ]]; then
         proxy_credentials=$(prompt_proxy_url)
-        # Parse pipe-separated output: URL|INSECURE_FLAG|CA_PATH|NO_PROXY|API_KEY
+        # Parse pipe-separated output: URL|NO_PROXY
         proxy_url=$(echo "$proxy_credentials" | cut -d'|' -f1)
-        local saved_insecure=$(echo "$proxy_credentials" | cut -d'|' -f2)
-        local saved_ca=$(echo "$proxy_credentials" | cut -d'|' -f3)
-        proxy_no_proxy=$(echo "$proxy_credentials" | cut -d'|' -f4)
-        local saved_api_key=$(echo "$proxy_credentials" | cut -d'|' -f5)
-
-        # Override with command-line flags if provided
-        if [[ "$proxy_insecure" == true ]]; then
-            saved_insecure="true"
-        elif [[ "$saved_insecure" != "true" ]]; then
-            saved_insecure="false"
-        fi
-        proxy_insecure="$saved_insecure"
-
-        # Use saved CA if no command-line CA provided
-        if [[ -z "$proxy_ca_path" ]] && [[ -n "$saved_ca" ]] && [[ "$saved_ca" != "" ]]; then
-            proxy_ca_path="$saved_ca"
-        fi
-
-        # Use saved API key if no command-line API key provided
-        if [[ -z "$api_key" ]] && [[ -n "$saved_api_key" ]] && [[ "$saved_api_key" != "" ]]; then
-            api_key="$saved_api_key"
-        fi
+        proxy_no_proxy=$(echo "$proxy_credentials" | cut -d'|' -f2)
     else
-        # Validate provided URL
-        if ! validate_proxy_url "$proxy_url"; then
+        # Validate provided URL (allow domains for now)
+        local validation_result
+        validate_proxy_url "$proxy_url"
+        validation_result=$?
+
+        if [[ $validation_result -eq 1 ]]; then
             print_error "Invalid proxy URL: $proxy_url"
-            echo "Expected format: protocol://[user:pass@]host:port"
+            echo "Expected format: protocol://[user:pass@]IP:port"
             exit 1
+        elif [[ $validation_result -eq 2 ]]; then
+            print_warning "Proxy URL contains domain name instead of IP address"
+            print_info "Consider using IP address for better reliability"
         fi
+
         # Use default NO_PROXY if not loaded from saved credentials
         proxy_no_proxy="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
     # Configure proxy
     print_info "Configuring proxy..."
-    configure_proxy_from_url "$proxy_url" "$proxy_insecure" "$proxy_ca_path" "$proxy_no_proxy"
+    configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
 
     # Display configuration
     display_proxy_info "$show_password"
