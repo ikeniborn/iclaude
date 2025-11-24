@@ -1406,9 +1406,10 @@ save_credentials() {
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL and NO_PROXY
+    # Save URL, PROXY_INSECURE (always true), and NO_PROXY
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
+PROXY_INSECURE=true
 NO_PROXY=$no_proxy
 EOF
 
