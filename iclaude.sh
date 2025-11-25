@@ -1337,7 +1337,8 @@ import_config() {
 
 #######################################
 # Save credentials to file
-# Auto-converts domain names to IP addresses
+# Auto-converts domain names to IP addresses (with user confirmation)
+# Returns: final proxy URL (with IP if domain was converted)
 #######################################
 save_credentials() {
     local proxy_url=$1
@@ -1414,6 +1415,9 @@ NO_PROXY=$no_proxy
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE"
+
+    # Return final URL (after possible domain-to-IP conversion)
+    echo "$proxy_url"
 }
 
 #######################################
@@ -1542,9 +1546,13 @@ configure_proxy_from_url() {
     local proxy_url=$1
     local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
 
-    # Set environment variables
-    export HTTPS_PROXY="$proxy_url"
-    export HTTP_PROXY="$proxy_url"
+    # Save credentials first (may convert domain to IP)
+    # and get the final URL (possibly with IP instead of domain)
+    local final_proxy_url=$(save_credentials "$proxy_url" "$no_proxy")
+
+    # Set environment variables with final URL (after possible domain-to-IP conversion)
+    export HTTPS_PROXY="$final_proxy_url"
+    export HTTP_PROXY="$final_proxy_url"
     export NO_PROXY="$no_proxy"
 
     # Always disable TLS verification for proxies (insecure mode by default)
@@ -1552,9 +1560,6 @@ configure_proxy_from_url() {
 
     # Configure git to ignore proxy
     configure_git_no_proxy
-
-    # Save credentials (including NO_PROXY)
-    save_credentials "$proxy_url" "$no_proxy"
 }
 
 #######################################
