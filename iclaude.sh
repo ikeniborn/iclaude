@@ -1358,21 +1358,21 @@ save_credentials() {
 
     # If host is domain (not IP), try to resolve and offer replacement
     if ! is_ip_address "$host"; then
-        print_warning "Proxy URL contains domain name instead of IP address: $host"
-        echo ""
-        print_info "Attempting to resolve domain to IP address..."
+        print_warning "Proxy URL contains domain name instead of IP address: $host" >&2
+        echo "" >&2
+        print_info "Attempting to resolve domain to IP address..." >&2
 
         local resolved_ip=$(resolve_domain_to_ip "$host")
 
         if [[ -n "$resolved_ip" ]]; then
-            print_success "Resolved $host → $resolved_ip"
-            echo ""
-            print_info "Recommendation: Use IP address for better reliability"
-            echo ""
+            print_success "Resolved $host → $resolved_ip" >&2
+            echo "" >&2
+            print_info "Recommendation: Use IP address for better reliability" >&2
+            echo "" >&2
 
             # Offer to replace domain with IP
             read -p "Replace domain with IP address? (Y/n): " -n 1 -r
-            echo ""
+            echo "" >&2
 
             if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
                 # Replace domain with IP in URL
@@ -1388,19 +1388,19 @@ save_credentials() {
                     local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
                     proxy_url="${protocol}://${resolved_ip}:${port}"
                 fi
-                print_success "Updated URL to use IP address"
+                print_success "Updated URL to use IP address" >&2
                 # Show new URL with masked password
                 local display_url=$(echo "$proxy_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
-                echo "  New URL: $display_url"
+                echo "  New URL: $display_url" >&2
             else
-                print_warning "Keeping domain name (not recommended)"
-                print_info "Domain resolution may fail or be unreliable"
+                print_warning "Keeping domain name (not recommended)" >&2
+                print_info "Domain resolution may fail or be unreliable" >&2
             fi
         else
-            print_error "Failed to resolve domain: $host"
-            print_warning "Saving URL with domain name (may be unreliable)"
+            print_error "Failed to resolve domain: $host" >&2
+            print_warning "Saving URL with domain name (may be unreliable)" >&2
         fi
-        echo ""
+        echo "" >&2
     fi
 
     # Create credentials file with restricted permissions
@@ -1414,7 +1414,7 @@ PROXY_INSECURE=true
 NO_PROXY=$no_proxy
 EOF
 
-    print_success "Credentials saved to: $CREDENTIALS_FILE"
+    print_success "Credentials saved to: $CREDENTIALS_FILE" >&2
 
     # Return final URL (after possible domain-to-IP conversion)
     echo "$proxy_url"
