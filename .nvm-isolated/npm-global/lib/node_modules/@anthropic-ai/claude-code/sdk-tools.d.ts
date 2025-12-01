@@ -23,7 +23,6 @@ export type ToolInputSchemas =
   | McpInput
   | NotebookEditInput
   | ReadMcpResourceInput
-  | TimeMachineInput
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
@@ -252,20 +251,6 @@ export interface ReadMcpResourceInput {
    * The resource URI to read
    */
   uri: string;
-}
-export interface TimeMachineInput {
-  /**
-   * The prefix of the user message to rewind to (searches backwards for first match)
-   */
-  message_prefix: string;
-  /**
-   * The new instructions to inject after rewinding, explaining what to do differently
-   */
-  course_correction: string;
-  /**
-   * Whether to restore code changes using file history (default: true)
-   */
-  restore_code?: boolean;
 }
 export interface TodoWriteInput {
   /**
