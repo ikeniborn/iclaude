@@ -1337,12 +1337,16 @@ import_config() {
 
 #######################################
 # Save credentials to file
-# Auto-converts domain names to IP addresses (with user confirmation)
-# Returns: final proxy URL (with IP if domain was converted)
+# HTTPS proxies: Domain names are PRESERVED (required for OAuth/TLS)
+# HTTP proxies: Offers to convert domain to IP (optional, for reliability)
+# Returns: final proxy URL (domain preserved for HTTPS, may be IP for HTTP)
 #######################################
 save_credentials() {
     local proxy_url=$1
     local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+
+    # Extract protocol first
+    local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
 
     # Extract host from URL to check if it's a domain
     local remainder=$(echo "$proxy_url" | sed 's|^[^:]*://||')
@@ -1356,51 +1360,61 @@ save_credentials() {
         host=$(echo "$remainder" | cut -d':' -f1)
     fi
 
-    # If host is domain (not IP), try to resolve and offer replacement
+    # If host is domain (not IP), handle based on protocol
     if ! is_ip_address "$host"; then
-        print_warning "Proxy URL contains domain name instead of IP address: $host" >&2
-        echo "" >&2
-        print_info "Attempting to resolve domain to IP address..." >&2
-
-        local resolved_ip=$(resolve_domain_to_ip "$host")
-
-        if [[ -n "$resolved_ip" ]]; then
-            print_success "Resolved $host → $resolved_ip" >&2
+        # For HTTPS proxies, NEVER replace domain with IP
+        # This is critical for OAuth and TLS (SNI, Host header)
+        if [[ "$protocol" == "https" ]]; then
+            print_info "Proxy URL contains domain name: $host" >&2
             echo "" >&2
-            print_info "Recommendation: Use IP address for better reliability" >&2
+            print_warning "IMPORTANT: Domain name will be preserved for HTTPS proxy" >&2
+            print_info "Reason: OAuth/TLS requires proper domain for SNI and Host header" >&2
+            print_info "Converting to IP would break authentication token refresh" >&2
             echo "" >&2
-
-            # Offer to replace domain with IP
-            read -p "Replace domain with IP address? (Y/n): " -n 1 -r
-            echo "" >&2
-
-            if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-                # Replace domain with IP in URL
-                if [[ "$remainder" =~ @ ]]; then
-                    # URL has credentials: protocol://user:pass@domain:port
-                    local credentials=$(echo "$remainder" | grep -oP '^[^@]+')
-                    local port=$(echo "$hostport" | cut -d':' -f2)
-                    local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
-                    proxy_url="${protocol}://${credentials}@${resolved_ip}:${port}"
-                else
-                    # URL has no credentials: protocol://domain:port
-                    local port=$(echo "$remainder" | cut -d':' -f2)
-                    local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
-                    proxy_url="${protocol}://${resolved_ip}:${port}"
-                fi
-                print_success "Updated URL to use IP address" >&2
-                # Show new URL with masked password
-                local display_url=$(echo "$proxy_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
-                echo "  New URL: $display_url" >&2
-            else
-                print_warning "Keeping domain name (not recommended)" >&2
-                print_info "Domain resolution may fail or be unreliable" >&2
-            fi
         else
-            print_error "Failed to resolve domain: $host" >&2
-            print_warning "Saving URL with domain name (may be unreliable)" >&2
+            # For HTTP/SOCKS5, offer to resolve (old behavior)
+            print_warning "Proxy URL contains domain name instead of IP address: $host" >&2
+            echo "" >&2
+            print_info "Attempting to resolve domain to IP address..." >&2
+
+            local resolved_ip=$(resolve_domain_to_ip "$host")
+
+            if [[ -n "$resolved_ip" ]]; then
+                print_success "Resolved $host → $resolved_ip" >&2
+                echo "" >&2
+                print_info "Recommendation: Use IP address for better reliability" >&2
+                echo "" >&2
+
+                # Offer to replace domain with IP
+                read -p "Replace domain with IP address? (Y/n): " -n 1 -r
+                echo "" >&2
+
+                if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+                    # Replace domain with IP in URL
+                    if [[ "$remainder" =~ @ ]]; then
+                        # URL has credentials: protocol://user:pass@domain:port
+                        local credentials=$(echo "$remainder" | grep -oP '^[^@]+')
+                        local port=$(echo "$hostport" | cut -d':' -f2)
+                        proxy_url="${protocol}://${credentials}@${resolved_ip}:${port}"
+                    else
+                        # URL has no credentials: protocol://domain:port
+                        local port=$(echo "$remainder" | cut -d':' -f2)
+                        proxy_url="${protocol}://${resolved_ip}:${port}"
+                    fi
+                    print_success "Updated URL to use IP address" >&2
+                    # Show new URL with masked password
+                    local display_url=$(echo "$proxy_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
+                    echo "  New URL: $display_url" >&2
+                else
+                    print_warning "Keeping domain name (not recommended)" >&2
+                    print_info "Domain resolution may fail or be unreliable" >&2
+                fi
+            else
+                print_error "Failed to resolve domain: $host" >&2
+                print_warning "Saving URL with domain name (may be unreliable)" >&2
+            fi
+            echo "" >&2
         fi
-        echo "" >&2
     fi
 
     # Create credentials file with restricted permissions
@@ -1449,12 +1463,17 @@ load_credentials() {
 
     if [[ $validation_result -eq 1 ]]; then
         # Invalid format
-        print_warning "Saved credentials have invalid format, will prompt for new URL"
+        print_warning "Saved credentials have invalid format, will prompt for new URL" >&2
         return 1
     elif [[ $validation_result -eq 2 ]]; then
-        # Domain instead of IP (warn but allow)
-        print_warning "Saved proxy URL uses domain name instead of IP address"
-        print_info "Consider updating to IP address for better reliability"
+        # Domain instead of IP (warn only for HTTP, not HTTPS)
+        local protocol=$(echo "$PROXY_URL" | grep -oP '^[^:]+')
+        if [[ "$protocol" != "https" ]]; then
+            # For HTTP: domain is not recommended
+            print_warning "Saved proxy URL uses domain name instead of IP address" >&2
+            print_info "Consider updating to IP address for better reliability" >&2
+        fi
+        # For HTTPS: domain is correct, no warning needed
     fi
 
     # Set default NO_PROXY if not present (backward compatibility)
@@ -1493,13 +1512,16 @@ prompt_proxy_url() {
 
     # Prompt for new URL
     echo "" >&2
-    print_info "Enter HTTP proxy URL" >&2
+    print_info "Enter proxy URL" >&2
     echo "" >&2
-    echo "Format: protocol://username:password@IP:port" >&2
-    echo "Example: http://alice:secret123@127.0.0.1:8118" >&2
+    echo "Format: protocol://username:password@host:port" >&2
     echo "" >&2
-    echo "Note: Use IP address instead of domain name for better reliability" >&2
-    echo "Supported protocols: http, https, socks5" >&2
+    echo "Examples:" >&2
+    echo "  HTTPS (recommended): https://alice:secret123@proxy.example.com:8118" >&2
+    echo "  HTTP (not recommended): http://alice:secret123@192.168.1.100:8118" >&2
+    echo "" >&2
+    echo "Note: HTTPS proxies REQUIRE domain names (not IPs) for OAuth/TLS to work" >&2
+    echo "Supported protocols: https (recommended), http" >&2
     echo "" >&2
 
     while true; do
@@ -1524,13 +1546,22 @@ prompt_proxy_url() {
 
         if [[ $validation_result -eq 1 ]]; then
             print_error "Invalid URL format" >&2
-            echo "Expected: protocol://[user:pass@]IP:port" >&2
+            echo "Expected: protocol://[user:pass@]host:port" >&2
             continue
         elif [[ $validation_result -eq 2 ]]; then
-            print_warning "URL contains domain name instead of IP address" >&2
-            echo "Domains may be less reliable than IP addresses" >&2
-            echo "Consider using IP address (will be resolved during save)" >&2
-            echo "" >&2
+            # Domain in URL - check protocol
+            local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
+            if [[ "$protocol" == "https" ]]; then
+                # For HTTPS: domain is REQUIRED (no warning)
+                print_success "HTTPS proxy with domain name - correct for OAuth/TLS!" >&2
+                echo "" >&2
+            else
+                # For HTTP: domain is not recommended
+                print_warning "URL contains domain name instead of IP address" >&2
+                echo "Domains may be less reliable than IP addresses" >&2
+                echo "Consider using IP address (will be resolved during save)" >&2
+                echo "" >&2
+            fi
         fi
 
         # Return URL with default NO_PROXY (pipe-separated)
@@ -2808,7 +2839,7 @@ show_usage() {
     cat << EOF
 Usage: iclaude [OPTIONS] [CLAUDE_ARGS...]
 
-Initialize Claude Code with HTTP proxy settings
+Initialize Claude Code with HTTPS/HTTP proxy settings (HTTPS recommended)
 
 OPTIONS:
   -h, --help                        Show this help message
@@ -2849,8 +2880,8 @@ EXAMPLES:
   # Second run - use saved credentials automatically
   iclaude
 
-  # Set proxy URL directly (use IP address recommended)
-  iclaude --proxy http://user:pass@127.0.0.1:8118
+  # Set proxy URL directly (HTTPS with domain recommended)
+  iclaude --proxy https://user:pass@proxy.example.com:8118
 
   # Test proxy without launching Claude
   iclaude --test
