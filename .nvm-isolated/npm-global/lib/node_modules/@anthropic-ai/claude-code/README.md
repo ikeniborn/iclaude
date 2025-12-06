@@ -6,7 +6,7 @@
 
 Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows -- all through natural language commands. Use it in your terminal, IDE, or tag @claude on Github.
 
-**Learn more in the [official documentation](https://docs.claude.com/en/docs/claude-code/overview)**.
+**Learn more in the [official documentation](https://code.claude.com/docs/en/overview)**.
 
 <img src="https://github.com/anthropics/claude-code/blob/main/demo.gif?raw=1" />
 
@@ -34,7 +34,7 @@ When you use Claude Code, we collect feedback, which includes usage data (such a
 
 ### How we use your data
 
-See our [data usage policies](https://docs.claude.com/en/docs/claude-code/data-usage).
+See our [data usage policies](https://code.claude.com/docs/en/data-usage).
 
 ### Privacy safeguards
 

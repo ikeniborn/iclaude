@@ -2735,6 +2735,83 @@ uninstall_symlink_only() {
 }
 
 #######################################
+# Check OAuth token expiration and handle renewal
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
+# Returns:
+#   0 - Token valid or doesn't exist
+#   1 - Token expired and requires login
+#######################################
+check_oauth_token() {
+    local skip_isolated="${1:-false}"
+
+    # Determine credentials file path
+    local credentials_file=""
+
+    if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+        # Use isolated config
+        credentials_file="$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json"
+    else
+        # Use system config
+        credentials_file="$HOME/.claude/.credentials.json"
+    fi
+
+    # If credentials file doesn't exist, nothing to check
+    if [[ ! -f "$credentials_file" ]]; then
+        return 0
+    fi
+
+    # Try to extract expiresAt field using grep and sed
+    local expires_at=$(grep -o '"expiresAt":[0-9]*' "$credentials_file" 2>/dev/null | sed 's/"expiresAt"://')
+
+    # If we couldn't parse expiresAt, assume token is valid
+    if [[ -z "$expires_at" ]]; then
+        return 0
+    fi
+
+    # Get current time in milliseconds
+    local current_time_ms=$(($(date +%s) * 1000))
+
+    # Calculate time remaining in seconds
+    local time_remaining_ms=$((expires_at - current_time_ms))
+    local time_remaining_sec=$((time_remaining_ms / 1000))
+    local time_remaining_min=$((time_remaining_sec / 60))
+
+    # If token is expired or will expire in less than 5 minutes
+    if [[ $time_remaining_sec -le 300 ]]; then
+        echo ""
+        if [[ $time_remaining_sec -le 0 ]]; then
+            print_warning "OAuth token has expired"
+        else
+            print_warning "OAuth token expires in $time_remaining_min minutes"
+        fi
+        print_info "File: $credentials_file"
+        print_info "Removing expired token..."
+
+        # Remove credentials file
+        rm -f "$credentials_file"
+
+        print_success "Expired token removed"
+        echo ""
+        print_info "Claude Code will prompt for login on startup"
+        echo ""
+
+        return 1
+    fi
+
+    # Token is valid - show remaining time if less than 1 hour
+    if [[ $time_remaining_min -lt 60 ]]; then
+        print_warning "OAuth token expires in $time_remaining_min minutes"
+        print_info "File: $credentials_file"
+        local expires_date=$(date -d "@$((expires_at / 1000))" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "unknown")
+        print_info "Expires at: $expires_date"
+        echo ""
+    fi
+
+    return 0
+}
+
+#######################################
 # Launch Claude Code
 # Arguments:
 #   $1 - skip_isolated (optional): "true" to skip isolated environment
@@ -2743,6 +2820,9 @@ uninstall_symlink_only() {
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
+
+    # Check OAuth token expiration before launching
+    check_oauth_token "$skip_isolated"
 
     echo ""
     print_info "Launching Claude Code..."
