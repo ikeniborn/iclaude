@@ -11,7 +11,7 @@
 export type ToolInputSchemas =
   | AgentInput
   | BashInput
-  | BashOutputInput
+  | TaskOutputInput
   | ExitPlanModeInput
   | FileEditInput
   | FileReadInput
@@ -26,8 +26,7 @@ export type ToolInputSchemas =
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
-  | AskUserQuestionInput
-  | AgentOutputInput;
+  | AskUserQuestionInput;
 
 export interface AgentInput {
   /**
@@ -51,7 +50,7 @@ export interface AgentInput {
    */
   resume?: string;
   /**
-   * Set to true to run this agent in the background. Use AgentOutputTool to read the output later.
+   * Set to true to run this agent in the background. Use TaskOutput to read the output later.
    */
   run_in_background?: boolean;
 }
@@ -80,7 +79,7 @@ export interface BashInput {
    */
   description?: string;
   /**
-   * Set to true to run this command in the background. Use BashOutput to read the output later.
+   * Set to true to run this command in the background. Use TaskOutput to read the output later.
    */
   run_in_background?: boolean;
   /**
@@ -88,15 +87,19 @@ export interface BashInput {
    */
   dangerouslyDisableSandbox?: boolean;
 }
-export interface BashOutputInput {
+export interface TaskOutputInput {
   /**
-   * The ID of the background shell to retrieve output from
+   * The task ID to get output from
    */
-  bash_id: string;
+  task_id: string;
   /**
-   * Optional regular expression to filter the output lines. Only lines matching this regex will be included in the result. Any lines that do not match will no longer be available to read.
+   * Whether to wait for completion
    */
-  filter?: string;
+  block?: boolean;
+  /**
+   * Max wait time in ms
+   */
+  timeout?: number;
 }
 export interface ExitPlanModeInput {
   /**
@@ -203,7 +206,7 @@ export interface GrepInput {
    */
   type?: string;
   /**
-   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults based on "cap" experiment value: 0 (unlimited), 20, or 100.
+   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults to 0 (unlimited).
    */
   head_limit?: number;
   /**
@@ -1488,18 +1491,4 @@ export interface AskUserQuestionInput {
   answers?: {
     [k: string]: string;
   };
-}
-export interface AgentOutputInput {
-  /**
-   * The agent ID to retrieve results for
-   */
-  agentId: string;
-  /**
-   * Whether to block until results are ready
-   */
-  block?: boolean;
-  /**
-   * Maximum time to wait in seconds
-   */
-  wait_up_to?: number;
 }
