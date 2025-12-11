@@ -1,0 +1,24 @@
+<!--
+  Analysis Thinking Template
+  Use for: task analysis, PRD compliance, root cause analysis
+-->
+<thinking type="analysis">
+ЗАДАЧА: {{task_description}}
+
+КОНТЕКСТ:
+{{current_state_description}}
+
+КОМПОНЕНТЫ:
+{{list_of_affected_files_and_modules}}
+
+PRD (если есть):
+- Секции: {{relevant_prd_sections}}
+- Alignment: {{how_task_aligns_with_prd}}
+
+ACCEPTANCE CRITERIA:
+- AC1: {{criterion_1}}
+- AC2: {{criterion_2}}
+
+ВЫВОДЫ:
+{{what_needs_to_be_done}}
+</thinking>

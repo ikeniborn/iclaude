@@ -1,0 +1,9 @@
+{
+  "$comment": "Simplified validation for minimal complexity",
+  "validation_lite": {
+    "syntax_check": "{{passed|failed}}",
+    "command": "{{syntax_command_executed}}",
+    "files_modified": ["{{file1}}", "{{file2}}"],
+    "status": "{{PASSED|FAILED}}"
+  }
+}

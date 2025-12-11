@@ -1,0 +1,12 @@
+{
+  "$comment": "Simplified plan for minimal complexity tasks",
+  "task_plan_lite": {
+    "task_name": "{{task_name}}",
+    "files": ["{{file1}}", "{{file2}}"],
+    "steps": [
+      "{{step1}}",
+      "{{step2}}"
+    ],
+    "validation": "{{syntax_command from context}}"
+  }
+}

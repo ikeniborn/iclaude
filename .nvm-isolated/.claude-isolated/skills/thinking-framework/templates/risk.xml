@@ -1,0 +1,27 @@
+<!--
+  Risk Thinking Template
+  Use for: risky operations, refactoring, migrations, breaking changes
+-->
+<thinking type="risk">
+ОПЕРАЦИЯ: {{what_we_plan_to_do}}
+
+РИСКИ:
+1. {{risk_1}}
+   Вероятность: {{low|medium|high}}
+   Impact: {{low|medium|high}}
+   Митигация: {{how_to_prevent_or_minimize}}
+
+2. {{risk_2}}
+   Вероятность: {{low|medium|high}}
+   Impact: {{low|medium|high}}
+   Митигация: {{how_to_prevent_or_minimize}}
+
+FALLBACK PLAN:
+{{what_to_do_if_things_go_wrong}}
+
+ROLLBACK STRATEGY:
+{{how_to_revert_changes}}
+
+TESTING:
+{{how_to_test_before_finalizing}}
+</thinking>

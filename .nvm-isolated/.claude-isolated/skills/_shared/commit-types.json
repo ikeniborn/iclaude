@@ -1,0 +1,50 @@
+{
+  "$comment": "Conventional Commits types",
+  "types": {
+    "feat": {
+      "description": "New feature",
+      "emoji": "✨",
+      "branch_prefix": "feature/"
+    },
+    "fix": {
+      "description": "Bug fix",
+      "emoji": "🐛",
+      "branch_prefix": "fix/"
+    },
+    "refactor": {
+      "description": "Code refactoring without changing functionality",
+      "emoji": "♻️",
+      "branch_prefix": "refactor/"
+    },
+    "docs": {
+      "description": "Documentation only",
+      "emoji": "📚",
+      "branch_prefix": "docs/"
+    },
+    "test": {
+      "description": "Adding or fixing tests",
+      "emoji": "🧪",
+      "branch_prefix": "test/"
+    },
+    "chore": {
+      "description": "Maintenance, CI/CD, dependencies",
+      "emoji": "🔧",
+      "branch_prefix": "chore/"
+    },
+    "perf": {
+      "description": "Performance improvement",
+      "emoji": "⚡",
+      "branch_prefix": "perf/"
+    },
+    "style": {
+      "description": "Code style changes (formatting, whitespace)",
+      "emoji": "💄",
+      "branch_prefix": "style/"
+    }
+  },
+  "format": {
+    "subject_max_length": 72,
+    "body_wrap": 100,
+    "footer": "🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+  }
+}

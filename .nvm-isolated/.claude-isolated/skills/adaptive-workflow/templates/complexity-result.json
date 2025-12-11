@@ -1,0 +1,20 @@
+{
+  "$comment": "Template for complexity determination output",
+  "complexity_result": {
+    "level": "{{level: minimal|standard|complex}}",
+    "workflow": "{{workflow: lite|full|phase-based}}",
+
+    "analysis": {
+      "files_count": "{{number}}",
+      "components_affected": "{{number}}",
+      "has_breaking_changes": "{{boolean}}",
+      "estimated_time": "{{string: e.g. '30 min', '2 hours'}}"
+    },
+
+    "skip": ["{{phases/checks to skip}}"],
+    "required": ["{{phases/checks required}}"],
+    "optional": ["{{phases/checks optional}}"],
+
+    "reasoning": "{{why this complexity level was chosen}}"
+  }
+}

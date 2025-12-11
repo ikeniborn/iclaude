@@ -1,0 +1,60 @@
+{
+  "$comment": "Full validation for standard/complex tasks",
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": "{{number}}",
+      "met": "{{number}}",
+      "not_met": "{{number}}",
+      "details": [
+        {
+          "criterion": "AC1: {{criterion}}",
+          "status": "{{met|not_met}}",
+          "evidence": "{{proof}}"
+        }
+      ]
+    },
+
+    "prd_compliance": {
+      "compliant": "{{boolean}}",
+      "conflicts": ["{{conflict if any}}"],
+      "checks_performed": [
+        {
+          "prd_section": "{{section}}",
+          "requirement": "{{requirement}}",
+          "status": "{{compliant|non_compliant}}",
+          "evidence": "{{proof}}"
+        }
+      ]
+    },
+
+    "syntax_checks": {
+      "total_files": "{{number}}",
+      "passed": "{{number}}",
+      "failed": "{{number}}",
+      "details": [
+        {
+          "file": "{{file_path}}",
+          "status": "{{passed|failed}}",
+          "command": "{{command_executed}}"
+        }
+      ]
+    },
+
+    "functional_checks": {
+      "total": "{{number}}",
+      "passed": "{{number}}",
+      "failed": "{{number}}",
+      "details": [
+        {
+          "check": "{{check_description}}",
+          "status": "{{passed|failed}}",
+          "evidence": "{{proof}}"
+        }
+      ]
+    },
+
+    "overall_status": "{{PASSED|FAILED}}",
+    "can_proceed": "{{boolean}}",
+    "blocking_issues": ["{{issue if any}}"]
+  }
+}

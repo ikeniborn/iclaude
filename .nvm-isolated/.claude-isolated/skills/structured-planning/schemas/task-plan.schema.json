@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Flexible schema - prd_sections and risks are optional",
+  "type": "object",
+  "properties": {
+    "task_plan": {
+      "type": "object",
+      "properties": {
+        "task_name": {"type": "string", "minLength": 5},
+        "prd_sections": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "problem": {"type": "string", "minLength": 10},
+        "solution": {"type": "string", "minLength": 10},
+
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string"}
+        },
+
+        "files_to_change": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "file_path": {"type": "string"},
+              "change_type": {"enum": ["create", "modify", "delete"]},
+              "description": {"type": "string"}
+            },
+            "required": ["file_path", "change_type", "description"]
+          }
+        },
+
+        "execution_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "step_number": {"type": "integer", "minimum": 1},
+              "description": {"type": "string"},
+              "actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "validation": {"type": "string"}
+            },
+            "required": ["step_number", "description", "actions"]
+          }
+        },
+
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "risk": {"type": "string"},
+              "mitigation": {"type": "string"}
+            },
+            "required": ["risk", "mitigation"]
+          }
+        },
+
+        "git": {
+          "type": "object",
+          "properties": {
+            "branch_name": {"type": "string", "pattern": "^(feature|fix|refactor|docs|chore|test)/"},
+            "base_branch": {"type": "string"},
+            "commit_type": {"enum": ["feat", "fix", "refactor", "docs", "chore", "test", "perf"]},
+            "commit_summary": {"type": "string", "maxLength": 72}
+          },
+          "required": ["branch_name", "commit_type", "commit_summary"]
+        }
+      },
+      "required": [
+        "task_name", "problem", "solution",
+        "acceptance_criteria", "files_to_change", "execution_steps", "git"
+      ]
+    }
+  },
+  "required": ["task_plan"]
+}

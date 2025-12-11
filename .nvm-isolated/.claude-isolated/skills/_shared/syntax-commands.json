@@ -1,0 +1,41 @@
+{
+  "$comment": "Syntax check commands by language",
+  "commands": {
+    "python": {
+      "syntax": "python -m py_compile {file}",
+      "lint": "flake8 {file}",
+      "type_check": "mypy {file}",
+      "extensions": [".py"]
+    },
+    "javascript": {
+      "syntax": "node --check {file}",
+      "lint": "eslint {file}",
+      "extensions": [".js", ".mjs"]
+    },
+    "typescript": {
+      "syntax": "tsc --noEmit {file}",
+      "lint": "eslint {file}",
+      "extensions": [".ts", ".tsx"]
+    },
+    "bash": {
+      "syntax": "bash -n {file}",
+      "lint": "shellcheck {file}",
+      "extensions": [".sh", ".bash"]
+    },
+    "go": {
+      "syntax": "go build {file}",
+      "lint": "golint {file}",
+      "format": "gofmt -l {file}",
+      "extensions": [".go"]
+    },
+    "rust": {
+      "syntax": "cargo check",
+      "lint": "cargo clippy",
+      "extensions": [".rs"]
+    },
+    "java": {
+      "syntax": "javac {file}",
+      "extensions": [".java"]
+    }
+  }
+}

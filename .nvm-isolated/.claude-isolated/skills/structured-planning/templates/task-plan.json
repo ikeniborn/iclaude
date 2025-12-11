@@ -1,0 +1,51 @@
+{
+  "$comment": "Full plan for standard/complex tasks",
+  "task_plan": {
+    "task_name": "{{task_name: string, min 5 chars}}",
+    "prd_sections": ["{{prd_section: optional}}"],
+
+    "problem": "{{problem_description}}",
+    "solution": "{{solution_approach}}",
+
+    "acceptance_criteria": [
+      "AC1: {{criterion_1}}",
+      "AC2: {{criterion_2}}"
+    ],
+
+    "files_to_change": [
+      {
+        "file_path": "{{path/to/file}}",
+        "change_type": "{{modify|create|delete}}",
+        "description": "{{what_changes}}"
+      }
+    ],
+
+    "execution_steps": [
+      {
+        "step_number": 1,
+        "description": "{{step_description}}",
+        "actions": ["{{action_1}}", "{{action_2}}"],
+        "validation": "{{validation_command}}"
+      }
+    ],
+
+    "risks": [
+      {
+        "risk": "{{what_can_go_wrong}}",
+        "mitigation": "{{how_to_prevent}}"
+      }
+    ],
+
+    "validation": {
+      "syntax_checks": ["{{syntax_command}}"],
+      "functional_checks": ["{{functional_check}}"]
+    },
+
+    "git": {
+      "branch_name": "{{feature|fix|refactor}}/{{slug}}",
+      "base_branch": "{{master|main}}",
+      "commit_type": "{{feat|fix|refactor|docs|test|chore}}",
+      "commit_summary": "{{max 72 chars}}"
+    }
+  }
+}

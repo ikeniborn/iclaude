@@ -1,0 +1,31 @@
+<!--
+  Decision Thinking Template
+  Use for: choosing between alternatives, technical decisions
+-->
+<thinking type="decision">
+КОНТЕКСТ: {{situation_description}}
+
+ЗАДАЧА: {{what_needs_to_be_decided}}
+
+ОПЦИИ:
+1. {{option_1_name}}
+   Плюсы: {{pros}}
+   Минусы: {{cons}}
+   Сложность: {{complexity}}
+
+2. {{option_2_name}}
+   Плюсы: {{pros}}
+   Минусы: {{cons}}
+   Сложность: {{complexity}}
+
+TRADE-OFFS:
+{{what_we_sacrifice_with_chosen_option}}
+
+ВЫБОР: {{chosen_option}}
+
+ОБОСНОВАНИЕ:
+{{why_this_option_is_best}}
+
+ВАЛИДАЦИЯ:
+{{how_to_verify_decision_was_correct}}
+</thinking>

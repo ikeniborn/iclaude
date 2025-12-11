@@ -51,11 +51,12 @@ scripts/.claude_proxy_credentials
 *.log
 
 # Isolated Claude Code configuration (session data)
-# Ignore session data, but keep skills and CLAUDE.md for global availability
+# Ignore session data, but keep skills, templates and CLAUDE.md for global availability
 .nvm-isolated/.claude-isolated/*
 !.nvm-isolated/.claude-isolated/skills/
 !.nvm-isolated/.claude-isolated/skills/**
 !.nvm-isolated/.claude-isolated/CLAUDE.md
+!.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
 
 # Docker
 docker-compose.override.yml
