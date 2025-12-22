@@ -31,6 +31,10 @@ ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
 ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
 USE_ISOLATED_BY_DEFAULT=true  # Use isolated environment by default
 
+# Token refresh threshold in seconds (7 days = 604800)
+# Token will be refreshed if it expires within this time
+TOKEN_REFRESH_THRESHOLD=604800
+
 #######################################
 # Print colored message
 #######################################
@@ -2777,26 +2781,38 @@ check_oauth_token() {
     local time_remaining_sec=$((time_remaining_ms / 1000))
     local time_remaining_min=$((time_remaining_sec / 60))
 
-    # If token is expired or will expire in less than 5 minutes
-    if [[ $time_remaining_sec -le 300 ]]; then
+    # If token is expired or will expire within threshold (7 days default)
+    if [[ $time_remaining_sec -le $TOKEN_REFRESH_THRESHOLD ]]; then
         echo ""
         if [[ $time_remaining_sec -le 0 ]]; then
             print_warning "OAuth token has expired"
         else
-            print_warning "OAuth token expires in $time_remaining_min minutes"
+            local days_remaining=$((time_remaining_sec / 86400))
+            local hours_remaining=$(((time_remaining_sec % 86400) / 3600))
+            if [[ $days_remaining -gt 0 ]]; then
+                print_warning "OAuth token expires in ${days_remaining}d ${hours_remaining}h"
+            else
+                print_warning "OAuth token expires in $time_remaining_min minutes"
+            fi
         fi
         print_info "File: $credentials_file"
-        print_info "Removing expired token..."
-
-        # Remove credentials file
-        rm -f "$credentials_file"
-
-        print_success "Expired token removed"
-        echo ""
-        print_info "Claude Code will prompt for login on startup"
         echo ""
 
-        return 1
+        # Try to refresh the token automatically
+        print_info "Attempting to refresh token automatically..."
+        echo ""
+
+        if refresh_oauth_token "$skip_isolated"; then
+            echo ""
+            print_success "Token refreshed successfully!"
+            return 0
+        else
+            echo ""
+            print_warning "Automatic token refresh failed"
+            print_info "Please run '/login' in Claude Code to authenticate"
+            # Don't delete credentials - refreshToken might still be usable by Claude Code
+            return 1
+        fi
     fi
 
     # Token is valid - show remaining time if less than 1 hour
@@ -2809,6 +2825,64 @@ check_oauth_token() {
     fi
 
     return 0
+}
+
+#######################################
+# Refresh OAuth token using setup-token
+# Uses 'claude setup-token' to generate a long-lived token (~1 year)
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
+# Returns:
+#   0 - Token refreshed successfully
+#   1 - Failed to refresh token
+#######################################
+refresh_oauth_token() {
+    local skip_isolated="${1:-false}"
+
+    print_info "Generating new long-lived OAuth token..."
+    echo ""
+
+    # Determine which claude binary to use
+    local claude_cmd=""
+
+    if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+        # Try isolated environment first
+        if detect_nvm "false"; then
+            claude_cmd=$(get_nvm_claude_path)
+        fi
+    else
+        # Try system installation
+        if detect_nvm "true"; then
+            claude_cmd=$(get_nvm_claude_path)
+        fi
+    fi
+
+    # Fallback to which claude
+    if [[ -z "$claude_cmd" ]]; then
+        claude_cmd=$(which claude 2>/dev/null || true)
+    fi
+
+    if [[ -z "$claude_cmd" ]]; then
+        print_error "Claude Code not found. Cannot refresh token."
+        return 1
+    fi
+
+    print_info "Using: $claude_cmd"
+    echo ""
+
+    # Run setup-token command
+    # This opens browser for OAuth and creates long-lived token
+    if "$claude_cmd" setup-token; then
+        echo ""
+        print_success "Long-lived OAuth token created successfully!"
+        print_info "Token is valid for approximately 1 year"
+        return 0
+    else
+        echo ""
+        print_error "Failed to generate token"
+        print_info "Please run '/login' manually in Claude Code"
+        return 1
+    fi
 }
 
 #######################################
@@ -2943,6 +3017,7 @@ OPTIONS:
   --isolated-config                 Use isolated config directory (automatic for isolated install)
   --shared-config                   Use shared config directory (default: ~/.claude/)
   --check-config                    Show current configuration directory status
+  --refresh-token                   Refresh OAuth token using setup-token (long-lived ~1 year)
   --export-config DIR               Export configuration to backup directory
   --import-config DIR               Import configuration from backup directory
   --no-test                         Skip proxy connectivity test
@@ -3008,6 +3083,9 @@ ISOLATED ENVIRONMENT (Recommended):
 
   # After git clone - repair symlinks and permissions
   ./iclaude.sh --repair-isolated
+
+  # Refresh OAuth token (generates long-lived token ~1 year)
+  ./iclaude.sh --refresh-token
 
   # Remove global symlink only (keeps isolated environment)
   sudo iclaude --uninstall-symlink
@@ -3267,6 +3345,14 @@ main() {
             --check-config)
                 check_config_status
                 exit 0
+                ;;
+            --refresh-token)
+                # Setup isolated environment if needed for refresh
+                if [[ "$use_system" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+                    setup_isolated_nvm
+                fi
+                refresh_oauth_token "$use_system"
+                exit $?
                 ;;
             --export-config)
                 export_config "$2"

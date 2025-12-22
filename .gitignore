@@ -17,6 +17,7 @@
 *~
 .*.swp
 .*.swo
+tmp
 
 # OS files
 .DS_Store
