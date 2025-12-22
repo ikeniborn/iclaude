@@ -102,14 +102,6 @@ export interface TaskOutputInput {
   timeout?: number;
 }
 export interface ExitPlanModeInput {
-  /**
-   * Whether to launch a swarm to implement the plan
-   */
-  launchSwarm?: boolean;
-  /**
-   * Number of teammates to spawn in the swarm
-   */
-  teammateCount?: number;
   [k: string]: unknown;
 }
 export interface FileEditInput {
