@@ -36,6 +36,7 @@
 ✅ Проверка подключения перед запуском
 ✅ **Изолированная установка** - портабельность через git
 ✅ **Воспроизводимые версии** через lockfile
+✅ **Claude Code Router** - использование альтернативных LLM провайдеров (OpenRouter, DeepSeek, Ollama, Gemini)
 
 ---
 
@@ -98,6 +99,18 @@
 | `--no-proxy` | Запуск без прокси |
 | `--proxy-ca <file>` | CA сертификат для HTTPS прокси (✅ SECURE) |
 | `--proxy-insecure` | Отключить проверку TLS (⚠️ NOT RECOMMENDED) |
+
+### 🔀 Router
+
+Интеграция с Claude Code Router для альтернативных LLM провайдеров.
+
+| Команда | Описание |
+|---------|----------|
+| `--install-router` | Установка Claude Code Router |
+| `--check-router` | Статус router и конфигурации |
+| `--no-router` | Принудительно использовать native Claude |
+
+<sub>✨ **Поддерживаемые провайдеры:** OpenRouter, DeepSeek, Ollama, Gemini, Volcengine, SiliconFlow</sub>
 
 ---
 
@@ -178,6 +191,60 @@ sudo iclaude --uninstall-symlink
 
 # Повторно создать симлинк
 sudo ./iclaude.sh --create-symlink
+```
+
+### Use Case 5: Использование альтернативных LLM провайдеров через Router
+
+Claude Code Router позволяет использовать DeepSeek, OpenRouter, Ollama и другие провайдеры вместо Anthropic API:
+
+```bash
+# Шаг 1: Установить Claude Code Router
+./iclaude.sh --install-router
+
+# Шаг 2: Настроить провайдер в router.json
+# Редактировать .nvm-isolated/.claude-isolated/router.json
+# (используйте ${VAR_NAME} для API ключей)
+
+# Шаг 3: Экспортировать API ключ
+export DEEPSEEK_API_KEY="your-key-here"
+
+# Шаг 4: Запустить с router (автоматически если router.json существует)
+./iclaude.sh
+
+# Проверить статус router
+./iclaude.sh --check-router
+
+# Принудительно использовать native Claude (без router)
+./iclaude.sh --no-router
+```
+
+**Преимущества:**
+- ✅ Снижение затрат (DeepSeek дешевле Anthropic API)
+- ✅ Локальные модели через Ollama (полная приватность)
+- ✅ Доступ к нескольким провайдерам (OpenRouter → Claude/GPT/Gemini)
+- ✅ Полная совместимость с Claude Code API
+
+**Пример конфигурации** (`.nvm-isolated/.claude-isolated/router.json`):
+```json
+{
+  "providers": {
+    "deepseek": {
+      "type": "deepseek",
+      "apiKey": "${DEEPSEEK_API_KEY}",
+      "baseURL": "https://api.deepseek.com"
+    }
+  },
+  "models": {
+    "claude-sonnet-4-5": {
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "maxTokens": 8000
+    }
+  },
+  "routing": {
+    "default": "claude-sonnet-4-5"
+  }
+}
 ```
 
 ---
