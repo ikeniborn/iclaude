@@ -1,0 +1,19 @@
+{
+  "providers": {
+    "deepseek": {
+      "type": "deepseek",
+      "apiKey": "${DEEPSEEK_API_KEY}",
+      "baseURL": "https://api.deepseek.com"
+    }
+  },
+  "models": {
+    "claude-sonnet-4-5": {
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "maxTokens": 8000
+    }
+  },
+  "routing": {
+    "default": "claude-sonnet-4-5"
+  }
+}

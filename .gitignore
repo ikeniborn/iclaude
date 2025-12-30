@@ -59,6 +59,13 @@ scripts/.claude_proxy_credentials
 !.nvm-isolated/.claude-isolated/CLAUDE.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
 
+# Router configuration (allow both router files in git)
+!.nvm-isolated/.claude-isolated/router.json.example
+!.nvm-isolated/.claude-isolated/router.json
+
+# Prevent accidental commit of runtime router config
+.claude-code-router/
+
 # Docker
 docker-compose.override.yml
 

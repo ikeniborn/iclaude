@@ -322,6 +322,63 @@ get_nvm_claude_path() {
 }
 
 #######################################
+# Detect if router should be used
+# Checks for router.json existence and ccr binary
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
+# Returns:
+#   0 - router should be used
+#   1 - use native Claude Code
+#######################################
+detect_router() {
+	local skip_isolated="${1:-false}"
+	local router_config=""
+
+	# Determine config location
+	if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+	else
+		router_config="$HOME/.claude/router.json"
+	fi
+
+	# Router config must exist
+	[[ ! -f "$router_config" ]] && return 1
+
+	# Check ccr binary
+	local ccr_cmd=$(get_router_path "$skip_isolated")
+	if [[ -z "$ccr_cmd" ]]; then
+		print_warning "router.json found but ccr binary not installed"
+		print_info "Install with: ./iclaude.sh --install-router"
+		return 1
+	fi
+
+	return 0  # Router available
+}
+
+#######################################
+# Get path to ccr binary
+# Arguments:
+#   $1 - skip_isolated (optional): "true" to skip isolated environment
+# Returns:
+#   ccr binary path or empty string
+#######################################
+get_router_path() {
+	local skip_isolated="${1:-false}"
+
+	# Check isolated environment first
+	if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		local npm_global_bin="$ISOLATED_NVM_DIR/npm-global/bin"
+		[[ -x "$npm_global_bin/ccr" ]] && echo "$npm_global_bin/ccr" && return 0
+	fi
+
+	# Check system PATH
+	command -v ccr &> /dev/null && command -v ccr && return 0
+
+	echo ""
+	return 1
+}
+
+#######################################
 # Get version from cli.js installation
 #######################################
 get_cli_version() {
@@ -525,6 +582,61 @@ install_isolated_claude() {
 }
 
 #######################################
+# Install Claude Code Router in isolated environment
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_router() {
+	setup_isolated_nvm
+
+	# Source NVM
+	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+		print_error "NVM not found in isolated environment"
+		echo "Run: ./iclaude.sh --isolated-install first"
+		return 1
+	fi
+
+	source "$NVM_DIR/nvm.sh"
+
+	print_info "Installing Claude Code Router to isolated environment..."
+	echo ""
+
+	# Install router globally (in isolated prefix)
+	npm install -g @musistudio/claude-code-router
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to install Claude Code Router"
+		return 1
+	fi
+
+	# Clear bash command hash cache
+	hash -r 2>/dev/null || true
+
+	# Check if router.json exists, if not copy from example
+	local router_config="${ISOLATED_NVM_DIR}/.claude-isolated/router.json"
+	local router_example="${ISOLATED_NVM_DIR}/.claude-isolated/router.json.example"
+
+	if [[ ! -f "$router_config" ]] && [[ -f "$router_example" ]]; then
+		print_info "Creating router.json from template..."
+		cp "$router_example" "$router_config"
+		print_success "Created router.json (configure providers and commit to git)"
+		echo ""
+	fi
+
+	print_success "Claude Code Router installed successfully"
+	echo ""
+	print_info "Next steps:"
+	print_info "  1. Edit: $router_config"
+	print_info "  2. Export API keys: export DEEPSEEK_API_KEY=your-key"
+	print_info "  3. Commit router.json to git (with \${VAR} placeholders)"
+	print_info "  4. Launch: ./iclaude.sh"
+	echo ""
+
+	return 0
+}
+
+#######################################
 # Update Claude Code in isolated environment
 # Returns:
 #   0 - success
@@ -653,6 +765,13 @@ save_isolated_lockfile() {
 		fi
 	fi
 
+	# Get router version if installed
+	local router_version="not installed"
+	local ccr_cmd=$(get_router_path "false")
+	if [[ -n "$ccr_cmd" ]]; then
+		router_version=$("$ccr_cmd" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+	fi
+
 	local installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 	# Create lockfile
@@ -660,6 +779,7 @@ save_isolated_lockfile() {
 {
   "nodeVersion": "$node_version",
   "claudeCodeVersion": "$claude_version",
+  "routerVersion": "$router_version",
   "installedAt": "$installed_at",
   "nvmVersion": "0.39.7"
 }
@@ -755,6 +875,25 @@ install_from_lockfile() {
 	if [[ $? -ne 0 ]]; then
 		print_error "Failed to install Claude Code"
 		return 1
+	fi
+
+	# Install router if version specified in lockfile
+	local router_version=$(grep -oP '"routerVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
+
+	if [[ "$router_version" != "not installed" ]] && [[ "$router_version" != "unknown" ]]; then
+		echo ""
+		print_info "Installing Claude Code Router version: $router_version"
+		echo ""
+
+		npm install -g "@musistudio/claude-code-router@$router_version"
+
+		if [[ $? -eq 0 ]]; then
+			print_success "Router installed: $router_version"
+			echo ""
+		else
+			print_warning "Failed to install router (non-critical)"
+			echo ""
+		fi
 	fi
 
 	print_success "Installation from lockfile complete"
@@ -1209,6 +1348,105 @@ check_config_status() {
 	else
 		print_info "Configuration type: CUSTOM"
 		echo "  Custom CLAUDE_CONFIG_DIR set"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Check router status
+# Shows router installation, config location, and settings
+# Returns:
+#   0 - success
+#######################################
+check_router_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Claude Code Router Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Check if router binary exists
+	local ccr_cmd=$(get_router_path "false")
+
+	if [[ -z "$ccr_cmd" ]]; then
+		print_warning "Router not installed"
+		echo ""
+		echo "Install with: ./iclaude.sh --install-router"
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	print_success "Router installed: $ccr_cmd"
+
+	# Show version
+	local router_version=$("$ccr_cmd" --version 2>/dev/null | head -1 || echo "unknown")
+	if [[ "$router_version" != "unknown" ]]; then
+		echo "  Version: $router_version"
+	fi
+	echo ""
+
+	# Check router config
+	local router_config=""
+	if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+	else
+		router_config="$HOME/.claude/router.json"
+	fi
+
+	print_info "Router config location:"
+	echo "  $router_config"
+	echo ""
+
+	if [[ ! -f "$router_config" ]]; then
+		print_warning "Router config not found"
+		echo ""
+		echo "Create config file at: $router_config"
+		echo "Or use template: ${router_config}.example"
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	print_success "Router config exists"
+
+	# Show config size
+	local size=$(du -sh "$router_config" 2>/dev/null | cut -f1 || echo "unknown")
+	echo "  Size: $size"
+	echo ""
+
+	# Parse config and show summary
+	print_info "Configuration summary:"
+
+	# Show provider names and default model
+	if command -v jq &> /dev/null; then
+		local providers=$(jq -r '.providers | keys[]' "$router_config" 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+		if [[ -n "$providers" ]]; then
+			echo "  Providers: $providers"
+		fi
+
+		local default_model=$(jq -r '.routing.default // "not set"' "$router_config" 2>/dev/null)
+		echo "  Default model: $default_model"
+	else
+		echo "  (Install jq for detailed config summary)"
+	fi
+
+	echo ""
+
+	# Check if router will be used on next launch
+	if detect_router "false"; then
+		print_success "Router will be used on next launch"
+		echo "  (router.json exists and ccr binary found)"
+	else
+		print_info "Router available but not active"
+		echo "  Use --no-router to skip router even if configured"
 	fi
 
 	echo ""
@@ -2898,11 +3136,57 @@ launch_claude() {
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 
+    # NEW: Check if router should be used (unless --no-router flag)
+    local use_router=false
+    if [[ "$NO_ROUTER_FLAG" != "true" ]] && detect_router "$skip_isolated"; then
+        use_router=true
+    fi
+
     echo ""
-    print_info "Launching Claude Code..."
+    if [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code via Router..."
+    else
+        print_info "Launching Claude Code..."
+    fi
     echo ""
 
-    # Find claude installation
+    # NEW: Router launch path
+    if [[ "$use_router" == "true" ]]; then
+        local ccr_cmd=$(get_router_path "$skip_isolated")
+        if [[ -z "$ccr_cmd" ]]; then
+            print_error "Router enabled but ccr binary not found"
+            print_info "Install with: ./iclaude.sh --install-router"
+            exit 1
+        fi
+
+        # Copy router config to CCR's expected location
+        local router_config=""
+        if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+            router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+        else
+            router_config="$HOME/.claude/router.json"
+        fi
+
+        if [[ -f "$router_config" ]]; then
+            mkdir -p "$HOME/.claude-code-router"
+            cp "$router_config" "$HOME/.claude-code-router/config.json"
+            print_info "Using router config: $router_config"
+        fi
+
+        print_info "Using Claude Code Router: $ccr_cmd"
+
+        # Show router version
+        local router_version=$("$ccr_cmd" --version 2>/dev/null | head -1 || echo "unknown")
+        if [[ "$router_version" != "unknown" ]]; then
+            print_info "Router version: $router_version"
+        fi
+        echo ""
+
+        # Launch via ccr code
+        exec "$ccr_cmd" code "$@"
+    fi
+
+    # EXISTING: Find claude installation (native launch path)
     local claude_cmd=""
 
     # Priority 1: Check NVM environment first (user's active version)
@@ -3020,6 +3304,9 @@ OPTIONS:
   --refresh-token                   Refresh OAuth token using setup-token (long-lived ~1 year)
   --export-config DIR               Export configuration to backup directory
   --import-config DIR               Import configuration from backup directory
+  --install-router                  Install Claude Code Router in isolated environment
+  --check-router                    Show router status and configuration
+  --no-router                       Force native Claude (skip router even if configured)
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
@@ -3119,6 +3406,19 @@ ISOLATED CONFIGURATION:
   # Import configuration from backup
   iclaude --import-config /path/to/backup
 
+ROUTER INTEGRATION:
+  # Install router in isolated environment
+  ./iclaude.sh --install-router
+
+  # Check router status and configuration
+  ./iclaude.sh --check-router
+
+  # Launch with router (auto-detected if router.json exists)
+  ./iclaude.sh
+
+  # Force native Claude (skip router)
+  ./iclaude.sh --no-router
+
 PROXY URL FORMAT:
   http://username:password@IP:port
   https://username:password@IP:port
@@ -3193,6 +3493,7 @@ main() {
     local use_isolated_config=false
     local use_shared_config=false
     local claude_args=()
+    local NO_ROUTER_FLAG=false
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -3317,6 +3618,24 @@ main() {
                 fi
                 update_isolated_claude
                 exit $?
+                ;;
+            --install-router)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-router"
+                    echo ""
+                    echo "Router is only available in isolated environment"
+                    exit 1
+                fi
+                install_isolated_router
+                exit $?
+                ;;
+            --check-router)
+                check_router_status
+                exit 0
+                ;;
+            --no-router)
+                NO_ROUTER_FLAG=true
+                shift
                 ;;
             --no-test)
                 skip_test=true
