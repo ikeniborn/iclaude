@@ -108,9 +108,9 @@
 |---------|----------|
 | `--install-router` | Установка Claude Code Router |
 | `--check-router` | Статус router и конфигурации |
-| `--no-router` | Принудительно использовать native Claude |
+| `--router` | Запуск через router (по умолчанию native) |
 
-<sub>✨ **Поддерживаемые провайдеры:** OpenRouter, DeepSeek, Ollama, Gemini, Volcengine, SiliconFlow</sub>
+<sub>✨ **Поддерживаемые провайдеры:** OpenRouter, DeepSeek, Ollama, Gemini, OpenAI, Volcengine, SiliconFlow</sub>
 
 ---
 
@@ -195,7 +195,7 @@ sudo ./iclaude.sh --create-symlink
 
 ### Use Case 5: Использование альтернативных LLM провайдеров через Router
 
-Claude Code Router позволяет использовать DeepSeek, OpenRouter, Ollama и другие провайдеры вместо Anthropic API:
+Claude Code Router позволяет использовать DeepSeek, OpenRouter, OpenAI, Ollama и другие провайдеры вместо Anthropic API:
 
 ```bash
 # Шаг 1: Установить Claude Code Router
@@ -208,14 +208,14 @@ Claude Code Router позволяет использовать DeepSeek, OpenRou
 # Шаг 3: Экспортировать API ключ
 export DEEPSEEK_API_KEY="your-key-here"
 
-# Шаг 4: Запустить с router (автоматически если router.json существует)
-./iclaude.sh
+# Шаг 4: Запустить через router (требуется флаг --router)
+./iclaude.sh --router
 
 # Проверить статус router
 ./iclaude.sh --check-router
 
-# Принудительно использовать native Claude (без router)
-./iclaude.sh --no-router
+# Запуск по умолчанию (native Claude, без router)
+./iclaude.sh
 ```
 
 **Преимущества:**

@@ -34,6 +34,12 @@
       "apiKey": "${SILICONFLOW_API_KEY}",
       "baseURL": "https://api.siliconflow.cn/v1",
       "description": "SiliconFlow - Chinese AI cloud provider"
+    },
+    "openai": {
+      "type": "openai",
+      "apiKey": "${OPENAI_API_KEY}",
+      "baseURL": "https://api.openai.com/v1",
+      "description": "OpenAI - Direct OpenAI API (GPT-4, GPT-4 Turbo, GPT-3.5)"
     }
   },
   "models": {
@@ -67,6 +73,18 @@
       "model": "gemini-2.0-flash-exp",
       "maxTokens": 8192,
       "description": "Google Gemini 2.0 Flash"
+    },
+    "gpt-4-turbo": {
+      "provider": "openai",
+      "model": "gpt-4-turbo-preview",
+      "maxTokens": 4096,
+      "description": "OpenAI GPT-4 Turbo"
+    },
+    "gpt-4": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "maxTokens": 8192,
+      "description": "OpenAI GPT-4"
     }
   },
   "routing": {

@@ -84,11 +84,11 @@ bash -n iclaude.sh
 # Check router status and configuration
 ./iclaude.sh --check-router
 
-# Launch with router (auto-detected if router.json exists)
-./iclaude.sh
+# Launch via router (opt-in with --router flag)
+./iclaude.sh --router
 
-# Force native Claude (skip router even if configured)
-./iclaude.sh --no-router
+# Launch with native Claude (default behavior)
+./iclaude.sh
 ```
 
 ## Code Architecture
@@ -190,8 +190,8 @@ The script is organized into functional modules:
 - **Location**: iclaude.sh:324-379 (detection), 584-637 (installation), 1333-1430 (status)
 - **Purpose**: Integrate Claude Code Router for alternative LLM providers
 - **Key Features**:
-  - Hybrid auto-detection (router.json + ccr binary availability)
-  - Support for multiple providers (OpenRouter, DeepSeek, Ollama, Gemini, Volcengine, SiliconFlow)
+  - Opt-in activation via `--router` flag (native Claude by default)
+  - Support for multiple providers (OpenRouter, DeepSeek, OpenAI, Ollama, Gemini, Volcengine, SiliconFlow)
   - Configuration with environment variable substitution (`${VAR_NAME}`)
   - Lockfile integration for router version tracking
   - Backward compatibility (zero breaking changes)
@@ -199,12 +199,13 @@ The script is organized into functional modules:
   - `router.json.example` - Comprehensive template with all providers (committed to git)
   - `router.json` - Team's actual config with `${VAR}` placeholders (committed to git)
   - `~/.claude-code-router/config.json` - Runtime config (copied at launch, NOT in git)
-- **Launch Flow**:
-  1. Check if `router.json` exists
-  2. Verify `ccr` binary installed
+- **Launch Flow** (when `--router` flag is specified):
+  1. Check if `USE_ROUTER_FLAG` is true
+  2. Verify `router.json` exists and `ccr` binary installed
   3. Copy `router.json` to `~/.claude-code-router/config.json`
   4. Launch via `ccr code` instead of `claude`
   5. Router intercepts Claude API calls → routes to configured provider
+  6. **Default behavior** (without `--router`): Launch native Claude directly
 
 **Router + Proxy Compatibility:**
 - Router inherits `HTTPS_PROXY` and `HTTP_PROXY` environment variables
@@ -265,7 +266,7 @@ Captures current versions to lockfile. Critical for reproducibility:
 - **Now includes router version** for reproducible router installations
 
 #### `detect_router()` - iclaude.sh:324
-Determines if Claude Code Router should be used. Returns:
+Determines if Claude Code Router is available (NOT whether it should be used). Returns:
 - `0`: Router available (router.json exists AND ccr binary installed)
 - `1`: Router not available (missing config or binary)
 
@@ -274,7 +275,7 @@ Determines if Claude Code Router should be used. Returns:
 2. Verify `ccr` binary available via `get_router_path()`
 3. If config exists but binary missing, warns user to run `--install-router`
 
-**Important**: Only activates when BOTH conditions met (file + binary). This ensures graceful fallback to native Claude if router not fully configured.
+**Important**: This function only checks availability. Router is activated ONLY when `USE_ROUTER_FLAG=true` (set by `--router` flag). By default, native Claude is used even if router is available.
 
 #### `get_router_path()` - iclaude.sh:355
 Locates `ccr` binary in isolated or system environment. Priority order:

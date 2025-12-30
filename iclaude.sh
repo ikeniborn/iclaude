@@ -1440,13 +1440,14 @@ check_router_status() {
 
 	echo ""
 
-	# Check if router will be used on next launch
+	# Check if router is configured
 	if detect_router "false"; then
-		print_success "Router will be used on next launch"
+		print_success "Router configured and ready"
 		echo "  (router.json exists and ccr binary found)"
+		echo "  Use --router flag to launch via router"
 	else
-		print_info "Router available but not active"
-		echo "  Use --no-router to skip router even if configured"
+		print_info "Router not fully configured"
+		echo "  Run --install-router to set up router"
 	fi
 
 	echo ""
@@ -3136,9 +3137,9 @@ launch_claude() {
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 
-    # NEW: Check if router should be used (unless --no-router flag)
+    # NEW: Check if router should be used (only if --router flag is set)
     local use_router=false
-    if [[ "$NO_ROUTER_FLAG" != "true" ]] && detect_router "$skip_isolated"; then
+    if [[ "$USE_ROUTER_FLAG" == "true" ]] && detect_router "$skip_isolated"; then
         use_router=true
     fi
 
@@ -3306,7 +3307,7 @@ OPTIONS:
   --import-config DIR               Import configuration from backup directory
   --install-router                  Install Claude Code Router in isolated environment
   --check-router                    Show router status and configuration
-  --no-router                       Force native Claude (skip router even if configured)
+  --router                          Launch via Claude Code Router (requires router.json)
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
@@ -3413,11 +3414,11 @@ ROUTER INTEGRATION:
   # Check router status and configuration
   ./iclaude.sh --check-router
 
-  # Launch with router (auto-detected if router.json exists)
+  # Launch with native Claude (default)
   ./iclaude.sh
 
-  # Force native Claude (skip router)
-  ./iclaude.sh --no-router
+  # Launch via Claude Code Router
+  ./iclaude.sh --router
 
 PROXY URL FORMAT:
   http://username:password@IP:port
@@ -3493,7 +3494,7 @@ main() {
     local use_isolated_config=false
     local use_shared_config=false
     local claude_args=()
-    local NO_ROUTER_FLAG=false
+    local USE_ROUTER_FLAG=false
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -3633,8 +3634,8 @@ main() {
                 check_router_status
                 exit 0
                 ;;
-            --no-router)
-                NO_ROUTER_FLAG=true
+            --router)
+                USE_ROUTER_FLAG=true
                 shift
                 ;;
             --no-test)
