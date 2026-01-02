@@ -3004,11 +3004,27 @@ check_oauth_token() {
         return 0
     fi
 
-    # Try to extract expiresAt field using grep and sed
-    local expires_at=$(grep -o '"expiresAt":[0-9]*' "$credentials_file" 2>/dev/null | sed 's/"expiresAt"://')
+    # Validate jq is installed
+    if ! validate_jq_installed; then
+        print_warning "Cannot check token expiration without jq - skipping check"
+        return 0
+    fi
 
-    # If we couldn't parse expiresAt, assume token is valid
-    if [[ -z "$expires_at" ]]; then
+    # Extract expiresAt field using jq with specific JSON path
+    # CRITICAL: Use .claudeAiOauth.expiresAt to avoid matching mcpOAuth.*.expiresAt
+    local expires_at=$(jq -r '.claudeAiOauth.expiresAt // 0' "$credentials_file" 2>/dev/null)
+
+    # If we couldn't parse expiresAt or it's invalid, show warning and skip check
+    if [[ -z "$expires_at" || "$expires_at" == "0" || "$expires_at" == "null" ]]; then
+        print_warning "OAuth token expiration not found in: $credentials_file"
+        print_info "Run '/login' in Claude Code if you encounter authentication issues"
+        return 0
+    fi
+
+    # Validate that expires_at is a number (catches jq errors)
+    if ! [[ "$expires_at" =~ ^[0-9]+$ ]]; then
+        print_warning "Invalid token expiration format in: $credentials_file"
+        print_info "Expected numeric timestamp, got: $expires_at"
         return 0
     fi
 
@@ -3058,7 +3074,9 @@ check_oauth_token() {
     if [[ $time_remaining_min -lt 60 ]]; then
         print_warning "OAuth token expires in $time_remaining_min minutes"
         print_info "File: $credentials_file"
-        local expires_date=$(date -d "@$((expires_at / 1000))" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "unknown")
+        # Safely calculate timestamp (already validated as numeric above)
+        local expires_sec=$((expires_at / 1000))
+        local expires_date=$(date -d "@${expires_sec}" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "unknown")
         print_info "Expires at: $expires_date"
         echo ""
     fi
@@ -3122,6 +3140,22 @@ refresh_oauth_token() {
         print_info "Please run '/login' manually in Claude Code"
         return 1
     fi
+}
+
+#######################################
+# Validate that jq is installed
+# Required for parsing JSON credentials file
+# Returns:
+#   0 - jq is installed
+#   1 - jq is not installed
+#######################################
+validate_jq_installed() {
+    if ! command -v jq &>/dev/null; then
+        print_error "jq is not installed. Cannot parse credentials file."
+        print_info "Install jq: sudo apt-get install jq (Debian/Ubuntu) or brew install jq (macOS)"
+        return 1
+    fi
+    return 0
 }
 
 #######################################
