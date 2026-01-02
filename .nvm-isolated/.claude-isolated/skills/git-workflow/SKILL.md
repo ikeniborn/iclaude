@@ -113,6 +113,36 @@ git push -u origin {branch_name}
 }
 ```
 
+## Task Summary
+
+После push выводить summary.
+
+Template: `@template:task-summary`
+
+Пример:
+```
+═══════════════════════════════════════════════════════════
+                    ✅ ЗАДАЧА ЗАВЕРШЕНА
+═══════════════════════════════════════════════════════════
+
+СТАТУС: ✓ COMPLETED
+
+СДЕЛАНО:
+- Добавлен метод calculate_total в BudgetService
+- Написаны unit-тесты для нового метода
+
+ФАЙЛЫ:
+- app/services/budget_service.py (modified)
+- tests/test_budget_service.py (created)
+
+GIT:
+- Branch: feature/add-calculate-total
+- Commit: abc123def
+- Pushed: origin/feature/add-calculate-total
+
+═══════════════════════════════════════════════════════════
+```
+
 ## Safety Rules
 
 ```yaml

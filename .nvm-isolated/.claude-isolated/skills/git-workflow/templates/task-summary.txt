@@ -1,0 +1,28 @@
+<!--
+  Task Summary Template
+  Use for: final summary after git push
+-->
+═══════════════════════════════════════════════════════════
+                    ✅ ЗАДАЧА ЗАВЕРШЕНА
+═══════════════════════════════════════════════════════════
+
+СТАТУС: ✓ {{status}}
+
+СДЕЛАНО:
+{{#changes}}
+- {{description}}
+{{/changes}}
+
+ФАЙЛЫ:
+{{#files}}
+- {{file_path}} ({{change_type}})
+{{/files}}
+
+GIT:
+- Branch: {{branch_name}}
+- Commit: {{commit_hash}}
+{{#pushed}}
+- Pushed: origin/{{branch_name}}
+{{/pushed}}
+
+═══════════════════════════════════════════════════════════
