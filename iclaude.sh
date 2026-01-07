@@ -1664,10 +1664,11 @@ save_credentials() {
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL, PROXY_INSECURE (always true), and NO_PROXY
+    # Save URL, PROXY_INSECURE, PROXY_CA, and NO_PROXY
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
-PROXY_INSECURE=true
+PROXY_INSECURE=${PROXY_INSECURE:-true}
+PROXY_CA=${PROXY_CA:-}
 NO_PROXY=$no_proxy
 EOF
 
@@ -1693,6 +1694,16 @@ load_credentials() {
         # Old format: first line is the URL
         PROXY_URL=$(head -n 1 "$CREDENTIALS_FILE")
         NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+    fi
+
+    # Export loaded credentials to environment
+    if [[ -n "${PROXY_CA:-}" ]] && [[ -f "$PROXY_CA" ]]; then
+        export PROXY_CA
+        export PROXY_INSECURE=false
+    elif [[ "${PROXY_INSECURE:-true}" == "false" ]]; then
+        export PROXY_INSECURE=false
+    else
+        export PROXY_INSECURE=true
     fi
 
     if [[ -z "$PROXY_URL" ]]; then
@@ -1819,18 +1830,40 @@ prompt_proxy_url() {
 configure_proxy_from_url() {
     local proxy_url=$1
     local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+    local final_proxy_url="$proxy_url"
 
-    # Save credentials first (may convert domain to IP)
-    # and get the final URL (possibly with IP instead of domain)
-    local final_proxy_url=$(save_credentials "$proxy_url" "$no_proxy")
+    # Only save credentials if this is a new URL (not loaded from file)
+    # Check if credentials file exists and URL matches
+    local skip_save=false
+    if [[ -f "$CREDENTIALS_FILE" ]]; then
+        source "$CREDENTIALS_FILE"
+        if [[ "${PROXY_URL:-}" == "$proxy_url" ]]; then
+            # URL matches saved credentials - skip save to preserve PROXY_CA and PROXY_INSECURE
+            skip_save=true
+        fi
+    fi
+
+    if [[ "$skip_save" == false ]]; then
+        # Save credentials (may convert domain to IP)
+        # and get the final URL (possibly with IP instead of domain)
+        final_proxy_url=$(save_credentials "$proxy_url" "$no_proxy")
+    fi
 
     # Set environment variables with final URL (after possible domain-to-IP conversion)
     export HTTPS_PROXY="$final_proxy_url"
     export HTTP_PROXY="$final_proxy_url"
     export NO_PROXY="$no_proxy"
 
-    # Always disable TLS verification for proxies (insecure mode by default)
-    export NODE_TLS_REJECT_UNAUTHORIZED=0
+    # Configure TLS certificate handling
+    if [[ -n "${PROXY_CA:-}" ]] && [[ -f "$PROXY_CA" ]]; then
+        # Use provided CA certificate (secure mode)
+        export NODE_EXTRA_CA_CERTS="$PROXY_CA"
+        print_info "Using proxy CA certificate: $PROXY_CA"
+    elif [[ "${PROXY_INSECURE:-true}" == "true" ]]; then
+        # Fallback to insecure mode (disable TLS verification)
+        export NODE_TLS_REJECT_UNAUTHORIZED=0
+        print_warning "TLS certificate verification disabled (insecure mode)"
+    fi
 
     # Configure git to ignore proxy
     configure_git_no_proxy
@@ -3317,6 +3350,8 @@ Initialize Claude Code with HTTPS/HTTP proxy settings (HTTPS recommended)
 OPTIONS:
   -h, --help                        Show this help message
   -p, --proxy URL                   Set proxy URL directly (skip prompt)
+  --proxy-ca FILE                   Use CA certificate for HTTPS proxy (secure mode)
+  --proxy-insecure                  Disable TLS verification (use NODE_TLS_REJECT_UNAUTHORIZED=0)
   -t, --test                        Test proxy and exit (don't launch Claude)
   -c, --clear                       Clear saved credentials
   --no-proxy                        Launch Claude Code without proxy
@@ -3359,6 +3394,12 @@ EXAMPLES:
 
   # Set proxy URL directly (HTTPS with domain recommended)
   iclaude --proxy https://user:pass@proxy.example.com:8118
+
+  # Use proxy with CA certificate (secure mode, recommended)
+  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca /path/to/proxy-cert.pem
+
+  # Use proxy with insecure mode (not recommended)
+  iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
 
   # Test proxy without launching Claude
   iclaude --test
@@ -3545,6 +3586,25 @@ main() {
                 fi
                 proxy_url="$2"
                 shift 2
+                ;;
+            --proxy-ca)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--proxy-ca requires a certificate file path"
+                    echo "Usage: iclaude --proxy-ca /path/to/proxy-cert.pem"
+                    exit 1
+                fi
+                if [[ ! -f "$2" ]]; then
+                    print_error "Certificate file not found: $2"
+                    exit 1
+                fi
+                export PROXY_CA="$2"
+                export PROXY_INSECURE=false
+                shift 2
+                ;;
+            --proxy-insecure)
+                export PROXY_INSECURE=true
+                unset PROXY_CA
+                shift
                 ;;
             -t|--test)
                 test_mode=true
