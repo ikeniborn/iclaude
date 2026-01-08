@@ -448,6 +448,63 @@ Mode Selection:
 - → Use standard execution
 ```
 
+### Явная постановка задачи с ralph-loop
+
+Если вы хотите **принудительно** использовать ralph-loop (минуя автоматический выбор режима), укажите параметры явно в описании задачи в template v6.0:
+
+#### Способ 1: Структурированная инструкция (рекомендуется)
+
+```markdown
+## Задачи
+
+Исправить все ошибки компиляции TypeScript в проекте.
+
+**Режим выполнения:** ralph-loop
+**Completion promise:** "COMPILED SUCCESSFULLY"
+**Max iterations:** 20
+**Validation command:** npm run build
+```
+
+#### Способ 2: Компактный формат
+
+```markdown
+## Задачи
+
+Исправить все TypeScript ошибки используя ralph-loop
+(promise: "COMPILED SUCCESSFULLY", max: 20, validation: npm run build)
+```
+
+#### Способ 3: Дополнительная секция
+
+```markdown
+## Задачи
+
+Исправить все ошибки компиляции TypeScript.
+
+## Execution Mode
+
+**Force ralph-loop mode:**
+- Task: "Fix all TypeScript compilation errors"
+- Completion promise: "COMPILED SUCCESSFULLY"
+- Max iterations: 20
+- Validation: npm run build
+
+---
+
+## Execution Flow
+...
+```
+
+**Важно указать:**
+- ✅ **Completion promise** - точный текст из вывода валидации при успехе
+- ✅ **Max iterations** - разумное число (20-50 в зависимости от сложности)
+- ✅ **Validation command** - команда для проверки (если не очевидна из контекста)
+
+**Поведение Claude:**
+- Когда Claude видит явные параметры ralph-loop в Phase 1, он пропустит автоматический выбор режима
+- В Phase 3 Claude сразу запустит ralph-loop с указанными параметрами
+- Не требуется подтверждение пользователя (параметры уже заданы явно)
+
 ### Интеграция с Skills
 
 Ralph-loop **дополняет** существующие skills, а не заменяет их:
