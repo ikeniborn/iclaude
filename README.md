@@ -13,6 +13,8 @@
   - [⚙️ Конфигурация](#️-конфигурация)
   - [🌐 Proxy](#-proxy)
 - [💡 Use Cases](#-use-cases)
+- [📚 Шаблоны и Skills для разработки](#-шаблоны-и-skills-для-разработки)
+- [🔄 Ralph-Wiggum Plugin: Итеративное выполнение](#-ralph-wiggum-plugin-итеративное-выполнение)
 - [Варианты установки](#варианты-установки)
   - [📦 Изолированная установка (Рекомендуется)](#-изолированная-установка-рекомендуется)
   - [🖥️ Системная установка](#️-системная-установка)
@@ -332,12 +334,248 @@ export DEEPSEEK_API_KEY="your-key-here"
 - **[.claude/skills/](/.claude/skills/)** - Исходники всех skills
 
 **Templates:**
-- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** - Simple tasks (одна фаза, <10 steps) - **РЕКОМЕНДУЕТСЯ**
-- **[task-planning-template-v3.1.md](task-planning-template-v3.1.md)** - Планирование (разбиение на 2-5 фаз) - **РЕКОМЕНДУЕТСЯ**
-- **[task-execution-template-v3.1.md](task-execution-template-v3.1.md)** - Выполнение одной фазы - **РЕКОМЕНДУЕТСЯ**
+- **[task-lite-template-v6.0.md](.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md)** - Adaptive workflow + ralph-loop integration - **РЕКОМЕНДУЕТСЯ (LATEST)**
+- **[task-lite-template-v3.1.md](task-lite-template-v3.1.md)** - Simple tasks (одна фаза, <10 steps)
+- **[task-planning-template-v3.1.md](task-planning-template-v3.1.md)** - Планирование (разбиение на 2-5 фаз)
+- **[task-execution-template-v3.1.md](task-execution-template-v3.1.md)** - Выполнение одной фазы
 
 **Project Documentation:**
 - **[CLAUDE.md](CLAUDE.md)** - Архитектура проекта и Phase-Based Workflow
+
+---
+
+## 🔄 Ralph-Wiggum Plugin: Итеративное выполнение
+
+Ralph-wiggum - официальный плагин Claude Code для **самореферентных итеративных циклов**. Интегрирован в Task Execution Template v6.0 как опциональный режим выполнения Phase 3.
+
+### Что это такое?
+
+**Ralph-wiggum** использует Stop hook для блокировки выхода из сессии и повторной инъекции того же prompt'а. Claude видит результаты предыдущих итераций (файлы, git history) и самостоятельно корректирует работу до достижения completion promise.
+
+**Принцип работы:**
+```
+User: /ralph-loop "Fix all TypeScript errors" --completion-promise "BUILD SUCCESS"
+  ↓
+Iteration 1: Claude fixes 5 errors → npm run build → 12 errors remain → Loop continues
+  ↓
+Iteration 2: Claude fixes 7 errors → npm run build → 5 errors remain → Loop continues
+  ↓
+Iteration 3: Claude fixes 5 errors → npm run build → Success! → Outputs "BUILD SUCCESS" → EXIT
+```
+
+### Интеграция с Template v6.0
+
+Template v6.0 добавляет **двухрежимное выполнение** в Phase 3:
+
+| Mode | Описание | Когда использовать |
+|------|----------|-------------------|
+| **Mode A: Standard** | Традиционное выполнение | Single-pass задачи, ручная валидация |
+| **Mode B: Ralph-Loop** | Итеративное выполнение | Автоматическая валидация, refinement tasks |
+
+**Decision Criteria (автоматическая рекомендация):**
+```
+✓ Has automatic validation? (tests, linting, build)
+✓ Multiple iterations expected? (>2 refinements)
+✓ Completion detectable via validation output?
+✓ Complexity = complex OR execution_steps > 5?
+→ Claude recommends ralph-loop mode
+```
+
+### Когда использовать ralph-loop?
+
+**✅ Используйте ralph-loop для:**
+- Исправление compilation errors (TypeScript, Rust, Go)
+- Рефакторинг для соответствия linting rules (ESLint, Pylint)
+- Прохождение acceptance tests (pytest, jest)
+- Задачи с чётким критерием завершения
+- Greenfield проекты с автоматической валидацией
+
+**❌ НЕ используйте ralph-loop для:**
+- Single-pass задачи (добавление API endpoint)
+- Ручная валидация (UI review, документация)
+- Задачи без автоматической проверки
+- Исследовательские задачи (exploration)
+
+### Примеры использования
+
+#### Пример 1: TypeScript Compilation Errors
+
+```bash
+# Standard workflow (v5.0)
+"Fix all TypeScript compilation errors"
+→ Manual iterations: fix → test → fix → test → fix → test (5+ prompts)
+
+# Ralph-loop workflow (v6.0)
+/ralph-loop "Fix all TypeScript compilation errors" \
+  --completion-promise "COMPILED SUCCESSFULLY" \
+  --max-iterations 20
+
+→ Autonomous iterations: 3 iterations, automatic exit on success (1 prompt)
+```
+
+**Mode Selection (automatic):**
+- ✓ Automatic validation: `npm run build`
+- ✓ Iterations expected: Unknown (potentially many)
+- ✓ Completion detectable: "Compiled successfully" in output
+- ✓ Complexity: standard
+- → **Claude recommends ralph-loop mode**
+
+#### Пример 2: ESLint Refactoring
+
+```bash
+/ralph-loop "Refactor codebase to pass ESLint rules" \
+  --completion-promise "LINT CLEAN" \
+  --max-iterations 50
+```
+
+**Loop behavior:**
+```
+Iteration 1: Fix 15 violations → npm run lint → 47 violations remain
+Iteration 2: Fix 22 violations → npm run lint → 25 violations remain
+Iteration 3: Fix 18 violations → npm run lint → 7 violations remain
+Iteration 4: Fix 7 violations → npm run lint → Success! → Output "LINT CLEAN" → EXIT
+```
+
+#### Пример 3: API Endpoint (Standard Mode)
+
+```bash
+# Ralph-loop НЕ рекомендуется (ручная валидация)
+"Add GET /api/users endpoint"
+
+Mode Selection:
+- ✗ Single-pass task (create file, write code, test manually)
+- ✗ Manual verification needed
+- → Use standard execution
+```
+
+### Интеграция с Skills
+
+Ralph-loop **дополняет** существующие skills, а не заменяет их:
+
+| Phase | Skills (v5.0) | Ralph-loop (v6.0) |
+|-------|--------------|------------------|
+| 0 | context-awareness, adaptive-workflow | ← Same |
+| 1 | thinking-framework, structured-planning | **+ execution_mode_recommendation** |
+| 2 | approval-gates | ← Same |
+| 3 | code-review | **+ ralph-loop [conditional]** |
+| 4 | validation-framework, error-handling | ← Same |
+| 5 | git-workflow | ← Same |
+
+**Workflow в Phase 1:**
+```json
+{
+  "task_plan": {
+    "execution_mode_recommendation": {
+      "mode": "ralph-loop",
+      "confidence": "high",
+      "reasoning": "Task has automatic validation (npm test) and requires iterative refinement",
+      "ralph_config": {
+        "completion_promise": "ALL TESTS PASSING",
+        "max_iterations": 30,
+        "validation_command": "npm test"
+      }
+    }
+  }
+}
+```
+
+**Workflow в Phase 3:**
+```
+Claude: "I recommend using ralph-loop for this task.
+  - Validation: npm run build
+  - Completion promise: 'COMPILED SUCCESSFULLY'
+  - Max iterations: 20
+
+Proceed with ralph-loop? (yes/no)"
+
+User: "yes"
+
+Claude: [Launches /ralph-loop command]
+```
+
+### Template v6.0 File Location
+
+**Расположение:**
+- **Repository:** `.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md`
+- **External:** `/home/ikeniborn/Documents/Notes/Work/ИИ/Prompt/Системные промты/template/task-lite-template-v6.0.md`
+
+**Использование:**
+```bash
+# Передать template Claude при запуске
+./iclaude.sh
+# Внутри Claude:
+"Use task-lite-template-v6.0.md for this task"
+```
+
+### Error Handling
+
+Template v6.0 добавляет специальные error types для ralph-loop:
+
+| Error Type | Action | Max Retries | Description |
+|------------|--------|-------------|-------------|
+| RALPH_MAX_ITERATIONS | STOP, report progress | 0 | Max iterations exhausted without completion |
+| RALPH_STUCK_LOOP | Cancel ralph, ASK user | 0 | Same error repeated 3+ iterations |
+
+**Recovery:**
+```bash
+# If ralph-loop gets stuck
+/cancel-ralph  # Manual cancellation
+
+# Check iteration count
+grep '^iteration:' .claude/ralph-loop.local.md
+```
+
+### Monitoring Ralph-Loop
+
+**Current iteration:**
+```bash
+# Ralph stores state in .claude/ralph-loop.local.md
+cat .claude/ralph-loop.local.md
+```
+
+**Expected output:**
+```yaml
+---
+iteration: 3
+maxIterations: 20
+completionPromise: "BUILD SUCCESS"
+prompt: |
+  Fix all TypeScript compilation errors
+---
+```
+
+### Преимущества
+
+**Для разработчика:**
+- ✅ Снижение числа ручных итераций (1 prompt вместо 5-10)
+- ✅ Автономная коррекция ошибок
+- ✅ Гарантированное достижение completion promise
+- ✅ Прозрачность через iteration count
+
+**Для AI:**
+- ✅ Видимость предыдущих попыток (files + git history)
+- ✅ Самокоррекция на основе validation feedback
+- ✅ Детерминированный exit condition
+
+**Для проекта:**
+- ✅ Atomic commits с полным результатом (не промежуточные состояния)
+- ✅ Reproducible builds через completion promise
+- ✅ Меньше мусора в git history
+
+### Ограничения
+
+**Ralph-loop НЕ подходит для:**
+- ❌ Задач без автоматической валидации
+- ❌ Исследовательских задач (exploration)
+- ❌ UI/UX review (субъективная оценка)
+- ❌ Задач с изменяющимися requirements
+- ❌ Debugging без чёткого completion criteria
+
+### Документация
+
+- **Template v6.0:** `.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md`
+- **Plugin Source:** `.nvm-isolated/.claude-isolated/plugins/marketplaces/claude-plugins-official/plugins/ralph-loop/`
+- **Official Docs:** [Ralph Technique](https://ghuntley.com/ralph/)
 
 ---
 
