@@ -26,7 +26,8 @@ export type ToolInputSchemas =
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
-  | AskUserQuestionInput;
+  | AskUserQuestionInput
+  | ConfigInput;
 
 export interface AgentInput {
   /**
@@ -50,7 +51,7 @@ export interface AgentInput {
    */
   resume?: string;
   /**
-   * Set to true to run this agent in the background. Use TaskOutput to read the output later.
+   * Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output.
    */
   run_in_background?: boolean;
 }
@@ -95,11 +96,11 @@ export interface TaskOutputInput {
   /**
    * Whether to wait for completion
    */
-  block?: boolean;
+  block: boolean;
   /**
    * Max wait time in ms
    */
-  timeout?: number;
+  timeout: number;
 }
 export interface ExitPlanModeInput {
   [k: string]: unknown;
@@ -1483,4 +1484,14 @@ export interface AskUserQuestionInput {
   answers?: {
     [k: string]: string;
   };
+}
+export interface ConfigInput {
+  /**
+   * The setting key (e.g., "theme", "model", "permissions.defaultMode")
+   */
+  setting: string;
+  /**
+   * The new value. Omit to get current value.
+   */
+  value?: string | boolean | number;
 }
