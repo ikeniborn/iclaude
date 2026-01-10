@@ -553,6 +553,75 @@ The repository includes a Skills system in `.nvm-isolated/.claude-isolated/skill
 
 See README.md for full Skills documentation.
 
+## LSP Integration
+
+The `lsp-integration` skill provides automatic Language Server Protocol (LSP) plugin setup for enhanced code intelligence across 11+ languages.
+
+### Supported Languages
+
+- **TypeScript/JavaScript** - typescript-lsp (vtsls server)
+- **Python** - pyright-lsp (pyright server)
+- **Go** - gopls-lsp (gopls server)
+- **Rust** - rust-analyzer-lsp (rust-analyzer server)
+- **C#** - csharp-lsp (OmniSharp server)
+- **Java** - jdtls-lsp (Eclipse JDT LS)
+- **Kotlin** - kotlin-lsp (kotlin-language-server)
+- **Lua** - lua-lsp (lua-language-server)
+- **PHP** - php-lsp (Intelephense server)
+- **C/C++** - clangd-lsp (clangd server)
+- **Swift** - swift-lsp (SourceKit-LSP server)
+
+### How It Works
+
+The `lsp-integration` skill automatically:
+1. Detects project language from `context-awareness` skill
+2. Checks if LSP plugin is installed for current project
+3. Verifies LSP server binary is available
+4. Recommends installation if missing (non-blocking)
+5. Outputs `lsp_status` for enhanced code-review and validation
+
+### Workflow Integration
+
+**PHASE 0:** LSP integration runs after `context-awareness` and before `adaptive-workflow`
+**PHASE 3:** Code review benefits from LSP-detected type errors and code intelligence
+**PHASE 4:** Validation includes LSP diagnostics when available
+
+### Benefits
+
+- **Go-to-definition**: Navigate to symbol definitions across files
+- **Find references**: Locate all usages of symbols
+- **Type checking**: Catch type errors before runtime
+- **Auto-completion**: Intelligent code suggestions
+
+### Manual Installation
+
+If LSP plugin not auto-installed, install manually:
+```bash
+# Inside Claude Code session
+/plugin install pyright-lsp@claude-plugins-official
+/plugin install typescript-lsp@claude-plugins-official
+# ... etc
+```
+
+### LSP Server Installation
+
+After plugin installation, install LSP server binary:
+```bash
+# Python
+npm install -g pyright
+
+# TypeScript
+npm install -g @vtsls/language-server
+
+# Go
+go install golang.org/x/tools/gopls@latest
+
+# Rust (via rustup)
+rustup component add rust-analyzer
+```
+
+See `skills/lsp-integration/SKILL.md` for language-specific prerequisites and troubleshooting.
+
 ## Security Considerations
 
 1. **Credential Storage**: `.claude_proxy_credentials` uses chmod 600 (owner-only)
