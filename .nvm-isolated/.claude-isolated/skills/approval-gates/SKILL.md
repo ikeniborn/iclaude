@@ -6,6 +6,7 @@ tags: [approval, confirmation, user-interaction]
 dependencies: [structured-planning]
 files:
   templates: ./templates/*.md
+user-invocable: false
 ---
 
 # Approval Gates v2.0

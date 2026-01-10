@@ -8,6 +8,7 @@ files:
   templates: ./templates/*.json
   schemas: ./schemas/*.json
   examples: ./examples/*.md
+user-invocable: false
 ---
 
 # Structured Planning v2.0

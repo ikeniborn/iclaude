@@ -8,6 +8,7 @@ files:
   templates: ./templates/*.json
   schemas: ./schemas/*.json
   examples: ./examples/*.md
+user-invocable: false
 ---
 
 # Validation Framework v2.0

@@ -5,6 +5,7 @@ version: 1.0.0
 author: init_claude Team
 tags: [bash, shell, scripting, development, refactoring]
 dependencies: []
+user-invocable: false
 ---
 
 # Bash Development

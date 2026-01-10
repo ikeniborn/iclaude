@@ -5,6 +5,7 @@ version: 1.0.0
 author: Claude Code Team
 tags: [phase-based, execution, checkpoint, validation, workflow]
 dependencies: [thinking-framework, validation-framework, git-workflow, error-handling]
+user-invocable: false
 ---
 
 # Phase Execution

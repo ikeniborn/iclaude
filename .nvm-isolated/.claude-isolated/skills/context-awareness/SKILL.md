@@ -7,6 +7,7 @@ dependencies: []
 files:
   templates: ./templates/*.json
   shared: ../_shared/syntax-commands.json
+user-invocable: false
 ---
 
 # Context Awareness

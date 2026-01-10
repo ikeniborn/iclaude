@@ -5,6 +5,7 @@ version: 1.0.0
 author: init_claude Team
 tags: [proxy, http, https, socks5, curl, tls, certificates, debugging]
 dependencies: []
+user-invocable: false
 ---
 
 # Proxy Management

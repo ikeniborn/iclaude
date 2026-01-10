@@ -6,6 +6,7 @@ tags: [errors, recovery, retry, handling]
 dependencies: []
 files:
   templates: ./templates/*.json
+user-invocable: false
 ---
 
 # Error Handling v2.0

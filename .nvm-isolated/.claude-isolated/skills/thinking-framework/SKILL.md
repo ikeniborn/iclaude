@@ -7,6 +7,7 @@ dependencies: []
 files:
   templates: ./templates/*.xml
   examples: ./examples/*.md
+user-invocable: false
 ---
 
 # Thinking Framework v2.0

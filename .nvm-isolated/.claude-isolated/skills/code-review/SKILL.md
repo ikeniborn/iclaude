@@ -1,5 +1,5 @@
 ---
-name: Code Review
+name: code-review
 description: Автоматический review кода перед commit
 version: 1.0.0
 tags: [review, quality, security, code-smells]
@@ -7,6 +7,7 @@ dependencies: []
 files:
   templates: ./templates/*.json
   rules: ./rules/*.md
+user-invocable: false
 ---
 
 # Code Review

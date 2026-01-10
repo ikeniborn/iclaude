@@ -5,6 +5,7 @@ version: 1.0.0
 author: Claude Code Team
 tags: [phase-based, decomposition, planning, master-plan, workflow]
 dependencies: [thinking-framework, structured-planning, approval-gates, error-handling]
+user-invocable: false
 ---
 
 # Task Decomposition

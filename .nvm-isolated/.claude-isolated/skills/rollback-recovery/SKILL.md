@@ -6,6 +6,7 @@ tags: [rollback, recovery, git, backup]
 dependencies: [error-handling]
 files:
   templates: ./templates/*.json
+user-invocable: false
 ---
 
 # Rollback Recovery

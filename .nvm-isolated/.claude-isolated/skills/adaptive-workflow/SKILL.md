@@ -6,6 +6,7 @@ tags: [workflow, complexity, adaptation, optimization]
 dependencies: [context-awareness]
 files:
   templates: ./templates/*.json
+user-invocable: false
 ---
 
 # Adaptive Workflow

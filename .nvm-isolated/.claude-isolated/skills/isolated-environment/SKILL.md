@@ -5,6 +5,7 @@ version: 1.0.0
 author: init_claude Team
 tags: [nvm, isolation, installation, versioning, portability]
 dependencies: [bash-development]
+user-invocable: false
 ---
 
 # Isolated Environment

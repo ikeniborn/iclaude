@@ -8,6 +8,7 @@ files:
   templates: ./templates/*.txt
   examples: ./examples/*.md
   shared: ../_shared/commit-types.json
+user-invocable: false
 ---
 
 # Git Workflow v2.0

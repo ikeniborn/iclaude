@@ -60,6 +60,8 @@ scripts/.claude_proxy_credentials
 !.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v5.0.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md
+!.nvm-isolated/.claude-isolated/task-lite-template-v7.0.md
+!.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
 
 # Router configuration (allow both router files in git)
 !.nvm-isolated/.claude-isolated/router.json.example

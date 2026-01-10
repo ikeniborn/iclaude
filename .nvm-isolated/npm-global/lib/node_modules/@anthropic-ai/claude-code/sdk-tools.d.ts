@@ -54,6 +54,10 @@ export interface AgentInput {
    * Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output.
    */
   run_in_background?: boolean;
+  /**
+   * Maximum number of agentic turns (API round-trips) before stopping. Used internally for warmup.
+   */
+  max_turns?: number;
 }
 export interface BashInput {
   /**
@@ -65,18 +69,17 @@ export interface BashInput {
    */
   timeout?: number;
   /**
-   * Clear, concise description of what this command does in 5-10 words, in active voice. Examples:
-   * Input: ls
-   * Output: List files in current directory
+   * Clear, concise description of what this command does in active voice. Never use words like "complex" or "risk" in the description - just describe what it does.
    *
-   * Input: git status
-   * Output: Show working tree status
+   * For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):
+   * - ls → "List files in current directory"
+   * - git status → "Show working tree status"
+   * - npm install → "Install package dependencies"
    *
-   * Input: npm install
-   * Output: Install package dependencies
-   *
-   * Input: mkdir foo
-   * Output: Create directory 'foo'
+   * For commands that are harder to parse at a glance (piped commands, obscure flags, etc.), add enough context to clarify what it does:
+   * - find . -name "*.tmp" -exec rm {} \; → "Find and delete all .tmp files recursively"
+   * - git reset --hard origin/main → "Discard all local changes and match remote main"
+   * - curl -s url | jq '.data[]' → "Fetch JSON from URL and extract data array elements"
    */
   description?: string;
   /**
@@ -87,6 +90,13 @@ export interface BashInput {
    * Set this to true to dangerously override sandbox mode and run commands without sandboxing.
    */
   dangerouslyDisableSandbox?: boolean;
+  /**
+   * Internal: pre-computed sed edit result from preview
+   */
+  _simulatedSedEdit?: {
+    filePath: string;
+    newContent: string;
+  };
 }
 export interface TaskOutputInput {
   /**
@@ -1483,6 +1493,15 @@ export interface AskUserQuestionInput {
    */
   answers?: {
     [k: string]: string;
+  };
+  /**
+   * Optional metadata for tracking and analytics purposes. Not displayed to user.
+   */
+  metadata?: {
+    /**
+     * Optional identifier for the source of this question (e.g., "remember" for /remember command). Used for analytics tracking.
+     */
+    source?: string;
   };
 }
 export interface ConfigInput {
