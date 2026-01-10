@@ -680,16 +680,22 @@ install_isolated_lsp_servers() {
 				npm install -g @vtsls/language-server || print_warning "Server install failed (continuing...)"
 				echo ""
 
-				# Install plugin (check if already installed first)
-				local plugin_list
-				if [[ "$claude_path" =~ ^node\  ]]; then
-					local cli_path="${claude_path#node }"
-					plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+				# Check if plugin already installed
+				local plugins_file=""
+				if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+					plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
 				else
-					plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi
 
-				if echo "$plugin_list" | grep -q "typescript-lsp@claude-plugins-official"; then
+				local ts_plugin_installed=false
+				if [[ -f "$plugins_file" ]] && command -v jq &>/dev/null; then
+					local ts_plugin_ver
+					ts_plugin_ver=$(jq -r ".plugins[\"typescript-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+					[[ -n "$ts_plugin_ver" ]] && ts_plugin_installed=true
+				fi
+
+				if [[ "$ts_plugin_installed" == true ]]; then
 					echo "✓ typescript-lsp plugin already installed (skipping)"
 				else
 					print_info "Installing typescript-lsp plugin..."
@@ -708,16 +714,22 @@ install_isolated_lsp_servers() {
 				npm install -g pyright || print_warning "Server install failed (continuing...)"
 				echo ""
 
-				# Install plugin (check if already installed first)
-				local plugin_list
-				if [[ "$claude_path" =~ ^node\  ]]; then
-					local cli_path="${claude_path#node }"
-					plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+				# Check if plugin already installed
+				local plugins_file=""
+				if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+					plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
 				else
-					plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi
 
-				if echo "$plugin_list" | grep -q "pyright-lsp@claude-plugins-official"; then
+				local py_plugin_installed=false
+				if [[ -f "$plugins_file" ]] && command -v jq &>/dev/null; then
+					local py_plugin_ver
+					py_plugin_ver=$(jq -r ".plugins[\"pyright-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+					[[ -n "$py_plugin_ver" ]] && py_plugin_installed=true
+				fi
+
+				if [[ "$py_plugin_installed" == true ]]; then
 					echo "✓ pyright-lsp plugin already installed (skipping)"
 				else
 					print_info "Installing pyright-lsp plugin..."

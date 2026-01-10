@@ -4,6 +4,6 @@
   "routerVersion": "not installed",
   "lspServers": {"pyright": "1.1.408", "vtsls": "0.3.0"},
   "lspPlugins": {"pyright-lsp@claude-plugins-official": "1.0.0", "typescript-lsp@claude-plugins-official": "1.0.0"},
-  "installedAt": "2026-01-10T19:48:42Z",
+  "installedAt": "2026-01-10T19:54:40Z",
   "nvmVersion": "0.39.7"
 }
