@@ -258,6 +258,9 @@ export DEEPSEEK_API_KEY="your-key-here"
 ### Что это?
 
 **Skills** - специализированные модули с готовыми шаблонами, чеклистами и примерами для типовых задач:
+- ✅ Context Awareness (автоопределение языка, framework, PRD)
+- ✅ LSP Integration (автоустановка Language Server Protocol плагинов)
+- ✅ Context7 Integration (автозагрузка документации библиотек через Context7 MCP)
 - ✅ Structured Planning (планирование с JSON валидацией)
 - ✅ Validation Framework (проверка acceptance criteria, синтаксиса)
 - ✅ Git Workflow (Conventional Commits, changelog generation)

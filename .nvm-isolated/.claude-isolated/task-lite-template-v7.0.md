@@ -31,6 +31,8 @@
 ### Data Flow
 ```
 PHASE 0 → @skill:context-awareness → {project_context}
+        → @skill:lsp-integration → {lsp_status}
+        → @skill:context7-integration → {library_docs}
         → @skill:adaptive-workflow → {complexity}
         ↓
 PHASE 1 → @skill:thinking-framework (analysis/decision)
@@ -56,7 +58,15 @@ PHASE 5 → @skill:git-workflow → {git_result} + summary
 
 **Skills:**
 - `@skill:context-awareness` → Detect project language, framework, PRD
+- `@skill:lsp-integration` → Setup LSP for code intelligence
+- `@skill:context7-integration` → Fetch library documentation via Context7 MCP
 - `@skill:adaptive-workflow` → Determine complexity (minimal|standard|complex)
+
+**Outputs:**
+- `project_context` - Language, framework, detected files
+- `lsp_status` - LSP plugin availability (READY|NOT_INSTALLED|NOT_SUPPORTED)
+- `library_docs` - Library documentation from Context7 (SUCCESS|PARTIAL|PLUGIN_NOT_AVAILABLE)
+- `complexity` - Task complexity level (minimal|standard|complex)
 
 **Complexity determines:** Which templates to use, which phases to skip, which mode to recommend
 

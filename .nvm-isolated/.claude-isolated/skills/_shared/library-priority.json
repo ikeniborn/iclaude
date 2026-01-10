@@ -1,0 +1,137 @@
+{
+  "$comment": "Common library priorities for context7-integration skill scoring system",
+  "common_libraries": {
+    "javascript": [
+      "react",
+      "express",
+      "next",
+      "vue",
+      "axios",
+      "lodash",
+      "moment",
+      "redux",
+      "socket.io",
+      "webpack"
+    ],
+    "typescript": [
+      "react",
+      "express",
+      "next",
+      "vue",
+      "axios",
+      "zod",
+      "typeorm",
+      "nest",
+      "prisma",
+      "graphql"
+    ],
+    "python": [
+      "fastapi",
+      "django",
+      "flask",
+      "pytest",
+      "requests",
+      "sqlalchemy",
+      "pandas",
+      "numpy",
+      "pydantic",
+      "celery"
+    ],
+    "go": [
+      "gin",
+      "echo",
+      "fiber",
+      "gorm",
+      "cobra",
+      "viper",
+      "testify",
+      "zap",
+      "logrus",
+      "chi"
+    ],
+    "rust": [
+      "tokio",
+      "serde",
+      "actix-web",
+      "diesel",
+      "clap",
+      "reqwest",
+      "axum",
+      "rocket",
+      "sea-orm",
+      "tracing"
+    ],
+    "java": [
+      "spring",
+      "hibernate",
+      "junit",
+      "lombok",
+      "jackson",
+      "slf4j",
+      "guava",
+      "mockito",
+      "netty",
+      "gson"
+    ],
+    "csharp": [
+      "asp.net",
+      "entity-framework",
+      "newtonsoft.json",
+      "automapper",
+      "serilog",
+      "nunit",
+      "moq",
+      "dapper",
+      "fluentvalidation",
+      "mediatr"
+    ],
+    "ruby": [
+      "rails",
+      "sinatra",
+      "rspec",
+      "rack",
+      "devise",
+      "sidekiq",
+      "activerecord",
+      "puma",
+      "faraday",
+      "capybara"
+    ],
+    "php": [
+      "laravel",
+      "symfony",
+      "composer",
+      "guzzle",
+      "doctrine",
+      "phpunit",
+      "monolog",
+      "twig",
+      "eloquent",
+      "carbon"
+    ],
+    "kotlin": [
+      "ktor",
+      "spring",
+      "exposed",
+      "kotlinx.coroutines",
+      "kotlinx.serialization",
+      "mockk",
+      "kotest",
+      "arrow",
+      "fuel",
+      "ktlint"
+    ],
+    "swift": [
+      "alamofire",
+      "swiftui",
+      "combine",
+      "realm",
+      "snapkit",
+      "rxswift",
+      "kingfisher",
+      "moya",
+      "quick",
+      "nimble"
+    ]
+  }
+}

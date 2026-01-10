@@ -1,0 +1,37 @@
+{
+  "$comment": "Output template for Context7 integration skill",
+  "library_docs": {
+    "budget_status": {
+      "$comment": "Tracks 3-call API budget (resolve-library-id + query-docs combined)",
+      "calls_used": "{{calls_used: integer 0-3, number of Context7 API calls made}}",
+      "calls_remaining": "{{calls_remaining: integer 0-3, calculated as max_calls - calls_used}}",
+      "exhausted": "{{exhausted: boolean, true if calls_used >= 3}}",
+      "warning": "{{warning: optional string, shown when calls_used >= 2, e.g. 'Context7 budget: 2/3 calls used'}}"
+    },
+    "libraries": [
+      {
+        "$comment": "Successfully fetched library documentation entry",
+        "library_id": "{{library_id: string, format /org/project or /org/project/version, e.g. /tiangolo/fastapi or /vercel/next.js/v14.0.0}}",
+        "library_name": "{{library_name: string, library name from manifest file, e.g. fastapi, react, express}}",
+        "docs_summary": "{{docs_summary: string, summary of documentation from Context7 query-docs response}}",
+        "code_examples": [
+          "{{example: string, code snippet from documentation, e.g. @app.get('/items/{item_id}')}}",
+          "{{example: string, another code snippet}}"
+        ],
+        "relevant_sections": [
+          "{{section: string, documentation section name, e.g. Dependencies}}",
+          "{{section: string, e.g. Security}}"
+        ],
+        "query_used": "{{query: string, actual query sent to Context7 query-docs, e.g. How to implement JWT authentication in FastAPI}}"
+      }
+    ],
+    "skipped_libraries": [
+      {
+        "$comment": "Libraries that were detected but not fetched due to budget/errors/priority",
+        "library_name": "{{library_name: string, name of skipped library}}",
+        "reason": "{{reason: enum string, one of: 'Budget exhausted' | 'Not found in Context7' | 'Network error' | 'Resolution failed' | 'Low priority'}}"
+      }
+    ],
+    "status": "{{status: enum string, one of: 'SUCCESS' | 'PARTIAL' | 'FAILED' | 'PLUGIN_NOT_AVAILABLE' | 'NO_LIBRARIES_DETECTED', overall skill execution status}}"
+  }
+}

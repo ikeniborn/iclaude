@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Context7 Integration Output Schema",
+  "description": "Validates output from context7-integration skill",
+  "type": "object",
+  "properties": {
+    "library_docs": {
+      "type": "object",
+      "properties": {
+        "budget_status": {
+          "type": "object",
+          "properties": {
+            "calls_used": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3,
+              "description": "Number of Context7 API calls made (resolve-library-id + query-docs combined)"
+            },
+            "calls_remaining": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3,
+              "description": "Number of calls left before budget exhausted (max_calls - calls_used)"
+            },
+            "exhausted": {
+              "type": "boolean",
+              "description": "True if all 3 calls used (calls_used >= 3)"
+            },
+            "warning": {
+              "type": "string",
+              "description": "Warning message when approaching budget limit (shown when calls_used >= 2)"
+            }
+          },
+          "required": ["calls_used", "calls_remaining", "exhausted"]
+        },
+        "libraries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "library_id": {
+                "type": "string",
+                "pattern": "^/[^/]+/[^/]+(/v[\\d.\\-a-zA-Z]+)?$",
+                "description": "Context7 library ID (e.g., /tiangolo/fastapi or /vercel/next.js/v14.0.0)"
+              },
+              "library_name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Library name from manifest file (e.g., fastapi, react, express)"
+              },
+              "docs_summary": {
+                "type": "string",
+                "description": "Summary of documentation from Context7"
+              },
+              "code_examples": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Code snippets from documentation"
+              },
+              "relevant_sections": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Documentation section names"
+              },
+              "query_used": {
+                "type": "string",
+                "description": "Query sent to Context7 query-docs"
+              }
+            },
+            "required": ["library_id", "library_name", "docs_summary"]
+          }
+        },
+        "skipped_libraries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "library_name": {"type": "string"},
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "Budget exhausted",
+                  "Not found in Context7",
+                  "Network error",
+                  "Resolution failed",
+                  "Low priority"
+                ]
+              }
+            },
+            "required": ["library_name", "reason"]
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "SUCCESS",
+            "PARTIAL",
+            "FAILED",
+            "PLUGIN_NOT_AVAILABLE",
+            "NO_LIBRARIES_DETECTED"
+          ],
+          "description": "Overall skill execution status"
+        }
+      },
+      "required": ["budget_status", "libraries", "status"]
+    }
+  },
+  "required": ["library_docs"]
+}
