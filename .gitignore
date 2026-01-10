@@ -51,18 +51,6 @@ scripts/.claude_proxy_credentials
 .nvm-isolated/npm-global/.npm/
 *.log
 
-# LSP servers (installed via npm, not in git)
-# Keep only @anthropic-ai/claude-code package
-.nvm-isolated/npm-global/lib/node_modules/*
-!.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/
-.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/*
-!.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/
-
-# LSP server binaries (installed via npm)
-.nvm-isolated/npm-global/bin/pyright
-.nvm-isolated/npm-global/bin/pyright-langserver
-.nvm-isolated/npm-global/bin/vtsls
-
 # Isolated Claude Code configuration (session data)
 # Ignore session data, but keep skills, templates and CLAUDE.md for global availability
 .nvm-isolated/.claude-isolated/*
