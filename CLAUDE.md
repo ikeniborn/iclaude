@@ -91,6 +91,23 @@ bash -n iclaude.sh
 ./iclaude.sh
 ```
 
+### LSP Server Management
+
+```bash
+# Install LSP servers for TypeScript and Python (default)
+./iclaude.sh --install-lsp
+
+# Install specific LSP servers
+./iclaude.sh --install-lsp python          # Python only
+./iclaude.sh --install-lsp typescript go   # TypeScript + Go
+
+# Check LSP server status
+./iclaude.sh --check-lsp
+
+# Install all versions from lockfile (includes LSP)
+./iclaude.sh --install-from-lockfile
+```
+
 ## Code Architecture
 
 ### Main Components

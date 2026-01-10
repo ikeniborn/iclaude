@@ -637,6 +637,129 @@ install_isolated_router() {
 }
 
 #######################################
+# Install LSP servers and plugins in isolated environment
+# Arguments:
+#   $@ - Language servers to install (default: typescript, python)
+# Returns:
+#   0 - success
+#   1 - error (Claude Code not installed)
+#######################################
+install_isolated_lsp_servers() {
+	local servers=("$@")  # Allow selecting specific servers
+
+	# Default: Install TypeScript + Python (most common)
+	if [[ ${#servers[@]} -eq 0 ]]; then
+		servers=("typescript" "python")
+	fi
+
+	# Setup environment
+	setup_isolated_nvm
+	source "$NVM_DIR/nvm.sh"
+
+	# Get Claude Code path using existing function
+	local claude_path
+	claude_path=$(get_nvm_claude_path)
+
+	if [[ -z "$claude_path" ]]; then
+		print_error "Claude Code not installed."
+		echo ""
+		print_info "Run './iclaude.sh --isolated-install' first to install Claude Code."
+		return 1
+	fi
+
+	echo ""
+	print_info "Installing LSP servers and plugins..."
+	print_info "Claude Code path: $claude_path"
+	echo ""
+
+	for server in "${servers[@]}"; do
+		case "$server" in
+			typescript|ts)
+				# Install server
+				print_info "Installing TypeScript LSP server..."
+				npm install -g @vtsls/language-server || print_warning "Server install failed (continuing...)"
+				echo ""
+
+				# Install plugin (check if already installed first)
+				local plugin_list
+				if [[ "$claude_path" =~ ^node\  ]]; then
+					local cli_path="${claude_path#node }"
+					plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+				else
+					plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+				fi
+
+				if echo "$plugin_list" | grep -q "typescript-lsp@claude-plugins-official"; then
+					echo "✓ typescript-lsp plugin already installed (skipping)"
+				else
+					print_info "Installing typescript-lsp plugin..."
+					if [[ "$claude_path" =~ ^node\  ]]; then
+						local cli_path="${claude_path#node }"
+						node "$cli_path" plugin install typescript-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+					else
+						"$claude_path" plugin install typescript-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+					fi
+				fi
+				echo ""
+				;;
+			python|py)
+				# Install server
+				print_info "Installing Python LSP server..."
+				npm install -g pyright || print_warning "Server install failed (continuing...)"
+				echo ""
+
+				# Install plugin (check if already installed first)
+				local plugin_list
+				if [[ "$claude_path" =~ ^node\  ]]; then
+					local cli_path="${claude_path#node }"
+					plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+				else
+					plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+				fi
+
+				if echo "$plugin_list" | grep -q "pyright-lsp@claude-plugins-official"; then
+					echo "✓ pyright-lsp plugin already installed (skipping)"
+				else
+					print_info "Installing pyright-lsp plugin..."
+					if [[ "$claude_path" =~ ^node\  ]]; then
+						local cli_path="${claude_path#node }"
+						node "$cli_path" plugin install pyright-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+					else
+						"$claude_path" plugin install pyright-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+					fi
+				fi
+				echo ""
+				;;
+			go)
+				# Go requires GOPATH setup, skip npm
+				print_warning "Go LSP (gopls): Install via 'go install golang.org/x/tools/gopls@latest'"
+				print_info "    Plugin: claude plugin install gopls-lsp@claude-plugins-official -s project --project-path \"$SCRIPT_DIR\""
+				echo ""
+				;;
+			rust)
+				print_warning "Rust LSP (rust-analyzer): Install via 'rustup component add rust-analyzer'"
+				print_info "    Plugin: claude plugin install rust-analyzer-lsp@claude-plugins-official -s project --project-path \"$SCRIPT_DIR\""
+				echo ""
+				;;
+			# Add other languages as needed
+			*)
+				print_error "Unknown LSP server: $server"
+				echo ""
+				;;
+		esac
+	done
+
+	hash -r  # Clear bash cache
+	save_isolated_lockfile  # Update lockfile with LSP versions
+
+	echo ""
+	print_success "LSP installation complete. Run './iclaude.sh --check-lsp' to verify."
+	echo ""
+
+	return 0
+}
+
+#######################################
 # Update Claude Code in isolated environment
 # Returns:
 #   0 - success
@@ -772,6 +895,71 @@ save_isolated_lockfile() {
 		router_version=$("$ccr_cmd" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
 	fi
 
+	# Detect LSP servers
+	local lsp_servers_json="{"
+	local first=true
+
+	for server_cmd in pyright vtsls typescript-language-server; do
+		if command -v "$server_cmd" &>/dev/null; then
+			local version
+			case "$server_cmd" in
+				pyright)
+					version=$(pyright --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					;;
+				vtsls)
+					version=$(vtsls --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					;;
+				typescript-language-server)
+					version=$(typescript-language-server --version 2>/dev/null)
+					;;
+			esac
+
+			if [[ -n "$version" ]]; then
+				[[ "$first" == false ]] && lsp_servers_json+=", "
+				lsp_servers_json+="\"$server_cmd\": \"$version\""
+				first=false
+			fi
+		fi
+	done
+
+	lsp_servers_json+="}"
+
+	# Detect LSP plugins
+	local lsp_plugins_json="{"
+	first=true
+
+	# Get Claude Code path
+	local claude_path
+	claude_path=$(get_nvm_claude_path)
+
+	if [[ -n "$claude_path" ]] && command -v jq &>/dev/null; then
+		# Get plugin list
+		local plugin_list
+		if [[ "$claude_path" =~ ^node\  ]]; then
+			local cli_path="${claude_path#node }"
+			plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+		else
+			plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+		fi
+
+		# Parse for LSP plugins in current project
+		for plugin in "pyright-lsp@claude-plugins-official" "typescript-lsp@claude-plugins-official" "gopls-lsp@claude-plugins-official" "rust-analyzer-lsp@claude-plugins-official"; do
+			if echo "$plugin_list" | grep -q "$plugin"; then
+				# Extract version (appears after plugin name in output)
+				local plugin_version
+				plugin_version=$(echo "$plugin_list" | grep -A2 "$plugin" | grep "Version:" | awk '{print $2}' | head -1)
+
+				if [[ -n "$plugin_version" ]]; then
+					[[ "$first" == false ]] && lsp_plugins_json+=", "
+					lsp_plugins_json+="\"$plugin\": \"$plugin_version\""
+					first=false
+				fi
+			fi
+		done
+	fi
+
+	lsp_plugins_json+="}"
+
 	local installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 	# Create lockfile
@@ -780,6 +968,8 @@ save_isolated_lockfile() {
   "nodeVersion": "$node_version",
   "claudeCodeVersion": "$claude_version",
   "routerVersion": "$router_version",
+  "lspServers": $lsp_servers_json,
+  "lspPlugins": $lsp_plugins_json,
   "installedAt": "$installed_at",
   "nvmVersion": "0.39.7"
 }
@@ -893,6 +1083,79 @@ install_from_lockfile() {
 		else
 			print_warning "Failed to install router (non-critical)"
 			echo ""
+		fi
+	fi
+
+	# Install LSP servers and plugins from lockfile
+	# Check jq dependency
+	if ! command -v jq &>/dev/null; then
+		print_warning "jq not installed - skipping LSP installation from lockfile"
+		echo "   Install jq to enable this feature: sudo apt-get install jq"
+		echo ""
+	else
+		# Install LSP servers from lockfile
+		local lsp_servers
+		lsp_servers=$(jq -r '.lspServers // {} | keys[]' "$ISOLATED_LOCKFILE" 2>/dev/null)
+
+		if [[ -n "$lsp_servers" ]]; then
+			echo ""
+			print_info "Installing LSP servers from lockfile..."
+			echo ""
+
+			while IFS= read -r server; do
+				local version
+				version=$(jq -r ".lspServers[\"$server\"]" "$ISOLATED_LOCKFILE")
+
+				case "$server" in
+					pyright)
+						npm install -g "pyright@$version" || print_warning "pyright install failed"
+						;;
+					vtsls)
+						npm install -g "@vtsls/language-server@$version" || print_warning "vtsls install failed"
+						;;
+					typescript-language-server)
+						npm install -g "typescript-language-server@$version" || print_warning "typescript-language-server install failed"
+						;;
+				esac
+			done <<< "$lsp_servers"
+
+			echo ""
+		fi
+
+		# Install LSP plugins from lockfile
+		local lsp_plugins
+		lsp_plugins=$(jq -r '.lspPlugins // {} | keys[]' "$ISOLATED_LOCKFILE" 2>/dev/null)
+
+		if [[ -n "$lsp_plugins" ]]; then
+			print_info "Installing LSP plugins from lockfile..."
+			echo ""
+
+			# Get Claude Code path
+			local claude_path
+			claude_path=$(get_nvm_claude_path)
+
+			if [[ -z "$claude_path" ]]; then
+				print_warning "Claude Code not found - skipping plugin installation"
+				echo "   Install Claude Code first: ./iclaude.sh --isolated-install"
+				echo ""
+			else
+				while IFS= read -r plugin; do
+					local version
+					version=$(jq -r ".lspPlugins[\"$plugin\"]" "$ISOLATED_LOCKFILE")
+
+					print_info "Installing $plugin@$version..."
+
+					# Handle both binary and cli.js paths
+					if [[ "$claude_path" =~ ^node\  ]]; then
+						local cli_path="${claude_path#node }"
+						node "$cli_path" plugin install "$plugin" -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed (may already exist)"
+					else
+						"$claude_path" plugin install "$plugin" -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed (may already exist)"
+					fi
+				done <<< "$lsp_plugins"
+
+				echo ""
+			fi
 		fi
 	fi
 
@@ -1451,6 +1714,108 @@ check_router_status() {
 	fi
 
 	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Check LSP server and plugin installation status
+# Returns:
+#   0 - always succeeds (informational only)
+#######################################
+check_lsp_status() {
+	# Check jq dependency
+	if ! command -v jq &>/dev/null; then
+		print_warning "jq not installed - lockfile display unavailable"
+		echo "   Install: sudo apt-get install jq (or brew install jq)"
+		echo ""
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  LSP Server Status for Isolated Environment"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Check TypeScript server
+	if command -v vtsls &>/dev/null || command -v typescript-language-server &>/dev/null; then
+		local ts_version
+		ts_version=$(vtsls --version 2>/dev/null || typescript-language-server --version 2>/dev/null)
+		print_success "TypeScript LSP server: $ts_version"
+	else
+		print_error "TypeScript LSP server: Not installed"
+		echo "   Install: ./iclaude.sh --install-lsp typescript"
+	fi
+	echo ""
+
+	# Check Python server
+	if command -v pyright &>/dev/null; then
+		local py_version
+		py_version=$(pyright --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+		print_success "Python LSP server: $py_version"
+	else
+		print_error "Python LSP server: Not installed"
+		echo "   Install: ./iclaude.sh --install-lsp python"
+	fi
+	echo ""
+
+	print_info "LSP Plugins (Claude Code):"
+	echo ""
+
+	# Get Claude Code path
+	local claude_path
+	claude_path=$(get_nvm_claude_path)
+
+	if [[ -z "$claude_path" ]]; then
+		print_error "Claude Code not installed - cannot check plugins"
+		echo "   Install: ./iclaude.sh --isolated-install"
+		echo ""
+	else
+		# Get plugin list
+		local plugin_list
+		if [[ "$claude_path" =~ ^node\  ]]; then
+			local cli_path="${claude_path#node }"
+			plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+		else
+			plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+		fi
+
+		# Check TypeScript plugin
+		if echo "$plugin_list" | grep -q "typescript-lsp"; then
+			local ts_plugin_ver
+			ts_plugin_ver=$(echo "$plugin_list" | grep -A2 "typescript-lsp" | grep "Version:" | awk '{print $2}')
+			print_success "typescript-lsp plugin: ${ts_plugin_ver:-unknown}"
+		else
+			print_error "typescript-lsp plugin: Not installed"
+			echo "   Install: ./iclaude.sh --install-lsp typescript"
+		fi
+		echo ""
+
+		# Check Python plugin
+		if echo "$plugin_list" | grep -q "pyright-lsp"; then
+			local py_plugin_ver
+			py_plugin_ver=$(echo "$plugin_list" | grep -A2 "pyright-lsp" | grep "Version:" | awk '{print $2}')
+			print_success "pyright-lsp plugin: ${py_plugin_ver:-unknown}"
+		else
+			print_error "pyright-lsp plugin: Not installed"
+			echo "   Install: ./iclaude.sh --install-lsp python"
+		fi
+		echo ""
+	fi
+
+	# Check lockfile tracking
+	local lockfile="$SCRIPT_DIR/.nvm-isolated-lockfile.json"
+	if [[ -f "$lockfile" ]] && command -v jq &>/dev/null; then
+		print_info "Lockfile Tracking:"
+		echo "  - LSP Servers:"
+		jq -r '.lspServers // {} | to_entries[] | "    \(.key): \(.value)"' "$lockfile" 2>/dev/null || echo "    Not tracked"
+		echo "  - LSP Plugins:"
+		jq -r '.lspPlugins // {} | to_entries[] | "    \(.key): \(.value)"' "$lockfile" 2>/dev/null || echo "    Not tracked"
+		echo ""
+	fi
+
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	echo ""
 
@@ -3377,6 +3742,10 @@ OPTIONS:
   --install-router                  Install Claude Code Router in isolated environment
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
+  --install-lsp [LANGUAGES]         Install LSP servers+plugins (typescript, python, go, rust)
+                                    Default: typescript and python
+                                    Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
+  --check-lsp                       Show LSP server and plugin installation status
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
@@ -3726,6 +4095,27 @@ main() {
                 ;;
             --check-router)
                 check_router_status
+                exit 0
+                ;;
+            --install-lsp)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-lsp"
+                    echo ""
+                    echo "LSP servers are only available in isolated environment"
+                    exit 1
+                fi
+                # Collect all following non-flag arguments as LSP languages
+                shift
+                lsp_languages=()
+                while [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; do
+                    lsp_languages+=("$1")
+                    shift
+                done
+                install_isolated_lsp_servers "${lsp_languages[@]}"
+                exit $?
+                ;;
+            --check-lsp)
+                check_lsp_status
                 exit 0
                 ;;
             --router)
