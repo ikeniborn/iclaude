@@ -75,3 +75,4 @@ docker-compose.override.yml
 
 # Catalog
 workflow/.claude_git_proxy_backup
+.claude/
