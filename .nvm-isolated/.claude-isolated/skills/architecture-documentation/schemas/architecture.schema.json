@@ -1,0 +1,357 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "JSON Schema for architecture.yaml validation",
+  "type": "object",
+  "properties": {
+    "architecture": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "project_name": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+"},
+            "description": {"type": "string", "minLength": 20},
+            "architecture_style": {
+              "type": "string",
+              "enum": ["monolith", "microservices", "serverless", "layered", "hexagonal", "event-driven"]
+            },
+            "generated_at": {"type": "string", "format": "date-time"},
+            "generated_by": {"type": "string"}
+          },
+          "required": ["project_name", "description", "architecture_style"]
+        },
+        "technology_stack": {
+          "type": "object",
+          "properties": {
+            "primary_language": {"type": "string"},
+            "language_version": {"type": "string"},
+            "frameworks": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "databases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "type": {
+                    "type": "string",
+                    "enum": ["sql", "nosql", "cache", "search"]
+                  },
+                  "version": {"type": "string"}
+                },
+                "required": ["name", "type"]
+              }
+            },
+            "external_services": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "build_tools": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "package_manager": {"type": "string"}
+          },
+          "required": ["primary_language"]
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "Kebab-case component ID"
+              },
+              "name": {"type": "string", "minLength": 1},
+              "type": {
+                "type": "string",
+                "enum": ["service", "module", "package", "library", "utility", "api", "database", "external"]
+              },
+              "path": {"type": "string"},
+              "description": {
+                "type": "string",
+                "minLength": 10,
+                "not": {"enum": ["TODO", "Component", "TBD"]}
+              },
+              "layer": {
+                "type": "string",
+                "enum": ["presentation", "business", "data", "infrastructure"]
+              },
+              "dependencies": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "component_id": {"type": "string"},
+                    "type": {
+                      "type": "string",
+                      "enum": ["required", "optional", "dev", "peer"]
+                    },
+                    "version": {"type": "string"},
+                    "reason": {"type": "string", "minLength": 5}
+                  },
+                  "required": ["component_id", "type"]
+                }
+              },
+              "provides": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "interface": {"type": "string"},
+                    "type": {
+                      "type": "string",
+                      "enum": ["rest-api", "graphql", "grpc", "library", "event", "cli"]
+                    },
+                    "endpoints": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  },
+                  "required": ["interface", "type"]
+                }
+              },
+              "responsibilities": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 5}
+              },
+              "configuration": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {"type": "string"},
+                    "type": {
+                      "type": "string",
+                      "enum": ["env", "file", "secret", "hardcoded"]
+                    },
+                    "required": {"type": "boolean"}
+                  },
+                  "required": ["key", "type", "required"]
+                }
+              },
+              "metrics": {
+                "type": "object",
+                "properties": {
+                  "lines_of_code": {"type": "number"},
+                  "complexity": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high"]
+                  }
+                }
+              }
+            },
+            "required": ["id", "name", "type", "description"]
+          }
+        },
+        "dependency_graph": {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "object",
+              "properties": {
+                "total_nodes": {"type": "number"},
+                "total_edges": {"type": "number"},
+                "max_depth": {"type": "number"},
+                "circular_dependencies": {"type": "number"}
+              },
+              "required": ["total_nodes", "total_edges"]
+            },
+            "nodes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "label": {"type": "string"},
+                  "type": {"type": "string"},
+                  "layer": {"type": "string"}
+                },
+                "required": ["id", "label", "type"]
+              }
+            },
+            "edges": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {"type": "string"},
+                  "to": {"type": "string"},
+                  "type": {
+                    "type": "string",
+                    "enum": ["required", "optional", "dev"]
+                  },
+                  "description": {"type": "string"},
+                  "bidirectional": {"type": "boolean"}
+                },
+                "required": ["from", "to", "type"]
+              }
+            }
+          },
+          "required": ["nodes", "edges"]
+        },
+        "data_flow": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "flow_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "name": {"type": "string"},
+              "trigger": {"type": "string"},
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "step": {"type": "number"},
+                    "component": {"type": "string"},
+                    "action": {"type": "string"},
+                    "input": {"type": "string"},
+                    "output": {"type": "string"},
+                    "data_transformation": {"type": "string"}
+                  },
+                  "required": ["step", "component", "action"]
+                }
+              },
+              "result": {"type": "string"}
+            },
+            "required": ["flow_id", "name", "trigger", "steps"]
+          }
+        },
+        "infrastructure": {
+          "type": "object",
+          "properties": {
+            "deployment_model": {
+              "type": "string",
+              "enum": ["cloud", "on-premise", "hybrid", "edge"]
+            },
+            "cloud_provider": {
+              "type": "string",
+              "enum": ["aws", "gcp", "azure", "cloudflare", "none"]
+            },
+            "runtime_environment": {"type": "string"},
+            "orchestration": {"type": "string"},
+            "configuration": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {"type": "string"},
+                  "source": {"type": "string"},
+                  "required": {"type": "boolean"},
+                  "default": {"type": "string"}
+                },
+                "required": ["key", "source", "required"]
+              }
+            },
+            "scaling": {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "type": "string",
+                  "enum": ["horizontal", "vertical", "auto-scaling", "none"]
+                },
+                "min_instances": {"type": "number"},
+                "max_instances": {"type": "number"}
+              }
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "authentication": {"type": "string"},
+            "authorization": {"type": "string"},
+            "data_encryption": {
+              "type": "object",
+              "properties": {
+                "at_rest": {"type": "boolean"},
+                "in_transit": {"type": "boolean"},
+                "algorithm": {"type": "string"}
+              }
+            },
+            "security_boundaries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "boundary": {"type": "string"},
+                  "components": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "protection": {"type": "string"}
+                },
+                "required": ["boundary", "components"]
+              }
+            },
+            "secrets_management": {"type": "string"}
+          }
+        },
+        "performance": {
+          "type": "object",
+          "properties": {
+            "scalability_pattern": {"type": "string"},
+            "caching_strategy": {"type": "string"},
+            "async_processing": {"type": "string"},
+            "database_optimization": {"type": "string"},
+            "monitoring": {"type": "string"}
+          }
+        },
+        "quality_attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "enum": ["availability", "reliability", "maintainability", "performance", "security"]
+              },
+              "target": {"type": "string"},
+              "measurement": {"type": "string"},
+              "current_status": {
+                "type": "string",
+                "enum": ["met", "not-met", "in-progress", "unknown"]
+              }
+            },
+            "required": ["attribute", "target", "measurement"]
+          }
+        },
+        "architectural_decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "decision_id": {"type": "string"},
+              "title": {"type": "string"},
+              "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["accepted", "deprecated", "superseded"]
+              },
+              "context": {"type": "string"},
+              "decision": {"type": "string"},
+              "consequences": {"type": "string"}
+            },
+            "required": ["decision_id", "title", "date", "status", "decision"]
+          }
+        }
+      },
+      "required": ["metadata", "components", "dependency_graph"]
+    }
+  },
+  "required": ["architecture"]
+}

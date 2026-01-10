@@ -1,0 +1,917 @@
+project:
+  id: iclaude
+  name: iclaude
+  description: Bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration and isolated environment management
+  language: bash
+  framework: none
+  version: "2.0"
+  repository: https://github.com/ikeniborn/iclaude
+
+architecture:
+  style: modular
+  patterns:
+    - layered
+    - configuration-management
+    - dependency-injection
+  description: Modular bash script organized into functional modules with clear separation of concerns
+
+layers:
+  - id: cli
+    name: Command Line Interface
+    description: User interaction layer handling argument parsing and command execution
+    responsibilities:
+      - Parse command-line arguments
+      - Display usage information
+      - Coordinate execution flow
+      - Present formatted output to users
+
+  - id: core
+    name: Core Services
+    description: Business logic layer containing primary functionality modules
+    responsibilities:
+      - Proxy configuration and validation
+      - Environment management (isolated/system)
+      - Version control and lockfile management
+      - OAuth token management
+      - Router integration
+
+  - id: installation
+    name: Installation Layer
+    description: Handles NVM, Node.js, Claude Code, and Router installation
+    responsibilities:
+      - Install and configure isolated NVM environment
+      - Manage Node.js versions
+      - Install and update Claude Code CLI
+      - Install and configure Claude Code Router
+      - Create and maintain symlinks
+
+  - id: infrastructure
+    name: Infrastructure
+    description: Low-level utilities and system interaction
+    responsibilities:
+      - File I/O operations
+      - Git configuration
+      - Credential storage
+      - Dependency validation
+      - Shell utilities
+
+components:
+  # CLI Layer
+  - id: cli-main
+    name: Main Entry Point
+    layer: cli
+    type: script
+    file_path: iclaude.sh:3561-3796
+    description: Main function handling command-line argument parsing and routing to appropriate handlers
+    dependencies:
+      - proxy-management
+      - isolated-environment
+      - version-management
+      - oauth-token-management
+      - router-management
+
+  - id: cli-usage
+    name: Usage Display
+    layer: cli
+    type: function
+    file_path: iclaude.sh:3344-3560
+    description: Displays comprehensive help information with command syntax and examples
+    dependencies: []
+
+  # Core Layer - Proxy Management
+  - id: proxy-management
+    name: Proxy Management Module
+    layer: core
+    type: module
+    file_path: iclaude.sh:60-2015
+    description: Handles proxy URL validation, credential storage, environment configuration, and connection testing
+    subcomponents:
+      - validate_proxy_url
+      - resolve_domain_to_ip
+      - parse_proxy_url
+      - save_credentials
+      - load_credentials
+      - configure_proxy_from_url
+      - test_proxy
+    dependencies:
+      - credential-storage
+      - git-proxy-config
+
+  - id: validate-proxy-url
+    name: Proxy URL Validator
+    layer: core
+    type: function
+    file_path: iclaude.sh:60-88
+    description: Validates proxy URL format and protocol (HTTP/HTTPS only, SOCKS5 not supported)
+    dependencies:
+      - ip-address-validator
+
+  - id: resolve-domain
+    name: Domain Resolution
+    layer: core
+    type: function
+    file_path: iclaude.sh:114-157
+    description: Resolves domain names to IP addresses using fallback chain (getent/host/dig/nslookup)
+    dependencies: []
+
+  - id: parse-proxy-url
+    name: Proxy URL Parser
+    layer: core
+    type: function
+    file_path: iclaude.sh:159-202
+    description: Extracts components from proxy URL (protocol, user, password, host, port)
+    dependencies: []
+
+  - id: configure-proxy
+    name: Proxy Environment Configurator
+    layer: core
+    type: function
+    file_path: iclaude.sh:1830-1873
+    description: Sets environment variables for proxy (HTTPS_PROXY, HTTP_PROXY, NO_PROXY)
+    dependencies:
+      - parse-proxy-url
+
+  - id: test-proxy
+    name: Proxy Connection Tester
+    layer: core
+    type: function
+    file_path: iclaude.sh:1969-2013
+    description: Tests proxy connectivity by making HTTP and HTTPS requests
+    dependencies:
+      - configure-proxy
+
+  # Core Layer - Environment Management
+  - id: isolated-environment
+    name: Isolated Environment Manager
+    layer: core
+    type: module
+    file_path: iclaude.sh:422-1121
+    description: Manages portable NVM+Node.js+Claude installation in .nvm-isolated/ directory
+    subcomponents:
+      - setup_isolated_nvm
+      - install_isolated_nvm
+      - repair_isolated_environment
+      - check_isolated_status
+    dependencies:
+      - nvm-installer
+      - nodejs-installer
+      - claude-installer
+      - lockfile-manager
+
+  - id: setup-isolated-nvm
+    name: Isolated NVM Setup
+    layer: core
+    type: function
+    file_path: iclaude.sh:422-446
+    description: Configures isolated NVM environment variables and PATH
+    dependencies: []
+
+  - id: repair-isolated-env
+    name: Environment Repair
+    layer: core
+    type: function
+    file_path: iclaude.sh:955-1120
+    description: Fixes broken symlinks after git clone or repository moves
+    dependencies: []
+
+  - id: check-isolated-status
+    name: Status Checker
+    layer: core
+    type: function
+    file_path: iclaude.sh:1122-1241
+    description: Displays comprehensive isolated environment status information
+    dependencies:
+      - lockfile-manager
+      - version-detection
+
+  # Core Layer - Version Management
+  - id: version-management
+    name: Version Management Module
+    layer: core
+    type: module
+    file_path: iclaude.sh:732-910
+    description: Tracks and reproduces exact versions via lockfile
+    subcomponents:
+      - save_isolated_lockfile
+      - install_from_lockfile
+      - get_cli_version
+    dependencies:
+      - lockfile-storage
+
+  - id: save-lockfile
+    name: Lockfile Saver
+    layer: core
+    type: function
+    file_path: iclaude.sh:732-823
+    description: Captures current versions (Node.js, Claude, Router) to lockfile
+    dependencies:
+      - version-detection
+
+  - id: install-from-lockfile
+    name: Lockfile Installer
+    layer: core
+    type: function
+    file_path: iclaude.sh:824-910
+    description: Installs exact versions from lockfile for reproducibility
+    dependencies:
+      - nvm-installer
+      - nodejs-installer
+      - claude-installer
+      - router-installer
+
+  # Core Layer - Configuration Management
+  - id: config-management
+    name: Configuration Management Module
+    layer: core
+    type: module
+    file_path: iclaude.sh:1242-1586
+    description: Manages isolated configuration directory separation
+    subcomponents:
+      - setup_isolated_config
+      - check_config_status
+      - export_config
+      - import_config
+    dependencies:
+      - file-operations
+
+  - id: setup-isolated-config
+    name: Isolated Config Setup
+    layer: core
+    type: function
+    file_path: iclaude.sh:1242-1261
+    description: Configures CLAUDE_DIR for isolated configuration
+    dependencies: []
+
+  - id: export-import-config
+    name: Config Migration
+    layer: core
+    type: function
+    file_path: iclaude.sh:1468-1586
+    description: Exports and imports configuration between isolated and shared locations
+    dependencies:
+      - file-operations
+
+  # Core Layer - OAuth Token Management
+  - id: oauth-token-management
+    name: OAuth Token Manager
+    layer: core
+    type: module
+    file_path: iclaude.sh:3021-3183
+    description: Automatic OAuth token validation and refresh using claude setup-token
+    subcomponents:
+      - check_oauth_token
+      - refresh_oauth_token
+      - check_token_expiration
+    dependencies:
+      - credential-storage
+      - jq-validator
+
+  - id: check-oauth-token
+    name: Token Checker
+    layer: core
+    type: function
+    file_path: iclaude.sh:3021-3127
+    description: Validates OAuth token and triggers refresh if expiring within threshold
+    dependencies:
+      - check-token-expiration
+      - refresh-oauth-token
+
+  - id: refresh-oauth-token
+    name: Token Refresher
+    layer: core
+    type: function
+    file_path: iclaude.sh:3129-3183
+    description: Refreshes OAuth token using claude setup-token for long-lived tokens
+    dependencies:
+      - claude-cli
+
+  - id: check-token-expiration
+    name: Token Expiration Checker
+    layer: core
+    type: function
+    file_path: iclaude.sh:2032-2094
+    description: Checks if token expires within configured threshold (7 days default)
+    dependencies:
+      - credential-storage
+
+  # Core Layer - Router Management
+  - id: router-management
+    name: Router Management Module
+    layer: core
+    type: module
+    file_path: iclaude.sh:333-1430
+    description: Integrates Claude Code Router for alternative LLM providers
+    subcomponents:
+      - detect_router
+      - get_router_path
+      - check_router_status
+    dependencies:
+      - router-installer
+
+  - id: detect-router
+    name: Router Detector
+    layer: core
+    type: function
+    file_path: iclaude.sh:333-363
+    description: Determines if router is available (config exists and ccr binary installed)
+    dependencies:
+      - get-router-path
+
+  - id: get-router-path
+    name: Router Path Finder
+    layer: core
+    type: function
+    file_path: iclaude.sh:365-382
+    description: Locates ccr binary in isolated or system environment
+    dependencies: []
+
+  - id: check-router-status
+    name: Router Status Checker
+    layer: core
+    type: function
+    file_path: iclaude.sh:1366-1430
+    description: Displays comprehensive router configuration and status
+    dependencies:
+      - detect-router
+      - jq-validator
+
+  # Installation Layer
+  - id: nvm-installer
+    name: NVM Installer
+    layer: installation
+    type: function
+    file_path: iclaude.sh:448-484
+    description: Installs NVM into isolated directory
+    dependencies: []
+
+  - id: nodejs-installer
+    name: Node.js Installer
+    layer: installation
+    type: function
+    file_path: iclaude.sh:485-531
+    description: Installs specific Node.js version via NVM
+    dependencies:
+      - nvm-installer
+
+  - id: claude-installer
+    name: Claude Code Installer
+    layer: installation
+    type: function
+    file_path: iclaude.sh:532-589
+    description: Installs Claude Code CLI globally via npm
+    dependencies:
+      - nodejs-installer
+      - symlink-creator
+
+  - id: router-installer
+    name: Router Installer
+    layer: installation
+    type: function
+    file_path: iclaude.sh:590-644
+    description: Installs Claude Code Router npm package
+    dependencies:
+      - nodejs-installer
+      - symlink-creator
+
+  - id: claude-updater
+    name: Claude Code Updater
+    layer: installation
+    type: function
+    file_path: iclaude.sh:645-731
+    description: Updates Claude Code and handles cleanup of temporary installations
+    dependencies:
+      - cleanup-old-installations
+      - symlink-recreator
+      - save-lockfile
+
+  - id: cleanup-old-installations
+    name: Installation Cleaner
+    layer: installation
+    type: function
+    file_path: iclaude.sh:2268-2405
+    description: Removes .claude-code-* temporary folders left by npm updates
+    dependencies: []
+
+  - id: symlink-manager
+    name: Symlink Manager
+    layer: installation
+    type: module
+    file_path: iclaude.sh:2406-2698
+    description: Creates and maintains symlinks for npm, npx, claude, ccr binaries
+    subcomponents:
+      - recreate_claude_symlinks
+    dependencies: []
+
+  - id: nvm-detector
+    name: NVM Detector
+    layer: installation
+    type: function
+    file_path: iclaude.sh:204-237
+    description: Detects NVM installation in isolated or system environment
+    dependencies: []
+
+  - id: claude-path-finder
+    name: Claude Path Finder
+    layer: installation
+    type: function
+    file_path: iclaude.sh:238-332
+    description: Locates Claude Code binary handling standard and temporary installations
+    dependencies:
+      - nvm-detector
+
+  - id: version-detector
+    name: Version Detector
+    layer: installation
+    type: function
+    file_path: iclaude.sh:384-421
+    description: Detects installed CLI version from binary
+    dependencies:
+      - claude-path-finder
+
+  # Infrastructure Layer
+  - id: credential-storage
+    name: Credential Storage
+    layer: infrastructure
+    type: module
+    file_path: iclaude.sh:1587-1745
+    description: Secure storage and retrieval of proxy credentials (chmod 600)
+    subcomponents:
+      - save_credentials
+      - load_credentials
+      - clear_credentials
+    dependencies:
+      - file-operations
+
+  - id: git-proxy-config
+    name: Git Proxy Configuration
+    layer: infrastructure
+    type: module
+    file_path: iclaude.sh:1875-1938
+    description: Manages git proxy settings with backup and restore
+    subcomponents:
+      - save_git_proxy_settings
+      - configure_git_no_proxy
+      - restore_git_proxy
+    dependencies:
+      - git-binary
+
+  - id: file-operations
+    name: File Operations
+    layer: infrastructure
+    type: module
+    description: File I/O utilities for reading, writing, and manipulating files
+    dependencies: []
+
+  - id: jq-validator
+    name: JQ Validator
+    layer: infrastructure
+    type: function
+    file_path: iclaude.sh:3185-3198
+    description: Validates jq installation for JSON parsing
+    dependencies: []
+
+  - id: dependency-checker
+    name: Dependency Checker
+    layer: infrastructure
+    type: function
+    file_path: iclaude.sh:2699-2802
+    description: Validates required system dependencies (curl, git, jq)
+    dependencies: []
+
+  - id: output-formatters
+    name: Output Formatters
+    layer: infrastructure
+    type: module
+    file_path: iclaude.sh:41-55
+    description: Colored output functions for user feedback
+    subcomponents:
+      - print_info
+      - print_success
+      - print_warning
+      - print_error
+    dependencies: []
+
+  # External Dependencies
+  - id: claude-cli
+    name: Claude Code CLI
+    layer: external
+    type: external-binary
+    description: Anthropic's official Claude Code command-line interface
+    dependencies: []
+
+  - id: router-cli
+    name: Claude Code Router CLI
+    layer: external
+    type: external-binary
+    description: Claude Code Router (ccr) for alternative LLM provider routing
+    dependencies: []
+
+  - id: nvm-binary
+    name: NVM Binary
+    layer: external
+    type: external-script
+    description: Node Version Manager for managing Node.js installations
+    dependencies: []
+
+  - id: git-binary
+    name: Git Binary
+    layer: external
+    type: external-binary
+    description: Git version control system
+    dependencies: []
+
+  - id: curl-binary
+    name: Curl Binary
+    layer: external
+    type: external-binary
+    description: HTTP client for proxy testing and downloads
+    dependencies: []
+
+  - id: jq-binary
+    name: JQ Binary
+    layer: external
+    type: external-binary
+    description: JSON processor for parsing credentials and router config
+    dependencies: []
+
+dependency_graph:
+  - source: cli-main
+    target: proxy-management
+    type: required
+    description: Routes proxy-related commands to proxy management module
+
+  - source: cli-main
+    target: isolated-environment
+    type: required
+    description: Routes isolated environment commands to environment manager
+
+  - source: cli-main
+    target: version-management
+    type: required
+    description: Routes version management commands to lockfile manager
+
+  - source: cli-main
+    target: oauth-token-management
+    type: optional
+    description: Checks and refreshes OAuth tokens before launch
+
+  - source: cli-main
+    target: router-management
+    type: optional
+    description: Handles router-related commands and launch mode
+
+  - source: proxy-management
+    target: validate-proxy-url
+    type: required
+    description: Validates proxy URL before saving credentials
+
+  - source: proxy-management
+    target: resolve-domain
+    type: optional
+    description: Resolves domain names to IPs for HTTP proxies
+
+  - source: proxy-management
+    target: credential-storage
+    type: required
+    description: Saves and loads proxy credentials
+
+  - source: proxy-management
+    target: git-proxy-config
+    type: optional
+    description: Configures git proxy settings
+
+  - source: validate-proxy-url
+    target: ip-address-validator
+    type: required
+    description: Checks if host is valid IP address
+
+  - source: isolated-environment
+    target: nvm-installer
+    type: required
+    description: Installs NVM for isolated environment
+
+  - source: isolated-environment
+    target: nodejs-installer
+    type: required
+    description: Installs Node.js in isolated environment
+
+  - source: isolated-environment
+    target: claude-installer
+    type: required
+    description: Installs Claude Code in isolated environment
+
+  - source: isolated-environment
+    target: lockfile-manager
+    type: required
+    description: Saves lockfile after installation
+
+  - source: version-management
+    target: save-lockfile
+    type: required
+    description: Creates lockfile with current versions
+
+  - source: version-management
+    target: install-from-lockfile
+    type: required
+    description: Installs from locked versions
+
+  - source: save-lockfile
+    target: version-detector
+    type: required
+    description: Detects current CLI version
+
+  - source: install-from-lockfile
+    target: nvm-installer
+    type: required
+    description: Installs NVM for locked version
+
+  - source: install-from-lockfile
+    target: nodejs-installer
+    type: required
+    description: Installs locked Node.js version
+
+  - source: install-from-lockfile
+    target: claude-installer
+    type: required
+    description: Installs locked Claude Code version
+
+  - source: install-from-lockfile
+    target: router-installer
+    type: optional
+    description: Installs locked router version if present
+
+  - source: oauth-token-management
+    target: check-oauth-token
+    type: required
+    description: Validates token before launch
+
+  - source: check-oauth-token
+    target: check-token-expiration
+    type: required
+    description: Checks if token is expiring
+
+  - source: check-oauth-token
+    target: refresh-oauth-token
+    type: optional
+    description: Refreshes token if expiring
+
+  - source: refresh-oauth-token
+    target: claude-cli
+    type: required
+    description: Uses claude setup-token for refresh
+
+  - source: router-management
+    target: detect-router
+    type: required
+    description: Checks router availability
+
+  - source: router-management
+    target: get-router-path
+    type: required
+    description: Locates ccr binary
+
+  - source: router-management
+    target: router-installer
+    type: optional
+    description: Installs router on demand
+
+  - source: detect-router
+    target: get-router-path
+    type: required
+    description: Verifies ccr binary exists
+
+  - source: claude-installer
+    target: nodejs-installer
+    type: required
+    description: Requires Node.js for npm install
+
+  - source: claude-installer
+    target: symlink-manager
+    type: required
+    description: Creates symlink after installation
+
+  - source: router-installer
+    target: nodejs-installer
+    type: required
+    description: Requires Node.js for npm install
+
+  - source: router-installer
+    target: symlink-manager
+    type: required
+    description: Creates symlink after installation
+
+  - source: claude-updater
+    target: cleanup-old-installations
+    type: required
+    description: Removes temporary folders after update
+
+  - source: claude-updater
+    target: symlink-manager
+    type: required
+    description: Recreates symlinks after update
+
+  - source: claude-updater
+    target: save-lockfile
+    type: required
+    description: Updates lockfile after update
+
+  - source: nodejs-installer
+    target: nvm-installer
+    type: required
+    description: Requires NVM to install Node.js
+
+  - source: claude-path-finder
+    target: nvm-detector
+    type: required
+    description: Needs NVM directory to locate Claude
+
+  - source: version-detector
+    target: claude-path-finder
+    type: required
+    description: Needs binary path to detect version
+
+  - source: test-proxy
+    target: configure-proxy
+    type: required
+    description: Configures proxy before testing
+
+  - source: test-proxy
+    target: curl-binary
+    type: required
+    description: Uses curl for HTTP requests
+
+  - source: check-router-status
+    target: jq-validator
+    type: required
+    description: Uses jq to parse router.json
+
+  - source: oauth-token-management
+    target: jq-validator
+    type: required
+    description: Uses jq to parse credentials.json
+
+data_flows:
+  - id: proxy-configuration-flow
+    name: Proxy Configuration Flow
+    description: User provides proxy URL, script validates and saves credentials
+    steps:
+      - component: cli-main
+        action: Receive proxy URL from user
+      - component: validate-proxy-url
+        action: Validate URL format and protocol
+      - component: resolve-domain
+        action: Optionally resolve domain to IP (HTTP only)
+      - component: parse-proxy-url
+        action: Extract credentials and host
+      - component: credential-storage
+        action: Save credentials to file (chmod 600)
+      - component: configure-proxy
+        action: Set environment variables
+      - component: test-proxy
+        action: Test connectivity
+      - component: cli-main
+        action: Launch Claude Code with proxy
+
+  - id: isolated-installation-flow
+    name: Isolated Installation Flow
+    description: Install complete isolated environment with lockfile
+    steps:
+      - component: cli-main
+        action: Receive --isolated-install command
+      - component: isolated-environment
+        action: Create .nvm-isolated directory
+      - component: nvm-installer
+        action: Download and install NVM
+      - component: nodejs-installer
+        action: Install Node.js via NVM
+      - component: claude-installer
+        action: Install Claude Code via npm
+      - component: symlink-manager
+        action: Create symlinks for binaries
+      - component: save-lockfile
+        action: Save versions to lockfile
+      - component: cli-main
+        action: Display success message
+
+  - id: oauth-token-refresh-flow
+    name: OAuth Token Refresh Flow
+    description: Automatic token validation and refresh on launch
+    steps:
+      - component: cli-main
+        action: Initiate Claude Code launch
+      - component: check-oauth-token
+        action: Read .credentials.json
+      - component: check-token-expiration
+        action: Compare expiresAt with current time + threshold
+      - component: refresh-oauth-token
+        action: Run claude setup-token (if expiring)
+      - component: credential-storage
+        action: Update .credentials.json with new token
+      - component: cli-main
+        action: Continue with launch
+
+  - id: router-launch-flow
+    name: Router Launch Flow
+    description: Launch Claude Code via Router for alternative LLM providers
+    steps:
+      - component: cli-main
+        action: Receive --router flag
+      - component: detect-router
+        action: Check router.json exists and ccr binary available
+      - component: router-management
+        action: Copy router.json to ~/.claude-code-router/config.json
+      - component: configure-proxy
+        action: Set proxy environment variables (inherited by router)
+      - component: router-cli
+        action: Launch ccr code (instead of claude)
+      - component: router-cli
+        action: Router intercepts API calls and routes to configured provider
+
+  - id: lockfile-installation-flow
+    name: Lockfile Installation Flow
+    description: Reproduce exact versions from lockfile
+    steps:
+      - component: cli-main
+        action: Receive --install-from-lockfile command
+      - component: install-from-lockfile
+        action: Read .nvm-isolated-lockfile.json
+      - component: nvm-installer
+        action: Install NVM (nvmVersion)
+      - component: nodejs-installer
+        action: Install Node.js (nodeVersion)
+      - component: claude-installer
+        action: Install Claude Code (claudeCodeVersion)
+      - component: router-installer
+        action: Install router (routerVersion) if not "not installed"
+      - component: cli-main
+        action: Display success message
+
+metrics:
+  total_components: 48
+  total_dependencies: 43
+  max_dependency_depth: 5
+  cyclomatic_complexity: medium
+
+quality_attributes:
+  maintainability: high
+  modularity: high
+  testability: medium
+  security: high
+  performance: medium
+  portability: high
+
+security_considerations:
+  - description: Proxy credentials stored with chmod 600 (owner-only)
+    mitigation: File permissions enforced at creation
+  - description: Credentials never committed to git (.gitignore)
+    mitigation: .claude_proxy_credentials in .gitignore
+  - description: HTTPS proxy MitM vulnerability (undici library)
+    mitigation: Recommend trusted proxies only, prefer --proxy-ca over --proxy-insecure
+  - description: Password display hidden by default
+    mitigation: Require --show-password flag to display
+  - description: OAuth tokens persisted in .credentials.json
+    mitigation: Automatic refresh within 7 days of expiration
+
+deployment:
+  installation_modes:
+    - isolated: Portable installation in .nvm-isolated/ directory
+    - system: System-wide NVM installation
+  configuration_modes:
+    - isolated_config: Config in .nvm-isolated/.claude-isolated/
+    - shared_config: Config in ~/.claude/
+  proxy_support:
+    - HTTPS (recommended, preserves domain names)
+    - HTTP (optional domain-to-IP conversion)
+    - SOCKS5 (NOT supported, causes crash)
+  router_integration:
+    - mode: opt-in
+    - activation: --router flag
+    - providers:
+        - OpenRouter
+        - DeepSeek
+        - Ollama
+        - Gemini
+        - OpenAI
+        - Volcengine
+        - SiliconFlow
+
+skills_integration:
+  skills_directory: .nvm-isolated/.claude-isolated/skills/
+  available_skills:
+    - structured-planning
+    - bash-development
+    - git-workflow
+    - validation-framework
+    - context-awareness
+    - task-decomposition
+    - thinking-framework
+    - error-handling
+    - rollback-recovery
+    - proxy-management
+    - isolated-environment
+    - code-review
+    - approval-gates
+    - adaptive-workflow
+    - phase-execution
+    - architecture-documentation
+  skill_purpose: Enhance development workflow with reusable templates and automation
