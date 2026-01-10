@@ -695,9 +695,9 @@ install_isolated_lsp_servers() {
 					print_info "Installing typescript-lsp plugin..."
 					if [[ "$claude_path" =~ ^node\  ]]; then
 						local cli_path="${claude_path#node }"
-						node "$cli_path" plugin install typescript-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+						(cd "$SCRIPT_DIR" && node "$cli_path" plugin install typescript-lsp@claude-plugins-official -s project) || print_warning "Plugin install failed"
 					else
-						"$claude_path" plugin install typescript-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+						(cd "$SCRIPT_DIR" && "$claude_path" plugin install typescript-lsp@claude-plugins-official -s project) || print_warning "Plugin install failed"
 					fi
 				fi
 				echo ""
@@ -723,9 +723,9 @@ install_isolated_lsp_servers() {
 					print_info "Installing pyright-lsp plugin..."
 					if [[ "$claude_path" =~ ^node\  ]]; then
 						local cli_path="${claude_path#node }"
-						node "$cli_path" plugin install pyright-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+						(cd "$SCRIPT_DIR" && node "$cli_path" plugin install pyright-lsp@claude-plugins-official -s project) || print_warning "Plugin install failed"
 					else
-						"$claude_path" plugin install pyright-lsp@claude-plugins-official -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed"
+						(cd "$SCRIPT_DIR" && "$claude_path" plugin install pyright-lsp@claude-plugins-official -s project) || print_warning "Plugin install failed"
 					fi
 				fi
 				echo ""
@@ -733,12 +733,12 @@ install_isolated_lsp_servers() {
 			go)
 				# Go requires GOPATH setup, skip npm
 				print_warning "Go LSP (gopls): Install via 'go install golang.org/x/tools/gopls@latest'"
-				print_info "    Plugin: claude plugin install gopls-lsp@claude-plugins-official -s project --project-path \"$SCRIPT_DIR\""
+				print_info "    Plugin: cd \"$SCRIPT_DIR\" && claude plugin install gopls-lsp@claude-plugins-official -s project"
 				echo ""
 				;;
 			rust)
 				print_warning "Rust LSP (rust-analyzer): Install via 'rustup component add rust-analyzer'"
-				print_info "    Plugin: claude plugin install rust-analyzer-lsp@claude-plugins-official -s project --project-path \"$SCRIPT_DIR\""
+				print_info "    Plugin: cd \"$SCRIPT_DIR\" && claude plugin install rust-analyzer-lsp@claude-plugins-official -s project"
 				echo ""
 				;;
 			# Add other languages as needed
@@ -933,29 +933,27 @@ save_isolated_lockfile() {
 	claude_path=$(get_nvm_claude_path)
 
 	if [[ -n "$claude_path" ]] && command -v jq &>/dev/null; then
-		# Get plugin list
-		local plugin_list
-		if [[ "$claude_path" =~ ^node\  ]]; then
-			local cli_path="${claude_path#node }"
-			plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+		# Read plugins from installed_plugins.json file
+		local plugins_file=""
+		if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+			plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
 		else
-			plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+			plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 		fi
 
-		# Parse for LSP plugins in current project
-		for plugin in "pyright-lsp@claude-plugins-official" "typescript-lsp@claude-plugins-official" "gopls-lsp@claude-plugins-official" "rust-analyzer-lsp@claude-plugins-official"; do
-			if echo "$plugin_list" | grep -q "$plugin"; then
-				# Extract version (appears after plugin name in output)
+		if [[ -f "$plugins_file" ]]; then
+			# Parse for LSP plugins in current project
+			for plugin in "pyright-lsp@claude-plugins-official" "typescript-lsp@claude-plugins-official" "gopls-lsp@claude-plugins-official" "rust-analyzer-lsp@claude-plugins-official"; do
 				local plugin_version
-				plugin_version=$(echo "$plugin_list" | grep -A2 "$plugin" | grep "Version:" | awk '{print $2}' | head -1)
+				plugin_version=$(jq -r ".plugins[\"$plugin\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
 
 				if [[ -n "$plugin_version" ]]; then
 					[[ "$first" == false ]] && lsp_plugins_json+=", "
 					lsp_plugins_json+="\"$plugin\": \"$plugin_version\""
 					first=false
 				fi
-			fi
-		done
+			done
+		fi
 	fi
 
 	lsp_plugins_json+="}"
@@ -1148,9 +1146,9 @@ install_from_lockfile() {
 					# Handle both binary and cli.js paths
 					if [[ "$claude_path" =~ ^node\  ]]; then
 						local cli_path="${claude_path#node }"
-						node "$cli_path" plugin install "$plugin" -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed (may already exist)"
+						(cd "$SCRIPT_DIR" && node "$cli_path" plugin install "$plugin" -s project) || print_warning "Plugin install failed (may already exist)"
 					else
-						"$claude_path" plugin install "$plugin" -s project --project-path "$SCRIPT_DIR" || print_warning "Plugin install failed (may already exist)"
+						(cd "$SCRIPT_DIR" && "$claude_path" plugin install "$plugin" -s project) || print_warning "Plugin install failed (may already exist)"
 					fi
 				done <<< "$lsp_plugins"
 
@@ -1773,36 +1771,47 @@ check_lsp_status() {
 		echo "   Install: ./iclaude.sh --isolated-install"
 		echo ""
 	else
-		# Get plugin list
-		local plugin_list
-		if [[ "$claude_path" =~ ^node\  ]]; then
-			local cli_path="${claude_path#node }"
-			plugin_list=$(node "$cli_path" plugin list 2>/dev/null || echo "")
+		# Read plugins from installed_plugins.json file
+		local plugins_file=""
+		if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+			plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
 		else
-			plugin_list=$("$claude_path" plugin list 2>/dev/null || echo "")
+			plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 		fi
 
-		# Check TypeScript plugin
-		if echo "$plugin_list" | grep -q "typescript-lsp"; then
+		if [[ ! -f "$plugins_file" ]]; then
+			print_warning "Plugin registry not found at: $plugins_file"
+			echo "   No plugins installed yet"
+			echo ""
+		elif ! command -v jq &>/dev/null; then
+			print_warning "jq not installed - cannot parse plugin registry"
+			echo "   Install jq to view plugin status"
+			echo ""
+		else
+			# Check TypeScript plugin
 			local ts_plugin_ver
-			ts_plugin_ver=$(echo "$plugin_list" | grep -A2 "typescript-lsp" | grep "Version:" | awk '{print $2}')
-			print_success "typescript-lsp plugin: ${ts_plugin_ver:-unknown}"
-		else
-			print_error "typescript-lsp plugin: Not installed"
-			echo "   Install: ./iclaude.sh --install-lsp typescript"
-		fi
-		echo ""
+			ts_plugin_ver=$(jq -r ".plugins[\"typescript-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
 
-		# Check Python plugin
-		if echo "$plugin_list" | grep -q "pyright-lsp"; then
+			if [[ -n "$ts_plugin_ver" ]]; then
+				print_success "typescript-lsp plugin: $ts_plugin_ver"
+			else
+				print_error "typescript-lsp plugin: Not installed"
+				echo "   Install: ./iclaude.sh --install-lsp typescript"
+			fi
+			echo ""
+
+			# Check Python plugin
 			local py_plugin_ver
-			py_plugin_ver=$(echo "$plugin_list" | grep -A2 "pyright-lsp" | grep "Version:" | awk '{print $2}')
-			print_success "pyright-lsp plugin: ${py_plugin_ver:-unknown}"
-		else
-			print_error "pyright-lsp plugin: Not installed"
-			echo "   Install: ./iclaude.sh --install-lsp python"
+			py_plugin_ver=$(jq -r ".plugins[\"pyright-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+
+			if [[ -n "$py_plugin_ver" ]]; then
+				print_success "pyright-lsp plugin: $py_plugin_ver"
+			else
+				print_error "pyright-lsp plugin: Not installed"
+				echo "   Install: ./iclaude.sh --install-lsp python"
+			fi
+			echo ""
 		fi
-		echo ""
 	fi
 
 	# Check lockfile tracking
