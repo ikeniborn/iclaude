@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Input Schema for skill-generator",
+  "$comment": "Validates input for skill-generator skill (non-interactive mode)",
+  "type": "object",
+  "properties": {
+    "skill_generator_input": {
+      "type": "object",
+      "properties": {
+        "skill_name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "minLength": 3,
+          "maxLength": 50,
+          "description": "Skill name in kebab-case format"
+        },
+        "skill_type": {
+          "type": "string",
+          "enum": ["system", "user-invocable", "bash-utility", "integration"],
+          "description": "Type of skill"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 200,
+          "description": "Brief description of skill functionality"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of skill dependencies"
+        },
+        "complexity_levels": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to support minimal/standard/complex levels"
+        },
+        "output_format": {
+          "type": "string",
+          "enum": ["JSON", "YAML", "Markdown", "Text", "Mixed"],
+          "default": "JSON",
+          "description": "Output format for generated skill"
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "description": "Array of template names to generate"
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "rules": {
+              "type": "boolean",
+              "default": false
+            },
+            "examples": {
+              "type": "boolean",
+              "default": true
+            },
+            "shared_data": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "target_location": {
+          "type": "string",
+          "enum": ["project", "iclaude-global"],
+          "default": "project",
+          "description": "Where to create the skill"
+        }
+      },
+      "required": ["skill_name", "skill_type", "description"]
+    }
+  },
+  "required": ["skill_generator_input"]
+}

@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Output Schema for skill-generator",
+  "$comment": "Validates output from skill-generator skill",
+  "type": "object",
+  "properties": {
+    "skill_generation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "partial", "failed"],
+          "description": "Status of skill generation"
+        },
+        "skill_directory": {
+          "type": "string",
+          "description": "Absolute path to created skill directory"
+        },
+        "files_created": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of relative paths to created files"
+        },
+        "validation_results": {
+          "type": "object",
+          "properties": {
+            "yaml_frontmatter": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["passed", "failed"]
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["status"]
+            },
+            "json_templates": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["passed", "failed"]
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["status"]
+            },
+            "json_schemas": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["passed", "failed"]
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["status"]
+            },
+            "markdown_formatting": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["passed", "warning", "failed"]
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["status"]
+            },
+            "file_structure": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["passed", "failed"]
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["status"]
+            }
+          },
+          "required": ["yaml_frontmatter", "json_templates", "json_schemas", "markdown_formatting", "file_structure"]
+        },
+        "integration_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Notes for user about next steps"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Skill dependencies"
+        },
+        "skill_type": {
+          "type": "string",
+          "enum": ["system", "user-invocable", "bash-utility", "integration"],
+          "description": "Type of created skill"
+        }
+      },
+      "required": ["status", "skill_directory", "files_created", "validation_results"]
+    }
+  },
+  "required": ["skill_generation"]
+}

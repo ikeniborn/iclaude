@@ -7,7 +7,7 @@ dependencies: []
 files:
   templates: ./templates/*.json
   rules: ./rules/*.md
-user-invocable: false
+user-invocable: true
 ---
 
 # Code Review
