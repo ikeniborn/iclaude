@@ -1,0 +1,68 @@
+{
+  "$comment": "Input template for prd-generator skill - defines schema for 12 questionnaire questions",
+  "prd_input": {
+    "product_info": {
+      "name": "{{name: string, min 3 chars, max 100 chars}}",
+      "description": "{{description: string, min 20 chars, max 500 chars}}",
+      "type": "{{type: enum: SaaS|Mobile App|Desktop Application|API/Platform|Hardware + Software|Other}}"
+    },
+    "goals": {
+      "business_goals": [
+        "{{goal: string, SMART format, min 20 chars}}"
+      ],
+      "success_metrics": [
+        "{{metric: string, measurable KPI}}"
+      ]
+    },
+    "audience": {
+      "segments": "{{segments: string, 1-3 target segments, min 20 chars}}",
+      "personas": [
+        {
+          "name": "{{persona_name: string}}",
+          "role": "{{role: string}}",
+          "goals": "{{goals: string}}",
+          "pain_points": "{{pain_points: string}}"
+        }
+      ]
+    },
+    "features": {
+      "core_features": [
+        "{{feature: string, min 3 features, max 15 features}}"
+      ],
+      "user_scenarios": [
+        "{{scenario: string, min 2 scenarios, max 10 scenarios}}"
+      ]
+    },
+    "technical": {
+      "stack": {
+        "frontend": "{{optional: string}}",
+        "backend": "{{optional: string}}",
+        "database": "{{optional: string}}",
+        "infrastructure": "{{optional: string}}"
+      },
+      "integrations": [
+        "{{integration: string}}"
+      ]
+    },
+    "constraints": {
+      "timeline": {
+        "roadmap": [
+          {
+            "phase": "{{phase_name: string}}",
+            "quarter": "{{quarter: pattern: /Q[1-4] \\d{4}/}}",
+            "deliverables": "{{deliverables: string}}"
+          }
+        ]
+      },
+      "budget": "{{optional: string}}",
+      "risks": [
+        "{{risk: string}}"
+      ]
+    },
+    "options": {
+      "target_directory": "{{target_dir: string, default: docs/prd/}}",
+      "interactive_mode": "{{interactive: boolean, default: true}}",
+      "update_mode": "{{update: boolean, default: false, if true merge with existing PRD}}"
+    }
+  }
+}
