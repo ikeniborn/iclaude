@@ -1,0 +1,102 @@
+{
+  "$comment": "Output template for prd-generator skill - defines structured output format",
+  "prd_generation": {
+    "status": "{{status: enum: success|partial|failed}}",
+    "product_name": "{{name: string}}",
+    "output_directory": "{{path: string, absolute path to docs/prd/}}",
+    "mode": "{{mode: enum: create|update}}",
+    "generated_files": {
+      "markdown_files": "{{count: integer, min 0}}",
+      "mermaid_diagrams": "{{count: integer, min 0, max 5}}",
+      "total_files": "{{total: integer, min 0}}"
+    },
+    "sections": {
+      "01-executive-summary": "{{path: string}}",
+      "02-goals-and-scope": "{{path: string}}",
+      "03-product-overview": "{{path: string}}",
+      "04-target-audience": "{{path: string}}",
+      "05-business-requirements": "{{path: string}}",
+      "06-functional-requirements": "{{path: string}}",
+      "07-non-functional-requirements": "{{path: string}}",
+      "08-user-interface": "{{path: string}}",
+      "09-technical-requirements": "{{path: string}}",
+      "10-roadmap": "{{path: string}}",
+      "11-risks": "{{path: string}}",
+      "12-testing": "{{path: string}}",
+      "13-launch-and-support": "{{path: string}}",
+      "14-appendices": "{{path: string}}"
+    },
+    "diagrams": {
+      "product-vision": "{{path: string}}",
+      "user-journey": "{{path: string}}",
+      "system-context": "{{path: string}}",
+      "feature-dependencies": "{{path: string}}",
+      "roadmap-timeline": "{{path: string}}"
+    },
+    "validation_results": {
+      "markdown_syntax": {
+        "status": "{{status: enum: passed|failed}}",
+        "files_checked": "{{count: integer, min 0}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "mermaid_diagrams": {
+        "status": "{{status: enum: passed|failed}}",
+        "diagrams_checked": "{{count: integer, min 0}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "navigation_links": {
+        "status": "{{status: enum: passed|warning|failed}}",
+        "links_checked": "{{count: integer, min 0}}",
+        "warnings": [
+          "{{warning: string}}"
+        ],
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "directory_structure": {
+        "status": "{{status: enum: passed|failed}}",
+        "directories_checked": "{{count: integer, min 0}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "content_quality": {
+        "status": "{{status: enum: passed|warning|failed}}",
+        "sections_checked": "{{count: integer, min 0}}",
+        "warnings": [
+          "{{warning: string}}"
+        ],
+        "errors": [
+          "{{error: string}}"
+        ]
+      }
+    },
+    "update_info": {
+      "backup_location": "{{optional: string}}",
+      "sections_updated": "{{optional: integer, min 0}}",
+      "sections_preserved": "{{optional: integer, min 0}}",
+      "conflicts": "{{optional: integer, min 0}}",
+      "conflict_resolutions": [
+        {
+          "section": "{{section: string}}",
+          "resolution": "{{resolution: enum: keep_existing|use_new|merge_manual}}",
+          "new_file_created": "{{optional: string}}"
+        }
+      ]
+    },
+    "integration_notes": [
+      "{{note: string}}"
+    ],
+    "statistics": {
+      "total_words": "{{words: integer, min 0}}",
+      "total_features": "{{features: integer, min 0}}",
+      "total_personas": "{{personas: integer, min 0}}",
+      "total_roadmap_phases": "{{phases: integer, min 0}}"
+    }
+  }
+}
