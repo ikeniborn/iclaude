@@ -1,5 +1,5 @@
 ---
-name: Skill Generator
+name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
 version: 1.0.0
 tags: [meta, generator, scaffolding, templates, schemas, validation, interactive]
