@@ -1,0 +1,44 @@
+{
+  "$comment": "Base template for generated SKILL.md frontmatter and structure",
+  "skill_template": {
+    "frontmatter": {
+      "name": "{{name: string}}",
+      "description": "{{description: string}}",
+      "version": "1.0.0",
+      "tags": [
+        "{{tag: string}}"
+      ],
+      "dependencies": [
+        "{{dependency: string}}"
+      ],
+      "user-invocable": "{{user_invocable: boolean}}"
+    },
+    "markdown_sections": [
+      "# {{Skill Name}}",
+      "",
+      "## When to Use",
+      "",
+      "## How It Works",
+      "",
+      "### Step 1: {{First Step Title}}",
+      "",
+      "### Step 2: {{Second Step Title}}",
+      "",
+      "## Output Format",
+      "",
+      "### Workflow Integration (JSON)",
+      "",
+      "## Templates",
+      "",
+      "## Schemas",
+      "",
+      "## Examples",
+      "",
+      "## Workflow Integration",
+      "",
+      "### Input Dependencies",
+      "",
+      "### Output Consumers"
+    ]
+  }
+}

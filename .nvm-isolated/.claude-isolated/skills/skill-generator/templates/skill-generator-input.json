@@ -1,0 +1,22 @@
+{
+  "$comment": "Input template for skill-generator (non-interactive mode)",
+  "skill_generator_input": {
+    "skill_name": "{{skill_name: string, kebab-case, min 3 chars, max 50 chars}}",
+    "skill_type": "{{type: enum: system|user-invocable|bash-utility|integration}}",
+    "description": "{{description: string, min 20 chars, max 200 chars}}",
+    "dependencies": [
+      "{{dependency: string, existing skill name}}"
+    ],
+    "complexity_levels": "{{complexity_levels: boolean, default: false}}",
+    "output_format": "{{format: enum: JSON|YAML|Markdown|Text|Mixed, default: JSON}}",
+    "templates": [
+      "{{template_name: string, kebab-case}}"
+    ],
+    "features": {
+      "rules": "{{rules: boolean, default: false}}",
+      "examples": "{{examples: boolean, default: true}}",
+      "shared_data": "{{shared_data: boolean, default: false}}"
+    },
+    "target_location": "{{location: enum: project|iclaude-global, default: project}}"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$comment": "Output template for skill-generator",
+  "skill_generation": {
+    "status": "{{status: enum: success|partial|failed}}",
+    "skill_directory": "{{path: string, absolute path}}",
+    "files_created": [
+      "{{file: string, relative path}}"
+    ],
+    "validation_results": {
+      "yaml_frontmatter": {
+        "status": "{{status: enum: passed|failed}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "json_templates": {
+        "status": "{{status: enum: passed|failed}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "json_schemas": {
+        "status": "{{status: enum: passed|failed}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      },
+      "markdown_formatting": {
+        "status": "{{status: enum: passed|warning|failed}}",
+        "warnings": [
+          "{{warning: string}}"
+        ]
+      },
+      "file_structure": {
+        "status": "{{status: enum: passed|failed}}",
+        "errors": [
+          "{{error: string}}"
+        ]
+      }
+    },
+    "integration_notes": [
+      "{{note: string}}"
+    ],
+    "dependencies": [
+      "{{dependency: string}}"
+    ],
+    "skill_type": "{{type: enum: system|user-invocable|bash-utility|integration}}"
+  }
+}
