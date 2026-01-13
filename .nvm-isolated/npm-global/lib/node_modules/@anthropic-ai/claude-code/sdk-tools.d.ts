@@ -113,6 +113,19 @@ export interface TaskOutputInput {
   timeout: number;
 }
 export interface ExitPlanModeInput {
+  /**
+   * Prompt-based permissions needed to implement the plan. These describe categories of actions rather than specific commands.
+   */
+  allowedPrompts?: {
+    /**
+     * The tool this prompt applies to
+     */
+    tool: "Bash";
+    /**
+     * Semantic description of the action, e.g. "run tests", "install dependencies"
+     */
+    prompt: string;
+  }[];
   [k: string]: unknown;
 }
 export interface FileEditInput {
