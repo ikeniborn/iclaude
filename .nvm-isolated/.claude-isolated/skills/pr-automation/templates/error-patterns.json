@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Error patterns for parsing CI/CD logs from GitHub Actions",
+  "version": "1.0.0",
+
+  "typescript": {
+    "description": "TypeScript compiler errors",
+    "enabled": true,
+    "pattern": "error TS(\\d+):\\s+(.+)",
+    "filePattern": "^(.+\\.ts)\\((\\d+),(\\d+)\\):",
+    "captureGroups": {
+      "errorCode": 1,
+      "message": 2,
+      "file": 1,
+      "line": 2,
+      "column": 3
+    },
+    "examples": [
+      "transactionForm.ts(45,12): error TS2322: Type 'string' is not assignable to type 'number'.",
+      "budgetState.ts(123,5): error TS2304: Cannot find name 'UnknownType'.",
+      "api.ts(67,18): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'."
+    ],
+    "commonErrors": {
+      "TS2322": "Type mismatch - conversion or type annotation needed",
+      "TS2304": "Unknown name - import missing or typo",
+      "TS2345": "Argument type mismatch - check function signature",
+      "TS2339": "Property doesn't exist - check object type",
+      "TS2531": "Object is possibly null - add null check",
+      "TS2532": "Object is possibly undefined - add undefined check",
+      "TS7006": "Implicit any type - add type annotation"
+    }
+  },
+
+  "eslint": {
+    "description": "ESLint and Prettier errors",
+    "enabled": true,
+    "pattern": "(.+\\.ts)\\s+(\\d+):(\\d+)\\s+error\\s+(.+?)\\s+(\\S+)$",
+    "captureGroups": {
+      "file": 1,
+      "line": 2,
+      "column": 3,
+      "message": 4,
+      "rule": 5
+    },
+    "examples": [
+      "frontend/web/static/js/budget/transactionForm.ts  45:12  error  'console.log' is not allowed  no-console",
+      "frontend/web/static/js/utils/helpers.ts  23:1  error  'foo' is assigned a value but never used  @typescript-eslint/no-unused-vars",
+      "frontend/web/static/js/api/client.ts  89:5  error  Unexpected console statement  no-console"
+    ],
+    "commonRules": {
+      "no-console": "Replace with debugLog() from utils/debug.ts",
+      "@typescript-eslint/no-unused-vars": "Remove unused variable or prefix with underscore _var",
+      "@typescript-eslint/no-explicit-any": "Add specific type instead of any",
+      "prettier/prettier": "Run prettier --write <file>",
+      "no-debugger": "Remove debugger statement"
+    }
+  },
+
+  "vitest": {
+    "description": "Vitest test failures",
+    "enabled": true,
+    "pattern": "FAIL\\s+(.+\\.test\\.ts)",
+    "errorPattern": "Error:\\s+(.+)",
+    "assertionPattern": "expect\\((.+?)\\)\\.toBe\\((.+?)\\)",
+    "captureGroups": {
+      "testFile": 1,
+      "errorMessage": 1,
+      "received": 1,
+      "expected": 2
+    },
+    "examples": [
+      "FAIL  frontend/web/static/js/__tests__/api.test.ts",
+      "  Error: expect(received).toBe(expected)",
+      "  Expected: 200",
+      "  Received: 404",
+      "FAIL  frontend/web/static/js/__tests__/state.test.ts",
+      "  Error: Cannot read properties of undefined (reading 'total')"
+    ],
+    "commonErrors": {
+      "toBe": "Check actual vs expected values - likely logic error",
+      "toEqual": "Deep equality failed - check object structure",
+      "toHaveBeenCalled": "Mock function not called - check invocation",
+      "undefined": "Null/undefined access - add null checks in code",
+      "timeout": "Test exceeded timeout - optimize or increase timeout"
+    }
+  },
+
+  "build": {
+    "description": "Build and bundling errors",
+    "enabled": true,
+    "pattern": "ERROR in (.+)",
+    "moduleNotFoundPattern": "Module not found: Error: Can't resolve '(.+?)' in '(.+?)'",
+    "captureGroups": {
+      "file": 1,
+      "module": 1,
+      "directory": 2
+    },
+    "examples": [
+      "ERROR in ./frontend/web/static/js/budget/transactionForm.ts",
+      "Module not found: Error: Can't resolve 'invalid-module' in '/path/to/frontend/web/static/js/budget'",
+      "ERROR in ./frontend/web/static/js/utils/helpers.ts",
+      "Module parse failed: Unexpected token (45:12)"
+    ],
+    "commonErrors": {
+      "Module not found": "npm install <module> or fix import path",
+      "Unexpected token": "Syntax error - check file for parsing issues",
+      "Cannot resolve": "Check import path and file existence",
+      "exceeded maximum budget": "Bundle size too large - code split or remove dependencies"
+    }
+  },
+
+  "coverage": {
+    "description": "Code coverage threshold failures",
+    "enabled": true,
+    "pattern": "Coverage for (\\w+) \\(([\\d.]+)%\\) does not meet threshold \\(([\\d.]+)%\\)",
+    "captureGroups": {
+      "metric": 1,
+      "actual": 2,
+      "threshold": 3
+    },
+    "examples": [
+      "Coverage for lines (8.5%) does not meet threshold (8.9%)",
+      "Coverage for branches (90%) does not meet threshold (92%)"
+    ],
+    "metrics": {
+      "lines": "Add tests for uncovered lines",
+      "functions": "Add tests for uncovered functions",
+      "branches": "Add tests for all if/else branches",
+      "statements": "Add tests for all statements"
+    }
+  },
+
+  "python": {
+    "description": "Python runtime and syntax errors (optional - for backend changes)",
+    "enabled": false,
+    "pattern": "File \"(.+?)\", line (\\d+)",
+    "tracebackPattern": "Traceback \\(most recent call last\\):",
+    "captureGroups": {
+      "file": 1,
+      "line": 2
+    },
+    "examples": [
+      "Traceback (most recent call last):",
+      "  File \"backend/app/main.py\", line 45, in <module>",
+      "    result = foo(bar)",
+      "NameError: name 'foo' is not defined"
+    ]
+  },
+
+  "docker": {
+    "description": "Docker build failures (optional)",
+    "enabled": false,
+    "pattern": "ERROR \\[.+?\\] (.+)",
+    "examples": [
+      "ERROR [stage-1 3/5] RUN npm install",
+      "npm ERR! code ENOTFOUND"
+    ]
+  }
+}

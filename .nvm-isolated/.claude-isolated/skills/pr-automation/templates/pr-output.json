@@ -1,0 +1,312 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PR Automation Output Schema",
+  "description": "Output format for pr-automation skill results",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Overall success status"
+    },
+    "prNumber": {
+      "type": "integer",
+      "description": "GitHub PR number",
+      "minimum": 1
+    },
+    "prUrl": {
+      "type": "string",
+      "description": "GitHub PR URL",
+      "format": "uri",
+      "pattern": "^https://github\\.com/.+/.+/pull/\\d+$"
+    },
+    "sourceBranch": {
+      "type": "string",
+      "description": "Source branch name"
+    },
+    "targetBranch": {
+      "type": "string",
+      "description": "Target branch name"
+    },
+    "isDraft": {
+      "type": "boolean",
+      "description": "Current draft status"
+    },
+    "finalStatus": {
+      "type": "string",
+      "description": "Final PR status",
+      "enum": [
+        "all_checks_passed",
+        "checks_passed_with_warnings",
+        "checks_failed",
+        "max_iterations_reached",
+        "error_during_creation",
+        "error_during_fixing"
+      ]
+    },
+    "checksStatus": {
+      "type": "object",
+      "description": "Summary of CI/CD checks",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "description": "Total number of checks",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "description": "Number of passed checks",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "description": "Number of failed checks",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "description": "Number of skipped checks",
+          "minimum": 0
+        },
+        "pending": {
+          "type": "integer",
+          "description": "Number of pending checks",
+          "minimum": 0
+        }
+      },
+      "required": ["total", "passed", "failed"]
+    },
+    "checks": {
+      "type": "array",
+      "description": "Individual check results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Check name"
+          },
+          "conclusion": {
+            "type": "string",
+            "description": "Check conclusion",
+            "enum": ["success", "failure", "skipped", "pending", "cancelled"]
+          },
+          "runId": {
+            "type": "integer",
+            "description": "GitHub Actions run ID"
+          },
+          "detailsUrl": {
+            "type": "string",
+            "description": "URL to check details",
+            "format": "uri"
+          }
+        },
+        "required": ["name", "conclusion"]
+      }
+    },
+    "fixIterations": {
+      "type": "integer",
+      "description": "Number of ralph-loop fix iterations performed",
+      "minimum": 0
+    },
+    "autoFixedErrors": {
+      "type": "array",
+      "description": "Errors that were automatically fixed",
+      "items": {
+        "type": "object",
+        "properties": {
+          "errorType": {
+            "type": "string",
+            "description": "Type of error",
+            "enum": ["typescript", "eslint", "vitest", "build", "coverage"]
+          },
+          "file": {
+            "type": "string",
+            "description": "File path where error occurred"
+          },
+          "line": {
+            "type": "integer",
+            "description": "Line number of error",
+            "minimum": 1
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "fix": {
+            "type": "string",
+            "description": "Description of fix applied"
+          },
+          "commitHash": {
+            "type": "string",
+            "description": "Commit hash of fix",
+            "pattern": "^[0-9a-f]{7,40}$"
+          }
+        },
+        "required": ["errorType", "file", "message"]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Non-critical warnings encountered",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "description": "Critical errors encountered",
+      "items": {
+        "type": "string"
+      }
+    },
+    "executionTime": {
+      "type": "object",
+      "description": "Execution time breakdown",
+      "properties": {
+        "total": {
+          "type": "string",
+          "description": "Total execution time (e.g., '8m 34s')"
+        },
+        "phaseBreakdown": {
+          "type": "object",
+          "properties": {
+            "phase0": {
+              "type": "string",
+              "description": "Auto-detection time"
+            },
+            "phase1": {
+              "type": "string",
+              "description": "Analysis time"
+            },
+            "phase2": {
+              "type": "string",
+              "description": "PR creation time"
+            },
+            "phase3": {
+              "type": "string",
+              "description": "CI/CD monitoring time"
+            },
+            "phase4": {
+              "type": "string",
+              "description": "Error fixing time"
+            },
+            "phase5": {
+              "type": "string",
+              "description": "Finalization time"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "properties": {
+        "skillVersion": {
+          "type": "string",
+          "description": "pr-automation skill version"
+        },
+        "ghCliVersion": {
+          "type": "string",
+          "description": "gh CLI version used"
+        },
+        "detectedStack": {
+          "type": "object",
+          "description": "Auto-detected tech stack",
+          "properties": {
+            "backend": {
+              "type": "string"
+            },
+            "frontend": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          }
+        },
+        "cicdPlatform": {
+          "type": "string",
+          "description": "Detected CI/CD platform (e.g., 'GitHub Actions')"
+        }
+      }
+    }
+  },
+  "required": ["success", "prNumber", "prUrl", "finalStatus", "checksStatus"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "success": true,
+      "prNumber": 312,
+      "prUrl": "https://github.com/ikeniborn/familyBudget/pull/312",
+      "sourceBranch": "feature/transaction-filters",
+      "targetBranch": "test",
+      "isDraft": false,
+      "finalStatus": "all_checks_passed",
+      "checksStatus": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0
+      },
+      "checks": [
+        {
+          "name": "TypeScript Type Check",
+          "conclusion": "success",
+          "runId": 123456789
+        },
+        {
+          "name": "Unit & Integration Tests",
+          "conclusion": "success",
+          "runId": 123456790
+        },
+        {
+          "name": "Build Verification",
+          "conclusion": "success",
+          "runId": 123456791
+        },
+        {
+          "name": "Linting & Formatting",
+          "conclusion": "success",
+          "runId": 123456792
+        }
+      ],
+      "fixIterations": 2,
+      "autoFixedErrors": [
+        {
+          "errorType": "typescript",
+          "file": "frontend/web/static/js/budget/transactionFilter.ts",
+          "line": 45,
+          "message": "Type 'string' is not assignable to type 'number'",
+          "fix": "Added parseInt() conversion",
+          "commitHash": "abc123def"
+        }
+      ],
+      "warnings": [],
+      "errors": [],
+      "executionTime": {
+        "total": "8m 34s",
+        "phaseBreakdown": {
+          "phase0": "45s",
+          "phase1": "1m 12s",
+          "phase2": "23s",
+          "phase3": "4m 56s",
+          "phase4": "1m 8s",
+          "phase5": "10s"
+        }
+      },
+      "metadata": {
+        "skillVersion": "1.0.0",
+        "ghCliVersion": "2.45.0",
+        "detectedStack": {
+          "backend": "Python 3 + FastAPI",
+          "frontend": "TypeScript + Vite + HTMX + Tailwind",
+          "database": "PostgreSQL 16"
+        },
+        "cicdPlatform": "GitHub Actions"
+      }
+    }
+  ]
+}

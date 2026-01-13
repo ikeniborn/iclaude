@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PR Automation Input Schema",
+  "description": "Input parameters for pr-automation skill",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "sourceBranch": {
+      "type": "string",
+      "description": "Source branch name (e.g., feature/transaction-filters)",
+      "pattern": "^(feature|fix|refactor|test|docs|chore)/[a-z0-9-]+$",
+      "examples": [
+        "feature/add-filters",
+        "fix/null-pointer",
+        "refactor/extract-validator"
+      ]
+    },
+    "targetBranch": {
+      "type": "string",
+      "description": "Target branch name (usually test or prod)",
+      "enum": ["test", "prod", "main", "master"],
+      "default": "test"
+    },
+    "prTitle": {
+      "type": "string",
+      "description": "PR title in Conventional Commits format",
+      "pattern": "^(feat|fix|refactor|test|docs|chore|style|perf)(\\(.+?\\))?: .+$",
+      "maxLength": 72,
+      "examples": [
+        "feat(frontend): add transaction filtering",
+        "fix(api): handle null pointer in validator",
+        "refactor(state): extract ListsState from monolithic file"
+      ]
+    },
+    "prDescription": {
+      "type": "string",
+      "description": "Detailed PR description (auto-generated or custom)"
+    },
+    "isDraft": {
+      "type": "boolean",
+      "description": "Create as draft PR (default: true)",
+      "default": true
+    },
+    "autoFix": {
+      "type": "boolean",
+      "description": "Enable automatic error fixing via ralph-loop",
+      "default": true
+    },
+    "maxFixIterations": {
+      "type": "integer",
+      "description": "Maximum ralph-loop iterations for fixing errors",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5
+    },
+    "errorTypesToFix": {
+      "type": "array",
+      "description": "Types of errors to auto-fix",
+      "items": {
+        "type": "string",
+        "enum": ["typescript", "eslint", "vitest", "build", "coverage"]
+      },
+      "default": ["typescript", "eslint", "vitest", "build"]
+    },
+    "requiredChecks": {
+      "type": "array",
+      "description": "CI/CD checks that must pass before PR is marked ready",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        ["TypeScript Type Check", "Unit & Integration Tests", "Build Verification", "Linting & Formatting"]
+      ]
+    },
+    "completionPromise": {
+      "type": "string",
+      "description": "Condition that indicates successful completion",
+      "default": "All GitHub Actions checks pass",
+      "examples": [
+        "All GitHub Actions checks pass",
+        "gh pr checks shows all ✓",
+        "No failed checks in gh pr checks output"
+      ]
+    }
+  },
+  "required": ["sourceBranch", "targetBranch"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "sourceBranch": "feature/transaction-filters",
+      "targetBranch": "test",
+      "prTitle": "feat(frontend): add transaction filtering functionality",
+      "isDraft": true,
+      "autoFix": true,
+      "maxFixIterations": 5,
+      "errorTypesToFix": ["typescript", "eslint", "vitest", "build"],
+      "completionPromise": "All GitHub Actions checks pass"
+    },
+    {
+      "sourceBranch": "fix/null-pointer-validator",
+      "targetBranch": "prod",
+      "prTitle": "fix(api): handle null pointer in OrderValidator",
+      "isDraft": false,
+      "autoFix": false
+    }
+  ]
+}

@@ -637,6 +637,70 @@ install_isolated_router() {
 }
 
 #######################################
+# Install gh CLI in isolated environment
+# Downloads gh CLI tarball, extracts to npm-global/bin
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_gh() {
+	setup_isolated_nvm
+
+	# Source NVM
+	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+		print_error "NVM not found in isolated environment"
+		echo "Run: ./iclaude.sh --isolated-install first"
+		return 1
+	fi
+
+	source "$NVM_DIR/nvm.sh"
+
+	print_info "Installing gh CLI to isolated environment..."
+	echo ""
+
+	# Detect architecture
+	local arch
+	arch=$(uname -m)
+	case "$arch" in
+		x86_64) arch="amd64" ;;
+		aarch64|arm64) arch="arm64" ;;
+		*) print_error "Unsupported architecture: $arch"; return 1 ;;
+	esac
+
+	# Download latest gh CLI release
+	local gh_version="2.45.0"
+	local gh_url="https://github.com/cli/cli/releases/download/v${gh_version}/gh_${gh_version}_linux_${arch}.tar.gz"
+	local gh_tmp="/tmp/gh_${gh_version}_linux_${arch}.tar.gz"
+
+	print_info "Downloading gh CLI v${gh_version}..."
+	curl -L "$gh_url" -o "$gh_tmp"
+
+	if [[ $? -ne 0 ]]; then
+		print_error "Failed to download gh CLI"
+		return 1
+	fi
+
+	# Extract to isolated npm-global/bin
+	local gh_bin="${ISOLATED_NVM_DIR}/npm-global/bin"
+	mkdir -p "$gh_bin"
+
+	tar -xzf "$gh_tmp" -C /tmp
+	cp "/tmp/gh_${gh_version}_linux_${arch}/bin/gh" "$gh_bin/gh"
+	chmod +x "$gh_bin/gh"
+
+	# Cleanup
+	rm -rf "$gh_tmp" "/tmp/gh_${gh_version}_linux_${arch}"
+
+	# Update lockfile
+	save_isolated_lockfile
+
+	print_success "gh CLI installed successfully: $("$gh_bin/gh" --version | head -1)"
+	echo ""
+
+	return 0
+}
+
+#######################################
 # Install LSP servers and plugins in isolated environment
 # Arguments:
 #   $@ - Language servers to install (default: typescript, python)
@@ -907,6 +971,13 @@ save_isolated_lockfile() {
 		router_version=$("$ccr_cmd" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
 	fi
 
+	# Detect gh CLI version
+	local gh_version="not installed"
+	local gh_bin="$ISOLATED_NVM_DIR/npm-global/bin/gh"
+	if [[ -x "$gh_bin" ]]; then
+		gh_version=$("$gh_bin" --version 2>/dev/null | head -1 | awk '{print $3}')
+	fi
+
 	# Detect LSP servers
 	local lsp_servers_json="{"
 	local first=true
@@ -978,6 +1049,7 @@ save_isolated_lockfile() {
   "nodeVersion": "$node_version",
   "claudeCodeVersion": "$claude_version",
   "routerVersion": "$router_version",
+  "ghCliVersion": "$gh_version",
   "lspServers": $lsp_servers_json,
   "lspPlugins": $lsp_plugins_json,
   "installedAt": "$installed_at",
@@ -1837,6 +1909,59 @@ check_lsp_status() {
 		echo ""
 	fi
 
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Check gh CLI status
+# Shows installation status, version, authentication
+# Returns:
+#   0 - success
+#######################################
+check_gh_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  GitHub CLI Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	setup_isolated_nvm
+	source "$NVM_DIR/nvm.sh" 2>/dev/null || true
+
+	# Check isolated gh
+	local isolated_gh="$ISOLATED_NVM_DIR/npm-global/bin/gh"
+	if [[ -x "$isolated_gh" ]]; then
+		print_success "Isolated gh CLI: INSTALLED"
+		echo "  Location: $isolated_gh"
+		echo "  Version: $($isolated_gh --version | head -1)"
+
+		# Check authentication
+		if $isolated_gh auth status &>/dev/null; then
+			print_success "  Authentication: OK"
+			$isolated_gh auth status 2>&1 | grep "Logged in"
+		else
+			print_warning "  Authentication: NOT CONFIGURED"
+			echo ""
+			echo "Run: gh auth login"
+		fi
+	else
+		print_warning "Isolated gh CLI: NOT INSTALLED"
+		echo ""
+		echo "Run: ./iclaude.sh --install-gh"
+	fi
+
+	# Check system gh (for comparison)
+	echo ""
+	if command -v gh &>/dev/null; then
+		echo "System gh CLI: $(gh --version | head -1)"
+	else
+		echo "System gh CLI: not found"
+	fi
+
+	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	echo ""
 
@@ -3763,6 +3888,8 @@ OPTIONS:
   --install-router                  Install Claude Code Router in isolated environment
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
+  --install-gh                      Install gh CLI in isolated environment
+  --check-gh                        Check gh CLI status and authentication
   --install-lsp [LANGUAGES]         Install LSP servers+plugins (typescript, python, go, rust)
                                     Default: typescript and python
                                     Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
@@ -4116,6 +4243,20 @@ main() {
                 ;;
             --check-router)
                 check_router_status
+                exit 0
+                ;;
+            --install-gh)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-gh"
+                    echo ""
+                    echo "gh CLI is only available in isolated environment"
+                    exit 1
+                fi
+                install_isolated_gh
+                exit $?
+                ;;
+            --check-gh)
+                check_gh_status
                 exit 0
                 ;;
             --install-lsp)

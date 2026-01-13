@@ -1,0 +1,435 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PR Automation Workflow State Schema",
+  "description": "Validates workflow state during PR automation execution",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "phase": {
+      "type": "string",
+      "description": "Current workflow phase",
+      "enum": [
+        "auto_detect",
+        "initialization",
+        "analysis",
+        "pr_creation",
+        "ci_monitoring",
+        "error_fixing",
+        "finalization",
+        "completed",
+        "failed"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of current state",
+      "format": "date-time"
+    },
+    "detectedStack": {
+      "type": "object",
+      "description": "Auto-detected tech stack from /docs/architecture",
+      "properties": {
+        "backend": {
+          "type": "string",
+          "examples": ["Python 3 + FastAPI", "Node.js + Express", "Go + Gin"]
+        },
+        "frontend": {
+          "type": "string",
+          "examples": ["TypeScript + Vite + HTMX + Tailwind", "React + TypeScript", "Vue 3"]
+        },
+        "database": {
+          "type": "string",
+          "examples": ["PostgreSQL 16", "MySQL 8", "MongoDB 6"]
+        },
+        "testing": {
+          "type": "string",
+          "examples": ["Vitest + pytest", "Jest + unittest", "Mocha + Pytest"]
+        }
+      }
+    },
+    "cicdConfig": {
+      "type": "object",
+      "description": "Detected CI/CD configuration",
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["GitHub Actions", "GitLab CI", "Travis CI", "Jenkins", "CircleCI"]
+        },
+        "workflows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "jobs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "triggers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "requiredChecks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["TypeScript Type Check", "Unit & Integration Tests", "Build Verification", "Linting & Formatting"]
+          ]
+        }
+      }
+    },
+    "errorPatterns": {
+      "type": "object",
+      "description": "Enabled error patterns based on detected stack",
+      "properties": {
+        "typescript": {
+          "$ref": "#/definitions/errorPattern"
+        },
+        "eslint": {
+          "$ref": "#/definitions/errorPattern"
+        },
+        "vitest": {
+          "$ref": "#/definitions/errorPattern"
+        },
+        "build": {
+          "$ref": "#/definitions/errorPattern"
+        },
+        "python": {
+          "$ref": "#/definitions/errorPattern"
+        }
+      }
+    },
+    "prInfo": {
+      "type": "object",
+      "description": "PR creation information",
+      "properties": {
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sourceBranch": {
+          "type": "string"
+        },
+        "targetBranch": {
+          "type": "string"
+        },
+        "isDraft": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["number", "url", "sourceBranch", "targetBranch"]
+    },
+    "currentCheck": {
+      "type": "object",
+      "description": "Currently monitored CI/CD check",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "queued", "success", "failure", "skipped", "cancelled"]
+        },
+        "runId": {
+          "type": "integer"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "detailsUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["name", "status"]
+    },
+    "allChecks": {
+      "type": "array",
+      "description": "All CI/CD checks for this PR",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "conclusion": {
+            "type": "string",
+            "enum": ["success", "failure", "skipped", "pending", "cancelled", "neutral"]
+          },
+          "runId": {
+            "type": "integer"
+          }
+        },
+        "required": ["name", "conclusion"]
+      }
+    },
+    "ralphLoopState": {
+      "type": "object",
+      "description": "Ralph-loop error fixing state",
+      "properties": {
+        "active": {
+          "type": "boolean",
+          "description": "Whether ralph-loop is currently running"
+        },
+        "iteration": {
+          "type": "integer",
+          "description": "Current iteration number",
+          "minimum": 0
+        },
+        "maxIterations": {
+          "type": "integer",
+          "description": "Maximum allowed iterations",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "targetError": {
+          "type": "object",
+          "description": "Error being fixed in current iteration",
+          "properties": {
+            "errorType": {
+              "type": "string",
+              "enum": ["typescript", "eslint", "vitest", "build", "coverage"]
+            },
+            "file": {
+              "type": "string"
+            },
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "completionPromise": {
+          "type": "string",
+          "description": "Condition that indicates successful completion",
+          "examples": [
+            "All GitHub Actions checks pass",
+            "gh pr checks shows all ✓"
+          ]
+        },
+        "promiseVerified": {
+          "type": "boolean",
+          "description": "Whether completion promise has been verified"
+        },
+        "fixedErrors": {
+          "type": "array",
+          "description": "Errors fixed in this iteration",
+          "items": {
+            "type": "object",
+            "properties": {
+              "errorType": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              },
+              "fix": {
+                "type": "string"
+              },
+              "commitHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{7,40}$"
+              }
+            }
+          }
+        }
+      },
+      "required": ["active", "iteration", "maxIterations"]
+    },
+    "executionMetrics": {
+      "type": "object",
+      "description": "Execution time metrics",
+      "properties": {
+        "startTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "phaseTimings": {
+          "type": "object",
+          "properties": {
+            "auto_detect": {
+              "type": "number",
+              "description": "Duration in seconds"
+            },
+            "initialization": {
+              "type": "number"
+            },
+            "analysis": {
+              "type": "number"
+            },
+            "pr_creation": {
+              "type": "number"
+            },
+            "ci_monitoring": {
+              "type": "number"
+            },
+            "error_fixing": {
+              "type": "number"
+            },
+            "finalization": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "description": "Errors encountered during execution",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recoverable": {
+            "type": "boolean"
+          }
+        },
+        "required": ["phase", "message", "timestamp"]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Non-critical warnings",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["phase", "timestamp"],
+  "definitions": {
+    "errorPattern": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["enabled", "pattern"]
+    }
+  },
+  "examples": [
+    {
+      "phase": "error_fixing",
+      "timestamp": "2026-01-13T20:45:23Z",
+      "detectedStack": {
+        "backend": "Python 3 + FastAPI",
+        "frontend": "TypeScript + Vite + HTMX + Tailwind",
+        "database": "PostgreSQL 16",
+        "testing": "Vitest + pytest"
+      },
+      "cicdConfig": {
+        "platform": "GitHub Actions",
+        "workflows": [
+          {
+            "name": "frontend-tests",
+            "jobs": ["type-check", "unit-tests", "build-check", "lint"],
+            "triggers": ["push", "pull_request"]
+          }
+        ],
+        "requiredChecks": [
+          "TypeScript Type Check",
+          "Unit & Integration Tests",
+          "Build Verification",
+          "Linting & Formatting"
+        ]
+      },
+      "prInfo": {
+        "number": 312,
+        "url": "https://github.com/ikeniborn/familyBudget/pull/312",
+        "sourceBranch": "feature/transaction-filters",
+        "targetBranch": "test",
+        "isDraft": true,
+        "createdAt": "2026-01-13T20:30:00Z"
+      },
+      "currentCheck": {
+        "name": "TypeScript Type Check",
+        "status": "failure",
+        "runId": 123456789,
+        "startedAt": "2026-01-13T20:31:00Z",
+        "detailsUrl": "https://github.com/ikeniborn/familyBudget/actions/runs/123456789"
+      },
+      "ralphLoopState": {
+        "active": true,
+        "iteration": 2,
+        "maxIterations": 5,
+        "targetError": {
+          "errorType": "typescript",
+          "file": "frontend/web/static/js/budget/transactionFilter.ts",
+          "line": 45,
+          "message": "Type 'string' is not assignable to type 'number'"
+        },
+        "completionPromise": "gh pr checks 312 shows all ✓",
+        "promiseVerified": false,
+        "fixedErrors": [
+          {
+            "errorType": "typescript",
+            "file": "frontend/web/static/js/budget/transactionFilter.ts",
+            "fix": "Added parseInt() conversion",
+            "commitHash": "abc123def"
+          }
+        ]
+      },
+      "executionMetrics": {
+        "startTime": "2026-01-13T20:25:00Z",
+        "phaseTimings": {
+          "auto_detect": 45,
+          "initialization": 72,
+          "analysis": 68,
+          "pr_creation": 23,
+          "ci_monitoring": 296
+        }
+      },
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

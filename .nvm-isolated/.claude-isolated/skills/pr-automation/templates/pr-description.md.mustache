@@ -1,0 +1,137 @@
+## Summary
+
+{{summary}}
+
+## Changes
+
+{{#commits}}
+- {{message}} ({{author}}){{#hash}} - [`{{hash}}`]({{repositoryUrl}}/commit/{{hash}}){{/hash}}
+{{/commits}}
+
+## Files Changed
+
+{{#changedFiles}}
+- `{{path}}` (+{{additions}} -{{deletions}})
+{{/changedFiles}}
+
+{{#hasSignificantChanges}}
+### Significant Changes
+
+{{#typescriptChanges}}
+#### TypeScript Changes
+{{#files}}
+- `{{file}}`: {{description}}
+{{/files}}
+{{/typescriptChanges}}
+
+{{#backendChanges}}
+#### Backend Changes
+{{#files}}
+- `{{file}}`: {{description}}
+{{/files}}
+{{/backendChanges}}
+
+{{#databaseChanges}}
+#### Database Changes
+{{#files}}
+- `{{file}}`: {{description}}
+{{/files}}
+{{/databaseChanges}}
+{{/hasSignificantChanges}}
+
+## Test Plan
+
+{{#hasTypescriptChanges}}
+- [ ] TypeScript type check passes (`npm run type-check`)
+{{/hasTypescriptChanges}}
+{{#hasFrontendChanges}}
+- [ ] Frontend tests pass (`npm test`)
+- [ ] Build verification successful (`npm run build`)
+- [ ] Bundle size within limits (< 500KB)
+{{/hasFrontendChanges}}
+{{#hasBackendChanges}}
+- [ ] Backend tests pass (`pytest`)
+- [ ] API endpoints tested
+{{/hasBackendChanges}}
+{{#hasDatabaseChanges}}
+- [ ] Database migrations tested
+- [ ] Schema changes verified
+{{/hasDatabaseChanges}}
+{{#hasIntegrationTests}}
+- [ ] Integration tests pass
+{{/hasIntegrationTests}}
+
+## Code Quality
+
+- [ ] ESLint passes (no `console.log` statements)
+- [ ] Prettier formatting applied
+- [ ] Code review completed
+- [ ] No TypeScript errors
+{{#coverageRequired}}
+- [ ] Coverage thresholds met (Lines: {{coverageThreshold.lines}}%, Functions: {{coverageThreshold.functions}}%, Branches: {{coverageThreshold.branches}}%)
+{{/coverageRequired}}
+
+## Deployment Notes
+
+{{#deploymentNotes}}
+{{deploymentNotes}}
+{{/deploymentNotes}}
+{{^deploymentNotes}}
+No special deployment considerations.
+{{/deploymentNotes}}
+
+{{#breakingChanges}}
+### ⚠️ Breaking Changes
+
+{{breakingChanges}}
+{{/breakingChanges}}
+
+## Related Issues
+
+{{#relatedIssues}}
+- Closes #{{issueNumber}}: {{issueTitle}}
+{{/relatedIssues}}
+{{^relatedIssues}}
+No related issues.
+{{/relatedIssues}}
+
+## Screenshots / Videos
+
+{{#screenshots}}
+{{#items}}
+### {{title}}
+![{{alt}}]({{url}})
+{{/items}}
+{{/screenshots}}
+{{^screenshots}}
+_No visual changes._
+{{/screenshots}}
+
+---
+
+## Automated Checks
+
+This PR is monitored by **pr-automation skill**. All CI/CD checks will be automatically fixed if possible.
+
+**Auto-fix enabled for:**
+{{#autoFixEnabled}}
+- ✅ TypeScript errors (TS2322, TS2304, TS2345, etc.)
+- ✅ ESLint violations (no-console, no-unused-vars, etc.)
+- ✅ Test failures (assertion errors, mock issues)
+- ✅ Build errors (module not found, syntax errors)
+{{/autoFixEnabled}}
+{{^autoFixEnabled}}
+- ❌ Auto-fix disabled (manual intervention required)
+{{/autoFixEnabled}}
+
+**Completion promise:** {{completionPromise}}
+
+**Max fix iterations:** {{maxFixIterations}}
+
+---
+
+🤖 Generated with **Claude Code pr-automation skill** v{{skillVersion}}
+
+{{#generatedAt}}
+_Generated at: {{generatedAt}}_
+{{/generatedAt}}
