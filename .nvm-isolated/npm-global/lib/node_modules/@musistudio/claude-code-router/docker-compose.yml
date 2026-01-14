@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  claude-code-router:
+    build: .
+    ports:
+      - "3456:3456"
+    volumes:
+      - ~/.claude-code-router:/root/.claude-code-router
+    restart: unless-stopped

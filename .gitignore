@@ -70,9 +70,4 @@ scripts/.claude_proxy_credentials
 # Prevent accidental commit of runtime router config
 .claude-code-router/
 
-# Docker
-docker-compose.override.yml
 
-# Catalog
-workflow/.claude_git_proxy_backup
-.claude/

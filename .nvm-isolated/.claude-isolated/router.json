@@ -1,9 +1,9 @@
 {
   "providers": {
     "deepseek": {
-      "type": "deepseek",
-      "apiKey": "${DEEPSEEK_API_KEY}",
-      "baseURL": "https://api.deepseek.com"
+      "type": "qwen",
+      "apiKey": "eyJhbGciOiJIUzUxMiJ9.eyJ1c2VyX3V1aWQiOiIwMTliYjY1Ny0zYzVjLTdhMWYtOTQwNC05YzgwNThjMDVhZTMiLCJsb2dpbiI6ImkueS50aXNjaGVua29Ac291dGgucnQucnUiLCJpYXQiOjE3NjgyOTA3NjYsImV4cCI6MTc3NjA2Njc2Nn0.Z245fPpT94oruT2Pg1giXHG7VNp09aPndB2AW6y2Du-dLIVmyXpIvpvCugUWJME9zLtffPC7RiIz9O5EHmGb7A",
+      "baseURL": "https://test.dataforge.rt.ru/api/1.0/back/chat/completions"
     }
   },
   "models": {
