@@ -1168,6 +1168,21 @@ install_from_lockfile() {
 		fi
 	fi
 
+	# Install gh CLI if version specified in lockfile
+	local gh_version=$(grep -oP '"ghCliVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
+
+	if [[ "$gh_version" != "not installed" ]] && [[ "$gh_version" != "unknown" ]]; then
+		echo ""
+		print_info "Installing gh CLI version: $gh_version (from lockfile)"
+		echo ""
+
+		# Вызвать существующую функцию установки
+		install_isolated_gh || {
+			print_warning "Failed to install gh CLI from lockfile (non-critical)"
+			echo ""
+		}
+	fi
+
 	# Install LSP servers and plugins from lockfile
 	# Check jq dependency
 	if ! command -v jq &>/dev/null; then
@@ -1565,7 +1580,12 @@ check_isolated_status() {
 		print_success "Lockfile: PRESENT"
 		echo "  File: $ISOLATED_LOCKFILE"
 		echo "  Content:"
-		cat "$ISOLATED_LOCKFILE" | grep -E "(nodeVersion|claudeCodeVersion|installedAt)" | sed 's/^/    /'
+		# Показать полный lockfile с форматированием
+		if command -v jq &>/dev/null; then
+			jq -r 'to_entries[] | "    \(.key): \(.value)"' "$ISOLATED_LOCKFILE"
+		else
+			cat "$ISOLATED_LOCKFILE" | sed 's/^/    /'
+		fi
 	else
 		print_warning "Lockfile: NOT FOUND"
 		echo "  Will be created after: iclaude --isolated-install"
@@ -3888,6 +3908,7 @@ OPTIONS:
   --install-router                  Install Claude Code Router in isolated environment
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
+  --no-chrome                       Disable Chrome integration (enabled by default)
   --install-gh                      Install gh CLI in isolated environment
   --check-gh                        Check gh CLI status and authentication
   --install-lsp [LANGUAGES]         Install LSP servers+plugins (typescript, python, go, rust)
@@ -4087,6 +4108,7 @@ main() {
     local use_shared_config=false
     local claude_args=()
     local USE_ROUTER_FLAG=false
+    local USE_CHROME=true  # Chrome integration enabled by default
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -4284,6 +4306,10 @@ main() {
                 USE_ROUTER_FLAG=true
                 shift
                 ;;
+            --no-chrome)
+                USE_CHROME=false
+                shift
+                ;;
             --no-test)
                 skip_test=true
                 shift
@@ -4391,6 +4417,11 @@ main() {
             claude_args+=("--dangerously-skip-permissions")
         fi
 
+        # Add --chrome flag if enabled (default)
+        if [[ "$USE_CHROME" == true ]]; then
+            claude_args+=("--chrome")
+        fi
+
         # Launch Claude Code without proxy
         launch_claude "$use_system" "${claude_args[@]}"
         exit 0
@@ -4476,6 +4507,11 @@ main() {
     # Add --dangerously-skip-permissions by default (unless --save is used)
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
+    fi
+
+    # Add --chrome flag if enabled (default)
+    if [[ "$USE_CHROME" == true ]]; then
+        claude_args+=("--chrome")
     fi
 
     # Launch Claude Code

@@ -91,6 +91,19 @@ bash -n iclaude.sh
 ./iclaude.sh
 ```
 
+### Chrome Integration Commands
+
+```bash
+# Launch WITHOUT Chrome integration (Chrome enabled by default)
+./iclaude.sh --no-chrome
+
+# Chrome is enabled by default, so this is equivalent to plain launch:
+./iclaude.sh  # Chrome integration included
+
+# Combine with other flags (proxy without Chrome)
+./iclaude.sh --proxy https://proxy:8118 --no-chrome
+```
+
 ### LSP Server Management
 
 ```bash
@@ -138,14 +151,34 @@ The script is organized into functional modules:
 - **Lockfile Format**:
   ```json
   {
-    "nodeVersion": "18.20.8",
-    "claudeCodeVersion": "2.0.50",
-    "routerVersion": "1.0.0",
-    "installedAt": "2025-11-23T13:13:54Z",
+    "nodeVersion": "18.20.8",           // Node.js version
+    "claudeCodeVersion": "2.1.7",       // Claude Code CLI
+    "routerVersion": "unknown",         // Claude Code Router (or "not installed")
+    "ghCliVersion": "2.45.0",           // GitHub CLI (or "not installed")
+    "lspServers": {                     // LSP server binaries
+      "pyright": "1.1.347",
+      "@vtsls/language-server": "0.2.3"
+    },
+    "lspPlugins": {                     // Claude Code LSP plugins
+      "pyright-lsp@claude-plugins-official": "1.0.0",
+      "typescript-lsp@claude-plugins-official": "1.0.0"
+    },
+    "installedAt": "2026-01-14T10:39:51Z",
     "nvmVersion": "0.39.7"
   }
   ```
-  **Note**: `routerVersion` is `"not installed"` if router not installed, or version string if installed.
+
+**Complete installation from lockfile**:
+```bash
+./iclaude.sh --install-from-lockfile
+```
+
+This installs exact versions of:
+- Node.js
+- Claude Code CLI
+- Router (if version != "not installed")
+- **gh CLI** (if version != "not installed") ← Now restored from lockfile
+- **LSP servers** (all listed versions) ← Now restored from lockfile
 
 #### 4. Configuration Isolation (`setup_isolated_config`, `check_config_status`, `export_config`, `import_config`)
 - **Location**: iclaude.sh:1099-1341
@@ -525,6 +558,30 @@ The test performs:
 - Using IP instead of domain causes authentication failures
 
 ## Common Development Tasks
+
+### Using Chrome Integration
+
+**Chrome integration is ENABLED BY DEFAULT** when launching Claude Code via iclaude.sh.
+
+To disable Chrome integration:
+```bash
+./iclaude.sh --no-chrome
+```
+
+**Requirements:**
+- Google Chrome browser installed and running
+- Claude in Chrome extension v1.0.36 or higher
+- Claude Code CLI v2.0.73 or higher
+- Paid Claude plan (Pro/Team/Enterprise)
+
+**Capabilities:**
+- Navigate pages and open tabs
+- Click elements and input text
+- Fill forms
+- Read console logs and network requests
+- Record GIF of interactions
+
+**Note:** Chrome integration increases context usage. Use `--no-chrome` if you don't need browser automation.
 
 ### Adding New Command-Line Options
 
