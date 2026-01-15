@@ -1,9 +1,9 @@
 ---
 name: Structured Planning
 description: Создание планов задач с адаптивной JSON Schema
-version: 2.1.0
-tags: [planning, json-schema, structured-output, skill-generation]
-dependencies: [thinking-framework, adaptive-workflow, skill-generator]
+version: 2.2.0
+tags: [planning, json-schema, structured-output, skill-generation, prd]
+dependencies: [thinking-framework, adaptive-workflow, skill-generator, prd-generator]
 files:
   templates: ./templates/*.json
   schemas: ./schemas/*.json
@@ -406,3 +406,385 @@ structured-planning автоматически использует `fastapi-dev
 4. Customize templates под паттерны проекта
 5. Commit skill в git
 6. Использовать в следующих задачах автоматически
+
+---
+
+## PRD Generator Integration (Product Requirements Documents)
+
+**Активируется когда:** Complex задача с большим количеством требований и без существующего PRD
+
+Когда structured-planning обнаруживает complex задачу (complexity_result.level == "complex") с множественными features/requirements, но проект не имеет Product Requirements Document, предлагает создать PRD через prd-generator BEFORE планирования для лучшей структуризации требований.
+
+### Зачем создавать PRD перед планированием:
+
+**1. Structured requirements:**
+- Единый источник правды для всех требований
+- 14 стандартных разделов (от Executive Summary до Appendices)
+- 5 Mermaid диаграмм (Product Vision, User Journey, System Context, Feature Dependencies, Roadmap)
+- Детальная спецификация каждой фичи (User Story + Acceptance Criteria)
+
+**2. Better task plans:**
+- structured-planning использует PRD как входные данные
+- execution_steps создаются на основе Functional Requirements
+- acceptance_criteria берутся из PRD §6 Feature Specifications
+- Technical constraints учитываются из PRD §9 Technical Requirements
+
+**3. Team alignment:**
+- Product Manager, Designer, Developer работают с одним документом
+- Newcomers быстро понимают product vision
+- Stakeholders имеют comprehensive overview
+
+**4. Long-term maintainability:**
+- PRD эволюционирует с продуктом (UPDATE mode)
+- Roadmap tracking из PRD §10
+- Risk management из PRD §11
+
+### Когда предлагать создание PRD:
+
+**Триггеры:**
+
+1. **Complex task with multiple features:**
+   - complexity_result.level == "complex"
+   - execution_steps содержат 5+ features (разные фичи, не steps одной фичи)
+   - Каждая фича имеет собственные acceptance criteria
+
+2. **New product/major feature:**
+   - Задача начинается со слов "Create new product", "Build {product}", "Implement major feature"
+   - Требуется business goals, target audience, roadmap
+   - Нет существующего PRD в `docs/prd/`
+
+3. **Feature-rich project without PRD:**
+   - context-awareness определяет проект как feature-rich (10+ файлов, 3+ модулей)
+   - `docs/prd/` отсутствует
+   - task_plan содержит 3+ разных модулей/компонентов
+
+**НЕ предлагать если:**
+- Задача simple/minimal (1-2 файла, straightforward fix)
+- PRD уже существует в `docs/prd/` (но можно предложить UPDATE)
+- Задача purely technical (refactoring без новых features)
+- Задача bug fix или minor enhancement
+
+### Алгоритм интеграции:
+
+```python
+# Step 1: Detect need for PRD during planning
+def check_prd_needed(task_context, complexity_result, execution_steps):
+    # Проверить существование PRD
+    prd_exists = os.path.exists("docs/prd/README.md")
+
+    # Подсчитать количество features в execution_steps
+    features = extract_features(execution_steps)  # ["User auth", "Dashboard", "Reports", "Notifications"]
+    feature_count = len(features)
+
+    # Определить масштаб задачи
+    is_complex = complexity_result.level == "complex"
+    is_feature_rich = feature_count >= 5
+    is_new_product = task_context.task_name.lower().startswith(("create", "build", "implement major"))
+
+    # Триггеры
+    needs_prd = False
+    reason = None
+
+    if is_complex and is_feature_rich and not prd_exists:
+        needs_prd = True
+        reason = f"Complex task with {feature_count} features, no PRD exists"
+    elif is_new_product and not prd_exists:
+        needs_prd = True
+        reason = "New product development, PRD recommended for requirements clarity"
+
+    return needs_prd, reason, prd_exists
+
+# Step 2: Offer PRD generation (non-blocking)
+IF needs_prd:
+    output_recommendation = f"""
+    💡 **Recommendation: Create Product Requirements Document (PRD)**
+
+    {reason}
+
+    Creating a PRD would provide:
+    - Structured requirements (14 sections)
+    - Visual diagrams (5 Mermaid charts)
+    - Detailed feature specs (User Stories + Acceptance Criteria)
+    - Roadmap and risk analysis
+
+    **Generate now:** `/prd-generator`
+
+    **Or skip** and continue with ad-hoc planning for this task.
+    """
+
+    # НЕ блокировать execution
+    # structured-planning продолжает без PRD
+    # Но если PRD создан, использовать его данные
+
+# Step 3: Use existing PRD (if available)
+IF prd_exists:
+    # Read PRD data
+    prd_data = read_prd_documents("docs/prd/")
+
+    # Enrich task_plan with PRD data:
+    # 1. acceptance_criteria ← PRD §6 Feature Specifications
+    # 2. risks ← PRD §11 Risks + add task-specific risks
+    # 3. git.commit_summary ← Based on PRD §10 Roadmap phase
+    # 4. execution_steps ← PRD §6 Functional Requirements breakdown
+    # 5. Non-functional requirements ← PRD §7 NFR (performance, security)
+
+    task_plan = {
+        "task_name": task_context.task_name,
+        "problem": task_context.problem,
+        "solution": task_context.solution,
+        "acceptance_criteria": prd_data.features[0].acceptance_criteria,  # From PRD
+        "execution_steps": generate_steps_from_prd(prd_data.functional_requirements),
+        "risks": prd_data.risks + task_specific_risks,
+        "git": {
+            "branch_name": f"feature/{slug(task_context.task_name)}",
+            "commit_type": "feat",
+            "commit_summary": f"Implement {prd_data.features[0].name} (Roadmap {prd_data.current_phase})"
+        },
+        "prd_reference": {
+            "prd_path": "docs/prd/",
+            "feature_file": f"docs/prd/06-functional-requirements/features/feature-{slug(task_context.task_name)}.md",
+            "roadmap_phase": prd_data.current_phase
+        }
+    }
+ELSE:
+    # Генерировать task_plan с generic approach (текущее поведение)
+```
+
+### Пример: New SaaS product без PRD
+
+**Задача:** "Create user management system with authentication, roles, permissions, audit logging, and user analytics"
+
+**structured-planning обнаруживает:**
+- Complexity: complex (определено adaptive-workflow)
+- Features: 5 (authentication, roles, permissions, audit, analytics)
+- PRD exists: No (docs/prd/ отсутствует)
+
+**Вывод рекомендации:**
+
+```markdown
+💡 **Recommendation: Create Product Requirements Document (PRD)**
+
+Complex task with 5 features, no PRD exists:
+- User authentication
+- Role management
+- Permission system
+- Audit logging
+- User analytics
+
+Creating a PRD would provide:
+- Structured requirements (14 sections)
+- Visual diagrams (5 Mermaid charts)
+- Detailed feature specs (User Stories + Acceptance Criteria)
+- Roadmap and risk analysis
+
+**Generate now:** `/prd-generator`
+
+**Or skip** and continue with ad-hoc planning for this task.
+```
+
+**Если user выбирает генерацию:**
+
+```bash
+# User запускает
+/prd-generator
+
+# Interactive questionnaire (12 questions):
+Q1: Product Name? → User Management System
+Q2: Product Type? → SaaS
+Q3: Target Audience? → B2B SaaS customers, IT administrators
+Q4: Business Goals? → Centralize user management, Reduce admin overhead by 50%, Improve security compliance
+Q5: Success Metrics? → MAU, Admin time saved, Security incidents
+Q6: Core Features? → Authentication, Roles, Permissions, Audit, Analytics
+Q7: User Scenarios? → Admin creates user, User logs in, Admin assigns role, Compliance officer reviews audit logs
+Q8: Tech Stack? → Backend: FastAPI + PostgreSQL, Frontend: React + TypeScript
+Q9: Integrations? → SAML SSO, Active Directory, Okta
+Q10: Timeline? → MVP (Q1 2026), Beta (Q2 2026), GA (Q3 2026)
+Q11: Risks? → SAML integration complexity, AD sync performance
+Q12: Target Directory? → docs/prd/
+
+# prd-generator creates:
+✅ docs/prd/README.md (navigation)
+✅ docs/prd/01-executive-summary.md
+✅ docs/prd/02-goals-and-scope.md
+✅ docs/prd/03-product-overview.md
+✅ docs/prd/04-target-audience.md (2 personas: IT Admin, Compliance Officer)
+✅ docs/prd/05-business-requirements.md
+✅ docs/prd/06-functional-requirements/overview.md
+✅ docs/prd/06-functional-requirements/features/feature-authentication.md
+✅ docs/prd/06-functional-requirements/features/feature-roles.md
+✅ docs/prd/06-functional-requirements/features/feature-permissions.md
+✅ docs/prd/06-functional-requirements/features/feature-audit.md
+✅ docs/prd/06-functional-requirements/features/feature-analytics.md
+✅ docs/prd/07-non-functional-requirements.md
+✅ docs/prd/08-user-interface/design-guidelines.md
+✅ docs/prd/09-technical-requirements/architecture.md
+✅ docs/prd/10-roadmap.md
+✅ docs/prd/11-risks.md
+✅ docs/prd/12-testing.md
+✅ docs/prd/13-launch-and-support.md
+✅ docs/prd/14-appendices/glossary.md
+✅ docs/prd/diagrams/product-vision.mmd
+✅ docs/prd/diagrams/user-journey.mmd
+✅ docs/prd/diagrams/system-context.mmd
+✅ docs/prd/diagrams/feature-dependencies.mmd
+✅ docs/prd/diagrams/roadmap-timeline.mmd
+```
+
+**После создания PRD, structured-planning использует его:**
+
+```json
+{
+  "task_plan": {
+    "task_name": "Implement user authentication",
+    "problem": "Users need secure login mechanism",
+    "solution": "SAML SSO + password-based auth with MFA",
+    "acceptance_criteria": [
+      "Given user enters valid credentials, when submits login form, then user is authenticated",
+      "Given user has MFA enabled, when logs in, then OTP is required",
+      "Given SAML is configured, when user clicks SSO, then redirected to IdP"
+    ],
+    "execution_steps": [
+      {
+        "step_number": 1,
+        "description": "Create authentication endpoints (from PRD §6 feature-authentication.md)",
+        "actions": [
+          "POST /auth/login - Password-based authentication",
+          "POST /auth/mfa/verify - MFA verification",
+          "GET /auth/saml/redirect - SAML SSO redirect"
+        ],
+        "validation": "pytest tests/test_auth.py"
+      },
+      {
+        "step_number": 2,
+        "description": "Implement session management (from PRD §7 NFR: session timeout 30 min)",
+        "actions": [
+          "Create Redis session store",
+          "Implement session refresh endpoint",
+          "Add session cleanup cron job"
+        ],
+        "validation": "pytest tests/test_session.py"
+      }
+    ],
+    "risks": [
+      {"risk": "SAML integration complexity (from PRD §11)", "mitigation": "Use existing library (python-saml), allocate 2 weeks for testing"},
+      {"risk": "MFA bypassed", "mitigation": "Add rate limiting + audit logging"}
+    ],
+    "git": {
+      "branch_name": "feature/user-authentication",
+      "commit_type": "feat",
+      "commit_summary": "Implement user authentication (Roadmap MVP Q1 2026)"
+    },
+    "prd_reference": {
+      "prd_path": "docs/prd/",
+      "feature_file": "docs/prd/06-functional-requirements/features/feature-authentication.md",
+      "roadmap_phase": "MVP (Q1 2026)"
+    }
+  }
+}
+```
+
+### Workflow diagram:
+
+```
+User Task: "Create user management system..."
+  ↓
+adaptive-workflow → complexity = "complex"
+  ↓
+structured-planning → detect 5 features, no PRD
+  ↓
+💡 Recommend: /prd-generator
+  ↓
+┌─────────────────────┬──────────────────────┐
+│ User skips          │ User creates PRD     │
+│ (ad-hoc planning)   │ (/prd-generator)     │
+├─────────────────────┼──────────────────────┤
+│ structured-planning │ prd-generator runs   │
+│ generates generic   │ → 14 sections + 5    │
+│ task_plan           │ diagrams created     │
+│                     │ ↓                    │
+│                     │ structured-planning  │
+│                     │ reads PRD data       │
+│                     │ → enriched task_plan │
+└─────────────────────┴──────────────────────┘
+  ↓
+Execution with task_plan
+```
+
+### Benefits of PRD-first approach:
+
+**1. Front-loaded clarity:**
+- Все требования документированы BEFORE coding
+- Stakeholders align на Product Vision (PRD §3)
+- Developer имеет complete context (PRD §6-§9)
+
+**2. Reduced rework:**
+- Acceptance Criteria из PRD (не придумываются на ходу)
+- Non-functional requirements учтены (PRD §7: performance, security)
+- Risks identified early (PRD §11)
+
+**3. Consistency across tasks:**
+- Следующие tasks тоже используют PRD
+- Терминология консистентна (PRD §14 Glossary)
+- Features координируются через PRD §10 Roadmap
+
+**4. Traceable progress:**
+- structured-planning ссылается на PRD feature file
+- Commits включают roadmap phase
+- Easy to track "Which features from PRD are implemented?"
+
+### UPDATE mode (when PRD exists):
+
+**Scenario:** PRD уже создан, но появились новые требования
+
+```python
+IF prd_exists:
+    # Check if task adds new feature
+    new_features = detect_new_features(task_context, prd_data.features)
+
+    IF new_features:
+        output_recommendation = f"""
+        💡 **Recommendation: Update PRD with new features**
+
+        This task introduces new features not in existing PRD:
+        {new_features}
+
+        **Update PRD:** `/prd-generator` (UPDATE mode)
+
+        prd-generator will:
+        - Preserve existing content
+        - Add new feature files
+        - Update diagrams (feature-dependencies, roadmap)
+        - Smart merge with your custom changes
+
+        **Or skip** and proceed with task-specific planning.
+        """
+```
+
+### Backward Compatibility:
+
+- PRD generator integration полностью опциональная
+- Без PRD structured-planning работает с generic approach
+- Рекомендации не блокируют workflow
+- Существующие проекты без PRD продолжают работать
+
+### When to use PRD vs ad-hoc planning:
+
+| Factor | Use PRD | Use Ad-hoc Planning |
+|--------|---------|---------------------|
+| **Task complexity** | Complex (5+ features) | Simple/Standard (1-3 features) |
+| **New product** | Yes (create PRD) | No (single feature addition) |
+| **Stakeholder involvement** | High (PM, Design, Dev) | Low (dev-only task) |
+| **Documentation needs** | Regulatory compliance, external docs | Internal implementation only |
+| **Long-term project** | Yes (evolving requirements) | No (one-off task) |
+| **Team size** | >3 people | 1-2 developers |
+
+### Next Steps (для user):
+
+**После получения рекомендации создать PRD:**
+
+1. Запустить `/prd-generator`
+2. Ответить на 12 интерактивных вопросов
+3. Проверить сгенерированные 14 разделов + 5 диаграмм
+4. Customize PRD (add specifics, refine personas)
+5. Commit PRD в git
+6. structured-planning автоматически использует PRD в следующих tasks
