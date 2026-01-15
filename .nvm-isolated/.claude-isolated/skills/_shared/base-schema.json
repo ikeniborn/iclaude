@@ -1,0 +1,362 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.code/skills/_shared/base-schema.json",
+  "$comment": "Базовая JSON Schema с переиспользуемыми definitions для всех skills",
+  "title": "Base Schema Definitions",
+  "description": "Централизованные definitions для git, file changes, code review, tests, execution steps",
+  "version": "1.0.0",
+  "definitions": {
+    "git": {
+      "$comment": "Git branch and commit information",
+      "type": "object",
+      "properties": {
+        "branch_name": {
+          "type": "string",
+          "pattern": "^(feature|fix|refactor|chore|test|docs|perf|style)/[a-z0-9_-]+$",
+          "description": "Git branch name following conventional format: prefix/name",
+          "examples": [
+            "feature/add-user-auth",
+            "fix/login-bug",
+            "refactor/cleanup-code"
+          ]
+        },
+        "commit_type": {
+          "type": "string",
+          "enum": ["feat", "fix", "refactor", "docs", "test", "chore", "perf", "style"],
+          "description": "Conventional Commits type"
+        },
+        "commit_summary": {
+          "type": "string",
+          "maxLength": 72,
+          "minLength": 10,
+          "description": "Commit message summary (imperative mood, max 72 chars)",
+          "examples": [
+            "Add user authentication system",
+            "Fix login validation bug",
+            "Refactor database connection"
+          ]
+        },
+        "commit_body": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Detailed commit message body (optional)"
+        },
+        "co_authored_by": {
+          "type": "string",
+          "pattern": "^[^<>]+\\s<[^@]+@[^>]+>$",
+          "description": "Co-author in format: Name <email@domain.com>",
+          "examples": ["Claude Sonnet 4.5 <noreply@anthropic.com>"]
+        }
+      },
+      "required": ["branch_name", "commit_type", "commit_summary"],
+      "additionalProperties": false
+    },
+    "file_change": {
+      "$comment": "File modification information",
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative or absolute file path",
+          "examples": [
+            "src/service.py",
+            "tests/test_service.py",
+            ".nvm-isolated/.claude-isolated/skills/my-skill/SKILL.md"
+          ]
+        },
+        "change_type": {
+          "type": "string",
+          "enum": ["create", "modify", "delete", "rename"],
+          "description": "Type of file operation"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Description of changes made to the file",
+          "examples": [
+            "Add user authentication endpoint",
+            "Fix SQL injection vulnerability",
+            "Rename variable for clarity"
+          ]
+        },
+        "old_path": {
+          "type": "string",
+          "description": "Original file path (for rename operation)"
+        },
+        "lines_added": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of lines added"
+        },
+        "lines_deleted": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of lines deleted"
+        }
+      },
+      "required": ["file_path", "change_type"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "rename requires old_path",
+          "if": {
+            "properties": {
+              "change_type": {"const": "rename"}
+            }
+          },
+          "then": {
+            "required": ["old_path"]
+          }
+        }
+      ]
+    },
+    "code_review_issue": {
+      "$comment": "Code review issue/warning",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "security",
+            "code_quality",
+            "error_handling",
+            "type_safety",
+            "performance",
+            "maintainability",
+            "best_practices",
+            "naming",
+            "documentation"
+          ],
+          "description": "Issue category"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["BLOCKING", "WARNING", "INFO"],
+          "description": "Issue severity level"
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "File path where issue found"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line number where issue found"
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Column number where issue starts (optional)"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Issue description"
+        },
+        "suggestion": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Suggested fix or improvement"
+        },
+        "code_snippet": {
+          "type": "string",
+          "description": "Relevant code snippet showing the issue"
+        }
+      },
+      "required": ["category", "severity", "file", "message"],
+      "additionalProperties": false
+    },
+    "test_result": {
+      "$comment": "Test execution result",
+      "type": "object",
+      "properties": {
+        "test_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Test case name or description",
+          "examples": [
+            "test_user_login_success",
+            "TestUserAuthentication.test_invalid_credentials",
+            "should return 404 for non-existent user"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed", "skipped", "error"],
+          "description": "Test execution status"
+        },
+        "duration_ms": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Test execution time in milliseconds"
+        },
+        "error_message": {
+          "type": "string",
+          "description": "Error message if test failed"
+        },
+        "stack_trace": {
+          "type": "string",
+          "description": "Full stack trace for failed tests"
+        },
+        "file": {
+          "type": "string",
+          "description": "Test file path"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line number where test defined"
+        }
+      },
+      "required": ["test_name", "status"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "failed tests require error_message",
+          "if": {
+            "properties": {
+              "status": {"enum": ["failed", "error"]}
+            }
+          },
+          "then": {
+            "required": ["error_message"]
+          }
+        }
+      ]
+    },
+    "execution_step": {
+      "$comment": "Single execution step in a task plan",
+      "type": "object",
+      "properties": {
+        "step_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential step number"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 200,
+          "description": "Step description (what will be done)",
+          "examples": [
+            "Create FastAPI endpoint for user login",
+            "Add Pydantic model for request validation",
+            "Write unit tests for endpoint"
+          ]
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 5
+          },
+          "minItems": 1,
+          "description": "List of actions to perform in this step",
+          "examples": [
+            ["Create file src/api/auth.py", "Add login endpoint function", "Add error handling"]
+          ]
+        },
+        "validation": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "How to verify step completion (tests, checks)",
+          "examples": [
+            "Run pytest tests/test_auth.py",
+            "Check endpoint returns 200 OK",
+            "Verify error handling with invalid input"
+          ]
+        },
+        "files_to_change": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/file_change"
+          },
+          "description": "Files modified in this step"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "Step numbers this step depends on",
+          "examples": [[1, 2]]
+        }
+      },
+      "required": ["step_number", "description", "actions"],
+      "additionalProperties": false
+    },
+    "validation_result": {
+      "$comment": "Validation result (schema, linting, tests, etc.)",
+      "type": "object",
+      "properties": {
+        "validator_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of validator that ran",
+          "examples": [
+            "YAML frontmatter",
+            "JSON Templates",
+            "JSON Schemas",
+            "Markdown Formatting",
+            "File Structure"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "warning", "failed"],
+          "description": "Overall validation status"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of error messages"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of warning messages"
+        },
+        "info": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Informational messages"
+        }
+      },
+      "required": ["validator_name", "status"],
+      "additionalProperties": false
+    },
+    "skill_dependency": {
+      "$comment": "Dependency between skills",
+      "type": "object",
+      "properties": {
+        "skill_name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Skill name (kebab-case)"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Required version (semver)"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether dependency is optional"
+        }
+      },
+      "required": ["skill_name"],
+      "additionalProperties": false
+    }
+  }
+}
