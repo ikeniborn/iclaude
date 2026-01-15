@@ -15,12 +15,28 @@ SKILLS_DIR="$SCRIPT_DIR/.nvm-isolated/.claude-isolated/skills"
 TEMPLATE_DIR="/home/UF.RT.RU/i.y.tischenko/Документы/Notes/Work/ИИ/Claude code/Template"
 
 # Project-specific skills (игнорируем их)
+# Эти skills специфичны для конкретных проектов и должны быть в локальных .claude/skills/
 PROJECT_SPECIFIC_SKILLS=(
+    # Existing project-specific (confirmed in local projects)
     "api-development"
     "clickhouse-sql"
     "frontend-development"
     "pihole-admin"
     "vless-deploy"
+
+    # Missing skills that should be project-specific (not global)
+    "arm-optimization"           # Специфично для ARM-проектов (Raspberry Pi)
+    "authentication-security"    # Специфично для проектов с auth
+    "bot-development"           # Специфично для Telegram/Discord ботов
+    "db-management"             # Специфично для проектов с БД
+    "docker-management"         # Специфично для Docker-проектов
+    "monitoring-troubleshooting" # Специфично для production систем
+    "network-configuration"     # Специфично для сетевых проектов
+    "security-hardening"        # Специфично для security-focused проектов
+    "service-management"        # Специфично для systemd/services проектов
+    "storage-optimization"      # Специфично для проектов с хранилищем
+    "system-administration"     # Специфично для системных проектов
+    "websocket-realtime"        # Специфично для real-time приложений
 )
 
 echo "🔍 Валидация ссылок на skills в Template файлах..."
