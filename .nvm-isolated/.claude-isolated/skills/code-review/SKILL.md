@@ -65,6 +65,73 @@ user-invocable: true
 - Implicit type conversions
 ```
 
+## LSP Integration (Optional)
+
+**Активируется когда:** `lsp_status.status == "READY"` (из lsp-integration skill)
+
+Когда LSP доступен, code-review использует Language Server Protocol для enhanced type checking и code intelligence:
+
+### Что предоставляет LSP:
+
+**1. Type Checking:**
+- Детектирование type mismatches
+- Поиск использования `Any` types (TypeScript)
+- Проверка missing type hints (Python via pyright)
+
+**2. Code Intelligence:**
+- Go-to-definition (проверка существования импортов)
+- Find-references (детектирование unused variables/functions)
+- Символы не найдены (undefined names)
+
+**3. LSP Diagnostics:**
+- Parsing LSP error messages
+- Merge в `code_review.warnings` с category: "type_safety"
+- Увеличенный score penalty для type errors
+
+### Алгоритм интеграции:
+
+```
+IF lsp_status.status == "READY":
+  1. Request LSP diagnostics for files_changed
+  2. Parse diagnostics response:
+     - severity: "error" → BLOCKING issue
+     - severity: "warning" → WARNING issue
+     - severity: "information" → INFO suggestion
+  3. Merge into code_review.warnings[]:
+     {
+       "category": "type_safety",
+       "severity": map_lsp_severity(diagnostic.severity),
+       "file": diagnostic.uri,
+       "line": diagnostic.range.start.line,
+       "message": diagnostic.message,
+       "suggestion": diagnostic.codeActions[0] (if available)
+     }
+  4. Adjust score:
+     - LSP errors: -10 points each (instead of -5)
+     - Total type_safety score capped at 25 points
+ELSE:
+  Skip LSP checks (fallback to regex-based checks)
+  Show info message: "LSP not available - basic checks only"
+```
+
+### Поддерживаемые LSP серверы:
+
+| Язык | LSP Server | Plugin |
+|------|------------|--------|
+| TypeScript | vtsls | typescript-lsp@claude-plugins-official |
+| Python | pyright | pyright-lsp@claude-plugins-official |
+| Go | gopls | gopls-lsp@claude-plugins-official |
+| Rust | rust-analyzer | rust-analyzer-lsp@claude-plugins-official |
+
+**Note:** См. [@skill:lsp-integration](../lsp-integration/SKILL.md) для установки LSP plugins.
+
+### Backward Compatibility:
+
+- LSP integration полностью опциональная
+- Без LSP skill работает с regex-based checks
+- Output формат одинаковый с/без LSP
+- `lsp_diagnostics` field добавляется только при LSP available
+
 ## Output
 
 ```json

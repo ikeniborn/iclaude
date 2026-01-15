@@ -22,10 +22,17 @@
 
     "execution_steps": [
       {
+        "$comment": "library_reference is optional - only present when library_docs.loaded == true",
         "step_number": 1,
         "description": "{{step_description}}",
         "actions": ["{{action_1}}", "{{action_2}}"],
-        "validation": "{{validation_command}}"
+        "validation": "{{validation_command}}",
+        "library_reference": {
+          "code_example": "{{code_snippet_from_docs}}",
+          "docs_url": "{{official_documentation_url}}",
+          "framework": "{{framework_name}}",
+          "pattern": "{{pattern_name}}"
+        }
       }
     ],
 
