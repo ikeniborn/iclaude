@@ -282,11 +282,9 @@ Example `rules/recommendations.md` with best practices and common pitfalls
 **5 Validators (run in parallel):**
 
 **Validator 1: YAML Frontmatter**
-- Check required fields exist: name, description, version, tags, dependencies, user-invocable
-- Validate types (name: string, tags: array, user-invocable: boolean)
-- Validate formats (version: semver `/^\d+\.\d+\.\d+$/`)
-- Check dependencies exist in skills/
-- Detect circular dependencies (DFS)
+- Use [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) for validation
+- Validates: required fields, types, formats (semver), dependencies, circular dependencies
+- See [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) for complete validation rules and error messages
 
 **Validator 2: JSON Templates**
 - Parse JSON syntax (catch SyntaxError)

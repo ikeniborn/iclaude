@@ -1,0 +1,94 @@
+{
+  "$comment": "Code review output template with optional LSP diagnostics",
+  "code_review": {
+    "score": 85,
+    "passed": true,
+    "blocking_issues": [
+      {
+        "category": "security",
+        "severity": "BLOCKING",
+        "file": "src/api/users.py",
+        "line": 42,
+        "message": "Potential SQL injection vulnerability",
+        "suggestion": "Use parameterized query instead of string concatenation",
+        "code_snippet": "query = f\"SELECT * FROM users WHERE email = '{email}'\""
+      }
+    ],
+    "warnings": [
+      {
+        "category": "code_quality",
+        "severity": "WARNING",
+        "file": "src/service.py",
+        "line": 65,
+        "message": "Function too long (72 lines)",
+        "suggestion": "Extract helper methods to reduce complexity"
+      },
+      {
+        "category": "type_safety",
+        "severity": "WARNING",
+        "file": "src/models.py",
+        "line": 15,
+        "message": "Missing type hint for function parameter",
+        "suggestion": "Add type hint: def process_data(data: dict) -> None"
+      }
+    ],
+    "suggestions": [
+      "Consider adding docstrings to public functions",
+      "Use constants instead of magic numbers"
+    ],
+    "lsp_diagnostics": [
+      {
+        "$comment": "Optional field - only present when lsp_status.status == 'READY'",
+        "source": "pyright",
+        "severity": "error",
+        "file": "src/service.py",
+        "line": 45,
+        "column": 12,
+        "message": "Type 'str' is not assignable to type 'int'",
+        "code": "TS2322",
+        "suggestion": "Add parseInt() conversion or change type annotation"
+      },
+      {
+        "source": "vtsls",
+        "severity": "warning",
+        "file": "frontend/app.ts",
+        "line": 23,
+        "column": 5,
+        "message": "Variable 'unusedVar' is declared but never used",
+        "code": "TS6133",
+        "suggestion": "Remove unused variable or prefix with underscore"
+      }
+    ],
+    "metrics": {
+      "security": {
+        "score": 20,
+        "max": 25,
+        "issues": 1
+      },
+      "code_quality": {
+        "score": 23,
+        "max": 25,
+        "issues": 1
+      },
+      "error_handling": {
+        "score": 25,
+        "max": 25,
+        "issues": 0
+      },
+      "type_safety": {
+        "score": 17,
+        "max": 25,
+        "issues": 3,
+        "$comment": "Includes 2 LSP diagnostics (if available)"
+      }
+    },
+    "files_reviewed": [
+      "src/api/users.py",
+      "src/service.py",
+      "src/models.py",
+      "frontend/app.ts"
+    ],
+    "lsp_available": true,
+    "$comment": "lsp_available: true когда lsp_status.status == 'READY', false иначе"
+  }
+}

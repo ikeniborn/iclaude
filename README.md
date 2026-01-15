@@ -724,6 +724,53 @@ prompt: |
 
 ---
 
+## Prerequisites (Внешние зависимости)
+
+Некоторые Skills используют внешние зависимости. Все они **опциональны** - Skills работают в fallback режиме без них.
+
+### Обязательные зависимости
+
+Только для Skills, связанных с Git:
+- **Git** - version control (обязательно для git-workflow, pr-automation)
+- **GitHub CLI (gh)** - создание PR, управление issues (обязательно для pr-automation)
+
+Установка:
+```bash
+# Ubuntu/Debian
+sudo apt install git gh
+
+# macOS
+brew install git gh
+
+# Аутентификация gh
+gh auth login
+```
+
+### Опциональные зависимости
+
+Расширяют возможности Skills (не обязательны):
+
+| Зависимость | Skills | Назначение | Установка |
+|-------------|--------|-----------|-----------|
+| **LSP Servers** | lsp-integration, code-review | Enhanced type checking | `/plugin install pyright-lsp` + `npm install -g pyright` |
+| **Context7 MCP** | context7-integration, structured-planning | Library docs, code examples | `npx @modelcontextprotocol/create-server context7` |
+| **Ralph-Loop Plugin** | pr-automation | Авто-фикс CI/CD errors | `/plugin install ralph-loop` |
+
+**Детальная документация:** См. [External Dependencies Guide](.nvm-isolated/.claude-isolated/skills/_shared/external-dependencies.md)
+
+**Проверка установленных зависимостей:**
+```bash
+# CLI tools
+git --version
+gh --version
+
+# Внутри Claude Code сессии
+/plugin list    # Claude plugins
+/mcp list       # MCP servers
+```
+
+---
+
 ## Варианты установки
 
 Выберите подходящий вариант установки в зависимости от ваших потребностей.

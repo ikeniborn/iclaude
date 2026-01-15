@@ -538,7 +538,7 @@ ELSE:
 
 **1. Markdown Syntax Validator:**
 - Parse all `.md` files
-- Check YAML frontmatter (if exists)
+- Check YAML frontmatter (if exists) using [@shared:frontmatter-parser](../_shared/frontmatter-parser.md)
 - Validate heading hierarchy (# → ## → ### without skips)
 - Check code blocks (fenced with ```)
 - Validate lists (consistent indentation)
