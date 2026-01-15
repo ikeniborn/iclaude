@@ -95,7 +95,7 @@ Skills, которые существуют, но не используются 
 
 ---
 
-## Missing Skills (13)
+## Missing Skills (12)
 
 Skills, которые упоминаются в Template, но **не существуют** в глобальных skills.
 
@@ -107,12 +107,13 @@ Skills, которые упоминаются в Template, но **не суще�
 5. **docker-management** - Управление Docker контейнерами
 6. **monitoring-troubleshooting** - Мониторинг и troubleshooting
 7. **network-configuration** - Настройка сети
-8. **ralph-loop** - Ralph-Loop plugin integration (существует как **plugin**, НЕ skill)
-9. **security-hardening** - Security hardening
-10. **service-management** - Управление сервисами
-11. **storage-optimization** - Оптимизация хранилища
-12. **system-administration** - Системное администрирование
-13. **websocket-realtime** - WebSocket и real-time коммуникация
+8. **security-hardening** - Security hardening
+9. **service-management** - Управление сервисами
+10. **storage-optimization** - Оптимизация хранилища
+11. **system-administration** - Системное администрирование
+12. **websocket-realtime** - WebSocket и real-time коммуникация
+
+**Note:** ~~ralph-loop~~ ✅ **FIXED** - Template updated to reference as external plugin (was incorrectly listed as @skill:ralph-loop)
 
 **Рекомендации:**
 
@@ -133,16 +134,16 @@ Skills, которые упоминаются в Template, но **не суще�
 - **security-hardening** → для security-focused проектов
 - **monitoring-troubleshooting** → для production систем
 
-### 2. Ralph-Loop - это plugin, НЕ skill
+### 2. Ralph-Loop - это plugin, НЕ skill ✅ FIXED
 
-**ralph-loop** упоминается как `@skill:ralph-loop`, но это **Claude Code Plugin**, а не skill.
+**ralph-loop** ~~упоминается~~ упоминался как `@skill:ralph-loop`, но это **Claude Code Plugin**, а не skill.
 
 **Корректное использование:**
-- В Template упоминать как external dependency
+- В Template упоминать как external dependency ✅ **DONE**
 - См. `.nvm-isolated/.claude-isolated/skills/_shared/external-dependencies.md`
 - Установка: `/plugin install ralph-loop@claude-plugins-official`
 
-**Предложение:** Заменить ссылки `@skill:ralph-loop` на упоминание external dependency в Template.
+~~**Предложение:**~~ ✅ **COMPLETED:** Заменены ссылки `@skill:ralph-loop` на упоминание external plugin в Template (task-lite-familybudget-v7.0.md:357)
 
 ---
 
