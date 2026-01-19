@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://iclaude.local/skills/commit-and-push/schemas/input.schema.json",
+  "title": "Commit and Push Input Schema",
+  "description": "JSON Schema for commit-and-push skill input validation",
+  "type": "object",
+  "properties": {
+    "commit_and_push_input": {
+      "type": "object",
+      "description": "Навык для коммита и пуша в репозиторий с автоматической фиксацией изменений",
+      "properties": {
+        "repository_path": {
+          "type": "string",
+          "description": "Absolute path to git repository",
+          "minLength": 1
+        },
+        "commit_message": {
+          "type": "string",
+          "description": "Commit message",
+          "minLength": 10,
+          "maxLength": 200
+        },
+        "files_to_stage": {
+          "type": "array",
+          "description": "Paths relative to repository root (optional)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "branch": {
+          "type": "string",
+          "description": "Target branch name (optional)"
+        },
+        "push_options": {
+          "type": "object",
+          "description": "Опции для git push",
+          "properties": {
+            "force": {
+              "type": "boolean",
+              "description": "Force push (default: false)",
+              "default": false
+            },
+            "set_upstream": {
+              "type": "boolean",
+              "description": "Set upstream (default: false)",
+              "default": false
+            },
+            "remote": {
+              "type": "string",
+              "description": "Remote name (default: origin)",
+              "default": "origin"
+            }
+          },
+          "additionalProperties": false
+        },
+        "validation": {
+          "type": "object",
+          "description": "Опции валидации перед коммитом",
+          "properties": {
+            "check_uncommitted_changes": {
+              "type": "boolean",
+              "description": "Check for uncommitted changes (default: true)",
+              "default": true
+            },
+            "verify_remote": {
+              "type": "boolean",
+              "description": "Verify remote exists (default: true)",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["repository_path", "commit_message"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["commit_and_push_input"],
+  "additionalProperties": false
+}

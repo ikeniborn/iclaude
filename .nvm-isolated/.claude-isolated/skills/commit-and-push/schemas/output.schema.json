@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://iclaude.local/skills/commit-and-push/schemas/output.schema.json",
+  "title": "Commit and Push Output Schema",
+  "description": "JSON Schema for commit-and-push skill output validation",
+  "type": "object",
+  "properties": {
+    "commit_and_push_output": {
+      "type": "object",
+      "description": "Результат выполнения коммита и пуша",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Execution status",
+          "enum": ["success", "partial", "failed"]
+        },
+        "commit_info": {
+          "type": "object",
+          "description": "Information about the commit",
+          "properties": {
+            "commit_hash": {
+              "type": "string",
+              "description": "Git commit hash (7-40 hex chars)",
+              "pattern": "^[a-f0-9]{7,40}$"
+            },
+            "commit_message": {
+              "type": "string",
+              "description": "Commit message"
+            },
+            "files_committed": {
+              "type": "integer",
+              "description": "Number of files committed",
+              "minimum": 0
+            },
+            "branch": {
+              "type": "string",
+              "description": "Branch name"
+            },
+            "timestamp": {
+              "type": "string",
+              "description": "ISO 8601 timestamp",
+              "format": "date-time"
+            }
+          },
+          "required": ["commit_hash", "commit_message", "files_committed", "branch", "timestamp"],
+          "additionalProperties": false
+        },
+        "push_info": {
+          "type": "object",
+          "description": "Information about the push",
+          "properties": {
+            "pushed": {
+              "type": "boolean",
+              "description": "Whether push was executed"
+            },
+            "remote": {
+              "type": "string",
+              "description": "Remote name"
+            },
+            "remote_branch": {
+              "type": "string",
+              "description": "Remote branch name"
+            },
+            "commits_pushed": {
+              "type": "integer",
+              "description": "Number of commits pushed",
+              "minimum": 0
+            }
+          },
+          "required": ["pushed", "remote", "remote_branch", "commits_pushed"],
+          "additionalProperties": false
+        },
+        "validation_results": {
+          "type": "object",
+          "description": "Validation check results",
+          "properties": {
+            "pre_commit_checks": {
+              "type": "string",
+              "description": "Pre-commit validation status",
+              "enum": ["passed", "failed", "skipped"]
+            },
+            "remote_verification": {
+              "type": "string",
+              "description": "Remote verification status",
+              "enum": ["passed", "failed", "skipped"]
+            }
+          },
+          "required": ["pre_commit_checks", "remote_verification"],
+          "additionalProperties": false
+        },
+        "errors": {
+          "type": "array",
+          "description": "Error messages (optional)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "description": "Warning messages (optional)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "description": "Integration notes (optional)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["status", "commit_info", "push_info", "validation_results"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["commit_and_push_output"],
+  "additionalProperties": false
+}
