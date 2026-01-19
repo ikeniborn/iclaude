@@ -3,8 +3,8 @@
   "claudeCodeVersion": "2.1.12",
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
-  "lspServers": {},
+  "lspServers": {"pyright": "1.1.408", "vtsls": "0.3.0"},
   "lspPlugins": {"pyright-lsp@claude-plugins-official": "1.0.0", "typescript-lsp@claude-plugins-official": "1.0.0"},
-  "installedAt": "2026-01-19T13:47:29Z",
+  "installedAt": "2026-01-19T13:51:01Z",
   "nvmVersion": "0.39.7"
 }

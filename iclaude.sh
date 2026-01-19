@@ -984,21 +984,33 @@ save_isolated_lockfile() {
 	fi
 
 	# Detect LSP servers
+	# Clear bash command cache to find newly installed binaries
+	hash -r 2>/dev/null || true
+
 	local lsp_servers_json="{"
 	local first=true
+	local npm_bin="$NPM_CONFIG_PREFIX/bin"
 
 	for server_cmd in pyright vtsls typescript-language-server; do
+		# Check both PATH and direct path in npm-global/bin
+		local server_bin=""
 		if command -v "$server_cmd" &>/dev/null; then
+			server_bin="$server_cmd"
+		elif [[ -x "$npm_bin/$server_cmd" ]]; then
+			server_bin="$npm_bin/$server_cmd"
+		fi
+
+		if [[ -n "$server_bin" ]]; then
 			local version
 			case "$server_cmd" in
 				pyright)
-					version=$(pyright --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
 					;;
 				vtsls)
-					version=$(vtsls --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
 					;;
 				typescript-language-server)
-					version=$(typescript-language-server --version 2>/dev/null)
+					version=$("$server_bin" --version 2>/dev/null)
 					;;
 			esac
 
