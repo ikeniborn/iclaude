@@ -3,30 +3,103 @@
 # schema-detector.sh
 # Автоопределение формата и структуры архитектурной документации
 
+# Загрузка пользовательских путей из конфигурации
+load_custom_search_paths() {
+  local project_root="${1:-$PWD}"
+  local custom_paths=()
+
+  # 1. Из переменной окружения CODE_REVIEW_ARCH_PATHS
+  if [[ -n "$CODE_REVIEW_ARCH_PATHS" ]]; then
+    IFS=':' read -ra custom_paths <<< "$CODE_REVIEW_ARCH_PATHS"
+  fi
+
+  # 2. Из .clauderc файла в корне проекта
+  local clauderc="$project_root/.clauderc"
+  if [[ -f "$clauderc" ]]; then
+    local arch_paths=$(jq -r '.codeReview.architecturePaths[]? // empty' "$clauderc" 2>/dev/null)
+    if [[ -n "$arch_paths" ]]; then
+      while IFS= read -r path; do
+        custom_paths+=("$path")
+      done <<< "$arch_paths"
+    fi
+  fi
+
+  # 3. Из .claude/config.json в изолированной конфигурации
+  local claude_config="$CLAUDE_DIR/config.json"
+  if [[ -f "$claude_config" ]]; then
+    local config_paths=$(jq -r '.skills.codeReview.architecturePaths[]? // empty' "$claude_config" 2>/dev/null)
+    if [[ -n "$config_paths" ]]; then
+      while IFS= read -r path; do
+        custom_paths+=("$path")
+      done <<< "$config_paths"
+    fi
+  fi
+
+  printf '%s\n' "${custom_paths[@]}"
+}
+
 # Поиск файлов архитектуры в стандартных локациях
 detect_architecture_files() {
   local project_root="${1:-$PWD}"
   local found_files=()
 
-  # Поиск в стандартных директориях
+  # Загрузка пользовательских путей
+  local custom_paths=()
+  while IFS= read -r path; do
+    [[ -n "$path" ]] && custom_paths+=("$path")
+  done < <(load_custom_search_paths "$project_root")
+
+  # Объединение стандартных и пользовательских путей
   local search_paths=(
-    "docs/architecture"
-    "docs/arch"
-    "architecture"
-    ".arch"
-    "docs"
+    # Сначала пользовательские пути (высший приоритет)
+    "${custom_paths[@]}"
+    # Priority 1: Explicit architecture directories
+    "docs/architecture"           # GitHub, Python, JS/TS standard
+    "doc/architecture"            # Java, Go standard (without 's')
+    "documentation/architecture"  # Enterprise projects
+    ".github/docs/architecture"   # GitHub-centric (Next.js, Vercel)
+
+    # Priority 2: Short names
+    "docs/arch"                   # Current pattern
+    "doc/arch"                    # Java/Go variant
+    "architecture"                # Root-level
+    ".arch"                       # Hidden root-level
+
+    # Priority 3: Alternative naming conventions
+    "design/architecture"         # Embedded systems, Hardware
+    "design/docs"                 # Alternative design docs
+    "adr"                         # Architecture Decision Records (Spotify, Netflix)
+    "wiki/architecture"           # Wiki-based documentation
+    "_docs/architecture"          # Jekyll-based documentation
+
+    # Priority 4: Fallback to parent directories
+    "docs/design"                 # Design-focused (Kubernetes)
+    "docs/internals"              # Internals documentation (Django)
+    "docs"                        # Last resort
   )
 
   # Поддерживаемые имена файлов
   local file_patterns=(
+    # Priority 1: iclaude native formats (YAML preferred)
     "overview.yaml"
     "overview.yml"
     "architecture.yaml"
     "architecture.yml"
+
+    # Priority 2: JSON formats
     "architecture.json"
     "components.json"
-    "ARCHITECTURE.md"
-    "architecture.md"
+    "c4-model.json"              # C4 architecture (Simon Brown)
+    "system-design.json"         # Facebook/Google style
+
+    # Priority 3: Markdown formats
+    "ARCHITECTURE.md"            # Uppercase convention
+    "architecture.md"            # Lowercase convention
+    "README.md"                  # Common in architecture/ directories
+    "index.md"                   # Documentation index
+    "system-design.md"           # Tech companies standard
+    "tech-spec.md"               # Microsoft style
+    "design-doc.md"              # Google style
   )
 
   # Поиск файлов
@@ -43,8 +116,36 @@ detect_architecture_files() {
   if [[ ${#found_files[@]} -gt 0 ]]; then
     printf '%s\n' "${found_files[@]}" | jq -R . | jq -s '.'
   else
-    echo '[]'
+    # Fallback: рекурсивный поиск
+    echo "⚠ Standard paths not found, trying recursive search..." >&2
+    recursive_architecture_search "$project_root" 3
   fi
+}
+
+# Рекурсивный поиск как последний fallback (с ограничением глубины)
+recursive_architecture_search() {
+  local project_root="${1:-$PWD}"
+  local max_depth="${2:-3}"  # Ограничение глубины (безопасность)
+
+  # Поиск файлов архитектуры рекурсивно
+  find "$project_root" \
+    -maxdepth "$max_depth" \
+    -type f \
+    \( -name "overview.yaml" -o \
+       -name "overview.yml" -o \
+       -name "architecture.yaml" -o \
+       -name "architecture.yml" -o \
+       -name "architecture.json" -o \
+       -name "c4-model.json" -o \
+       -name "system-design.json" -o \
+       -name "ARCHITECTURE.md" -o \
+       -name "architecture.md" -o \
+       -name "README.md" -o \
+       -name "index.md" -o \
+       -name "system-design.md" -o \
+       -name "tech-spec.md" -o \
+       -name "design-doc.md" \) \
+    2>/dev/null | jq -R . | jq -s '.'
 }
 
 # Определяет формат файла (YAML, JSON, Markdown)
@@ -127,7 +228,9 @@ extract_frontmatter_yaml() {
 }
 
 # Экспорт функций для использования в других скриптах
+export -f load_custom_search_paths
 export -f detect_architecture_files
+export -f recursive_architecture_search
 export -f detect_file_format
 export -f detect_schema_type
 export -f extract_frontmatter_yaml

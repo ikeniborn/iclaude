@@ -33,9 +33,50 @@ user-invocable: true
 ```
 
 **Требования:**
-- Архитектурная документация: `docs/architecture/overview.yaml`
-- Инструменты: `yq` (для YAML→JSON), `jq` (для JSON parsing)
+- Архитектурная документация в одном из поддерживаемых путей:
+  - **Рекомендуемые**: `docs/architecture/overview.yaml`, `doc/architecture/overview.yaml`
+  - **Альтернативные**: `documentation/architecture/`, `.github/docs/architecture/`, `design/architecture/`, `adr/`
+  - **Fallback**: Рекурсивный поиск в корне проекта (глубина до 3 уровней)
+- Инструменты: `yq` (для YAML→JSON), `jq` (для JSON parsing), `find` (для рекурсивного поиска)
 - Компоненты документированы с `file_path` и `dependencies`
+
+**Пользовательская конфигурация путей:**
+
+1. **Через переменную окружения:**
+   ```bash
+   export CODE_REVIEW_ARCH_PATHS="custom/arch:internal/docs/architecture"
+   ```
+
+2. **Через .clauderc в корне проекта:**
+   ```json
+   {
+     "codeReview": {
+       "architecturePaths": [
+         "custom/architecture",
+         "internal/docs/arch"
+       ]
+     }
+   }
+   ```
+
+3. **Через isolated config (.claude/config.json):**
+   ```json
+   {
+     "skills": {
+       "codeReview": {
+         "architecturePaths": [
+           "team/architecture",
+           "wiki/system-design"
+         ]
+       }
+     }
+   }
+   ```
+
+**Приоритет путей:**
+1. Пользовательские пути (.clauderc, environment, config.json)
+2. Стандартные пути (docs/architecture, doc/architecture, etc.)
+3. Рекурсивный поиск (fallback)
 
 **Поведение при отсутствии архитектуры:**
 - Блокирует commit с предложением запустить `@skill:architecture-documentation`
