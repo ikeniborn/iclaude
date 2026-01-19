@@ -1,9 +1,28 @@
 {
-  "$comment": "Code review output template with optional LSP diagnostics",
+  "$comment": "Code review output template with Architecture Compliance, LSP diagnostics",
   "code_review": {
-    "score": 85,
-    "passed": true,
+    "score": 75,
+    "passed": false,
     "blocking_issues": [
+      {
+        "category": "architecture_compliance",
+        "severity": "BLOCKING",
+        "rule": "circular_dependency",
+        "cycle_path": "cli-main → proxy-management → credential-storage → cli-main",
+        "message": "Circular dependency detected in architecture",
+        "suggestion": "Break cycle using dependency injection or mediator pattern"
+      },
+      {
+        "category": "architecture_compliance",
+        "severity": "BLOCKING",
+        "rule": "layer_violation",
+        "component": "credential-storage",
+        "layer": "infrastructure",
+        "depends_on": "oauth-token-management",
+        "depends_on_layer": "core",
+        "message": "Layer violation: infrastructure depends on core (upward dependency)",
+        "suggestion": "Move component or introduce adapter pattern"
+      },
       {
         "category": "security",
         "severity": "BLOCKING",
@@ -34,7 +53,8 @@
     ],
     "suggestions": [
       "Consider adding docstrings to public functions",
-      "Use constants instead of magic numbers"
+      "Use constants instead of magic numbers",
+      "Consider documenting new function at iclaude.sh:3850-3900"
     ],
     "lsp_diagnostics": [
       {
@@ -60,24 +80,40 @@
       }
     ],
     "metrics": {
+      "architecture_compliance": {
+        "score": 5,
+        "max": 25,
+        "issues": 2,
+        "checks_run": [
+          "referential_integrity",
+          "circular_dependencies",
+          "component_validation",
+          "layer_boundaries"
+        ],
+        "scope": {
+          "modified_components": ["validate-proxy-url"],
+          "dependent_components": ["proxy-management", "cli-main"],
+          "total_checked": 3
+        }
+      },
       "security": {
-        "score": 20,
+        "score": 15,
         "max": 25,
         "issues": 1
       },
       "code_quality": {
-        "score": 23,
+        "score": 20,
         "max": 25,
         "issues": 1
       },
       "error_handling": {
-        "score": 25,
-        "max": 25,
+        "score": 15,
+        "max": 15,
         "issues": 0
       },
       "type_safety": {
-        "score": 17,
-        "max": 25,
+        "score": 5,
+        "max": 10,
         "issues": 3,
         "$comment": "Includes 2 LSP diagnostics (if available)"
       }
@@ -86,9 +122,16 @@
       "src/api/users.py",
       "src/service.py",
       "src/models.py",
-      "frontend/app.ts"
+      "frontend/app.ts",
+      "iclaude.sh"
     ],
     "lsp_available": true,
-    "$comment": "lsp_available: true когда lsp_status.status == 'READY', false иначе"
+    "architecture_available": true,
+    "$comment": [
+      "lsp_available: true когда lsp_status.status == 'READY'",
+      "architecture_available: true когда docs/architecture/overview.yaml существует и yq/jq доступны",
+      "Score calculation: architecture(25%) + security(25%) + code_quality(25%) + error_handling(15%) + type_safety(10%)",
+      "Если architecture_available: false, веса пересчитываются: security(33.33%) + code_quality(33.33%) + error_handling(20%) + type_safety(13.33%)"
+    ]
   }
 }

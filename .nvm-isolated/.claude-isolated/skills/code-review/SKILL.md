@@ -22,7 +22,29 @@ user-invocable: true
 
 ## Категории проверок
 
-### 1. Security (BLOCKING)
+### 1. Architecture Compliance (BLOCKING)
+
+```
+- Referential integrity (все зависимости существуют)
+- Circular dependency detection (обнаружение циклов)
+- Component file path validation (измененные файлы документированы)
+- Layer boundary compliance (соблюдение границ слоев)
+- Scope: гибридный (измененные компоненты + их dependents)
+```
+
+**Требования:**
+- Архитектурная документация: `docs/architecture/overview.yaml`
+- Инструменты: `yq` (для YAML→JSON), `jq` (для JSON parsing)
+- Компоненты документированы с `file_path` и `dependencies`
+
+**Поведение при отсутствии архитектуры:**
+- Блокирует commit с предложением запустить `@skill:architecture-documentation`
+- Автоматически вызывает architecture-documentation skill для генерации
+- После генерации повторно запускает валидацию
+
+**Правила:** `@rules:architecture`
+
+### 2. Security (BLOCKING)
 
 ```
 - SQL Injection
@@ -35,7 +57,7 @@ user-invocable: true
 
 Правила: `@rules:security`
 
-### 2. Code Quality (WARNING)
+### 3. Code Quality (WARNING)
 
 ```
 - Code duplication
@@ -48,7 +70,7 @@ user-invocable: true
 
 Правила: `@rules:code-quality`
 
-### 3. Error Handling (WARNING)
+### 4. Error Handling (WARNING)
 
 ```
 - Bare except clauses
@@ -57,7 +79,7 @@ user-invocable: true
 - Unhandled promises
 ```
 
-### 4. Type Safety (INFO)
+### 5. Type Safety (INFO)
 
 ```
 - Missing type hints (Python)
@@ -159,7 +181,18 @@ ELSE:
 ## Score Calculation
 
 ```
-score = 100 - (blocking * 20) - (warnings * 5) - (suggestions * 1)
+# Новая формула с весами для 5 категорий:
+architecture_score = 25 - (arch_blocking * 10)    # 25%
+security_score = 25 - (sec_blocking * 10)          # 25%
+code_quality_score = 25 - (quality_warnings * 5)   # 25%
+error_handling_score = 15 - (error_warnings * 5)   # 15%
+type_safety_score = 10 - (type_warnings * 5)       # 10%
+
+total_score = architecture_score + security_score + code_quality_score +
+              error_handling_score + type_safety_score
+
+# Если архитектура недоступна, пересчитываем веса:
+# security = 33.33%, code_quality = 33.33%, error = 20%, type = 13.33%
 
 passed = blocking_issues.length === 0
 ```
