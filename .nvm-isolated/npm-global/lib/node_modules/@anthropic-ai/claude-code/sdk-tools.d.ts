@@ -126,6 +126,18 @@ export interface ExitPlanModeInput {
      */
     prompt: string;
   }[];
+  /**
+   * Whether to push the plan to a remote Claude.ai session
+   */
+  pushToRemote?: boolean;
+  /**
+   * The remote session ID if pushed to remote
+   */
+  remoteSessionId?: string;
+  /**
+   * The remote session URL if pushed to remote
+   */
+  remoteSessionUrl?: string;
   [k: string]: unknown;
 }
 export interface FileEditInput {
