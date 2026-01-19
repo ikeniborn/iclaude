@@ -85,6 +85,20 @@ user-invocable: true
 
 **Правила:** `@rules:architecture`
 
+**Поддерживаемые форматы архитектуры:**
+
+| Формат | Детекция | Источник |
+|--------|----------|----------|
+| `iclaude` | `project.id` + `components[]` + `layers[]` | Ручное создание |
+| `arch-doc` | `architecture.metadata` + `architecture.components[]` | `@skill:architecture-documentation` |
+| `c4` | `model.softwareSystems` или `model.containers` | Structurizr |
+| `generic` | `components[]` | Различные инструменты |
+
+**Graceful Degradation:**
+- Нераспознанный формат: WARNING (не BLOCKING)
+- Остальные проверки (security, code quality) выполняются
+- Рекомендация: запустить `@skill:architecture-documentation` для генерации совместимого формата
+
 ### 2. Security (BLOCKING)
 
 ```

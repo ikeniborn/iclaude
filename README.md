@@ -72,6 +72,7 @@
 | `--create-symlink` | Создание глобального симлинка | ✅ | isolated env |
 | `--uninstall-symlink` | Удаление симлинка | ✅ | - |
 | `--repair-isolated` | Починка симлинков после git clone | ❌ | - |
+| `--repair-plugins` | Починка путей плагинов после переноса проекта | ❌ | - |
 | `--check-isolated` | Статус изолированной среды | ❌ | - |
 | `--cleanup-isolated` | Удаление изолированной среды (сохраняет lockfile) | ❌ | - |
 
@@ -1291,6 +1292,35 @@ iclaude --update
 # Проверить статус
 ./iclaude.sh --check-isolated
 ```
+
+### LSP плагины не устанавливаются ("Plugin not found")
+
+**Симптомы:**
+- `./iclaude.sh --install-lsp` выдает ошибку:
+  ```
+  Plugin "typescript-lsp" not found in marketplace "claude-plugins-official"
+  Plugin "pyright-lsp" not found in marketplace "claude-plugins-official"
+  ```
+- Плагины не находятся после переноса/переименования директории проекта
+
+**Причина:**
+- Claude Code хранит абсолютные пути в `known_marketplaces.json` и `installed_plugins.json`
+- После переноса проекта пути становятся невалидными (например `/Project/claude/` → `/Project/iclaude/`)
+
+**Решение:**
+```bash
+# Вариант 1: Автоматическое исправление через --repair-isolated
+./iclaude.sh --repair-isolated
+
+# Вариант 2: Только исправление путей плагинов
+./iclaude.sh --repair-plugins
+
+# После исправления повторить установку LSP
+./iclaude.sh --install-lsp
+./iclaude.sh --check-lsp
+```
+
+**Примечание:** Начиная с версии от 19.01.2026, пути плагинов автоматически проверяются и исправляются при каждом запуске (тихий режим).
 
 ### Проверка симлинков
 

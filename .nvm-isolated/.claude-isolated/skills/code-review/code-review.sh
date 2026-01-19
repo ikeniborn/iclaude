@@ -138,9 +138,10 @@ validate_architecture() {
                 fi
                 ;;
             unknown_schema)
-                log_error "Architecture file found but structure not recognized"
-                BLOCKING_ISSUES+=("{\"category\":\"architecture_compliance\",\"severity\":\"BLOCKING\",\"rule\":\"unknown_schema\",\"message\":\"Architecture file found but structure not recognized\",\"suggestion\":\"Run @skill:architecture-documentation to standardize\",\"action\":\"trigger_skill\"}")
-                return 1
+                log_warning "Architecture file found but structure not recognized"
+                WARNINGS+=("{\"category\":\"architecture_compliance\",\"severity\":\"WARNING\",\"rule\":\"unknown_schema\",\"message\":\"Architecture format not recognized. Architecture validation skipped.\",\"suggestion\":\"Run @skill:architecture-documentation to generate compatible format\"}")
+                ARCHITECTURE_AVAILABLE=false
+                # НЕ возвращаем 1 - позволяем продолжить частичную валидацию
                 ;;
             *)
                 log_error "Architecture parsing failed: $reason"

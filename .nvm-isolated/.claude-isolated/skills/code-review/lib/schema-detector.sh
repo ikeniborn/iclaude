@@ -203,6 +203,12 @@ detect_schema_type() {
     return 0
   fi
 
+  # architecture-documentation skill format: architecture.metadata + architecture.components[]
+  if echo "$json_content" | jq -e '.architecture.metadata.project_name and .architecture.components' &>/dev/null; then
+    echo "arch-doc"
+    return 0
+  fi
+
   # Generic schema: components[] и dependencies[] присутствуют
   if echo "$json_content" | jq -e '.components' &>/dev/null; then
     echo "generic"

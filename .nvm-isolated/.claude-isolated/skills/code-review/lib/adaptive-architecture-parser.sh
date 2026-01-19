@@ -94,6 +94,28 @@ convert_c4_to_normalized() {
   )'
 }
 
+# Конвертация architecture-documentation skill формата в нормализованный формат
+convert_arch_doc_to_normalized() {
+  local json_content="$1"
+
+  echo "$json_content" | jq '{
+    components: .architecture.components,
+    layers: (
+      [.architecture.components[].layer | select(. != null)] | unique |
+      to_entries | map({id: .value, name: (.value | gsub("-"; " ") | ascii_upcase)})
+    ),
+    layer_levels: (
+      [.architecture.components[].layer | select(. != null)] | unique |
+      to_entries | map({(.value): (.key + 1)}) | add
+    ),
+    project: {
+      id: .architecture.metadata.project_name,
+      name: .architecture.metadata.project_name,
+      description: .architecture.metadata.description
+    }
+  }'
+}
+
 # Нормализует различные схемы в единый формат
 normalize_schema() {
   local json_content="$1"
@@ -113,6 +135,10 @@ normalize_schema() {
     c4)
       # Конвертация C4 model → iclaude формат
       convert_c4_to_normalized "$json_content"
+      ;;
+    arch-doc)
+      # Конвертация architecture-documentation skill формат → iclaude формат
+      convert_arch_doc_to_normalized "$json_content"
       ;;
     generic)
       # Generic schema - предполагаем минимальную структуру
@@ -255,6 +281,7 @@ get_dependent_components() {
 # Экспорт функций
 export -f convert_to_json
 export -f convert_c4_to_normalized
+export -f convert_arch_doc_to_normalized
 export -f normalize_schema
 export -f parse_architecture_adaptive
 export -f get_modified_components
