@@ -1,10 +1,10 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.7",
+  "claudeCodeVersion": "2.1.12",
   "routerVersion": "unknown",
   "ghCliVersion": "not installed",
   "lspServers": {},
-  "lspPlugins": {"pyright-lsp@claude-plugins-official": "1.0.0", "typescript-lsp@claude-plugins-official": "1.0.0"},
-  "installedAt": "2026-01-14T10:39:51Z",
+  "lspPlugins": {},
+  "installedAt": "2026-01-19T13:26:39Z",
   "nvmVersion": "0.39.7"
 }
