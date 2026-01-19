@@ -2,9 +2,9 @@
   "nodeVersion": "18.20.8",
   "claudeCodeVersion": "2.1.12",
   "routerVersion": "unknown",
-  "ghCliVersion": "not installed",
+  "ghCliVersion": "2.45.0",
   "lspServers": {},
   "lspPlugins": {},
-  "installedAt": "2026-01-19T13:26:39Z",
+  "installedAt": "2026-01-19T13:27:32Z",
   "nvmVersion": "0.39.7"
 }
