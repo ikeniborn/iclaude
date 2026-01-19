@@ -3,6 +3,7 @@ name: commit-and-push
 version: 1.0.0
 description: Навык используется для коммита и пуша в репозиторий в коттором вызывается для фиксации изменений после изменений
 user-invocable: true
+context: fork
 tags:
   - git
   - automation
