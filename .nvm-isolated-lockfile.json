@@ -4,7 +4,7 @@
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
   "lspServers": {"pyright": "1.1.408", "vtsls": "0.3.0"},
-  "lspPlugins": {},
-  "installedAt": "2026-01-20T06:32:00Z",
+  "lspPlugins": {"pyright-lsp@claude-plugins-official": "1.0.0", "typescript-lsp@claude-plugins-official": "1.0.0"},
+  "installedAt": "2026-01-20T06:34:53Z",
   "nvmVersion": "0.39.7"
 }

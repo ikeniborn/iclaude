@@ -1168,28 +1168,31 @@ save_isolated_lockfile() {
 	local claude_path
 	claude_path=$(get_nvm_claude_path)
 
-	if [[ -n "$claude_path" ]] && command -v jq &>/dev/null; then
-		# Read plugins from installed_plugins.json file
-		local plugins_file=""
-		if [[ -d "$ISOLATED_NVM_DIR" ]]; then
-			plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
-		else
-			plugins_file="$HOME/.claude/plugins/installed_plugins.json"
-		fi
+	if [[ -n "$claude_path" ]]; then
+		# Check installation status via plugin list command
+		for plugin in "pyright-lsp@claude-plugins-official" "typescript-lsp@claude-plugins-official" "gopls-lsp@claude-plugins-official" "rust-analyzer-lsp@claude-plugins-official"; do
+			local plugin_info
 
-		if [[ -f "$plugins_file" ]]; then
-			# Parse for LSP plugins in current project
-			for plugin in "pyright-lsp@claude-plugins-official" "typescript-lsp@claude-plugins-official" "gopls-lsp@claude-plugins-official" "rust-analyzer-lsp@claude-plugins-official"; do
+			if [[ "$claude_path" =~ ^node\  ]]; then
+				local cli_path="${claude_path#node }"
+				plugin_info=$(cd "$SCRIPT_DIR" && node "$cli_path" plugin list 2>/dev/null | grep -A 3 "$plugin" || true)
+			else
+				plugin_info=$(cd "$SCRIPT_DIR" && "$claude_path" plugin list 2>/dev/null | grep -A 3 "$plugin" || true)
+			fi
+
+			# Check if plugin is enabled for this project
+			if echo "$plugin_info" | grep -q "enabled"; then
+				# Extract version
 				local plugin_version
-				plugin_version=$(jq -r ".plugins[\"$plugin\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+				plugin_version=$(echo "$plugin_info" | grep "Version:" | awk '{print $2}')
 
 				if [[ -n "$plugin_version" ]]; then
 					[[ "$first" == false ]] && lsp_plugins_json+=", "
 					lsp_plugins_json+="\"$plugin\": \"$plugin_version\""
 					first=false
 				fi
-			done
-		fi
+			fi
+		done
 	fi
 
 	lsp_plugins_json+="}"
@@ -2182,27 +2185,81 @@ check_lsp_status() {
 			echo "   Install jq to view plugin status"
 			echo ""
 		else
-			# Check TypeScript plugin
-			local ts_plugin_ver
-			ts_plugin_ver=$(jq -r ".plugins[\"typescript-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+			# Check TypeScript plugin using plugin list command
+			if [[ "$claude_path" =~ ^node\  ]]; then
+				local cli_path="${claude_path#node }"
+				local ts_plugin_status
+				ts_plugin_status=$(cd "$SCRIPT_DIR" && node "$cli_path" plugin list 2>/dev/null | grep -A 3 "typescript-lsp@claude-plugins-official" || true)
 
-			if [[ -n "$ts_plugin_ver" ]]; then
-				print_success "typescript-lsp plugin: $ts_plugin_ver"
+				if [[ -n "$ts_plugin_status" ]]; then
+					local ts_version
+					ts_version=$(echo "$ts_plugin_status" | grep "Version:" | awk '{print $2}')
+					if echo "$ts_plugin_status" | grep -q "enabled"; then
+						print_success "typescript-lsp plugin: $ts_version (enabled)"
+					else
+						print_warning "typescript-lsp plugin: $ts_version (disabled)"
+						echo "   Enable: ./iclaude.sh --install-lsp typescript"
+					fi
+				else
+					print_error "typescript-lsp plugin: Not installed"
+					echo "   Install: ./iclaude.sh --install-lsp typescript"
+				fi
 			else
-				print_error "typescript-lsp plugin: Not installed"
-				echo "   Install: ./iclaude.sh --install-lsp typescript"
+				local ts_plugin_status
+				ts_plugin_status=$(cd "$SCRIPT_DIR" && "$claude_path" plugin list 2>/dev/null | grep -A 3 "typescript-lsp@claude-plugins-official" || true)
+
+				if [[ -n "$ts_plugin_status" ]]; then
+					local ts_version
+					ts_version=$(echo "$ts_plugin_status" | grep "Version:" | awk '{print $2}')
+					if echo "$ts_plugin_status" | grep -q "enabled"; then
+						print_success "typescript-lsp plugin: $ts_version (enabled)"
+					else
+						print_warning "typescript-lsp plugin: $ts_version (disabled)"
+						echo "   Enable: ./iclaude.sh --install-lsp typescript"
+					fi
+				else
+					print_error "typescript-lsp plugin: Not installed"
+					echo "   Install: ./iclaude.sh --install-lsp typescript"
+				fi
 			fi
 			echo ""
 
-			# Check Python plugin
-			local py_plugin_ver
-			py_plugin_ver=$(jq -r ".plugins[\"pyright-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
+			# Check Python plugin using plugin list command
+			if [[ "$claude_path" =~ ^node\  ]]; then
+				local cli_path="${claude_path#node }"
+				local py_plugin_status
+				py_plugin_status=$(cd "$SCRIPT_DIR" && node "$cli_path" plugin list 2>/dev/null | grep -A 3 "pyright-lsp@claude-plugins-official" || true)
 
-			if [[ -n "$py_plugin_ver" ]]; then
-				print_success "pyright-lsp plugin: $py_plugin_ver"
+				if [[ -n "$py_plugin_status" ]]; then
+					local py_version
+					py_version=$(echo "$py_plugin_status" | grep "Version:" | awk '{print $2}')
+					if echo "$py_plugin_status" | grep -q "enabled"; then
+						print_success "pyright-lsp plugin: $py_version (enabled)"
+					else
+						print_warning "pyright-lsp plugin: $py_version (disabled)"
+						echo "   Enable: ./iclaude.sh --install-lsp python"
+					fi
+				else
+					print_error "pyright-lsp plugin: Not installed"
+					echo "   Install: ./iclaude.sh --install-lsp python"
+				fi
 			else
-				print_error "pyright-lsp plugin: Not installed"
-				echo "   Install: ./iclaude.sh --install-lsp python"
+				local py_plugin_status
+				py_plugin_status=$(cd "$SCRIPT_DIR" && "$claude_path" plugin list 2>/dev/null | grep -A 3 "pyright-lsp@claude-plugins-official" || true)
+
+				if [[ -n "$py_plugin_status" ]]; then
+					local py_version
+					py_version=$(echo "$py_plugin_status" | grep "Version:" | awk '{print $2}')
+					if echo "$py_plugin_status" | grep -q "enabled"; then
+						print_success "pyright-lsp plugin: $py_version (enabled)"
+					else
+						print_warning "pyright-lsp plugin: $py_version (disabled)"
+						echo "   Enable: ./iclaude.sh --install-lsp python"
+					fi
+				else
+					print_error "pyright-lsp plugin: Not installed"
+					echo "   Install: ./iclaude.sh --install-lsp python"
+				fi
 			fi
 			echo ""
 		fi
