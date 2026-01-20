@@ -1,7 +1,7 @@
 ---
 name: architecture-documentation
 description: Generate detailed architectural documentation in YAML format with component dependencies and relationships
-version: 1.0.0
+version: 1.1.0
 tags: [documentation, architecture, yaml, dependencies, graph]
 dependencies: [context-awareness, thinking-framework]
 author: Claude Code Skills Team
@@ -11,6 +11,17 @@ files:
   examples: ./examples/*.md
   rules: ./rules/*.md
 user-invocable: true
+changelog:
+  - version: 1.1.0
+    date: 2026-01-20
+    changes:
+      - Updated documentation to reflect actual implementation (.md files instead of .mmd)
+      - Added notes about embedded Mermaid blocks in Markdown files
+      - Clarified GitHub rendering advantages
+  - version: 1.0.0
+    date: 2025-11-23
+    changes:
+      - Initial release
 ---
 
 # Architecture Documentation Skill
@@ -116,7 +127,13 @@ Convert dependency_graph to Mermaid syntax for visualization:
 
 **Mermaid generation logic:**
 
-Generate `/docs/architecture/diagrams/dependency-graph.mmd` with:
+**Note:** Diagrams are generated as Markdown files (`.md`) with embedded Mermaid code blocks (` ```mermaid ... ``` `). This format provides:
+- Automatic rendering on GitHub
+- Support in VS Code, Obsidian, Jekyll
+- Ability to include descriptions and metadata
+- Better version control (all content in one file)
+
+Generate `/docs/architecture/diagrams/dependency-graph.md` with embedded Mermaid block:
 
 1. Graph type: `graph TD` (top-down) or `graph LR` (left-right) based on depth
 2. Nodes: One per component with abbreviated ID
@@ -146,8 +163,8 @@ mkdir -p /docs/architecture/diagrams
 Write files:
 - `/docs/architecture/overview.yaml` - Main architecture (from template)
 - `/docs/architecture/dependency-graph.yaml` - Graph structure only (if complex)
-- `/docs/architecture/diagrams/dependency-graph.mmd` - Mermaid visualization (ALWAYS)
-- `/docs/architecture/diagrams/data-flow-{flow-id}.mmd` - Data flow diagrams (if data flows exist)
+- `/docs/architecture/diagrams/dependency-graph.md` - Markdown with embedded Mermaid visualization (ALWAYS)
+- `/docs/architecture/diagrams/data-flow-{flow-id}.md` - Data flow diagrams with embedded Mermaid (if data flows exist)
 - `/docs/architecture/components/{component-id}.yaml` - Per-component (if complex)
 - `/docs/architecture/README.md` - Index with embedded Mermaid diagrams for GitHub rendering
 
@@ -161,8 +178,8 @@ Provide structured output for workflow:
     "output_directory": "/docs/architecture",
     "files_created": [
       "overview.yaml",
-      "diagrams/dependency-graph.mmd",
-      "diagrams/data-flow-user-login.mmd",
+      "diagrams/dependency-graph.md",
+      "diagrams/data-flow-user-login.md",
       "README.md"
     ],
     "component_count": 15,
@@ -185,7 +202,7 @@ Show user-friendly markdown summary with:
 - Warnings (circular dependencies, missing descriptions)
 - Next steps:
   - Review YAML files in `/docs/architecture/`
-  - View Mermaid diagrams on GitHub or using Mermaid preview extension
+  - View Mermaid diagrams directly on GitHub (auto-rendered) or using Mermaid preview extension in VS Code/Obsidian
   - Commit architecture docs to git
 
 ## Output Format
@@ -213,8 +230,8 @@ Show user-friendly markdown summary with:
 - `/docs/architecture/overview.yaml` - Main architecture document
 - `/docs/architecture/components/*.yaml` - Individual component docs
 - `/docs/architecture/dependency-graph.yaml` - Dependency relationships
-- `/docs/architecture/diagrams/dependency-graph.mmd` - Mermaid visualization
-- `/docs/architecture/diagrams/data-flow-*.mmd` - Data flow diagrams
+- `/docs/architecture/diagrams/dependency-graph.md` - Markdown with embedded Mermaid visualization
+- `/docs/architecture/diagrams/data-flow-*.md` - Data flow diagrams with embedded Mermaid
 - `/docs/architecture/README.md` - Architecture documentation index
 
 ## Templates
@@ -223,8 +240,8 @@ Show user-friendly markdown summary with:
 - `@template:architecture-full` - Complete architecture documentation
 - `@template:component` - Single component specification
 - `@template:dependency-graph` - Dependency graph structure
-- `@template:dependency-graph.mmd` - Mermaid dependency visualization
-- `@template:data-flow.mmd` - Mermaid data flow diagram
+- `@template:dependency-graph.md` - Markdown with Mermaid dependency visualization
+- `@template:data-flow.md` - Markdown with Mermaid data flow diagram
 - `@template:README.md` - Architecture documentation index
 
 ## Schemas

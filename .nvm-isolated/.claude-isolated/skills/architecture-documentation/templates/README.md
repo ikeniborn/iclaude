@@ -14,7 +14,7 @@
 ## Quick Links
 
 - [Overview (YAML)](./overview.yaml) - Complete architecture specification
-- [Dependency Graph](./diagrams/dependency-graph.mmd) - Component dependencies
+- [Dependency Graph](./diagrams/dependency-graph.md) - Component dependencies
 {{#if data_flows_exist}}- [Data Flows](./diagrams/) - Request/response flow diagrams{{/if}}
 {{#if components_split}}- [Components](./components/) - Individual component specifications{{/if}}
 
@@ -80,3 +80,5 @@ To regenerate this documentation:
 ```
 
 See [documentation standards](../skills/architecture-documentation/rules/documentation-standards.md) for guidelines.
+
+**Note:** All Mermaid diagrams are embedded in Markdown files (`.md`) using ` ```mermaid ... ``` ` code blocks for better GitHub compatibility.
