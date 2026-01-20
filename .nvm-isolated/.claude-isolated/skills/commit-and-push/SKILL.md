@@ -4,6 +4,9 @@ version: 1.0.0
 description: Навык используется для коммита и пуша в репозиторий в коттором вызывается для фиксации изменений после изменений
 user-invocable: true
 context: fork
+triggers:
+  - "коммит и пуш"
+  - "коммит"
 tags:
   - git
   - automation
