@@ -1,4 +1,8 @@
 {
-  "alwaysThinkingEnabled": true,
-  "language": "russian"
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "language": "russian",
+  "alwaysThinkingEnabled": true
 }

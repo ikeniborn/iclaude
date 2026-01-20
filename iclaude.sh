@@ -835,15 +835,44 @@ install_isolated_lsp_servers() {
 					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi
 
-				local ts_plugin_installed=false
-				if [[ -f "$plugins_file" ]] && command -v jq &>/dev/null; then
-					local ts_plugin_ver
-					ts_plugin_ver=$(jq -r ".plugins[\"typescript-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
-					[[ -n "$ts_plugin_ver" ]] && ts_plugin_installed=true
+				# Check if plugin exists globally (any project)
+				local ts_plugin_exists=false
+				local ts_plugin_enabled=false
+
+				# Check installation status via plugin list command
+				if [[ "$claude_path" =~ ^node\  ]]; then
+					local cli_path="${claude_path#node }"
+					local plugin_status
+					plugin_status=$(cd "$SCRIPT_DIR" && node "$cli_path" plugin list 2>/dev/null | grep -A 3 "typescript-lsp@claude-plugins-official" | grep "Status:" || true)
+
+					# Check if installed (appears in list)
+					if [[ -n "$plugin_status" ]]; then
+						ts_plugin_exists=true
+						# Check if enabled
+						[[ "$plugin_status" =~ "enabled" ]] && ts_plugin_enabled=true
+					fi
+				else
+					local plugin_status
+					plugin_status=$(cd "$SCRIPT_DIR" && "$claude_path" plugin list 2>/dev/null | grep -A 3 "typescript-lsp@claude-plugins-official" | grep "Status:" || true)
+
+					# Check if installed (appears in list)
+					if [[ -n "$plugin_status" ]]; then
+						ts_plugin_exists=true
+						# Check if enabled
+						[[ "$plugin_status" =~ "enabled" ]] && ts_plugin_enabled=true
+					fi
 				fi
 
-				if [[ "$ts_plugin_installed" == true ]]; then
-					echo "✓ typescript-lsp plugin already installed (skipping)"
+				if [[ "$ts_plugin_enabled" == true ]]; then
+					echo "✓ typescript-lsp plugin already enabled for this project"
+				elif [[ "$ts_plugin_exists" == true ]]; then
+					print_info "Enabling typescript-lsp plugin for this project..."
+					if [[ "$claude_path" =~ ^node\  ]]; then
+						local cli_path="${claude_path#node }"
+						(cd "$SCRIPT_DIR" && node "$cli_path" plugin enable typescript-lsp@claude-plugins-official -s project) || print_warning "Plugin enable failed"
+					else
+						(cd "$SCRIPT_DIR" && "$claude_path" plugin enable typescript-lsp@claude-plugins-official -s project) || print_warning "Plugin enable failed"
+					fi
 				else
 					print_info "Installing typescript-lsp plugin..."
 					if [[ "$claude_path" =~ ^node\  ]]; then
@@ -869,15 +898,44 @@ install_isolated_lsp_servers() {
 					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi
 
-				local py_plugin_installed=false
-				if [[ -f "$plugins_file" ]] && command -v jq &>/dev/null; then
-					local py_plugin_ver
-					py_plugin_ver=$(jq -r ".plugins[\"pyright-lsp@claude-plugins-official\"][]? | select(.projectPath == \"$SCRIPT_DIR\") | .version" "$plugins_file" 2>/dev/null)
-					[[ -n "$py_plugin_ver" ]] && py_plugin_installed=true
+				# Check if plugin exists globally (any project)
+				local py_plugin_exists=false
+				local py_plugin_enabled=false
+
+				# Check installation status via plugin list command
+				if [[ "$claude_path" =~ ^node\  ]]; then
+					local cli_path="${claude_path#node }"
+					local plugin_status
+					plugin_status=$(cd "$SCRIPT_DIR" && node "$cli_path" plugin list 2>/dev/null | grep -A 3 "pyright-lsp@claude-plugins-official" | grep "Status:" || true)
+
+					# Check if installed (appears in list)
+					if [[ -n "$plugin_status" ]]; then
+						py_plugin_exists=true
+						# Check if enabled
+						[[ "$plugin_status" =~ "enabled" ]] && py_plugin_enabled=true
+					fi
+				else
+					local plugin_status
+					plugin_status=$(cd "$SCRIPT_DIR" && "$claude_path" plugin list 2>/dev/null | grep -A 3 "pyright-lsp@claude-plugins-official" | grep "Status:" || true)
+
+					# Check if installed (appears in list)
+					if [[ -n "$plugin_status" ]]; then
+						py_plugin_exists=true
+						# Check if enabled
+						[[ "$plugin_status" =~ "enabled" ]] && py_plugin_enabled=true
+					fi
 				fi
 
-				if [[ "$py_plugin_installed" == true ]]; then
-					echo "✓ pyright-lsp plugin already installed (skipping)"
+				if [[ "$py_plugin_enabled" == true ]]; then
+					echo "✓ pyright-lsp plugin already enabled for this project"
+				elif [[ "$py_plugin_exists" == true ]]; then
+					print_info "Enabling pyright-lsp plugin for this project..."
+					if [[ "$claude_path" =~ ^node\  ]]; then
+						local cli_path="${claude_path#node }"
+						(cd "$SCRIPT_DIR" && node "$cli_path" plugin enable pyright-lsp@claude-plugins-official -s project) || print_warning "Plugin enable failed"
+					else
+						(cd "$SCRIPT_DIR" && "$claude_path" plugin enable pyright-lsp@claude-plugins-official -s project) || print_warning "Plugin enable failed"
+					fi
 				else
 					print_info "Installing pyright-lsp plugin..."
 					if [[ "$claude_path" =~ ^node\  ]]; then
