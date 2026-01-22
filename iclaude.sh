@@ -1884,8 +1884,72 @@ check_isolated_status() {
 		echo "  Will be created after: iclaude --isolated-install"
 	fi
 
+	# Show native installer information (for Claude Code >= 2.1.0)
+	show_native_installer_info
+
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Display native installer information
+# Показывает информацию о рекомендации Anthropic использовать native installer
+#######################################
+show_native_installer_info() {
+	# Проверяем версию Claude Code из package.json
+	local package_json="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
+
+	if [[ ! -f "$package_json" ]]; then
+		# Если package.json не найден, пытаемся найти в другом месте
+		local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+		if [[ -n "$node_version_dir" ]]; then
+			package_json="$node_version_dir/lib/node_modules/@anthropic-ai/claude-code/package.json"
+		fi
+	fi
+
+	if [[ ! -f "$package_json" ]]; then
+		return 0  # Нет установленного Claude Code, выходим молча
+	fi
+
+	# Получаем версию из package.json
+	local claude_version=""
+	if command -v jq &>/dev/null; then
+		claude_version=$(jq -r '.version' "$package_json" 2>/dev/null)
+	else
+		claude_version=$(grep '"version"' "$package_json" | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
+	fi
+
+	# Проверяем, что версия >= 2.1.0 (когда началась рекомендация native installer)
+	if [[ -z "$claude_version" ]]; then
+		return 0
+	fi
+
+	# Простая проверка версии (мажорная.минорная)
+	local major=$(echo "$claude_version" | cut -d. -f1)
+	local minor=$(echo "$claude_version" | cut -d. -f2)
+
+	if [[ "$major" -lt 2 ]] || { [[ "$major" -eq 2 ]] && [[ "$minor" -lt 1 ]]; }; then
+		return 0  # Версия < 2.1.0, нет предупреждения
+	fi
+
+	# Показываем информационное сообщение
+	echo ""
+	print_info "Anthropic recommends native installer for auto-updates"
+	echo "  Current installation: npm-based (deprecated but works)"
+	echo "  Recommended: native installer from https://code.claude.com/docs/en/setup"
+	echo ""
+	echo "  Why native installer?"
+	echo "    • Automatic updates without manual npm commands"
+	echo "    • Better integration with system package managers"
+	echo "    • Simplified installation process"
+	echo ""
+	echo "  What does this mean for iclaude.sh?"
+	echo "    • npm installation continues to work normally"
+	echo "    • No immediate action required"
+	echo "    • See CLAUDE.md section 'Future Migration: Native Installer' for details"
 	echo ""
 
 	return 0

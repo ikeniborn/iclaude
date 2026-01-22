@@ -70,4 +70,11 @@ scripts/.claude_proxy_credentials
 # Prevent accidental commit of runtime router config
 .claude-code-router/
 
+# NPM packages (tracked via lockfile only)
+# Exclude node_modules to prevent committing minified JavaScript artifacts
+.nvm-isolated/npm-global/lib/node_modules/
+.nvm-isolated/versions/node/*/lib/node_modules/
+
+# Keep only package structure
+!.nvm-isolated/npm-global/lib/.gitkeep
 
