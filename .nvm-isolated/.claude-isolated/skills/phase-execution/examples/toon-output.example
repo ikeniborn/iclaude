@@ -1,0 +1,273 @@
+/**
+ * Phase Execution TOON Output Examples
+ *
+ * Demonstrates hybrid JSON + TOON format for phase-execution skill output
+ * Generated when checkpoint.checks >= 5 OR files_changed >= 5
+ */
+
+// ============================================
+// Example 1: Checkpoint 1 (ЗАГРУЗКА) with TOON
+// ============================================
+
+{
+  "checkpoint": {
+    "checkpoint_id": 1,
+    "checkpoint_name": "ЗАГРУЗКА И АНАЛИЗ",
+    "checks": [
+      {
+        "check_id": 1,
+        "check_name": "Phase file прочитан",
+        "status": "passed",
+        "details": "plans/phase-2-backend-api.md (127 строк)"
+      },
+      {
+        "check_id": 2,
+        "check_name": "Phase metadata parsed",
+        "status": "passed",
+        "details": "phase_metadata JSON валиден, все обязательные поля присутствуют"
+      },
+      {
+        "check_id": 3,
+        "check_name": "Branch context valid",
+        "status": "passed",
+        "details": "На ветке feature/auth-system, нет uncommitted changes"
+      },
+      {
+        "check_id": 4,
+        "check_name": "Dependencies resolved",
+        "status": "passed",
+        "details": "User model exists, RefreshToken model exists"
+      },
+      {
+        "check_id": 5,
+        "check_name": "Syntax validation ready",
+        "status": "passed",
+        "details": "All 5 files accessible: jwt_service.py, auth.py, security.py, test_jwt.py, test_auth.py"
+      },
+      {
+        "check_id": 6,
+        "check_name": "Test environment configured",
+        "status": "passed",
+        "details": "pytest installed, DATABASE_URL set, test database ready"
+      }
+    ],
+    "overall_result": "PASSED",
+    "can_proceed_to_execution": true,
+    "blocking_issues": [],
+    "toon": {
+      "checks_toon": "checks[6]{check_id,check_name,status,details}:\n  1,Phase file прочитан,passed,plans/phase-2-backend-api.md (127 строк)\n  2,Phase metadata parsed,passed,phase_metadata JSON валиден все обязательные поля присутствуют\n  3,Branch context valid,passed,На ветке feature/auth-system нет uncommitted changes\n  4,Dependencies resolved,passed,User model exists RefreshToken model exists\n  5,Syntax validation ready,passed,All 5 files accessible: jwt_service.py auth.py security.py test_jwt.py test_auth.py\n  6,Test environment configured,passed,pytest installed DATABASE_URL set test database ready",
+      "token_savings": "30.2%",
+      "size_comparison": "JSON: 1012 tokens, TOON: 706 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 2: Checkpoint 2 (ВЫПОЛНЕНИЕ) with TOON
+// ============================================
+
+{
+  "checkpoint": {
+    "checkpoint_id": 2,
+    "checkpoint_name": "ВЫПОЛНЕНИЕ",
+    "checks": [
+      {
+        "check_id": 1,
+        "check_name": "All steps completed",
+        "status": "passed",
+        "details": "7/7 steps executed successfully"
+      },
+      {
+        "check_id": 2,
+        "check_name": "Step validations passed",
+        "status": "passed",
+        "details": "pytest: 24 passed, ESLint: 0 errors, TypeScript: build successful"
+      },
+      {
+        "check_id": 3,
+        "check_name": "Completion criteria met",
+        "status": "passed",
+        "details": "POST /auth/login returns tokens, POST /auth/refresh works, POST /auth/logout invalidates token"
+      },
+      {
+        "check_id": 4,
+        "check_name": "Syntax checks passed",
+        "status": "passed",
+        "details": "python -m py_compile passed for 5 Python files, no syntax errors"
+      },
+      {
+        "check_id": 5,
+        "check_name": "Working directory clean",
+        "status": "passed",
+        "details": "All changes staged, ready for commit"
+      }
+    ],
+    "overall_result": "PASSED",
+    "can_proceed_to_commit": true,
+    "blocking_issues": [],
+    "toon": {
+      "checks_toon": "checks[5]{check_id,check_name,status,details}:\n  1,All steps completed,passed,7/7 steps executed successfully\n  2,Step validations passed,passed,pytest: 24 passed ESLint: 0 errors TypeScript: build successful\n  3,Completion criteria met,passed,POST /auth/login returns tokens POST /auth/refresh works POST /auth/logout invalidates token\n  4,Syntax checks passed,passed,python -m py_compile passed for 5 Python files no syntax errors\n  5,Working directory clean,passed,All changes staged ready for commit",
+      "token_savings": "28.5%",
+      "size_comparison": "JSON: 845 tokens, TOON: 604 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 3: Phase Summary with TOON (7 files changed)
+// ============================================
+
+{
+  "phase_summary": {
+    "phase_number": 2,
+    "phase_name": "Backend API + JWT Logic",
+    "status": "COMPLETED",
+    "commit_hash": "abc123def456",
+    "files_changed": [
+      {
+        "file": "backend/app/services/jwt_service.py",
+        "change_type": "create",
+        "lines_added": 45,
+        "lines_removed": 0
+      },
+      {
+        "file": "backend/app/api/v1/endpoints/auth.py",
+        "change_type": "create",
+        "lines_added": 78,
+        "lines_removed": 0
+      },
+      {
+        "file": "backend/app/core/security.py",
+        "change_type": "modify",
+        "lines_added": 12,
+        "lines_removed": 3
+      },
+      {
+        "file": "backend/app/middleware/auth_middleware.py",
+        "change_type": "create",
+        "lines_added": 34,
+        "lines_removed": 0
+      },
+      {
+        "file": "tests/services/test_jwt_service.py",
+        "change_type": "create",
+        "lines_added": 56,
+        "lines_removed": 0
+      },
+      {
+        "file": "tests/api/test_auth_endpoints.py",
+        "change_type": "create",
+        "lines_added": 89,
+        "lines_removed": 0
+      },
+      {
+        "file": "backend/app/models/user.py",
+        "change_type": "modify",
+        "lines_added": 5,
+        "lines_removed": 1
+      }
+    ],
+    "completion_criteria_met": 3,
+    "total_completion_criteria": 3,
+    "next_phase": {
+      "phase_number": 3,
+      "phase_name": "Frontend Integration",
+      "file": "plans/phase-3-frontend-integration.md"
+    },
+    "toon": {
+      "files_changed_toon": "files_changed[7]{file,change_type,lines_added,lines_removed}:\n  backend/app/services/jwt_service.py,create,45,0\n  backend/app/api/v1/endpoints/auth.py,create,78,0\n  backend/app/core/security.py,modify,12,3\n  backend/app/middleware/auth_middleware.py,create,34,0\n  tests/services/test_jwt_service.py,create,56,0\n  tests/api/test_auth_endpoints.py,create,89,0\n  backend/app/models/user.py,modify,5,1",
+      "token_savings": "32.1%",
+      "size_comparison": "JSON: 1240 tokens, TOON: 842 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 4: Large Phase Summary (15 files changed)
+// ============================================
+
+{
+  "phase_summary": {
+    "phase_number": 3,
+    "phase_name": "Frontend Integration + Auth UI",
+    "status": "COMPLETED",
+    "commit_hash": "def789ghi012",
+    "files_changed": [
+      {"file": "frontend/src/services/AuthService.ts", "change_type": "create", "lines_added": 67, "lines_removed": 0},
+      {"file": "frontend/src/components/LoginForm.tsx", "change_type": "create", "lines_added": 89, "lines_removed": 0},
+      {"file": "frontend/src/components/LogoutButton.tsx", "change_type": "create", "lines_added": 23, "lines_removed": 0},
+      {"file": "frontend/src/hooks/useAuth.ts", "change_type": "create", "lines_added": 45, "lines_removed": 0},
+      {"file": "frontend/src/contexts/AuthContext.tsx", "change_type": "create", "lines_added": 78, "lines_removed": 0},
+      {"file": "frontend/src/api/authApi.ts", "change_type": "create", "lines_added": 56, "lines_removed": 0},
+      {"file": "frontend/src/types/auth.types.ts", "change_type": "create", "lines_added": 34, "lines_removed": 0},
+      {"file": "frontend/src/utils/tokenStorage.ts", "change_type": "create", "lines_added": 28, "lines_removed": 0},
+      {"file": "frontend/src/pages/LoginPage.tsx", "change_type": "create", "lines_added": 112, "lines_removed": 0},
+      {"file": "frontend/src/App.tsx", "change_type": "modify", "lines_added": 18, "lines_removed": 5},
+      {"file": "frontend/src/router/index.tsx", "change_type": "modify", "lines_added": 12, "lines_removed": 2},
+      {"file": "frontend/tests/AuthService.test.ts", "change_type": "create", "lines_added": 145, "lines_removed": 0},
+      {"file": "frontend/tests/LoginForm.test.tsx", "change_type": "create", "lines_added": 98, "lines_removed": 0},
+      {"file": "frontend/tests/useAuth.test.ts", "change_type": "create", "lines_added": 76, "lines_removed": 0},
+      {"file": "frontend/package.json", "change_type": "modify", "lines_added": 3, "lines_removed": 0}
+    ],
+    "completion_criteria_met": 5,
+    "total_completion_criteria": 5,
+    "next_phase": null,
+    "toon": {
+      "files_changed_toon": "files_changed[15]{file,change_type,lines_added,lines_removed}:\n  frontend/src/services/AuthService.ts,create,67,0\n  frontend/src/components/LoginForm.tsx,create,89,0\n  frontend/src/components/LogoutButton.tsx,create,23,0\n  frontend/src/hooks/useAuth.ts,create,45,0\n  frontend/src/contexts/AuthContext.tsx,create,78,0\n  frontend/src/api/authApi.ts,create,56,0\n  frontend/src/types/auth.types.ts,create,34,0\n  frontend/src/utils/tokenStorage.ts,create,28,0\n  frontend/src/pages/LoginPage.tsx,create,112,0\n  frontend/src/App.tsx,modify,18,5\n  frontend/src/router/index.tsx,modify,12,2\n  frontend/tests/AuthService.test.ts,create,145,0\n  frontend/tests/LoginForm.test.tsx,create,98,0\n  frontend/tests/useAuth.test.ts,create,76,0\n  frontend/package.json,modify,3,0",
+      "token_savings": "39.6%",
+      "size_comparison": "JSON: 2680 tokens, TOON: 1620 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 5: Simple Phase (Below Threshold)
+// ============================================
+
+{
+  "phase_summary": {
+    "phase_number": 1,
+    "phase_name": "Database Models",
+    "status": "COMPLETED",
+    "commit_hash": "xyz456abc789",
+    "files_changed": [
+      {"file": "backend/app/models/user.py", "change_type": "create", "lines_added": 34, "lines_removed": 0},
+      {"file": "backend/app/models/refresh_token.py", "change_type": "create", "lines_added": 23, "lines_removed": 0},
+      {"file": "tests/models/test_user.py", "change_type": "create", "lines_added": 45, "lines_removed": 0}
+    ],
+    "completion_criteria_met": 2,
+    "total_completion_criteria": 2
+  }
+  // NO toon field - files_changed=3 (below threshold 5)
+}
+
+/**
+ * Token Savings Breakdown:
+ *
+ * Example 1 (Checkpoint 1, 6 checks):
+ * - JSON: 1012 tokens
+ * - TOON: 706 tokens
+ * - Savings: 30.2% (306 tokens saved)
+ *
+ * Example 2 (Checkpoint 2, 5 checks):
+ * - JSON: 845 tokens
+ * - TOON: 604 tokens
+ * - Savings: 28.5% (241 tokens saved)
+ *
+ * Example 3 (Phase Summary, 7 files):
+ * - JSON: 1240 tokens
+ * - TOON: 842 tokens
+ * - Savings: 32.1% (398 tokens saved)
+ *
+ * Example 4 (Phase Summary, 15 files):
+ * - JSON: 2680 tokens
+ * - TOON: 1620 tokens
+ * - Savings: 39.6% (1060 tokens saved)
+ *
+ * Example 5 (Simple Phase, 3 files):
+ * - No TOON generation (below threshold)
+ * - JSON only: 450 tokens
+ *
+ * Combined workflow (2 checkpoints + 12 files):
+ * - Total savings: ~35-40%
+ */

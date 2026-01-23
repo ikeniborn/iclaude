@@ -1,7 +1,7 @@
 ---
 name: Phase Execution
 description: Автоматизация выполнения одной фазы из готового phase file с checkpoint validation и structured output
-version: 1.0.0
+version: 1.1.0
 author: Claude Code Team
 tags: [phase-based, execution, checkpoint, validation, workflow]
 dependencies: [thinking-framework, validation-framework, git-workflow, error-handling]
@@ -524,6 +524,155 @@ NEXT PHASE:
 - [ ] phase_summary JSON создан
 - [ ] Markdown summary выведен
 - [ ] Next phase указан (если есть)
+
+## TOON Format Support (v1.1.0)
+
+**Назначение:** Автоматическая оптимизация токенов для checkpoint.checks[] и files_changed[] массивов.
+
+### Threshold
+
+TOON генерируется если **checkpoint.checks[] >= 5** ИЛИ **files_changed[] >= 5**
+
+### Target Arrays
+
+**1. checkpoint.checks[]** (в Checkpoint 1 и Checkpoint 2)
+- Обычно: 4-6 элементов per checkpoint
+- Поля: check_id, check_name, status, details
+- Token savings: ~25-30% для 5+ checks
+
+**2. phase_summary.files_changed[]**
+- Обычно: 3-20 файлов per phase
+- Поля: file, change_type, lines_added, lines_removed (optional)
+- Token savings: ~30-35% для 10+ files
+
+### Output Structure
+
+**Checkpoint Output (с TOON):**
+```json
+{
+  "checkpoint": {
+    "checkpoint_id": 1,
+    "checkpoint_name": "ЗАГРУЗКА И АНАЛИЗ",
+    "checks": [
+      {"check_id": 1, "check_name": "Phase file прочитан", "status": "passed", "details": "..."},
+      {"check_id": 2, "check_name": "Phase metadata parsed", "status": "passed", "details": "..."},
+      {"check_id": 3, "check_name": "Branch context valid", "status": "passed", "details": "..."},
+      {"check_id": 4, "check_name": "Dependencies resolved", "status": "passed", "details": "..."},
+      {"check_id": 5, "check_name": "Syntax validation ready", "status": "passed", "details": "..."}
+    ],
+    "overall_result": "PASSED",
+    "can_proceed_to_execution": true,
+    "toon": {
+      "checks_toon": "checks[5]{check_id,check_name,status,details}:\n  1,Phase file прочитан,passed,plans/phase-2-backend-api.md (127 строк)\n  2,Phase metadata parsed,passed,phase_metadata JSON валиден\n  3,Branch context valid,passed,feature/auth-system clean working directory\n  4,Dependencies resolved,passed,User model exists RefreshToken model exists\n  5,Syntax validation ready,passed,All files accessible for syntax check",
+      "token_savings": "28.5%",
+      "size_comparison": "JSON: 845 tokens, TOON: 604 tokens"
+    }
+  }
+}
+```
+
+**Phase Summary Output (с TOON):**
+```json
+{
+  "phase_summary": {
+    "phase_number": 2,
+    "phase_name": "Backend API + JWT Logic",
+    "status": "COMPLETED",
+    "commit_hash": "abc123def456",
+    "files_changed": [
+      {"file": "backend/app/services/jwt_service.py", "change_type": "create", "lines_added": 45},
+      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "create", "lines_added": 78},
+      {"file": "backend/app/core/security.py", "change_type": "modify", "lines_added": 12, "lines_removed": 3},
+      {"file": "backend/app/middleware/auth_middleware.py", "change_type": "create", "lines_added": 34},
+      {"file": "tests/services/test_jwt_service.py", "change_type": "create", "lines_added": 56},
+      {"file": "tests/api/test_auth_endpoints.py", "change_type": "create", "lines_added": 89},
+      {"file": "backend/app/models/user.py", "change_type": "modify", "lines_added": 5, "lines_removed": 1}
+    ],
+    "completion_criteria_met": 3,
+    "total_completion_criteria": 3,
+    "toon": {
+      "files_changed_toon": "files_changed[7]{file,change_type,lines_added,lines_removed}:\n  backend/app/services/jwt_service.py,create,45,0\n  backend/app/api/v1/endpoints/auth.py,create,78,0\n  backend/app/core/security.py,modify,12,3\n  backend/app/middleware/auth_middleware.py,create,34,0\n  tests/services/test_jwt_service.py,create,56,0\n  tests/api/test_auth_endpoints.py,create,89,0\n  backend/app/models/user.py,modify,5,1",
+      "token_savings": "32.1%",
+      "size_comparison": "JSON: 1240 tokens, TOON: 842 tokens"
+    }
+  }
+}
+```
+
+### Implementation Pattern
+
+```javascript
+import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
+
+// Checkpoint output с TOON
+const checkpoint = {
+  checkpoint_id: 1,
+  checkpoint_name: "ЗАГРУЗКА И АНАЛИЗ",
+  checks: [...]  // 5+ elements
+};
+
+// Add TOON optimization
+if (checkpoint.checks.length >= 5) {
+  checkpoint.toon = {
+    checks_toon: arrayToToon('checks', checkpoint.checks,
+      ['check_id', 'check_name', 'status', 'details']),
+    ...calculateTokenSavings({ checks: checkpoint.checks })
+  };
+}
+
+// Phase summary output с TOON
+const phaseSummary = {
+  phase_number: 2,
+  files_changed: [...]  // 7+ files
+};
+
+if (phaseSummary.files_changed.length >= 5) {
+  // Normalize lines_removed field (default to 0)
+  const filesNormalized = phaseSummary.files_changed.map(f => ({
+    file: f.file,
+    change_type: f.change_type,
+    lines_added: f.lines_added,
+    lines_removed: f.lines_removed || 0
+  }));
+
+  phaseSummary.toon = {
+    files_changed_toon: arrayToToon('files_changed', filesNormalized,
+      ['file', 'change_type', 'lines_added', 'lines_removed']),
+    ...calculateTokenSavings({ files_changed: filesNormalized })
+  };
+}
+```
+
+### Token Savings Examples
+
+| Scenario | JSON Tokens | TOON Tokens | Savings | Elements |
+|----------|-------------|-------------|---------|----------|
+| Checkpoint (5 checks) | 845 | 604 | 28.5% | 5 |
+| Checkpoint (6 checks) | 1012 | 685 | 32.3% | 6 |
+| Files changed (7 files) | 1240 | 842 | 32.1% | 7 |
+| Files changed (15 files) | 2680 | 1620 | 39.6% | 15 |
+| Combined (6 checks + 12 files) | 3450 | 2210 | 35.9% | 18 |
+
+**Total workflow savings:** Для complex task с 2 checkpoints + 12 файлов: ~**35-40% token reduction**
+
+### Backward Compatibility
+
+- ✅ JSON format always present (primary format)
+- ✅ TOON field optional (only when threshold met)
+- ✅ Zero breaking changes для downstream consumers
+- ✅ Consumers могут игнорировать TOON и читать JSON
+
+### When TOON is Generated
+
+**Always generated:**
+- Phase with 5+ file changes (typical для standard/complex tasks)
+- Checkpoint with 5+ checks (расширенные checkpoints)
+
+**Not generated:**
+- Minimal tasks (< 5 files changed)
+- Simple checkpoints (4 checks standard)
+
+См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
 
 ## Связанные скилы
 
