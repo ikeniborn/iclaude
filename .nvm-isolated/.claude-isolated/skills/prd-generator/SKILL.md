@@ -1,9 +1,9 @@
 ---
 name: prd-generator
 description: Автоматизированное создание Product Requirements Document (PRD) с интерактивными вопросами, AI-генерацией 14 разделов и 5 Mermaid диаграмм
-version: 1.0.0
-tags: [documentation, prd, product-management, mermaid, interactive, ai-generation]
-dependencies: [thinking-framework, context-awareness, validation-framework]
+version: 1.1.0
+tags: [documentation, prd, product-management, mermaid, interactive, ai-generation, toon]
+dependencies: [thinking-framework, context-awareness, validation-framework, toon-skill]
 author: iclaude Skills Team
 files:
   templates: ./templates/*.json
@@ -11,6 +11,18 @@ files:
   examples: ./examples/*.md
   rules: ./rules/*.md
 user-invocable: true
+changelog:
+  - version: 1.1.0
+    date: 2026-01-23
+    changes:
+      - "**TOON Format Support**: Token-efficient PRD reporting"
+      - "TOON для sections (14) и diagrams (5) - всегда генерируется"
+      - "45-55% token savings (highly structured data)"
+      - "Object → array conversion для TOON compatibility"
+  - version: 1.0.0
+    date: 2025-XX-XX
+    changes:
+      - "Initial release"
 ---
 
 # PRD Generator Skill
@@ -707,6 +719,62 @@ See `templates/prd-output.json` for complete schema
 - `architecture-documentation` skill: consumes `sections.09-technical-requirements`, `diagrams.system-context`
 - `task-decomposition` skill: consumes `sections.06-functional-requirements`, `diagrams.feature-dependencies`
 - `git-workflow` skill: consumes `output_directory`, `product_name` for commit message
+
+---
+
+## TOON Format Support
+
+**NEW in v1.1.0:** Token-efficient PRD generation reporting (45-55% savings)
+
+### Когда генерируется TOON
+
+Автоматически для всех PRD (sections=14, diagrams=5 всегда >= 5)
+
+### Output Structure
+
+```json
+{
+  "prd_generation": {
+    "sections": {...},      // JSON object (always)
+    "diagrams": {...},      // JSON object (always)
+    "validation_results": {...},
+    "toon": {
+      "sections_toon": "sections[14]{section_id,section_name,file_path}:\n  01-executive-summary,Executive Summary,docs/prd/01-executive-summary.md\n  02-goals-and-scope,Goals and Scope,docs/prd/02-goals-and-scope.md\n  ...",
+      "diagrams_toon": "diagrams[5]{diagram_id,diagram_name,file_path}:\n  product-vision,Product Vision,docs/prd/diagrams/product-vision.mmd\n  user-journey,User Journey,docs/prd/diagrams/user-journey.mmd\n  ...",
+      "token_savings": "48%",
+      "size_comparison": "JSON: 4200 tokens, TOON: 2184 tokens"
+    }
+  }
+}
+```
+
+### Token Savings
+
+- 14 sections + 5 diagrams: **45-55% reduction**
+- Highly structured data (ideal для TOON)
+
+### Integration
+
+```javascript
+// Convert sections/diagrams objects → arrays
+const sectionsArray = Object.entries(prdGeneration.sections).map(([id, path]) => ({
+  section_id: id,
+  section_name: formatSectionName(id),
+  file_path: path
+}));
+
+prdGeneration.toon = {
+  sections_toon: arrayToToon('sections', sectionsArray, ['section_id', 'section_name', 'file_path']),
+  // ... diagrams similarly
+};
+```
+
+### See Also
+
+- **toon-skill** - TOON API ([../toon-skill/SKILL.md](../toon-skill/SKILL.md))
+- **TOON-PATTERNS.md** - Integration patterns ([../_shared/TOON-PATTERNS.md](../_shared/TOON-PATTERNS.md))
+
+---
 
 **Notes:**
 - This skill generates files in user's project directory (`docs/prd/`), NOT in skill directory
