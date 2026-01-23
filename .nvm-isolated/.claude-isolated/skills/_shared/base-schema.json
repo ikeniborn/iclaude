@@ -357,6 +357,57 @@
       },
       "required": ["skill_name"],
       "additionalProperties": false
+    },
+    "toon_optimization": {
+      "$comment": "Optional TOON format for token-efficient output (added v7.0)",
+      "type": "object",
+      "description": "TOON format optimization for array-heavy structured output. Generated automatically when arrays >= 5 elements. Achieves 30-60% token savings.",
+      "properties": {
+        "token_savings": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?%$",
+          "description": "Percentage of tokens saved (e.g., '42.3%')",
+          "examples": ["39.1%", "48.9%", "42.3%", "35.5%", "50.0%"]
+        },
+        "size_comparison": {
+          "type": "string",
+          "description": "Human-readable comparison of sizes",
+          "pattern": "^JSON: \\d+ tokens, TOON: \\d+ tokens$",
+          "examples": [
+            "JSON: 3450 tokens, TOON: 1960 tokens",
+            "JSON: 650 tokens, TOON: 380 tokens"
+          ]
+        }
+      },
+      "patternProperties": {
+        "^[a-z_]+_toon$": {
+          "type": "string",
+          "description": "TOON formatted array (e.g., 'warnings_toon', 'steps_toon', 'checks_toon')",
+          "pattern": "^[a-z_]+\\[\\d+\\]\\{[a-z_,]+\\}:",
+          "examples": [
+            "warnings[15]{category,file,line,severity,message}:\n  security,src/app.js,42,BLOCKING,SQL injection\n  ...",
+            "execution_steps[10]{step_number,description,validation}:\n  1,Create API endpoint,Run pytest\n  ..."
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": ["token_savings"]
+    },
+    "structured_output_with_toon": {
+      "$comment": "Base structure for skills with TOON support (added v7.0)",
+      "type": "object",
+      "description": "Template for skill output with optional TOON optimization",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "partial", "failed"],
+          "description": "Execution status"
+        },
+        "toon": {
+          "$ref": "#/definitions/toon_optimization"
+        }
+      },
+      "required": ["status"]
     }
   }
 }

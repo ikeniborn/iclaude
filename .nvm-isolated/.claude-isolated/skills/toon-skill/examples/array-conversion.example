@@ -1,0 +1,277 @@
+/**
+ * Example: Array Conversion to TOON format
+ *
+ * Demonstrates basic arrayToToon() usage for common skill output patterns.
+ */
+
+import { arrayToToon, calculateTokenSavings } from '../converters/toon-converter.mjs';
+
+// ============================================================================
+// Example 1: Code Review Warnings
+// ============================================================================
+
+console.log('=== Example 1: Code Review Warnings ===\n');
+
+const warnings = [
+  {
+    category: 'security',
+    file: 'src/app.js',
+    line: 42,
+    severity: 'BLOCKING',
+    message: 'SQL injection vulnerability',
+    suggestion: 'Use parameterized queries or ORM methods'
+  },
+  {
+    category: 'code_quality',
+    file: 'src/db.js',
+    line: 15,
+    severity: 'WARNING',
+    message: 'Missing database index on frequently queried column',
+    suggestion: 'Add index on user_id column for performance'
+  },
+  {
+    category: 'error_handling',
+    file: 'src/api.js',
+    line: 78,
+    severity: 'INFO',
+    message: 'Consider async/await refactoring',
+    suggestion: 'Replace promise chains with async/await for better readability'
+  },
+  {
+    category: 'type_safety',
+    file: 'src/utils.js',
+    line: 123,
+    severity: 'WARNING',
+    message: 'Implicit type coercion',
+    suggestion: 'Use strict equality (===) instead of loose equality (==)'
+  },
+  {
+    category: 'performance',
+    file: 'src/parser.js',
+    line: 56,
+    severity: 'INFO',
+    message: 'Inefficient array operations',
+    suggestion: 'Use Array.reduce() instead of multiple map/filter chains'
+  }
+];
+
+const toonWarnings = arrayToToon('warnings', warnings,
+  ['category', 'file', 'line', 'severity', 'message', 'suggestion']);
+
+console.log('TOON Output:');
+console.log(toonWarnings);
+console.log();
+
+const stats1 = calculateTokenSavings({ warnings });
+console.log(`Token Savings: ${stats1.savedPercent}`);
+console.log(`JSON: ${stats1.jsonTokens} tokens (${stats1.jsonSize} bytes)`);
+console.log(`TOON: ${stats1.toonTokens} tokens (${stats1.toonSize} bytes)`);
+console.log(`Saved: ${stats1.savedTokens} tokens\n`);
+
+// ============================================================================
+// Example 2: Task Execution Steps
+// ============================================================================
+
+console.log('=== Example 2: Task Execution Steps ===\n');
+
+const executionSteps = [
+  {
+    step_number: 1,
+    description: 'Create FastAPI endpoint for user login',
+    validation: 'Run pytest tests/test_auth.py and verify 200 OK response'
+  },
+  {
+    step_number: 2,
+    description: 'Add Pydantic model for request validation',
+    validation: 'Check type annotations and run mypy validation'
+  },
+  {
+    step_number: 3,
+    description: 'Implement JWT token generation',
+    validation: 'Test token format with jwt.io decoder'
+  },
+  {
+    step_number: 4,
+    description: 'Add password hashing with bcrypt',
+    validation: 'Verify bcrypt.checkpw() validates hashed passwords'
+  },
+  {
+    step_number: 5,
+    description: 'Write comprehensive unit tests',
+    validation: 'Ensure 100% test coverage for auth module'
+  }
+];
+
+const toonSteps = arrayToToon('execution_steps', executionSteps,
+  ['step_number', 'description', 'validation']);
+
+console.log('TOON Output:');
+console.log(toonSteps);
+console.log();
+
+const stats2 = calculateTokenSavings({ execution_steps: executionSteps });
+console.log(`Token Savings: ${stats2.savedPercent}`);
+console.log(`JSON: ${stats2.jsonTokens} tokens`);
+console.log(`TOON: ${stats2.toonTokens} tokens\n`);
+
+// ============================================================================
+// Example 3: PR CI/CD Checks
+// ============================================================================
+
+console.log('=== Example 3: PR CI/CD Checks ===\n');
+
+const checks = [
+  {
+    name: 'pytest',
+    status: 'passed',
+    duration_ms: 1250,
+    details_url: 'https://github.com/org/repo/actions/runs/12345'
+  },
+  {
+    name: 'eslint',
+    status: 'failed',
+    duration_ms: 340,
+    details_url: 'https://github.com/org/repo/actions/runs/12346'
+  },
+  {
+    name: 'build',
+    status: 'passed',
+    duration_ms: 4800,
+    details_url: 'https://github.com/org/repo/actions/runs/12347'
+  },
+  {
+    name: 'type-check',
+    status: 'passed',
+    duration_ms: 890,
+    details_url: 'https://github.com/org/repo/actions/runs/12348'
+  },
+  {
+    name: 'security-scan',
+    status: 'passed',
+    duration_ms: 2100,
+    details_url: 'https://github.com/org/repo/actions/runs/12349'
+  },
+  {
+    name: 'coverage',
+    status: 'passed',
+    duration_ms: 1560,
+    details_url: 'https://github.com/org/repo/actions/runs/12350'
+  },
+  {
+    name: 'deploy-preview',
+    status: 'passed',
+    duration_ms: 15300,
+    details_url: 'https://github.com/org/repo/actions/runs/12351'
+  },
+  {
+    name: 'lighthouse',
+    status: 'passed',
+    duration_ms: 8200,
+    details_url: 'https://github.com/org/repo/actions/runs/12352'
+  }
+];
+
+const toonChecks = arrayToToon('checks', checks,
+  ['name', 'status', 'duration_ms', 'details_url']);
+
+console.log('TOON Output:');
+console.log(toonChecks);
+console.log();
+
+const stats3 = calculateTokenSavings({ checks });
+console.log(`Token Savings: ${stats3.savedPercent}`);
+console.log(`JSON: ${stats3.jsonTokens} tokens`);
+console.log(`TOON: ${stats3.toonTokens} tokens\n`);
+
+// ============================================================================
+// Example 4: Handling Special Characters (commas, quotes)
+// ============================================================================
+
+console.log('=== Example 4: Special Characters ===\n');
+
+const itemsWithCommas = [
+  {
+    file: 'app.js',
+    message: 'Error: invalid input, check validation logic'
+  },
+  {
+    file: 'db.js',
+    message: 'Warning: missing index on users table, columns: email, username'
+  },
+  {
+    file: 'api.js',
+    message: 'Consider refactoring: "split, map, filter" chain'
+  },
+  {
+    file: 'utils.js',
+    message: 'Performance issue: O(n^2) algorithm, optimize with hash map'
+  },
+  {
+    file: 'parser.js',
+    message: 'Type error: Expected string, got number'
+  }
+];
+
+const toonSpecial = arrayToToon('items_with_special_chars', itemsWithCommas,
+  ['file', 'message']);
+
+console.log('TOON Output (with automatic quoting):');
+console.log(toonSpecial);
+console.log();
+
+// ============================================================================
+// Example 5: Empty Array Handling
+// ============================================================================
+
+console.log('=== Example 5: Empty Array ===\n');
+
+const emptyArray = [];
+
+const toonEmpty = arrayToToon('empty_items', emptyArray,
+  ['field1', 'field2']);
+
+console.log('TOON Output:');
+console.log(toonEmpty);
+console.log('(Empty array generates header with [0] count)\n');
+
+// ============================================================================
+// Example 6: LSP Diagnostics (Large Dataset)
+// ============================================================================
+
+console.log('=== Example 6: LSP Diagnostics (50 items) ===\n');
+
+const lspDiagnostics = Array.from({ length: 50 }, (_, i) => ({
+  file: `src/file${i % 10}.ts`,
+  line: 10 + i,
+  severity: ['error', 'warning', 'info'][i % 3],
+  code: `TS${2000 + i}`,
+  message: `Type error #${i + 1}: Property does not exist on type`
+}));
+
+const toonLsp = arrayToToon('lsp_diagnostics', lspDiagnostics,
+  ['file', 'line', 'severity', 'code', 'message']);
+
+console.log('TOON Output (first 10 lines):');
+const toonLspLines = toonLsp.split('\n');
+console.log(toonLspLines.slice(0, 11).join('\n'));
+console.log(`... (${toonLspLines.length - 11} more lines)\n`);
+
+const stats6 = calculateTokenSavings({ lsp_diagnostics: lspDiagnostics });
+console.log(`Token Savings: ${stats6.savedPercent}`);
+console.log(`JSON: ${stats6.jsonTokens} tokens`);
+console.log(`TOON: ${stats6.toonTokens} tokens`);
+console.log(`Saved: ${stats6.savedTokens} tokens (Large dataset = maximum savings!)\n`);
+
+// ============================================================================
+// Summary
+// ============================================================================
+
+console.log('=== Summary ===\n');
+console.log('Array Size | Token Savings | Recommendation');
+console.log('-----------|---------------|----------------');
+console.log(`5 items    | ${stats1.savedPercent.padEnd(13)} | ✅ Threshold met`);
+console.log(`5 items    | ${stats2.savedPercent.padEnd(13)} | ✅ Good value`);
+console.log(`8 items    | ${stats3.savedPercent.padEnd(13)} | ✅ High value`);
+console.log(`50 items   | ${stats6.savedPercent.padEnd(13)} | ✅✅✅ Maximum savings!`);
+console.log();
+console.log('💡 Use arrayToToon() for arrays >= 5 elements with consistent schema');

@@ -1,0 +1,234 @@
+/**
+ * Example: Nested Objects Conversion to TOON format
+ *
+ * Demonstrates nestedToToon() for dependency graphs and complex nested structures.
+ */
+
+import { nestedToToon, calculateTokenSavings, roundTripTest } from '../converters/toon-converter.mjs';
+
+// ============================================================================
+// Example 1: Dependency Graph (Architecture Documentation)
+// ============================================================================
+
+console.log('=== Example 1: Dependency Graph ===\n');
+
+const dependencyGraph = {
+  nodes: [
+    { id: 'proxy-mgmt', label: 'Proxy Management', type: 'module', layer: 'infrastructure' },
+    { id: 'oauth-handler', label: 'OAuth Handler', type: 'function', layer: 'business' },
+    { id: 'token-refresh', label: 'Token Refresh', type: 'function', layer: 'business' },
+    { id: 'api-client', label: 'API Client', type: 'class', layer: 'business' },
+    { id: 'config-loader', label: 'Config Loader', type: 'module', layer: 'infrastructure' },
+    { id: 'credential-store', label: 'Credential Store', type: 'module', layer: 'infrastructure' }
+  ],
+  edges: [
+    { from: 'proxy-mgmt', to: 'oauth-handler', type: 'required', description: 'Requires OAuth for authenticated proxies' },
+    { from: 'oauth-handler', to: 'token-refresh', type: 'required', description: 'Refreshes expired tokens' },
+    { from: 'api-client', to: 'oauth-handler', type: 'required', description: 'Uses OAuth for API calls' },
+    { from: 'proxy-mgmt', to: 'config-loader', type: 'required', description: 'Loads proxy configuration' },
+    { from: 'oauth-handler', to: 'credential-store', type: 'required', description: 'Stores/retrieves credentials' },
+    { from: 'config-loader', to: 'credential-store', type: 'optional', description: 'May cache credentials' }
+  ]
+};
+
+const toonGraph = nestedToToon('dependency_graph', {
+  nodes: {
+    items: dependencyGraph.nodes,
+    fields: ['id', 'label', 'type', 'layer']
+  },
+  edges: {
+    items: dependencyGraph.edges,
+    fields: ['from', 'to', 'type', 'description']
+  }
+});
+
+console.log('TOON Output:');
+console.log(toonGraph);
+console.log();
+
+const stats1 = calculateTokenSavings({ dependency_graph: dependencyGraph });
+console.log(`Token Savings: ${stats1.savedPercent}`);
+console.log(`JSON: ${stats1.jsonTokens} tokens (${stats1.jsonSize} bytes)`);
+console.log(`TOON: ${stats1.toonTokens} tokens (${stats1.toonSize} bytes)`);
+console.log(`Saved: ${stats1.savedTokens} tokens\n`);
+
+// Verify lossless conversion
+const roundTrip1 = roundTripTest({ dependency_graph: dependencyGraph });
+console.log(roundTrip1.success
+  ? '✓ Round-trip test: PASSED (lossless conversion)\n'
+  : `✗ Round-trip test: FAILED (${roundTrip1.error})\n`
+);
+
+// ============================================================================
+// Example 2: Multi-Phase Task Plan
+// ============================================================================
+
+console.log('=== Example 2: Multi-Phase Task Plan ===\n');
+
+const taskPlan = {
+  phases: [
+    { phase_number: 1, name: 'Planning', status: 'completed', duration_days: 2 },
+    { phase_number: 2, name: 'Implementation', status: 'in_progress', duration_days: 5 },
+    { phase_number: 3, name: 'Testing', status: 'pending', duration_days: 3 },
+    { phase_number: 4, name: 'Deployment', status: 'pending', duration_days: 1 }
+  ],
+  milestones: [
+    { phase: 1, name: 'Requirements approved', date: '2026-01-20', completed: true },
+    { phase: 2, name: 'Core features complete', date: '2026-01-25', completed: false },
+    { phase: 3, name: 'All tests passing', date: '2026-01-28', completed: false },
+    { phase: 4, name: 'Production deployed', date: '2026-01-29', completed: false }
+  ],
+  blockers: [
+    { phase: 2, blocker: 'Waiting for API access', severity: 'high', eta: '2026-01-24' },
+    { phase: 3, blocker: 'Test environment setup', severity: 'medium', eta: '2026-01-26' }
+  ]
+};
+
+const toonTaskPlan = nestedToToon('task_plan', {
+  phases: {
+    items: taskPlan.phases,
+    fields: ['phase_number', 'name', 'status', 'duration_days']
+  },
+  milestones: {
+    items: taskPlan.milestones,
+    fields: ['phase', 'name', 'date', 'completed']
+  },
+  blockers: {
+    items: taskPlan.blockers,
+    fields: ['phase', 'blocker', 'severity', 'eta']
+  }
+});
+
+console.log('TOON Output:');
+console.log(toonTaskPlan);
+console.log();
+
+const stats2 = calculateTokenSavings({ task_plan: taskPlan });
+console.log(`Token Savings: ${stats2.savedPercent}`);
+console.log(`JSON: ${stats2.jsonTokens} tokens`);
+console.log(`TOON: ${stats2.toonTokens} tokens\n`);
+
+// ============================================================================
+// Example 3: Test Suite Results
+// ============================================================================
+
+console.log('=== Example 3: Test Suite Results ===\n');
+
+const testResults = {
+  passed_tests: [
+    { test_name: 'test_user_login_success', duration_ms: 45, file: 'tests/test_auth.py' },
+    { test_name: 'test_token_validation', duration_ms: 12, file: 'tests/test_auth.py' },
+    { test_name: 'test_password_hashing', duration_ms: 38, file: 'tests/test_crypto.py' },
+    { test_name: 'test_api_endpoint_200', duration_ms: 120, file: 'tests/test_api.py' },
+    { test_name: 'test_database_connection', duration_ms: 95, file: 'tests/test_db.py' }
+  ],
+  failed_tests: [
+    { test_name: 'test_invalid_credentials', duration_ms: 25, file: 'tests/test_auth.py', error: 'AssertionError: Expected 401, got 500' },
+    { test_name: 'test_expired_token', duration_ms: 18, file: 'tests/test_auth.py', error: 'TypeError: Cannot read property of undefined' }
+  ],
+  skipped_tests: [
+    { test_name: 'test_oauth_flow', duration_ms: 0, file: 'tests/test_oauth.py', reason: 'Requires external service' },
+    { test_name: 'test_payment_integration', duration_ms: 0, file: 'tests/test_payment.py', reason: 'Not implemented yet' }
+  ]
+};
+
+const toonTestResults = nestedToToon('test_results', {
+  passed_tests: {
+    items: testResults.passed_tests,
+    fields: ['test_name', 'duration_ms', 'file']
+  },
+  failed_tests: {
+    items: testResults.failed_tests,
+    fields: ['test_name', 'duration_ms', 'file', 'error']
+  },
+  skipped_tests: {
+    items: testResults.skipped_tests,
+    fields: ['test_name', 'duration_ms', 'file', 'reason']
+  }
+});
+
+console.log('TOON Output:');
+console.log(toonTestResults);
+console.log();
+
+const stats3 = calculateTokenSavings({ test_results: testResults });
+console.log(`Token Savings: ${stats3.savedPercent}`);
+console.log(`JSON: ${stats3.jsonTokens} tokens`);
+console.log(`TOON: ${stats3.toonTokens} tokens\n`);
+
+// ============================================================================
+// Example 4: Service Mesh Configuration
+// ============================================================================
+
+console.log('=== Example 4: Service Mesh Configuration ===\n');
+
+const serviceMesh = {
+  services: [
+    { name: 'auth-service', port: 8080, replicas: 3, memory_mb: 512 },
+    { name: 'api-gateway', port: 80, replicas: 5, memory_mb: 1024 },
+    { name: 'database', port: 5432, replicas: 1, memory_mb: 2048 },
+    { name: 'cache', port: 6379, replicas: 2, memory_mb: 256 },
+    { name: 'message-queue', port: 5672, replicas: 3, memory_mb: 512 }
+  ],
+  routes: [
+    { source: 'api-gateway', destination: 'auth-service', path: '/auth/*', method: 'POST' },
+    { source: 'api-gateway', destination: 'database', path: '/api/users/*', method: 'GET' },
+    { source: 'auth-service', destination: 'cache', path: '/cache/tokens/*', method: 'GET' },
+    { source: 'auth-service', destination: 'database', path: '/db/users/*', method: 'GET' },
+    { source: 'api-gateway', destination: 'message-queue', path: '/async/*', method: 'POST' }
+  ],
+  health_checks: [
+    { service: 'auth-service', endpoint: '/health', interval_sec: 30, timeout_sec: 5 },
+    { service: 'api-gateway', endpoint: '/health', interval_sec: 15, timeout_sec: 3 },
+    { service: 'database', endpoint: '/health', interval_sec: 60, timeout_sec: 10 },
+    { service: 'cache', endpoint: '/ping', interval_sec: 10, timeout_sec: 2 },
+    { service: 'message-queue', endpoint: '/health', interval_sec: 20, timeout_sec: 5 }
+  ]
+};
+
+const toonServiceMesh = nestedToToon('service_mesh', {
+  services: {
+    items: serviceMesh.services,
+    fields: ['name', 'port', 'replicas', 'memory_mb']
+  },
+  routes: {
+    items: serviceMesh.routes,
+    fields: ['source', 'destination', 'path', 'method']
+  },
+  health_checks: {
+    items: serviceMesh.health_checks,
+    fields: ['service', 'endpoint', 'interval_sec', 'timeout_sec']
+  }
+});
+
+console.log('TOON Output:');
+console.log(toonServiceMesh);
+console.log();
+
+const stats4 = calculateTokenSavings({ service_mesh: serviceMesh });
+console.log(`Token Savings: ${stats4.savedPercent}`);
+console.log(`JSON: ${stats4.jsonTokens} tokens`);
+console.log(`TOON: ${stats4.toonTokens} tokens\n`);
+
+// ============================================================================
+// Summary
+// ============================================================================
+
+console.log('=== Summary ===\n');
+console.log('Use Case                | Nodes/Arrays | Token Savings | Recommendation');
+console.log('------------------------|--------------|---------------|----------------');
+console.log(`Dependency Graph        | 6 + 6        | ${stats1.savedPercent.padEnd(13)} | ✅✅ Excellent for graphs`);
+console.log(`Multi-Phase Task Plan   | 4 + 4 + 2    | ${stats2.savedPercent.padEnd(13)} | ✅✅ Great for complex plans`);
+console.log(`Test Suite Results      | 5 + 2 + 2    | ${stats3.savedPercent.padEnd(13)} | ✅ Good for test reports`);
+console.log(`Service Mesh Config     | 5 + 5 + 5    | ${stats4.savedPercent.padEnd(13)} | ✅✅ Perfect for infra configs`);
+console.log();
+console.log('💡 Use nestedToToon() for:');
+console.log('   - Dependency graphs (nodes + edges)');
+console.log('   - Multi-phase plans (phases + milestones + blockers)');
+console.log('   - Test results (passed + failed + skipped)');
+console.log('   - Service configurations (services + routes + health checks)');
+console.log();
+console.log('📊 Best results when:');
+console.log('   - Multiple child arrays (2-5 arrays)');
+console.log('   - Each array has >= 5 elements');
+console.log('   - Consistent schema across items');

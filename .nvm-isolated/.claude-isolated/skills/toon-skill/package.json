@@ -1,0 +1,16 @@
+{
+  "name": "toon-skill",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Централизованный API для конвертации JSON ↔ TOON и расчёта token savings",
+  "main": "converters/toon-converter.mjs",
+  "scripts": {
+    "test": "node tests/round-trip.test.mjs && node tests/token-savings.test.mjs"
+  },
+  "keywords": ["toon", "token-optimization", "claude-code", "skills"],
+  "author": "Claude Code Team",
+  "license": "MIT",
+  "dependencies": {
+    "@toon-format/toon": "^2.1.0"
+  }
+}

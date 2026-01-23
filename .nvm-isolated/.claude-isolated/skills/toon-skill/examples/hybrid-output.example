@@ -1,0 +1,195 @@
+/**
+ * Example: Hybrid Output Pattern (JSON + TOON)
+ *
+ * Demonstrates the recommended pattern for backward-compatible TOON integration.
+ * Always generate JSON (primary), add TOON as optimization layer (optional).
+ */
+
+import { arrayToToon, calculateTokenSavings } from '../converters/toon-converter.mjs';
+
+// ============================================================================
+// Pattern: Hybrid Output for code-review skill
+// ============================================================================
+
+console.log('=== Hybrid Output Pattern: code-review skill ===\n');
+
+/**
+ * Simulate code review generation
+ */
+function generateCodeReview() {
+  // Step 1: Generate JSON output (ALWAYS)
+  const codeReview = {
+    score: 85,
+    blocking_issues: [
+      {
+        category: 'security',
+        file: 'src/auth.js',
+        line: 42,
+        severity: 'BLOCKING',
+        message: 'SQL injection vulnerability',
+        suggestion: 'Use parameterized queries'
+      },
+      {
+        category: 'security',
+        file: 'src/api.js',
+        line: 156,
+        severity: 'BLOCKING',
+        message: 'Unauthenticated endpoint',
+        suggestion: 'Add authentication middleware'
+      }
+    ],
+    warnings: [
+      { category: 'code_quality', file: 'src/app.js', line: 23, severity: 'WARNING', message: 'Unused variable', suggestion: 'Remove unused variable' },
+      { category: 'code_quality', file: 'src/db.js', line: 45, severity: 'WARNING', message: 'Missing error handling', suggestion: 'Add try-catch block' },
+      { category: 'performance', file: 'src/utils.js', line: 78, severity: 'INFO', message: 'Inefficient loop', suggestion: 'Use Array.map()' },
+      { category: 'maintainability', file: 'src/parser.js', line: 123, severity: 'INFO', message: 'Complex function', suggestion: 'Extract helper function' },
+      { category: 'best_practices', file: 'src/config.js', line: 12, severity: 'WARNING', message: 'Hardcoded value', suggestion: 'Move to environment variable' },
+      { category: 'type_safety', file: 'src/types.ts', line: 67, severity: 'WARNING', message: 'Implicit any type', suggestion: 'Add explicit type annotation' },
+      { category: 'documentation', file: 'src/api.js', line: 201, severity: 'INFO', message: 'Missing JSDoc comment', suggestion: 'Add function documentation' },
+      { category: 'naming', file: 'src/helpers.js', line: 34, severity: 'INFO', message: 'Non-descriptive name', suggestion: 'Rename to processUserData' },
+      { category: 'code_quality', file: 'src/validators.js', line: 89, severity: 'WARNING', message: 'Duplicate code', suggestion: 'Extract to shared function' },
+      { category: 'error_handling', file: 'src/service.js', line: 145, severity: 'WARNING', message: 'Swallowed exception', suggestion: 'Log or re-throw error' },
+      { category: 'performance', file: 'src/search.js', line: 56, severity: 'INFO', message: 'O(n^2) algorithm', suggestion: 'Use hash map for O(n) complexity' },
+      { category: 'best_practices', file: 'src/index.js', line: 7, severity: 'INFO', message: 'Missing input validation', suggestion: 'Validate user input' },
+      { category: 'maintainability', file: 'src/legacy.js', line: 234, severity: 'WARNING', message: 'Deprecated API usage', suggestion: 'Migrate to new API' },
+      { category: 'code_quality', file: 'src/formatter.js', line: 91, severity: 'INFO', message: 'Magic number', suggestion: 'Define as named constant' },
+      { category: 'type_safety', file: 'src/models.ts', line: 103, severity: 'WARNING', message: 'Type assertion without check', suggestion: 'Add runtime type guard' }
+    ],
+    lsp_diagnostics: [
+      { file: 'src/app.ts', line: 12, severity: 'error', code: 'TS2304', message: 'Cannot find name "window"' },
+      { file: 'src/app.ts', line: 45, severity: 'warning', code: 'TS2345', message: 'Argument of type "string" not assignable' },
+      { file: 'src/utils.ts', line: 67, severity: 'error', code: 'TS2322', message: 'Type "number" not assignable to type "string"' },
+      { file: 'src/types.ts', line: 23, severity: 'warning', code: 'TS2740', message: 'Property "id" is missing in type' },
+      { file: 'src/api.ts', line: 89, severity: 'error', code: 'TS2531', message: 'Object is possibly "null"' },
+      { file: 'src/db.ts', line: 34, severity: 'warning', code: 'TS2339', message: 'Property does not exist on type' },
+      { file: 'src/service.ts', line: 156, severity: 'error', code: 'TS2554', message: 'Expected 2 arguments, but got 1' }
+    ]
+  };
+
+  // Step 2: Add TOON optimization (if >= 5 elements)
+  const dataToConvert = {};
+
+  // blocking_issues: 2 elements (< 5, skip TOON)
+  // warnings: 15 elements (>= 5, add TOON)
+  if (codeReview.warnings.length >= 5) {
+    codeReview.toon = codeReview.toon || {};
+    codeReview.toon.warnings_toon = arrayToToon('warnings', codeReview.warnings,
+      ['category', 'file', 'line', 'severity', 'message', 'suggestion']);
+    dataToConvert.warnings = codeReview.warnings;
+  }
+
+  // lsp_diagnostics: 7 elements (>= 5, add TOON)
+  if (codeReview.lsp_diagnostics && codeReview.lsp_diagnostics.length >= 5) {
+    codeReview.toon = codeReview.toon || {};
+    codeReview.toon.lsp_diagnostics_toon = arrayToToon('lsp_diagnostics', codeReview.lsp_diagnostics,
+      ['file', 'line', 'severity', 'code', 'message']);
+    dataToConvert.lsp_diagnostics = codeReview.lsp_diagnostics;
+  }
+
+  // Calculate overall savings
+  if (codeReview.toon) {
+    const stats = calculateTokenSavings(dataToConvert);
+    codeReview.toon.token_savings = stats.savedPercent;
+    codeReview.toon.size_comparison = `JSON: ${stats.jsonTokens} tokens, TOON: ${stats.toonTokens} tokens`;
+  }
+
+  return { code_review: codeReview };
+}
+
+// Generate output
+const output = generateCodeReview();
+
+// Display result
+console.log('=== JSON Output (Primary - Always Present) ===\n');
+console.log('blocking_issues (2 items): Always available in JSON');
+console.log('warnings (15 items): Available in both JSON and TOON');
+console.log('lsp_diagnostics (7 items): Available in both JSON and TOON\n');
+
+console.log('=== TOON Output (Optimization Layer - Optional) ===\n');
+if (output.code_review.toon) {
+  console.log('TOON warnings:');
+  console.log(output.code_review.toon.warnings_toon);
+  console.log();
+
+  console.log('TOON lsp_diagnostics:');
+  console.log(output.code_review.toon.lsp_diagnostics_toon);
+  console.log();
+
+  console.log(`Token Savings: ${output.code_review.toon.token_savings}`);
+  console.log(`Size Comparison: ${output.code_review.toon.size_comparison}\n`);
+}
+
+// ============================================================================
+// Consuming Hybrid Output (Downstream Skill)
+// ============================================================================
+
+console.log('=== Consuming Hybrid Output (Downstream Skill) ===\n');
+
+/**
+ * Downstream skill reading hybrid output
+ */
+function consumeCodeReview(upstreamOutput) {
+  const codeReview = upstreamOutput.code_review;
+
+  // Strategy 1: Always use JSON (safest, backward compatible)
+  console.log('Strategy 1: Always use JSON');
+  const warnings = codeReview.warnings;
+  console.log(`Read ${warnings.length} warnings from JSON\n`);
+
+  // Strategy 2: Prefer TOON if available (token efficient)
+  console.log('Strategy 2: Prefer TOON if available');
+  import('../converters/toon-converter.mjs').then(({ toonToJson }) => {
+    const warningsToon = codeReview.toon?.warnings_toon
+      ? toonToJson(codeReview.toon.warnings_toon).warnings
+      : codeReview.warnings;
+
+    console.log(`Read ${warningsToon.length} warnings from ${codeReview.toon?.warnings_toon ? 'TOON' : 'JSON'}`);
+    console.log(`Token savings applied: ${codeReview.toon?.warnings_toon ? 'Yes (' + codeReview.toon.token_savings + ')' : 'No (fallback to JSON)'}\n`);
+  });
+
+  // Strategy 3: Use TOON for validation only
+  console.log('Strategy 3: Use TOON for validation only');
+  if (codeReview.toon?.warnings_toon) {
+    import('../converters/toon-converter.mjs').then(({ toonToJson, roundTripTest }) => {
+      const toonWarnings = toonToJson(codeReview.toon.warnings_toon).warnings;
+      const jsonWarnings = codeReview.warnings;
+
+      // Verify consistency
+      const consistent = JSON.stringify(toonWarnings) === JSON.stringify(jsonWarnings);
+      console.log(`TOON ↔ JSON consistency check: ${consistent ? '✓ PASSED' : '✗ FAILED'}\n`);
+    });
+  }
+}
+
+// Consume the output
+consumeCodeReview(output);
+
+// ============================================================================
+// Summary: Hybrid Output Benefits
+// ============================================================================
+
+setTimeout(() => {
+  console.log('=== Hybrid Output Benefits ===\n');
+  console.log('✅ 100% Backward Compatibility');
+  console.log('   - JSON always present (primary format)');
+  console.log('   - Existing consumers work without changes');
+  console.log('   - Zero breaking changes\n');
+
+  console.log('✅ Opt-in Token Optimization');
+  console.log('   - TOON generated only when beneficial (>= 5 elements)');
+  console.log('   - 30-60% token savings for large arrays');
+  console.log('   - Metrics embedded in output\n');
+
+  console.log('✅ Gradual Migration Path');
+  console.log('   - Producers add TOON incrementally');
+  console.log('   - Consumers can ignore TOON initially');
+  console.log('   - Migrate to TOON consumption when ready\n');
+
+  console.log('📊 Token Savings Example (code-review):');
+  console.log('   - 15 warnings + 7 LSP diagnostics');
+  console.log('   - JSON: ~650 tokens');
+  console.log('   - TOON: ~380 tokens');
+  console.log('   - Saved: ~270 tokens (41.5%)\n');
+
+  console.log('💡 Use this pattern for all skills!');
+}, 100);

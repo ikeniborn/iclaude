@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.code/skills/toon-skill/schemas/toon-output.schema.json",
+  "title": "TOON Output Schema",
+  "description": "JSON Schema для TOON optimization field в skill output",
+  "version": "1.0.0",
+  "definitions": {
+    "toon_optimization": {
+      "type": "object",
+      "description": "TOON format optimization for array-heavy structured output. Generated automatically when arrays >= 5 elements.",
+      "properties": {
+        "token_savings": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?%$",
+          "description": "Percentage of tokens saved compared to JSON (e.g., '42.3%')",
+          "examples": ["39.1%", "48.9%", "42.3%", "35.5%", "50.0%"]
+        },
+        "size_comparison": {
+          "type": "string",
+          "description": "Human-readable comparison of JSON vs TOON sizes",
+          "pattern": "^JSON: \\d+ tokens, TOON: \\d+ tokens$",
+          "examples": [
+            "JSON: 3450 tokens, TOON: 1960 tokens",
+            "JSON: 650 tokens, TOON: 380 tokens"
+          ]
+        }
+      },
+      "patternProperties": {
+        "^[a-z_]+_toon$": {
+          "type": "string",
+          "description": "TOON formatted array (e.g., 'warnings_toon', 'steps_toon', 'checks_toon'). Field name must end with '_toon' suffix.",
+          "pattern": "^[a-z_]+\\[\\d+\\]\\{[a-z_,]+\\}:",
+          "examples": [
+            "warnings[15]{category,file,line,severity,message}:\n  security,src/app.js,42,BLOCKING,SQL injection\n  ...",
+            "execution_steps[10]{step_number,description,validation}:\n  1,Create API endpoint,Run pytest\n  ..."
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": ["token_savings"]
+    },
+    "structured_output_with_toon": {
+      "type": "object",
+      "description": "Base structure for skills with TOON support. Use this as template for your skill's output schema.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "partial", "failed"],
+          "description": "Execution status"
+        },
+        "toon": {
+          "$ref": "#/definitions/toon_optimization"
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  "examples": [
+    {
+      "$comment": "Example 1: code-review skill output with TOON",
+      "code_review": {
+        "score": 85,
+        "warnings": [
+          {
+            "category": "security",
+            "file": "src/app.js",
+            "line": 42,
+            "severity": "BLOCKING",
+            "message": "SQL injection"
+          }
+        ],
+        "toon": {
+          "warnings_toon": "warnings[15]{category,file,line,severity,message}:\n  security,src/app.js,42,BLOCKING,SQL injection\n  ...",
+          "token_savings": "43.2%",
+          "size_comparison": "JSON: 3450 tokens, TOON: 1960 tokens"
+        }
+      }
+    },
+    {
+      "$comment": "Example 2: structured-planning skill output with TOON",
+      "task_plan": {
+        "task_summary": "Implement user authentication",
+        "execution_steps": [
+          {
+            "step_number": 1,
+            "description": "Create API endpoint",
+            "validation": "Run pytest"
+          }
+        ],
+        "toon": {
+          "execution_steps_toon": "execution_steps[7]{step_number,description,validation}:\n  1,Create API endpoint,Run pytest\n  ...",
+          "token_savings": "38.5%"
+        }
+      }
+    }
+  ]
+}
