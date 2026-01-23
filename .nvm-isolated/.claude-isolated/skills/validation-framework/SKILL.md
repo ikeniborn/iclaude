@@ -135,7 +135,11 @@ TOON (Token-Oriented Object Notation) - компактный формат для
 **Шаг 1: Импортировать TOON converter**
 
 ```javascript
-import { toonToJson, validateToon } from '../architecture-documentation/converters/toon-converter.mjs';
+// Recommended: Import from centralized toon-skill
+import { toonToJson, validateToon } from '../toon-skill/converters/toon-converter.mjs';
+
+// Legacy: Import from architecture-documentation (still works, but deprecated)
+// import { toonToJson, validateToon } from '../architecture-documentation/converters/toon-converter.mjs';
 ```
 
 **Шаг 2: Получить TOON из structured output**

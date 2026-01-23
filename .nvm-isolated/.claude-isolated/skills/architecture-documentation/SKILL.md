@@ -364,9 +364,10 @@ See [TOON Integration Guide](./examples/TOON-INTEGRATION-GUIDE.md) for usage det
 
 ### TOON Converter API
 
-Located in `converters/toon-converter.mjs`:
+Located in `converters/toon-converter.mjs` (re-export wrapper around centralized `toon-skill`):
 
 ```javascript
+// Local import (uses wrapper for backward compatibility)
 import {
   jsonToToon,           // Generic JSON → TOON
   toonToJson,           // Generic TOON → JSON
@@ -376,6 +377,9 @@ import {
   validateToon,         // Validate TOON syntax
   roundTripTest         // Test lossless conversion
 } from './converters/toon-converter.mjs';
+
+// Recommended for new code: Import from centralized toon-skill
+// import { ... } from '../toon-skill/converters/toon-converter.mjs';
 ```
 
 **Usage example:**
