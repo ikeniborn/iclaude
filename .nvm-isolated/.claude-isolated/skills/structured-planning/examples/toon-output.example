@@ -1,0 +1,346 @@
+/**
+ * Structured Planning TOON Output Example
+ *
+ * Demonstrates hybrid JSON + TOON format for structured-planning skill output
+ * Generated when execution_steps.length >= 5 OR files_to_change.length >= 5
+ */
+
+// ============================================
+// Example 1: Standard Task with 10 Execution Steps
+// ============================================
+
+{
+  "task_plan": {
+    "task_name": "Implement user authentication API with JWT",
+    "problem": "Users need secure login mechanism with session management and token refresh capabilities",
+    "solution": "JWT-based authentication with access/refresh tokens, Redis session store, and comprehensive security measures (rate limiting, audit logging)",
+    "acceptance_criteria": [
+      "Given user enters valid credentials, when submits login form, then access token and refresh token are returned",
+      "Given access token expires, when user requests refresh, then new access token is generated using refresh token",
+      "Given user logs out, when refresh token is invalidated, then subsequent refresh attempts fail",
+      "Given failed login attempts exceed limit, when user tries again, then account is temporarily locked",
+      "Given authentication events occur, when logged, then audit trail is created with timestamp and IP address"
+    ],
+    "files_to_change": [
+      {
+        "file_path": "src/api/auth.py",
+        "change_type": "create",
+        "description": "Authentication endpoints (POST /auth/login, /auth/refresh, /auth/logout)"
+      },
+      {
+        "file_path": "src/models/user.py",
+        "change_type": "create",
+        "description": "User model with password hashing using bcrypt"
+      },
+      {
+        "file_path": "src/utils/jwt.py",
+        "change_type": "create",
+        "description": "JWT token generation and validation utilities"
+      },
+      {
+        "file_path": "src/middleware/auth.py",
+        "change_type": "create",
+        "description": "Authentication middleware for protected routes"
+      },
+      {
+        "file_path": "src/services/email.py",
+        "change_type": "modify",
+        "description": "Add password reset and email verification functionality"
+      },
+      {
+        "file_path": "src/config/redis.py",
+        "change_type": "create",
+        "description": "Redis session store configuration for refresh tokens"
+      },
+      {
+        "file_path": "src/api/rate_limit.py",
+        "change_type": "create",
+        "description": "Rate limiting decorator for auth endpoints"
+      },
+      {
+        "file_path": "src/utils/audit.py",
+        "change_type": "create",
+        "description": "Audit logging utilities for authentication events"
+      },
+      {
+        "file_path": "tests/test_auth.py",
+        "change_type": "create",
+        "description": "Comprehensive authentication endpoint tests"
+      },
+      {
+        "file_path": "tests/test_jwt.py",
+        "change_type": "create",
+        "description": "JWT utility unit tests"
+      },
+      {
+        "file_path": "tests/test_middleware.py",
+        "change_type": "create",
+        "description": "Middleware integration tests"
+      },
+      {
+        "file_path": "requirements.txt",
+        "change_type": "modify",
+        "description": "Add PyJWT, bcrypt, redis, and rate-limiting dependencies"
+      }
+    ],
+    "execution_steps": [
+      {
+        "step_number": 1,
+        "description": "Create authentication endpoints",
+        "actions": [
+          "POST /auth/login - Accept email/password, validate credentials, return access+refresh tokens",
+          "POST /auth/refresh - Accept refresh token, validate, return new access token",
+          "POST /auth/logout - Accept refresh token, invalidate in Redis"
+        ],
+        "validation": "pytest tests/test_auth.py::test_login tests/test_auth.py::test_refresh tests/test_auth.py::test_logout"
+      },
+      {
+        "step_number": 2,
+        "description": "Implement JWT token generation using PyJWT library",
+        "actions": [
+          "Create access token (expires in 15 minutes) with user_id and role claims",
+          "Create refresh token (expires in 7 days) with unique jti claim",
+          "Implement token validation and decoding with signature verification"
+        ],
+        "validation": "pytest tests/test_jwt.py -v"
+      },
+      {
+        "step_number": 3,
+        "description": "Create user model with password hashing",
+        "actions": [
+          "Define User SQLAlchemy model (id, email, password_hash, created_at, updated_at)",
+          "Implement set_password() method using bcrypt.hashpw() with salt rounds=12",
+          "Implement check_password() method using bcrypt.checkpw()"
+        ],
+        "validation": "pytest tests/test_user_model.py::test_password_hashing"
+      },
+      {
+        "step_number": 4,
+        "description": "Add Redis session store for refresh tokens",
+        "actions": [
+          "Configure Redis connection with connection pooling",
+          "Store refresh token with TTL=7 days, key format: refresh_token:{jti}",
+          "Implement token revocation by deleting Redis key"
+        ],
+        "validation": "pytest tests/test_session.py::test_redis_storage tests/test_session.py::test_token_revocation"
+      },
+      {
+        "step_number": 5,
+        "description": "Implement token refresh endpoint",
+        "actions": [
+          "Validate refresh token signature and expiration",
+          "Check Redis for token existence (not revoked)",
+          "Generate new access token with same user_id",
+          "Optionally rotate refresh token (create new, invalidate old)"
+        ],
+        "validation": "pytest tests/test_refresh.py -v"
+      },
+      {
+        "step_number": 6,
+        "description": "Add rate limiting to auth endpoints",
+        "actions": [
+          "Implement @rate_limit decorator using Redis for counter storage",
+          "Apply 10 requests/minute limit to /auth/login per IP address",
+          "Return 429 Too Many Requests with Retry-After header when limit exceeded"
+        ],
+        "validation": "pytest tests/test_rate_limit.py::test_login_rate_limit"
+      },
+      {
+        "step_number": 7,
+        "description": "Create middleware for token validation",
+        "actions": [
+          "Extract access token from Authorization: Bearer {token} header",
+          "Decode and validate token signature using JWT secret",
+          "Attach user object to request context for downstream handlers",
+          "Return 401 Unauthorized for invalid/expired tokens"
+        ],
+        "validation": "pytest tests/test_middleware.py::test_protected_routes"
+      },
+      {
+        "step_number": 8,
+        "description": "Add password reset functionality",
+        "actions": [
+          "POST /auth/password-reset-request - Send reset email with signed token",
+          "POST /auth/password-reset - Validate token, update password hash",
+          "Reset tokens expire in 1 hour"
+        ],
+        "validation": "pytest tests/test_password_reset.py -v"
+      },
+      {
+        "step_number": 9,
+        "description": "Implement email verification flow",
+        "actions": [
+          "Add email_verified boolean field to User model",
+          "Send verification email on registration with signed token",
+          "GET /auth/verify-email?token={token} - Validate and mark email as verified"
+        ],
+        "validation": "pytest tests/test_email_verify.py -v"
+      },
+      {
+        "step_number": 10,
+        "description": "Add audit logging for authentication events",
+        "actions": [
+          "Create AuditLog model (event_type, user_id, ip_address, timestamp, details)",
+          "Log events: login_success, login_failure, logout, token_refresh, password_reset",
+          "Store logs in PostgreSQL for compliance and security monitoring"
+        ],
+        "validation": "pytest tests/test_audit.py::test_audit_logging"
+      }
+    ],
+    "risks": [
+      {
+        "risk": "JWT secret key leakage compromises all tokens",
+        "mitigation": "Store secret in environment variable, use strong random 256-bit key, rotate periodically"
+      },
+      {
+        "risk": "Redis downtime prevents authentication",
+        "mitigation": "Implement Redis connection retry logic, fallback to database for critical operations"
+      },
+      {
+        "risk": "Brute force attacks on login endpoint",
+        "mitigation": "Rate limiting (10 req/min), account lockout after 5 failed attempts, CAPTCHA after 3 failures"
+      }
+    ],
+    "git": {
+      "branch_name": "feature/user-authentication-jwt",
+      "commit_type": "feat",
+      "commit_summary": "Implement JWT authentication with refresh tokens and audit logging"
+    },
+    "toon": {
+      "execution_steps_toon": "execution_steps[10]{step_number,description,validation}:\n  1,Create authentication endpoints (POST /auth/login - Accept email/password validate credentials return access+refresh tokens POST /auth/refresh - Accept refresh token validate return new access token POST /auth/logout - Accept refresh token invalidate in Redis),pytest tests/test_auth.py::test_login tests/test_auth.py::test_refresh tests/test_auth.py::test_logout\n  2,Implement JWT token generation using PyJWT library (Create access token expires in 15 minutes with user_id and role claims Create refresh token expires in 7 days with unique jti claim Implement token validation and decoding with signature verification),pytest tests/test_jwt.py -v\n  3,Create user model with password hashing (Define User SQLAlchemy model id email password_hash created_at updated_at Implement set_password method using bcrypt.hashpw with salt rounds=12 Implement check_password method using bcrypt.checkpw),pytest tests/test_user_model.py::test_password_hashing\n  4,Add Redis session store for refresh tokens (Configure Redis connection with connection pooling Store refresh token with TTL=7 days key format refresh_token:{jti} Implement token revocation by deleting Redis key),pytest tests/test_session.py::test_redis_storage tests/test_session.py::test_token_revocation\n  5,Implement token refresh endpoint (Validate refresh token signature and expiration Check Redis for token existence not revoked Generate new access token with same user_id Optionally rotate refresh token create new invalidate old),pytest tests/test_refresh.py -v\n  6,Add rate limiting to auth endpoints (Implement @rate_limit decorator using Redis for counter storage Apply 10 requests/minute limit to /auth/login per IP address Return 429 Too Many Requests with Retry-After header when limit exceeded),pytest tests/test_rate_limit.py::test_login_rate_limit\n  7,Create middleware for token validation (Extract access token from Authorization Bearer {token} header Decode and validate token signature using JWT secret Attach user object to request context for downstream handlers Return 401 Unauthorized for invalid/expired tokens),pytest tests/test_middleware.py::test_protected_routes\n  8,Add password reset functionality (POST /auth/password-reset-request - Send reset email with signed token POST /auth/password-reset - Validate token update password hash Reset tokens expire in 1 hour),pytest tests/test_password_reset.py -v\n  9,Implement email verification flow (Add email_verified boolean field to User model Send verification email on registration with signed token GET /auth/verify-email?token={token} - Validate and mark email as verified),pytest tests/test_email_verify.py -v\n  10,Add audit logging for authentication events (Create AuditLog model event_type user_id ip_address timestamp details Log events login_success login_failure logout token_refresh password_reset Store logs in PostgreSQL for compliance and security monitoring),pytest tests/test_audit.py::test_audit_logging",
+      "files_to_change_toon": "files_to_change[12]{file_path,change_type,description}:\n  src/api/auth.py,create,Authentication endpoints (POST /auth/login /auth/refresh /auth/logout)\n  src/models/user.py,create,User model with password hashing using bcrypt\n  src/utils/jwt.py,create,JWT token generation and validation utilities\n  src/middleware/auth.py,create,Authentication middleware for protected routes\n  src/services/email.py,modify,Add password reset and email verification functionality\n  src/config/redis.py,create,Redis session store configuration for refresh tokens\n  src/api/rate_limit.py,create,Rate limiting decorator for auth endpoints\n  src/utils/audit.py,create,Audit logging utilities for authentication events\n  tests/test_auth.py,create,Comprehensive authentication endpoint tests\n  tests/test_jwt.py,create,JWT utility unit tests\n  tests/test_middleware.py,create,Middleware integration tests\n  requirements.txt,modify,Add PyJWT bcrypt redis and rate-limiting dependencies",
+      "token_savings": "38.5%",
+      "size_comparison": "JSON: 4200 tokens, TOON: 2583 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 2: Complex Task with 15 Steps + 20 Files
+// ============================================
+
+{
+  "task_plan": {
+    "task_name": "Build complete e-commerce checkout system",
+    "problem": "Users need end-to-end checkout flow from cart to payment confirmation",
+    "solution": "Multi-step checkout (cart review → shipping → payment → confirmation) with Stripe integration, inventory management, and order tracking",
+    "acceptance_criteria": [
+      "User can review cart items before checkout",
+      "User can enter/select shipping address",
+      "User can choose shipping method (standard, express, overnight)",
+      "User can pay via credit card (Stripe) or PayPal",
+      "Order confirmation email is sent with tracking number",
+      "Inventory is decremented upon successful payment",
+      "User can view order history and track shipments"
+    ],
+    "files_to_change": [
+      // ... 20 files (omitted for brevity)
+    ],
+    "execution_steps": [
+      // ... 15 detailed steps (omitted for brevity)
+    ],
+    "risks": [
+      {"risk": "Payment failures leave inventory locked", "mitigation": "Implement timeout-based inventory release (15 min)"},
+      {"risk": "Stripe webhook race conditions", "mitigation": "Idempotent webhook handlers with event deduplication"},
+      {"risk": "Overselling due to concurrent orders", "mitigation": "Database row-level locking for inventory updates"}
+    ],
+    "git": {
+      "branch_name": "feature/ecommerce-checkout-system",
+      "commit_type": "feat",
+      "commit_summary": "Implement complete checkout flow with Stripe and order tracking"
+    },
+    "toon": {
+      "execution_steps_toon": "execution_steps[15]{step_number,description,validation}:\n  ...",
+      "files_to_change_toon": "files_to_change[20]{file_path,change_type,description}:\n  ...",
+      "token_savings": "43%",
+      "size_comparison": "JSON: 6800 tokens, TOON: 3876 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 3: Minimal Task (Below Threshold)
+// ============================================
+
+{
+  "task_plan_lite": {
+    "task_name": "Fix typo in user profile page",
+    "files": ["src/pages/profile.tsx"],
+    "steps": [
+      "Locate typo in profile page heading",
+      "Correct spelling error",
+      "Verify change in browser"
+    ],
+    "validation": "npm run typecheck && npm test src/pages/profile.test.tsx"
+    // NO toon field - только 3 steps (ниже threshold 5)
+  }
+}
+
+// ============================================
+// Example 4: Standard Task with Files Only (No Steps)
+// ============================================
+
+{
+  "task_plan": {
+    "task_name": "Add new React components for dashboard",
+    "problem": "Dashboard needs visualizations for analytics data",
+    "solution": "Create reusable chart components using Recharts library",
+    "acceptance_criteria": [
+      "LineChart component displays time-series data",
+      "BarChart component displays categorical data",
+      "PieChart component displays distribution data",
+      "Components accept data prop and render responsively"
+    ],
+    "files_to_change": [
+      {"file_path": "src/components/charts/LineChart.tsx", "change_type": "create", "description": "Recharts-based line chart component"},
+      {"file_path": "src/components/charts/BarChart.tsx", "change_type": "create", "description": "Recharts-based bar chart component"},
+      {"file_path": "src/components/charts/PieChart.tsx", "change_type": "create", "description": "Recharts-based pie chart component"},
+      {"file_path": "src/components/charts/index.ts", "change_type": "create", "description": "Export all chart components"},
+      {"file_path": "src/pages/Dashboard.tsx", "change_type": "modify", "description": "Import and use new chart components"},
+      {"file_path": "src/types/charts.ts", "change_type": "create", "description": "TypeScript types for chart data and props"},
+      {"file_path": "tests/components/charts/LineChart.test.tsx", "change_type": "create", "description": "Unit tests for LineChart"},
+      {"file_path": "tests/components/charts/BarChart.test.tsx", "change_type": "create", "description": "Unit tests for BarChart"}
+    ],
+    "execution_steps": [
+      {"step_number": 1, "description": "Create chart components using Recharts", "actions": ["Install recharts", "Create LineChart, BarChart, PieChart"], "validation": "npm run typecheck"},
+      {"step_number": 2, "description": "Add unit tests for all components", "actions": ["Test data rendering", "Test responsive behavior"], "validation": "npm test -- charts"},
+      {"step_number": 3, "description": "Integrate charts into Dashboard page", "actions": ["Import components", "Pass analytics data"], "validation": "npm run dev and verify in browser"}
+    ],
+    "risks": [],
+    "git": {
+      "branch_name": "feature/dashboard-chart-components",
+      "commit_type": "feat",
+      "commit_summary": "Add Recharts-based visualization components for dashboard"
+    },
+    "toon": {
+      "files_to_change_toon": "files_to_change[8]{file_path,change_type,description}:\n  src/components/charts/LineChart.tsx,create,Recharts-based line chart component\n  src/components/charts/BarChart.tsx,create,Recharts-based bar chart component\n  src/components/charts/PieChart.tsx,create,Recharts-based pie chart component\n  src/components/charts/index.ts,create,Export all chart components\n  src/pages/Dashboard.tsx,modify,Import and use new chart components\n  src/types/charts.ts,create,TypeScript types for chart data and props\n  tests/components/charts/LineChart.test.tsx,create,Unit tests for LineChart\n  tests/components/charts/BarChart.test.tsx,create,Unit tests for BarChart",
+      "token_savings": "35.2%",
+      "size_comparison": "JSON: 1850 tokens, TOON: 1199 tokens"
+    }
+    // NOTE: execution_steps < 5, так что только files_to_change_toon
+  }
+}
+
+/**
+ * Token Savings Breakdown:
+ *
+ * Example 1 (10 steps + 12 files):
+ * - JSON: 4200 tokens
+ * - TOON: 2583 tokens
+ * - Savings: 38.5% (1617 tokens saved)
+ *
+ * Example 2 (15 steps + 20 files):
+ * - JSON: 6800 tokens
+ * - TOON: 3876 tokens
+ * - Savings: 43% (2924 tokens saved)
+ *
+ * Example 3 (3 steps):
+ * - No TOON generation (below threshold)
+ * - JSON only: 850 tokens
+ *
+ * Example 4 (3 steps + 8 files):
+ * - Only files_to_change_toon generated (execution_steps < 5)
+ * - JSON: 1850 tokens
+ * - TOON: 1199 tokens
+ * - Savings: 35.2% (651 tokens saved)
+ */
