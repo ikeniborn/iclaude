@@ -1,0 +1,8 @@
+data_flow:
+  id: {{flow_id}}
+  name: {{flow_name}}
+  trigger: {{trigger}}
+  steps[{{step_count}}]{step_number,component,action,data_in,data_out}:
+{{#each steps}}
+    {{step_number}},{{component}},{{action}},{{data_in}},{{data_out}}
+{{/each}}

@@ -1,0 +1,8 @@
+dependency_graph:
+  nodes[3]{id,label,type,layer}:
+    proxy-management,Proxy Management,component,infrastructure
+    isolated-environment,Isolated Environment,component,infrastructure
+    version-management,Version Management,component,data
+  edges[2]{from,to,type,description}:
+    isolated-environment,version-management,required,Uses lockfile for version tracking
+    isolated-environment,proxy-management,optional,Configures proxy if credentials exist

@@ -1,0 +1,28 @@
+{
+  "components": [
+    {
+      "id": "proxy-management",
+      "name": "Proxy Management",
+      "type": "module",
+      "path": "iclaude.sh:1343-1666",
+      "description": "Handle proxy URL validation, credential storage, and environment configuration",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "isolated-environment",
+      "name": "Isolated Environment",
+      "type": "module",
+      "path": "iclaude.sh:361-978",
+      "description": "Manage portable NVM+Node.js+Claude installation",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "version-management",
+      "name": "Version Management",
+      "type": "module",
+      "path": "iclaude.sh:616-768",
+      "description": "Track and reproduce exact versions of Node.js, npm, and Claude Code",
+      "layer": "data"
+    }
+  ]
+}

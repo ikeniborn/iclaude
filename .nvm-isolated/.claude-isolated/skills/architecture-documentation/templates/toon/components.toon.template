@@ -1,0 +1,4 @@
+components[{{component_count}}]{id,name,type,path,description,layer}:
+{{#each components}}
+  {{id}},{{name}},{{type}},{{path}},{{description}},{{layer}}
+{{/each}}

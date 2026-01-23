@@ -1,0 +1,31 @@
+{
+  "architecture_documentation": {
+    "status": "success",
+    "output_directory": "/docs/architecture",
+    "formats": {
+      "yaml": {
+        "files_created": [
+          "overview.yaml",
+          "diagrams/dependency-graph.md",
+          "diagrams/data-flow-user-launch.md",
+          "README.md"
+        ],
+        "output_directory": "/docs/architecture"
+      },
+      "toon": {
+        "components_toon": "components[6]{id,name,type,path,description,layer}:\n  proxy-management,Proxy Management,module,\"iclaude.sh:1343-1666\",\"Handle proxy URL validation, credential storage, and environment configuration\",infrastructure\n  isolated-environment,Isolated Environment,module,\"iclaude.sh:361-978\",Manage portable NVM+Node.js+Claude installation in .nvm-isolated/,infrastructure\n  version-management,Version Management,module,\"iclaude.sh:616-768\",\"Track and reproduce exact versions of Node.js, npm, and Claude Code\",data\n  configuration-isolation,Configuration Isolation,module,\"iclaude.sh:1099-1341\",Separate Claude Code state between isolated and system installations,infrastructure\n  nvm-detection,NVM Detection,module,\"iclaude.sh:200-318\",Find Claude Code binary in various installation modes,business\n  update-management,Update Management,module,\"iclaude.sh:529-2389\",Safely update Claude Code and handle temporary installation artifacts,business",
+        "dependency_graph_toon": "dependency_graph:\n  nodes[6]{id,label,type,layer}:\n    proxy-management,Proxy Management,component,infrastructure\n    isolated-environment,Isolated Environment,component,infrastructure\n    version-management,Version Management,component,data\n    configuration-isolation,Configuration Isolation,component,infrastructure\n    nvm-detection,NVM Detection,component,business\n    update-management,Update Management,component,business\n  edges[7]{from,to,type,description}:\n    isolated-environment,version-management,required,Uses lockfile for version tracking\n    isolated-environment,proxy-management,optional,Configures proxy if credentials exist\n    isolated-environment,nvm-detection,required,Locates NVM and Claude binaries\n    update-management,version-management,required,Updates lockfile after Claude Code update\n    update-management,isolated-environment,required,Recreates symlinks after update\n    configuration-isolation,isolated-environment,required,Sets CLAUDE_DIR to isolated config\n    nvm-detection,configuration-isolation,optional,Determines config location based on installation mode",
+        "data_flow_toon": "data_flow:\n  id: user-launch\n  name: User Launch with Proxy\n  trigger: User runs ./iclaude.sh\n  steps[5]{step_number,component,action,data_in,data_out}:\n    1,proxy-management,Load credentials,.claude_proxy_credentials,proxy URL\n    2,proxy-management,Configure environment,proxy URL,\"HTTPS_PROXY, HTTP_PROXY, NO_PROXY\"\n    3,isolated-environment,Setup NVM,\"NVM_DIR, CLAUDE_DIR\",Activated environment\n    4,nvm-detection,Find Claude binary,Activated environment,Claude binary path\n    5,nvm-detection,Launch Claude,\"Claude binary path, proxy env vars\",Running Claude Code session",
+        "quality_attributes_toon": "quality_attributes[5]{attribute,target,measurement,status}:\n  portability,100%,Isolated installation works after git clone,achieved\n  reliability,99%,Proxy configuration persists across restarts,achieved\n  maintainability,High,Modular bash functions with clear responsibilities,achieved\n  security,High,Credentials stored with chmod 600,achieved\n  performance,Fast,Startup time < 2 seconds with proxy,achieved",
+        "token_savings": "42.3%",
+        "size_comparison": "YAML: 1852 tokens, TOON: 1068 tokens"
+      }
+    },
+    "component_count": 6,
+    "dependency_count": 7,
+    "detected_patterns": ["layered", "modular"],
+    "warnings": [],
+    "complexity": "standard",
+    "mermaid_diagrams_generated": 2
+  }
+}

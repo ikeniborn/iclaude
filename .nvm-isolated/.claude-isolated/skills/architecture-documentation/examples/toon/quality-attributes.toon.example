@@ -1,0 +1,6 @@
+quality_attributes[5]{attribute,target,measurement,status}:
+  portability,100%,Isolated installation works after git clone,achieved
+  reliability,99%,Proxy configuration persists across restarts,achieved
+  maintainability,High,Modular bash functions with clear responsibilities,achieved
+  security,High,Credentials stored with chmod 600,achieved
+  performance,Fast,Startup time < 2 seconds with proxy,achieved

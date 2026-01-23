@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "JSON Schema for architecture-documentation skill structured output (dual-format: YAML + TOON)",
+  "type": "object",
+  "properties": {
+    "architecture_documentation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "partial", "failed"],
+          "description": "Overall status of documentation generation"
+        },
+        "output_directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Root directory for generated documentation files"
+        },
+        "formats": {
+          "type": "object",
+          "description": "Dual-format output: YAML for humans, TOON for LLMs",
+          "properties": {
+            "yaml": {
+              "type": "object",
+              "description": "YAML format output (human-facing, committed to git)",
+              "properties": {
+                "files_created": {
+                  "type": "array",
+                  "items": {"type": "string"},
+                  "minItems": 1,
+                  "description": "List of YAML/Markdown files created"
+                },
+                "output_directory": {
+                  "type": "string",
+                  "description": "Directory containing YAML files"
+                }
+              },
+              "required": ["files_created", "output_directory"]
+            },
+            "toon": {
+              "type": "object",
+              "description": "TOON format output (LLM-facing, token-efficient)",
+              "properties": {
+                "components_toon": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^components\\[\\d+\\]\\{",
+                  "description": "Components in TOON tabular format: components[N]{id,name,type,path,description,layer}:"
+                },
+                "dependency_graph_toon": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^dependency_graph:",
+                  "description": "Dependency graph in TOON format: dependency_graph:\\n  nodes[N]{...}:\\n  edges[M]{...}:"
+                },
+                "data_flow_toon": {
+                  "type": "string",
+                  "pattern": "^data_flow:",
+                  "description": "Data flow in TOON format (optional): data_flow:\\n  id: ...\\n  steps[N]{...}:"
+                },
+                "quality_attributes_toon": {
+                  "type": "string",
+                  "pattern": "^quality_attributes\\[\\d+\\]\\{",
+                  "description": "Quality attributes in TOON format (optional): quality_attributes[N]{attribute,target,measurement,status}:"
+                },
+                "token_savings": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d+)?%$",
+                  "description": "Percentage token savings compared to YAML/JSON (e.g., '42.5%')"
+                },
+                "size_comparison": {
+                  "type": "string",
+                  "pattern": "YAML: \\d+ tokens, TOON: \\d+ tokens",
+                  "description": "Token count comparison (e.g., 'YAML: 8542 tokens, TOON: 4951 tokens')"
+                }
+              },
+              "required": ["components_toon", "dependency_graph_toon", "token_savings", "size_comparison"]
+            }
+          },
+          "required": ["yaml", "toon"]
+        },
+        "component_count": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Total number of components discovered"
+        },
+        "dependency_count": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total number of dependency edges"
+        },
+        "detected_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["layered", "mvc", "microservices", "hexagonal", "event-driven", "modular", "monolith"]
+          },
+          "minItems": 1,
+          "description": "Detected architectural patterns"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Warnings (e.g., circular dependencies, missing descriptions)"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["minimal", "standard", "complex"],
+          "description": "Project complexity classification"
+        },
+        "mermaid_diagrams_generated": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Number of Mermaid diagrams created"
+        }
+      },
+      "required": [
+        "status",
+        "output_directory",
+        "formats",
+        "component_count",
+        "dependency_count",
+        "detected_patterns",
+        "complexity"
+      ]
+    }
+  },
+  "required": ["architecture_documentation"]
+}

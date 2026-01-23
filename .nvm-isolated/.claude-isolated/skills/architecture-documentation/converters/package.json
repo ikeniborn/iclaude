@@ -1,0 +1,13 @@
+{
+  "name": "architecture-documentation-converters",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TOON converters for architecture-documentation skill",
+  "main": "toon-converter.mjs",
+  "scripts": {
+    "test": "node toon-converter.mjs test ../examples/test-components.json"
+  },
+  "dependencies": {
+    "@toon-format/toon": "^2.1.0"
+  }
+}

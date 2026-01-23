@@ -1,0 +1,4 @@
+quality_attributes[{{attribute_count}}]{attribute,target,measurement,status}:
+{{#each attributes}}
+  {{attribute}},{{target}},{{measurement}},{{status}}
+{{/each}}

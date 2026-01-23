@@ -1,0 +1,16 @@
+dependency_graph:
+  nodes[6]{id,label,type,layer}:
+    proxy-management,Proxy Management,component,infrastructure
+    isolated-environment,Isolated Environment,component,infrastructure
+    version-management,Version Management,component,data
+    configuration-isolation,Configuration Isolation,component,infrastructure
+    nvm-detection,NVM Detection,component,business
+    update-management,Update Management,component,business
+  edges[7]{from,to,type,description}:
+    isolated-environment,version-management,required,Uses lockfile for version tracking
+    isolated-environment,proxy-management,optional,Configures proxy if credentials exist
+    isolated-environment,nvm-detection,required,Locates NVM and Claude binaries
+    update-management,version-management,required,Updates lockfile after Claude Code update
+    update-management,isolated-environment,required,Recreates symlinks after update
+    configuration-isolation,isolated-environment,required,Sets CLAUDE_DIR to isolated config
+    nvm-detection,configuration-isolation,optional,Determines config location based on installation mode

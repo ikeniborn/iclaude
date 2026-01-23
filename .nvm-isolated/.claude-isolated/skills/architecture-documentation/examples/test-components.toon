@@ -1,0 +1,4 @@
+components[3]{id,name,type,path,description,layer}:
+  proxy-management,Proxy Management,module,"iclaude.sh:1343-1666","Handle proxy URL validation, credential storage, and environment configuration",infrastructure
+  isolated-environment,Isolated Environment,module,"iclaude.sh:361-978",Manage portable NVM+Node.js+Claude installation,infrastructure
+  version-management,Version Management,module,"iclaude.sh:616-768","Track and reproduce exact versions of Node.js, npm, and Claude Code",data

@@ -1,0 +1,9 @@
+dependency_graph:
+  nodes[{{node_count}}]{id,label,type,layer}:
+{{#each nodes}}
+    {{id}},{{label}},{{type}},{{layer}}
+{{/each}}
+  edges[{{edge_count}}]{from,to,type,description}:
+{{#each edges}}
+    {{from}},{{to}},{{type}},{{description}}
+{{/each}}

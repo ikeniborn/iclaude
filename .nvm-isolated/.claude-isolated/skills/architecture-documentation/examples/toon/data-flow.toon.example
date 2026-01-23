@@ -1,0 +1,10 @@
+data_flow:
+  id: user-launch
+  name: User Launch with Proxy
+  trigger: User runs ./iclaude.sh
+  steps[5]{step_number,component,action,data_in,data_out}:
+    1,proxy-management,Load credentials,.claude_proxy_credentials,proxy URL
+    2,proxy-management,Configure environment,proxy URL,"HTTPS_PROXY, HTTP_PROXY, NO_PROXY"
+    3,isolated-environment,Setup NVM,"NVM_DIR, CLAUDE_DIR",Activated environment
+    4,nvm-detection,Find Claude binary,Activated environment,Claude binary path
+    5,nvm-detection,Launch Claude,"Claude binary path, proxy env vars",Running Claude Code session

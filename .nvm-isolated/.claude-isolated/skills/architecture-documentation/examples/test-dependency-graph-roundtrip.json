@@ -1,0 +1,38 @@
+{
+  "dependency_graph": {
+    "nodes": [
+      {
+        "id": "proxy-management",
+        "label": "Proxy Management",
+        "type": "component",
+        "layer": "infrastructure"
+      },
+      {
+        "id": "isolated-environment",
+        "label": "Isolated Environment",
+        "type": "component",
+        "layer": "infrastructure"
+      },
+      {
+        "id": "version-management",
+        "label": "Version Management",
+        "type": "component",
+        "layer": "data"
+      }
+    ],
+    "edges": [
+      {
+        "from": "isolated-environment",
+        "to": "version-management",
+        "type": "required",
+        "description": "Uses lockfile for version tracking"
+      },
+      {
+        "from": "isolated-environment",
+        "to": "proxy-management",
+        "type": "optional",
+        "description": "Configures proxy if credentials exist"
+      }
+    ]
+  }
+}
