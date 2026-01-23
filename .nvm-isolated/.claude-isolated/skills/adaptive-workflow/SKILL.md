@@ -1,7 +1,7 @@
 ---
 name: Adaptive Workflow
 description: Автоматический выбор сложности workflow
-version: 2.0.0
+version: 2.1.0
 tags: [workflow, complexity, adaptation, optimization, task-decomposition]
 dependencies: [context-awareness, task-decomposition, phase-execution]
 files:
@@ -303,5 +303,174 @@ Task: "Update README documentation"
 - task-decomposition и phase-execution опциональны
 - Если skills не установлены → fallback to standard structured-planning
 - Без декомпозиции complex tasks выполняются монолитно (как раньше)
+
+## Extended Complexity Analysis (v2.1.0)
+
+**Новое:** Для детального объяснения complexity classification, добавляется массив `complexity_factors[]`.
+
+**Структура:**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "prd_compliance"],
+    "reasoning": "Multiple components, breaking changes, and 8+ files",
+    "complexity_factors": [
+      {
+        "factor_id": 1,
+        "factor_name": "Files to change",
+        "value": 8,
+        "threshold": 5,
+        "weight": 0.4,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 2,
+        "factor_name": "Number of components",
+        "value": 3,
+        "threshold": 2,
+        "weight": 0.3,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 3,
+        "factor_name": "Breaking changes",
+        "value": true,
+        "threshold": false,
+        "weight": 0.2,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 4,
+        "factor_name": "Cross-domain changes",
+        "value": true,
+        "threshold": false,
+        "weight": 0.1,
+        "impact": "medium",
+        "contributes_to": "complex"
+      }
+    ],
+    "complexity_score": 0.85
+  }
+}
+```
+
+Используется когда:
+- Требуется прозрачность complexity decision
+- User challenges complexity classification
+- Debugging workflow selection
+
+## TOON Format Support (v2.1.0)
+
+**Назначение:** Автоматическая оптимизация токенов для complexity_factors[] массива при детальном анализе.
+
+### Threshold
+
+TOON генерируется если **complexity_factors[] >= 5**
+
+### Target Array
+
+**complexity_factors[]**
+- Обычно: 3-8 factors per task
+- Поля: factor_id, factor_name, value, threshold, weight, impact, contributes_to
+- Token savings: ~20-30% для 5+ factors
+
+### Output Structure
+
+**Complexity Result (с TOON):**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "prd_compliance"],
+    "reasoning": "Large codebase changes with breaking API modifications and multiple subsystems affected",
+    "complexity_factors": [
+      {"factor_id": 1, "factor_name": "Files to change", "value": 12, "threshold": 5, "weight": 0.35, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 2, "factor_name": "Number of components", "value": 4, "threshold": 2, "weight": 0.25, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 3, "factor_name": "Breaking changes", "value": true, "threshold": false, "weight": 0.15, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 4, "factor_name": "Cross-domain changes", "value": true, "threshold": false, "weight": 0.10, "impact": "medium", "contributes_to": "complex"},
+      {"factor_id": 5, "factor_name": "Database migration required", "value": true, "threshold": false, "weight": 0.10, "impact": "medium", "contributes_to": "complex"},
+      {"factor_id": 6, "factor_name": "External API changes", "value": true, "threshold": false, "weight": 0.05, "impact": "low", "contributes_to": "complex"}
+    ],
+    "complexity_score": 0.92,
+    "toon": {
+      "complexity_factors_toon": "complexity_factors[6]{factor_id,factor_name,value,threshold,weight,impact,contributes_to}:\n  1,Files to change,12,5,0.35,high,complex\n  2,Number of components,4,2,0.25,high,complex\n  3,Breaking changes,true,false,0.15,high,complex\n  4,Cross-domain changes,true,false,0.10,medium,complex\n  5,Database migration required,true,false,0.10,medium,complex\n  6,External API changes,true,false,0.05,low,complex",
+      "token_savings": "24.3%",
+      "size_comparison": "JSON: 1240 tokens, TOON: 938 tokens"
+    }
+  }
+}
+```
+
+### Implementation Pattern
+
+```javascript
+import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
+
+// Complexity result with factors
+const complexityResult = {
+  level: "complex",
+  workflow: "phase-based",
+  complexity_factors: [...]  // 6+ factors
+};
+
+// Add TOON optimization (только для complexity_factors >= 5)
+if (complexityResult.complexity_factors.length >= 5) {
+  // Normalize boolean values для TOON consistency
+  const factorsNormalized = complexityResult.complexity_factors.map(f => ({
+    factor_id: f.factor_id,
+    factor_name: f.factor_name,
+    value: typeof f.value === 'boolean' ? f.value.toString() : f.value,
+    threshold: typeof f.threshold === 'boolean' ? f.threshold.toString() : f.threshold,
+    weight: f.weight,
+    impact: f.impact,
+    contributes_to: f.contributes_to
+  }));
+
+  complexityResult.toon = {
+    complexity_factors_toon: arrayToToon('complexity_factors', factorsNormalized,
+      ['factor_id', 'factor_name', 'value', 'threshold', 'weight', 'impact', 'contributes_to']),
+    ...calculateTokenSavings({ complexity_factors: factorsNormalized })
+  };
+}
+```
+
+### Token Savings Examples
+
+| Scenario | JSON Tokens | TOON Tokens | Savings | Factors |
+|----------|-------------|-------------|---------|---------|
+| Standard analysis (5 factors) | 1050 | 820 | 21.9% | 5 |
+| Detailed analysis (6 factors) | 1240 | 938 | 24.3% | 6 |
+| Comprehensive (8 factors) | 1680 | 1210 | 28.0% | 8 |
+
+**Typical use case:** Complex task с 6 факторами: **~24% token reduction**
+
+### Backward Compatibility
+
+- ✅ JSON format always present (primary format)
+- ✅ TOON field optional (only when threshold met)
+- ✅ Simple output without factors unchanged
+- ✅ Zero breaking changes для downstream consumers
+
+### When TOON is Generated
+
+**Always generated:**
+- Detailed complexity analysis (5+ factors tracked)
+- User requested explanation mode
+- Debugging workflow classification
+
+**Not generated:**
+- Simple tasks (3-4 factors sufficient)
+- Quick classification (minimal analysis)
+- Default workflow selection
+
+См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
 
 ---
