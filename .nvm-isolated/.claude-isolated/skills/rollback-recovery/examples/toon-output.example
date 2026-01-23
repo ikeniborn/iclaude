@@ -1,0 +1,237 @@
+/**
+ * Rollback Recovery TOON Output Examples
+ *
+ * Demonstrates hybrid JSON + TOON format for rollback-recovery skill output
+ * Generated when files_affected >= 5
+ */
+
+// ============================================
+// Example 1: Git Reset Hard (7 files affected)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "git_reset_hard",
+    "executed_commands": [
+      "git reset --hard abc123"
+    ],
+    "files_affected": [
+      {"file": "backend/app/services/auth_service.py", "change_type": "modified", "status": "reverted"},
+      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/app/core/security.py", "change_type": "modified", "status": "reverted"},
+      {"file": "backend/app/middleware/auth_middleware.py", "change_type": "created", "status": "deleted"},
+      {"file": "tests/services/test_auth_service.py", "change_type": "created", "status": "deleted"},
+      {"file": "tests/api/test_auth_endpoints.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/app/models/user.py", "change_type": "modified", "status": "reverted"}
+    ],
+    "previous_state": "abc123def456",
+    "current_state": "abc123",
+    "status": "rolled_back",
+    "changes_preserved": false,
+    "toon": {
+      "files_affected_toon": "files_affected[7]{file,change_type,status}:\n  backend/app/services/auth_service.py,modified,reverted\n  backend/app/api/v1/endpoints/auth.py,created,deleted\n  backend/app/core/security.py,modified,reverted\n  backend/app/middleware/auth_middleware.py,created,deleted\n  tests/services/test_auth_service.py,created,deleted\n  tests/api/test_auth_endpoints.py,created,deleted\n  backend/app/models/user.py,modified,reverted",
+      "token_savings": "28.3%",
+      "size_comparison": "JSON: 980 tokens, TOON: 702 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 2: Git Reset Soft (12 files affected)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "git_reset_soft",
+    "executed_commands": [
+      "git reset --soft HEAD~1"
+    ],
+    "files_affected": [
+      {"file": "frontend/src/services/AuthService.ts", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/components/LoginForm.tsx", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/components/LogoutButton.tsx", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/hooks/useAuth.ts", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/contexts/AuthContext.tsx", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/api/authApi.ts", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/types/auth.types.ts", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/utils/tokenStorage.ts", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/pages/LoginPage.tsx", "change_type": "created", "status": "unstaged"},
+      {"file": "frontend/src/App.tsx", "change_type": "modified", "status": "unstaged"},
+      {"file": "frontend/src/router/index.tsx", "change_type": "modified", "status": "unstaged"},
+      {"file": "frontend/package.json", "change_type": "modified", "status": "unstaged"}
+    ],
+    "previous_state": "def456ghi789",
+    "current_state": "def456",
+    "status": "rolled_back",
+    "changes_preserved": true,
+    "stash_location": null,
+    "toon": {
+      "files_affected_toon": "files_affected[12]{file,change_type,status}:\n  frontend/src/services/AuthService.ts,created,unstaged\n  frontend/src/components/LoginForm.tsx,created,unstaged\n  frontend/src/components/LogoutButton.tsx,created,unstaged\n  frontend/src/hooks/useAuth.ts,created,unstaged\n  frontend/src/contexts/AuthContext.tsx,created,unstaged\n  frontend/src/api/authApi.ts,created,unstaged\n  frontend/src/types/auth.types.ts,created,unstaged\n  frontend/src/utils/tokenStorage.ts,created,unstaged\n  frontend/src/pages/LoginPage.tsx,created,unstaged\n  frontend/src/App.tsx,modified,unstaged\n  frontend/src/router/index.tsx,modified,unstaged\n  frontend/package.json,modified,unstaged",
+      "token_savings": "33.3%",
+      "size_comparison": "JSON: 1680 tokens, TOON: 1120 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 3: Git Stash (Large rollback, 20 files)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "git_stash",
+    "executed_commands": [
+      "git stash push -m \"rollback: auth-system-implementation\""
+    ],
+    "files_affected": [
+      {"file": "backend/app/services/auth_service.py", "change_type": "modified", "status": "stashed"},
+      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "created", "status": "stashed"},
+      {"file": "backend/app/core/security.py", "change_type": "modified", "status": "stashed"},
+      {"file": "backend/app/middleware/auth_middleware.py", "change_type": "created", "status": "stashed"},
+      {"file": "tests/services/test_auth_service.py", "change_type": "created", "status": "stashed"},
+      {"file": "tests/api/test_auth_endpoints.py", "change_type": "created", "status": "stashed"},
+      {"file": "backend/app/models/user.py", "change_type": "modified", "status": "stashed"},
+      {"file": "frontend/src/services/AuthService.ts", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/components/LoginForm.tsx", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/components/LogoutButton.tsx", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/hooks/useAuth.ts", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/contexts/AuthContext.tsx", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/api/authApi.ts", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/types/auth.types.ts", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/utils/tokenStorage.ts", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/pages/LoginPage.tsx", "change_type": "created", "status": "stashed"},
+      {"file": "frontend/src/App.tsx", "change_type": "modified", "status": "stashed"},
+      {"file": "frontend/src/router/index.tsx", "change_type": "modified", "status": "stashed"},
+      {"file": "frontend/package.json", "change_type": "modified", "status": "stashed"},
+      {"file": "backend/requirements.txt", "change_type": "modified", "status": "stashed"}
+    ],
+    "previous_state": "working_directory_dirty",
+    "current_state": "working_directory_clean",
+    "status": "rolled_back",
+    "changes_preserved": true,
+    "stash_location": "stash@{0}",
+    "toon": {
+      "files_affected_toon": "files_affected[20]{file,change_type,status}:\n  backend/app/services/auth_service.py,modified,stashed\n  backend/app/api/v1/endpoints/auth.py,created,stashed\n  backend/app/core/security.py,modified,stashed\n  backend/app/middleware/auth_middleware.py,created,stashed\n  tests/services/test_auth_service.py,created,stashed\n  tests/api/test_auth_endpoints.py,created,stashed\n  backend/app/models/user.py,modified,stashed\n  frontend/src/services/AuthService.ts,created,stashed\n  frontend/src/components/LoginForm.tsx,created,stashed\n  frontend/src/components/LogoutButton.tsx,created,stashed\n  frontend/src/hooks/useAuth.ts,created,stashed\n  frontend/src/contexts/AuthContext.tsx,created,stashed\n  frontend/src/api/authApi.ts,created,stashed\n  frontend/src/types/auth.types.ts,created,stashed\n  frontend/src/utils/tokenStorage.ts,created,stashed\n  frontend/src/pages/LoginPage.tsx,created,stashed\n  frontend/src/App.tsx,modified,stashed\n  frontend/src/router/index.tsx,modified,stashed\n  frontend/package.json,modified,stashed\n  backend/requirements.txt,modified,stashed",
+      "token_savings": "35.0%",
+      "size_comparison": "JSON: 2800 tokens, TOON: 1820 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 4: File Restore (Partial rollback, 6 files)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "file_restore",
+    "executed_commands": [
+      "git checkout HEAD -- backend/app/services/auth_service.py backend/app/api/v1/endpoints/auth.py backend/app/core/security.py tests/services/test_auth_service.py tests/api/test_auth_endpoints.py backend/app/models/user.py"
+    ],
+    "files_affected": [
+      {"file": "backend/app/services/auth_service.py", "change_type": "modified", "status": "restored"},
+      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/app/core/security.py", "change_type": "modified", "status": "restored"},
+      {"file": "tests/services/test_auth_service.py", "change_type": "created", "status": "deleted"},
+      {"file": "tests/api/test_auth_endpoints.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/app/models/user.py", "change_type": "modified", "status": "restored"}
+    ],
+    "previous_state": "working_directory_partial",
+    "current_state": "working_directory_partial",
+    "status": "partially_rolled_back",
+    "changes_preserved": false,
+    "toon": {
+      "files_affected_toon": "files_affected[6]{file,change_type,status}:\n  backend/app/services/auth_service.py,modified,restored\n  backend/app/api/v1/endpoints/auth.py,created,deleted\n  backend/app/core/security.py,modified,restored\n  tests/services/test_auth_service.py,created,deleted\n  tests/api/test_auth_endpoints.py,created,deleted\n  backend/app/models/user.py,modified,restored",
+      "token_savings": "26.7%",
+      "size_comparison": "JSON: 890 tokens, TOON: 652 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 5: Simplified Files Array (strings only)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "git_reset_hard",
+    "executed_commands": [
+      "git reset --hard HEAD~2"
+    ],
+    "files_affected": [
+      "src/app.py",
+      "src/utils.py",
+      "src/models.py",
+      "tests/test_app.py",
+      "tests/test_utils.py",
+      "README.md"
+    ],
+    "previous_state": "xyz789",
+    "current_state": "xyz123",
+    "status": "rolled_back",
+    "changes_preserved": false,
+    "toon": {
+      "files_affected_toon": "files_affected[6]{file,change_type,status}:\n  src/app.py,unknown,reverted\n  src/utils.py,unknown,reverted\n  src/models.py,unknown,reverted\n  tests/test_app.py,unknown,reverted\n  tests/test_utils.py,unknown,reverted\n  README.md,unknown,reverted",
+      "token_savings": "30.1%",
+      "size_comparison": "JSON: 420 tokens, TOON: 294 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 6: Small Rollback (Below Threshold)
+// ============================================
+
+{
+  "rollback": {
+    "strategy": "git_reset_soft",
+    "executed_commands": [
+      "git reset --soft HEAD~1"
+    ],
+    "files_affected": [
+      {"file": "src/config.py", "change_type": "modified", "status": "unstaged"},
+      {"file": "src/settings.py", "change_type": "modified", "status": "unstaged"},
+      {"file": "tests/test_config.py", "change_type": "created", "status": "unstaged"}
+    ],
+    "previous_state": "aaa111",
+    "current_state": "aaa000",
+    "status": "rolled_back",
+    "changes_preserved": true
+  }
+  // NO toon field - files_affected=3 (below threshold 5)
+}
+
+/**
+ * Token Savings Breakdown:
+ *
+ * Example 1 (Git Reset Hard, 7 files):
+ * - JSON: 980 tokens
+ * - TOON: 702 tokens
+ * - Savings: 28.3% (278 tokens saved)
+ *
+ * Example 2 (Git Reset Soft, 12 files):
+ * - JSON: 1680 tokens
+ * - TOON: 1120 tokens
+ * - Savings: 33.3% (560 tokens saved)
+ *
+ * Example 3 (Git Stash, 20 files):
+ * - JSON: 2800 tokens
+ * - TOON: 1820 tokens
+ * - Savings: 35.0% (980 tokens saved)
+ *
+ * Example 4 (File Restore, 6 files):
+ * - JSON: 890 tokens
+ * - TOON: 652 tokens
+ * - Savings: 26.7% (238 tokens saved)
+ *
+ * Example 5 (Simplified, 6 files):
+ * - JSON: 420 tokens
+ * - TOON: 294 tokens
+ * - Savings: 30.1% (126 tokens saved)
+ *
+ * Example 6 (Small Rollback, 3 files):
+ * - No TOON generation (below threshold)
+ * - JSON only: 340 tokens
+ *
+ * Typical use case (12 files): ~33% token reduction
+ */
