@@ -1,0 +1,121 @@
+/**
+ * PR Automation TOON Output Example
+ *
+ * Demonstrates hybrid JSON + TOON format for pr-automation skill output
+ * Generated when checks >= 5 OR autoFixedErrors >= 5 OR commits >= 5
+ */
+
+// ============================================
+// Example 1: Standard PR with Auto-Fixes
+// ============================================
+
+{
+  "success": true,
+  "prNumber": 312,
+  "prUrl": "https://github.com/user/repo/pull/312",
+  "finalStatus": "all_checks_passed",
+  "checksStatus": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "checks": [
+    {"name": "TypeScript Type Check", "status": "success", "duration_ms": 45000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/123"},
+    {"name": "ESLint & Prettier", "status": "success", "duration_ms": 28000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/124"},
+    {"name": "Unit Tests (Vitest)", "status": "success", "duration_ms": 67000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/125"},
+    {"name": "Integration Tests", "status": "success", "duration_ms": 89000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/126"},
+    {"name": "Build Verification", "status": "success", "duration_ms": 120000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/127"},
+    {"name": "E2E Tests (Cypress)", "status": "success", "duration_ms": 180000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/128"},
+    {"name": "Security Scan", "status": "success", "duration_ms": 45000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/129"},
+    {"name": "Deploy Preview", "status": "success", "duration_ms": 90000, "conclusion": "success", "details_url": "https://github.com/user/repo/actions/runs/130"}
+  ],
+  "fixIterations": 2,
+  "autoFixedErrors": [
+    {"file": "src/components/TransactionForm.tsx", "line": 45, "error_type": "typescript", "error_code": "TS2322", "message": "Type 'string | undefined' is not assignable to type 'string'", "fix_applied": "Added type guard: if (value !== undefined)", "commit_sha": "abc123"},
+    {"file": "src/utils/validation.ts", "line": 89, "error_type": "typescript", "error_code": "TS2304", "message": "Cannot find name 'ValidationError'", "fix_applied": "Added import: import { ValidationError } from './types'", "commit_sha": "def456"},
+    {"file": "src/api/transactions.ts", "line": 123, "error_type": "eslint", "error_code": "no-unused-vars", "message": "Variable 'oldApi' is defined but never used", "fix_applied": "Removed unused variable", "commit_sha": "ghi789"},
+    {"file": "src/components/FilterPanel.tsx", "line": 67, "error_type": "typescript", "error_code": "TS2345", "message": "Argument of type 'number' is not assignable to parameter of type 'string'", "fix_applied": "Added toString() conversion", "commit_sha": "jkl012"},
+    {"file": "tests/integration/api.test.ts", "line": 234, "error_type": "vitest", "error_code": "assertion-failure", "message": "Expected 200 but received 404", "fix_applied": "Fixed mock API endpoint path", "commit_sha": "mno345"},
+    {"file": "src/services/email.ts", "line": 156, "error_type": "typescript", "error_code": "TS2531", "message": "Object is possibly 'null'", "fix_applied": "Added null check with optional chaining", "commit_sha": "pqr678"},
+    {"file": "src/components/Dashboard.tsx", "line": 78, "error_type": "eslint", "error_code": "no-console", "message": "Unexpected console.log statement", "fix_applied": "Removed debug console.log", "commit_sha": "stu901"},
+    {"file": "src/hooks/useTransactions.ts", "line": 45, "error_type": "typescript", "error_code": "TS2532", "message": "Object is possibly 'undefined'", "fix_applied": "Added default value in destructuring", "commit_sha": "vwx234"},
+    {"file": "src/utils/formatting.ts", "line": 23, "error_type": "prettier", "error_code": "formatting", "message": "Line exceeds 80 characters", "fix_applied": "Reformatted long line", "commit_sha": "yza567"},
+    {"file": "tests/unit/validation.test.ts", "line": 89, "error_type": "vitest", "error_code": "mock-error", "message": "Mock function not called", "fix_applied": "Fixed mock setup timing issue", "commit_sha": "bcd890"},
+    {"file": "src/api/auth.ts", "line": 167, "error_type": "typescript", "error_code": "TS2345", "message": "Type 'Promise<User>' is not assignable to type 'User'", "fix_applied": "Added await keyword", "commit_sha": "efg123"},
+    {"file": "src/components/UserProfile.tsx", "line": 201, "error_type": "eslint", "error_code": "no-unused-vars", "message": "Imported 'useState' is not used", "fix_applied": "Removed unused import", "commit_sha": "hij456"},
+    {"file": "src/types/transaction.ts", "line": 34, "error_type": "typescript", "error_code": "TS2304", "message": "Cannot find name 'TransactionType'", "fix_applied": "Added enum import from constants", "commit_sha": "klm789"},
+    {"file": "src/utils/date.ts", "line": 78, "error_type": "eslint", "error_code": "no-implicit-coercion", "message": "Use the Number constructor instead of unary plus", "fix_applied": "Changed +value to Number(value)", "commit_sha": "nop012"},
+    {"file": "build/webpack.config.js", "line": 123, "error_type": "build-error", "error_code": "module-not-found", "message": "Module 'css-loader' not found", "fix_applied": "Added css-loader to package.json", "commit_sha": "qrs345"}
+  ],
+  "commits": [
+    {"sha": "abc123", "author": "Claude Code", "timestamp": "2026-01-23T10:15:30Z", "type": "fix", "message": "resolve TS2322 type mismatch in TransactionForm"},
+    {"sha": "def456", "author": "Claude Code", "timestamp": "2026-01-23T10:18:45Z", "type": "fix", "message": "add missing ValidationError import"},
+    {"sha": "ghi789", "author": "Claude Code", "timestamp": "2026-01-23T10:22:10Z", "type": "refactor", "message": "remove unused oldApi variable"},
+    {"sha": "jkl012", "author": "Claude Code", "timestamp": "2026-01-23T10:25:30Z", "type": "fix", "message": "convert number to string in FilterPanel"},
+    {"sha": "mno345", "author": "Claude Code", "timestamp": "2026-01-23T10:28:50Z", "type": "test", "message": "fix API mock endpoint path in integration test"},
+    {"sha": "pqr678", "author": "Claude Code", "timestamp": "2026-01-23T10:32:15Z", "type": "fix", "message": "add null check for email service"},
+    {"sha": "stu901", "author": "Claude Code", "timestamp": "2026-01-23T10:35:40Z", "type": "chore", "message": "remove debug console.log from Dashboard"},
+    {"sha": "vwx234", "author": "Claude Code", "timestamp": "2026-01-23T10:39:05Z", "type": "fix", "message": "add default value in useTransactions hook"},
+    {"sha": "yza567", "author": "Claude Code", "timestamp": "2026-01-23T10:42:30Z", "type": "style", "message": "reformat long line in formatting.ts"},
+    {"sha": "bcd890", "author": "Claude Code", "timestamp": "2026-01-23T10:45:55Z", "type": "test", "message": "fix mock timing in validation test"},
+    {"sha": "efg123", "author": "Claude Code", "timestamp": "2026-01-23T10:49:20Z", "type": "fix", "message": "add missing await in auth API call"},
+    {"sha": "hij456", "author": "Claude Code", "timestamp": "2026-01-23T10:52:45Z", "type": "refactor", "message": "remove unused useState import"}
+  ],
+  "executionTime": {
+    "total": "8m 34s",
+    "phase_0": "1m 12s",
+    "phase_1": "2m 45s",
+    "phase_2": "4m 37s"
+  },
+  "toon": {
+    "checks_toon": "checks[8]{name,status,duration_ms,conclusion,details_url}:\n  TypeScript Type Check,success,45000,success,https://github.com/user/repo/actions/runs/123\n  ESLint & Prettier,success,28000,success,https://github.com/user/repo/actions/runs/124\n  Unit Tests (Vitest),success,67000,success,https://github.com/user/repo/actions/runs/125\n  Integration Tests,success,89000,success,https://github.com/user/repo/actions/runs/126\n  Build Verification,success,120000,success,https://github.com/user/repo/actions/runs/127\n  E2E Tests (Cypress),success,180000,success,https://github.com/user/repo/actions/runs/128\n  Security Scan,success,45000,success,https://github.com/user/repo/actions/runs/129\n  Deploy Preview,success,90000,success,https://github.com/user/repo/actions/runs/130",
+    "autoFixedErrors_toon": "autoFixedErrors[15]{file,line,error_type,error_code,message,fix_applied,commit_sha}:\n  src/components/TransactionForm.tsx,45,typescript,TS2322,Type 'string | undefined' is not assignable to type 'string',Added type guard: if (value !== undefined),abc123\n  src/utils/validation.ts,89,typescript,TS2304,Cannot find name 'ValidationError',Added import: import { ValidationError } from './types',def456\n  src/api/transactions.ts,123,eslint,no-unused-vars,Variable 'oldApi' is defined but never used,Removed unused variable,ghi789\n  src/components/FilterPanel.tsx,67,typescript,TS2345,Argument of type 'number' is not assignable to parameter of type 'string',Added toString() conversion,jkl012\n  tests/integration/api.test.ts,234,vitest,assertion-failure,Expected 200 but received 404,Fixed mock API endpoint path,mno345\n  src/services/email.ts,156,typescript,TS2531,Object is possibly 'null',Added null check with optional chaining,pqr678\n  src/components/Dashboard.tsx,78,eslint,no-console,Unexpected console.log statement,Removed debug console.log,stu901\n  src/hooks/useTransactions.ts,45,typescript,TS2532,Object is possibly 'undefined',Added default value in destructuring,vwx234\n  src/utils/formatting.ts,23,prettier,formatting,Line exceeds 80 characters,Reformatted long line,yza567\n  tests/unit/validation.test.ts,89,vitest,mock-error,Mock function not called,Fixed mock setup timing issue,bcd890\n  src/api/auth.ts,167,typescript,TS2345,Type 'Promise<User>' is not assignable to type 'User',Added await keyword,efg123\n  src/components/UserProfile.tsx,201,eslint,no-unused-vars,Imported 'useState' is not used,Removed unused import,hij456\n  src/types/transaction.ts,34,typescript,TS2304,Cannot find name 'TransactionType',Added enum import from constants,klm789\n  src/utils/date.ts,78,eslint,no-implicit-coercion,Use the Number constructor instead of unary plus,Changed +value to Number(value),nop012\n  build/webpack.config.js,123,build-error,module-not-found,Module 'css-loader' not found,Added css-loader to package.json,qrs345",
+    "commits_toon": "commits[12]{sha,author,timestamp,type,message}:\n  abc123,Claude Code,2026-01-23T10:15:30Z,fix,resolve TS2322 type mismatch in TransactionForm\n  def456,Claude Code,2026-01-23T10:18:45Z,fix,add missing ValidationError import\n  ghi789,Claude Code,2026-01-23T10:22:10Z,refactor,remove unused oldApi variable\n  jkl012,Claude Code,2026-01-23T10:25:30Z,fix,convert number to string in FilterPanel\n  mno345,Claude Code,2026-01-23T10:28:50Z,test,fix API mock endpoint path in integration test\n  pqr678,Claude Code,2026-01-23T10:32:15Z,fix,add null check for email service\n  stu901,Claude Code,2026-01-23T10:35:40Z,chore,remove debug console.log from Dashboard\n  vwx234,Claude Code,2026-01-23T10:39:05Z,fix,add default value in useTransactions hook\n  yza567,Claude Code,2026-01-23T10:42:30Z,style,reformat long line in formatting.ts\n  bcd890,Claude Code,2026-01-23T10:45:55Z,test,fix mock timing in validation test\n  efg123,Claude Code,2026-01-23T10:49:20Z,fix,add missing await in auth API call\n  hij456,Claude Code,2026-01-23T10:52:45Z,refactor,remove unused useState import",
+    "token_savings": "40.2%",
+    "size_comparison": "JSON: 5800 tokens, TOON: 3468 tokens"
+  }
+}
+
+// ============================================
+// Example 2: Simple PR (Below Threshold)
+// ============================================
+
+{
+  "success": true,
+  "prNumber": 315,
+  "prUrl": "https://github.com/user/repo/pull/315",
+  "finalStatus": "all_checks_passed",
+  "checksStatus": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "checks": [
+    {"name": "TypeScript Type Check", "status": "success", "duration_ms": 30000, "conclusion": "success", "details_url": "..."},
+    {"name": "ESLint", "status": "success", "duration_ms": 15000, "conclusion": "success", "details_url": "..."},
+    {"name": "Unit Tests", "status": "success", "duration_ms": 45000, "conclusion": "success", "details_url": "..."}
+  ],
+  "fixIterations": 0,
+  "autoFixedErrors": [],
+  "commits": [
+    {"sha": "xyz789", "author": "Developer", "timestamp": "2026-01-23T11:00:00Z", "type": "feat", "message": "add new feature"},
+    {"sha": "uvw456", "author": "Developer", "timestamp": "2026-01-23T11:05:00Z", "type": "test", "message": "add unit tests"}
+  ],
+  "executionTime": {
+    "total": "2m 15s"
+  }
+  // NO toon field - checks=3, errors=0, commits=2 (все ниже threshold 5)
+}
+
+/**
+ * Token Savings Breakdown:
+ *
+ * Example 1 (8 checks + 15 errors + 12 commits):
+ * - JSON: 5800 tokens
+ * - TOON: 3468 tokens
+ * - Savings: 40.2% (2332 tokens saved)
+ *
+ * Example 2 (3 checks + 0 errors + 2 commits):
+ * - No TOON generation (below threshold)
+ * - JSON only: 1200 tokens
+ */
