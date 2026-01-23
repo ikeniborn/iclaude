@@ -1,0 +1,270 @@
+/**
+ * Error Handling TOON Output Examples
+ *
+ * Demonstrates hybrid JSON + TOON format for error-handling skill output
+ * Generated when error_history >= 5
+ */
+
+// ============================================
+// Example 1: Medium Task (8 errors, 3 retry iterations)
+// ============================================
+
+{
+  "error_handling_summary": {
+    "total_errors": 8,
+    "errors_fixed": 7,
+    "errors_remaining": 1,
+    "retry_iterations": 3,
+    "final_status": "partially_resolved",
+    "error_history": [
+      {
+        "attempt_id": 1,
+        "error_type": "SYNTAX_ERROR",
+        "file": "backend/app/services/auth_service.py",
+        "line": 42,
+        "message": "SyntaxError: unexpected indent at line 42",
+        "fix_applied": "Fixed indentation on line 42",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 2,
+        "error_type": "VALIDATION_FAILED",
+        "file": "backend/app/api/v1/endpoints/auth.py",
+        "line": 78,
+        "message": "TypeError: expected str, got int for user_id parameter",
+        "fix_applied": "Added type casting str(user_id)",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 3,
+        "error_type": "SYNTAX_ERROR",
+        "file": "backend/app/core/security.py",
+        "line": 23,
+        "message": "NameError: name 'hashlib' is not defined",
+        "fix_applied": "Added import hashlib at line 1",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 4,
+        "error_type": "VALIDATION_FAILED",
+        "file": "tests/api/test_auth_endpoints.py",
+        "line": 56,
+        "message": "AssertionError: expected status code 200 but got 401",
+        "fix_applied": "Fixed mock JWT token generation in test setup",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 5,
+        "error_type": "SYNTAX_ERROR",
+        "file": "backend/app/middleware/auth_middleware.py",
+        "line": 34,
+        "message": "IndentationError: expected an indented block after function definition",
+        "fix_applied": "Fixed indentation in verify_token function",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 6,
+        "error_type": "ACCEPTANCE_NOT_MET",
+        "file": "backend/app/api/v1/endpoints/auth.py",
+        "line": 120,
+        "message": "Acceptance criteria failed: POST /auth/login returns 500 Internal Server Error",
+        "fix_applied": "Fixed database connection initialization in login endpoint",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 7,
+        "error_type": "SYNTAX_ERROR",
+        "file": "backend/app/models/user.py",
+        "line": 15,
+        "message": "SyntaxError: invalid syntax - missing colon after class definition",
+        "fix_applied": "Added missing colon on line 15",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 8,
+        "error_type": "PRD_CONFLICT",
+        "file": "backend/app/api/v1/endpoints/auth.py",
+        "line": 200,
+        "message": "PRD requires logout to invalidate both access and refresh tokens, currently only invalidates refresh",
+        "fix_applied": null,
+        "outcome": "pending"
+      }
+    ],
+    "toon": {
+      "error_history_toon": "error_history[8]{attempt_id,error_type,file,line,message,fix_applied,outcome}:\n  1,SYNTAX_ERROR,auth_service.py,42,SyntaxError: unexpected indent at line 42,Fixed indentation on line 42,success\n  2,VALIDATION_FAILED,auth.py,78,TypeError: expected str got int for user_id parameter,Added type casting str(user_id),success\n  3,SYNTAX_ERROR,security.py,23,NameError: name 'hashlib' is not defined,Added import hashlib at line 1,success\n  4,VALIDATION_FAILED,test_auth_endpoints.py,56,AssertionError: expected status code 200 but got 401,Fixed mock JWT token generation in test setup,success\n  5,SYNTAX_ERROR,auth_middleware.py,34,IndentationError: expected an indented block after function definition,Fixed indentation in verify_token function,success\n  6,ACCEPTANCE_NOT_MET,auth.py,120,Acceptance criteria failed: POST /auth/login returns 500 Internal Server Error,Fixed database connection initialization in login endpoint,success\n  7,SYNTAX_ERROR,user.py,15,SyntaxError: invalid syntax - missing colon after class definition,Added missing colon on line 15,success\n  8,PRD_CONFLICT,auth.py,200,PRD requires logout to invalidate both access and refresh tokens currently only invalidates refresh,none,pending",
+      "token_savings": "35.2%",
+      "size_comparison": "JSON: 2340 tokens, TOON: 1516 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 2: Small Task (5 errors, fully resolved)
+// ============================================
+
+{
+  "error_handling_summary": {
+    "total_errors": 5,
+    "errors_fixed": 5,
+    "errors_remaining": 0,
+    "retry_iterations": 2,
+    "final_status": "fully_resolved",
+    "error_history": [
+      {
+        "attempt_id": 1,
+        "error_type": "SYNTAX_ERROR",
+        "file": "src/utils.py",
+        "line": 12,
+        "message": "IndentationError: unexpected indent",
+        "fix_applied": "Fixed indentation",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 2,
+        "error_type": "SYNTAX_ERROR",
+        "file": "src/models.py",
+        "line": 34,
+        "message": "SyntaxError: invalid syntax",
+        "fix_applied": "Fixed missing parenthesis",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 3,
+        "error_type": "VALIDATION_FAILED",
+        "file": "tests/test_utils.py",
+        "line": 45,
+        "message": "TypeError: argument must be str",
+        "fix_applied": "Added string conversion",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 4,
+        "error_type": "SYNTAX_ERROR",
+        "file": "src/app.py",
+        "line": 78,
+        "message": "NameError: undefined variable",
+        "fix_applied": "Fixed variable name typo",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 5,
+        "error_type": "VALIDATION_FAILED",
+        "file": "tests/test_models.py",
+        "line": 23,
+        "message": "AssertionError: values don't match",
+        "fix_applied": "Updated expected test value",
+        "outcome": "success"
+      }
+    ],
+    "toon": {
+      "error_history_toon": "error_history[5]{attempt_id,error_type,file,line,message,fix_applied,outcome}:\n  1,SYNTAX_ERROR,utils.py,12,IndentationError: unexpected indent,Fixed indentation,success\n  2,SYNTAX_ERROR,models.py,34,SyntaxError: invalid syntax,Fixed missing parenthesis,success\n  3,VALIDATION_FAILED,test_utils.py,45,TypeError: argument must be str,Added string conversion,success\n  4,SYNTAX_ERROR,app.py,78,NameError: undefined variable,Fixed variable name typo,success\n  5,VALIDATION_FAILED,test_models.py,23,AssertionError: values don't match,Updated expected test value,success",
+      "token_savings": "32.1%",
+      "size_comparison": "JSON: 1450 tokens, TOON: 985 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 3: Large Task (15 errors, mixed outcomes)
+// ============================================
+
+{
+  "error_handling_summary": {
+    "total_errors": 15,
+    "errors_fixed": 12,
+    "errors_remaining": 3,
+    "retry_iterations": 5,
+    "final_status": "partially_resolved",
+    "error_history": [
+      {"attempt_id": 1, "error_type": "SYNTAX_ERROR", "file": "frontend/src/App.tsx", "line": 23, "message": "SyntaxError: Unexpected token", "fix_applied": "Fixed JSX syntax", "outcome": "success"},
+      {"attempt_id": 2, "error_type": "VALIDATION_FAILED", "file": "frontend/src/components/LoginForm.tsx", "line": 45, "message": "Type error: Property 'username' does not exist", "fix_applied": "Added username prop to interface", "outcome": "success"},
+      {"attempt_id": 3, "error_type": "SYNTAX_ERROR", "file": "frontend/src/hooks/useAuth.ts", "line": 12, "message": "TypeScript error: Cannot find module '@/types/auth'", "fix_applied": "Fixed import path", "outcome": "success"},
+      {"attempt_id": 4, "error_type": "VALIDATION_FAILED", "file": "frontend/src/api/authApi.ts", "line": 67, "message": "Network error: CORS policy blocked", "fix_applied": "Updated API base URL", "outcome": "success"},
+      {"attempt_id": 5, "error_type": "SYNTAX_ERROR", "file": "frontend/src/contexts/AuthContext.tsx", "line": 34, "message": "React Hook useEffect has missing dependency", "fix_applied": "Added dependency to useEffect", "outcome": "success"},
+      {"attempt_id": 6, "error_type": "ACCEPTANCE_NOT_MET", "file": "frontend/src/components/LoginForm.tsx", "line": 89, "message": "Login form doesn't redirect after successful login", "fix_applied": "Added navigation after login", "outcome": "success"},
+      {"attempt_id": 7, "error_type": "SYNTAX_ERROR", "file": "frontend/src/utils/tokenStorage.ts", "line": 15, "message": "ReferenceError: localStorage is not defined", "fix_applied": "Added browser environment check", "outcome": "success"},
+      {"attempt_id": 8, "error_type": "VALIDATION_FAILED", "file": "frontend/tests/LoginForm.test.tsx", "line": 23, "message": "Test failed: Cannot find element by role 'button'", "fix_applied": "Fixed test selector", "outcome": "success"},
+      {"attempt_id": 9, "error_type": "SYNTAX_ERROR", "file": "frontend/src/router/index.tsx", "line": 45, "message": "TypeScript error: Type 'string' is not assignable to type 'number'", "fix_applied": "Added type conversion", "outcome": "success"},
+      {"attempt_id": 10, "error_type": "VALIDATION_FAILED", "file": "frontend/src/services/AuthService.ts", "line": 78, "message": "API returns 400 Bad Request for refresh token", "fix_applied": "Fixed request body format", "outcome": "success"},
+      {"attempt_id": 11, "error_type": "SYNTAX_ERROR", "file": "frontend/src/pages/LoginPage.tsx", "line": 56, "message": "ESLint error: 'React' must be in scope when using JSX", "fix_applied": "Added React import", "outcome": "success"},
+      {"attempt_id": 12, "error_type": "ACCEPTANCE_NOT_MET", "file": "frontend/src/components/LogoutButton.tsx", "line": 12, "message": "Logout doesn't clear all auth state", "fix_applied": "Added state cleanup in logout handler", "outcome": "success"},
+      {"attempt_id": 13, "error_type": "PRD_CONFLICT", "file": "frontend/src/components/LoginForm.tsx", "line": 100, "message": "PRD requires 2FA support, not implemented", "fix_applied": null, "outcome": "pending"},
+      {"attempt_id": 14, "error_type": "FILE_NOT_FOUND", "file": "frontend/src/assets/logo.svg", "line": 0, "message": "Cannot resolve './assets/logo.svg'", "fix_applied": null, "outcome": "pending"},
+      {"attempt_id": 15, "error_type": "PRD_CONFLICT", "file": "frontend/src/components/LoginForm.tsx", "line": 120, "message": "PRD requires remember me checkbox", "fix_applied": null, "outcome": "pending"}
+    ],
+    "toon": {
+      "error_history_toon": "error_history[15]{attempt_id,error_type,file,line,message,fix_applied,outcome}:\n  1,SYNTAX_ERROR,App.tsx,23,SyntaxError: Unexpected token,Fixed JSX syntax,success\n  2,VALIDATION_FAILED,LoginForm.tsx,45,Type error: Property 'username' does not exist,Added username prop to interface,success\n  3,SYNTAX_ERROR,useAuth.ts,12,TypeScript error: Cannot find module '@/types/auth',Fixed import path,success\n  4,VALIDATION_FAILED,authApi.ts,67,Network error: CORS policy blocked,Updated API base URL,success\n  5,SYNTAX_ERROR,AuthContext.tsx,34,React Hook useEffect has missing dependency,Added dependency to useEffect,success\n  6,ACCEPTANCE_NOT_MET,LoginForm.tsx,89,Login form doesn't redirect after successful login,Added navigation after login,success\n  7,SYNTAX_ERROR,tokenStorage.ts,15,ReferenceError: localStorage is not defined,Added browser environment check,success\n  8,VALIDATION_FAILED,LoginForm.test.tsx,23,Test failed: Cannot find element by role 'button',Fixed test selector,success\n  9,SYNTAX_ERROR,index.tsx,45,TypeScript error: Type 'string' is not assignable to type 'number',Added type conversion,success\n  10,VALIDATION_FAILED,AuthService.ts,78,API returns 400 Bad Request for refresh token,Fixed request body format,success\n  11,SYNTAX_ERROR,LoginPage.tsx,56,ESLint error: 'React' must be in scope when using JSX,Added React import,success\n  12,ACCEPTANCE_NOT_MET,LogoutButton.tsx,12,Logout doesn't clear all auth state,Added state cleanup in logout handler,success\n  13,PRD_CONFLICT,LoginForm.tsx,100,PRD requires 2FA support not implemented,none,pending\n  14,FILE_NOT_FOUND,logo.svg,0,Cannot resolve './assets/logo.svg',none,pending\n  15,PRD_CONFLICT,LoginForm.tsx,120,PRD requires remember me checkbox,none,pending",
+      "token_savings": "39.5%",
+      "size_comparison": "JSON: 4380 tokens, TOON: 2650 tokens"
+    }
+  }
+}
+
+// ============================================
+// Example 4: Simple Task (3 errors - Below Threshold)
+// ============================================
+
+{
+  "error_handling_summary": {
+    "total_errors": 3,
+    "errors_fixed": 3,
+    "errors_remaining": 0,
+    "retry_iterations": 1,
+    "final_status": "fully_resolved",
+    "error_history": [
+      {
+        "attempt_id": 1,
+        "error_type": "SYNTAX_ERROR",
+        "file": "src/config.py",
+        "line": 8,
+        "message": "IndentationError: unexpected indent",
+        "fix_applied": "Fixed indentation",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 2,
+        "error_type": "SYNTAX_ERROR",
+        "file": "src/utils.py",
+        "line": 15,
+        "message": "SyntaxError: invalid syntax",
+        "fix_applied": "Added missing colon",
+        "outcome": "success"
+      },
+      {
+        "attempt_id": 3,
+        "error_type": "VALIDATION_FAILED",
+        "file": "tests/test_config.py",
+        "line": 12,
+        "message": "AssertionError: values don't match",
+        "fix_applied": "Updated test assertion",
+        "outcome": "success"
+      }
+    ]
+  }
+  // NO toon field - error_history=3 (below threshold 5)
+}
+
+/**
+ * Token Savings Breakdown:
+ *
+ * Example 1 (Medium task, 8 errors):
+ * - JSON: 2340 tokens
+ * - TOON: 1516 tokens
+ * - Savings: 35.2% (824 tokens saved)
+ *
+ * Example 2 (Small task, 5 errors):
+ * - JSON: 1450 tokens
+ * - TOON: 985 tokens
+ * - Savings: 32.1% (465 tokens saved)
+ *
+ * Example 3 (Large task, 15 errors):
+ * - JSON: 4380 tokens
+ * - TOON: 2650 tokens
+ * - Savings: 39.5% (1730 tokens saved)
+ *
+ * Example 4 (Simple task, 3 errors):
+ * - No TOON generation (below threshold)
+ * - JSON only: 890 tokens
+ *
+ * Typical use case (8 errors): ~35% token reduction
+ */
