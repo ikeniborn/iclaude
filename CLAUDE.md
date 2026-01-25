@@ -121,6 +121,51 @@ bash -n iclaude.sh
 ./iclaude.sh --install-from-lockfile
 ```
 
+### Loop Mode Commands
+
+```bash
+# Execute task sequentially with retry logic (Week 1)
+./iclaude.sh --loop task.md
+
+# Execute tasks in parallel with git worktrees (Week 2 - not yet implemented)
+./iclaude.sh --loop-parallel task.md
+
+# Limit parallel agents to 3
+./iclaude.sh --loop-parallel task.md --max-parallel 3
+
+# Example task definition (task.md):
+# Task: Fix TypeScript errors
+#
+# ## Description
+# Fix all TypeScript compilation errors in src/
+#
+# ## Completion Promise
+# npm run type-check
+#
+# ## Validation Command
+# npm run type-check
+#
+# ## Max Iterations
+# 5
+#
+# ## Git Config
+# Branch: fix/typescript-errors
+# Commit message: fix: resolve TypeScript errors
+# Auto-push: true
+```
+
+**Loop Mode Features:**
+- Sequential execution with retry logic
+- Exponential backoff (2s, 4s, 8s, 16s, 32s, capped at 60s)
+- Completion promise verification via validation command
+- Git integration (auto-commit + push)
+- Markdown task definition format
+- Parallel execution with worktree isolation (Week 2)
+
+**Example task files:**
+- `examples/test-loop-simple.md` - Basic task (succeeds on first iteration)
+- `examples/test-loop-retry.md` - Retry logic test (exponential backoff)
+
 ## Code Architecture
 
 ### Main Components
