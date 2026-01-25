@@ -58,8 +58,8 @@
 │   - Execute task_plan.execution_steps                    │
 │   - Run syntax validation                                │
 │   - code-review (if complexity != minimal)               │
-│ Mode B: Ralph-Loop (conditional)                         │
-│   - /ralph-loop with completion promise                  │
+│ External Tool: Bash Loop (optional)                         │
+│   - ./iclaude.sh --loop task.md                  │
 │   - Iterative execution until promise found              │
 │ Output: {execution_results, code_review_results}        │
 └──────────────────────────────────────────────────────────┘
@@ -116,7 +116,7 @@
 | **1** | thinking-framework | ✅ Always | - | All |
 | **1** | structured-planning | ✅ Always | - | All |
 | **2** | approval-gates | ⚠️ Conditional | Skip if minimal | standard, complex |
-| **3** | ralph-loop | ⚠️ Conditional | If iterative task | complex |
+| **3** | loop mode | ⚠️ Conditional | If iterative task | complex |
 | **3** | code-review | ⚠️ Conditional | Skip if minimal | standard, complex |
 | **3.5** | code-review (re-run) | ⚠️ Conditional | If blocking_issues > 0 | standard, complex |
 | **3.5** | pr-automation (fixes) | ⚠️ Conditional | If blocking_issues > 0 | standard, complex |
@@ -368,7 +368,7 @@ pr-automation
 - pr-automation uses `git_result.branch` для PR creation
 - pr-automation creates PR from `git_result.branch` to `main`
 - pr-automation monitors CI/CD checks
-- pr-automation uses ralph-loop для auto-fixing CI failures
+- pr-automation uses loop mode для auto-fixing CI failures
 
 ---
 
@@ -443,7 +443,7 @@ Options:
 - Execute full PR automation workflow
 - Create draft PR
 - Monitor CI/CD checks
-- Auto-fix failures via ralph-loop
+- Auto-fix failures via loop mode
 - Mark as ready when all checks pass
 
 **If "Нет":**
@@ -535,7 +535,7 @@ Options:
 | 1 | thinking-framework | COT reasoning |
 | 1 | structured-planning | Create task plan |
 | 2 | approval-gates | User approval [conditional] |
-| 3 | ralph-loop | Iterative execution [plugin] |
+| 3 | loop mode | Iterative execution [plugin] |
 | 3 | code-review | Quality checks [conditional] |
 | 3.5 | code-review (re-run) | Verify fixes [conditional] |
 | 3.5 | pr-automation | Error fixing strategies [conditional] |

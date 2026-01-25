@@ -1,10 +1,10 @@
 ---
 name: pr-automation
-description: Автоматизация создания PR с мониторингом CI/CD и авто-исправлением через ralph-loop
-version: 1.2.0
+description: Автоматизация создания PR с мониторингом CI/CD и автоматическим исправлением ошибок
+version: 1.3.0
 author: ikeniborn
-tags: [github, pr, ci/cd, automation, ralph-loop, github-actions, typescript, eslint, toon]
-dependencies: [ralph-loop, git-workflow, code-review, toon-skill]
+tags: [github, pr, ci/cd, automation, github-actions, typescript, eslint, toon, loop-mode]
+dependencies: [git-workflow, code-review, toon-skill]
 triggers:
   - "создать pr"
   - "создать pull request"
@@ -12,6 +12,13 @@ triggers:
   - "открыть pull request"
 user-invocable: true
 changelog:
+  - version: 1.3.0
+    date: 2026-01-25
+    changes:
+      - "**BREAKING**: Удален ralph-loop plugin (deprecated)"
+      - "Замена: Bash loop mode через ./iclaude.sh --loop task.md"
+      - "External tool для итеративных фиксов (не auto-invocation)"
+      - "Обновлены examples для manual loop invocation"
   - version: 1.2.0
     date: 2026-01-25
     changes:
@@ -32,13 +39,12 @@ changelog:
     date: 2025-XX-XX
     changes:
       - "Initial release"
-      - "Ralph-loop integration"
       - "Auto-detection stack & CI/CD"
 ---
 
 # PR Automation Skill
 
-Автоматизирует полный workflow создания Pull Request с мониторингом CI/CD и автоматическим исправлением ошибок через ralph-loop plugin.
+Автоматизирует полный workflow создания Pull Request с мониторингом CI/CD и поддержкой автоматического исправления ошибок.
 
 ## Возможности
 
@@ -50,7 +56,7 @@ changelog:
   - ESLint/Prettier (no-console, no-unused-vars)
   - Vitest тесты (assertion failures, mock issues)
   - Build errors (module not found, syntax errors)
-- ✅ **Ralph-loop integration** для итеративных фиксов
+- ✅ **External loop tool** для итеративных фиксов (./iclaude.sh --loop)
 - ✅ **Conventional Commits** для всех автокоммитов
 - ✅ **Ready-for-review** после успешного прохождения всех проверок
 
@@ -69,11 +75,7 @@ cd /home/ikeniborn/Documents/Project/claude
 gh auth login
 ```
 
-### 2. Ralph-loop Plugin
-
-Должен быть установлен в Claude Code.
-
-### 3. Git Workflow
+### 2. Git Workflow
 
 Требуется для форматирования commit messages.
 
@@ -256,23 +258,32 @@ gh run view $run_id --log-failed > /tmp/ci_logs.txt
 grep -E "error TS[0-9]+" /tmp/ci_logs.txt
 ```
 
-3. **Вызов ralph-loop:**
-```bash
-/ralph-loop "Fix TypeScript error TS2322 in transactionForm.ts:45" \
-  --context "File: transactionForm.ts, Line: 45, PR: 312" \
-  --completion-promise "gh pr checks 312 shows all ✓" \
-  --max-iterations 5
-```
+3. **Исправление ошибок** (manual или через external loop tool):
+   - Option A: Manual fix в Claude Code
+   - Option B: External loop tool (./iclaude.sh --loop task.md)
+     ```bash
+     # Create task definition
+     cat > fix-ts-error.md <<'EOF'
+     # Task: Fix TypeScript error TS2322
+     ## Description
+     Fix TS2322 in transactionForm.ts:45
+     ## Completion Promise
+     gh pr checks 312
+     ## Validation Command
+     gh pr checks 312 | grep -E "✓|success" | wc -l
+     ## Max Iterations
+     5
+     EOF
 
-4. **Ralph-loop workflow:**
-   - Читает файл с ошибкой
+     # Run loop (external to Claude session)
+     ./iclaude.sh --loop fix-ts-error.md
+     ```
    - Применяет fix из `rules/error-fixing-strategies.md`
    - Коммитит (формат из `@shared:GIT-CONVENTIONS.md#conventional-commits`)
    - Пушит в branch
    - Ждёт re-run checks
-   - Проверяет completion promise
 
-5. **Повторить** пока все checks не пройдут или max iterations
+4. **Повторить** пока все checks не пройдут или max iterations
 
 **Output:**
 ```json
@@ -395,32 +406,6 @@ const HeavyComponent = lazy(() => import('./Heavy'));
 
 ---
 
-## Ralph-Loop Integration
-
-### Completion Promise
-
-**Primary:**
-```
-All GitHub Actions checks pass
-```
-
-**Verification:**
-```bash
-gh pr checks <pr-number> | grep -E "✓|success" | wc -l
-# Expected: number of required checks
-```
-
-### Max Iterations
-
-**Default:** 5 iterations
-
-**Typical scenarios:**
-- 1 iteration: Simple fixes (type conversion, remove console.log)
-- 2-3 iterations: Multiple errors fixed sequentially
-- 5 iterations: Max reached → manual intervention needed
-
----
-
 ## Output Format
 
 **JSON Schema:** См. `@shared:TASK-STRUCTURE.md#pr-workflow`
@@ -508,14 +493,14 @@ gh auth login
 
 ### Issue 4: Wrong File Fixed
 
-**Symptom:** Ralph-loop изменил не тот файл
+**Symptom:** Исправлен не тот файл
 
 **Причина:** Ambiguous error context
 
 **Действия:**
 1. Revert commit: `git revert HEAD`
 2. Push revert
-3. Предоставить более точный контекст для ralph-loop
+3. Предоставить более точный контекст для fix
 
 ---
 
@@ -599,7 +584,7 @@ return prResult;
 
 **Use Cases (PR-Specific):**
 1. **CI/CD Monitoring**: Track check execution times, identify slow checks
-2. **Auto-Fix Analysis**: Analyze error types (TS2322 vs ESLint), track ralph-loop success rates
+2. **Auto-Fix Analysis**: Analyze error types (TS2322 vs ESLint), track fix success rates
 3. **Commit History**: Review auto-generated commits for Conventional Commits compliance
 4. **PR Metrics Dashboard**: Aggregate data across PRs, identify CI/CD bottlenecks
 
@@ -699,7 +684,7 @@ return prResult;
 
    **Iteration 1:**
    - Parsed error: `Type 'string' is not assignable to type 'number'`
-   - Ralph-loop context: `transactionForm.ts:45, field: amount`
+   - Fix context: `transactionForm.ts:45, field: amount`
    - Fix applied: Added `parseInt(value, 10)` conversion
    - Committed: `fix: resolve TS2322 type mismatch in amount field`
    - Re-run checks: All passed ✓
@@ -878,7 +863,7 @@ return prResult;
 
    **Iterations 1-5:** All attempts to fix TS2345 error failed
    - Complex type incompatibility requiring architectural changes
-   - Ralph-loop tried multiple approaches (type assertions, interface extensions, generics)
+   - Multiple approaches tried (type assertions, interface extensions, generics)
    - Each fix introduced new type errors
    - Max iterations (5) reached without success
 
@@ -1210,7 +1195,7 @@ pr-automation/
 │   ├── pr-best-practices.md        # GitHub PR conventions
 │   ├── error-fixing-strategies.md  # Как исправлять ошибки
 │   ├── commit-guidelines.md        # Conventional Commits
-│   └── ralph-loop-integration.md   # Completion promises
+│   └── error-fixing-strategies.md  # Error fixing strategies
 └── examples/
     ├── pr-creation-flow.md         # Full example
     └── error-fixing-scenarios.md   # Common scenarios
@@ -1226,8 +1211,8 @@ pr-automation/
 - yq (YAML parsing для auto-detect)
 - git 2.0+
 
-**Plugins:**
-- ralph-loop (для automatic error fixing)
+**External Tools:**
+- Loop mode (./iclaude.sh --loop) для iterative error fixing
 - git-workflow (для commit formatting)
 
 **Skills:**
@@ -1240,7 +1225,7 @@ pr-automation/
 - Git conventions: `@shared:GIT-CONVENTIONS.md`
 - TOON format: `@shared:TOON-REFERENCE.md`
 - Task structure: `@shared:TASK-STRUCTURE.md`
-- [Ralph-Loop Plugin](https://github.com/anthropics/ralph-loop)
+- [Loop Mode Documentation](../../CLAUDE.md#loop-mode-commands)
 - [GitHub CLI](https://cli.github.com/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [GitHub Actions](https://docs.github.com/en/actions)

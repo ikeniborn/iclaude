@@ -187,82 +187,6 @@
         "required": ["name", "conclusion"]
       }
     },
-    "ralphLoopState": {
-      "type": "object",
-      "description": "Ralph-loop error fixing state",
-      "properties": {
-        "active": {
-          "type": "boolean",
-          "description": "Whether ralph-loop is currently running"
-        },
-        "iteration": {
-          "type": "integer",
-          "description": "Current iteration number",
-          "minimum": 0
-        },
-        "maxIterations": {
-          "type": "integer",
-          "description": "Maximum allowed iterations",
-          "minimum": 1,
-          "maximum": 10
-        },
-        "targetError": {
-          "type": "object",
-          "description": "Error being fixed in current iteration",
-          "properties": {
-            "errorType": {
-              "type": "string",
-              "enum": ["typescript", "eslint", "vitest", "build", "coverage"]
-            },
-            "file": {
-              "type": "string"
-            },
-            "line": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "message": {
-              "type": "string"
-            }
-          }
-        },
-        "completionPromise": {
-          "type": "string",
-          "description": "Condition that indicates successful completion",
-          "examples": [
-            "All GitHub Actions checks pass",
-            "gh pr checks shows all ✓"
-          ]
-        },
-        "promiseVerified": {
-          "type": "boolean",
-          "description": "Whether completion promise has been verified"
-        },
-        "fixedErrors": {
-          "type": "array",
-          "description": "Errors fixed in this iteration",
-          "items": {
-            "type": "object",
-            "properties": {
-              "errorType": {
-                "type": "string"
-              },
-              "file": {
-                "type": "string"
-              },
-              "fix": {
-                "type": "string"
-              },
-              "commitHash": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{7,40}$"
-              }
-            }
-          }
-        }
-      },
-      "required": ["active", "iteration", "maxIterations"]
-    },
     "executionMetrics": {
       "type": "object",
       "description": "Execution time metrics",
@@ -396,27 +320,6 @@
         "runId": 123456789,
         "startedAt": "2026-01-13T20:31:00Z",
         "detailsUrl": "https://github.com/ikeniborn/familyBudget/actions/runs/123456789"
-      },
-      "ralphLoopState": {
-        "active": true,
-        "iteration": 2,
-        "maxIterations": 5,
-        "targetError": {
-          "errorType": "typescript",
-          "file": "frontend/web/static/js/budget/transactionFilter.ts",
-          "line": 45,
-          "message": "Type 'string' is not assignable to type 'number'"
-        },
-        "completionPromise": "gh pr checks 312 shows all ✓",
-        "promiseVerified": false,
-        "fixedErrors": [
-          {
-            "errorType": "typescript",
-            "file": "frontend/web/static/js/budget/transactionFilter.ts",
-            "fix": "Added parseInt() conversion",
-            "commitHash": "abc123def"
-          }
-        ]
       },
       "executionMetrics": {
         "startTime": "2026-01-13T20:25:00Z",

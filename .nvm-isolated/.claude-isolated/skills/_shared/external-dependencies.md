@@ -32,7 +32,7 @@
 **Установка:**
 ```bash
 # Внутри Claude Code сессии
-/plugin install ralph-loop@claude-plugins-official
+# Ralph-loop plugin removed (deprecated)
 ```
 
 **Проверка установки:**
@@ -271,7 +271,7 @@ git --version
 | code-review | 🔶 LSP plugins (optional) | - | - | 🔶 LSP binaries (optional) |
 | context7-integration | - | ✅ Context7 | - | - |
 | structured-planning | - | 🔶 Context7 (optional) | - | - |
-| pr-automation | 🔶 ralph-loop (optional) | - | ✅ gh, git | - |
+| pr-automation | - | - | ✅ gh, git | - |
 | git-workflow | - | - | ✅ git | - |
 
 **Легенда:**
@@ -308,7 +308,7 @@ npx @modelcontextprotocol/create-server context7
 # Добавить в mcp.json (см. секцию Context7 выше)
 
 # 4. Ralph-loop для авто-фиксов PR
-/plugin install ralph-loop@claude-plugins-official
+# Ralph-loop plugin removed (deprecated)
 
 # Готово для полнофункциональной работы
 ```
@@ -389,7 +389,7 @@ gh auth login
    ```
 2. Если нет:
    ```bash
-   /plugin install ralph-loop@claude-plugins-official
+   # Ralph-loop plugin removed (deprecated)
    ```
 3. Перезапустить pr-automation skill
 
@@ -398,7 +398,7 @@ gh auth login
 ## 7. FAQ
 
 **Q: Обязательно ли устанавливать все зависимости?**
-A: Нет. Только CLI tools (git, gh) обязательны для git-workflow и pr-automation. Остальные (LSP, Context7, ralph-loop) опциональны - skills работают без них в fallback режиме.
+A: Нет. Только CLI tools (git, gh) обязательны для git-workflow и pr-automation. Остальные (LSP, Context7) опциональны - skills работают без них в fallback режиме.
 
 **Q: Как проверить, какие зависимости установлены?**
 A: Запустить:
@@ -438,7 +438,7 @@ A: Да, но LSP server должен быть установлен на уда�
 ## 8. Version History
 
 - **1.0.0** (2026-01-15): Initial version
-  - Документация для ralph-loop, LSP plugins, Context7, gh, git
+  - Документация для LSP plugins, Context7, gh, git
   - Installation workflow
   - Troubleshooting guide
   - Skills dependency matrix
@@ -447,7 +447,7 @@ A: Да, но LSP server должен быть установлен на уда�
 
 ## References
 
-- [Ralph-Loop Plugin](https://github.com/MightyPhoenix/ralph-loop)
+- [Loop Mode Documentation](../../CLAUDE.md#loop-mode-commands)
 - [Context7 MCP Server](https://github.com/modelcontextprotocol/servers/tree/main/src/context7)
 - [GitHub CLI](https://cli.github.com/)
 - [Git](https://git-scm.com/)
