@@ -2315,9 +2315,42 @@ load_all_tasks() {
 
 	print_info "Found $task_count task(s) in file"
 
-	# For now, load only the first task
-	# TODO: Week 2 will implement multi-task loading
-	load_markdown_task "$task_file" 0
+	# Extract line numbers for each task section
+	local -a task_start_lines
+	mapfile -t task_start_lines < <(grep -n "^# Task:" "$task_file" | cut -d: -f1)
+
+	# Load each task
+	local task_index=0
+	for start_line in "${task_start_lines[@]}"; do
+		# Determine end line (next task or end of file)
+		local end_line
+		local next_index=$((task_index + 1))
+		if [[ $next_index -lt ${#task_start_lines[@]} ]]; then
+			end_line=$((${task_start_lines[$next_index]} - 1))
+		else
+			end_line=$(wc -l < "$task_file")
+		fi
+
+		# Extract task section to temp file
+		local temp_task_file="/tmp/iclaude-task-${task_index}-$$.md"
+		sed -n "${start_line},${end_line}p" "$task_file" > "$temp_task_file"
+
+		# Load task from temp file
+		if ! load_markdown_task "$temp_task_file" "$task_index"; then
+			print_warning "Failed to load task $task_index, skipping"
+			rm -f "$temp_task_file"
+			((task_index++))
+			continue
+		fi
+
+		rm -f "$temp_task_file"
+		((task_index++))
+	done
+
+	if [[ ${#TASKS[@]} -eq 0 ]]; then
+		print_error "No tasks successfully loaded"
+		return 1
+	fi
 
 	return 0
 }
@@ -2599,6 +2632,282 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || {
 }
 
 #######################################
+# Save loop state to file for recovery
+# Arguments:
+#   None (uses global variables)
+# Returns:
+#   0 - State saved successfully
+#######################################
+save_loop_state() {
+	local state_file="/tmp/iclaude-loop-state-$$.json"
+
+	# Create JSON state
+	cat > "$state_file" <<EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "current_task": "$CURRENT_TASK",
+  "iteration": $CURRENT_ITERATION,
+  "completed_tasks": [$(printf '"%s",' "${COMPLETED_TASKS[@]}" | sed 's/,$//')]
+}
+EOF
+
+	return 0
+}
+
+#######################################
+# Load loop state from file
+# Arguments:
+#   None (sets global variables)
+# Returns:
+#   0 - State loaded successfully
+#   1 - No state file found
+#######################################
+load_loop_state() {
+	local state_file="/tmp/iclaude-loop-state-$$.json"
+
+	if [[ ! -f "$state_file" ]]; then
+		return 1
+	fi
+
+	# Check if jq is available
+	if ! command -v jq &>/dev/null; then
+		print_warning "jq not installed - cannot load state"
+		return 1
+	fi
+
+	# Parse state using jq
+	CURRENT_TASK=$(jq -r '.current_task' "$state_file")
+	CURRENT_ITERATION=$(jq -r '.iteration' "$state_file")
+
+	# Parse completed tasks array
+	local completed_json
+	completed_json=$(jq -r '.completed_tasks[]' "$state_file" 2>/dev/null)
+	if [[ -n "$completed_json" ]]; then
+		mapfile -t COMPLETED_TASKS <<< "$completed_json"
+	fi
+
+	print_info "Loaded loop state from $state_file"
+	return 0
+}
+
+#######################################
+# Create git worktree for task isolation
+# Arguments:
+#   $1 - Task ID
+# Returns:
+#   0 - Worktree created successfully
+#   1 - Creation failed
+# Sets WORKTREE_PATH global variable
+#######################################
+create_task_worktree() {
+	local task_id="$1"
+	local task_name="${TASK_NAME[$task_id]}"
+
+	# Check if we're in a git repository
+	if ! git rev-parse --git-dir &>/dev/null; then
+		print_warning "Not in a git repository - cannot create worktree"
+		return 1
+	fi
+
+	# Generate worktree path and branch name
+	local timestamp=$(date +%s)
+	local sanitized_name=$(echo "$task_name" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]//g')
+	local worktree_path=".git/worktrees/loop-${sanitized_name}-${timestamp}"
+	local branch_name="loop/${sanitized_name}-${timestamp}"
+
+	print_info "Creating worktree for: $task_name"
+	echo "  Path: $worktree_path"
+	echo "  Branch: $branch_name"
+
+	# Create worktree with new branch
+	if ! git worktree add -B "$branch_name" "$worktree_path" 2>&1; then
+		print_error "Failed to create worktree"
+		return 1
+	fi
+
+	# Export worktree path for use in other functions
+	declare -g "WORKTREE_PATH_${task_id}=$worktree_path"
+	declare -g "WORKTREE_BRANCH_${task_id}=$branch_name"
+
+	print_success "Worktree created: $worktree_path"
+	return 0
+}
+
+#######################################
+# Cleanup git worktree after task completion
+# Arguments:
+#   $1 - Task ID
+# Returns:
+#   0 - Worktree removed successfully
+#   1 - Removal failed
+#######################################
+cleanup_worktree() {
+	local task_id="$1"
+	local worktree_path_var="WORKTREE_PATH_${task_id}"
+	local worktree_path="${!worktree_path_var}"
+
+	if [[ -z "$worktree_path" ]]; then
+		print_warning "No worktree path found for task: $task_id"
+		return 0
+	fi
+
+	print_info "Cleaning up worktree: $worktree_path"
+
+	# Remove worktree
+	if ! git worktree remove "$worktree_path" --force 2>&1; then
+		print_warning "Failed to remove worktree, trying manual cleanup"
+		rm -rf "$worktree_path"
+	fi
+
+	# Unset variables
+	unset "WORKTREE_PATH_${task_id}"
+	unset "WORKTREE_BRANCH_${task_id}"
+
+	print_success "Worktree cleaned up"
+	return 0
+}
+
+#######################################
+# Merge worktree changes back to main branch
+# Arguments:
+#   $1 - Task ID
+# Returns:
+#   0 - Merge successful
+#   1 - Merge failed (conflicts)
+#######################################
+merge_worktree_changes() {
+	local task_id="$1"
+	local task_name="${TASK_NAME[$task_id]}"
+	local worktree_branch_var="WORKTREE_BRANCH_${task_id}"
+	local worktree_branch="${!worktree_branch_var}"
+
+	if [[ -z "$worktree_branch" ]]; then
+		print_error "No worktree branch found for task: $task_id"
+		return 1
+	fi
+
+	print_info "Merging changes from: $worktree_branch"
+
+	# Attempt merge
+	if git merge "$worktree_branch" --no-edit 2>&1; then
+		print_success "Merge successful: $task_name"
+		return 0
+	fi
+
+	# Check if merge failed due to conflicts
+	if git diff --name-only --diff-filter=U | grep -q .; then
+		print_warning "Merge conflicts detected - attempting AI resolution"
+
+		# Try AI-assisted conflict resolution
+		if resolve_merge_conflicts_ai "$task_id"; then
+			print_success "Conflicts resolved by AI"
+			return 0
+		else
+			print_error "Failed to resolve conflicts automatically"
+			echo ""
+			echo "Manual intervention required:"
+			echo "  1. Review conflicts: git status"
+			echo "  2. Resolve manually"
+			echo "  3. Stage resolved files: git add <files>"
+			echo "  4. Complete merge: git commit"
+			echo ""
+			return 1
+		fi
+	fi
+
+	print_error "Merge failed for unknown reason"
+	return 1
+}
+
+#######################################
+# Resolve merge conflicts using AI
+# Arguments:
+#   $1 - Task ID
+# Returns:
+#   0 - Conflicts resolved
+#   1 - Resolution failed
+#######################################
+resolve_merge_conflicts_ai() {
+	local task_id="$1"
+
+	# Get list of conflicted files
+	local conflicted_files
+	mapfile -t conflicted_files < <(git diff --name-only --diff-filter=U)
+
+	if [[ ${#conflicted_files[@]} -eq 0 ]]; then
+		print_info "No conflicts to resolve"
+		return 0
+	fi
+
+	print_info "Resolving ${#conflicted_files[@]} conflicted file(s)"
+
+	# Get Claude binary
+	local claude_bin
+	claude_bin=$(get_nvm_claude_path) || {
+		print_error "Claude Code binary not found for conflict resolution"
+		return 1
+	}
+
+	# Resolve each conflicted file
+	for file in "${conflicted_files[@]}"; do
+		print_info "Resolving conflicts in: $file"
+
+		# Read file with conflict markers
+		local file_content
+		file_content=$(cat "$file")
+
+		# Build AI prompt
+		local prompt="Resolve git merge conflict in file: $file
+
+File content with conflict markers:
+\`\`\`
+$file_content
+\`\`\`
+
+Your task:
+1. Understand both versions (HEAD vs incoming branch)
+2. Combine changes intelligently (preserve functionality from both sides if possible)
+3. Remove ALL conflict markers (<<<<<<, =======, >>>>>>>)
+4. Ensure syntactically valid code
+5. Output ONLY the resolved file content without markers
+
+Output the complete resolved file content:"
+
+		# Invoke Claude to resolve
+		local resolved_content
+		resolved_content=$(echo "$prompt" | "$claude_bin" --no-chrome 2>/dev/null)
+
+		if [[ -z "$resolved_content" ]]; then
+			print_error "AI failed to resolve conflicts in: $file"
+			return 1
+		fi
+
+		# Check if markers still present
+		if echo "$resolved_content" | grep -qE "^<<<<<<<|^=======|^>>>>>>>"; then
+			print_error "Conflict markers still present after AI resolution: $file"
+			return 1
+		fi
+
+		# Write resolved content
+		echo "$resolved_content" > "$file"
+
+		# Stage resolved file
+		git add "$file"
+
+		print_success "Resolved: $file"
+	done
+
+	# Commit merge
+	if ! git commit --no-edit 2>&1; then
+		print_error "Failed to commit merge"
+		return 1
+	fi
+
+	print_success "All conflicts resolved and committed"
+	return 0
+}
+
+#######################################
 # Execute tasks in sequential mode
 # Arguments:
 #   $1 - Path to task file (.md)
@@ -2702,13 +3011,14 @@ execute_sequential_mode() {
 
 #######################################
 # Execute tasks in parallel mode
-# (Week 2 implementation - placeholder for now)
+# Uses git worktrees for task isolation
 # Arguments:
 #   $1 - Path to task file (.md)
 #   $2 - Max parallel agents (default: 5)
 # Returns:
 #   0 - All tasks completed
 #   1 - One or more tasks failed
+#   2 - Partial success
 #######################################
 execute_parallel_mode() {
 	local task_file="$1"
@@ -2720,11 +3030,236 @@ execute_parallel_mode() {
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	echo ""
 
-	print_warning "Parallel mode not yet implemented (Week 2)"
-	echo "  For now, use sequential mode: ./iclaude.sh --loop task.md"
+	# Load tasks
+	if ! load_all_tasks "$task_file"; then
+		print_error "Failed to load tasks from file"
+		return 1
+	fi
+
+	echo ""
+	print_info "Loaded ${#TASKS[@]} task(s)"
+	print_info "Max parallel agents: $max_parallel"
 	echo ""
 
-	return 1
+	# Group tasks by parallel group ID
+	declare -A parallel_groups
+	for task_id in "${TASKS[@]}"; do
+		local group_id="${TASK_PARALLEL_GROUP[$task_id]}"
+		if [[ -z "${parallel_groups[$group_id]}" ]]; then
+			parallel_groups[$group_id]="$task_id"
+		else
+			parallel_groups[$group_id]="${parallel_groups[$group_id]} $task_id"
+		fi
+	done
+
+	# Sort groups (sequential group 0 first, then parallel groups)
+	local -a sorted_groups
+	mapfile -t sorted_groups < <(printf '%s\n' "${!parallel_groups[@]}" | sort -n)
+
+	local total_failed=0
+	local total_completed=0
+
+	# Execute each group
+	for group_id in "${sorted_groups[@]}"; do
+		local group_tasks="${parallel_groups[$group_id]}"
+		local task_count=$(echo "$group_tasks" | wc -w)
+
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		if [[ "$group_id" -eq 0 ]]; then
+			echo "  Group: Sequential (Group 0)"
+		else
+			echo "  Group: Parallel (Group $group_id) - $task_count task(s)"
+		fi
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+
+		if [[ "$group_id" -eq 0 ]]; then
+			# Sequential execution for group 0
+			for task_id in $group_tasks; do
+				if ! execute_task_with_retry "$task_id"; then
+					((total_failed++))
+				else
+					((total_completed++))
+				fi
+			done
+		else
+			# Parallel execution for group > 0
+			execute_parallel_group "$group_tasks" "$max_parallel"
+			local group_exit=$?
+
+			# Count results
+			for task_id in $group_tasks; do
+				if [[ " ${COMPLETED_TASKS[*]} " =~ " ${task_id} " ]]; then
+					((total_completed++))
+				else
+					((total_failed++))
+				fi
+			done
+		fi
+
+		echo ""
+	done
+
+	# Summary
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Parallel Execution Summary"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+	print_info "Total tasks: ${#TASKS[@]}"
+	print_success "Completed: $total_completed"
+
+	if [[ $total_failed -gt 0 ]]; then
+		print_error "Failed: $total_failed"
+		echo ""
+
+		if [[ $total_completed -gt 0 ]]; then
+			return 2  # Partial success
+		else
+			return 1  # Complete failure
+		fi
+	else
+		echo ""
+		print_success "All tasks completed successfully!"
+		echo ""
+		return 0
+	fi
+}
+
+#######################################
+# Execute single task with retry logic
+# (Helper for parallel execution)
+# Arguments:
+#   $1 - Task ID
+# Returns:
+#   0 - Task completed
+#   1 - Task failed
+#######################################
+execute_task_with_retry() {
+	local task_id="$1"
+	local task_name="${TASK_NAME[$task_id]}"
+
+	print_info "Executing: $task_name"
+
+	# Execute first iteration
+	if ! execute_single_iteration "$task_id" 1; then
+		print_error "Failed to execute task: $task_name"
+		return 1
+	fi
+
+	# Verify completion promise
+	if verify_completion_promise "$task_id"; then
+		print_success "Task completed on first attempt: $task_name"
+		COMPLETED_TASKS+=("$task_id")
+		git_commit_task_changes "$task_id"
+		return 0
+	fi
+
+	# Retry with exponential backoff
+	if retry_task_with_backoff "$task_id" 1; then
+		print_success "Task completed after retries: $task_name"
+		COMPLETED_TASKS+=("$task_id")
+		git_commit_task_changes "$task_id"
+		return 0
+	else
+		print_error "Task failed after max iterations: $task_name"
+		return 1
+	fi
+}
+
+#######################################
+# Execute parallel group of tasks
+# Arguments:
+#   $1 - Space-separated task IDs
+#   $2 - Max parallel agents
+# Returns:
+#   0 - All tasks in group completed
+#   1 - One or more tasks failed
+#######################################
+execute_parallel_group() {
+	local group_tasks="$1"
+	local max_parallel="$2"
+
+	# Check if in git repository
+	if ! git rev-parse --git-dir &>/dev/null; then
+		print_warning "Not in git repository - falling back to sequential execution"
+		for task_id in $group_tasks; do
+			execute_task_with_retry "$task_id"
+		done
+		return 0
+	fi
+
+	print_info "Creating worktrees for parallel execution..."
+
+	# Create worktrees for each task
+	local -a worktree_tasks
+	for task_id in $group_tasks; do
+		if create_task_worktree "$task_id"; then
+			worktree_tasks+=("$task_id")
+		else
+			print_warning "Failed to create worktree for $task_id - will skip"
+		fi
+	done
+
+	# Execute tasks in parallel (limited by max_parallel)
+	local -a pids
+	local running=0
+
+	for task_id in "${worktree_tasks[@]}"; do
+		# Wait if max parallel reached
+		while [[ $running -ge $max_parallel ]]; do
+			# Check for finished jobs
+			for pid in "${pids[@]}"; do
+				if ! kill -0 "$pid" 2>/dev/null; then
+					# Job finished
+					((running--))
+				fi
+			done
+			sleep 1
+		done
+
+		# Start task in background
+		(
+			local worktree_path_var="WORKTREE_PATH_${task_id}"
+			local worktree_path="${!worktree_path_var}"
+
+			cd "$worktree_path" || exit 1
+
+			# Execute task with retry
+			execute_task_with_retry "$task_id"
+			local exit_code=$?
+
+			exit $exit_code
+		) &
+
+		pids+=($!)
+		((running++))
+	done
+
+	# Wait for all tasks to complete
+	print_info "Waiting for all parallel tasks to complete..."
+	for pid in "${pids[@]}"; do
+		wait "$pid"
+	done
+
+	# Merge changes from worktrees
+	print_info "Merging changes from worktrees..."
+
+	for task_id in "${worktree_tasks[@]}"; do
+		local task_name="${TASK_NAME[$task_id]}"
+
+		print_info "Merging: $task_name"
+
+		if merge_worktree_changes "$task_id"; then
+			print_success "Merged: $task_name"
+		else
+			print_error "Failed to merge: $task_name"
+		fi
+
+		# Cleanup worktree regardless of merge success
+		cleanup_worktree "$task_id"
+	done
+
+	return 0
 }
 
 #######################################
