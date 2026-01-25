@@ -197,15 +197,41 @@ transactionFilter.ts(45,12): error TS2322: Type 'string' is not assignable to ty
 }
 ```
 
-**Invoke ralph-loop:**
-```bash
-/ralph-loop "Fix TypeScript error TS2322 in transactionFilter.ts:45" \
-  --context "File: transactionFilter.ts, Line: 45, PR: 312" \
-  --completion-promise "gh pr checks 312 shows all ✓" \
-  --max-iterations 5
+**Option A: Manual fix in Claude Code**
+
+Fix the error directly by editing transactionFilter.ts:45
+
+**Option B: External loop tool (bash loop)**
+
+Create task definition:
+```markdown
+# Task: Fix TypeScript Error TS2322
+
+## Description
+Fix type mismatch in transactionFilter.ts:45
+Type 'string' is not assignable to type 'number'
+
+## Completion Promise
+gh pr checks 312
+
+## Validation Command
+gh pr checks 312 | grep -E "✓|success" | wc -l
+
+## Max Iterations
+5
+
+## Git Config
+Branch: fix/ts2322-transaction-filter
+Commit message: fix: resolve TS2322 type mismatch
+Auto-push: true
 ```
 
-**Ralph-loop actions:**
+Run loop:
+```bash
+./iclaude.sh --loop fix-ts2322.md
+```
+
+**Loop actions:**
 
 1. Read `transactionFilter.ts` lines 35-55
 2. Analyze error:

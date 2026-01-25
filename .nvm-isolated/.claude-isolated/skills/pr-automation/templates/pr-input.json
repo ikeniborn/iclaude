@@ -43,12 +43,12 @@
     },
     "autoFix": {
       "type": "boolean",
-      "description": "Enable automatic error fixing via ralph-loop",
+      "description": "Enable automatic error fixing (manual or via external loop tool)",
       "default": true
     },
     "maxFixIterations": {
       "type": "integer",
-      "description": "Maximum ralph-loop iterations for fixing errors",
+      "description": "Maximum iterations for fixing errors (for external loop tool)",
       "minimum": 1,
       "maximum": 10,
       "default": 5

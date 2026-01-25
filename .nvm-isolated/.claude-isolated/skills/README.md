@@ -219,7 +219,7 @@ These skills are **essential for git workflows** and PR automation.
 | Skill | Version | Description | Dependencies | User-Invocable |
 |-------|---------|-------------|--------------|----------------|
 | **git-workflow** | 1.0.0 | Стандартизированный git workflow с Conventional Commits | - | ❌ |
-| **pr-automation** | 1.0.0 | Автоматизация создания PR с мониторингом CI/CD и auto-fix через ralph-loop | git-workflow | ❌ |
+| **pr-automation** | 1.3.0 | Автоматизация создания PR с мониторингом CI/CD (external loop tool для auto-fix) | git-workflow | ❌ |
 | **code-review** | 1.0.0 | Автоматический review кода перед commit (security, quality, complexity) | - | ❌ |
 
 **Why Workflow:**
@@ -230,13 +230,13 @@ These skills are **essential for git workflows** and PR automation.
 **Usage in Template:**
 ```
 PHASE 4: git-workflow creates commit with Conventional Commits message
-PHASE 4: pr-automation creates PR → monitors CI → auto-fixes failures via ralph-loop
+PHASE 4: pr-automation creates PR → monitors CI/CD → manual or external loop tool for auto-fix
 PHASE 3: code-review validates code quality during execution
 ```
 
 **Key Features:**
 - **git-workflow:** Conventional Commits (feat, fix, refactor), Co-Authored-By tag
-- **pr-automation:** CI/CD monitoring, ralph-loop integration for auto-fix, draft → ready flow
+- **pr-automation:** CI/CD monitoring, external loop tool support for auto-fix, draft → ready flow
 - **code-review:** Security checks (SQL injection, XSS), complexity analysis, duplicate detection
 
 ---
@@ -472,10 +472,10 @@ See [lsp-integration/SKILL.md](./lsp-integration/SKILL.md) for full list of 11+ 
 - **Context7 MCP:** Load official library documentation (FastAPI, React, pandas, etc.)
 - Installation: See [External Dependencies Guide](./_shared/external-dependencies.md#context7-mcp-plugin)
 
-### Claude Code Plugins
-- **ralph-loop:** External plugin for iterative execution (NOT a skill)
-- Installation: `/plugin install ralph-loop@claude-plugins-official`
-- Documentation: See [External Dependencies Guide](./_shared/external-dependencies.md#ralph-loop-plugin)
+### External Loop Tools
+- **Bash Loop Mode:** External tool for iterative task execution (NOT a skill)
+- **Usage:** `./iclaude.sh --loop task.md` (sequential) or `./iclaude.sh --loop-parallel task.md` (parallel)
+- **Documentation:** See [Loop Mode Documentation](../../CLAUDE.md#loop-mode-commands) and [Migration Guide](../../MIGRATION-GUIDE.md)
 
 ---
 
@@ -524,7 +524,7 @@ Shared resources used across multiple skills:
 | **frontmatter-parser.md** | YAML frontmatter parsing and validation | skill-generator, structured-planning, validation-framework, context-awareness, adaptive-workflow |
 | **base-schema.json** | Base JSON Schema definitions (git, file_change, code_review_issue, test_result, execution_step) | structured-planning, pr-automation, git-workflow, code-review, validation-framework |
 | **markdown-templates.md** | Standard Markdown output templates | structured-planning, git-workflow, pr-automation, code-review |
-| **external-dependencies.md** | External dependencies guide (ralph-loop plugin, Context7 MCP, LSP servers) | All skills referencing external tools |
+| **external-dependencies.md** | External dependencies guide (Context7 MCP, LSP servers, gh CLI, git) | All skills referencing external tools |
 
 **Why Shared:**
 - Avoid duplication (DRY principle)

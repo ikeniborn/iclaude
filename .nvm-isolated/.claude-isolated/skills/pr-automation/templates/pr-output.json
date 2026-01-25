@@ -106,7 +106,7 @@
     },
     "fixIterations": {
       "type": "integer",
-      "description": "Number of ralph-loop fix iterations performed",
+      "description": "Number of fix iterations performed (manual or via external loop tool)",
       "minimum": 0
     },
     "autoFixedErrors": {
