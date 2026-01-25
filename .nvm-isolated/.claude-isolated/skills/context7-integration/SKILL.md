@@ -1,7 +1,7 @@
 ---
 name: Context7 Integration
 description: Автоматическая загрузка документации библиотек через Context7 MCP плагин
-version: 1.0.0
+version: 1.1.0
 tags: [context7, documentation, libraries, mcp, api-docs]
 dependencies: [context-awareness]
 files:
@@ -10,6 +10,13 @@ files:
   examples: ./examples/*.md
   shared: ../_shared/library-priority.json
 user-invocable: false
+changelog:
+  - version: 1.1.0
+    date: 2026-01-25
+    changes:
+      - "Добавлено: 3 примера (Plugin Not Available, Budget Exhausted, Version-Specific Query)"
+      - "Обновлены references на @shared:"
+      - "Улучшена документация error handling"
 ---
 
 # Context7 Integration
@@ -1048,6 +1055,208 @@ Process:
 
 **Note:** Для Java и C# требуется более сложный парсинг XML. Можно использовать `xmllint` или `xpath` для extraction.
 
+## Examples
+
+### Example 1: Plugin Not Available (Graceful Degradation)
+
+**Scenario:** Context7 MCP plugin не установлен, workflow продолжается без блокировки
+
+**Initial state:**
+```bash
+# Проверка доступности Context7
+try {
+  await mcp__plugin_context7_context7__resolve_library_id({
+    libraryName: "test",
+    query: "test"
+  });
+} catch (error) {
+  # Error: function not found
+  plugin_available = false
+}
+```
+
+**Output:**
+```json
+{
+  "library_docs": {
+    "budget_status": {
+      "calls_used": 0,
+      "calls_remaining": 0,
+      "exhausted": false
+    },
+    "libraries": [],
+    "skipped_libraries": [],
+    "status": "PLUGIN_NOT_AVAILABLE"
+  }
+}
+```
+
+**User message:**
+```
+ℹ️ Context7 plugin not installed. Continuing without library docs.
+
+To enable: Install Context7 MCP server
+```
+
+**Result:** Workflow продолжается к adaptive-workflow, task выполняется без library docs.
+
+---
+
+### Example 2: Budget Exhausted Mid-Query (Partial Results)
+
+**Scenario:** Top 3 библиотеки приоритизированы, но бюджет исчерпан после первой библиотеки
+
+**Project state:**
+```
+Task: "Add authentication to Express.js app"
+Detected libraries: [express, passport, bcrypt, jest, dotenv]
+Framework: express
+```
+
+**Prioritization:**
+```
+express: 20 (framework + task + common + prod)
+passport: 7 (task + prod)
+bcrypt: 5 (common + prod)
+```
+
+**Execution:**
+```json
+{
+  "budget_status": {
+    "calls_used": 0,
+    "calls_remaining": 3
+  }
+}
+```
+
+**Call 1:** `resolve-library-id("express")` → `/expressjs/express` (calls_used: 1)
+
+**Call 2:** `query-docs("/expressjs/express", "authentication middleware")` → Success (calls_used: 2)
+
+**Call 3:** `resolve-library-id("passport")` → `/jaredhanson/passport` (calls_used: 3)
+
+**Budget exhausted:** calls_remaining = 0
+
+**Output:**
+```json
+{
+  "library_docs": {
+    "budget_status": {
+      "calls_used": 3,
+      "calls_remaining": 0,
+      "exhausted": true,
+      "warning": "Context7 budget exhausted (3/3 calls)"
+    },
+    "libraries": [
+      {
+        "library_id": "/expressjs/express",
+        "library_name": "express",
+        "docs_summary": "Express provides middleware-based routing for Node.js applications...",
+        "code_examples": [
+          "app.use(express.json())",
+          "app.get('/protected', authMiddleware, handler)"
+        ],
+        "relevant_sections": ["Middleware", "Routing", "Error Handling"],
+        "query_used": "Express middleware for authentication and authorization"
+      }
+    ],
+    "skipped_libraries": [
+      {"library_name": "passport", "reason": "Budget exhausted (resolved but no budget for docs)"},
+      {"library_name": "bcrypt", "reason": "Budget exhausted"}
+    ],
+    "status": "PARTIAL"
+  }
+}
+```
+
+**Result:** Express docs загружены успешно, passport и bcrypt пропущены из-за бюджета. structured-planning всё ещё может использовать Express docs для планирования.
+
+---
+
+### Example 3: Version-Specific Query (Next.js 14 Upgrade)
+
+**Scenario:** Пользователь хочет обновить Next.js до версии 14, Context7 возвращает version-specific docs
+
+**Task:** "Upgrade to Next.js 14"
+
+**Manifest (package.json):**
+```json
+{
+  "dependencies": {
+    "next": "^13.5.0",
+    "react": "^18.2.0"
+  }
+}
+```
+
+**Library detection:**
+```
+Detected: [next, react]
+Priority: next (20 - framework + task match), react (12 - common + prod)
+```
+
+**Version extraction:**
+```javascript
+detectVersionFromTask("Upgrade to Next.js 14", "next") → "14"
+```
+
+**Call 1:** `resolve-library-id("next", "Next.js 14 upgrade guide")`
+- Context7 returns: `/vercel/next.js/v14.0.0` (version-specific)
+- calls_used: 1
+
+**Call 2:** `query-docs("/vercel/next.js/v14.0.0", "Next.js 14 new features migration breaking changes")`
+- Context7 returns: Docs for version 14 specifically
+- calls_used: 2
+
+**Call 3:** `resolve-library-id("react", "React library for UI")`
+- Context7 returns: `/facebook/react`
+- calls_used: 3
+
+**Budget exhausted**
+
+**Output:**
+```json
+{
+  "library_docs": {
+    "budget_status": {
+      "calls_used": 3,
+      "calls_remaining": 0,
+      "exhausted": true,
+      "warning": "Context7 budget exhausted (3/3 calls)"
+    },
+    "libraries": [
+      {
+        "library_id": "/vercel/next.js/v14.0.0",
+        "library_name": "next",
+        "docs_summary": "Next.js 14 introduces Turbopack, Server Actions stable, Partial Prerendering...",
+        "code_examples": [
+          "// Server Actions (stable in v14)",
+          "export async function createUser(data) { 'use server'; ... }",
+          "// Partial Prerendering",
+          "export const experimental_ppr = true"
+        ],
+        "relevant_sections": [
+          "Migration Guide v13 → v14",
+          "Breaking Changes",
+          "Turbopack",
+          "Server Actions"
+        ],
+        "query_used": "Next.js 14 new features migration breaking changes"
+      }
+    ],
+    "skipped_libraries": [
+      {"library_name": "react", "reason": "Budget exhausted (resolved but no budget for docs)"}
+    ],
+    "status": "PARTIAL"
+  }
+}
+```
+
+**Result:** Version-specific Next.js 14 docs успешно загружены, structured-planning может использовать migration guide и breaking changes для планирования обновления.
+
+---
+
 ## FAQ
 
 **Q: Что делать, если Context7 plugin не установлен?**
@@ -1080,76 +1289,16 @@ A: См. раздел "Prioritization Algorithm". Framework получает н�
 **Q: Что означает status PARTIAL?**
 A: Некоторые библиотеки успешно загружены, но часть пропущена из-за бюджета, ошибок или отсутствия в Context7.
 
-## Examples
-
-См. `@example:context7-example` для полных примеров с JSON output.
-
-### Quick Example: FastAPI Project
-
-**Input:**
-```json
-{
-  "project_context": {
-    "language": "python",
-    "framework": "fastapi",
-    "detected_files": {
-      "config": ["requirements.txt"]
-    }
-  }
-}
-```
-
-**requirements.txt:**
-```
-fastapi==0.104.1
-pytest>=7.4.0
-pydantic~=2.5.0
-```
-
-**Task:** "Add JWT authentication"
-
-**Processing:**
-1. Detected libraries: [fastapi, pytest, pydantic]
-2. Priority: fastapi (20), pytest (0 - dev), pydantic (5)
-3. Top 3: [fastapi, pydantic, pytest]
-4. Query loop:
-   - resolve("fastapi") → /tiangolo/fastapi (call 1)
-   - query-docs → JWT docs (call 2)
-   - resolve("pydantic") → /pydantic/pydantic (call 3)
-   - BUDGET EXHAUSTED
-
-**Output:**
-```json
-{
-  "library_docs": {
-    "budget_status": {
-      "calls_used": 3,
-      "calls_remaining": 0,
-      "exhausted": true,
-      "warning": "Context7 budget exhausted (3/3 calls)"
-    },
-    "libraries": [
-      {
-        "library_id": "/tiangolo/fastapi",
-        "library_name": "fastapi",
-        "docs_summary": "FastAPI provides dependency injection...",
-        "code_examples": ["@app.get('/protected', dependencies=[Depends(verify_token)])"],
-        "relevant_sections": ["Security", "Dependencies"],
-        "query_used": "How to implement JWT authentication in FastAPI"
-      }
-    ],
-    "skipped_libraries": [
-      {"library_name": "pydantic", "reason": "Budget exhausted"},
-      {"library_name": "pytest", "reason": "Low priority"}
-    ],
-    "status": "PARTIAL"
-  }
-}
-```
-
 ## Related Skills
 
 - **context-awareness**: Предоставляет `project_context.detected_files.config` для detection
 - **structured-planning**: Использует `library_docs` для улучшения execution plans
 - **code-review**: Может сверяться с library best practices из docs_summary
 - **validation-framework**: Может использовать примеры кода для проверки правильности реализации
+
+---
+
+🤖 Generated with Claude Code
+
+**Author:** ikeniborn
+**License:** MIT

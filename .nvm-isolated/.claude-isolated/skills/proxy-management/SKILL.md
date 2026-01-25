@@ -1,16 +1,26 @@
 ---
 name: Proxy Management
 description: Настройка, тестирование и отладка HTTP/HTTPS/SOCKS5 прокси для Claude Code
-version: 1.0.0
-author: init_claude Team
+version: 1.1.0
 tags: [proxy, http, https, socks5, curl, tls, certificates, debugging]
 dependencies: []
 user-invocable: false
+changelog:
+  - version: 1.1.0
+    date: 2026-01-25
+    changes:
+      - "Добавлено: 3 компактных примера (HTTP proxy test, HTTPS with cert, SOCKS5 proxy warning)"
+      - "Обновлены references на @shared:"
+      - "Удалён author field"
+  - version: 1.0.0
+    date: 2025-XX-XX
+    changes:
+      - "Initial version"
 ---
 
 # Proxy Management
 
-Автоматизация работы с прокси-конфигурациями в проекте `init_claude`. Этот скил помогает настраивать прокси, тестировать подключения, работать с TLS сертификатами и отлаживать проблемы с прокси.
+Автоматизация работы с прокси-конфигурациями в проекте `iclaude`. Этот скил помогает настраивать прокси, тестировать подключения, работать с TLS сертификатами и отлаживать проблемы с прокси.
 
 ## Когда использовать этот скил
 
@@ -59,7 +69,7 @@ NO_PROXY="localhost,127.0.0.1"            # Хосты без прокси
 
 **Решение 1: --proxy-ca (SECURE - рекомендуется)**
 ```bash
-init_claude --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
+iclaude --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 ```
 - Использует `NODE_EXTRA_CA_CERTS` для добавления ТОЛЬКО proxy сертификата
 - TLS проверка работает для всех остальных соединений (Claude → Anthropic API)
@@ -67,7 +77,7 @@ init_claude --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 
 **Решение 2: --proxy-insecure (INSECURE - не рекомендуется)**
 ```bash
-init_claude --proxy https://proxy:8118 --proxy-insecure
+iclaude --proxy https://proxy:8118 --proxy-insecure
 ```
 - Использует `NODE_TLS_REJECT_UNAUTHORIZED=0`
 - Отключает TLS проверку для ВСЕХ Node.js соединений
@@ -75,7 +85,7 @@ init_claude --proxy https://proxy:8118 --proxy-insecure
 
 ### Функции для работы с прокси
 
-**Ключевые функции в init_claude.sh:**
+**Ключевые функции в iclaude.sh:**
 - `validate_proxy_url()` - валидация формата URL
 - `parse_proxy_url()` - парсинг URL на компоненты
 - `configure_proxy_from_url()` - установка переменных окружения
@@ -255,6 +265,213 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 # 4. Export as PEM format
 ```
 
+## References
+
+**Git Conventions:**
+@shared:GIT-CONVENTIONS.md
+
+**Task Structure:**
+@shared:TASK-STRUCTURE.md
+
+---
+
+## Domain-Specific Examples
+
+### Example 1: HTTP Proxy Test
+
+**Situation:** Test basic HTTP proxy connectivity before launching Claude Code
+
+**Input:**
+- Proxy URL: `http://proxy.company.com:3128`
+- No authentication required
+- Need to verify connectivity
+
+**Actions:**
+
+```bash
+# Step 1: Test basic connectivity
+nc -zv proxy.company.com 3128
+# Output: Connection to proxy.company.com 3128 port [tcp/*] succeeded!
+
+# Step 2: Test HTTP request through proxy
+curl -x http://proxy.company.com:3128 http://www.google.com
+# Output: <HTML>... (Google homepage)
+
+# Step 3: Test HTTPS request through proxy
+curl -x http://proxy.company.com:3128 https://www.anthropic.com
+# Output: <html>... (Anthropic homepage)
+
+# Step 4: Set environment variables
+export HTTP_PROXY="http://proxy.company.com:3128"
+export HTTPS_PROXY="http://proxy.company.com:3128"
+export NO_PROXY="localhost,127.0.0.1,*.local"
+
+# Step 5: Launch Claude Code
+claude
+```
+
+**Expected Result:**
+- Proxy connectivity verified
+- HTTP/HTTPS requests work through proxy
+- Claude Code launches successfully with proxy configured
+
+**Validation:**
+```bash
+# Check environment variables
+env | grep PROXY
+# HTTP_PROXY=http://proxy.company.com:3128
+# HTTPS_PROXY=http://proxy.company.com:3128
+# NO_PROXY=localhost,127.0.0.1,*.local
+```
+
+---
+
+### Example 2: HTTPS Proxy with TLS Certificate
+
+**Situation:** Corporate HTTPS proxy with self-signed certificate requires CA cert installation
+
+**Input:**
+- Proxy URL: `https://proxy.company.com:8118`
+- Self-signed certificate (not trusted by system)
+- Authentication: username/password
+
+**Actions:**
+
+```bash
+# Step 1: Download proxy certificate
+openssl s_client -connect proxy.company.com:8118 -showcerts </dev/null 2>/dev/null | \
+  openssl x509 -outform PEM > /tmp/proxy-cert.pem
+
+# Step 2: Verify certificate
+openssl x509 -in /tmp/proxy-cert.pem -noout -text
+# Subject: CN=proxy.company.com
+# Issuer: CN=CompanyRootCA
+# Validity: Not After: Dec 31 23:59:59 2026 GMT
+
+# Step 3: Test proxy with certificate
+curl --cacert /tmp/proxy-cert.pem \
+     -x https://user:pass@proxy.company.com:8118 \
+     https://www.anthropic.com
+# Output: <html>... (success)
+
+# Step 4: Set environment variables
+export NODE_EXTRA_CA_CERTS="/tmp/proxy-cert.pem"
+export HTTPS_PROXY="https://user:pass@proxy.company.com:8118"
+export HTTP_PROXY="https://user:pass@proxy.company.com:8118"
+export NO_PROXY="localhost,127.0.0.1,github.com"
+
+# Step 5: Launch Claude Code
+claude
+```
+
+**Expected Result:**
+- Certificate validated successfully
+- HTTPS proxy accepts self-signed cert
+- OAuth token refresh works (domain name preserved)
+- No TLS errors during operation
+
+**Validation:**
+```bash
+# Check that domain name is used (NOT IP)
+echo $HTTPS_PROXY | grep -o 'proxy.company.com'
+# proxy.company.com
+
+# Verify certificate file exists
+test -f /tmp/proxy-cert.pem && echo "Certificate found"
+# Certificate found
+```
+
+**Important Notes:**
+- **ALWAYS use domain name** in HTTPS_PROXY (not IP address)
+- IP address breaks OAuth token refresh (TLS SNI and Host header)
+- Store proxy-cert.pem in secure location (not /tmp for production)
+
+---
+
+### Example 3: SOCKS5 Proxy Warning (Not Supported)
+
+**Situation:** User attempts to use SOCKS5 proxy with Claude Code
+
+**Input:**
+- Proxy URL: `socks5://proxy.company.com:1080`
+- User expects it to work like in browsers
+
+**Actions:**
+
+```bash
+# Attempt to set SOCKS5 proxy
+export HTTPS_PROXY="socks5://proxy.company.com:1080"
+
+# Launch Claude Code
+claude
+```
+
+**Expected Result (ERROR):**
+
+```
+Error: InvalidArgumentError: Invalid URL protocol: the URL must start with `http:` or `https:`
+    at ProxyAgent.constructor (node_modules/undici/lib/proxy-agent.js:45:13)
+    ...
+```
+
+**Problem:**
+- Claude Code uses `undici` HTTP client library
+- `undici` does NOT support SOCKS5 protocol
+- Only HTTP and HTTPS proxies are supported
+
+**Solution - Workaround with Privoxy:**
+
+```bash
+# Step 1: Install Privoxy (SOCKS5 → HTTP converter)
+sudo apt-get install privoxy  # Ubuntu/Debian
+brew install privoxy          # macOS
+
+# Step 2: Configure Privoxy to use SOCKS5 upstream
+echo "forward-socks5 / proxy.company.com:1080 ." >> /etc/privoxy/config
+
+# Step 3: Start Privoxy (listens on localhost:8118 by default)
+sudo systemctl start privoxy  # Linux
+brew services start privoxy   # macOS
+
+# Step 4: Configure Claude Code to use Privoxy (HTTP proxy)
+export HTTPS_PROXY="http://localhost:8118"
+export HTTP_PROXY="http://localhost:8118"
+export NO_PROXY="localhost,127.0.0.1"
+
+# Step 5: Launch Claude Code (now works via Privoxy → SOCKS5)
+claude
+```
+
+**Architecture:**
+```
+Claude Code → HTTP proxy (Privoxy:8118) → SOCKS5 proxy (proxy:1080) → Internet
+```
+
+**Expected Result:**
+- Privoxy converts HTTP → SOCKS5
+- Claude Code works transparently
+- All requests go through SOCKS5 proxy
+
+**Validation:**
+```bash
+# Check Privoxy is running
+curl http://localhost:8118
+# Output: Privoxy is running (HTML page)
+
+# Verify traffic goes through SOCKS5
+tail -f /var/log/privoxy/logfile
+# Shows connections to SOCKS5 proxy
+```
+
+**Alternative Solution - Squid:**
+
+```bash
+# Squid также может конвертировать SOCKS5 → HTTP
+# Similar configuration to Privoxy
+```
+
+---
+
 ## Проверочный чеклист
 
 После настройки/изменения proxy конфигурации проверь:
@@ -298,10 +515,10 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
   openssl x509 -outform PEM > proxy-cert.pem
 
 # Используй с --proxy-ca
-init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca proxy-cert.pem
+iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-ca proxy-cert.pem
 
 # Вариант 2 (INSECURE - только для тестирования):
-init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
+iclaude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
 ```
 
 3. **Объясняет разницу:**
@@ -312,7 +529,7 @@ init_claude --proxy https://user:pass@proxy.example.com:8118 --proxy-insecure
 
 **Запрос:**
 ```
-Добавь поддержку SOCKS4 прокси в init_claude.sh
+Добавь поддержку SOCKS4 прокси в iclaude.sh
 ```
 
 **Claude использует proxy-management + bash-development скилы:**
@@ -419,11 +636,11 @@ A: HTTP 407 = Proxy Authentication Required. Проблемы:
 Решение:
 ```bash
 # Проверь credentials
-init_claude --show-password
+iclaude --show-password
 
 # Очисти и введи заново
-init_claude --clear
-init_claude
+iclaude --clear
+iclaude
 ```
 
 **Q: Почему proxy test failed с HTTP 000?**
@@ -443,7 +660,7 @@ telnet proxy.example.com 8118
 curl -x http://user:pass@proxy:8118 https://www.google.com -v
 
 # Для HTTPS прокси используй --proxy-ca
-init_claude --proxy https://proxy:8118 --proxy-ca cert.pem
+iclaude --proxy https://proxy:8118 --proxy-ca cert.pem
 ```
 
 **Q: Как экспортировать proxy сертификат из браузера?**
@@ -458,7 +675,7 @@ A:
 
 **Q: Как проверить что Claude Code использует прокси?**
 
-A: После запуска init_claude проверь:
+A: После запуска iclaude проверь:
 ```bash
 # Переменные окружения установлены
 echo $HTTPS_PROXY
@@ -494,3 +711,9 @@ A: Модифицируй `configure_proxy_from_url()`:
 ```bash
 export NO_PROXY="localhost,127.0.0.1,.internal,.local"
 ```
+
+---
+
+🤖 Generated with Claude Code
+
+**License:** MIT

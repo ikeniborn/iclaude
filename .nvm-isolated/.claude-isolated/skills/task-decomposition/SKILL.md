@@ -1,14 +1,29 @@
 ---
 name: Task Decomposition
 description: Автоматизация разбиения задачи на 2-5 логических фаз с генерацией master plan и individual phase files
-version: 1.0.0
-author: Claude Code Team
+version: 1.2.0
 tags: [phase-based, decomposition, planning, master-plan, workflow]
 dependencies: [thinking-framework, structured-planning, approval-gates, error-handling]
 user-invocable: false
+changelog:
+  - version: 1.2.0
+    date: 2026-01-25
+    changes:
+      - "Удалён author field (cleanup)"
+  - version: 1.1.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: Thinking templates → @shared:THINKING-PATTERNS.md"
+      - "Централизация: Task structure → @shared:TASK-STRUCTURE.md"
+      - "Добавлено: 6 полных примеров multi-phase decomposition (auth system, e-commerce, API migration, UI redesign, third-party integration, caching layer)"
+      - "Обновлено: References используют @shared: syntax вместо устаревших \"Шаблон N\""
+  - version: 1.0.0
+    date: 2025-XX-XX
+    changes:
+      - "Initial release: Multi-phase task decomposition"
 ---
 
-# Task Decomposition
+# Task Decomposition v1.1
 
 Автоматизация разбиения complex задачи на 2-5 логических фаз. Этот скил создает master plan, генерирует individual phase files (phase-N-slug.md), maps acceptance criteria к фазам, и подготавливает task для sequential phase execution.
 
@@ -30,6 +45,36 @@ user-invocable: false
 - "Создай multi-phase plan для добавления X"
 - "Подготовь phase-based execution для задачи Y"
 
+---
+
+## References
+
+### Thinking Framework
+@shared:THINKING-PATTERNS.md#analysis
+
+**Skill-specific usage:**
+- Используй **analysis thinking** для decomposition reasoning
+- Обоснуй количество фаз (2-5)
+- Map acceptance criteria к фазам
+- Определи dependencies между фазами
+
+### Task Structure
+@shared:TASK-STRUCTURE.md#task-decomposition
+@shared:TASK-STRUCTURE.md#phase-metadata
+
+**Skill-specific schemas:**
+- `task_decomposition` JSON для multi-phase planning
+- `phase_metadata` JSON для individual phases
+
+### Git Conventions
+@shared:GIT-CONVENTIONS.md#commit-message-format
+
+**Skill-specific usage:**
+- Каждая фаза = отдельный commit
+- commit_message генерируется для каждой фазы
+
+---
+
 ## Контекст проекта
 
 ### Философия Task Decomposition
@@ -45,7 +90,7 @@ user-invocable: false
 ### Workflow Overview
 
 ```
-1. THINKING: Decomposition Thinking (Шаблон 6)
+1. THINKING: Decomposition Analysis
    ├─ Анализировать сложность задачи
    ├─ Определить критерий разделения
    ├─ Обосновать количество фаз
@@ -77,45 +122,63 @@ user-invocable: false
 ### Dependencies
 
 **Required skills:**
-- **thinking-framework**: Decomposition Thinking (Шаблон 6), Phase Planning Thinking (Шаблон 8)
-- **structured-planning**: Task Decomposition JSON (Шаблон 8-9), Phase Metadata JSON (Шаблон 6-7)
+- **thinking-framework**: Analysis thinking для decomposition reasoning
+- **structured-planning**: Task Decomposition JSON, Phase Metadata JSON schemas
 - **approval-gates**: Получение подтверждения плана перед созданием phase files
-- **error-handling**: DECOMPOSITION_FAILED (Шаблон 14), FILE_CREATE_FAILED (Шаблон 15)
+- **error-handling**: DECOMPOSITION_FAILED, FILE_CREATE_FAILED
 
-## Шаблоны
+---
 
-### Шаблон 1: Decomposition Thinking (ОБЯЗАТЕЛЬНО)
+## Domain-Specific Examples
 
-**[CRITICAL] Thinking перед decomposition - обязателен!**
+### Example 1: Authentication System (3 Phases)
 
-Используй thinking-framework skill (Шаблон 6: Decomposition Thinking).
+**Situation:** Add JWT authentication with refresh tokens
 
-**Thinking блок:**
+**Input:**
+- Task: "Implement JWT authentication system with login, refresh, logout endpoints"
+- Complexity: complex (database + backend + frontend)
+- Estimated total: 18 steps
+
+**Decomposition Thinking:**
+
 ```xml
-<thinking>
-ЗАДАЧА: Добавить систему аутентификации с JWT и refresh tokens
-СЛОЖНОСТЬ: Complex (затрагивает database, API, middleware, frontend)
+<thinking type="analysis">
+ЗАДАЧА: Add JWT authentication system
+СЛОЖНОСТЬ: Complex (затрагивает database, backend API, frontend)
+
+КОМПОНЕНТЫ:
+- Database: User model, RefreshToken model (2 tables + migrations)
+- Backend: JWTService, auth endpoints (login, refresh, logout)
+- Frontend: Auth interceptor, login form, token storage
 
 ДЕКОМПОЗИЦИЯ:
-Почему многофазная: Система аутентификации состоит из 3 независимых компонентов
-(database models, backend API, frontend integration). Каждый можно реализовать
-и протестировать отдельно.
-
-Количество фаз: 3
 Критерий разделения: По архитектурным слоям (database → backend → frontend)
+Количество фаз: 3
+
+ОБОСНОВАНИЕ: Каждый слой независимо тестируется. Database schema нужен для backend. Backend API нужен для frontend.
 
 ФАЗЫ:
-Phase 1: Database Models + Migrations - создать User, RefreshToken tables
-  Почему первой: Backend API требует database schema
-  Зависимости: Нет (первая фаза)
+Phase 1: Database Models
+  - User model с password hashing
+  - RefreshToken model
+  - Migrations
+  - Provides: Database schema для auth
 
-Phase 2: Backend API + JWT Logic - реализовать login, refresh, logout endpoints
-  Почему после Phase 1: Требует User и RefreshToken models
-  Зависимости: Phase 1 (database schema)
+Phase 2: Backend API + JWT Logic
+  - JWTService (generate, validate tokens)
+  - Login endpoint (email/password → tokens)
+  - Refresh endpoint (refresh_token → new access_token)
+  - Logout endpoint (invalidate refresh_token)
+  - JWT middleware для protected routes
+  - Provides: Working auth API
 
-Phase 3: Frontend Integration - добавить auth interceptor, login form
-  Почему после Phase 2: Требует работающие API endpoints
-  Зависимости: Phase 2 (backend API)
+Phase 3: Frontend Integration
+  - Auth interceptor (add Authorization header)
+  - Login form component
+  - Token storage (localStorage)
+  - Protected route handling
+  - Provides: End-to-end auth flow
 
 ACCEPTANCE CRITERIA MAPPING:
 AC1 (User registration) → Phase 1 (User model) + Phase 2 (register endpoint)
@@ -123,37 +186,12 @@ AC2 (JWT authentication) → Phase 2 (JWT logic)
 AC3 (Refresh tokens) → Phase 1 (RefreshToken model) + Phase 2 (refresh endpoint)
 AC4 (Frontend login) → Phase 3 (frontend integration)
 
-РИСКИ:
-- Можем неправильно спроектировать RefreshToken schema в Phase 1
-  (придется менять в Phase 2) → Митигация: тщательный review schema
-- JWT logic может требовать дополнительные поля в User model
-  (breaking change в Phase 2) → Митигация: добавить nullable fields в Phase 1
-
-ВАЛИДАЦИЯ:
-- Phase 1: migrations apply успешно, tables созданы
-- Phase 2: API tests проходят, JWT tokens валидны
-- Phase 3: Frontend успешно login/logout
-- Каждая фаза имеет отдельный commit
+ВЫВОДЫ: 3 фазы оптимально. Linear dependency chain (1→2→3). Each phase testable independently.
 </thinking>
 ```
 
-**Exit Conditions:**
-- ✓ Thinking завершен
-- ✓ Количество фаз определено (2-5)
-- ✓ Acceptance criteria mapped к фазам
-
-**Violation Action:**
-- Нет явных фаз → DECOMPOSITION_FAILED (error-handling Шаблон 14) → STOP, используй task-lite-template
-- Слишком много фаз (> 5) → Пересмотреть decomposition strategy
-- Слишком мало фаз (< 2) → Используй task-lite-template
-
----
-
-### Шаблон 2: Task Decomposition JSON
-
-Используй structured-planning skill (Шаблон 8: Task Decomposition JSON, Шаблон 9: JSON Schema).
-
 **Task Decomposition JSON:**
+
 ```json
 {
   "task_decomposition": {
@@ -161,13 +199,13 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
     "task_slug": "add-jwt-auth",
     "complexity": "complex",
     "total_phases": 3,
-    "decomposition_rationale": "Система аутентификации состоит из 3 независимых слоев: database schema, backend API, frontend integration. Каждый слой можно реализовать и протестировать отдельно.",
+    "decomposition_rationale": "Authentication system splits cleanly into 3 layers: database schema (User, RefreshToken), backend API (JWTService, endpoints), frontend integration (interceptor, login UI). Each layer independently testable.",
     "phases": [
       {
         "phase_number": 1,
         "phase_name": "Database Models + Migrations",
         "phase_slug": "database-models",
-        "goal": "Создать User и RefreshToken database models с migrations",
+        "goal": "Create User and RefreshToken database models with migrations",
         "estimated_steps": 5,
         "dependencies": [],
         "provides_for_next": ["User model", "RefreshToken model"],
@@ -177,7 +215,7 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
         "phase_number": 2,
         "phase_name": "Backend API + JWT Logic",
         "phase_slug": "backend-api",
-        "goal": "Реализовать login, refresh, logout endpoints с JWT authentication",
+        "goal": "Implement login, refresh, logout endpoints with JWT authentication",
         "estimated_steps": 7,
         "dependencies": ["User model", "RefreshToken model"],
         "provides_for_next": ["Working auth endpoints"],
@@ -191,7 +229,7 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
         "phase_number": 3,
         "phase_name": "Frontend Integration",
         "phase_slug": "frontend-integration",
-        "goal": "Интегрировать auth API в frontend (auth interceptor, login form)",
+        "goal": "Integrate auth API in frontend (interceptor, login form)",
         "estimated_steps": 6,
         "dependencies": ["Working auth endpoints"],
         "provides_for_next": [],
@@ -209,38 +247,12 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
 }
 ```
 
-**JSON Schema Validation:**
-- ✓ total_phases = 2-5 (enforced)
-- ✓ Each phase has 3-7 estimated_steps (recommended)
-- ✓ phases[] length = total_phases
-- ✓ phase_number sequential (1, 2, 3, ...)
-- ✓ phase_slug: lowercase-hyphenated (no spaces, no underscores)
-- ✓ dependencies referenced phases exist
-- ✓ acceptance_criteria_covered не пусто для хотя бы одной фазы
+**Master Plan:** `plans/master-plan-add-jwt-auth.md`
 
-**Exit Conditions:**
-- ✓ JSON Schema validation PASSED
-- ✓ task_decomposition JSON создан
-- ✓ 2-5 phases определены
-
-**Violation Action:**
-Используй error-handling skill:
-- Schema validation failed → JSON_SCHEMA_VALIDATION_ERROR (Шаблон 2) → RETRY (max 1)
-- total_phases < 2 или > 5 → DECOMPOSITION_FAILED (Шаблон 14) → STOP
-
----
-
-### Шаблон 3: Master Plan Generation
-
-Используй structured-planning skill (Шаблон 10: Master Plan Generation).
-
-**Master Plan File:** `plans/master-plan-{task_slug}.md`
-
-**Содержимое:**
 ```markdown
 # Master Plan: Add JWT Authentication System
 
-**Created:** 2025-11-20
+**Created:** 2026-01-25
 **Status:** Planning Complete
 **Branch:** feature/add-jwt-auth
 
@@ -248,22 +260,22 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
 
 ## Overview
 
-Добавление системы аутентификации с JWT tokens и refresh token механизмом. Задача разбита на 3 фазы для последовательной реализации по архитектурным слоям.
+Add JWT-based authentication system with refresh token mechanism. Task split into 3 phases for sequential implementation by architectural layers.
 
 ---
 
 ## Phases Overview
 
 ### Phase 1: Database Models + Migrations
-- **Goal:** Создать User и RefreshToken database models с migrations
-- **Dependencies:** Нет
-- **Provides:** User model, RefreshToken model
+- **Goal:** Create User and RefreshToken database models
+- **Dependencies:** None
+- **Provides:** Database schema
 - **Acceptance Criteria:** AC1 (partial)
 - **File:** `plans/phase-1-database-models.md`
 - **Estimated Steps:** 5
 
 ### Phase 2: Backend API + JWT Logic
-- **Goal:** Реализовать login, refresh, logout endpoints с JWT authentication
+- **Goal:** Implement login, refresh, logout endpoints
 - **Dependencies:** User model, RefreshToken model (Phase 1)
 - **Provides:** Working auth endpoints
 - **Acceptance Criteria:** AC1 (complete), AC2, AC3
@@ -271,9 +283,9 @@ AC4 (Frontend login) → Phase 3 (frontend integration)
 - **Estimated Steps:** 7
 
 ### Phase 3: Frontend Integration
-- **Goal:** Интегрировать auth API в frontend (auth interceptor, login form)
+- **Goal:** Integrate auth API in frontend
 - **Dependencies:** Working auth endpoints (Phase 2)
-- **Provides:** Full auth flow working
+- **Provides:** Full auth flow
 - **Acceptance Criteria:** AC4
 - **File:** `plans/phase-3-frontend-integration.md`
 - **Estimated Steps:** 6
@@ -290,7 +302,7 @@ Phase 1 (Database)
             └─→ Phase 3 (Frontend)
 ```
 
-**Execution Order:** Строго последовательно (1 → 2 → 3)
+**Execution Order:** Sequential (1 → 2 → 3)
 
 ---
 
@@ -298,45 +310,485 @@ Phase 1 (Database)
 
 | Criterion | Phase | Status |
 |-----------|-------|--------|
-| AC1: User registration | Phase 1 (partial) + Phase 2 (complete) | Pending |
+| AC1: User registration | Phase 1 + Phase 2 | Pending |
 | AC2: JWT authentication | Phase 2 | Pending |
 | AC3: Refresh tokens | Phase 1 + Phase 2 | Pending |
 | AC4: Frontend login | Phase 3 | Pending |
+```
+
+**Result:** 3 phases, linear dependency, 18 total steps.
+
+---
+
+### Example 2: E-Commerce Order System (4 Phases)
+
+**Situation:** Build complete order management system
+
+**Input:**
+- Task: "Create order system with cart, checkout, payment, and order tracking"
+- Complexity: complex (multiple features, payment integration)
+- Estimated total: 24 steps
+
+**Decomposition Thinking:**
+
+```xml
+<thinking type="analysis">
+ЗАДАЧА: E-commerce order management system
+СЛОЖНОСТЬ: Complex (4 major features, payment gateway integration)
+
+КОМПОНЕНТЫ:
+- Shopping cart (add/remove items, update quantities)
+- Checkout flow (shipping info, payment method selection)
+- Payment processing (Stripe integration, webhook handling)
+- Order tracking (status updates, order history)
+
+ДЕКОМПОЗИЦИЯ:
+Критерий разделения: По user journey stages (cart → checkout → payment → tracking)
+Количество фаз: 4
+
+ОБОСНОВАНИЕ: Each stage independently valuable. Cart functional without payment. Checkout without payment = "save order". Payment adds monetization. Tracking enhances UX.
+
+ФАЗЫ:
+Phase 1: Shopping Cart
+  - Cart model (user_id, items[], total)
+  - Add/remove/update cart items
+  - Cart persistence (save to database)
+  - Provides: Working cart functionality
+
+Phase 2: Checkout Flow
+  - Order model (user_id, status, shipping_address)
+  - Checkout API (create order from cart)
+  - Shipping address validation
+  - Provides: Order creation without payment
+
+Phase 3: Payment Integration
+  - Stripe integration (create payment intent)
+  - Webhook handler (payment confirmation)
+  - Order status update (pending → paid)
+  - Provides: Monetization capability
+
+Phase 4: Order Tracking
+  - Order status tracking (processing, shipped, delivered)
+  - Order history endpoint
+  - Email notifications on status change
+  - Provides: Customer visibility
+
+ACCEPTANCE CRITERIA MAPPING:
+AC1 (Add items to cart) → Phase 1
+AC2 (Checkout with shipping) → Phase 2
+AC3 (Payment processing) → Phase 3
+AC4 (Order status tracking) → Phase 4
+
+ВЫВОДЫ: 4 фазы optimal. Each phase delivers incremental value. Dependencies: 1→2→3→4 (linear).
+</thinking>
+```
+
+**Task Decomposition JSON:**
+
+```json
+{
+  "task_decomposition": {
+    "task_name": "Build E-Commerce Order System",
+    "task_slug": "ecommerce-order-system",
+    "complexity": "complex",
+    "total_phases": 4,
+    "decomposition_rationale": "Order system follows natural user journey: cart → checkout → payment → tracking. Each stage independently valuable and testable.",
+    "phases": [
+      {
+        "phase_number": 1,
+        "phase_name": "Shopping Cart",
+        "phase_slug": "shopping-cart",
+        "goal": "Implement cart functionality (add, remove, update items)",
+        "estimated_steps": 6,
+        "dependencies": [],
+        "provides_for_next": ["Cart model with items"],
+        "acceptance_criteria_covered": ["AC1: Add items to cart"]
+      },
+      {
+        "phase_number": 2,
+        "phase_name": "Checkout Flow",
+        "phase_slug": "checkout-flow",
+        "goal": "Create order from cart with shipping validation",
+        "estimated_steps": 6,
+        "dependencies": ["Cart model with items"],
+        "provides_for_next": ["Order model"],
+        "acceptance_criteria_covered": ["AC2: Checkout with shipping"]
+      },
+      {
+        "phase_number": 3,
+        "phase_name": "Payment Integration",
+        "phase_slug": "payment-integration",
+        "goal": "Integrate Stripe payment processing",
+        "estimated_steps": 7,
+        "dependencies": ["Order model"],
+        "provides_for_next": ["Payment confirmation"],
+        "acceptance_criteria_covered": ["AC3: Payment processing"]
+      },
+      {
+        "phase_number": 4,
+        "phase_name": "Order Tracking",
+        "phase_slug": "order-tracking",
+        "goal": "Add order status tracking and history",
+        "estimated_steps": 5,
+        "dependencies": ["Payment confirmation"],
+        "provides_for_next": [],
+        "acceptance_criteria_covered": ["AC4: Order status tracking"]
+      }
+    ],
+    "branch_strategy": {
+      "base_branch": "master",
+      "feature_branch": "feature/ecommerce-order-system",
+      "branch_per_phase": false
+    },
+    "execution_order": [1, 2, 3, 4],
+    "parallel_phases": []
+  }
+}
+```
+
+**Result:** 4 phases, linear dependency (1→2→3→4), 24 total steps.
+
+---
+
+### Example 3: API Versioning Migration (3 Phases)
+
+**Situation:** Migrate API from v1 to v2 with backward compatibility
+
+**Input:**
+- Task: "Introduce API v2 with new response format, maintain v1 for 6 months"
+- Complexity: complex (breaking changes, dual support)
+- Estimated total: 16 steps
+
+**Decomposition Thinking:**
+
+```xml
+<thinking type="analysis">
+ЗАДАЧА: API versioning migration (v1 → v2)
+СЛОЖНОСТЬ: Complex (breaking changes, backward compatibility required)
+
+КОМПОНЕНТЫ:
+- API v2 endpoints (new response format)
+- Dual version support (v1 + v2 live simultaneously)
+- Client migration guide + deprecation warnings
+
+ДЕКОМПОЗИЦИЯ:
+Критерий разделения: По migration stages (implement v2 → enable dual support → deprecate v1)
+Количество фаз: 3
+
+ОБОСНОВАНИЕ: Can't break v1 clients. Must run both versions parallel. Gradual migration path.
+
+ФАЗЫ:
+Phase 1: Implement API v2
+  - Create v2 endpoints (/api/v2/*)
+  - New response format (nested objects, pagination)
+  - Unit tests для v2
+  - Provides: Working v2 endpoints (not public yet)
+
+Phase 2: Enable Dual Version Support
+  - Routing logic (Accept-Version header or URL path)
+  - v1 endpoints unchanged (backward compatible)
+  - v2 endpoints live (opt-in for early adopters)
+  - Load testing (ensure no performance degradation)
+  - Provides: Both v1 and v2 available
+
+Phase 3: Deprecation Warnings + Migration Guide
+  - Add deprecation warnings to v1 responses (X-API-Deprecated header)
+  - Migration guide documentation
+  - Client SDK updates (support both versions)
+  - Provides: Migration path for clients
+
+ACCEPTANCE CRITERIA MAPPING:
+AC1 (v2 endpoints functional) → Phase 1
+AC2 (Both versions work) → Phase 2
+AC3 (Deprecation warnings) → Phase 3
+
+ВЫВОДЫ: 3 фазы optimal. Phase 1 implemented first (safe, no breaking). Phase 2 enables dual support. Phase 3 prepares for v1 sunset.
+</thinking>
+```
+
+**Result:** 3 phases, backend-only changes, 16 total steps.
+
+---
+
+### Example 4: UI Redesign with Component Library (3 Phases)
+
+**Situation:** Redesign UI using new component library
+
+**Input:**
+- Task: "Migrate from custom CSS to Chakra UI component library across all pages"
+- Complexity: complex (25+ components affected)
+- Estimated total: 18 steps
+
+**Decomposition Thinking:**
+
+```xml
+<thinking type="analysis">
+ЗАДАЧА: UI redesign with Chakra UI migration
+СЛОЖНОСТЬ: Complex (25+ components, design system change)
+
+КОМПОНЕНТЫ:
+- Component library setup (Chakra UI installation, theme)
+- Core components migration (Button, Input, Card - used everywhere)
+- Page-level migration (Dashboard, Settings, Profile pages)
+
+ДЕКОМПОЗИЦИЯ:
+Критерий разделения: По dependency layers (setup → core components → pages)
+Количество фаз: 3
+
+ОБОСНОВАНИЕ: Must setup library first. Core components used by pages (can't migrate pages without core). Pages can be migrated incrementally.
+
+ФАЗЫ:
+Phase 1: Setup Component Library
+  - Install Chakra UI + dependencies
+  - Create custom theme (colors, typography, spacing)
+  - Setup ChakraProvider in root
+  - Provides: Chakra UI ready to use
+
+Phase 2: Migrate Core Components
+  - Button component (replace custom CSS → Chakra Button)
+  - Input component (replace → Chakra Input)
+  - Card component (replace → Chakra Box with styling)
+  - Modal component (replace → Chakra Modal)
+  - Provides: Core components using Chakra
+
+Phase 3: Migrate Pages
+  - Dashboard page (use new core components)
+  - Settings page
+  - Profile page
+  - Remove custom CSS files
+  - Provides: Full UI redesigned
+
+ACCEPTANCE CRITERIA MAPPING:
+AC1 (Chakra UI setup) → Phase 1
+AC2 (Core components migrated) → Phase 2
+AC3 (All pages redesigned) → Phase 3
+
+ВЫВОДЫ: 3 фазы frontend-focused. Linear dependency (1→2→3). Incremental migration reduces risk.
+</thinking>
+```
+
+**Result:** 3 phases, frontend-heavy, 18 total steps.
+
+---
+
+### Example 5: Third-Party API Integration (2 Phases)
+
+**Situation:** Integrate Stripe payment gateway
+
+**Input:**
+- Task: "Add Stripe payment processing to checkout flow"
+- Complexity: standard (external integration, webhook handling)
+- Estimated total: 10 steps
+
+**Decomposition Thinking:**
+
+```xml
+<thinking type="analysis">
+ЗАДАЧА: Stripe payment integration
+СЛОЖНОСТЬ: Standard (external API integration)
+
+КОМПОНЕНТЫ:
+- Stripe SDK setup + payment flow (create payment intent, confirm)
+- Webhook handling (payment success/failure events)
+
+ДЕКОМПОЗИЦИЯ:
+Критерий разделения: По integration stages (payment flow → event handling)
+Количество фаз: 2
+
+ОБОСНОВАНИЕ: Payment flow can work without webhooks (polling alternative). Webhooks enhance reliability but not required for MVP.
+
+ФАЗЫ:
+Phase 1: Payment Flow Implementation
+  - Install Stripe SDK
+  - Create payment intent API
+  - Payment confirmation flow
+  - Test with Stripe test cards
+  - Provides: Working payment processing
+
+Phase 2: Webhook Integration
+  - Setup webhook endpoint (/webhooks/stripe)
+  - Verify webhook signatures
+  - Handle payment_intent.succeeded event
+  - Handle payment_intent.payment_failed event
+  - Provides: Reliable payment confirmation
+
+ACCEPTANCE CRITERIA MAPPING:
+AC1 (Payment processing) → Phase 1
+AC2 (Webhook handling) → Phase 2
+
+ВЫВОДЫ: 2 фазы minimal. Phase 1 delivers core value. Phase 2 adds production reliability.
+</thinking>
+```
+
+**Result:** 2 phases, minimal decomposition, 10 total steps.
+
+---
+
+### Example 6: Caching Layer Addition (3 Phases)
+
+**Situation:** Add Redis caching to improve performance
+
+**Input:**
+- Task: "Implement Redis caching for frequently accessed data (users, posts, analytics)"
+- Complexity: complex (multiple cache strategies)
+- Estimated total: 15 steps
+
+**Decomposition Thinking:**
+
+```xml
+<thinking type="analysis">
+ЗАДАЧА: Redis caching layer
+СЛОЖНОСТЬ: Complex (different cache strategies per data type)
+
+КОМПОНЕНТЫ:
+- Redis setup + connection pooling
+- User data caching (cache-aside pattern)
+- Post data caching (write-through pattern)
+- Analytics caching (TTL-based expiration)
+
+ДЕКОМПОЗИЦИЯ:
+Критерий разделения: По data types (infrastructure → users → posts/analytics)
+Количество фаз: 3
+
+ОБОСНОВАНИЕ: Infrastructure first (Redis setup). Then user cache (highest ROI, simple cache-aside). Then posts + analytics (more complex strategies).
+
+ФАЗЫ:
+Phase 1: Redis Infrastructure
+  - Install Redis + client library
+  - Connection pooling configuration
+  - Basic get/set operations
+  - Health check endpoint
+  - Provides: Redis ready for caching
+
+Phase 2: User Data Caching
+  - Cache-aside pattern для getUserById
+  - Cache invalidation on user update
+  - TTL: 5 minutes
+  - Provides: User data cached (70% queries cached)
+
+Phase 3: Posts + Analytics Caching
+  - Write-through для createPost (cache on write)
+  - Analytics aggregation caching (TTL: 1 hour)
+  - Cache warming on server start
+  - Provides: Full caching coverage
+
+ACCEPTANCE CRITERIA MAPPING:
+AC1 (Redis setup) → Phase 1
+AC2 (User data cached) → Phase 2
+AC3 (Posts + analytics cached) → Phase 3
+
+ВЫВОДЫ: 3 фазы performance-focused. Each phase reduces load incrementally. Dependencies: 1→2→3.
+</thinking>
+```
+
+**Result:** 3 phases, infrastructure → incremental caching, 15 total steps.
+
+---
+
+## Шаблоны
+
+### Шаблон 1: Decomposition Thinking (ОБЯЗАТЕЛЬНО)
+
+**[CRITICAL] Thinking перед decomposition - обязателен!**
+
+Используй @shared:THINKING-PATTERNS.md#analysis для decomposition reasoning.
+
+**Exit Conditions:**
+- ✓ Thinking завершен
+- ✓ Количество фаз определено (2-5)
+- ✓ Acceptance criteria mapped к фазам
+
+**Violation Action:**
+- Нет явных фаз → DECOMPOSITION_FAILED (error-handling) → STOP, используй task-lite-template
+- Слишком много фаз (> 5) → Пересмотреть decomposition strategy
+- Слишком мало фаз (< 2) → Используй task-lite-template
+
+---
+
+### Шаблон 2: Task Decomposition JSON
+
+Используй @shared:TASK-STRUCTURE.md#task-decomposition для schema reference.
+
+**JSON Schema Validation:**
+- ✓ total_phases = 2-5 (enforced)
+- ✓ Each phase has 3-7 estimated_steps (recommended)
+- ✓ phases[] length = total_phases
+- ✓ phase_number sequential (1, 2, 3, ...)
+- ✓ phase_slug: lowercase-hyphenated (no spaces, no underscores)
+- ✓ dependencies referenced phases exist
+- ✓ acceptance_criteria_covered не пусто для хотя бы одной фазы
+
+**Exit Conditions:**
+- ✓ JSON Schema validation PASSED
+- ✓ task_decomposition JSON создан
+- ✓ 2-5 phases определены
+
+**Violation Action:**
+Используй error-handling skill:
+- Schema validation failed → JSON_SCHEMA_VALIDATION_ERROR → RETRY (max 1)
+- total_phases < 2 или > 5 → DECOMPOSITION_FAILED → STOP
+
+---
+
+### Шаблон 3: Master Plan Generation
+
+Используй @shared:TASK-STRUCTURE.md#master-plan для structure reference.
+
+**Master Plan File:** `plans/master-plan-{task_slug}.md`
+
+**Содержимое:**
+```markdown
+# Master Plan: {Task Name}
+
+**Created:** {Date}
+**Status:** Planning Complete
+**Branch:** {feature_branch}
+
+---
+
+## Overview
+
+{1-3 paragraph summary}
+
+---
+
+## Phases Overview
+
+### Phase 1: {Name}
+- **Goal:** {goal}
+- **Dependencies:** {dependencies or "None"}
+- **Provides:** {provides_for_next}
+- **Acceptance Criteria:** {AC covered}
+- **File:** `plans/phase-1-{slug}.md`
+- **Estimated Steps:** {N}
+
+[Repeat for each phase]
+
+---
+
+## Dependency Graph
+
+```
+Phase 1 → Phase 2 → Phase 3
+```
+
+**Execution Order:** {execution_order}
+
+---
+
+## Acceptance Criteria Mapping
+
+| Criterion | Phase | Status |
+|-----------|-------|--------|
+| AC1 | Phase N | Pending |
 
 ---
 
 ## Branch Strategy
 
-- **Base Branch:** master
-- **Feature Branch:** feature/add-jwt-auth
-- **Branch per Phase:** No (все фазы в одной feature branch)
-
----
-
-## Execution Instructions
-
-Для выполнения всех фаз последовательно:
-
-```bash
-# Phase 1
-"Выполни Phase 1 из plans/phase-1-database-models.md"
-
-# После завершения Phase 1:
-"Выполни Phase 2 из plans/phase-2-backend-api.md"
-
-# После завершения Phase 2:
-"Выполни Phase 3 из plans/phase-3-frontend-integration.md"
-```
-
----
-
-## Risks
-
-1. RefreshToken schema может потребовать изменений в Phase 2
-   - **Митигация:** Тщательный review schema в Phase 1
-
-2. JWT logic может требовать дополнительные поля в User model
-   - **Митигация:** Добавить nullable fields в Phase 1
+- **Base Branch:** {base_branch}
+- **Feature Branch:** {feature_branch}
+- **Branch per Phase:** {yes/no}
 
 ---
 
@@ -353,27 +805,24 @@ Phase 1 (Database)
 
 **Violation Action:**
 Используй error-handling skill:
-- File creation failed → FILE_CREATE_FAILED (Шаблон 15) → STOP
+- File creation failed → FILE_CREATE_FAILED → STOP
 
 ---
 
 ### Шаблон 4: Phase File Generation
 
-Используй structured-planning skill (Шаблон 11: Phase File Generation).
+Используй @shared:TASK-STRUCTURE.md#phase-metadata для structure reference.
 
 **Для каждой фазы:** Создать `plans/phase-{N}-{phase_slug}.md`
 
-**Thinking (ОБЯЗАТЕЛЬНО):**
-Используй thinking-framework skill (Шаблон 8: Phase Planning Thinking) перед генерацией каждого phase file.
-
 **Phase File Содержимое:**
 ```markdown
-# Phase 2: Backend API + JWT Logic
+# Phase {N}: {Phase Name}
 
-**Phase:** 2/3
-**Goal:** Реализовать login, refresh, logout endpoints с JWT authentication
-**Branch:** feature/add-jwt-auth
-**Dependencies:** User model, RefreshToken model (Phase 1)
+**Phase:** {N}/{total_phases}
+**Goal:** {goal}
+**Branch:** {feature_branch}
+**Dependencies:** {dependencies}
 
 ---
 
@@ -382,91 +831,40 @@ Phase 1 (Database)
 ```json
 {
   "phase_metadata": {
-    "phase_number": 2,
-    "phase_name": "Backend API + JWT Logic",
-    "total_phases": 3,
-    "goal": "Реализовать login, refresh, logout endpoints с JWT authentication",
+    "phase_number": N,
+    "phase_name": "{name}",
+    "total_phases": {total},
+    "goal": "{goal}",
     "context": {
-      "branch_name": "feature/add-jwt-auth",
-      "base_branch": "master",
-      "previous_changes_summary": "Phase 1 создал User и RefreshToken models с migrations",
-      "dependencies": ["User model", "RefreshToken model"]
+      "branch_name": "{feature_branch}",
+      "base_branch": "{base}",
+      "previous_changes_summary": "{summary from Phase N-1}",
+      "dependencies": ["{dep1}", "{dep2}"]
     },
     "steps": [
       {
         "step_number": 1,
-        "description": "Создать JWTService для генерации и валидации токенов",
-        "actions": [
-          "Создать backend/app/services/jwt_service.py",
-          "Реализовать generate_token() method (принимает user_id, возвращает JWT)",
-          "Реализовать validate_token() method (принимает JWT, возвращает user_id или None)"
-        ],
-        "validation": "python -m pytest tests/services/test_jwt_service.py"
-      },
-      {
-        "step_number": 2,
-        "description": "Реализовать POST /auth/login endpoint",
-        "actions": [
-          "Создать backend/app/api/v1/endpoints/auth.py",
-          "Реализовать login endpoint (принимает email/password, возвращает access_token и refresh_token)",
-          "Добавить password hashing validation"
-        ],
-        "validation": "curl -X POST http://localhost:8000/api/v1/auth/login -d '{\"email\":\"test@test.com\",\"password\":\"test123\"}'"
-      },
-      {
-        "step_number": 3,
-        "description": "Реализовать POST /auth/refresh endpoint",
-        "actions": [
-          "Реализовать refresh endpoint в auth.py",
-          "Принимает refresh_token, возвращает новый access_token",
-          "Валидировать refresh_token через RefreshToken model"
-        ],
-        "validation": "curl -X POST http://localhost:8000/api/v1/auth/refresh -d '{\"refresh_token\":\"...\"}'"
-      },
-      {
-        "step_number": 4,
-        "description": "Реализовать POST /auth/logout endpoint",
-        "actions": [
-          "Реализовать logout endpoint в auth.py",
-          "Invalidate refresh_token (удалить из database)",
-          "Возвращает success message"
-        ],
-        "validation": "curl -X POST http://localhost:8000/api/v1/auth/logout -d '{\"refresh_token\":\"...\"}'"
-      },
-      {
-        "step_number": 5,
-        "description": "Добавить JWT middleware для protected endpoints",
-        "actions": [
-          "Создать backend/app/core/middleware/jwt_middleware.py",
-          "Реализовать JWT validation middleware",
-          "Применить middleware к protected routes"
-        ],
-        "validation": "curl -H 'Authorization: Bearer <invalid_token>' http://localhost:8000/api/v1/protected (should return 401)"
+        "description": "{description}",
+        "actions": ["{action1}", "{action2}"],
+        "validation": "{validation_command}"
       }
     ],
     "completion_criteria": [
-      "POST /auth/login возвращает access_token и refresh_token при valid credentials",
-      "POST /auth/refresh генерирует новый access_token при valid refresh_token",
-      "POST /auth/logout invalidates refresh_token (удаляет из database)",
-      "JWT middleware защищает protected endpoints (401 без valid token)"
+      "{criterion1}",
+      "{criterion2}"
     ],
     "commit_message": {
-      "type": "feat",
-      "summary": "add JWT authentication endpoints",
-      "body": "- Implement JWTService for token generation/validation\n- Add login, refresh, logout endpoints\n- Add JWT middleware for protected routes\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+      "type": "{feat/fix/refactor}",
+      "summary": "{summary}",
+      "body": "{body}"
     },
     "risks": [
-      "JWT SECRET_KEY может быть hardcoded (security vulnerability)",
-      "Password hashing может быть слабым (bcrypt rounds < 12)",
-      "Refresh token replay attacks если не проверяем expiration"
+      "{risk1}",
+      "{risk2}"
     ],
     "validation": {
       "syntax_check_required": true,
-      "files_to_check": [
-        "backend/app/services/jwt_service.py",
-        "backend/app/api/v1/endpoints/auth.py",
-        "backend/app/core/middleware/jwt_middleware.py"
-      ]
+      "files_to_check": ["{file1}"]
     }
   }
 }
@@ -478,16 +876,16 @@ Phase 1 (Database)
 
 Для выполнения этой фазы:
 ```
-"Выполни Phase 2 из plans/phase-2-backend-api.md"
+"Выполни Phase {N} из plans/phase-{N}-{slug}.md"
 ```
 
 ---
 
 ## Next Phase
 
-После завершения Phase 2:
-→ Phase 3: Frontend Integration
-  File: plans/phase-3-frontend-integration.md
+После завершения Phase {N}:
+→ Phase {N+1}: {Next Phase Name}
+  File: plans/phase-{N+1}-{slug}.md
 ```
 
 **Slug Generation Rules:**
@@ -507,7 +905,7 @@ Phase 1 (Database)
 
 **Violation Action:**
 Используй error-handling skill:
-- File creation failed → FILE_CREATE_FAILED (Шаблон 15) → STOP
+- File creation failed → FILE_CREATE_FAILED → STOP
 - steps[] < 3 или > 7 → Пересмотреть phase breakdown
 
 ---
@@ -524,38 +922,33 @@ Phase 1 (Database)
            📋 PLAN APPROVAL REQUIRED
 ═══════════════════════════════════════════════════════════
 
-TASK: Add JWT Authentication System
-COMPLEXITY: Complex
+TASK: {Task Name}
+COMPLEXITY: {complexity}
 
 DECOMPOSITION:
-- Total Phases: 3
-- Total Steps: ~18 (5 + 7 + 6)
-- Branch: feature/add-jwt-auth
+- Total Phases: {N}
+- Total Steps: ~{total_steps}
+- Branch: {feature_branch}
 
 PHASES:
-1. Database Models + Migrations (5 steps)
-   Dependencies: None
-   Provides: User model, RefreshToken model
+1. {Phase 1 Name} ({steps} steps)
+   Dependencies: {dependencies or "None"}
+   Provides: {provides_for_next}
 
-2. Backend API + JWT Logic (7 steps)
-   Dependencies: Phase 1 (database models)
-   Provides: Working auth endpoints
+2. {Phase 2 Name} ({steps} steps)
+   Dependencies: {dependencies}
+   Provides: {provides_for_next}
 
-3. Frontend Integration (6 steps)
-   Dependencies: Phase 2 (backend API)
-   Provides: Full auth flow
+[Continue for each phase]
 
 ACCEPTANCE CRITERIA COVERAGE:
-- AC1: User registration → Phase 1 + Phase 2 ✓
-- AC2: JWT authentication → Phase 2 ✓
-- AC3: Refresh tokens → Phase 1 + Phase 2 ✓
-- AC4: Frontend login → Phase 3 ✓
+- AC1: {description} → Phase {N} ✓
+- AC2: {description} → Phase {N} ✓
 
 FILES TO CREATE:
-- plans/master-plan-add-jwt-auth.md
-- plans/phase-1-database-models.md
-- plans/phase-2-backend-api.md
-- plans/phase-3-frontend-integration.md
+- plans/master-plan-{slug}.md
+- plans/phase-1-{slug}.md
+- plans/phase-2-{slug}.md
 
 ═══════════════════════════════════════════════════════════
 
@@ -584,7 +977,7 @@ FILES TO CREATE:
 
 **Violation Action:**
 Используй error-handling skill:
-- approved = false → APPROVAL_REJECTED (Шаблон 5) → STOP
+- approved = false → APPROVAL_REJECTED → STOP
 - Requested modifications → Вернуться к Decomposition Thinking, исправить, RETRY
 
 ---
@@ -594,7 +987,7 @@ FILES TO CREATE:
 После завершения task decomposition проверь:
 
 **Thinking:**
-- [ ] Decomposition Thinking завершен (Шаблон 6)
+- [ ] Decomposition analysis завершен
 - [ ] Количество фаз обосновано (2-5)
 - [ ] Acceptance criteria mapped к фазам
 - [ ] Риски идентифицированы
@@ -633,10 +1026,10 @@ FILES TO CREATE:
 
 ## Связанные скилы
 
-- **thinking-framework**: Decomposition Thinking (Шаблон 6), Phase Planning Thinking (Шаблон 8)
-- **structured-planning**: Task Decomposition JSON (Шаблон 8-9), Phase Metadata JSON (Шаблон 6-7), Master Plan (Шаблон 10), Phase File (Шаблон 11)
+- **thinking-framework**: Analysis thinking для decomposition
+- **structured-planning**: Task Decomposition JSON, Phase Metadata JSON schemas
 - **approval-gates**: Запрос подтверждения плана
-- **error-handling**: DECOMPOSITION_FAILED (Шаблон 14), FILE_CREATE_FAILED (Шаблон 15)
+- **error-handling**: DECOMPOSITION_FAILED, FILE_CREATE_FAILED
 - **phase-execution**: Использует phase files созданные этим скилом
 
 ## Часто задаваемые вопросы
@@ -669,16 +1062,6 @@ A: ДА, но с ограничениями:
 
 Если нужны major changes после approval → cancel execution, restart decomposition.
 
-**Q: Phase Planning Thinking (Шаблон 8) обязателен для КАЖДОЙ фазы?**
-
-A: ДА! Phase Planning Thinking помогает:
-- Определить правильный scope фазы
-- Разбить на 3-7 steps (не слишком мелко, не слишком крупно)
-- Определить commit message type
-- Идентифицировать фазо-специфичные риски
-
-Без thinking можем создать несбалансированные фазы (Phase 1: 2 steps, Phase 2: 12 steps).
-
 **Q: Acceptance criteria должны быть распределены равномерно по фазам?**
 
 A: НЕТ! Acceptance criteria распределяются по **логике**, не по количеству:
@@ -708,18 +1091,6 @@ A: **Рекомендуется:** Одна feature branch для всех фа�
 - Фазы выполняются разными людьми
 - Нужен separate Code Review для каждой фазы
 
-**Q: Сколько времени займет task decomposition?**
-
-A: Зависит от сложности задачи:
-- **Simple multi-phase (2-3 фазы):** 10-15 минут (thinking + JSON + files)
-- **Complex multi-phase (4-5 фаз):** 20-30 минут
-- **Approval gate:** +5 минут (ждать ответа пользователя)
-
-Это overhead, но он окупается:
-- Четкий execution plan
-- Возможность rollback отдельных фаз
-- Лучшая организация (не потеряешь контекст между фазами)
-
 **Q: Можно ли пропустить Master Plan и создать только phase files?**
 
 A: НЕТ! Master Plan **обязателен** потому что:
@@ -730,24 +1101,13 @@ A: НЕТ! Master Plan **обязателен** потому что:
 
 Phase files - детализация, Master Plan - overview.
 
-**Q: Phase metadata JSON слишком verbose - можно сокращать?**
-
-A: НЕТ! phase_metadata должен содержать ВСЕ информацию для автоматизированного execution:
-- context (branch_name, dependencies, previous_changes_summary)
-- steps[] (детальные actions + validation)
-- completion_criteria[] (как проверим что фаза завершена)
-- commit_message (готовый commit message)
-- risks, validation (syntax checks)
-
-Это позволяет phase-execution skill выполнить фазу **автономно**, без manual intervention.
-
 **Q: Что если Decomposition Thinking показал что задача simple (1 фаза)?**
 
 A: Используй **task-lite-template** вместо task decomposition! Decomposition overhead не окупится для simple tasks.
 
-Decomposition Thinking может заключить:
+Decomposition thinking может заключить:
 ```xml
-<thinking>
+<thinking type="analysis">
 ДЕКОМПОЗИЦИЯ:
 Почему многофазная: НЕ МНОГОФАЗНАЯ
   Все изменения в одном компоненте (OrderService)
@@ -767,3 +1127,10 @@ A: Теоретически ДА (если нет dependencies), но **НЕ Р�
 Используй parallel phases только если:
 - Multiple developers работают одновременно
 - Фазы **действительно** independent (no shared files)
+
+---
+
+**License:** MIT
+**Support:** См. @shared:THINKING-PATTERNS.md, @shared:TASK-STRUCTURE.md для детальной документации
+
+🤖 Generated with Claude Code

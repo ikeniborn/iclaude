@@ -1,10 +1,9 @@
 ---
 name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
-version: 1.1.0
+version: 1.2.0
 tags: [meta, generator, scaffolding, templates, schemas, validation, interactive, toon]
 dependencies: [thinking-framework, structured-planning, validation-framework, toon-skill]
-author: iclaude Skills Team
 files:
   templates: ./templates/*.json
   schemas: ./schemas/*.schema.json
@@ -12,6 +11,12 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 changelog:
+  - version: 1.2.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: TOON specification → @shared:TOON-REFERENCE.md"
+      - "Обновлены references: ../_shared/TOON-PATTERNS.md → @shared:TOON-REFERENCE.md"
+      - "Удалён author field"
   - version: 1.1.0
     date: 2026-01-23
     changes:
@@ -550,8 +555,8 @@ Skill автоматически генерирует TOON format когда:
 
 ### See Also
 
-- **toon-skill** - Базовый навык для TOON API ([../toon-skill/SKILL.md](../toon-skill/SKILL.md))
-- **TOON-PATTERNS.md** - Integration patterns ([../_shared/TOON-PATTERNS.md](../_shared/TOON-PATTERNS.md))
+- **toon-skill** - Базовый навык для TOON API (@skill:toon-skill)
+- **TOON Reference** - Full specification (@shared:TOON-REFERENCE.md)
 
 ---
 

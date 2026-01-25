@@ -1,11 +1,20 @@
 ---
 name: Phase Execution
 description: Автоматизация выполнения одной фазы из готового phase file с checkpoint validation и structured output
-version: 1.1.0
+version: 1.2.0
 author: Claude Code Team
 tags: [phase-based, execution, checkpoint, validation, workflow]
 dependencies: [thinking-framework, validation-framework, git-workflow, error-handling]
 user-invocable: false
+changelog:
+  - version: 1.2.0
+    date: 2026-01-25
+    changes:
+      - "Удалено: TOON Format Support дублирование (~148 строк)"
+      - "Добавлено: References к @shared:TOON-REFERENCE.md, @shared:THINKING-PATTERNS.md, @shared:GIT-CONVENTIONS.md, @shared:TASK-STRUCTURE.md"
+      - "Обновлено: Устаревшие references \"Шаблон N\" заменены на @shared: links"
+      - "Добавлено: 7 complete working examples (simple, standard, complex, checkpoint failures, multi-step, complete workflow)"
+      - "Добавлено: Skill-specific TOON usage notes для checkpoint.checks[] и files_changed[]"
 ---
 
 # Phase Execution
@@ -68,10 +77,34 @@ user-invocable: false
 ### Dependencies
 
 **Required skills:**
-- **thinking-framework**: Phase Analysis Thinking (Шаблон 7) перед началом
-- **validation-framework**: Checkpoint Validation (Шаблон 5), Completion Status (Шаблон 7)
-- **git-workflow**: Phase Commit (Шаблон 5), Git Commit Validation (Шаблон 6), Branch Context Check (Шаблон 7)
-- **error-handling**: Phase-based error types (Шаблон 8-16)
+- **thinking-framework**: `@shared:THINKING-PATTERNS.md#analysis` для phase analysis
+- **validation-framework**: Checkpoint Validation, Completion Status
+- **git-workflow**: `@shared:GIT-CONVENTIONS.md#conventional-commits` для phase commit
+- **error-handling**: Phase-based error types
+
+---
+
+## References
+
+**TOON Format:**
+- Спецификация: `@shared:TOON-REFERENCE.md`
+- Применение к checkpoint.checks[] и files_changed[]: см. Skill-specific TOON usage ниже
+
+**Task Structure:**
+- JSON schemas: `@shared:TASK-STRUCTURE.md#execution-step`
+- Git commit schema: `@shared:TASK-STRUCTURE.md#git-commit`
+- Completion status schema: `@shared:TASK-STRUCTURE.md#validation-result`
+
+**Thinking Framework:**
+- Analysis thinking: `@shared:THINKING-PATTERNS.md#analysis`
+- Risk thinking для checkpoints: `@shared:THINKING-PATTERNS.md#risk`
+
+**Git Conventions:**
+- Commit message format: `@shared:GIT-CONVENTIONS.md#conventional-commits`
+- Branch naming: `@shared:GIT-CONVENTIONS.md#branch-naming`
+- Co-authored commits: `@shared:GIT-CONVENTIONS.md#co-authored-by`
+
+---
 
 ## Шаблоны
 
@@ -94,7 +127,7 @@ test -f plans/phase-2-backend-api.md && echo "✓ File exists" || echo "✗ File
 
 **Violation Action:**
 Используй error-handling skill:
-- File not found → PHASE_FILE_NOT_FOUND (Шаблон 8) → STOP
+- File not found → PHASE_FILE_NOT_FOUND → STOP
 - File read error → FILE_READ_ERROR → STOP
 
 ---
@@ -163,7 +196,7 @@ test -f plans/phase-2-backend-api.md && echo "✓ File exists" || echo "✗ File
 
 **Violation Action:**
 Используй error-handling skill:
-- JSON parse error → PHASE_FILE_PARSE_ERROR (Шаблон 9) → STOP
+- JSON parse error → PHASE_FILE_PARSE_ERROR → STOP
 - Missing required fields → PHASE_FILE_PARSE_ERROR → STOP
 
 ---
@@ -172,7 +205,7 @@ test -f plans/phase-2-backend-api.md && echo "✓ File exists" || echo "✗ File
 
 **[BLOCKING] Обязательная точка проверки перед началом выполнения.**
 
-Используй validation-framework skill (Шаблон 5: Checkpoint Validation).
+Используй validation-framework skill.
 
 **Checkpoint JSON:**
 ```json
@@ -243,9 +276,9 @@ test -f plans/phase-2-backend-api.md && echo "✓ File exists" || echo "✗ File
 
 **Violation Action:**
 Используй error-handling skill:
-- overall_result = "FAILED" → CHECKPOINT_FAILED (Шаблон 13) → BLOCKING
-- Branch context check failed → WRONG_BRANCH (Шаблон 11) или UNCOMMITTED_CHANGES (Шаблон 12) → STOP
-- Dependencies not resolved → ENTRY_CONDITION_VIOLATION (Шаблон 16) → STOP
+- overall_result = "FAILED" → CHECKPOINT_FAILED → BLOCKING
+- Branch context check failed → WRONG_BRANCH или UNCOMMITTED_CHANGES → STOP
+- Dependencies not resolved → ENTRY_CONDITION_VIOLATION → STOP
 
 ---
 
@@ -254,7 +287,7 @@ test -f plans/phase-2-backend-api.md && echo "✓ File exists" || echo "✗ File
 **Действия:**
 1. Для каждого `step` в `phase_metadata.steps[]`:
    - **a) Thinking (ОБЯЗАТЕЛЬНО):**
-     Используй thinking-framework skill (Phase Analysis Thinking может быть адаптирован для step-level)
+     Используй thinking-framework skill (`@shared:THINKING-PATTERNS.md#analysis`)
    - **b) Выполнить actions:**
      Следовать `step.actions[]` по порядку
    - **c) Валидация шага:**
@@ -291,7 +324,7 @@ Validation: python -m pytest tests/services/test_jwt_service.py
 
 **[BLOCKING] Обязательная точка проверки перед git commit.**
 
-Используй validation-framework skill (Шаблон 8: Completion Status Validation).
+Используй validation-framework skill.
 
 **Completion Status JSON:**
 ```json
@@ -367,14 +400,14 @@ SYNTAX CHECKS: ✓ All passed (2 files)
 
 **Violation Action:**
 Используй error-handling skill:
-- overall_status != "COMPLETED" → PHASE_COMPLETION_CRITERIA_NOT_MET (Шаблон 10) → BLOCKING, RETRY (max 2)
-- syntax_checks.all_passed = false → SYNTAX_ERROR (Шаблон 4) → STOP
+- overall_status != "COMPLETED" → PHASE_COMPLETION_CRITERIA_NOT_MET → BLOCKING, RETRY (max 2)
+- syntax_checks.all_passed = false → SYNTAX_ERROR → STOP
 
 ---
 
 ### Шаблон 6: Git Commit
 
-Используй git-workflow skill (Шаблон 5: Phase Commit, Шаблон 6: Git Commit Validation).
+Используй git-workflow skill (`@shared:GIT-CONVENTIONS.md#conventional-commits`).
 
 **Действия:**
 1. Stage all modified/created files
@@ -409,7 +442,7 @@ SYNTAX CHECKS: ✓ All passed (2 files)
 
 **Violation Action:**
 Используй error-handling skill:
-- commit_status = "failed" → GIT_COMMIT_FAILED (Шаблон 7) → STOP
+- commit_status = "failed" → GIT_COMMIT_FAILED → STOP
 
 ---
 
@@ -491,116 +524,13 @@ NEXT PHASE:
 
 ---
 
-## Проверочный чеклист
+## Skill-Specific TOON Usage
 
-После завершения phase execution проверь:
+**TOON генерируется для:**
+- **checkpoint.checks[]** когда checks.length >= 5 (расширенные checkpoints)
+- **phase_summary.files_changed[]** когда files_changed.length >= 5 (typical для standard/complex phases)
 
-**Phase File:**
-- [ ] Phase file прочитан полностью
-- [ ] phase_metadata JSON распарсен успешно
-- [ ] Все обязательные поля присутствуют
-
-**Checkpoints:**
-- [ ] Checkpoint 1 (ЗАГРУЗКА) пройден (overall_result = PASSED)
-- [ ] Checkpoint 2 (ВЫПОЛНЕНИЕ) пройден (overall_status = COMPLETED)
-- [ ] can_proceed_to_commit = true
-
-**Execution:**
-- [ ] Все steps выполнены по порядку
-- [ ] Каждый step.validation пройден
-- [ ] Все actions завершены успешно
-
-**Completion:**
-- [ ] Все completion_criteria выполнены (criteria_met = criteria_total)
-- [ ] Syntax checks passed (all_passed = true)
-- [ ] Нет blocking_issues
-
-**Git:**
-- [ ] Git commit создан (commit_status = success)
-- [ ] commit_hash записан
-- [ ] Правильная ветка (branch = phase_metadata.context.branch_name)
-
-**Summary:**
-- [ ] phase_summary JSON создан
-- [ ] Markdown summary выведен
-- [ ] Next phase указан (если есть)
-
-## TOON Format Support (v1.1.0)
-
-**Назначение:** Автоматическая оптимизация токенов для checkpoint.checks[] и files_changed[] массивов.
-
-### Threshold
-
-TOON генерируется если **checkpoint.checks[] >= 5** ИЛИ **files_changed[] >= 5**
-
-### Target Arrays
-
-**1. checkpoint.checks[]** (в Checkpoint 1 и Checkpoint 2)
-- Обычно: 4-6 элементов per checkpoint
-- Поля: check_id, check_name, status, details
-- Token savings: ~25-30% для 5+ checks
-
-**2. phase_summary.files_changed[]**
-- Обычно: 3-20 файлов per phase
-- Поля: file, change_type, lines_added, lines_removed (optional)
-- Token savings: ~30-35% для 10+ files
-
-### Output Structure
-
-**Checkpoint Output (с TOON):**
-```json
-{
-  "checkpoint": {
-    "checkpoint_id": 1,
-    "checkpoint_name": "ЗАГРУЗКА И АНАЛИЗ",
-    "checks": [
-      {"check_id": 1, "check_name": "Phase file прочитан", "status": "passed", "details": "..."},
-      {"check_id": 2, "check_name": "Phase metadata parsed", "status": "passed", "details": "..."},
-      {"check_id": 3, "check_name": "Branch context valid", "status": "passed", "details": "..."},
-      {"check_id": 4, "check_name": "Dependencies resolved", "status": "passed", "details": "..."},
-      {"check_id": 5, "check_name": "Syntax validation ready", "status": "passed", "details": "..."}
-    ],
-    "overall_result": "PASSED",
-    "can_proceed_to_execution": true,
-    "toon": {
-      "checks_toon": "checks[5]{check_id,check_name,status,details}:\n  1,Phase file прочитан,passed,plans/phase-2-backend-api.md (127 строк)\n  2,Phase metadata parsed,passed,phase_metadata JSON валиден\n  3,Branch context valid,passed,feature/auth-system clean working directory\n  4,Dependencies resolved,passed,User model exists RefreshToken model exists\n  5,Syntax validation ready,passed,All files accessible for syntax check",
-      "token_savings": "28.5%",
-      "size_comparison": "JSON: 845 tokens, TOON: 604 tokens"
-    }
-  }
-}
-```
-
-**Phase Summary Output (с TOON):**
-```json
-{
-  "phase_summary": {
-    "phase_number": 2,
-    "phase_name": "Backend API + JWT Logic",
-    "status": "COMPLETED",
-    "commit_hash": "abc123def456",
-    "files_changed": [
-      {"file": "backend/app/services/jwt_service.py", "change_type": "create", "lines_added": 45},
-      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "create", "lines_added": 78},
-      {"file": "backend/app/core/security.py", "change_type": "modify", "lines_added": 12, "lines_removed": 3},
-      {"file": "backend/app/middleware/auth_middleware.py", "change_type": "create", "lines_added": 34},
-      {"file": "tests/services/test_jwt_service.py", "change_type": "create", "lines_added": 56},
-      {"file": "tests/api/test_auth_endpoints.py", "change_type": "create", "lines_added": 89},
-      {"file": "backend/app/models/user.py", "change_type": "modify", "lines_added": 5, "lines_removed": 1}
-    ],
-    "completion_criteria_met": 3,
-    "total_completion_criteria": 3,
-    "toon": {
-      "files_changed_toon": "files_changed[7]{file,change_type,lines_added,lines_removed}:\n  backend/app/services/jwt_service.py,create,45,0\n  backend/app/api/v1/endpoints/auth.py,create,78,0\n  backend/app/core/security.py,modify,12,3\n  backend/app/middleware/auth_middleware.py,create,34,0\n  tests/services/test_jwt_service.py,create,56,0\n  tests/api/test_auth_endpoints.py,create,89,0\n  backend/app/models/user.py,modify,5,1",
-      "token_savings": "32.1%",
-      "size_comparison": "JSON: 1240 tokens, TOON: 842 tokens"
-    }
-  }
-}
-```
-
-### Implementation Pattern
-
+**Optimization pattern:**
 ```javascript
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
@@ -643,44 +573,721 @@ if (phaseSummary.files_changed.length >= 5) {
 }
 ```
 
-### Token Savings Examples
+**Token savings:**
+- Checkpoint (5-6 checks): ~28-32% savings
+- Files changed (7-15 files): ~32-40% savings
+- Combined workflow: ~35-40% total reduction
 
-| Scenario | JSON Tokens | TOON Tokens | Savings | Elements |
-|----------|-------------|-------------|---------|----------|
-| Checkpoint (5 checks) | 845 | 604 | 28.5% | 5 |
-| Checkpoint (6 checks) | 1012 | 685 | 32.3% | 6 |
-| Files changed (7 files) | 1240 | 842 | 32.1% | 7 |
-| Files changed (15 files) | 2680 | 1620 | 39.6% | 15 |
-| Combined (6 checks + 12 files) | 3450 | 2210 | 35.9% | 18 |
+См. `@shared:TOON-REFERENCE.md#token-savings` для детальной спецификации.
 
-**Total workflow savings:** Для complex task с 2 checkpoints + 12 файлов: ~**35-40% token reduction**
+---
 
-### Backward Compatibility
+## Domain-Specific Examples
 
-- ✅ JSON format always present (primary format)
-- ✅ TOON field optional (only when threshold met)
-- ✅ Zero breaking changes для downstream consumers
-- ✅ Consumers могут игнорировать TOON и читать JSON
+### Example 1: Simple Phase Execution (3-4 files)
 
-### When TOON is Generated
+**Phase file:** `plans/phase-1-database-models.md`
 
-**Always generated:**
-- Phase with 5+ file changes (typical для standard/complex tasks)
-- Checkpoint with 5+ checks (расширенные checkpoints)
+**Phase metadata:**
+```json
+{
+  "phase_metadata": {
+    "phase_number": 1,
+    "phase_name": "Database Models",
+    "total_phases": 3,
+    "goal": "Create User and RefreshToken models",
+    "steps": [
+      {
+        "step_number": 1,
+        "description": "Create User model",
+        "actions": [
+          "Create models/user.py",
+          "Add email, password_hash, created_at fields"
+        ],
+        "validation": "python -m pytest tests/models/test_user.py"
+      },
+      {
+        "step_number": 2,
+        "description": "Create RefreshToken model",
+        "actions": [
+          "Create models/refresh_token.py",
+          "Add token, user_id, expires_at fields"
+        ],
+        "validation": "python -m pytest tests/models/test_refresh_token.py"
+      }
+    ],
+    "completion_criteria": [
+      "User model created with required fields",
+      "RefreshToken model created with foreign key to User"
+    ],
+    "commit_message": {
+      "type": "feat",
+      "summary": "add User and RefreshToken database models",
+      "body": "- Create User model with authentication fields\n- Create RefreshToken model for JWT refresh flow"
+    }
+  }
+}
+```
 
-**Not generated:**
-- Minimal tasks (< 5 files changed)
-- Simple checkpoints (4 checks standard)
+**Execution:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] All checks passed
 
-См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
+Step 1: Create User model
+→ Created models/user.py ✓
+→ Tests passed ✓
+
+Step 2: Create RefreshToken model
+→ Created models/refresh_token.py ✓
+→ Tests passed ✓
+
+Checkpoint 2: ВЫПОЛНЕНИЕ
+[✓] Completion criteria: 2/2 met
+[✓] Syntax checks: passed
+
+Git Commit:
+→ Commit hash: a1b2c3d
+→ Files: models/user.py, models/refresh_token.py, tests/models/test_user.py, tests/models/test_refresh_token.py
+
+Phase Summary:
+✅ PHASE 1 ЗАВЕРШЕНА (4 files changed)
+```
+
+**Result:** Simple phase completed with 4 files. No TOON optimization (< 5 files threshold).
+
+---
+
+### Example 2: Standard Phase Execution (5-7 files, checkpoint validation)
+
+**Phase file:** `plans/phase-2-backend-api.md`
+
+**Phase metadata:**
+```json
+{
+  "phase_metadata": {
+    "phase_number": 2,
+    "phase_name": "Backend API + JWT Logic",
+    "total_phases": 3,
+    "goal": "Implement authentication endpoints",
+    "context": {
+      "branch_name": "feature/auth-system",
+      "dependencies": ["User model", "RefreshToken model"]
+    },
+    "steps": [
+      {"step_number": 1, "description": "Create JWTService", "actions": ["..."], "validation": "pytest tests/services/test_jwt_service.py"},
+      {"step_number": 2, "description": "Create auth endpoints", "actions": ["..."], "validation": "pytest tests/api/test_auth.py"},
+      {"step_number": 3, "description": "Add JWT middleware", "actions": ["..."], "validation": "pytest tests/middleware/test_auth.py"}
+    ],
+    "completion_criteria": [
+      "POST /auth/login returns tokens",
+      "POST /auth/refresh generates new access_token",
+      "POST /auth/logout invalidates refresh_token"
+    ],
+    "commit_message": {
+      "type": "feat",
+      "summary": "add JWT authentication endpoints",
+      "body": "..."
+    }
+  }
+}
+```
+
+**Execution:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] Phase file read (127 lines)
+[✓] Phase metadata parsed
+[✓] Branch: feature/auth-system ✓
+[✓] Dependencies: User model ✓, RefreshToken model ✓
+
+Step 1: Create JWTService
+→ Created services/jwt_service.py ✓
+→ Tests passed (3 passed) ✓
+
+Step 2: Create auth endpoints
+→ Created api/v1/endpoints/auth.py ✓
+→ Tests passed (5 passed) ✓
+
+Step 3: Add JWT middleware
+→ Created middleware/auth_middleware.py ✓
+→ Tests passed (2 passed) ✓
+
+Checkpoint 2: ВЫПОЛНЕНИЕ
+[✓] Completion criteria: 3/3 met
+  - POST /auth/login: ✓ (curl test passed)
+  - POST /auth/refresh: ✓ (curl test passed)
+  - POST /auth/logout: ✓ (curl test passed)
+[✓] Syntax checks: 3 files passed
+
+Git Commit:
+→ Branch: feature/auth-system
+→ Commit: b2c3d4e
+→ Type: feat
+→ Summary: add JWT authentication endpoints
+→ Files committed: 6
+
+Phase Summary (with TOON):
+{
+  "phase_summary": {
+    "phase_number": 2,
+    "status": "COMPLETED",
+    "files_changed": [
+      {"file": "services/jwt_service.py", "change_type": "create", "lines_added": 45},
+      {"file": "api/v1/endpoints/auth.py", "change_type": "create", "lines_added": 78},
+      {"file": "middleware/auth_middleware.py", "change_type": "create", "lines_added": 34},
+      {"file": "tests/services/test_jwt_service.py", "change_type": "create", "lines_added": 56},
+      {"file": "tests/api/test_auth.py", "change_type": "create", "lines_added": 89},
+      {"file": "core/security.py", "change_type": "modify", "lines_added": 12, "lines_removed": 3}
+    ],
+    "toon": {
+      "files_changed_toon": "files_changed[6]{file,change_type,lines_added,lines_removed}:\n  services/jwt_service.py,create,45,0\n  api/v1/endpoints/auth.py,create,78,0\n  middleware/auth_middleware.py,create,34,0\n  tests/services/test_jwt_service.py,create,56,0\n  tests/api/test_auth.py,create,89,0\n  core/security.py,modify,12,3",
+      "token_savings": "31.2%"
+    }
+  }
+}
+
+✅ PHASE 2 ЗАВЕРШЕНА (6 files changed, 31.2% token savings)
+```
+
+**Result:** Standard phase with 6 files. TOON optimization applied (>= 5 files threshold). Token savings: 31.2%.
+
+---
+
+### Example 3: Complex Phase with TOON (10+ files)
+
+**Phase file:** `plans/phase-2-refactor-auth-system.md`
+
+**Phase metadata:**
+```json
+{
+  "phase_metadata": {
+    "phase_number": 2,
+    "phase_name": "Authentication System Refactoring",
+    "total_phases": 4,
+    "goal": "Refactor monolithic auth module into services",
+    "steps": [
+      {"step_number": 1, "description": "Extract JWTService", "actions": ["..."]},
+      {"step_number": 2, "description": "Extract PasswordHashService", "actions": ["..."]},
+      {"step_number": 3, "description": "Extract EmailVerificationService", "actions": ["..."]},
+      {"step_number": 4, "description": "Refactor auth endpoints to use services", "actions": ["..."]},
+      {"step_number": 5, "description": "Update tests", "actions": ["..."]}
+    ],
+    "completion_criteria": [
+      "All auth endpoints use new services",
+      "All tests pass",
+      "No circular dependencies"
+    ],
+    "commit_message": {
+      "type": "refactor",
+      "summary": "extract authentication services from monolithic module",
+      "body": "..."
+    }
+  }
+}
+```
+
+**Execution:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] All 4 checks passed
+
+Execution: 5 steps completed
+→ Step 1: Extract JWTService ✓
+→ Step 2: Extract PasswordHashService ✓
+→ Step 3: Extract EmailVerificationService ✓
+→ Step 4: Refactor auth endpoints ✓
+→ Step 5: Update tests ✓
+
+Checkpoint 2: ВЫПОЛНЕНИЕ
+[✓] Completion criteria: 3/3 met
+
+Git Commit:
+→ Commit: c3d4e5f
+→ Type: refactor
+
+Phase Summary (with TOON):
+{
+  "phase_summary": {
+    "phase_number": 2,
+    "status": "COMPLETED",
+    "commit_hash": "c3d4e5f",
+    "files_changed": [
+      {"file": "services/jwt_service.py", "change_type": "create", "lines_added": 67},
+      {"file": "services/password_hash_service.py", "change_type": "create", "lines_added": 45},
+      {"file": "services/email_verification_service.py", "change_type": "create", "lines_added": 89},
+      {"file": "api/v1/endpoints/auth.py", "change_type": "modify", "lines_added": 34, "lines_removed": 156},
+      {"file": "api/v1/endpoints/registration.py", "change_type": "modify", "lines_added": 23, "lines_removed": 78},
+      {"file": "tests/services/test_jwt_service.py", "change_type": "create", "lines_added": 78},
+      {"file": "tests/services/test_password_hash_service.py", "change_type": "create", "lines_added": 56},
+      {"file": "tests/services/test_email_verification_service.py", "change_type": "create", "lines_added": 67},
+      {"file": "tests/api/test_auth.py", "change_type": "modify", "lines_added": 45, "lines_removed": 23},
+      {"file": "tests/api/test_registration.py", "change_type": "modify", "lines_added": 34, "lines_removed": 12},
+      {"file": "models/user.py", "change_type": "modify", "lines_added": 12, "lines_removed": 5},
+      {"file": "core/dependencies.py", "change_type": "modify", "lines_added": 23, "lines_removed": 8}
+    ],
+    "toon": {
+      "files_changed_toon": "files_changed[12]{file,change_type,lines_added,lines_removed}:\n  services/jwt_service.py,create,67,0\n  services/password_hash_service.py,create,45,0\n  services/email_verification_service.py,create,89,0\n  api/v1/endpoints/auth.py,modify,34,156\n  api/v1/endpoints/registration.py,modify,23,78\n  tests/services/test_jwt_service.py,create,78,0\n  tests/services/test_password_hash_service.py,create,56,0\n  tests/services/test_email_verification_service.py,create,67,0\n  tests/api/test_auth.py,modify,45,23\n  tests/api/test_registration.py,modify,34,12\n  models/user.py,modify,12,5\n  core/dependencies.py,modify,23,8",
+      "token_savings": "37.8%",
+      "size_comparison": "JSON: 2120 tokens, TOON: 1319 tokens"
+    }
+  }
+}
+
+✅ PHASE 2 ЗАВЕРШЕНА (12 files changed, 37.8% token savings)
+```
+
+**Result:** Complex phase with 12 files. TOON optimization applied with significant token savings (37.8%).
+
+---
+
+### Example 4: Checkpoint 1 Failure (branch context check failed)
+
+**Phase file:** `plans/phase-3-frontend-integration.md`
+
+**Execution attempt:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] Phase file read
+[✓] Phase metadata parsed
+[✗] Branch context valid: FAILED
+    Details: Currently on branch 'develop', expected 'feature/auth-system'
+[⏸️ ] Dependencies check: SKIPPED (blocked by previous failure)
+
+Overall result: FAILED
+Blocking issues:
+  - Wrong branch: develop (expected: feature/auth-system)
+
+❌ CHECKPOINT 1 FAILED - BLOCKING
+Cannot proceed to execution.
+```
+
+**Error handling:**
+```json
+{
+  "error": {
+    "error_type": "WRONG_BRANCH",
+    "severity": "BLOCKING",
+    "message": "Phase expects branch 'feature/auth-system', currently on 'develop'",
+    "resolution": "Switch to correct branch: git checkout feature/auth-system",
+    "can_retry": true
+  }
+}
+```
+
+**Action:** User switches branch → Retry phase execution
+
+**Result:** Checkpoint 1 failure due to branch mismatch. Execution stopped before any code changes.
+
+---
+
+### Example 5: Checkpoint 2 Failure (completion criteria not met)
+
+**Phase file:** `plans/phase-2-backend-api.md`
+
+**Execution:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] All checks passed
+
+Step 1: Create JWTService ✓
+Step 2: Create auth endpoints ✓
+Step 3: Add JWT middleware ✓
+
+Checkpoint 2: ВЫПОЛНЕНИЕ
+[✓] Criterion 1: POST /auth/login returns tokens
+    Evidence: curl test passed
+[✗] Criterion 2: POST /auth/refresh generates new access_token
+    Evidence: FAILED - 401 Unauthorized (invalid refresh token)
+[⏸️ ] Criterion 3: POST /auth/logout invalidates refresh_token
+    Status: SKIPPED (blocked by previous failure)
+
+Completion criteria: 1/3 met
+Blocking issues:
+  - POST /auth/refresh endpoint not working (401 error)
+
+Overall status: INCOMPLETE
+❌ CHECKPOINT 2 FAILED - BLOCKING
+Cannot proceed to commit.
+```
+
+**Error handling:**
+```json
+{
+  "error": {
+    "error_type": "PHASE_COMPLETION_CRITERIA_NOT_MET",
+    "severity": "BLOCKING",
+    "message": "Only 1 of 3 completion criteria met",
+    "failed_criteria": [
+      {
+        "criterion": "POST /auth/refresh generates new access_token",
+        "evidence": "401 Unauthorized - invalid refresh token"
+      }
+    ],
+    "resolution": "Fix /auth/refresh endpoint validation logic, then RETRY",
+    "can_retry": true,
+    "max_retries": 2
+  }
+}
+```
+
+**Action:** Fix refresh endpoint → Retry checkpoint 2 → Success → Commit
+
+**Result:** Checkpoint 2 failure prevents premature commit. Issue fixed and retried successfully.
+
+---
+
+### Example 6: Multi-Step Execution with Validation
+
+**Phase file:** `plans/phase-1-setup-project-structure.md`
+
+**Phase metadata:**
+```json
+{
+  "phase_metadata": {
+    "phase_number": 1,
+    "phase_name": "Setup Project Structure",
+    "total_phases": 1,
+    "goal": "Create FastAPI project structure",
+    "steps": [
+      {
+        "step_number": 1,
+        "description": "Create directory structure",
+        "actions": [
+          "Create app/api/v1/endpoints/",
+          "Create app/core/",
+          "Create app/models/",
+          "Create app/services/",
+          "Create tests/"
+        ],
+        "validation": "test -d app/api/v1/endpoints && echo 'Directories created'"
+      },
+      {
+        "step_number": 2,
+        "description": "Create configuration files",
+        "actions": [
+          "Create app/core/config.py",
+          "Create app/main.py",
+          "Create requirements.txt"
+        ],
+        "validation": "python -m py_compile app/main.py"
+      },
+      {
+        "step_number": 3,
+        "description": "Initialize git and create .gitignore",
+        "actions": [
+          "Create .gitignore with Python/FastAPI patterns",
+          "git init (if not exists)",
+          "git add .",
+          "git commit -m 'Initial project structure'"
+        ],
+        "validation": "git log --oneline | head -1"
+      }
+    ],
+    "completion_criteria": [
+      "All directories created",
+      "Configuration files exist",
+      "Git initialized with initial commit"
+    ],
+    "commit_message": {
+      "type": "feat",
+      "summary": "setup FastAPI project structure",
+      "body": "- Create directory structure\n- Add configuration files\n- Initialize git repository"
+    }
+  }
+}
+```
+
+**Execution:**
+```
+Checkpoint 1: ЗАГРУЗКА И АНАЛИЗ
+[✓] Phase file read
+[✓] Phase metadata parsed
+[✓] Branch context valid (master branch, clean)
+[✓] No dependencies
+
+Step 1: Create directory structure
+→ Created app/api/v1/endpoints/ ✓
+→ Created app/core/ ✓
+→ Created app/models/ ✓
+→ Created app/services/ ✓
+→ Created tests/ ✓
+→ Validation: Directories created ✓
+
+Step 2: Create configuration files
+→ Created app/core/config.py ✓
+→ Created app/main.py ✓
+→ Created requirements.txt ✓
+→ Validation: python -m py_compile app/main.py
+  Output: No syntax errors ✓
+
+Step 3: Initialize git and create .gitignore
+→ Created .gitignore ✓
+→ Git init (already exists) ✓
+→ Files staged ✓
+→ Initial commit created ✓
+→ Validation: git log shows initial commit ✓
+
+Checkpoint 2: ВЫПОЛНЕНИЕ
+[✓] Criterion 1: All directories created
+    Evidence: 5 directories exist
+[✓] Criterion 2: Configuration files exist
+    Evidence: config.py, main.py, requirements.txt present
+[✓] Criterion 3: Git initialized with initial commit
+    Evidence: git log shows commit a1b2c3d
+
+Completion criteria: 3/3 met ✓
+Syntax checks: Not required
+Overall status: COMPLETED ✓
+
+Git Commit:
+→ Branch: master
+→ Commit: d4e5f6g
+→ Type: feat
+→ Summary: setup FastAPI project structure
+
+Phase Summary:
+✅ PHASE 1 ЗАВЕРШЕНА
+Files changed: 8 (directories + files)
+Next phase: None (single-phase task)
+```
+
+**Result:** Multi-step execution with validation at each step. All validations passed, checkpoints cleared, successful commit.
+
+---
+
+### Example 7: Complete Phase-Based Workflow (Phase 2 of 3)
+
+**Context:** Task "Implement JWT authentication system" decomposed into 3 phases. Currently executing Phase 2.
+
+**Previous state:**
+- ✅ Phase 1 completed: Database models created (commit: a1b2c3d)
+- ⏳ Phase 2 in progress: Backend API + JWT Logic
+- ⏸️  Phase 3 pending: Frontend Integration
+
+**Phase file:** `plans/phase-2-backend-api.md`
+
+**Execution:**
+```
+═══════════════════════════════════════════════════════════
+      PHASE EXECUTION: Phase 2 of 3
+═══════════════════════════════════════════════════════════
+
+Phase: Backend API + JWT Logic
+Goal: Implement login, refresh, logout endpoints
+Dependencies: User model, RefreshToken model (from Phase 1)
+Branch: feature/auth-system
+
+───────────────────────────────────────────────────────────
+CHECKPOINT 1: ЗАГРУЗКА И АНАЛИЗ
+───────────────────────────────────────────────────────────
+
+[✓] Check 1: Phase file read
+    Details: plans/phase-2-backend-api.md (127 lines)
+
+[✓] Check 2: Phase metadata parsed
+    Details: JSON valid, all required fields present
+
+[✓] Check 3: Branch context valid
+    Details: On feature/auth-system, clean working directory
+
+[✓] Check 4: Dependencies resolved
+    Details: User model exists (commit a1b2c3d)
+             RefreshToken model exists (commit a1b2c3d)
+
+Overall result: PASSED ✓
+Proceeding to execution...
+
+───────────────────────────────────────────────────────────
+EXECUTION (3 steps)
+───────────────────────────────────────────────────────────
+
+Step 1/3: Create JWTService for token generation
+  Actions:
+    → Create backend/app/services/jwt_service.py ✓
+    → Implement generate_token() method ✓
+    → Implement validate_token() method ✓
+  Validation: pytest tests/services/test_jwt_service.py
+    → 3 passed in 0.12s ✓
+
+Step 2/3: Create authentication endpoints
+  Actions:
+    → Create backend/app/api/v1/endpoints/auth.py ✓
+    → Implement POST /auth/login ✓
+    → Implement POST /auth/refresh ✓
+    → Implement POST /auth/logout ✓
+  Validation: pytest tests/api/test_auth.py
+    → 5 passed in 0.24s ✓
+
+Step 3/3: Add JWT middleware
+  Actions:
+    → Create backend/app/middleware/auth_middleware.py ✓
+    → Integrate middleware with FastAPI app ✓
+  Validation: pytest tests/middleware/test_auth.py
+    → 2 passed in 0.08s ✓
+
+All steps completed ✓
+
+───────────────────────────────────────────────────────────
+CHECKPOINT 2: ВЫПОЛНЕНИЕ
+───────────────────────────────────────────────────────────
+
+Completion Criteria: 3/3
+
+[✓] Criterion 1: POST /auth/login returns access_token and refresh_token
+    Evidence: curl test passed, tokens returned
+
+[✓] Criterion 2: POST /auth/refresh generates new access_token
+    Evidence: curl test passed, new token generated
+
+[✓] Criterion 3: POST /auth/logout invalidates refresh_token
+    Evidence: curl test passed, refresh_token invalid after logout
+
+Syntax Checks:
+  Files checked: 2
+    → backend/app/services/jwt_service.py ✓
+    → backend/app/api/v1/endpoints/auth.py ✓
+  Result: All passed ✓
+
+Overall status: COMPLETED ✓
+Proceeding to commit...
+
+───────────────────────────────────────────────────────────
+GIT COMMIT
+───────────────────────────────────────────────────────────
+
+Branch: feature/auth-system
+Type: feat
+Summary: add JWT authentication endpoints
+Body: - Implement JWTService
+      - Add login, refresh, logout endpoints
+      - Add JWT middleware
+
+Files committed: 6
+  → backend/app/services/jwt_service.py (create, +45)
+  → backend/app/api/v1/endpoints/auth.py (create, +78)
+  → backend/app/middleware/auth_middleware.py (create, +34)
+  → tests/services/test_jwt_service.py (create, +56)
+  → tests/api/test_auth.py (create, +89)
+  → backend/app/core/security.py (modify, +12/-3)
+
+Commit hash: b2c3d4e
+Status: success ✓
+
+═══════════════════════════════════════════════════════════
+       ✅ PHASE 2 ЗАВЕРШЕНА
+═══════════════════════════════════════════════════════════
+
+Phase: 2/3 - Backend API + JWT Logic
+Status: COMPLETED
+Commit: b2c3d4e
+
+Changes Summary:
+- 6 files modified
+- 314 lines added
+- 3 lines removed
+
+Completion Criteria: ✓ 3/3 met
+
+Next Phase:
+→ Phase 3: Frontend Integration
+  File: plans/phase-3-frontend-integration.md
+  Dependencies: Backend API endpoints (Phase 2)
+
+To execute Phase 3:
+  "Выполни Phase 3 из plans/phase-3-frontend-integration.md"
+
+═══════════════════════════════════════════════════════════
+```
+
+**Phase Summary JSON (with TOON):**
+```json
+{
+  "phase_summary": {
+    "phase_number": 2,
+    "phase_name": "Backend API + JWT Logic",
+    "total_phases": 3,
+    "status": "COMPLETED",
+    "commit_hash": "b2c3d4e",
+    "files_changed": [
+      {"file": "backend/app/services/jwt_service.py", "change_type": "create", "lines_added": 45, "lines_removed": 0},
+      {"file": "backend/app/api/v1/endpoints/auth.py", "change_type": "create", "lines_added": 78, "lines_removed": 0},
+      {"file": "backend/app/middleware/auth_middleware.py", "change_type": "create", "lines_added": 34, "lines_removed": 0},
+      {"file": "tests/services/test_jwt_service.py", "change_type": "create", "lines_added": 56, "lines_removed": 0},
+      {"file": "tests/api/test_auth.py", "change_type": "create", "lines_added": 89, "lines_removed": 0},
+      {"file": "backend/app/core/security.py", "change_type": "modify", "lines_added": 12, "lines_removed": 3}
+    ],
+    "completion_criteria_met": 3,
+    "total_completion_criteria": 3,
+    "next_phase": {
+      "phase_number": 3,
+      "phase_name": "Frontend Integration",
+      "file": "plans/phase-3-frontend-integration.md",
+      "dependencies": ["Backend API endpoints"]
+    },
+    "toon": {
+      "files_changed_toon": "files_changed[6]{file,change_type,lines_added,lines_removed}:\n  backend/app/services/jwt_service.py,create,45,0\n  backend/app/api/v1/endpoints/auth.py,create,78,0\n  backend/app/middleware/auth_middleware.py,create,34,0\n  tests/services/test_jwt_service.py,create,56,0\n  tests/api/test_auth.py,create,89,0\n  backend/app/core/security.py,modify,12,3",
+      "token_savings": "31.2%",
+      "size_comparison": "JSON: 1380 tokens, TOON: 949 tokens"
+    }
+  }
+}
+```
+
+**Result:** Complete phase-based workflow demonstrating:
+- Checkpoint validation before and after execution
+- Multi-step execution with individual validations
+- Git commit with structured metadata
+- Phase summary with TOON optimization (31.2% savings)
+- Clear next phase guidance
+
+---
+
+## Проверочный чеклист
+
+После завершения phase execution проверь:
+
+**Phase File:**
+- [ ] Phase file прочитан полностью
+- [ ] phase_metadata JSON распарсен успешно
+- [ ] Все обязательные поля присутствуют
+
+**Checkpoints:**
+- [ ] Checkpoint 1 (ЗАГРУЗКА) пройден (overall_result = PASSED)
+- [ ] Checkpoint 2 (ВЫПОЛНЕНИЕ) пройден (overall_status = COMPLETED)
+- [ ] can_proceed_to_commit = true
+
+**Execution:**
+- [ ] Все steps выполнены по порядку
+- [ ] Каждый step.validation пройден
+- [ ] Все actions завершены успешно
+
+**Completion:**
+- [ ] Все completion_criteria выполнены (criteria_met = criteria_total)
+- [ ] Syntax checks passed (all_passed = true)
+- [ ] Нет blocking_issues
+
+**Git:**
+- [ ] Git commit создан (commit_status = success)
+- [ ] commit_hash записан
+- [ ] Правильная ветка (branch = phase_metadata.context.branch_name)
+
+**Summary:**
+- [ ] phase_summary JSON создан
+- [ ] Markdown summary выведен
+- [ ] Next phase указан (если есть)
+
+---
 
 ## Связанные скилы
 
-- **thinking-framework**: Phase Analysis Thinking (Шаблон 7) перед выполнением
-- **validation-framework**: Checkpoint Validation (Шаблон 5), Completion Status (Шаблон 8)
-- **git-workflow**: Phase Commit (Шаблон 5), Git Commit Validation (Шаблон 6), Branch Context Check (Шаблон 7)
-- **error-handling**: PHASE_FILE_NOT_FOUND (Шаблон 8), PHASE_FILE_PARSE_ERROR (Шаблон 9), PHASE_COMPLETION_CRITERIA_NOT_MET (Шаблон 10), WRONG_BRANCH (Шаблон 11), UNCOMMITTED_CHANGES (Шаблон 12), CHECKPOINT_FAILED (Шаблон 13), ENTRY_CONDITION_VIOLATION (Шаблон 16)
+- **thinking-framework**: `@shared:THINKING-PATTERNS.md#analysis` для phase analysis
+- **validation-framework**: Checkpoint Validation, Completion Status
+- **git-workflow**: `@shared:GIT-CONVENTIONS.md` для phase commit
+- **error-handling**: PHASE_FILE_NOT_FOUND, CHECKPOINT_FAILED, PHASE_COMPLETION_CRITERIA_NOT_MET, etc.
 - **task-decomposition**: Phase files созданы этим скилом
+
+---
 
 ## Часто задаваемые вопросы
 
@@ -713,7 +1320,7 @@ A: НЕТ! Phase-execution выполняет ОДНУ фазу за раз. Д�
 
 **Q: Что если Phase N зависит от Phase N-1, но Phase N-1 не завершен?**
 
-A: Checkpoint 1 проверит dependencies (Check 4: Dependencies resolved). Если Phase N-1 не завершен → ENTRY_CONDITION_VIOLATION (error-handling Шаблон 16) → STOP. Нужно вернуться к Phase N-1 и завершить его полностью.
+A: Checkpoint 1 проверит dependencies (Check 4: Dependencies resolved). Если Phase N-1 не завершен → ENTRY_CONDITION_VIOLATION → STOP. Нужно вернуться к Phase N-1 и завершить его полностью.
 
 **Q: Phase metadata JSON слишком большой - можно сокращать?**
 
@@ -728,7 +1335,7 @@ A: НЕТ! phase_metadata JSON должен содержать ВСЕ необх
 
 **Q: Syntax checks происходят автоматически?**
 
-A: ДА, если `phase_metadata.validation.syntax_check_required = true`. Phase-execution запустит syntax check для всех файлов в `validation.files_to_check[]`. Если syntax check failed → SYNTAX_ERROR (error-handling Шаблон 4) → STOP.
+A: ДА, если `phase_metadata.validation.syntax_check_required = true`. Phase-execution запустит syntax check для всех файлов в `validation.files_to_check[]`. Если syntax check failed → SYNTAX_ERROR → STOP.
 
 **Q: Phase commit должен быть pushed немедленно?**
 
@@ -751,3 +1358,9 @@ A: НЕТ! Phase file - read-only reference во время execution. Если 
 1. STOP execution
 2. Модифицировать phase file (изменить steps, criteria, etc)
 3. Restart phase execution с обновленным phase file
+
+---
+
+**Author:** Claude Code Team
+**License:** MIT
+**Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:THINKING-PATTERNS.md, @shared:GIT-CONVENTIONS.md

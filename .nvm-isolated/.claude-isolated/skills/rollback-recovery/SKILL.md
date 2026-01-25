@@ -1,12 +1,24 @@
 ---
 name: Rollback Recovery
 description: Механизм отката и восстановления при критических ошибках
-version: 1.1.0
+version: 1.2.0
 tags: [rollback, recovery, git, backup]
 dependencies: [error-handling]
 files:
   templates: ./templates/*.json
 user-invocable: false
+changelog:
+  - version: 1.2.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
+      - "Добавлено: 3 примера (git reset soft, git reset hard, file restore)"
+      - "Skill-specific TOON usage notes для files_affected[]"
+      - "Обновлены references"
+  - version: 1.1.0
+    date: 2026-01-23
+    changes:
+      - "TOON Format Support для files_affected[]"
 ---
 
 # Rollback Recovery
@@ -112,26 +124,121 @@ elif partial_rollback:
 - [ ] Повторить задачу
 ```
 
-## TOON Format Support (v1.1.0)
+## References
 
-**Назначение:** Автоматическая оптимизация токенов для files_affected[] массива при больших откатах.
+**TOON Format Specification:**
+- Full spec: @shared:TOON-REFERENCE.md
+- Integration patterns: @shared:TOON-REFERENCE.md#integration-patterns
+- Token savings benchmarks: @shared:TOON-REFERENCE.md#token-savings
 
-### Threshold
+**Task Structure:**
+- @shared:TASK-STRUCTURE.md#rollback-strategy
 
-TOON генерируется если **files_affected[] >= 5**
+## Skill-Specific TOON Usage
 
-**Note:** executed_commands[] обычно содержит 1-3 команды (ниже threshold), поэтому TOON не применяется к этому массиву.
+**rollback-recovery генерирует TOON для:**
+- `files_affected[]` - когда >= 5 files
 
-### Target Array
+**Implementation:**
+```javascript
+import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
-**files_affected[]**
-- Обычно: 1-20 файлов (зависит от scope rollback)
-- Поля: file, change_type (optional), status (optional)
-- Token savings: ~25-35% для 5+ files
+// Rollback output
+const rollback = {
+  strategy: "git_reset_hard",
+  executed_commands: ["git reset --hard abc123"],
+  files_affected: [...]  // 7+ files
+};
 
-### Output Structure
+// Add TOON optimization (только для files_affected >= 5)
+if (rollback.files_affected.length >= 5) {
+  const filesNormalized = rollback.files_affected.map(f => ({
+    file: f.file || f,
+    change_type: f.change_type || 'unknown',
+    status: f.status || 'reverted'
+  }));
 
-**Rollback Output (с TOON):**
+  rollback.toon = {
+    files_affected_toon: arrayToToon('files_affected', filesNormalized,
+      ['file', 'change_type', 'status']),
+    ...calculateTokenSavings({ files_affected: filesNormalized })
+  };
+}
+```
+
+**Token Savings (Rollback-Specific):**
+- 7 files: **28.3% savings** (980 → 702 tokens)
+- 12 files: **33.3% savings** (1680 → 1120 tokens)
+- 20 files: **35.0% savings** (2800 → 1820 tokens)
+
+---
+
+## Examples
+
+### Example 1: Git Reset Soft (Fixable Error)
+
+**Scenario:** Commit made, but tests failed - need to fix and re-commit
+
+**Initial state:**
+```bash
+# Just committed with syntax error
+git log -1 --oneline
+# abc123 feat: add authentication service
+
+pytest tests/
+# FAILED tests/test_auth.py::test_login - SyntaxError: invalid syntax
+```
+
+**Rollback execution:**
+```json
+{
+  "rollback": {
+    "strategy": "git_reset_soft",
+    "executed_commands": [
+      "git reset --soft HEAD~1"
+    ],
+    "files_affected": [
+      "backend/services/auth_service.py",
+      "tests/test_auth.py"
+    ],
+    "previous_state": "abc123",
+    "current_state": "def456",
+    "status": "rolled_back",
+    "changes_preserved": true
+  }
+}
+```
+
+**User message:**
+```
+🔄 ОТКАТ ВЫПОЛНЕН
+
+Стратегия: git_reset_soft
+Файлы: backend/services/auth_service.py, tests/test_auth.py
+Статус: rolled_back
+
+💾 Изменения сохранены в: working directory (staged)
+
+Следующие шаги:
+- [ ] Проверить состояние репозитория
+- [ ] Исправить проблему
+- [ ] Повторить задачу
+```
+
+**Result:** Changes remain staged, commit undone, ready to fix syntax error and re-commit.
+
+---
+
+### Example 2: Git Reset Hard (Full Rollback)
+
+**Scenario:** Critical error in 12-file refactor - need full rollback
+
+**Task details:**
+- Refactored authentication module (12 files modified/created)
+- Breaking change broke production
+- Cannot fix quickly
+
+**Rollback execution:**
 ```json
 {
   "rollback": {
@@ -146,95 +253,122 @@ TOON генерируется если **files_affected[] >= 5**
       {"file": "backend/app/middleware/auth_middleware.py", "change_type": "created", "status": "deleted"},
       {"file": "tests/services/test_auth_service.py", "change_type": "created", "status": "deleted"},
       {"file": "tests/api/test_auth_endpoints.py", "change_type": "created", "status": "deleted"},
-      {"file": "backend/app/models/user.py", "change_type": "modified", "status": "reverted"}
+      {"file": "backend/app/models/user.py", "change_type": "modified", "status": "reverted"},
+      {"file": "backend/app/schemas/auth.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/app/config.py", "change_type": "modified", "status": "reverted"},
+      {"file": "backend/alembic/versions/003_add_refresh_tokens.py", "change_type": "created", "status": "deleted"},
+      {"file": "backend/requirements.txt", "change_type": "modified", "status": "reverted"},
+      {"file": "docs/api/authentication.md", "change_type": "modified", "status": "reverted"}
     ],
-    "previous_state": "abc123def456",
+    "previous_state": "xyz789",
     "current_state": "abc123",
     "status": "rolled_back",
     "changes_preserved": false,
     "toon": {
-      "files_affected_toon": "files_affected[7]{file,change_type,status}:\n  backend/app/services/auth_service.py,modified,reverted\n  backend/app/api/v1/endpoints/auth.py,created,deleted\n  backend/app/core/security.py,modified,reverted\n  backend/app/middleware/auth_middleware.py,created,deleted\n  tests/services/test_auth_service.py,created,deleted\n  tests/api/test_auth_endpoints.py,created,deleted\n  backend/app/models/user.py,modified,reverted",
-      "token_savings": "28.3%",
-      "size_comparison": "JSON: 980 tokens, TOON: 702 tokens"
+      "files_affected_toon": "files_affected[12]{file,change_type,status}:\n  backend/app/services/auth_service.py,modified,reverted\n  backend/app/api/v1/endpoints/auth.py,created,deleted\n  backend/app/core/security.py,modified,reverted\n  backend/app/middleware/auth_middleware.py,created,deleted\n  tests/services/test_auth_service.py,created,deleted\n  tests/api/test_auth_endpoints.py,created,deleted\n  backend/app/models/user.py,modified,reverted\n  backend/app/schemas/auth.py,created,deleted\n  backend/app/config.py,modified,reverted\n  backend/alembic/versions/003_add_refresh_tokens.py,created,deleted\n  backend/requirements.txt,modified,reverted\n  docs/api/authentication.md,modified,reverted",
+      "token_savings": "33.3%",
+      "size_comparison": "JSON: 1680 tokens, TOON: 1120 tokens"
     }
   }
 }
 ```
 
-### Implementation Pattern
+**User message:**
+```
+🔄 ОТКАТ ВЫПОЛНЕН
 
-```javascript
-import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
+Стратегия: git_reset_hard
+Файлы: 12 files (see toon.files_affected_toon for details)
+Статус: rolled_back
 
-// Rollback output
-const rollback = {
-  strategy: "git_reset_hard",
-  executed_commands: ["git reset --hard abc123"],
-  files_affected: [...]  // 7+ files
-};
+⚠️ Изменения УДАЛЕНЫ (changes_preserved: false)
 
-// Add TOON optimization (только для files_affected >= 5)
-if (rollback.files_affected.length >= 5) {
-  // Normalize структуру (добавить change_type и status если отсутствуют)
-  const filesNormalized = rollback.files_affected.map(f => ({
-    file: f.file || f,  // Support простой string array или object array
-    change_type: f.change_type || 'unknown',
-    status: f.status || 'reverted'
-  }));
+Следующие шаги:
+- [ ] Проверить состояние репозитория
+- [ ] Исправить проблему
+- [ ] Повторить задачу
+```
 
-  rollback.toon = {
-    files_affected_toon: arrayToToon('files_affected', filesNormalized,
-      ['file', 'change_type', 'status']),
-    ...calculateTokenSavings({ files_affected: filesNormalized })
-  };
+**Result:** All 12 files reverted to commit abc123, breaking changes completely removed, TOON optimization saves 33.3% tokens.
+
+---
+
+### Example 3: File Restore (Partial Rollback)
+
+**Scenario:** Only 2 files need rollback, keep rest of changes
+
+**Initial state:**
+```bash
+# Modified 5 files, but 2 have errors
+git status
+# modified: backend/services/payment.py (good)
+# modified: backend/services/order.py (good)
+# modified: backend/services/auth.py (ERROR)
+# modified: backend/models/user.py (ERROR)
+# modified: backend/config.py (good)
+```
+
+**Rollback execution:**
+```json
+{
+  "rollback": {
+    "strategy": "file_restore",
+    "executed_commands": [
+      "git checkout HEAD -- backend/services/auth.py backend/models/user.py"
+    ],
+    "files_affected": [
+      "backend/services/auth.py",
+      "backend/models/user.py"
+    ],
+    "previous_state": "working_directory_dirty",
+    "current_state": "working_directory_partial",
+    "status": "partial_rollback",
+    "changes_preserved": true,
+    "preserved_files": [
+      "backend/services/payment.py",
+      "backend/services/order.py",
+      "backend/config.py"
+    ]
+  }
 }
 ```
 
-### Token Savings Examples
+**User message:**
+```
+🔄 ОТКАТ ВЫПОЛНЕН
 
-| Scenario | JSON Tokens | TOON Tokens | Savings | Files |
-|----------|-------------|-------------|---------|-------|
-| Small rollback (7 files) | 980 | 702 | 28.3% | 7 |
-| Medium rollback (12 files) | 1680 | 1120 | 33.3% | 12 |
-| Large rollback (20 files) | 2800 | 1820 | 35.0% | 20 |
+Стратегия: file_restore
+Файлы: backend/services/auth.py, backend/models/user.py
+Статус: partial_rollback
 
-**Typical use case:** Complex task rollback с 12 файлами: **~33% token reduction**
+💾 Остальные изменения сохранены:
+- backend/services/payment.py
+- backend/services/order.py
+- backend/config.py
 
-### Backward Compatibility
-
-- ✅ JSON format always present (primary format)
-- ✅ TOON field optional (only when threshold met)
-- ✅ Zero breaking changes для downstream consumers
-- ✅ Consumers могут игнорировать TOON и читать JSON
-
-### When TOON is Generated
-
-**Always generated:**
-- Large rollback (5+ files affected)
-- Full phase rollback (typically 7-15 files)
-
-**Not generated:**
-- Small rollback (< 5 files)
-- Single file restore
-- Git stash (usually minimal file count in output)
-
-### Simplified Files Array
-
-Если files_affected содержит только file paths (strings), автоматически нормализуем:
-
-```javascript
-// Input: простые strings
-const rollback = {
-  files_affected: ["file1.py", "file2.py", "file3.py", "file4.py", "file5.py"]
-};
-
-// Auto-normalized для TOON:
-const filesNormalized = rollback.files_affected.map(file => ({
-  file: file,
-  change_type: 'unknown',
-  status: 'reverted'
-}));
+Следующие шаги:
+- [ ] Проверить состояние репозитория
+- [ ] Исправить проблему в откаченных файлах
+- [ ] Повторить задачу для auth.py и user.py
 ```
 
-См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
+**Result:** Only 2 problematic files restored, 3 good changes preserved.
 
+---
+
+## Integration with Other Skills
+
+**Used by:**
+- `error-handling` → Called when retry_count >= max_retries
+- `adaptive-workflow` → Emergency rollback on critical failures
+- `phase-execution` → Phase-level rollback on checkpoint failure
+
+**Uses:**
+- `toon-skill` → TOON optimization for files_affected[] (см. `@shared:TOON-REFERENCE.md`)
+
+---
+
+🤖 Generated with Claude Code
+
+**Author:** ikeniborn
+**License:** MIT

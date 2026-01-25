@@ -21,6 +21,15 @@
 - При обновлении существующих skills
 - При оптимизации token usage в workflows
 
+### benefits
+
+**TOON Format Benefits:**
+- 🔥 **60-75% token savings** for arrays with ≥5 elements
+- ✅ **100% backward compatibility** (JSON primary, TOON optional)
+- 🚀 **Opt-in optimization** (no breaking changes)
+- 📊 **Embedded metrics** (token_savings always included)
+- 🔄 **Consistent schema** enforcement (validation built-in)
+
 ---
 
 ## Pattern 1: Simple Array Conversion
@@ -421,6 +430,8 @@ const items = upstreamOutput.items;
 
 ## Integration Checklist
 
+### integration-patterns
+
 При добавлении TOON в skill:
 
 ### ☐ Phase 1: Analysis
@@ -598,6 +609,8 @@ try {
 ---
 
 ## Token Savings Calculator
+
+### token-savings
 
 Быстрая оценка token savings для вашего массива:
 

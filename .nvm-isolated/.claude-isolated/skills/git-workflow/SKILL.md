@@ -1,41 +1,58 @@
 ---
 name: Git Workflow
 description: Стандартизированный git workflow с Conventional Commits
-version: 2.1.0
-tags: [git, commit, branch, conventional-commits]
+version: 2.2.0
+tags: [git, commit, branch, conventional-commits, toon]
 dependencies: []
 files:
   templates: ./templates/*.txt
   examples: ./examples/*.md
   shared: ../_shared/commit-types.json
 user-invocable: false
+changelog:
+  - version: 2.2.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: Branch naming и commit format → @shared:GIT-CONVENTIONS.md"
+      - "Централизация: TOON support → @shared:TOON-REFERENCE.md"
+      - "Добавлено: 7 полных workflow примеров (feature, hotfix, multi-file, etc.)"
+      - "Сокращено: -95 строк дублированного контента"
+  - version: 2.1.0
+    date: 2026-01-23
+    changes:
+      - "TOON Format Support для validation_checks[] (26% token savings)"
+      - "Pre-commit validation checks массив"
 ---
 
-# Git Workflow v2.0
+# Git Workflow v2.2
 
-Стандартизированный git workflow.
+Стандартизированный git workflow с Conventional Commits.
 
 ## Когда использовать
 
 - При создании ветки (Phase 1)
-- При commit (Phase 5)
-- При создании PR
+- При commit (Phase 5A)
+- При создании PR (Phase 5B)
 
-## Branch Naming
+---
 
+## References
+
+### Git Conventions
+
+**Branch Naming:**
 ```
-{type}/{slug}
-
-Примеры:
-- feature/add-calculate-total
-- fix/null-pointer-validator
-- refactor/extract-order-validator
+@shared:GIT-CONVENTIONS.md#branch-naming-convention
 ```
 
-Types: `@shared:commit-types`
+Pattern: `{type}/{slug}` (e.g., `feature/add-user-auth`)
 
-## Commit Message Format
+**Commit Message Format:**
+```
+@shared:GIT-CONVENTIONS.md#conventional-commits-format
+```
 
+Structure:
 ```
 {type}: {summary}
 
@@ -43,38 +60,29 @@ Types: `@shared:commit-types`
 
 🤖 Generated with Claude Code
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
-### Rules
+**Full specification:** См. `@shared:GIT-CONVENTIONS.md` для:
+- Все commit types (feat, fix, refactor, etc.)
+- Branch naming rules и validation regex
+- Breaking changes format
+- 35+ reference примеров
 
-- `summary`: max 72 chars, imperative mood
-- `body`: wrap at 100 chars, explain "why" not "what"
-- `type`: from Conventional Commits
+### TOON Format
 
-### Examples
-
+**TOON Support:**
 ```
-feat: add calculate_total method to BudgetService
-
-Implement method to sum amounts from budget facts.
-This enables total calculation for budget reports.
-
-🤖 Generated with Claude Code
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+@shared:TOON-REFERENCE.md
 ```
 
-```
-fix: handle null pointer in OrderValidator
+git-workflow генерирует TOON для `validation_checks[]` когда >= 5 элементов.
 
-Add null check before accessing order.items property.
-Fixes #123.
+**Target array:** validation_checks (pre-commit validation results)
+**Token savings:** 20-30% для 5+ checks
+**Implementation:** См. `@shared:TOON-REFERENCE.md#pattern-1-simple-array-conversion`
 
-🤖 Generated with Claude Code
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
+---
 
 ## Git Commands
 
@@ -99,7 +107,9 @@ git commit -m "{message}"
 git push -u origin {branch_name}
 ```
 
-## Output
+---
+
+## Output Schema
 
 ```json
 {
@@ -109,18 +119,44 @@ git push -u origin {branch_name}
     "commit_message": "feat: add calculate_total method",
     "files_committed": ["service.py"],
     "pushed": true,
-    "remote": "origin"
+    "remote": "origin",
+    "validation_checks": [
+      {
+        "check_id": 1,
+        "check_name": "Syntax validation",
+        "command": "python -m py_compile service.py",
+        "status": "passed",
+        "duration_ms": 120,
+        "details": "No syntax errors"
+      }
+    ],
+    "toon": {
+      "validation_checks_toon": "validation_checks[5]{...}:\n  ...",
+      "token_savings": "23.5%"
+    }
   }
 }
 ```
 
+**Fields:**
+- `branch` - Branch name (matches pattern from GIT-CONVENTIONS.md)
+- `commit_hash` - Short commit SHA
+- `commit_message` - Full commit message (Conventional Commits format)
+- `files_committed` - Array of file paths
+- `pushed` - Boolean (whether pushed to remote)
+- `remote` - Remote name (usually "origin")
+- `validation_checks` - Array of pre-commit validation results (optional)
+- `toon` - TOON optimization (optional, if validation_checks >= 5)
+
+---
+
 ## Task Summary
 
-После push выводить summary.
+После push выводить enhanced summary.
 
-Template: `@template:task-summary`
+**Template:** `@template:task-summary`
 
-Пример:
+**Example:**
 ```
 ═══════════════════════════════════════════════════════════
                     ✅ ЗАДАЧА ЗАВЕРШЕНА
@@ -141,126 +177,318 @@ GIT:
 - Commit: abc123def
 - Pushed: origin/feature/add-calculate-total
 
+VALIDATION:
+- 5/5 checks passed (syntax, tests, lint, types, security)
+- Total duration: 1.32s
+
 ═══════════════════════════════════════════════════════════
 ```
+
+---
 
 ## Safety Rules
 
 ```yaml
 NEVER:
-  - force push to main/master
-  - commit secrets/credentials
-  - use --no-verify
-  - amend others' commits
+  - force push to main/master (use --force-with-lease only if needed)
+  - commit secrets/credentials (.env, API keys, tokens)
+  - use --no-verify (bypasses pre-commit hooks)
+  - amend others' commits (only your own unpushed commits)
+  - push directly to protected branches (always create PR)
 
 ALWAYS:
-  - check branch before commit
-  - verify files to commit
-  - use conventional commit format
+  - check branch before commit (git branch --show-current)
+  - verify files to commit (git status, git diff)
+  - use conventional commit format (type: summary)
+  - include co-author for AI-generated code
+  - run validation checks before commit (if configured)
 ```
 
-## Pre-Commit Validation (v2.1.0)
+---
 
-**Новое:** Для обеспечения качества commit, добавляется массив `validation_checks[]` с pre-commit checks.
+## Domain-Specific Examples
 
-**Структура:**
+### Example 1: Feature Branch Workflow (Standard)
+
+**Task:** Add user authentication endpoint
+
+**Workflow:**
+
+1. **Create branch:**
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/user-authentication
+```
+
+2. **Make changes:**
+- Create `app/api/auth.py` (login endpoint)
+- Create `app/services/jwt_service.py` (JWT generation)
+- Create `tests/test_auth.py` (unit tests)
+
+3. **Commit:**
+```bash
+git add app/api/auth.py app/services/jwt_service.py tests/test_auth.py
+git commit -m "feat(api): add user authentication endpoint
+
+Implement JWT-based authentication with login endpoint.
+Supports email/password credentials and returns access token.
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push:**
+```bash
+git push -u origin feature/user-authentication
+```
+
+**Output:**
 ```json
 {
   "git_result": {
-    "branch": "feature/add-calculate-total",
-    "commit_hash": "abc123def",
-    "commit_message": "feat: add calculate_total method",
-    "files_committed": ["service.py", "test_service.py"],
+    "branch": "feature/user-authentication",
+    "commit_hash": "a1b2c3d",
+    "commit_message": "feat(api): add user authentication endpoint",
+    "files_committed": ["app/api/auth.py", "app/services/jwt_service.py", "tests/test_auth.py"],
+    "pushed": true,
+    "remote": "origin"
+  }
+}
+```
+
+---
+
+### Example 2: Hotfix Workflow (Emergency Fix)
+
+**Task:** Fix critical SQL injection vulnerability
+
+**Workflow:**
+
+1. **Create hotfix branch:**
+```bash
+git checkout main
+git pull origin main
+git checkout -b fix/sql-injection-auth
+```
+
+2. **Fix issue:**
+- Edit `app/api/auth.py` (use parameterized query)
+
+3. **Commit with issue reference:**
+```bash
+git add app/api/auth.py
+git commit -m "fix(security): prevent SQL injection in auth endpoint
+
+Replace string concatenation with parameterized query.
+Fixes critical security vulnerability.
+
+Fixes #456
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push immediately:**
+```bash
+git push -u origin fix/sql-injection-auth
+```
+
+**Output:**
+```json
+{
+  "git_result": {
+    "branch": "fix/sql-injection-auth",
+    "commit_hash": "d4e5f6g",
+    "commit_message": "fix(security): prevent SQL injection in auth endpoint",
+    "files_committed": ["app/api/auth.py"],
     "pushed": true,
     "remote": "origin",
     "validation_checks": [
-      {
-        "check_id": 1,
-        "check_name": "Syntax validation",
-        "command": "python -m py_compile service.py",
-        "status": "passed",
-        "duration_ms": 120,
-        "details": "No syntax errors"
-      },
-      {
-        "check_id": 2,
-        "check_name": "Unit tests",
-        "command": "pytest tests/test_service.py",
-        "status": "passed",
-        "duration_ms": 450,
-        "details": "8 passed, 0 failed"
-      },
-      {
-        "check_id": 3,
-        "check_name": "Code linting",
-        "command": "pylint service.py",
-        "status": "passed",
-        "duration_ms": 230,
-        "details": "Score: 9.5/10"
-      },
-      {
-        "check_id": 4,
-        "check_name": "Type checking",
-        "command": "mypy service.py",
-        "status": "passed",
-        "duration_ms": 180,
-        "details": "No type errors"
-      },
-      {
-        "check_id": 5,
-        "check_name": "Security scan",
-        "command": "bandit -r .",
-        "status": "passed",
-        "duration_ms": 340,
-        "details": "No security issues"
-      }
+      {"check_id": 1, "check_name": "Security scan", "command": "bandit -r .", "status": "passed", "duration_ms": 340, "details": "No issues found"}
     ]
   }
 }
 ```
 
-Используется когда:
-- Pre-commit hooks enabled
-- Quality gates требуются перед commit
-- CI/CD-style validation локально
+---
 
-## TOON Format Support (v2.1.0)
+### Example 3: Multi-File Refactoring
 
-**Назначение:** Автоматическая оптимизация токенов для validation_checks[] массива.
+**Task:** Extract validation logic to separate class
 
-### Threshold
+**Workflow:**
 
-TOON генерируется если **validation_checks[] >= 5**
+1. **Create refactor branch:**
+```bash
+git checkout -b refactor/extract-order-validator
+```
 
-### Target Array
+2. **Make changes:**
+- Create `app/validators/order_validator.py` (new validator class)
+- Modify `app/services/order_service.py` (use new validator)
+- Update `tests/test_order_service.py` (update tests)
+- Delete `app/utils/validation.py` (old validation code)
 
-**validation_checks[]**
-- Обычно: 3-10 checks per commit
-- Поля: check_id, check_name, command, status, duration_ms, details
-- Token savings: ~20-30% для 5+ checks
+3. **Commit:**
+```bash
+git add app/validators/order_validator.py app/services/order_service.py tests/test_order_service.py
+git rm app/utils/validation.py
+git commit -m "refactor: extract validation logic to OrderValidator class
 
-### Output Structure
+Move validation code from OrderService to separate validator.
+No functional changes, improves testability and maintainability.
 
-**Git Result (с TOON):**
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push:**
+```bash
+git push -u origin refactor/extract-order-validator
+```
+
+**Output:**
 ```json
 {
   "git_result": {
-    "branch": "feature/auth-system",
-    "commit_hash": "abc123def456",
-    "commit_message": "feat: add JWT authentication endpoints",
-    "files_committed": ["auth_service.py", "auth.py", "security.py", "test_auth.py", "test_endpoints.py"],
+    "branch": "refactor/extract-order-validator",
+    "commit_hash": "h7i8j9k",
+    "commit_message": "refactor: extract validation logic to OrderValidator class",
+    "files_committed": [
+      "app/validators/order_validator.py",
+      "app/services/order_service.py",
+      "tests/test_order_service.py"
+    ],
+    "files_deleted": ["app/utils/validation.py"],
+    "pushed": true,
+    "remote": "origin"
+  }
+}
+```
+
+---
+
+### Example 4: Breaking Change Workflow
+
+**Task:** Change API response format (breaking change)
+
+**Workflow:**
+
+1. **Create feature branch:**
+```bash
+git checkout -b feat/api-response-v2
+```
+
+2. **Make breaking changes:**
+- Modify `app/api/transactions.py` (nested response structure)
+- Update `docs/API.md` (document breaking change)
+- Update `tests/test_api.py` (update tests)
+
+3. **Commit with breaking change marker:**
+```bash
+git add app/api/transactions.py docs/API.md tests/test_api.py
+git commit -m "feat(api)!: change transaction response format
+
+Return transactions in nested structure for better clarity.
+
+BREAKING CHANGE: Response format changed from flat array
+to nested object with pagination metadata. Update clients
+to access data via response.data instead of response directly.
+
+Migration guide: docs/migration/v2-api.md
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push:**
+```bash
+git push -u origin feat/api-response-v2
+```
+
+**Output:**
+```json
+{
+  "git_result": {
+    "branch": "feat/api-response-v2",
+    "commit_hash": "k0l1m2n",
+    "commit_message": "feat(api)!: change transaction response format",
+    "files_committed": ["app/api/transactions.py", "docs/API.md", "tests/test_api.py"],
+    "pushed": true,
+    "remote": "origin",
+    "breaking_change": true
+  }
+}
+```
+
+---
+
+### Example 5: Commit with Pre-Commit Validation
+
+**Task:** Add calculate_total method with comprehensive validation
+
+**Workflow:**
+
+1. **Create branch:**
+```bash
+git checkout -b feature/calculate-total
+```
+
+2. **Make changes:**
+- Add method to `app/services/budget_service.py`
+- Add tests to `tests/test_budget_service.py`
+
+3. **Commit triggers pre-commit hooks:**
+```bash
+git add app/services/budget_service.py tests/test_budget_service.py
+git commit -m "feat: add calculate_total method to BudgetService
+
+Implement method to sum amounts from budget facts.
+This enables total calculation for budget reports.
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+# Pre-commit hooks automatically run:
+# ✓ Syntax validation (150ms)
+# ✓ Unit tests (680ms)
+# ✓ Code linting (420ms)
+# ✓ Type checking (290ms)
+# ✓ Security scan (510ms)
+# ✓ Code coverage (720ms)
+```
+
+4. **Push:**
+```bash
+git push -u origin feature/calculate-total
+```
+
+**Output (with TOON optimization):**
+```json
+{
+  "git_result": {
+    "branch": "feature/calculate-total",
+    "commit_hash": "n3o4p5q",
+    "commit_message": "feat: add calculate_total method to BudgetService",
+    "files_committed": ["app/services/budget_service.py", "tests/test_budget_service.py"],
     "pushed": true,
     "remote": "origin",
     "validation_checks": [
-      {"check_id": 1, "check_name": "Syntax validation", "command": "python -m py_compile *.py", "status": "passed", "duration_ms": 150, "details": "All 5 files valid"},
+      {"check_id": 1, "check_name": "Syntax validation", "command": "python -m py_compile *.py", "status": "passed", "duration_ms": 150, "details": "All files valid"},
       {"check_id": 2, "check_name": "Unit tests", "command": "pytest tests/", "status": "passed", "duration_ms": 680, "details": "24 passed, 0 failed"},
-      {"check_id": 3, "check_name": "Code linting", "command": "pylint --rcfile=.pylintrc *.py", "status": "passed", "duration_ms": 420, "details": "Average score: 9.2/10"},
-      {"check_id": 4, "check_name": "Type checking", "command": "mypy --strict *.py", "status": "passed", "duration_ms": 290, "details": "No type errors found"},
-      {"check_id": 5, "check_name": "Security scan", "command": "bandit -r . -ll", "status": "passed", "duration_ms": 510, "details": "No high/medium severity issues"},
+      {"check_id": 3, "check_name": "Code linting", "command": "pylint *.py", "status": "passed", "duration_ms": 420, "details": "Score: 9.2/10"},
+      {"check_id": 4, "check_name": "Type checking", "command": "mypy *.py", "status": "passed", "duration_ms": 290, "details": "No type errors"},
+      {"check_id": 5, "check_name": "Security scan", "command": "bandit -r .", "status": "passed", "duration_ms": 510, "details": "No issues"},
       {"check_id": 6, "check_name": "Code coverage", "command": "pytest --cov=app tests/", "status": "passed", "duration_ms": 720, "details": "Coverage: 87%"}
     ],
     "toon": {
-      "validation_checks_toon": "validation_checks[6]{check_id,check_name,command,status,duration_ms,details}:\n  1,Syntax validation,python -m py_compile *.py,passed,150,All 5 files valid\n  2,Unit tests,pytest tests/,passed,680,24 passed 0 failed\n  3,Code linting,pylint --rcfile=.pylintrc *.py,passed,420,Average score: 9.2/10\n  4,Type checking,mypy --strict *.py,passed,290,No type errors found\n  5,Security scan,bandit -r . -ll,passed,510,No high/medium severity issues\n  6,Code coverage,pytest --cov=app tests/,passed,720,Coverage: 87%",
+      "validation_checks_toon": "validation_checks[6]{check_id,check_name,command,status,duration_ms,details}:\n  1,Syntax validation,python -m py_compile *.py,passed,150,All files valid\n  2,Unit tests,pytest tests/,passed,680,24 passed 0 failed\n  3,Code linting,pylint *.py,passed,420,Score: 9.2/10\n  4,Type checking,mypy *.py,passed,290,No type errors\n  5,Security scan,bandit -r .,passed,510,No issues\n  6,Code coverage,pytest --cov=app tests/,passed,720,Coverage: 87%",
       "token_savings": "26.1%",
       "size_comparison": "JSON: 1580 tokens, TOON: 1168 tokens"
     }
@@ -268,56 +496,201 @@ TOON генерируется если **validation_checks[] >= 5**
 }
 ```
 
-### Implementation Pattern
+---
 
-```javascript
-import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
+### Example 6: Documentation Update
 
-// Git result with validation checks
-const gitResult = {
-  branch: "feature/auth-system",
-  commit_hash: "abc123def456",
-  validation_checks: [...]  // 6+ checks
-};
+**Task:** Update API documentation
 
-// Add TOON optimization (только для validation_checks >= 5)
-if (gitResult.validation_checks.length >= 5) {
-  gitResult.toon = {
-    validation_checks_toon: arrayToToon('validation_checks', gitResult.validation_checks,
-      ['check_id', 'check_name', 'command', 'status', 'duration_ms', 'details']),
-    ...calculateTokenSavings({ validation_checks: gitResult.validation_checks })
-  };
+**Workflow:**
+
+1. **Create docs branch:**
+```bash
+git checkout -b docs/api-endpoints
+```
+
+2. **Update documentation:**
+- Edit `docs/API.md` (add new endpoint documentation)
+- Edit `README.md` (update getting started guide)
+
+3. **Commit:**
+```bash
+git add docs/API.md README.md
+git commit -m "docs: add API documentation for transaction endpoints
+
+Document all CRUD endpoints with request/response examples.
+Add authentication requirements and error codes.
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push:**
+```bash
+git push -u origin docs/api-endpoints
+```
+
+**Output:**
+```json
+{
+  "git_result": {
+    "branch": "docs/api-endpoints",
+    "commit_hash": "q6r7s8t",
+    "commit_message": "docs: add API documentation for transaction endpoints",
+    "files_committed": ["docs/API.md", "README.md"],
+    "pushed": true,
+    "remote": "origin"
+  }
 }
 ```
 
-### Token Savings Examples
+---
 
-| Scenario | JSON Tokens | TOON Tokens | Savings | Checks |
-|----------|-------------|-------------|---------|--------|
-| Standard checks (5 checks) | 1320 | 1010 | 23.5% | 5 |
-| Comprehensive (6 checks) | 1580 | 1168 | 26.1% | 6 |
-| Full suite (8 checks) | 2100 | 1520 | 27.6% | 8 |
+### Example 7: Performance Optimization
 
-**Typical use case:** Commit с 6 pre-commit checks: **~26% token reduction**
+**Task:** Optimize database queries
 
-### Backward Compatibility
+**Workflow:**
 
-- ✅ JSON format always present (primary format)
-- ✅ TOON field optional (only when threshold met)
-- ✅ Simple output without checks unchanged
-- ✅ Zero breaking changes для downstream consumers
+1. **Create perf branch:**
+```bash
+git checkout -b perf/optimize-queries
+```
 
-### When TOON is Generated
+2. **Make optimizations:**
+- Modify `app/services/transaction_service.py` (add index hints)
+- Modify `app/models/transaction.py` (add composite index)
+- Update `tests/test_performance.py` (verify improvements)
 
-**Always generated:**
-- Commits with comprehensive pre-commit validation (5+ checks)
-- Quality-gated workflows
-- CI/CD-style local validation
+3. **Commit:**
+```bash
+git add app/services/transaction_service.py app/models/transaction.py tests/test_performance.py
+git commit -m "perf: optimize transaction query performance
 
-**Not generated:**
-- Simple commits (< 5 validation checks)
-- No pre-commit hooks configured
-- Quick commits без validation
+Add composite index on (user_id, date) for faster filtering.
+Add query hints to use index efficiently.
 
-См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
+Reduces query time from 450ms to 85ms (81% improvement).
 
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+4. **Push:**
+```bash
+git push -u origin perf/optimize-queries
+```
+
+**Output:**
+```json
+{
+  "git_result": {
+    "branch": "perf/optimize-queries",
+    "commit_hash": "t9u0v1w",
+    "commit_message": "perf: optimize transaction query performance",
+    "files_committed": [
+      "app/services/transaction_service.py",
+      "app/models/transaction.py",
+      "tests/test_performance.py"
+    ],
+    "pushed": true,
+    "remote": "origin"
+  }
+}
+```
+
+---
+
+## Integration with Other Skills
+
+### structured-planning
+
+**Uses git field from task_plan:**
+```json
+{
+  "task_plan": {
+    "git": {
+      "branch_name": "feature/transaction-filtering",
+      "commit_type": "feat",
+      "commit_summary": "add transaction filtering endpoint"
+    }
+  }
+}
+```
+
+git-workflow executes:
+1. Create branch from `git.branch_name`
+2. Generate commit message from `git.commit_type` + `git.commit_summary`
+3. Add co-author footer automatically
+
+### validation-framework
+
+**validation_checks integration:**
+
+validation-framework results → git-workflow.validation_checks[]
+
+If pre-commit hooks enabled, git-workflow runs validation before commit and includes results in output.
+
+### pr-automation
+
+**git_result usage:**
+
+git-workflow output → pr-automation input
+
+pr-automation uses `git_result.branch` для creating PR from current branch to target branch.
+
+---
+
+## Best Practices
+
+### ✅ DO
+
+1. **Always verify branch** before committing (`git branch --show-current`)
+2. **Review staged files** before commit (`git diff --staged`)
+3. **Use meaningful commit messages** (explain "why", not "what")
+4. **Include issue references** when fixing bugs (`Fixes #123`)
+5. **Mark breaking changes** with `!` and `BREAKING CHANGE:` footer
+6. **Run validation checks** before commit (if configured)
+7. **Push after commit** to backup work to remote
+
+### ❌ DON'T
+
+1. **Skip commit message body** for non-trivial changes
+2. **Use generic messages** ("fix bug", "update code")
+3. **Commit secrets** (use .gitignore for sensitive files)
+4. **Force push** to shared branches (main, develop)
+5. **Bypass pre-commit hooks** (--no-verify) without good reason
+6. **Amend commits** after pushing to shared branch
+7. **Push directly** to protected branches (always create PR)
+
+---
+
+## Version History
+
+### v2.2.0 (2026-01-25)
+
+- ✅ Centralized git conventions → `@shared:GIT-CONVENTIONS.md`
+- ✅ Centralized TOON support → `@shared:TOON-REFERENCE.md`
+- ✅ Added 7 complete workflow examples (feature, hotfix, multi-file, breaking, validation, docs, perf)
+- ✅ Reduced duplication: -95 lines (TOON секция удалена)
+- ✅ Enhanced task summary template
+
+### v2.1.0 (2026-01-23)
+
+- ✅ TOON Format Support для validation_checks[]
+- ✅ Pre-commit validation checks массив
+- ✅ Token savings: 20-30% для 5+ checks
+
+### v2.0.0
+
+- ✅ Initial standardized workflow
+- ✅ Conventional Commits integration
+- ✅ Co-authored commits для AI code
+
+---
+
+**Author:** Claude Code Team
+**License:** MIT
+**Support:** См. @shared:GIT-CONVENTIONS.md для полной git спецификации

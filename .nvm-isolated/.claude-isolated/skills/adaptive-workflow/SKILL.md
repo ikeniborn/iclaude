@@ -1,12 +1,20 @@
 ---
 name: Adaptive Workflow
 description: Автоматический выбор сложности workflow
-version: 2.1.0
+version: 2.2.0
 tags: [workflow, complexity, adaptation, optimization, task-decomposition]
 dependencies: [context-awareness, task-decomposition, phase-execution]
 files:
   templates: ./templates/*.json
 user-invocable: false
+changelog:
+  - version: 2.2.0
+    date: 2026-01-25
+    changes:
+      - "Удалено: TOON Format Support дублирование (~107 строк)"
+      - "Добавлено: References к @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:WORKFLOW-SKILLS-UNIVERSAL.md"
+      - "Добавлено: 7 complete working examples (minimal, standard, complex, escalation, downgrade, extended analysis, TOON optimization)"
+      - "Добавлено: Skill-specific TOON usage notes для complexity_factors[]"
 ---
 
 # Adaptive Workflow
@@ -365,52 +373,32 @@ Task: "Update README documentation"
 - User challenges complexity classification
 - Debugging workflow selection
 
-## TOON Format Support (v2.1.0)
+---
 
-**Назначение:** Автоматическая оптимизация токенов для complexity_factors[] массива при детальном анализе.
+## References
 
-### Threshold
+**TOON Format:**
+- Спецификация: `@shared:TOON-REFERENCE.md`
+- Применение к complexity_factors[]: см. Skill-specific TOON usage ниже
 
-TOON генерируется если **complexity_factors[] >= 5**
+**Task Structure:**
+- JSON schemas: `@shared:TASK-STRUCTURE.md#complexity-result`
+- Adaptive schemas: `@shared:TASK-STRUCTURE.md#adaptive-behavior`
 
-### Target Array
+**Workflow Integration:**
+- Universal workflow: `@shared:WORKFLOW-SKILLS-UNIVERSAL.md#phase-0-complexity`
+- Skills matrix: `@shared:WORKFLOW-SKILLS-UNIVERSAL.md#skills-by-phase`
 
-**complexity_factors[]**
-- Обычно: 3-8 factors per task
-- Поля: factor_id, factor_name, value, threshold, weight, impact, contributes_to
-- Token savings: ~20-30% для 5+ factors
+---
 
-### Output Structure
+## Skill-Specific TOON Usage
 
-**Complexity Result (с TOON):**
-```json
-{
-  "complexity_result": {
-    "level": "complex",
-    "workflow": "phase-based",
-    "skip": [],
-    "required": ["all phases", "code_review", "prd_compliance"],
-    "reasoning": "Large codebase changes with breaking API modifications and multiple subsystems affected",
-    "complexity_factors": [
-      {"factor_id": 1, "factor_name": "Files to change", "value": 12, "threshold": 5, "weight": 0.35, "impact": "high", "contributes_to": "complex"},
-      {"factor_id": 2, "factor_name": "Number of components", "value": 4, "threshold": 2, "weight": 0.25, "impact": "high", "contributes_to": "complex"},
-      {"factor_id": 3, "factor_name": "Breaking changes", "value": true, "threshold": false, "weight": 0.15, "impact": "high", "contributes_to": "complex"},
-      {"factor_id": 4, "factor_name": "Cross-domain changes", "value": true, "threshold": false, "weight": 0.10, "impact": "medium", "contributes_to": "complex"},
-      {"factor_id": 5, "factor_name": "Database migration required", "value": true, "threshold": false, "weight": 0.10, "impact": "medium", "contributes_to": "complex"},
-      {"factor_id": 6, "factor_name": "External API changes", "value": true, "threshold": false, "weight": 0.05, "impact": "low", "contributes_to": "complex"}
-    ],
-    "complexity_score": 0.92,
-    "toon": {
-      "complexity_factors_toon": "complexity_factors[6]{factor_id,factor_name,value,threshold,weight,impact,contributes_to}:\n  1,Files to change,12,5,0.35,high,complex\n  2,Number of components,4,2,0.25,high,complex\n  3,Breaking changes,true,false,0.15,high,complex\n  4,Cross-domain changes,true,false,0.10,medium,complex\n  5,Database migration required,true,false,0.10,medium,complex\n  6,External API changes,true,false,0.05,low,complex",
-      "token_savings": "24.3%",
-      "size_comparison": "JSON: 1240 tokens, TOON: 938 tokens"
-    }
-  }
-}
-```
+**TOON генерируется для complexity_factors[] когда:**
+- Extended complexity analysis активирован (complexity_factors.length >= 5)
+- Debugging workflow classification
+- User requested transparency
 
-### Implementation Pattern
-
+**Optimization pattern:**
 ```javascript
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
@@ -442,35 +430,449 @@ if (complexityResult.complexity_factors.length >= 5) {
 }
 ```
 
-### Token Savings Examples
-
-| Scenario | JSON Tokens | TOON Tokens | Savings | Factors |
-|----------|-------------|-------------|---------|---------|
-| Standard analysis (5 factors) | 1050 | 820 | 21.9% | 5 |
-| Detailed analysis (6 factors) | 1240 | 938 | 24.3% | 6 |
-| Comprehensive (8 factors) | 1680 | 1210 | 28.0% | 8 |
-
-**Typical use case:** Complex task с 6 факторами: **~24% token reduction**
-
-### Backward Compatibility
-
-- ✅ JSON format always present (primary format)
-- ✅ TOON field optional (only when threshold met)
-- ✅ Simple output without factors unchanged
-- ✅ Zero breaking changes для downstream consumers
-
-### When TOON is Generated
-
-**Always generated:**
-- Detailed complexity analysis (5+ factors tracked)
-- User requested explanation mode
-- Debugging workflow classification
-
-**Not generated:**
-- Simple tasks (3-4 factors sufficient)
-- Quick classification (minimal analysis)
-- Default workflow selection
-
-См. также: **toon-skill** для API документации, **_shared/TOON-PATTERNS.md** для integration patterns.
+**Token savings:** ~20-30% для 5+ factors (см. @shared:TOON-REFERENCE.md#token-savings)
 
 ---
+
+## Domain-Specific Examples
+
+### Example 1: Minimal Complexity Task
+
+**User task:** "Fix typo in README.md"
+
+**Analysis:**
+```json
+{
+  "files_to_change": 1,
+  "components_affected": 0,
+  "breaking_changes": false,
+  "estimated_complexity": "minimal"
+}
+```
+
+**Output:**
+```json
+{
+  "complexity_result": {
+    "level": "minimal",
+    "workflow": "lite",
+    "skip": ["approval_gate", "prd_compliance", "code_review", "changelog"],
+    "required": ["syntax_check"],
+    "reasoning": "Single file change, no code logic, documentation update"
+  }
+}
+```
+
+**Result:** Упрощённый workflow активирован. Skipped 4 phases (approval, PRD, code review, changelog). Estimated time saved: 15 minutes.
+
+---
+
+### Example 2: Standard Complexity Task
+
+**User task:** "Add user registration endpoint with email validation"
+
+**Analysis:**
+```json
+{
+  "files_to_change": 4,
+  "files": ["app/api/users.py", "app/services/email_validator.py", "app/models/user.py", "tests/test_user_registration.py"],
+  "components_affected": 1,
+  "breaking_changes": false,
+  "estimated_complexity": "standard"
+}
+```
+
+**Output:**
+```json
+{
+  "complexity_result": {
+    "level": "standard",
+    "workflow": "full",
+    "skip": [],
+    "optional": ["code_review"],
+    "required": ["syntax_check", "unit_tests", "acceptance_criteria_validation"],
+    "reasoning": "3-5 files, single component (user registration), no breaking changes"
+  }
+}
+```
+
+**Result:** Full lite workflow активирован. All phases included (planning, execution, validation, git). Code review optional.
+
+---
+
+### Example 3: Complex Task with Task-Decomposition Integration
+
+**User task:** "Migrate database from SQLite to PostgreSQL with schema changes"
+
+**Analysis:**
+```json
+{
+  "files_to_change": 12,
+  "files": ["app/models/*.py", "migrations/*.sql", "app/database.py", "tests/*.py", "docker-compose.yml", "requirements.txt"],
+  "components_affected": 3,
+  "breaking_changes": true,
+  "estimated_complexity": "complex"
+}
+```
+
+**Output:**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "prd_compliance", "integration_tests"],
+    "reasoning": "12+ files, 3 components (models, migrations, tests), breaking schema changes"
+  }
+}
+```
+
+**Integration with task-decomposition:**
+```json
+{
+  "master_plan": {
+    "task_name": "Database Migration SQLite → PostgreSQL",
+    "total_phases": 3
+  },
+  "phases": [
+    {
+      "phase_id": 1,
+      "description": "Schema migration scripts",
+      "files": ["migrations/001_initial.sql", "migrations/002_schema_changes.sql"],
+      "validation": "docker exec db psql -f migrations/001_initial.sql",
+      "dependencies": []
+    },
+    {
+      "phase_id": 2,
+      "description": "Model updates and database connection",
+      "files": ["app/models/user.py", "app/models/product.py", "app/database.py", "requirements.txt"],
+      "validation": "pytest tests/test_models.py",
+      "dependencies": [1]
+    },
+    {
+      "phase_id": 3,
+      "description": "Integration tests and rollback plan",
+      "files": ["tests/integration/test_db_migration.py", "docs/rollback.md"],
+      "validation": "pytest tests/integration/",
+      "dependencies": [2]
+    }
+  ]
+}
+```
+
+**Execution flow:**
+```
+✓ Phase 1: Schema migration (30 min) → Checkpoint created
+✓ Phase 2: Model updates (45 min) → Checkpoint created
+✓ Phase 3: Integration tests (25 min) → Checkpoint created
+
+Total: 100 minutes, 3 checkpoints, systematic execution
+```
+
+**Result:** Complex workflow with task-decomposition. Incremental progress with rollback points after each phase.
+
+---
+
+### Example 4: Escalation (Minimal → Complex)
+
+**User task (initial):** "Update email validation regex"
+
+**Initial analysis:**
+```json
+{
+  "files_to_change": 1,
+  "files": ["app/validators/email.py"],
+  "estimated_complexity": "minimal"
+}
+```
+
+**Initial output:**
+```json
+{
+  "complexity_result": {
+    "level": "minimal",
+    "workflow": "lite",
+    "skip": ["approval_gate", "code_review"],
+    "reasoning": "Single file change, simple regex update"
+  }
+}
+```
+
+**During execution - discovered complexity:**
+```
+❌ Found: email.py imported in 8 files (ripple effect)
+❌ Found: Breaking change - old emails fail new regex
+❌ Found: Need to update 3 test files
+❌ Found: Need migration script for existing data
+```
+
+**Re-analysis:**
+```json
+{
+  "files_to_change": 12,
+  "breaking_changes": true,
+  "components_affected": 2
+}
+```
+
+**Escalation output:**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "integration_tests"],
+    "reasoning": "ESCALATED: Initial estimate 1 file → actual 12 files with breaking changes",
+    "escalation": {
+      "from": "minimal",
+      "to": "complex",
+      "trigger": "Breaking changes detected during execution",
+      "impact": "Switching to task-decomposition for systematic execution"
+    }
+  }
+}
+```
+
+**Result:** Escalation triggered. Switched from minimal → complex workflow. Task-decomposition activated to handle complexity.
+
+---
+
+### Example 5: Downgrade (Complex → Standard)
+
+**User task (user specified complex):** "Update API documentation for /users endpoint"
+
+**User request:**
+```json
+{
+  "user_requested_complexity": "complex",
+  "reason": "Important API, want thorough review"
+}
+```
+
+**Initial analysis:**
+```json
+{
+  "files_to_change": 2,
+  "files": ["docs/api/users.md", "README.md"],
+  "components_affected": 0,
+  "breaking_changes": false,
+  "code_changes": false
+}
+```
+
+**Analysis conclusion:**
+```
+✓ Only 2 markdown files
+✓ No code changes
+✓ No dependencies
+✓ No breaking changes
+→ Complex workflow is overkill
+```
+
+**Downgrade output:**
+```json
+{
+  "complexity_result": {
+    "level": "standard",
+    "workflow": "full",
+    "skip": [],
+    "required": ["markdown_validation", "link_checking"],
+    "reasoning": "DOWNGRADED: User requested complex, but analysis shows standard is sufficient",
+    "downgrade": {
+      "from": "complex",
+      "to": "standard",
+      "trigger": "No code changes, documentation-only update",
+      "time_saved": "~45 minutes",
+      "justification": "Task-decomposition unnecessary for 2 markdown files"
+    }
+  }
+}
+```
+
+**Result:** Downgrade от complex к standard. Task-decomposition skipped. Estimated 45 minutes saved.
+
+---
+
+### Example 6: Extended Complexity Analysis with Factors
+
+**User task:** "Implement payment processing with Stripe integration"
+
+**Analysis:**
+```json
+{
+  "files_to_change": 15,
+  "components_affected": 4,
+  "breaking_changes": true,
+  "external_apis": ["Stripe API"],
+  "security_critical": true,
+  "database_migrations": true
+}
+```
+
+**Output (with extended analysis):**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "security_audit", "prd_compliance"],
+    "reasoning": "Large codebase changes with breaking API modifications, external integrations, and security considerations",
+    "complexity_factors": [
+      {
+        "factor_id": 1,
+        "factor_name": "Files to change",
+        "value": 15,
+        "threshold": 5,
+        "weight": 0.35,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 2,
+        "factor_name": "Number of components",
+        "value": 4,
+        "threshold": 2,
+        "weight": 0.25,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 3,
+        "factor_name": "Breaking changes",
+        "value": true,
+        "threshold": false,
+        "weight": 0.15,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 4,
+        "factor_name": "External API integration",
+        "value": true,
+        "threshold": false,
+        "weight": 0.10,
+        "impact": "medium",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 5,
+        "factor_name": "Security critical",
+        "value": true,
+        "threshold": false,
+        "weight": 0.10,
+        "impact": "high",
+        "contributes_to": "complex"
+      },
+      {
+        "factor_id": 6,
+        "factor_name": "Database migration required",
+        "value": true,
+        "threshold": false,
+        "weight": 0.05,
+        "impact": "medium",
+        "contributes_to": "complex"
+      }
+    ],
+    "complexity_score": 0.94
+  }
+}
+```
+
+**Interpretation:**
+- **Complexity score: 0.94** (very high)
+- **Top contributors:** Files (15), Components (4), Security critical
+- **Required phases:** All phases + security audit
+- **Estimated effort:** Phase-based decomposition essential
+
+**Result:** Extended analysis shows 6 complexity factors with score 0.94. Task-decomposition mandatory for systematic execution with security checkpoints.
+
+---
+
+### Example 7: Complex Task with TOON Optimization
+
+**User task:** "Refactor authentication system with OAuth2 and multi-provider support"
+
+**Analysis:**
+```json
+{
+  "files_to_change": 18,
+  "components_affected": 5,
+  "breaking_changes": true,
+  "external_apis": ["Google OAuth", "GitHub OAuth", "Facebook OAuth"],
+  "security_critical": true,
+  "database_migrations": true,
+  "cross_domain_changes": true,
+  "performance_impact": true
+}
+```
+
+**Output (with TOON for complexity_factors[]):**
+```json
+{
+  "complexity_result": {
+    "level": "complex",
+    "workflow": "phase-based",
+    "skip": [],
+    "required": ["all phases", "code_review", "security_audit", "prd_compliance", "performance_testing"],
+    "reasoning": "Comprehensive refactoring with 18 files, 5 components, breaking changes, and multiple external OAuth providers",
+    "complexity_factors": [
+      {"factor_id": 1, "factor_name": "Files to change", "value": 18, "threshold": 5, "weight": 0.30, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 2, "factor_name": "Number of components", "value": 5, "threshold": 2, "weight": 0.20, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 3, "factor_name": "Breaking changes", "value": true, "threshold": false, "weight": 0.15, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 4, "factor_name": "External API integrations", "value": 3, "threshold": 1, "weight": 0.10, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 5, "factor_name": "Security critical", "value": true, "threshold": false, "weight": 0.10, "impact": "high", "contributes_to": "complex"},
+      {"factor_id": 6, "factor_name": "Database migrations", "value": true, "threshold": false, "weight": 0.05, "impact": "medium", "contributes_to": "complex"},
+      {"factor_id": 7, "factor_name": "Cross-domain changes", "value": true, "threshold": false, "weight": 0.05, "impact": "medium", "contributes_to": "complex"},
+      {"factor_id": 8, "factor_name": "Performance impact", "value": true, "threshold": false, "weight": 0.05, "impact": "low", "contributes_to": "complex"}
+    ],
+    "complexity_score": 0.97,
+    "toon": {
+      "complexity_factors_toon": "complexity_factors[8]{factor_id,factor_name,value,threshold,weight,impact,contributes_to}:\n  1,Files to change,18,5,0.30,high,complex\n  2,Number of components,5,2,0.20,high,complex\n  3,Breaking changes,true,false,0.15,high,complex\n  4,External API integrations,3,1,0.10,high,complex\n  5,Security critical,true,false,0.10,high,complex\n  6,Database migrations,true,false,0.05,medium,complex\n  7,Cross-domain changes,true,false,0.05,medium,complex\n  8,Performance impact,true,false,0.05,low,complex",
+      "token_savings": "28.0%",
+      "size_comparison": "JSON: 1680 tokens, TOON: 1210 tokens"
+    }
+  }
+}
+```
+
+**Token optimization:**
+- **JSON tokens:** 1680
+- **TOON tokens:** 1210
+- **Savings:** 28.0% (470 tokens saved)
+
+**Interpretation:**
+- **8 complexity factors** tracked (threshold >= 5, TOON activated)
+- **Complexity score: 0.97** (extremely high)
+- **Top contributors:** Files (18), Components (5), Breaking changes, External APIs (3)
+- **Required:** All phases + security audit + performance testing
+
+**Result:** Complex task with comprehensive factor analysis. TOON optimization applied for 28% token savings. Phase-based decomposition mandatory with security and performance checkpoints.
+
+---
+
+## Best Practices
+
+### ✅ DO
+
+1. **Use extended analysis для complex tasks** - track all factors для transparency
+2. **Trust the algorithm** - don't force complexity level without justification
+3. **Enable escalation detection** - monitor during execution для unexpected complexity
+4. **Document downgrade reasons** - explain why simpler workflow is sufficient
+5. **Activate TOON для 5+ factors** - significant token savings для detailed analysis
+
+### ❌ DON'T
+
+1. **Force complex workflow для simple tasks** - wastes time and resources
+2. **Skip minimal workflow checks** - can save significant time
+3. **Ignore escalation triggers** - risks incomplete execution
+4. **Over-analyze simple tasks** - 3-4 factors sufficient для minimal/standard
+5. **Generate TOON для <5 factors** - overhead не оправдан для small arrays
+
+---
+
+**Author:** Claude Code Team
+**License:** MIT
+**Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:WORKFLOW-SKILLS-UNIVERSAL.md

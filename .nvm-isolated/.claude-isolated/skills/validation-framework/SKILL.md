@@ -1,7 +1,7 @@
 ---
 name: Validation Framework
 description: Адаптивная валидация с поддержкой partial validation и TOON input
-version: 2.1.0
+version: 2.2.0
 tags: [validation, testing, acceptance-criteria, quality, toon]
 dependencies: [structured-planning, architecture-documentation]
 files:
@@ -10,6 +10,13 @@ files:
   examples: ./examples/*.md
 user-invocable: false
 changelog:
+  - version: 2.2.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: TOON specification → @shared:TOON-REFERENCE.md"
+      - "Удалено: ~333 строки TOON Format Support дубликатов"
+      - "Добавлено: 7 полных примеров validation scenarios (simple, standard, full, failure, partial, architecture from TOON, performance)"
+      - "Улучшено: Skill-specific TOON usage notes для validation input"
   - version: 2.1.0
     date: 2026-01-23
     changes:
@@ -22,11 +29,11 @@ changelog:
   - version: 2.0.0
     date: 2025-11-XX
     changes:
-      - Адаптивная валидация с режимами lite/standard/full
-      - Initial release
+      - "Адаптивная валидация с режимами lite/standard/full"
+      - "Initial release"
 ---
 
-# Validation Framework v2.0
+# Validation Framework v2.2
 
 Адаптивная валидация с выбором режима по сложности задачи.
 
@@ -53,6 +60,47 @@ elif complexity == "standard":
 else:
   mode = "full"
 ```
+
+---
+
+## References
+
+### Task Structure
+@shared:TASK-STRUCTURE.md#validation-result
+
+**Skill-specific schemas:**
+- `validation_lite` для minimal complexity
+- `validation_results` для standard/full complexity
+
+### TOON Format
+@shared:TOON-REFERENCE.md
+
+**Skill-specific TOON usage:**
+- **Input consumption**: Чтение TOON output из architecture-documentation
+- **Parser usage**: `toonToJson()` для конвертации TOON → JSON
+- **Validation**: `validateToon()` перед parsing
+- **Fallback**: YAML/JSON для backward compatibility
+
+**TOON Integration Pattern:**
+```javascript
+import { toonToJson, validateToon } from '../toon-skill/converters/toon-converter.mjs';
+
+// Try TOON first (token-efficient)
+if (structuredOutput.architecture_documentation?.formats?.toon?.components_toon) {
+  const validation = validateToon(toonString);
+  if (validation.valid) {
+    const data = toonToJson(toonString);
+    // Use data.components for validation
+  }
+}
+
+// Fallback to YAML/JSON (legacy)
+else if (structuredOutput.architecture_documentation?.components) {
+  // Use YAML components directly
+}
+```
+
+---
 
 ## Шаблоны
 
@@ -117,113 +165,484 @@ overall_status = "PASSED" if (
 can_proceed = overall_status === "PASSED"
 ```
 
-## TOON Input Support (NEW)
+---
 
-**Validation Framework теперь поддерживает TOON format input** из structured output других навыков (например, `architecture-documentation`).
+## Domain-Specific Examples
 
-### Что такое TOON Input?
+### Example 1: Simple Validation (Lite Mode)
 
-TOON (Token-Oriented Object Notation) - компактный формат для inter-skill communication с **30-60% экономией токенов**.
+**Situation:** Typo fix in variable name
 
-**Преимущества:**
-- ✅ Экономия токенов в workflow
-- ✅ Improved parsing accuracy (73.9% vs 69.7% для JSON)
-- ✅ Lossless conversion (100% data fidelity)
+**Input:**
+- Task: "Rename variable `usreName` to `userName` in user.py"
+- Complexity: minimal
+- Mode: lite
 
-### Как читать TOON Input
+**Validation:**
 
-**Шаг 1: Импортировать TOON converter**
-
-```javascript
-// Recommended: Import from centralized toon-skill
-import { toonToJson, validateToon } from '../toon-skill/converters/toon-converter.mjs';
-
-// Legacy: Import from architecture-documentation (still works, but deprecated)
-// import { toonToJson, validateToon } from '../architecture-documentation/converters/toon-converter.mjs';
+```json
+{
+  "validation_lite": {
+    "syntax_check": "passed",
+    "files_modified": ["src/models/user.py"],
+    "status": "PASSED"
+  }
+}
 ```
 
-**Шаг 2: Получить TOON из structured output**
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              ВАЛИДАЦИЯ: PASSED
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 1/1 ✓
+
+FILES MODIFIED:
+- src/models/user.py
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** Can proceed to commit (syntax check passed).
+
+---
+
+### Example 2: Standard Validation (Syntax + Acceptance Criteria)
+
+**Situation:** Add new API endpoint
+
+**Input:**
+- Task: "Create GET /users/{id} endpoint with authentication"
+- Complexity: standard
+- Mode: standard
+- Acceptance Criteria:
+  - AC1: Endpoint returns user profile when valid JWT provided
+  - AC2: Endpoint returns 401 when JWT missing
+  - AC3: Endpoint returns 404 when user not found
+
+**Validation:**
+
+```json
+{
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": 3,
+      "met": 3,
+      "not_met": 0,
+      "details": [
+        {
+          "criterion": "AC1: Endpoint returns user profile when valid JWT provided",
+          "met": true,
+          "evidence": "curl -H 'Authorization: Bearer TOKEN' /users/1 → 200 OK with profile JSON"
+        },
+        {
+          "criterion": "AC2: Endpoint returns 401 when JWT missing",
+          "met": true,
+          "evidence": "curl /users/1 → 401 Unauthorized"
+        },
+        {
+          "criterion": "AC3: Endpoint returns 404 when user not found",
+          "met": true,
+          "evidence": "curl -H 'Authorization: Bearer TOKEN' /users/999 → 404 Not Found"
+        }
+      ]
+    },
+    "syntax_checks": {
+      "total_files": 2,
+      "passed": 2,
+      "failed": 0,
+      "details": [
+        {"file": "src/api/users.py", "result": "passed"},
+        {"file": "tests/test_users_api.py", "result": "passed"}
+      ]
+    },
+    "overall_status": "PASSED",
+    "can_proceed": true,
+    "blocking_issues": []
+  }
+}
+```
+
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              ВАЛИДАЦИЯ: PASSED
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 2/2 ✓
+ACCEPTANCE: 3/3 ✓
+
+DETAILS:
+✓ AC1: Endpoint returns user profile when valid JWT
+✓ AC2: Endpoint returns 401 when JWT missing
+✓ AC3: Endpoint returns 404 when user not found
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** Can proceed to commit (all checks passed).
+
+---
+
+### Example 3: Full Validation (All Checks)
+
+**Situation:** Implement new feature with PRD compliance
+
+**Input:**
+- Task: "Add two-factor authentication (2FA) for user login"
+- Complexity: complex
+- Mode: full
+- PRD Section: "Security Requirements §7.2 - Two-Factor Authentication"
+- Acceptance Criteria:
+  - AC1: User can enable 2FA in settings
+  - AC2: Login requires OTP when 2FA enabled
+  - AC3: Backup codes generated on 2FA setup
+  - AC4: User can disable 2FA
+
+**Validation:**
+
+```json
+{
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": 4,
+      "met": 4,
+      "not_met": 0,
+      "details": [
+        {
+          "criterion": "AC1: User can enable 2FA in settings",
+          "met": true,
+          "evidence": "Settings page has 'Enable 2FA' button → QR code displayed → TOTP verified"
+        },
+        {
+          "criterion": "AC2: Login requires OTP when 2FA enabled",
+          "met": true,
+          "evidence": "Login with password → OTP prompt → valid OTP → login success"
+        },
+        {
+          "criterion": "AC3: Backup codes generated on 2FA setup",
+          "met": true,
+          "evidence": "10 backup codes generated and displayed after QR code scan"
+        },
+        {
+          "criterion": "AC4: User can disable 2FA",
+          "met": true,
+          "evidence": "Settings → Disable 2FA → password confirmation → 2FA disabled"
+        }
+      ]
+    },
+    "prd_compliance": {
+      "compliant": true,
+      "prd_section": "Security Requirements §7.2",
+      "conflicts": [],
+      "notes": "Implementation follows TOTP standard (RFC 6238) as specified in PRD"
+    },
+    "syntax_checks": {
+      "total_files": 5,
+      "passed": 5,
+      "failed": 0,
+      "details": [
+        {"file": "src/models/user.py", "result": "passed"},
+        {"file": "src/services/totp_service.py", "result": "passed"},
+        {"file": "src/api/auth.py", "result": "passed"},
+        {"file": "frontend/pages/settings.tsx", "result": "passed"},
+        {"file": "tests/test_2fa.py", "result": "passed"}
+      ]
+    },
+    "functional_checks": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "details": [
+        {"test": "pytest tests/test_2fa.py", "result": "passed", "output": "15 passed in 2.3s"},
+        {"test": "E2E: Enable 2FA flow", "result": "passed", "output": "Cypress test passed"},
+        {"test": "Security: Brute force protection", "result": "passed", "output": "Account locked after 5 invalid OTP attempts"}
+      ]
+    },
+    "overall_status": "PASSED",
+    "can_proceed": true,
+    "blocking_issues": []
+  }
+}
+```
+
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              ВАЛИДАЦИЯ: PASSED
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 5/5 ✓
+ACCEPTANCE: 4/4 ✓
+PRD COMPLIANCE: ✓ (Security Requirements §7.2)
+FUNCTIONAL: 3/3 ✓
+
+DETAILS:
+✓ AC1: User can enable 2FA in settings
+✓ AC2: Login requires OTP when 2FA enabled
+✓ AC3: Backup codes generated on 2FA setup
+✓ AC4: User can disable 2FA
+
+TESTS:
+✓ pytest tests/test_2fa.py (15 passed)
+✓ E2E: Enable 2FA flow (Cypress passed)
+✓ Security: Brute force protection (passed)
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** Can proceed to commit (all checks passed, PRD compliant).
+
+---
+
+### Example 4: Validation Failure (Blocking Issues)
+
+**Situation:** Implementation incomplete - missing acceptance criteria
+
+**Input:**
+- Task: "Add email notification for order status changes"
+- Complexity: standard
+- Mode: standard
+- Acceptance Criteria:
+  - AC1: Email sent when order status changes to "shipped"
+  - AC2: Email contains tracking number
+  - AC3: Email sent when order delivered
+
+**Validation:**
+
+```json
+{
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": 3,
+      "met": 1,
+      "not_met": 2,
+      "details": [
+        {
+          "criterion": "AC1: Email sent when order status changes to 'shipped'",
+          "met": true,
+          "evidence": "Manual test: Order status updated → email received"
+        },
+        {
+          "criterion": "AC2: Email contains tracking number",
+          "met": false,
+          "evidence": "Email received but tracking number field empty",
+          "missing": "Email template missing {{ tracking_number }} variable"
+        },
+        {
+          "criterion": "AC3: Email sent when order delivered",
+          "met": false,
+          "evidence": "No email sent on 'delivered' status change",
+          "missing": "Event handler for 'delivered' status not implemented"
+        }
+      ]
+    },
+    "syntax_checks": {
+      "total_files": 3,
+      "passed": 2,
+      "failed": 1,
+      "details": [
+        {"file": "src/services/notification_service.py", "result": "passed"},
+        {"file": "templates/email/order_shipped.html", "result": "failed", "error": "Syntax error line 42: unclosed <div> tag"},
+        {"file": "tests/test_notifications.py", "result": "passed"}
+      ]
+    },
+    "overall_status": "FAILED",
+    "can_proceed": false,
+    "blocking_issues": [
+      "AC2 not met: Email template missing tracking number variable",
+      "AC3 not met: No email sent on 'delivered' status",
+      "Syntax error in templates/email/order_shipped.html line 42"
+    ]
+  }
+}
+```
+
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              ВАЛИДАЦИЯ: FAILED
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 2/3 ✗
+ACCEPTANCE: 1/3 ✗
+
+🛑 BLOCKING ISSUES:
+- AC2 not met: Email template missing tracking number variable
+- AC3 not met: No email sent on 'delivered' status
+- Syntax error in templates/email/order_shipped.html line 42
+
+FAILED CHECKS:
+✗ AC2: Email contains tracking number
+  Missing: Email template missing {{ tracking_number }} variable
+
+✗ AC3: Email sent when order delivered
+  Missing: Event handler for 'delivered' status not implemented
+
+✗ Syntax: templates/email/order_shipped.html
+  Error: Syntax error line 42: unclosed <div> tag
+
+═══════════════════════════════════════════════════════════
+
+❌ CANNOT PROCEED TO COMMIT
+Fix blocking issues before retrying validation.
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** CANNOT proceed to commit. Must fix:
+1. Add `{{ tracking_number }}` to email template
+2. Implement event handler for "delivered" status
+3. Fix HTML syntax error (unclosed div tag)
+
+---
+
+### Example 5: Partial Validation (Some AC Met)
+
+**Situation:** Feature partially implemented - some AC met, some not
+
+**Input:**
+- Task: "Implement shopping cart functionality"
+- Complexity: standard
+- Mode: standard
+- Acceptance Criteria:
+  - AC1: User can add items to cart
+  - AC2: User can update item quantities
+  - AC3: User can remove items from cart
+  - AC4: Cart persists across sessions (saved to database)
+
+**Validation:**
+
+```json
+{
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": 4,
+      "met": 3,
+      "not_met": 1,
+      "details": [
+        {
+          "criterion": "AC1: User can add items to cart",
+          "met": true,
+          "evidence": "POST /cart/items → Item added, cart updated"
+        },
+        {
+          "criterion": "AC2: User can update item quantities",
+          "met": true,
+          "evidence": "PATCH /cart/items/{id} → Quantity updated"
+        },
+        {
+          "criterion": "AC3: User can remove items from cart",
+          "met": true,
+          "evidence": "DELETE /cart/items/{id} → Item removed"
+        },
+        {
+          "criterion": "AC4: Cart persists across sessions (saved to database)",
+          "met": false,
+          "evidence": "Cart data stored in memory only, not persisted to database",
+          "missing": "Database persistence not implemented (cart model exists but not used)"
+        }
+      ]
+    },
+    "syntax_checks": {
+      "total_files": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "overall_status": "FAILED",
+    "can_proceed": false,
+    "blocking_issues": [
+      "AC4 not met: Cart persistence not implemented"
+    ]
+  }
+}
+```
+
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              ВАЛИДАЦИЯ: FAILED (Partial)
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 3/3 ✓
+ACCEPTANCE: 3/4 ✗ (75% complete)
+
+PASSED:
+✓ AC1: User can add items to cart
+✓ AC2: User can update item quantities
+✓ AC3: User can remove items from cart
+
+🛑 BLOCKING ISSUES:
+- AC4 not met: Cart persistence not implemented
+
+FAILED CHECKS:
+✗ AC4: Cart persists across sessions
+  Missing: Database persistence not implemented (cart model exists but not used)
+
+═══════════════════════════════════════════════════════════
+
+❌ CANNOT PROCEED TO COMMIT
+Implement database persistence for cart data.
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** CANNOT proceed to commit. Core functionality works (75% AC met) but critical feature (persistence) missing.
+
+---
+
+### Example 6: Architecture Validation from TOON Input
+
+**Situation:** Validate architecture quality using TOON input from architecture-documentation
+
+**Input:**
+- TOON from architecture-documentation skill
+- Components: 15
+- Dependencies: 42 edges
+- Token savings: 42%
+
+**Validation:**
 
 ```javascript
-// Structured output from architecture-documentation
-const archOutput = {
+// Parse TOON input
+import { toonToJson, validateToon } from '../toon-skill/converters/toon-converter.mjs';
+
+const toonInput = {
   architecture_documentation: {
     formats: {
       toon: {
-        components_toon: "components[15]{id,name,type,path,description,layer}:\n  proxy-mgmt,Proxy Management,...",
-        dependency_graph_toon: "dependency_graph:\n  nodes[15]{...}:\n  ...",
-        token_savings: "42%"
+        components_toon: "components[15]{id,name,type,path,description,layer}:\n  proxy-mgmt,Proxy Management,module,iclaude.sh:1343-1666,Handle proxy URL validation and credential storage,infrastructure\n  isolated-env,Isolated Environment,module,iclaude.sh:361-978,Manage portable NVM+Node.js+Claude installation,infrastructure\n  ...",
+        dependency_graph_toon: "dependency_graph:\n  nodes[15]{id,label,type,layer}:\n    proxy-mgmt,Proxy Management,component,infrastructure\n    isolated-env,Isolated Environment,component,infrastructure\n    ...\n  edges[42]{from,to,type,description}:\n    isolated-env,version-mgmt,required,Uses lockfile for version tracking\n    version-mgmt,update-mgmt,provides,Lockfile enables reproducible updates\n    ...",
+        token_savings: "42.3%"
       }
     },
     component_count: 15,
     dependency_count: 42
   }
 };
-```
 
-**Шаг 3: Валидировать TOON syntax**
+// Validate TOON syntax
+const componentsValidation = validateToon(toonInput.architecture_documentation.formats.toon.components_toon);
+const graphValidation = validateToon(toonInput.architecture_documentation.formats.toon.dependency_graph_toon);
 
-```javascript
-// Validate TOON before parsing
-const componentsValidation = validateToon(archOutput.architecture_documentation.formats.toon.components_toon);
-
-if (!componentsValidation.valid) {
-  console.error('⚠ Invalid TOON input:', componentsValidation.error);
-  // Fallback: Request YAML format or skip validation
-  throw new Error('TOON validation failed - cannot parse input');
+if (!componentsValidation.valid || !graphValidation.valid) {
+  throw new Error('Invalid TOON input');
 }
 
-console.log('✓ TOON input validated');
-```
-
-**Шаг 4: Парсить TOON → JSON**
-
-```javascript
-// Parse TOON strings to JSON
-const componentsData = toonToJson(archOutput.architecture_documentation.formats.toon.components_toon);
-const graphData = toonToJson(archOutput.architecture_documentation.formats.toon.dependency_graph_toon);
-
-// Now use JSON data for validation
-console.log(`Parsed ${componentsData.components.length} components from TOON`);
-console.log(`Parsed ${graphData.dependency_graph.nodes.length} nodes, ${graphData.dependency_graph.edges.length} edges`);
-```
-
-**Результат:**
-```javascript
-componentsData = {
-  components: [
-    { id: 'proxy-mgmt', name: 'Proxy Management', type: 'module', ... },
-    { id: 'isolated-env', name: 'Isolated Environment', type: 'module', ... },
-    // ... 13 more components
-  ]
-};
-
-graphData = {
-  dependency_graph: {
-    nodes: [
-      { id: 'proxy-mgmt', label: 'Proxy Management', type: 'component', layer: 'infrastructure' },
-      // ... 14 more nodes
-    ],
-    edges: [
-      { from: 'isolated-env', to: 'version-mgmt', type: 'required', description: 'Uses lockfile' },
-      // ... 41 more edges
-    ]
-  }
-};
-```
-
-### Валидация Architecture Quality из TOON
-
-**Use case:** Валидация circular dependencies и architecture quality из TOON input
-
-```javascript
-// Parse TOON dependency graph
-const graphData = toonToJson(archOutput.architecture_documentation.formats.toon.dependency_graph_toon);
+// Parse TOON to JSON
+const componentsData = toonToJson(toonInput.architecture_documentation.formats.toon.components_toon);
+const graphData = toonToJson(toonInput.architecture_documentation.formats.toon.dependency_graph_toon);
 
 // Extract nodes and edges
 const { nodes, edges } = graphData.dependency_graph;
 
-// 1. Check for circular dependencies
+// Detect circular dependencies
 function detectCircularDependencies(nodes, edges) {
   const visited = new Set();
   const recursionStack = new Set();
@@ -258,90 +677,41 @@ function detectCircularDependencies(nodes, edges) {
 
 const circularDeps = detectCircularDependencies(nodes, edges);
 
-if (circularDeps.length > 0) {
-  console.warn('⚠ Circular dependencies detected:', circularDeps);
-}
-
-// 2. Check component count matches
-const expectedCount = archOutput.architecture_documentation.component_count;
+// Validate component count
+const expectedCount = toonInput.architecture_documentation.component_count;
 const actualCount = componentsData.components.length;
 
-if (expectedCount !== actualCount) {
-  console.error(`⚠ Component count mismatch: expected ${expectedCount}, got ${actualCount}`);
-}
-
-// 3. Validate all edge references exist
+// Validate all edge references exist
+const invalidEdges = [];
 for (const edge of edges) {
   const fromExists = nodes.some(n => n.id === edge.from);
   const toExists = nodes.some(n => n.id === edge.to);
 
   if (!fromExists || !toExists) {
-    console.error(`⚠ Invalid edge: ${edge.from} → ${edge.to} (missing node)`);
+    invalidEdges.push(`${edge.from} → ${edge.to} (missing node)`);
   }
 }
 ```
 
-### Fallback для Legacy Input (YAML/JSON)
-
-**Backward compatibility:** Поддержка YAML/JSON input если TOON недоступен
-
-```javascript
-function getComponentsData(structuredOutput) {
-  // Try TOON first (token-efficient)
-  if (structuredOutput.architecture_documentation?.formats?.toon?.components_toon) {
-    try {
-      const toonString = structuredOutput.architecture_documentation.formats.toon.components_toon;
-      const validation = validateToon(toonString);
-
-      if (validation.valid) {
-        const data = toonToJson(toonString);
-        console.log('✓ Using TOON input (token-efficient)');
-        return data.components;
-      } else {
-        console.warn('⚠ TOON validation failed, falling back to YAML');
-      }
-    } catch (error) {
-      console.warn('⚠ TOON parsing error:', error.message);
-    }
-  }
-
-  // Fallback to YAML/JSON (legacy)
-  if (structuredOutput.architecture_documentation?.components) {
-    console.log('ℹ Using YAML/JSON input (legacy)');
-    return structuredOutput.architecture_documentation.components;
-  }
-
-  throw new Error('No components data found in structured output');
-}
-
-// Usage
-const components = getComponentsData(archOutput);
-console.log(`Loaded ${components.length} components`);
-```
-
-### TOON Validation Output
-
-**Enhanced validation result** с TOON token savings:
+**Validation Output:**
 
 ```json
 {
   "validation_results": {
     "input_format": "toon",
-    "input_token_savings": "42%",
+    "input_token_savings": "42.3%",
     "toon_validation": {
       "components_valid": true,
       "dependency_graph_valid": true,
       "round_trip_test": "passed"
     },
     "architecture_quality": {
-      "circular_dependencies": 0,
       "component_count_matches": true,
+      "expected_components": 15,
+      "actual_components": 15,
+      "circular_dependencies": 0,
+      "invalid_edges": 0,
       "all_edges_valid": true
-    },
-    "acceptance_criteria": {
-      "total": 3,
-      "met": 3,
-      "not_met": 0
     },
     "overall_status": "PASSED",
     "can_proceed": true
@@ -349,106 +719,135 @@ console.log(`Loaded ${components.length} components`);
 }
 ```
 
-### Примеры
+**Markdown Output:**
 
-**Пример 1: Валидация architecture из TOON**
-
-```javascript
-// Input: TOON from architecture-documentation
-const toonInput = {
-  architecture_documentation: {
-    formats: {
-      toon: {
-        components_toon: "components[6]{id,name,type,path,description,layer}:\n  ...",
-        dependency_graph_toon: "dependency_graph:\n  nodes[6]{...}:\n  edges[7]{...}:\n  ...",
-        token_savings: "42.3%"
-      }
-    },
-    component_count: 6,
-    dependency_count: 7
-  }
-};
-
-// Parse TOON
-const components = toonToJson(toonInput.architecture_documentation.formats.toon.components_toon);
-const graph = toonToJson(toonInput.architecture_documentation.formats.toon.dependency_graph_toon);
-
-// Validate
-const circularDeps = detectCircularDependencies(graph.dependency_graph.nodes, graph.dependency_graph.edges);
-
-// Output
-console.log(circularDeps.length === 0 ? '✓ No circular dependencies' : '⚠ Circular dependencies found');
-```
-
-**Пример 2: Token savings reporting**
-
-```javascript
-// Report token savings from TOON usage
-const tokenSavings = toonInput.architecture_documentation.formats.toon.token_savings;
-
-console.log(`
+```markdown
 ═══════════════════════════════════════════════════════════
-              ВАЛИДАЦИЯ: PASSED
+              ARCHITECTURE VALIDATION: PASSED
 ═══════════════════════════════════════════════════════════
 
 INPUT FORMAT: TOON (token-efficient)
-TOKEN SAVINGS: ${tokenSavings}
+TOKEN SAVINGS: 42.3%
+
+TOON VALIDATION: ✓
+- Components parsed: 15
+- Dependency graph parsed: 42 edges
+- Round-trip test: PASSED
 
 ARCHITECTURE QUALITY: ✓
-- Components: ${components.components.length}
 - Circular dependencies: 0
-- All edges valid: true
+- Component count matches: true (15/15)
+- All edge references valid: true
 
 ═══════════════════════════════════════════════════════════
-`);
 ```
 
-### Когда использовать TOON Input
+**Result:** Architecture valid (no circular dependencies, all edges valid, TOON parsed correctly).
 
-✅ **Рекомендуется:**
-- Structured output от `architecture-documentation` с TOON support
-- High-volume workflows (экономия токенов критична)
-- Inter-skill communication (architecture-documentation → validation-framework → git-workflow)
+---
 
-❌ **Не рекомендуется:**
-- Human-provided input (используйте YAML/JSON)
-- Small datasets (< 5 компонентов, overhead превышает savings)
-- Legacy workflows без TOON support
+### Example 7: Performance Validation (Load Testing)
 
-### Troubleshooting
+**Situation:** Validate performance requirements for API endpoint
 
-**Ошибка: "Cannot find module toon-converter"**
+**Input:**
+- Task: "Optimize GET /products endpoint for high load"
+- Complexity: complex
+- Mode: full
+- Performance Requirements:
+  - Response time p95 < 200ms
+  - Throughput > 1000 req/sec
+  - Error rate < 0.1%
 
-```bash
-# Установите TOON converter
-cd ../architecture-documentation/converters
-npm install
-```
+**Validation:**
 
-**Ошибка: "TOON validation failed"**
-
-```javascript
-// Debug invalid TOON
-const validation = validateToon(toonString);
-console.error('TOON validation error:', validation.error);
-
-// Fallback to YAML
-console.log('Using YAML fallback');
-const components = structuredOutput.architecture_documentation.components;
-```
-
-**Ошибка: "Round-trip test failed"**
-
-```javascript
-// Test lossless conversion
-const { roundTripTest } = await import('../architecture-documentation/converters/toon-converter.mjs');
-const result = roundTripTest({ components });
-
-if (!result.success) {
-  console.error('Data loss detected:', result.error);
-  // Abort or use YAML
+```json
+{
+  "validation_results": {
+    "acceptance_criteria": {
+      "total": 2,
+      "met": 2,
+      "not_met": 0,
+      "details": [
+        {"criterion": "AC1: Endpoint returns product list", "met": true},
+        {"criterion": "AC2: Pagination works correctly", "met": true}
+      ]
+    },
+    "syntax_checks": {
+      "total_files": 2,
+      "passed": 2,
+      "failed": 0
+    },
+    "functional_checks": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "details": [
+        {"test": "pytest tests/test_products_api.py", "result": "passed"},
+        {"test": "Integration test: Pagination", "result": "passed"}
+      ]
+    },
+    "performance_checks": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "details": [
+        {
+          "requirement": "Response time p95 < 200ms",
+          "result": "passed",
+          "actual": "147ms",
+          "evidence": "locust load test: 1000 concurrent users → p95 = 147ms"
+        },
+        {
+          "requirement": "Throughput > 1000 req/sec",
+          "result": "passed",
+          "actual": "1342 req/sec",
+          "evidence": "locust load test: steady state throughput = 1342 req/sec"
+        },
+        {
+          "requirement": "Error rate < 0.1%",
+          "result": "passed",
+          "actual": "0.03%",
+          "evidence": "locust load test: 3 errors out of 10000 requests = 0.03%"
+        }
+      ]
+    },
+    "overall_status": "PASSED",
+    "can_proceed": true,
+    "blocking_issues": []
+  }
 }
 ```
+
+**Markdown Output:**
+
+```markdown
+═══════════════════════════════════════════════════════════
+              PERFORMANCE VALIDATION: PASSED
+═══════════════════════════════════════════════════════════
+
+SYNTAX: 2/2 ✓
+ACCEPTANCE: 2/2 ✓
+FUNCTIONAL: 2/2 ✓
+PERFORMANCE: 3/3 ✓
+
+PERFORMANCE RESULTS:
+✓ Response time p95: 147ms (target: < 200ms)
+✓ Throughput: 1342 req/sec (target: > 1000 req/sec)
+✓ Error rate: 0.03% (target: < 0.1%)
+
+LOAD TEST DETAILS:
+- Concurrent users: 1000
+- Total requests: 10000
+- Errors: 3 (0.03%)
+- p50 latency: 89ms
+- p95 latency: 147ms
+- p99 latency: 213ms (slightly above target, acceptable)
+
+═══════════════════════════════════════════════════════════
+```
+
+**Result:** Performance requirements met (all metrics within targets).
 
 ---
 
@@ -456,7 +855,7 @@ if (!result.success) {
 
 Используй: `@shared:syntax-commands`
 
-## Markdown Output
+## Markdown Output Template
 
 ```
 ═══════════════════════════════════════════════════════════
@@ -474,7 +873,8 @@ ACCEPTANCE: {met}/{total} ✓
 ═══════════════════════════════════════════════════════════
 ```
 
-## Примеры
+---
 
-- Passed: `@example:passed`
-- Failed: `@example:failed`
+**Author:** Claude Code Team
+**License:** MIT
+**Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md для детальной документации

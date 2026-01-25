@@ -1,7 +1,7 @@
 ---
 name: prd-generator
 description: Автоматизированное создание Product Requirements Document (PRD) с интерактивными вопросами, AI-генерацией 14 разделов и 5 Mermaid диаграмм
-version: 1.1.0
+version: 1.2.0
 tags: [documentation, prd, product-management, mermaid, interactive, ai-generation, toon]
 dependencies: [thinking-framework, context-awareness, validation-framework, toon-skill]
 author: iclaude Skills Team
@@ -12,6 +12,12 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 changelog:
+  - version: 1.2.0
+    date: 2026-01-25
+    changes:
+      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
+      - "Обновлены references на @shared: (thinking patterns, task structure)"
+      - "Улучшена документация integration with workflow"
   - version: 1.1.0
     date: 2026-01-23
     changes:
