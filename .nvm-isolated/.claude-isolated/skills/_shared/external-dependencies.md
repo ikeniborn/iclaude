@@ -23,36 +23,6 @@
 
 ## 1. Claude Code Plugins
 
-### Ralph-Loop Plugin
-
-**Используется в:** pr-automation skill
-**Назначение:** Итеративное исправление CI/CD ошибок через авто-коммиты
-**Репозиторий:** https://github.com/MightyPhoenix/ralph-loop
-
-**Установка:**
-```bash
-# Внутри Claude Code сессии
-# Ralph-loop plugin removed (deprecated)
-```
-
-**Проверка установки:**
-```bash
-/plugin list
-# Должен быть в списке: ralph-loop@claude-plugins-official
-```
-
-**Что делает:**
-- Мониторит статус CI/CD checks после создания PR
-- Анализирует ошибки тестов, линтера, type checker
-- Автоматически создаёт fixup коммиты
-- Повторяет до прохождения всех проверок (max 5 итераций)
-
-**Fallback при отсутствии:**
-- pr-automation создаст PR, но не будет мониторить CI/CD
-- Пользователю нужно вручную исправлять ошибки
-
----
-
 ### LSP Plugins (Language Server Protocol)
 
 **Используются в:** lsp-integration skill, code-review skill
