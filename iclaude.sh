@@ -2291,6 +2291,60 @@ load_markdown_task() {
 }
 
 #######################################
+# Validate task file format
+# Arguments:
+#   $1 - Path to .md file
+# Returns:
+#   0 - Valid format
+#   1 - Invalid format or user rejected
+#######################################
+validate_task_file_format() {
+	local task_file="$1"
+
+	# Check file existence and readability
+	if [[ ! -f "$task_file" ]]; then
+		print_error "Task file not found: $task_file"
+		return 1
+	fi
+
+	if [[ ! -r "$task_file" ]]; then
+		print_error "Task file not readable: $task_file"
+		return 1
+	fi
+
+	# Check for "# Task:" headers
+	if ! grep -q "^# Task:" "$task_file" 2>/dev/null; then
+		print_error "Invalid task file format"
+		echo ""
+		echo "Expected format:"
+		echo "  # Task: Task name"
+		echo "  ## Description"
+		echo "  ## Completion Promise"
+		echo "  ## Validation Command"
+		echo ""
+		return 1
+	fi
+
+	# Check for required sections (with warning)
+	local -a missing=()
+	grep -q "^## Description" "$task_file" 2>/dev/null || missing+=("Description")
+	grep -q "^## Completion Promise" "$task_file" 2>/dev/null || missing+=("Completion Promise")
+	grep -q "^## Validation Command" "$task_file" 2>/dev/null || missing+=("Validation Command")
+
+	if [[ ${#missing[@]} -gt 0 ]]; then
+		print_warning "Missing sections: ${missing[*]}"
+		echo "Continue? (yes/no)"
+		read -r response
+		if [[ ! "$response" =~ ^(yes|y)$ ]]; then
+			print_error "Task file validation rejected by user"
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+#######################################
 # Load all tasks from Markdown file
 # Supports multiple "# Task:" sections in one file
 # Arguments:
@@ -2302,14 +2356,17 @@ load_markdown_task() {
 load_all_tasks() {
 	local task_file="$1"
 
-	if [[ ! -f "$task_file" ]]; then
-		print_error "Task file not found: $task_file"
+	# Initialize tasks array
+	TASKS=()
+
+	# Validate file format before parsing
+	if ! validate_task_file_format "$task_file"; then
 		return 1
 	fi
 
 	# Count number of tasks (count "# Task:" headers)
 	local task_count
-	task_count=$(grep -c "^# Task:" "$task_file" || echo "0")
+	task_count=$(grep "^# Task:" "$task_file" 2>/dev/null | wc -l)
 
 	if [[ "$task_count" -eq 0 ]]; then
 		print_error "No tasks found in file (expected '# Task:' header)"
@@ -2350,7 +2407,7 @@ load_all_tasks() {
 		((task_index++))
 	done
 
-	if [[ ${#TASKS[@]} -eq 0 ]]; then
+	if [[ ${#TASKS[@]:-0} -eq 0 ]]; then
 		print_error "No tasks successfully loaded"
 		return 1
 	fi
@@ -2750,23 +2807,30 @@ cleanup_worktree() {
 	local worktree_path="${!worktree_path_var}"
 
 	if [[ -z "$worktree_path" ]]; then
-		print_warning "No worktree path found for task: $task_id"
 		return 0
 	fi
 
 	print_info "Cleaning up worktree: $worktree_path"
 
-	# Remove worktree
-	if ! git worktree remove "$worktree_path" --force 2>&1; then
-		print_warning "Failed to remove worktree, trying manual cleanup"
-		rm -rf "$worktree_path"
+	# 1. Attempt graceful removal
+	if git worktree remove "$worktree_path" 2>&1; then
+		print_success "Worktree removed cleanly"
+	# 2. Attempt force removal
+	elif git worktree remove "$worktree_path" --force 2>&1; then
+		print_success "Worktree force-removed"
+	# 3. Manual cleanup
+	else
+		print_warning "Manual cleanup required"
+		rm -f "$worktree_path/.git" 2>/dev/null || true
+		rm -rf "$worktree_path" 2>/dev/null || true
+		git worktree prune 2>/dev/null || true
+		print_success "Manual cleanup completed"
 	fi
 
 	# Unset variables
 	unset "WORKTREE_PATH_${task_id}"
 	unset "WORKTREE_BRANCH_${task_id}"
 
-	print_success "Worktree cleaned up"
 	return 0
 }
 
@@ -2789,30 +2853,45 @@ merge_worktree_changes() {
 		return 1
 	fi
 
-	print_info "Merging changes from: $worktree_branch"
+	# Check if there are commits to merge
+	local commit_count
+	commit_count=$(git rev-list --count "HEAD..$worktree_branch" 2>/dev/null || echo "0")
 
-	# Attempt merge
-	if git merge "$worktree_branch" --no-edit 2>&1; then
+	if [[ "$commit_count" -eq 0 ]]; then
+		print_info "No changes to merge for: $task_name"
+		return 0
+	fi
+
+	print_info "Merging $commit_count commit(s) from: $worktree_branch"
+
+	# Attempt merge with patience strategy
+	if git merge "$worktree_branch" --no-edit --strategy-option=patience 2>&1; then
 		print_success "Merge successful: $task_name"
 		return 0
 	fi
 
 	# Check if merge failed due to conflicts
-	if git diff --name-only --diff-filter=U | grep -q .; then
-		print_warning "Merge conflicts detected - attempting AI resolution"
+	if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+		local -a conflicted
+		mapfile -t conflicted < <(git diff --name-only --diff-filter=U 2>/dev/null)
+
+		print_warning "Merge conflicts (${#conflicted[@]} file(s)):"
+		printf '  - %s\n' "${conflicted[@]}"
+		echo ""
 
 		# Try AI-assisted conflict resolution
+		print_info "Attempting AI-assisted conflict resolution..."
 		if resolve_merge_conflicts_ai "$task_id"; then
 			print_success "Conflicts resolved by AI"
 			return 0
 		else
 			print_error "Failed to resolve conflicts automatically"
 			echo ""
-			echo "Manual intervention required:"
-			echo "  1. Review conflicts: git status"
-			echo "  2. Resolve manually"
-			echo "  3. Stage resolved files: git add <files>"
-			echo "  4. Complete merge: git commit"
+			echo "Manual resolution required:"
+			echo "  1. git status"
+			echo "  2. Edit conflicted files"
+			echo "  3. git add <files>"
+			echo "  4. git commit"
 			echo ""
 			return 1
 		fi
@@ -3191,6 +3270,11 @@ execute_parallel_group() {
 		return 0
 	fi
 
+	# Create logs directory
+	local logs_dir="/tmp/iclaude-parallel-logs-$$"
+	mkdir -p "$logs_dir"
+	print_info "Parallel task logs: $logs_dir"
+
 	print_info "Creating worktrees for parallel execution..."
 
 	# Create worktrees for each task
@@ -3205,6 +3289,7 @@ execute_parallel_group() {
 
 	# Execute tasks in parallel (limited by max_parallel)
 	local -a pids
+	local -A pid_to_task
 	local running=0
 
 	for task_id in "${worktree_tasks[@]}"; do
@@ -3214,34 +3299,67 @@ execute_parallel_group() {
 			for pid in "${pids[@]}"; do
 				if ! kill -0 "$pid" 2>/dev/null; then
 					# Job finished
+					wait "$pid" 2>/dev/null || true
+					local exit_code=$?
+					local finished_task="${pid_to_task[$pid]}"
+					if [[ $exit_code -eq 0 ]]; then
+						print_success "Task completed: ${TASK_NAME[$finished_task]}"
+					else
+						print_error "Task failed: ${TASK_NAME[$finished_task]} (exit: $exit_code)"
+					fi
 					((running--))
 				fi
 			done
 			sleep 1
 		done
 
-		# Start task in background
+		# Start task in background with logging
+		local task_log="$logs_dir/${task_id}.log"
 		(
+			{
+				echo "=== Task: ${TASK_NAME[$task_id]} ==="
+				echo "Started: $(date -Iseconds)"
+				echo ""
+			} > "$task_log"
+
 			local worktree_path_var="WORKTREE_PATH_${task_id}"
 			local worktree_path="${!worktree_path_var}"
 
 			cd "$worktree_path" || exit 1
 
 			# Execute task with retry
-			execute_task_with_retry "$task_id"
+			execute_task_with_retry "$task_id" >> "$task_log" 2>&1
 			local exit_code=$?
+
+			{
+				echo ""
+				echo "Finished: $(date -Iseconds)"
+				echo "Exit code: $exit_code"
+			} >> "$task_log"
 
 			exit $exit_code
 		) &
 
-		pids+=($!)
+		local pid=$!
+		pids+=("$pid")
+		pid_to_task[$pid]="$task_id"
 		((running++))
+		print_info "Started task in background (PID: $pid): ${TASK_NAME[$task_id]}"
 	done
 
 	# Wait for all tasks to complete
 	print_info "Waiting for all parallel tasks to complete..."
 	for pid in "${pids[@]}"; do
-		wait "$pid"
+		if kill -0 "$pid" 2>/dev/null; then
+			wait "$pid" 2>/dev/null || true
+			local exit_code=$?
+			local finished_task="${pid_to_task[$pid]}"
+			if [[ $exit_code -eq 0 ]]; then
+				print_success "Task completed: ${TASK_NAME[$finished_task]}"
+			else
+				print_error "Task failed: ${TASK_NAME[$finished_task]} (exit: $exit_code)"
+			fi
+		fi
 	done
 
 	# Merge changes from worktrees
