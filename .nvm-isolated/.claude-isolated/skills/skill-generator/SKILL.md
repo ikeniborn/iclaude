@@ -1,7 +1,7 @@
 ---
 name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
-version: 1.2.0
+version: 1.3.0
 tags: [meta, generator, scaffolding, templates, schemas, validation, interactive, toon]
 dependencies: [thinking-framework, structured-planning, validation-framework, toon-skill]
 files:
@@ -11,6 +11,16 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 changelog:
+  - version: 1.3.0
+    date: 2026-01-26
+    changes:
+      - "**Documentation Optimization**: 27% reduction (578 → 423 lines)"
+      - "Added Quick Reference table at top for instant understanding"
+      - "Compacted How It Works with tables instead of verbose lists"
+      - "Added Best Practices section (Skill Design + Common Pitfalls + Template Tips)"
+      - "Converted Error Handling to table with recovery strategies"
+      - "Optimized TOON section - removed redundant examples"
+      - "Replaced verbose JSON examples with references to @example and @rules"
   - version: 1.2.0
     date: 2026-01-25
     changes:
@@ -33,6 +43,19 @@ changelog:
 # Skill Generator
 
 Автоматизированное создание новых скиллов для текущего проекта с интерактивными вопросами, автоматической генерацией JSON Schema из template placeholders и полной валидацией.
+
+## Quick Reference
+
+| Aspect | Details |
+|--------|---------|
+| **Invocation** | `/skill-generator` (manual only, never auto-invoked) |
+| **Duration** | ~5 min (Q&A + generation) vs ~2-3 hours manual |
+| **Inputs** | 8-9 interactive questions (skill name, type, dependencies, templates) |
+| **Outputs** | SKILL.md + templates/*.json + schemas/*.schema.json + examples/*.md |
+| **Auto-generates** | JSON Schema from template placeholders (35-45% token savings) |
+| **Validation** | 5 validators (YAML, JSON, Schema, Markdown, File Structure) |
+| **TOON Support** | Auto-generates TOON for files_created[] & validation_results[] |
+| **Target Location** | `.claude/skills/` (project) or `.nvm-isolated/.claude-isolated/skills/` (global) |
 
 ## When to Use
 
@@ -106,59 +129,19 @@ if (fs.existsSync(projectSkillsDir)) {
 
 **Purpose:** Gather requirements through 8-9 interactive questions using AskUserQuestion tool
 
-**Question 1: Skill Name**
-- Prompt: "Enter skill name (kebab-case, e.g., my-awesome-skill):"
-- Validation: `/^[a-z][a-z0-9-]*$/` (3-50 chars)
-- Check: Name must not conflict with existing skills
-- Retry on failure with suggestions
+| Question | Prompt | Validation | Default | Notes |
+|----------|--------|------------|---------|-------|
+| **Q1: Skill Name** | Enter skill name (kebab-case) | `/^[a-z][a-z0-9-]*$/` (3-50 chars) | - | Must not conflict with existing skills |
+| **Q2: Skill Type** | 1=system, 2=user-invocable, 3=bash-utility, 4=integration | enum [1,2,3,4] | - | Sets `user-invocable` field & default tags |
+| **Q3: Description** | Brief description (1-2 sentences) | 20-200 chars | - | Must be informative (not placeholder) |
+| **Q4: Dependencies** | Comma-separated skill names | Must exist in skills/, no circular deps | none | DFS cycle detection with path visualization |
+| **Q5: Complexity Levels** | Support minimal/standard/complex? (Y/n) | boolean | n | Yes → multiple templates (input-lite.json, input.json) |
+| **Q6: Output Format** | 1=JSON, 2=YAML, 3=Markdown, 4=Text, 5=Mixed | enum [1,2,3,4,5] | JSON | Determines template structure |
+| **Q7: Templates** | Comma-separated template names | kebab-case | input, output | Each → `templates/{name}.json` |
+| **Q8: Features** | Comma-separated: rules, examples, shared-data | enum | examples | Controls directory creation |
+| **Q9: Target Location** | 1=project (.claude/skills/), 2=global (iclaude) | enum [1,2] | project | **Only if BOTH locations available** |
 
-**Question 2: Skill Type**
-- Prompt: "Select skill type:\n1. system\n2. user-invocable\n3. bash-utility\n4. integration"
-- Validation: enum [1,2,3,4]
-- Mapping: {1: "system", 2: "user-invocable", ...}
-- Sets `user-invocable` frontmatter field
-- Determines default tags
-
-**Question 3: Description**
-- Prompt: "Brief description (1-2 sentences, 20-200 chars):"
-- Validation: minLength 20, maxLength 200
-- Must be informative (not placeholder text)
-
-**Question 4: Dependencies**
-- Prompt: "Dependencies (comma-separated, or Enter to skip):\nAvailable: ..."
-- Validation: Each dependency must exist in skills/
-- Check for circular dependencies (DFS graph traversal)
-- Retry on error with cycle path visualization
-
-**Question 5: Complexity Levels**
-- Prompt: "Support complexity levels (minimal/standard/complex)? (Y/n)"
-- Default: n
-- If yes → Generate multiple templates (input-lite.json, input.json)
-- If no → Generate single template
-
-**Question 6: Output Format**
-- Prompt: "Output format:\n1. JSON\n2. YAML\n3. Markdown\n4. Text\n5. Mixed (JSON + Markdown)"
-- Default: JSON
-- Determines template structure
-
-**Question 7: Templates Needed**
-- Prompt: "Templates (comma-separated):\nExamples: input, output, config\nOr Enter for default (input + output):"
-- Validation: kebab-case names
-- Default: ["input", "output"]
-- Each generates `templates/{name}.json`
-
-**Question 8: Additional Features**
-- Prompt: "Features (comma-separated or Enter):\n- rules\n- examples\n- shared-data"
-- Default: ["examples"]
-- Controls which directories to create
-
-**Question 9 (Conditional): Target Location**
-- **Only asked if BOTH locations available**
-- Prompt: "Where to create skill:\n1. Current project (.claude/skills/) - Project-specific [RECOMMENDED]\n2. iclaude global (.nvm-isolated/.claude-isolated/skills/) - Global for all projects"
-- Default: 1 (project-specific)
-- Recommendation: Always use project-specific unless creating shared utility
-
-**Output:**
+**Output Structure:**
 ```json
 {
   "user_input": {
@@ -217,120 +200,49 @@ ACCEPTANCE CRITERIA:
 
 **Purpose:** Generate all skill files with correct content
 
-**4.1 Generate SKILL.md**
+| Component | Description | Reference |
+|-----------|-------------|-----------|
+| **SKILL.md** | YAML frontmatter + standard sections (When to Use, How It Works, Output Format, etc.) | `@template:skill-template-base` |
+| **JSON Templates** | Input/output templates with `{{placeholder}}` syntax | `@example:simple-system-skill` |
+| **JSON Schemas** | Auto-generated from template placeholders (35-45% token savings) | `@rules:placeholder-mapping` |
+| **Examples** | Usage examples (Scenario, Input, Output, Explanation) | `@example:simple-system-skill` |
+| **Rules** | Best practices and common pitfalls (optional) | - |
 
-Structure with YAML frontmatter and standard sections:
-- When to Use
-- How It Works (with numbered steps)
-- Output Format
-- Templates
-- Schemas
-- Examples
-- Workflow Integration
+**Placeholder Syntax:**
 
-**4.2 Generate JSON Templates**
+| Pattern | Schema Mapping | Example |
+|---------|----------------|---------|
+| `{{name: string}}` | `{"type": "string"}` | `"name": "value"` |
+| `{{name: string, min 3 chars}}` | `{"type": "string", "minLength": 3}` | `"name": "abc"` |
+| `{{name: integer, min 1}}` | `{"type": "integer", "minimum": 1}` | `"count": 10` |
+| `{{name: enum: val1\|val2}}` | `{"enum": ["val1", "val2"]}` | `"type": "val1"` |
+| `{{optional: type}}` | Not in required array | `"optional_field": null` |
+| `{{name: pattern: /regex/}}` | `{"pattern": "regex"}` | `"name": "abc-123"` |
 
-Example `templates/input.json`:
-```json
-{
-  "$comment": "Input template for {skill_name} skill",
-  "{skill_name}_input": {
-    "$comment": "{description}",
-    "field1": "{{field1: string, description}}",
-    "field2": "{{field2: integer, min 1}}",
-    "nested": {
-      "subfield": "{{subfield: enum: val1|val2|val3}}"
-    },
-    "array": ["{{item: string}}"],
-    "optional_field": "{{optional: string}}"
-  }
-}
-```
+**Full placeholder mapping rules:** `@rules:placeholder-mapping`
 
-**Placeholder syntax rules:**
-- Basic: `{{name: type}}`
-- With constraint: `{{name: type, constraint value}}`
-- Enum: `{{name: enum: val1|val2|val3}}`
-- Optional: `{{optional: type}}` (prefix `optional:`)
-- Pattern: `{{name: pattern: /regex/}}`
+**Schema Generation Algorithm:**
+1. Parse template JSON → Extract `{{...}}` placeholders via `/\{\{([^}]+)\}\}/g`
+2. Parse each placeholder → `name: type[, constraint]*`
+3. Map to JSON Schema type + constraints (minLength, maximum, enum, pattern)
+4. Build required array (non-optional fields only)
+5. Generate JSON Schema Draft-7
 
-**4.3 Auto-generate JSON Schemas**
-
-Algorithm:
-1. Parse template JSON
-2. Extract all `{{...}}` placeholders via regex `/\{\{([^}]+)\}\}/g`
-3. For each placeholder:
-   - Parse format: `name: type[, constraint]*`
-   - Map to JSON Schema type
-   - Add constraints (minLength, maximum, enum, pattern)
-   - Mark as required (if not `optional:`)
-4. Build JSON Schema Draft-7
-
-Example mapping:
-```
-{{name: string, min 3 chars}}
-→
-{
-  "name": {
-    "type": "string",
-    "minLength": 3
-  }
-}
-+ required: ["name"]
-```
-
-**4.4 Generate Examples**
-
-Example `examples/basic-usage.md` with sections:
-- Scenario
-- Input
-- Execution
-- Output
-- Explanation
-
-**4.5 Generate Rules (if enabled)**
-
-Example `rules/recommendations.md` with best practices and common pitfalls
+**See also:** `@example:simple-system-skill` for complete template → schema → example workflow
 
 ### Step 5: Validation
 
-**Purpose:** Validate all generated files before finalizing
+**Purpose:** Validate all generated files before finalizing (5 validators run in parallel)
 
-**5 Validators (run in parallel):**
+| Validator | Checks | Status | Reference |
+|-----------|--------|--------|-----------|
+| **YAML Frontmatter** | Required fields, types, semver format, dependencies, circular deps | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
+| **JSON Templates** | JSON syntax, root key naming, placeholder extraction, placeholder format | passed/failed | `@rules:placeholder-mapping` |
+| **JSON Schemas** | JSON Schema syntax, `$schema` field = Draft-7, meta-schema validation, template cross-check | passed/failed | - |
+| **Markdown Formatting** | Frontmatter exists, required sections (When to Use, How It Works, Output Format), code blocks, references | passed/warning/failed | - |
+| **File Structure** | SKILL.md exists, frontmatter.files declarations, directory/file existence, naming conventions (kebab-case), orphaned files | passed/failed | - |
 
-**Validator 1: YAML Frontmatter**
-- Use [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) for validation
-- Validates: required fields, types, formats (semver), dependencies, circular dependencies
-- See [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) for complete validation rules and error messages
-
-**Validator 2: JSON Templates**
-- Parse JSON syntax (catch SyntaxError)
-- Validate root key matches skill name pattern
-- Extract placeholders
-- Validate placeholder format (see rules/placeholder-mapping.md)
-
-**Validator 3: JSON Schemas**
-- Parse JSON Schema
-- Check `$schema` field = Draft-7
-- Validate against meta-schema
-- Cross-check with template (required fields match, types match, enums match)
-
-**Validator 4: Markdown Formatting**
-- Check YAML frontmatter exists
-- Extract headings
-- Verify required sections: "When to Use", "How It Works", "Output Format"
-- Validate code blocks (fenced with ```)
-- Extract and validate references (@template:, @schema:, @example:)
-- Check references resolve to files
-
-**Validator 5: File Structure**
-- Check SKILL.md exists
-- Parse frontmatter.files
-- For each declared file type: check directory exists, files exist
-- Validate naming conventions (kebab-case for templates/schemas/examples)
-- Detect orphaned files (not declared in frontmatter)
-
-**Validation output:**
+**Output Structure:**
 ```json
 {
   "validation_results": {
@@ -345,126 +257,87 @@ Example `rules/recommendations.md` with best practices and common pitfalls
 
 ### Step 6: Error Handling & Recovery
 
-**Error types and recovery strategies:**
-
-**E001: Invalid skill name**
-- Show: "❌ Invalid name '{name}' (must be kebab-case)"
-- Suggest: Auto-convert to kebab-case
-- Retry: Q1 with suggestion
-
-**E002: Skill exists**
-- Show: "⚠️  Skill '{name}' already exists"
-- Options: 1) Rename, 2) Overwrite [DANGEROUS], 3) Abort
-- Action based on user choice
-
-**E003: Unknown dependency**
-- Show: "❌ Unknown dependency '{dep}'"
-- List: Available skills
-- Retry: Q4
-
-**E004: Circular dependency**
-- Show: "❌ Circular: skill-a → skill-b → skill-a"
-- Explain: Which dependency to remove
-- Retry: Q4
-
-**E005: JSON syntax error**
-- Detect: Trailing commas, unclosed braces
-- Auto-fix: Remove trailing commas
-- Re-validate
-
-**E006: Missing section**
-- Detect: Required section missing in SKILL.md
-- Auto-fix: Add placeholder section
-- Mark: Warning (not error)
-
-**E007: Schema-template mismatch**
-- Detect: Required field in template missing in schema
-- Auto-fix: Regenerate schema from template
-- Re-validate
+| Error Code | Issue | Detection | Recovery Strategy |
+|------------|-------|-----------|-------------------|
+| **E001** | Invalid skill name | Name doesn't match `/^[a-z][a-z0-9-]*$/` | Show: "❌ Invalid name" → Auto-suggest kebab-case conversion → Retry Q1 |
+| **E002** | Skill exists | Name conflicts with existing skill | Show: "⚠️ Skill exists" → Options: 1) Rename, 2) Overwrite [DANGEROUS], 3) Abort |
+| **E003** | Unknown dependency | Dependency not found in skills/ | Show: "❌ Unknown dependency" → List available skills → Retry Q4 |
+| **E004** | Circular dependency | DFS detects cycle in dependency graph | Show: "❌ Circular: skill-a → skill-b → skill-a" → Explain which dep to remove → Retry Q4 |
+| **E005** | JSON syntax error | Trailing commas, unclosed braces | Auto-fix: Remove trailing commas → Re-validate |
+| **E006** | Missing section | Required section missing in SKILL.md | Auto-fix: Add placeholder section → Mark as warning (not error) |
+| **E007** | Schema-template mismatch | Required field in template missing in schema | Auto-fix: Regenerate schema from template → Re-validate |
 
 ### Step 7: Output Generation
 
 **Purpose:** Produce final structured output + user-friendly summary
 
-**JSON Output:**
+**JSON Output Structure:**
 ```json
 {
   "skill_generation": {
-    "status": "success",
+    "status": "success|partial|failed",
     "skill_directory": "/absolute/path/to/skills/my-skill",
-    "files_created": [
-      "SKILL.md",
-      "templates/input.json",
-      "templates/output.json",
-      "schemas/input.schema.json",
-      "schemas/output.schema.json",
-      "examples/basic-usage.md"
-    ],
-    "validation_results": {
-      "yaml_frontmatter": {"status": "passed", "errors": []},
-      "json_templates": {"status": "passed", "errors": []},
-      "json_schemas": {"status": "passed", "errors": []},
-      "markdown_formatting": {"status": "warning", "warnings": ["No FAQ section"]},
-      "file_structure": {"status": "passed", "errors": []}
-    },
-    "integration_notes": [
-      "Skill created successfully",
-      "Test with: /my-skill",
-      "Commit to git: git add skills/my-skill/",
-      "Update README.md with skill description"
-    ],
+    "files_created": ["SKILL.md", "templates/*.json", "schemas/*.schema.json", "examples/*.md"],
+    "validation_results": { /* 5 validator outputs */ },
+    "integration_notes": ["Test with: /my-skill", "Commit: git add skills/my-skill/"],
     "dependencies": ["thinking-framework"],
-    "skill_type": "user-invocable"
+    "skill_type": "user-invocable",
+    "toon": { /* Optional TOON format (if >= 5 files) */ }
   }
 }
 ```
 
-**Markdown Summary:**
-```markdown
+**User-Friendly Summary:**
+
+```
 ## Skill Generated Successfully ✅
 
-**Skill:** my-skill
-**Type:** user-invocable
-**Location:** `.claude/skills/my-skill/`
+**Skill:** my-skill | **Type:** user-invocable | **Location:** .claude/skills/my-skill/
 
 ### Files Created (6)
+✅ SKILL.md, templates/input.json, templates/output.json, schemas/*.schema.json, examples/basic-usage.md
 
-- ✅ SKILL.md (YAML frontmatter + Markdown)
-- ✅ templates/input.json
-- ✅ templates/output.json
-- ✅ schemas/input.schema.json
-- ✅ schemas/output.schema.json
-- ✅ examples/basic-usage.md
-
-### Validation Results
-
-- ✅ YAML frontmatter: passed
-- ✅ JSON templates: passed
-- ✅ JSON schemas: passed
-- ⚠️  Markdown formatting: 1 warning (No FAQ section)
-- ✅ File structure: passed
+### Validation: 4 passed, 1 warning
+⚠️ Markdown formatting: No FAQ section
 
 ### Next Steps
-
-1. **Review generated files:**
-   ```bash
-   cd .claude/skills/my-skill/
-   cat SKILL.md
-   ```
-
-2. **Customize templates and examples**
-
-3. **Test the skill:**
-   ```bash
-   /my-skill
-   ```
-
-4. **Commit to git:**
-   ```bash
-   git add skills/my-skill/
-   git commit -m "feat(skills): add my-skill"
-   ```
+1. Review: `cat .claude/skills/my-skill/SKILL.md`
+2. Customize templates & examples
+3. Test: `/my-skill`
+4. Commit: `git add skills/my-skill/ && git commit -m "feat(skills): add my-skill"`
 ```
+
+## Best Practices
+
+### Skill Design Principles
+
+| Principle | Guideline | Example |
+|-----------|-----------|---------|
+| **Single Responsibility** | Each skill should do ONE thing well | ❌ "file-ops-and-validation" → ✅ "file-validator" + "file-transformer" |
+| **Clear Dependencies** | Explicit dependencies, avoid circular deps | ✅ "code-review" depends on "thinking-framework" |
+| **Validation First** | Use JSON Schema for all inputs/outputs | ✅ Auto-generated schemas from templates |
+| **Token Efficiency** | Use TOON for arrays >= 5 elements | ✅ files_created[20] → 45% token savings |
+| **Documentation** | Complete examples, not just templates | ✅ @example:simple-system-skill shows full workflow |
+| **Reusability** | Design for reuse across projects | ✅ Project-specific (.claude/skills/) vs Global (iclaude) |
+
+### Common Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **No examples** | Users don't understand usage | Always generate examples/ with scenarios |
+| **Overcomplicated templates** | Hard to maintain | Start simple, add complexity only when needed |
+| **Missing validation** | Silent failures | Use all 5 validators, fix warnings |
+| **Circular dependencies** | Skill won't load | Use DFS detection (E004 error handler) |
+| **Unclear naming** | Hard to discover | Use descriptive kebab-case names |
+| **No TOON support** | Token waste | Auto-enable for arrays >= 5 elements |
+
+### Template Design Tips
+
+1. **Start with output, then input** - Define what you want to produce first
+2. **Use optional fields sparingly** - Required fields = explicit contracts
+3. **Leverage enums** - Constrain values early (e.g., `enum: success|partial|failed`)
+4. **Nest logically** - Group related fields in objects
+5. **Document with $comment** - Explain non-obvious constraints
 
 ## Output Format
 
@@ -510,53 +383,36 @@ Created files:
 
 ## TOON Format Support
 
-**NEW in v1.1.0:** Автоматическая генерация TOON format для token-efficient skill generation reporting
+**NEW in v1.1.0:** Автоматическая генерация TOON format для token-efficient reporting
 
-### Когда генерируется TOON
+### Auto-Generation Triggers
 
-Skill автоматически генерирует TOON format когда:
-- `files_created.length >= 5` ИЛИ
-- `validation_results` объект конвертируется в массив validators (всегда 5 элементов)
+| Array | Threshold | Token Savings | Example |
+|-------|-----------|---------------|---------|
+| `files_created[]` | >= 5 files | 45% (20 files) | `SKILL.md,markdown,4523\ntemplates/input.json,template,1245...` |
+| `validation_results` | Always (5 validators) | 35% | `yaml_frontmatter,passed,0,0\njson_templates,passed,0,0...` |
 
-### Token Savings
+### Output Structure
 
-**Типичная экономия:**
-- 20 files created: **45% token reduction**
-- 5 validation results: **35% token reduction**
-- Combined (files + validation): **40-50% total savings**
-
-### Output Structure (Hybrid JSON + TOON)
+**Hybrid JSON + TOON** (100% backward compatible):
 
 ```json
 {
   "skill_generation": {
-    "status": "success",
-    "skill_directory": "/path/to/skills/my-awesome-skill",
-    "files_created": [...],      // JSON (всегда присутствует)
-    "validation_results": {...}, // JSON object (всегда присутствует)
-    "integration_notes": [...],
-    "dependencies": ["thinking-framework"],
-    "skill_type": "user-invocable",
-    "toon": {                    // TOON (опционально, если >= 5 элементов)
-      "files_created_toon": "files_created[20]{relative_path,file_type,size_bytes}:\n  SKILL.md,markdown,4523\n  templates/input.json,template,1245\n  templates/output.json,template,1678\n  ...",
-      "validation_results_toon": "validation_results[5]{validator_name,status,error_count,warning_count,messages}:\n  yaml_frontmatter,passed,0,0,\n  json_templates,passed,0,0,\n  json_schemas,passed,0,0,\n  markdown_formatting,warning,0,1,No FAQ section\n  file_structure,passed,0,0,",
-      "token_savings": "42.5%",
-      "size_comparison": "JSON: 3800 tokens, TOON: 2185 tokens"
+    "files_created": [...],      // JSON (always present - primary format)
+    "validation_results": {...}, // JSON (always present - primary format)
+    "toon": {                    // TOON (optional, if >= 5 elements)
+      "files_created_toon": "files_created[20]{path,type,size}:\n  ...",
+      "validation_results_toon": "validators[5]{name,status,errors,warnings}:\n  ...",
+      "token_savings": "42.5%"
     }
   }
 }
 ```
 
-### Benefits
+**Benefits:** 40-50% token savings for skills with multiple files, validation transparency, no breaking changes
 
-- **Backward Compatible**: JSON output неизменён (primary format)
-- **Token Efficient**: 40-50% savings для skills с множественными files
-- **Validation Transparency**: TOON сохраняет validation results в компактном формате
-
-### See Also
-
-- **toon-skill** - Базовый навык для TOON API (@skill:toon-skill)
-- **TOON Reference** - Full specification (@shared:TOON-REFERENCE.md)
+**See also:** @skill:toon-skill (TOON API), @shared:TOON-REFERENCE.md (specification)
 
 ---
 
