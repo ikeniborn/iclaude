@@ -420,6 +420,9 @@ NODE_TLS_REJECT_UNAUTHORIZED=0                 # Insecure mode (not recommended)
 NVM_DIR="$SCRIPT_DIR/.nvm-isolated"
 CLAUDE_DIR="$SCRIPT_DIR/.nvm-isolated/.claude-isolated"
 PATH="$ISOLATED_NVM_DIR/npm-global/bin:$ISOLATED_NVM_DIR/versions/node/.../bin:$PATH"
+
+# Claude Code features
+CLAUDE_CODE_ENABLE_TASKS="true"                    # Enable tasks system (set to false for old system)
 ```
 
 ## File Structure
@@ -512,6 +515,30 @@ OAuth tokens expire and require manual `/login`. The script now automatically ha
 - Claude Code may still be able to use the refreshToken internally
 
 **Known limitation**: `setup-token` requires interactive browser authentication. Not suitable for fully headless/CI environments.
+
+### Tasks System
+
+Claude Code включает систему управления задачами (tasks) для отслеживания прогресса выполнения работы.
+
+**Автоматическая активация**:
+- iclaude.sh экспортирует `CLAUDE_CODE_ENABLE_TASKS=true` по умолчанию
+- Новая система задач активируется автоматически при запуске
+- Доступны инструменты: `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate`, `TaskOutput`
+
+**Отключение** (временный возврат к старой системе):
+```bash
+CLAUDE_CODE_ENABLE_TASKS=false ./iclaude.sh
+```
+
+**Возможности**:
+- Создание списка задач для отслеживания работы
+- Управление зависимостями между задачами (blocks/blockedBy)
+- Отслеживание фоновых процессов (bash shell, subagents)
+- Шаринг задач между сессиями (через `CLAUDE_CODE_TASK_LIST_ID`)
+
+**Примечание**: Переменная `CLAUDE_CODE_TASK_LIST_ID` является процессной и должна устанавливаться вручную при необходимости шаринга задач между несколькими экземплярами Claude Code.
+
+**Источник**: [claude-code/CHANGELOG.md](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
 
 ### Symlink Management
 

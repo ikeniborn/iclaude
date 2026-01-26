@@ -436,6 +436,9 @@ setup_isolated_nvm() {
 		print_warning "Node.js not found in isolated environment"
 	fi
 
+	# Enable Claude Code tasks system (set CLAUDE_CODE_ENABLE_TASKS=false to use old system temporarily)
+	export CLAUDE_CODE_ENABLE_TASKS="${CLAUDE_CODE_ENABLE_TASKS:-true}"
+
 	# Auto-repair plugin paths silently (if function is defined)
 	if declare -f repair_plugin_paths &>/dev/null; then
 		repair_plugin_paths "quiet" 2>/dev/null || true
