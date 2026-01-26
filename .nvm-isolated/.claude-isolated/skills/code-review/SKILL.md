@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: Автоматический review кода перед commit
-version: 1.2.0
+version: 1.3.0
 tags: [review, quality, security, code-smells, toon]
 dependencies: [toon-skill, lsp-integration]
 files:
@@ -9,13 +9,19 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 changelog:
+  - version: 1.3.0
+    date: 2026-01-26
+    changes:
+      - "Структурная оптимизация: TOC, Quick Start, компактные секции"
+      - "Консолидация TOON информации в Output Formats"
+      - "Примеры сокращены (inline summary + ссылки на examples/*.md)"
+      - "Агрессивное удаление дублирования (619 → ~400 строк, 35% сокращение)"
   - version: 1.2.0
     date: 2026-01-25
     changes:
       - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
       - "Добавлено: 3 примера (simple review, LSP integration, TOON optimization)"
       - "Skill-specific TOON usage notes для warnings[] и lsp_diagnostics[]"
-      - "Обновлены references"
   - version: 1.1.0
     date: 2026-01-23
     changes:
@@ -23,197 +29,157 @@ changelog:
       - "TOON для warnings[] и lsp_diagnostics[] (когда >= 5 элементов)"
       - "40-50% token savings для больших review reports"
       - "100% backward compatibility (JSON остаётся primary format)"
-      - "Integration examples для producers и consumers"
-  - version: 1.0.0
-    date: 2025-11-XX
-    changes:
-      - "Initial release"
-      - "Architecture compliance, security, code quality checks"
-      - "LSP integration для enhanced type checking"
 ---
 
 # Code Review
 
-Автоматическая проверка качества и безопасности кода.
+Автоматическая проверка качества, безопасности и архитектурной целостности кода с LSP integration и TOON optimization.
 
-## Когда использовать
+---
 
-- После выполнения задачи (standard/complex только)
-- Перед git commit
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Overview](#overview)
+- [Check Categories](#check-categories)
+  - [Architecture Compliance](#1-architecture-compliance-blocking)
+  - [Security](#2-security-blocking)
+  - [Code Quality](#3-code-quality-warning)
+  - [Error Handling](#4-error-handling-warning)
+  - [Type Safety](#5-type-safety-info)
+- [LSP Integration](#lsp-integration)
+- [Output Formats](#output-formats)
+  - [JSON Schema](#json-schema)
+  - [Score Calculation](#score-calculation)
+  - [TOON Optimization](#toon-optimization)
+- [Examples](#examples)
+- [Integration](#integration-with-other-skills)
+- [Advanced Topics](#advanced-topics)
+- [References](#references)
+
+---
+
+## Quick Start
+
+```bash
+# Automatic review в adaptive-workflow (PHASE 3)
+# Требования: yq, jq, architecture docs (auto-generated if missing)
+
+# Output: JSON с blocking_issues[], warnings[], score
+{
+  "code_review": {
+    "score": 85,
+    "passed": true,
+    "blocking_issues": [],  # Architecture, security
+    "warnings": [...]       # Code quality, type safety
+  }
+}
+```
+
+**Когда блокирует commit:**
+- ⚠️ Architecture violations (circular deps, undocumented components)
+- 🔒 Security issues (SQL injection, XSS, hardcoded secrets)
+
+---
+
+## Overview
+
+### Когда использовать
+
+- После выполнения задачи (standard/complex workflows)
+- Перед git commit (автоматически в git-workflow skill)
 - По запросу пользователя
 
-## Категории проверок
+### Требования
+
+| Компонент | Статус | Описание |
+|-----------|--------|----------|
+| **yq** | Required | YAML→JSON конвертация архитектуры |
+| **jq** | Required | JSON parsing для валидации |
+| **Architecture docs** | Required | `docs/architecture/overview.yaml` (auto-generated) |
+| **LSP integration** | Optional | Enhanced type checking (см. [@skill:lsp-integration](../lsp-integration/SKILL.md)) |
+
+---
+
+## Check Categories
+
+| # | Category | Severity | Examples | Details |
+|---|----------|----------|----------|---------|
+| 1 | **Architecture Compliance** | BLOCKING | Circular deps, layer violations, undocumented components | [@rules:architecture](./rules/architecture.md) |
+| 2 | **Security** | BLOCKING | SQL injection, XSS, command injection, hardcoded secrets | [@rules:security](./rules/security.md) |
+| 3 | **Code Quality** | WARNING | Long functions (>50 lines), high complexity (>10), duplication | Regex-based |
+| 4 | **Error Handling** | WARNING | Bare except, empty catch, unhandled promises | Regex-based |
+| 5 | **Type Safety** | INFO | Missing type hints, Any types, implicit conversions | LSP-enhanced |
 
 ### 1. Architecture Compliance (BLOCKING)
 
-```
+**Проверки:**
 - Referential integrity (все зависимости существуют)
-- Circular dependency detection (обнаружение циклов)
+- Circular dependency detection (DAG validation)
 - Component file path validation (измененные файлы документированы)
-- Layer boundary compliance (соблюдение границ слоев)
-- Scope: гибридный (измененные компоненты + их dependents)
-```
+- Layer boundary compliance (no upward dependencies)
 
-**Требования:**
-- Архитектурная документация в одном из поддерживаемых путей:
-  - **Рекомендуемые**: `docs/architecture/overview.yaml`, `doc/architecture/overview.yaml`
-  - **Альтернативные**: `documentation/architecture/`, `.github/docs/architecture/`, `design/architecture/`, `adr/`
-  - **Fallback**: Рекурсивный поиск в корне проекта (глубина до 3 уровней)
-- Инструменты: `yq` (для YAML→JSON), `jq` (для JSON parsing), `find` (для рекурсивного поиска)
-- Компоненты документированы с `file_path` и `dependencies`
+**Scope:** Гибридный (modified components + their dependents)
 
-**Пользовательская конфигурация путей:**
+**Architecture paths** (приоритет):
+1. Пользовательские пути (`.clauderc`, `CODE_REVIEW_ARCH_PATHS` env, `.claude/config.json`)
+2. Стандартные пути (`docs/architecture/`, `doc/architecture/`, `documentation/architecture/`)
+3. Рекурсивный поиск (fallback, глубина 3)
 
-1. **Через переменную окружения:**
-   ```bash
-   export CODE_REVIEW_ARCH_PATHS="custom/arch:internal/docs/architecture"
-   ```
+**Fallback:** Если архитектура не найдена → автоматически запускает `@skill:architecture-documentation` для генерации.
 
-2. **Через .clauderc в корне проекта:**
-   ```json
-   {
-     "codeReview": {
-       "architecturePaths": [
-         "custom/architecture",
-         "internal/docs/arch"
-       ]
-     }
-   }
-   ```
-
-3. **Через isolated config (.claude/config.json):**
-   ```json
-   {
-     "skills": {
-       "codeReview": {
-         "architecturePaths": [
-           "team/architecture",
-           "wiki/system-design"
-         ]
-       }
-     }
-   }
-   ```
-
-**Приоритет путей:**
-1. Пользовательские пути (.clauderc, environment, config.json)
-2. Стандартные пути (docs/architecture, doc/architecture, etc.)
-3. Рекурсивный поиск (fallback)
-
-**Поведение при отсутствии архитектуры:**
-- Блокирует commit с предложением запустить `@skill:architecture-documentation`
-- Автоматически вызывает architecture-documentation skill для генерации
-- После генерации повторно запускает валидацию
-
-**Правила:** `@rules:architecture`
-
-**Поддерживаемые форматы архитектуры:**
-
-| Формат | Детекция | Источник |
-|--------|----------|----------|
-| `iclaude` | `project.id` + `components[]` + `layers[]` | Ручное создание |
-| `arch-doc` | `architecture.metadata` + `architecture.components[]` | `@skill:architecture-documentation` |
-| `c4` | `model.softwareSystems` или `model.containers` | Structurizr |
-| `generic` | `components[]` | Различные инструменты |
-
-**Graceful Degradation:**
-- Нераспознанный формат: WARNING (не BLOCKING)
-- Остальные проверки (security, code quality) выполняются
-- Рекомендация: запустить `@skill:architecture-documentation` для генерации совместимого формата
+**Детали:** См. [@rules:architecture](./rules/architecture.md)
 
 ### 2. Security (BLOCKING)
 
-```
-- SQL Injection
-- XSS (Cross-Site Scripting)
-- Command Injection
-- Path Traversal
-- Hardcoded secrets
+**Паттерны:**
+- SQL Injection (string concatenation в queries)
+- Command Injection (shell=True, unsanitized input)
+- XSS (innerHTML assignment)
+- Path Traversal (unsanitized file paths)
+- Hardcoded secrets (API_KEY=, password=, token=)
 - Insecure deserialization
-```
 
-Правила: `@rules:security`
+**Детали:** См. [@rules:security](./rules/security.md)
 
 ### 3. Code Quality (WARNING)
 
-```
+**Метрики:**
+- Function length > 50 lines
+- Cyclomatic complexity > 10
+- Deep nesting > 4 levels
 - Code duplication
-- High complexity (cyclomatic > 10)
-- Long functions (> 50 lines)
-- Deep nesting (> 4 levels)
 - Magic numbers
-- Unused variables/imports
-```
-
-Правила: `@rules:code-quality`
+- Unused imports/variables
 
 ### 4. Error Handling (WARNING)
 
-```
-- Bare except clauses
-- Empty catch blocks
+**Паттерны:**
+- Bare `except:` clauses (Python)
+- Empty catch blocks (JavaScript/TypeScript)
 - Missing null checks
 - Unhandled promises
-```
 
 ### 5. Type Safety (INFO)
 
-```
-- Missing type hints (Python)
-- Any types (TypeScript)
+**LSP-enhanced проверки:**
+- Missing type hints (Python via pyright)
+- Any types (TypeScript via vtsls)
+- Type mismatches (LSP diagnostics)
 - Implicit type conversions
-```
 
-## LSP Integration (Optional)
+---
+
+## LSP Integration
 
 **Активируется когда:** `lsp_status.status == "READY"` (из lsp-integration skill)
 
-Когда LSP доступен, code-review использует Language Server Protocol для enhanced type checking и code intelligence:
+**Что предоставляет LSP:**
+1. **Type Checking:** mismatches, Any types, missing type hints
+2. **Code Intelligence:** undefined names, unused variables (via find-references)
+3. **Diagnostics:** merged в `code_review.warnings[]` с category: "type_safety"
 
-### Что предоставляет LSP:
-
-**1. Type Checking:**
-- Детектирование type mismatches
-- Поиск использования `Any` types (TypeScript)
-- Проверка missing type hints (Python via pyright)
-
-**2. Code Intelligence:**
-- Go-to-definition (проверка существования импортов)
-- Find-references (детектирование unused variables/functions)
-- Символы не найдены (undefined names)
-
-**3. LSP Diagnostics:**
-- Parsing LSP error messages
-- Merge в `code_review.warnings` с category: "type_safety"
-- Увеличенный score penalty для type errors
-
-### Алгоритм интеграции:
-
-```
-IF lsp_status.status == "READY":
-  1. Request LSP diagnostics for files_changed
-  2. Parse diagnostics response:
-     - severity: "error" → BLOCKING issue
-     - severity: "warning" → WARNING issue
-     - severity: "information" → INFO suggestion
-  3. Merge into code_review.warnings[]:
-     {
-       "category": "type_safety",
-       "severity": map_lsp_severity(diagnostic.severity),
-       "file": diagnostic.uri,
-       "line": diagnostic.range.start.line,
-       "message": diagnostic.message,
-       "suggestion": diagnostic.codeActions[0] (if available)
-     }
-  4. Adjust score:
-     - LSP errors: -10 points each (instead of -5)
-     - Total type_safety score capped at 25 points
-ELSE:
-  Skip LSP checks (fallback to regex-based checks)
-  Show info message: "LSP not available - basic checks only"
-```
-
-### Поддерживаемые LSP серверы:
+**Поддерживаемые LSP серверы:**
 
 | Язык | LSP Server | Plugin |
 |------|------------|--------|
@@ -222,348 +188,153 @@ ELSE:
 | Go | gopls | gopls-lsp@claude-plugins-official |
 | Rust | rust-analyzer | rust-analyzer-lsp@claude-plugins-official |
 
-**Note:** См. [@skill:lsp-integration](../lsp-integration/SKILL.md) для установки LSP plugins.
-
-### Backward Compatibility:
-
-- LSP integration полностью опциональная
-- Без LSP skill работает с regex-based checks
-- Output формат одинаковый с/без LSP
-- `lsp_diagnostics` field добавляется только при LSP available
-
-## References
-
-**TOON Format Specification:**
-- Full spec: @shared:TOON-REFERENCE.md
-- Integration patterns: @shared:TOON-REFERENCE.md#integration-patterns
-- Token savings benchmarks: @shared:TOON-REFERENCE.md#token-savings
-
-**Task Structure:**
-- @shared:TASK-STRUCTURE.md#code-review
-
-## Skill-Specific TOON Usage
-
-**code-review генерирует TOON для:**
-- `warnings[]` - когда >= 5 warnings
-- `lsp_diagnostics[]` - когда >= 5 LSP issues
-
-**Implementation:**
-```javascript
-import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
-
-// Review output
-const review = {
-  status: "passed",
-  total_warnings: 12,
-  warnings: [...],          // 12 warnings
-  lsp_diagnostics: [...]    // 8 LSP issues
-};
-
-// Add TOON optimization
-const dataToConvert = {};
-
-if (review.warnings.length >= 5) {
-  review.toon = review.toon || {};
-  review.toon.warnings_toon = arrayToToon('warnings', review.warnings,
-    ['severity', 'file', 'line', 'message', 'rule']);
-  dataToConvert.warnings = review.warnings;
-}
-
-if (review.lsp_diagnostics && review.lsp_diagnostics.length >= 5) {
-  review.toon = review.toon || {};
-  review.toon.lsp_diagnostics_toon = arrayToToon('lsp_diagnostics', review.lsp_diagnostics,
-    ['severity', 'file', 'line', 'message', 'source']);
-  dataToConvert.lsp_diagnostics = review.lsp_diagnostics;
-}
-
-if (review.toon) {
-  const stats = calculateTokenSavings(dataToConvert);
-  review.toon.token_savings = stats.savedPercent;
-  review.toon.size_comparison = `JSON: ${stats.jsonTokens} tokens, TOON: ${stats.toonTokens} tokens`;
-}
+**Интеграция:**
+```
+IF lsp_status.status == "READY":
+  1. Request LSP diagnostics for files_changed
+  2. Parse severity: error → BLOCKING, warning → WARNING, info → INFO
+  3. Merge into code_review.warnings[] + lsp_diagnostics[]
+  4. Adjust score: LSP errors -10 points (vs. -5 for regex checks)
+ELSE:
+  Fallback to regex-based checks
 ```
 
-**Token Savings (Review-Specific):**
-- 8 warnings: **35.4% savings** (1420 → 918 tokens)
-- 12 warnings + 8 LSP: **40.2% savings** (3560 → 2130 tokens)
-- 25 warnings + 15 LSP: **45.7% savings** (7120 → 3865 tokens)
+**Backward Compatibility:** Без LSP skill работает полностью функционально (regex-based checks).
 
-## Output
+**Детали:** См. [@skill:lsp-integration](../lsp-integration/SKILL.md)
+
+---
+
+## Output Formats
+
+### JSON Schema
 
 ```json
 {
   "code_review": {
-    "score": 85,
-    "blocking_issues": [],
-    "warnings": [
+    "score": 75,                    // 0-100
+    "passed": false,                // blocking_issues.length === 0
+    "blocking_issues": [            // BLOCKING severity только
+      {
+        "category": "architecture_compliance",
+        "severity": "BLOCKING",
+        "rule": "circular_dependency",
+        "message": "...",
+        "suggestion": "..."
+      }
+    ],
+    "warnings": [                   // WARNING + INFO
       {
         "category": "code_quality",
+        "severity": "WARNING",
         "file": "service.py",
         "line": 42,
         "message": "Function too long (65 lines)",
         "suggestion": "Extract helper methods"
       }
     ],
-    "suggestions": [
-      "Consider adding type hints to function parameters"
-    ],
-    "passed": true
+    "lsp_diagnostics": [...],       // Optional (if LSP available)
+    "toon": { ... }                 // Optional (if >= 5 warnings/diagnostics)
   }
 }
 ```
 
-## Score Calculation
+**Полный шаблон:** См. [templates/review-output.json](./templates/review-output.json)
+
+### Score Calculation
+
+**Формула:**
+
+| Category | Weight | Penalty | Max Score |
+|----------|--------|---------|-----------|
+| Architecture | 25% | -10 per blocking | 25 |
+| Security | 25% | -10 per blocking | 25 |
+| Code Quality | 25% | -5 per warning | 25 |
+| Error Handling | 15% | -5 per warning | 15 |
+| Type Safety | 10% | -5 per warning | 10 |
 
 ```
-# Новая формула с весами для 5 категорий:
-architecture_score = 25 - (arch_blocking * 10)    # 25%
-security_score = 25 - (sec_blocking * 10)          # 25%
-code_quality_score = 25 - (quality_warnings * 5)   # 25%
-error_handling_score = 15 - (error_warnings * 5)   # 15%
-type_safety_score = 10 - (type_warnings * 5)       # 10%
-
 total_score = architecture_score + security_score + code_quality_score +
               error_handling_score + type_safety_score
-
-# Если архитектура недоступна, пересчитываем веса:
-# security = 33.33%, code_quality = 33.33%, error = 20%, type = 13.33%
 
 passed = blocking_issues.length === 0
 ```
 
-## Markdown Output
+**Fallback:** Если архитектура недоступна, веса пересчитываются: Security 33.33%, Code Quality 33.33%, Error 20%, Type 13.33%.
 
-```
-## Code Review: {score}/100
+**Markdown Output:**
 
-{если blocking}
-🛑 BLOCKING ISSUES:
-- {file}:{line} — {message}
-
-{если warnings}
-⚠️ WARNINGS:
-- {file}:{line} — {message}
-
-{если suggestions}
-💡 SUGGESTIONS:
-- {suggestion}
-
-{passed ? "✓ Review passed" : "✗ Review failed"}
-```
-
----
-
-## Examples
-
-### Example 1: Simple Review (Passed)
-
-**Scenario:** Small change - 2 files, no blocking issues
-
-**Files reviewed:**
-- `backend/services/payment.py` (modified)
-- `tests/test_payment.py` (created)
-
-**Review result:**
-```json
-{
-  "code_review": {
-    "score": 92,
-    "blocking_issues": [],
-    "warnings": [
-      {
-        "category": "code_quality",
-        "severity": "WARNING",
-        "file": "backend/services/payment.py",
-        "line": 45,
-        "message": "Function 'process_payment' complexity 12 exceeds threshold 10",
-        "suggestion": "Consider refactoring to reduce complexity"
-      },
-      {
-        "category": "type_safety",
-        "severity": "INFO",
-        "file": "tests/test_payment.py",
-        "line": 12,
-        "message": "Missing type hint for parameter 'amount'",
-        "suggestion": "Add type hint: def test_payment(amount: Decimal)"
-      }
-    ],
-    "passed": true
-  }
-}
-```
-
-**User message:**
-```
-## Code Review: 92/100
-
-⚠️ WARNINGS:
-- backend/services/payment.py:45 — Function complexity 12 exceeds threshold 10
-
-💡 SUGGESTIONS:
-- tests/test_payment.py:12 — Add type hint for parameter 'amount'
-
-✓ Review passed
-```
-
-**Result:** Review passed, 2 non-blocking warnings, ready to commit.
-
----
-
-### Example 2: LSP Integration (Type Errors Found)
-
-**Scenario:** TypeScript refactor - LSP detected 8 type errors (5 BLOCKING)
-
-**Files reviewed:**
-- `frontend/src/services/AuthService.ts`
-- `frontend/src/hooks/useAuth.ts`
-- `frontend/src/contexts/AuthContext.tsx`
-
-**Review result:**
-```json
-{
-  "code_review": {
-    "score": 58,
-    "blocking_issues": [
-      {
-        "category": "type_safety",
-        "severity": "ERROR",
-        "file": "frontend/src/services/AuthService.ts",
-        "line": 45,
-        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'",
-        "source": "typescript"
-      },
-      {
-        "category": "type_safety",
-        "severity": "ERROR",
-        "file": "frontend/src/services/AuthService.ts",
-        "line": 78,
-        "message": "Property 'refreshToken' does not exist on type 'AuthResponse'",
-        "source": "typescript"
-      },
-      {
-        "category": "type_safety",
-        "severity": "ERROR",
-        "file": "frontend/src/hooks/useAuth.ts",
-        "line": 23,
-        "message": "Object is possibly 'null'",
-        "source": "typescript"
-      },
-      {
-        "category": "type_safety",
-        "severity": "ERROR",
-        "file": "frontend/src/hooks/useAuth.ts",
-        "line": 56,
-        "message": "Type '() => Promise<void>' is not assignable to type '() => void'",
-        "source": "typescript"
-      },
-      {
-        "category": "type_safety",
-        "severity": "ERROR",
-        "file": "frontend/src/contexts/AuthContext.tsx",
-        "line": 112,
-        "message": "Cannot find name 'User'. Did you mean 'user'?",
-        "source": "typescript"
-      }
-    ],
-    "warnings": [
-      {
-        "category": "code_quality",
-        "severity": "WARNING",
-        "file": "frontend/src/services/AuthService.ts",
-        "line": 34,
-        "message": "Async function without error handling"
-      },
-      {
-        "category": "code_quality",
-        "severity": "WARNING",
-        "file": "frontend/src/hooks/useAuth.ts",
-        "line": 67,
-        "message": "Missing dependency in useEffect"
-      }
-    ],
-    "lsp_diagnostics": [
-      {"severity": "ERROR", "file": "AuthService.ts", "line": 45, "message": "Type mismatch", "source": "typescript"},
-      {"severity": "ERROR", "file": "AuthService.ts", "line": 78, "message": "Property missing", "source": "typescript"},
-      {"severity": "ERROR", "file": "useAuth.ts", "line": 23, "message": "Null check required", "source": "typescript"},
-      {"severity": "ERROR", "file": "useAuth.ts", "line": 56, "message": "Promise type error", "source": "typescript"},
-      {"severity": "ERROR", "file": "AuthContext.tsx", "line": 112, "message": "Undefined name", "source": "typescript"},
-      {"severity": "WARNING", "file": "AuthService.ts", "line": 12, "message": "Unused import", "source": "typescript"},
-      {"severity": "WARNING", "file": "useAuth.ts", "line": 8, "message": "Unused import", "source": "typescript"},
-      {"severity": "WARNING", "file": "AuthContext.tsx", "line": 5, "message": "Unused import", "source": "typescript"}
-    ],
-    "passed": false,
-    "toon": {
-      "lsp_diagnostics_toon": "lsp_diagnostics[8]{severity,file,line,message,source}:\n  ERROR,AuthService.ts,45,Type mismatch,typescript\n  ERROR,AuthService.ts,78,Property missing,typescript\n  ERROR,useAuth.ts,23,Null check required,typescript\n  ERROR,useAuth.ts,56,Promise type error,typescript\n  ERROR,AuthContext.tsx,112,Undefined name,typescript\n  WARNING,AuthService.ts,12,Unused import,typescript\n  WARNING,useAuth.ts,8,Unused import,typescript\n  WARNING,AuthContext.tsx,5,Unused import,typescript",
-      "token_savings": "35.4%",
-      "size_comparison": "JSON: 1420 tokens, TOON: 918 tokens"
-    }
-  }
-}
-```
-
-**User message:**
-```
-## Code Review: 58/100
+```markdown
+## Code Review: 75/100
 
 🛑 BLOCKING ISSUES:
-- AuthService.ts:45 — Argument type mismatch: string | undefined → string
-- AuthService.ts:78 — Property 'refreshToken' does not exist on type 'AuthResponse'
-- useAuth.ts:23 — Object is possibly 'null'
-- useAuth.ts:56 — Type mismatch in async handler
-- AuthContext.tsx:112 — Cannot find name 'User'
+- file.py:42 — SQL injection detected
 
 ⚠️ WARNINGS:
-- AuthService.ts:34 — Async function without error handling
-- useAuth.ts:67 — Missing dependency in useEffect
-- 3 unused imports (auto-fixable)
+- service.py:65 — Function too long (72 lines)
+- models.py:15 — Missing type hint
+
+💡 SUGGESTIONS:
+- Consider adding docstrings to public functions
 
 ✗ Review failed - fix blocking issues before commit
-
-Token savings: 35.4% (TOON format)
 ```
 
-**Result:** Review failed, 5 blocking type errors must be fixed before commit.
+### TOON Optimization
 
----
+**Цель:** 40-50% token savings для больших review reports (>= 5 warnings/diagnostics)
 
-### Example 3: TOON Optimization (Large Review)
+**Что оптимизируется:**
+- `warnings[]` — когда >= 5 warnings
+- `lsp_diagnostics[]` — когда >= 5 LSP issues
 
-**Scenario:** Full module review - 12 warnings + 8 LSP diagnostics
+**Threshold:** TOON генерируется только если массив >= 5 элементов.
 
-**Review result:**
+**Token Savings (Review-Specific):**
+
+| Array Size | Token Savings | JSON Tokens | TOON Tokens |
+|------------|---------------|-------------|-------------|
+| 8 warnings | 35.4% | 1420 | 918 |
+| 12 warnings + 8 LSP | 40.2% | 3560 | 2130 |
+| 25 warnings + 15 LSP | 45.7% | 7120 | 3865 |
+
+**Implementation:**
+
+```javascript
+import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
+
+// Review output
+const review = {
+  warnings: [...],          // 12 warnings
+  lsp_diagnostics: [...]    // 8 LSP issues
+};
+
+// Add TOON optimization (if >= 5 elements)
+if (review.warnings.length >= 5) {
+  review.toon = {
+    warnings_toon: arrayToToon('warnings', review.warnings,
+      ['severity', 'file', 'line', 'message', 'rule']),
+    token_savings: "40.2%",
+    size_comparison: "JSON: 3560 tokens, TOON: 2130 tokens"
+  };
+}
+
+if (review.lsp_diagnostics?.length >= 5) {
+  review.toon.lsp_diagnostics_toon = arrayToToon('lsp_diagnostics', review.lsp_diagnostics,
+    ['severity', 'file', 'line', 'message', 'source']);
+}
+```
+
+**Output Structure:**
+
 ```json
 {
   "code_review": {
-    "score": 73,
-    "blocking_issues": [],
-    "warnings": [
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/services/auth_service.py", "line": 45, "message": "Function complexity 15 exceeds threshold 10", "rule": "cognitive-complexity"},
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/services/auth_service.py", "line": 78, "message": "Long function (67 lines) exceeds limit 50", "rule": "function-length"},
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/api/v1/endpoints/auth.py", "line": 34, "message": "Missing docstring for public function", "rule": "documentation"},
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/api/v1/endpoints/auth.py", "line": 89, "message": "Deep nesting level 5 exceeds limit 4", "rule": "nesting-depth"},
-      {"category": "security", "severity": "WARNING", "file": "backend/app/core/security.py", "line": 23, "message": "Hardcoded secret detected", "rule": "security"},
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/middleware/auth_middleware.py", "line": 56, "message": "Duplicate code block found", "rule": "duplicate-code"},
-      {"category": "code_quality", "severity": "INFO", "file": "tests/services/test_auth_service.py", "line": 12, "message": "Test coverage 78% below target 80%", "rule": "test-coverage"},
-      {"category": "code_quality", "severity": "INFO", "file": "tests/api/test_auth_endpoints.py", "line": 45, "message": "Consider parameterizing test cases", "rule": "test-quality"},
-      {"category": "code_quality", "severity": "WARNING", "file": "backend/app/models/user.py", "line": 67, "message": "Mutable default argument []", "rule": "code-smell"},
-      {"category": "type_safety", "severity": "WARNING", "file": "backend/app/schemas/auth.py", "line": 34, "message": "Missing type annotation", "rule": "type-hints"},
-      {"category": "code_quality", "severity": "INFO", "file": "backend/app/config.py", "line": 12, "message": "Consider using environment variables", "rule": "configuration"},
-      {"category": "code_quality", "severity": "WARNING", "file": "docs/authentication.md", "line": 89, "message": "Documentation outdated", "rule": "documentation"}
-    ],
-    "lsp_diagnostics": [
-      {"severity": "WARNING", "file": "backend/app/services/auth_service.py", "line": 23, "message": "'jwt' is not accessed", "source": "pyright"},
-      {"severity": "WARNING", "file": "backend/app/services/auth_service.py", "line": 45, "message": "Return type partially unknown", "source": "pyright"},
-      {"severity": "WARNING", "file": "backend/app/api/v1/endpoints/auth.py", "line": 12, "message": "'Depends' is not accessed", "source": "pyright"},
-      {"severity": "WARNING", "file": "backend/app/core/security.py", "line": 8, "message": "'hashlib' is not accessed", "source": "pyright"},
-      {"severity": "INFO", "file": "backend/app/middleware/auth_middleware.py", "line": 34, "message": "Type partially unknown", "source": "pyright"},
-      {"severity": "WARNING", "file": "backend/app/models/user.py", "line": 5, "message": "'Optional' is not accessed", "source": "pyright"},
-      {"severity": "WARNING", "file": "backend/app/schemas/auth.py", "line": 3, "message": "'BaseModel' is not accessed", "source": "pyright"},
-      {"severity": "INFO", "file": "tests/services/test_auth_service.py", "line": 7, "message": "Import could be condensed", "source": "pyright"}
-    ],
-    "passed": true,
-    "toon": {
-      "warnings_toon": "warnings[12]{category,severity,file,line,message,rule}:\n  code_quality,WARNING,backend/app/services/auth_service.py,45,Function complexity 15 exceeds threshold 10,cognitive-complexity\n  code_quality,WARNING,backend/app/services/auth_service.py,78,Long function (67 lines) exceeds limit 50,function-length\n  code_quality,WARNING,backend/app/api/v1/endpoints/auth.py,34,Missing docstring for public function,documentation\n  code_quality,WARNING,backend/app/api/v1/endpoints/auth.py,89,Deep nesting level 5 exceeds limit 4,nesting-depth\n  security,WARNING,backend/app/core/security.py,23,Hardcoded secret detected,security\n  code_quality,WARNING,backend/app/middleware/auth_middleware.py,56,Duplicate code block found,duplicate-code\n  code_quality,INFO,tests/services/test_auth_service.py,12,Test coverage 78% below target 80%,test-coverage\n  code_quality,INFO,tests/api/test_auth_endpoints.py,45,Consider parameterizing test cases,test-quality\n  code_quality,WARNING,backend/app/models/user.py,67,Mutable default argument [],code-smell\n  type_safety,WARNING,backend/app/schemas/auth.py,34,Missing type annotation,type-hints\n  code_quality,INFO,backend/app/config.py,12,Consider using environment variables,configuration\n  code_quality,WARNING,docs/authentication.md,89,Documentation outdated,documentation",
-      "lsp_diagnostics_toon": "lsp_diagnostics[8]{severity,file,line,message,source}:\n  WARNING,backend/app/services/auth_service.py,23,'jwt' is not accessed,pyright\n  WARNING,backend/app/services/auth_service.py,45,Return type partially unknown,pyright\n  WARNING,backend/app/api/v1/endpoints/auth.py,12,'Depends' is not accessed,pyright\n  WARNING,backend/app/core/security.py,8,'hashlib' is not accessed,pyright\n  INFO,backend/app/middleware/auth_middleware.py,34,Type partially unknown,pyright\n  WARNING,backend/app/models/user.py,5,'Optional' is not accessed,pyright\n  WARNING,backend/app/schemas/auth.py,3,'BaseModel' is not accessed,pyright\n  INFO,tests/services/test_auth_service.py,7,Import could be condensed,pyright",
+    "warnings": [...],              // JSON (always present)
+    "lsp_diagnostics": [...],
+    "toon": {                       // TOON (optional, if >= 5 elements)
+      "warnings_toon": "warnings[12]{severity,file,line,message,rule}:\n  ...",
+      "lsp_diagnostics_toon": "lsp_diagnostics[8]{severity,file,line,message,source}:\n  ...",
       "token_savings": "40.2%",
       "size_comparison": "JSON: 3560 tokens, TOON: 2130 tokens"
     }
@@ -571,44 +342,132 @@ Token savings: 35.4% (TOON format)
 }
 ```
 
-**User message:**
-```
-## Code Review: 73/100
+**100% Backward Compatibility:**
+- JSON остаётся primary format (всегда присутствует)
+- TOON добавляется как optimization layer (opt-in)
+- Downstream skills могут читать JSON (всегда работает) или TOON (если доступен)
 
-⚠️ WARNINGS:
-- security.py:23 — Hardcoded secret detected (SECURITY)
-- auth_service.py:45 — Function complexity 15 exceeds threshold
-- auth_service.py:78 — Long function (67 lines)
-- auth_middleware.py:56 — Duplicate code block found
-- ... 8 more warnings
+**Детали:** См. [@shared:TOON-REFERENCE.md](../_shared/TOON-REFERENCE.md)
 
-💡 LSP DIAGNOSTICS:
-- 6 unused imports (auto-fixable)
-- 2 type hints partially unknown (info)
+---
 
-✓ Review passed (with warnings)
+## Examples
 
-Top priority fixes:
-1. security.py:23 - Remove hardcoded secret (SECURITY)
-2. auth_service.py - Refactor complex function
+**Формат:** Короткие inline summaries + ссылки на детальные примеры
 
-Token savings: 40.2% (TOON format)
-```
+| Scenario | Files | Score | Result | Details |
+|----------|-------|-------|--------|---------|
+| **Simple Review** | 2 files, 2 warnings | 92/100 | ✓ Passed | [examples/basic-usage.md](./examples/basic-usage.md) |
+| **LSP Integration** | 3 TS files, 5 type errors | 58/100 | ✗ Failed (BLOCKING) | [examples/architecture-validation.md](./examples/architecture-validation.md) |
+| **TOON Optimization** | 8 files, 12 warnings + 8 LSP | 73/100 | ✓ Passed (40.2% savings) | [examples/toon-output.example](./examples/toon-output.example) |
 
-**Result:** Review passed, 12 non-blocking warnings, TOON optimization saves 40.2% tokens.
+**Example 1 Summary:** Small change (payment service + test), 2 non-blocking warnings (complexity, type hint), review passed.
+
+**Example 2 Summary:** TypeScript refactor, LSP detected 5 blocking type errors (string|undefined mismatch, missing property, null checks), review failed.
+
+**Example 3 Summary:** Full module review, 12 code quality warnings + 8 LSP diagnostics (unused imports, partial types), TOON optimization saved 40.2% tokens (3560 → 2130).
+
+**Детальные примеры:** См. директорию [examples/](./examples/)
 
 ---
 
 ## Integration with Other Skills
 
 **Used by:**
-- `adaptive-workflow` → Review code after PHASE 3 (implementation)
-- `commit-and-push` → Pre-commit validation
+- `adaptive-workflow` → Review code after PHASE 3 (implementation) for standard/complex workflows
+- `commit-and-push` → Pre-commit validation (blocks commit if `passed: false`)
 
 **Uses:**
-- `lsp-integration` → LSP diagnostics for type checking
-- `architecture-documentation` → Architecture validation
-- `toon-skill` → TOON optimization for warnings[] и lsp_diagnostics[] (см. `@shared:TOON-REFERENCE.md`)
+- `lsp-integration` → LSP diagnostics для enhanced type checking (optional)
+- `architecture-documentation` → Architecture validation (auto-generates if missing)
+- `toon-skill` → TOON optimization для warnings[] и lsp_diagnostics[] (см. @shared:TOON-REFERENCE.md)
+
+**Data Flow:**
+```
+files_changed[] → code-review skill
+                    ├─ Architecture checks (if docs available)
+                    ├─ Security checks (regex-based)
+                    ├─ Code quality checks (regex-based)
+                    ├─ LSP diagnostics (if lsp_status.status == "READY")
+                    └─ TOON optimization (if warnings >= 5)
+                  → {code_review: {...}}
+```
+
+---
+
+## Advanced Topics
+
+### Custom Architecture Paths
+
+**3 способа конфигурации:**
+
+1. **Переменная окружения:**
+   ```bash
+   export CODE_REVIEW_ARCH_PATHS="custom/arch:internal/docs/architecture"
+   ```
+
+2. **`.clauderc` в корне проекта:**
+   ```json
+   {
+     "codeReview": {
+       "architecturePaths": ["custom/architecture", "internal/docs/arch"]
+     }
+   }
+   ```
+
+3. **Isolated config** (`.claude/config.json`):
+   ```json
+   {
+     "skills": {
+       "codeReview": {
+         "architecturePaths": ["team/architecture", "wiki/system-design"]
+       }
+     }
+   }
+   ```
+
+**Приоритет:** Пользовательские пути → Стандартные пути → Рекурсивный поиск.
+
+### Architecture Format Support
+
+| Формат | Детекция | Источник | Status |
+|--------|----------|----------|--------|
+| `iclaude` | `project.id` + `components[]` + `layers[]` | Ручное создание | ✅ Full support |
+| `arch-doc` | `architecture.metadata` + `architecture.components[]` | @skill:architecture-documentation | ✅ Full support |
+| `c4` | `model.softwareSystems` или `model.containers` | Structurizr | ✅ Full support |
+| `generic` | `components[]` | Различные инструменты | ✅ Basic support |
+
+**Graceful Degradation:**
+- Нераспознанный формат: WARNING (не BLOCKING)
+- Остальные проверки (security, code quality) выполняются
+- Рекомендация: запустить `@skill:architecture-documentation` для генерации совместимого формата
+
+**Детали форматов:** См. [examples/supported-formats.md](./examples/supported-formats.md)
+
+---
+
+## References
+
+**TOON Format:**
+- Full spec: [@shared:TOON-REFERENCE.md](../_shared/TOON-REFERENCE.md)
+- Integration patterns: [@shared:TOON-REFERENCE.md#integration-patterns](../_shared/TOON-REFERENCE.md#integration-patterns)
+- Token savings benchmarks: [@shared:TOON-REFERENCE.md#token-savings](../_shared/TOON-REFERENCE.md#token-savings)
+
+**Rules:**
+- Architecture compliance: [@rules:architecture](./rules/architecture.md)
+- Security patterns: [@rules:security](./rules/security.md)
+
+**Templates:**
+- Review output JSON schema: [templates/review-output.json](./templates/review-output.json)
+
+**Examples:**
+- Basic usage: [examples/basic-usage.md](./examples/basic-usage.md)
+- Architecture validation: [examples/architecture-validation.md](./examples/architecture-validation.md)
+- TOON optimization: [examples/toon-output.example](./examples/toon-output.example)
+- Supported formats: [examples/supported-formats.md](./examples/supported-formats.md)
+
+**Task Structure:**
+- [@shared:TASK-STRUCTURE.md#code-review](../_shared/TASK-STRUCTURE.md#code-review)
 
 ---
 
