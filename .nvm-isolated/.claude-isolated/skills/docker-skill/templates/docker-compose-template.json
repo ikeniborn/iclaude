@@ -1,0 +1,264 @@
+{
+  "$comment": "Docker Compose template for multi-container applications - supports Node.js and Python apps",
+  "version": "3.8",
+
+  "services": {
+    "app": {
+      "$comment": "Main application service (Node.js or Python)",
+      "build": {
+        "context": ".",
+        "dockerfile": "Dockerfile",
+        "args": {
+          "NODE_ENV": "production",
+          "BUILD_DATE": "{{build_date: string, description: Build timestamp}}",
+          "VERSION": "{{version: string, description: App version}}"
+        }
+      },
+      "container_name": "{{project_name: string, description: Container name}}-app",
+      "ports": [
+        "{{port_mapping: string, description: Port mapping (e.g. 3000:3000 for Node.js, 8000:8000 for Python)}}"
+      ],
+      "environment": {
+        "NODE_ENV": "production",
+        "DATABASE_URL": "{{database_url: string, description: Database connection string, e.g. postgres://user:pass@db:5432/dbname}}",
+        "REDIS_URL": "{{redis_url: string, description: Redis connection string, e.g. redis://redis:6379, optional}}",
+        "LOG_LEVEL": "info",
+        "PORT": "{{port: integer, description: Application port}}"
+      },
+      "depends_on": [
+        "{{service: string, description: Dependency service (e.g. db, redis)}}"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "{{health_command: string, description: Health check command (e.g. curl -f http://localhost:3000/health || exit 1)}}"
+        ],
+        "interval": "30s",
+        "timeout": "3s",
+        "retries": 3,
+        "start_period": "40s"
+      },
+      "volumes": [
+        "{{volume_mapping: string, description: Volume mapping (e.g. ./logs:/app/logs), optional}}"
+      ],
+      "labels": {
+        "com.example.description": "{{description: string, description: Service description}}",
+        "com.example.version": "{{version: string, description: Service version}}"
+      }
+    },
+
+    "db": {
+      "$comment": "PostgreSQL database service (conditional - only if database=postgres)",
+      "image": "postgres:15-alpine",
+      "container_name": "{{project_name: string}}-db",
+      "environment": {
+        "POSTGRES_USER": "{{db_user: string, description: Database user, default: postgres}}",
+        "POSTGRES_PASSWORD": "{{db_password: string, description: Database password (use env var: ${DB_PASSWORD})}}",
+        "POSTGRES_DB": "{{db_name: string, description: Database name, default: appdb}}",
+        "PGDATA": "/var/lib/postgresql/data/pgdata"
+      },
+      "volumes": [
+        "postgres-data:/var/lib/postgresql/data"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres}"
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 5
+      },
+      "ports": [
+        "{{expose_port: string, description: Expose port to host (e.g. 5432:5432), optional for production}}"
+      ]
+    },
+
+    "redis": {
+      "$comment": "Redis cache service (conditional - only if redis requested)",
+      "image": "redis:7-alpine",
+      "container_name": "{{project_name: string}}-redis",
+      "command": "redis-server --appendonly yes --requirepass {{redis_password: string, description: Redis password (use env var: ${REDIS_PASSWORD})}}",
+      "volumes": [
+        "redis-data:/data"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "redis-cli",
+          "--raw",
+          "incr",
+          "ping"
+        ],
+        "interval": "10s",
+        "timeout": "3s",
+        "retries": 5
+      },
+      "ports": [
+        "{{expose_port: string, description: Expose port to host (e.g. 6379:6379), optional}}"
+      ]
+    },
+
+    "mongodb": {
+      "$comment": "MongoDB database service (conditional - only if database=mongodb)",
+      "image": "mongo:7-jammy",
+      "container_name": "{{project_name: string}}-mongodb",
+      "environment": {
+        "MONGO_INITDB_ROOT_USERNAME": "{{mongo_user: string, description: MongoDB root user}}",
+        "MONGO_INITDB_ROOT_PASSWORD": "{{mongo_password: string, description: MongoDB root password (use env var: ${MONGO_PASSWORD})}}",
+        "MONGO_INITDB_DATABASE": "{{db_name: string, description: Initial database name}}"
+      },
+      "volumes": [
+        "mongodb-data:/data/db",
+        "mongodb-config:/data/configdb"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "mongosh",
+          "--eval",
+          "db.adminCommand('ping')"
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 5
+      },
+      "ports": [
+        "{{expose_port: string, description: Expose port to host (e.g. 27017:27017), optional}}"
+      ]
+    },
+
+    "mysql": {
+      "$comment": "MySQL database service (conditional - only if database=mysql)",
+      "image": "mysql:8.0",
+      "container_name": "{{project_name: string}}-mysql",
+      "environment": {
+        "MYSQL_ROOT_PASSWORD": "{{root_password: string, description: MySQL root password (use env var: ${MYSQL_ROOT_PASSWORD})}}",
+        "MYSQL_DATABASE": "{{db_name: string, description: Database name}}",
+        "MYSQL_USER": "{{db_user: string, description: Database user}}",
+        "MYSQL_PASSWORD": "{{db_password: string, description: Database password (use env var: ${MYSQL_PASSWORD})}}"
+      },
+      "volumes": [
+        "mysql-data:/var/lib/mysql"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost"
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 5
+      },
+      "ports": [
+        "{{expose_port: string, description: Expose port to host (e.g. 3306:3306), optional}}"
+      ],
+      "command": "--default-authentication-plugin=mysql_native_password"
+    },
+
+    "nginx": {
+      "$comment": "Nginx reverse proxy (optional - for production deployments)",
+      "image": "nginx:alpine",
+      "container_name": "{{project_name: string}}-nginx",
+      "ports": [
+        "80:80",
+        "443:443"
+      ],
+      "volumes": [
+        "./nginx.conf:/etc/nginx/nginx.conf:ro",
+        "./ssl:/etc/nginx/ssl:ro"
+      ],
+      "networks": [
+        "app-network"
+      ],
+      "depends_on": [
+        "app"
+      ],
+      "restart": "unless-stopped"
+    }
+  },
+
+  "networks": {
+    "app-network": {
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "{{subnet: string, description: Network subnet (e.g. 172.20.0.0/16), optional}}"
+          }
+        ]
+      }
+    }
+  },
+
+  "volumes": {
+    "postgres-data": {
+      "driver": "local",
+      "labels": {
+        "com.example.description": "PostgreSQL data volume"
+      }
+    },
+    "redis-data": {
+      "driver": "local",
+      "labels": {
+        "com.example.description": "Redis data volume"
+      }
+    },
+    "mongodb-data": {
+      "driver": "local",
+      "labels": {
+        "com.example.description": "MongoDB data volume"
+      }
+    },
+    "mongodb-config": {
+      "driver": "local",
+      "labels": {
+        "com.example.description": "MongoDB config volume"
+      }
+    },
+    "mysql-data": {
+      "driver": "local",
+      "labels": {
+        "com.example.description": "MySQL data volume"
+      }
+    }
+  },
+
+  "$usage_notes": {
+    "environment_variables": "Use .env file for secrets: DB_PASSWORD, REDIS_PASSWORD, etc.",
+    "production_deployment": "Remove port exposures for db/redis, use nginx for HTTPS",
+    "data_persistence": "Volumes ensure data survives container restarts",
+    "health_checks": "All services have health checks for better orchestration",
+    "security": "Never commit .env file - use ${VAR} syntax in docker-compose.yml"
+  },
+
+  "$examples": {
+    "nodejs_postgres_redis": "Full stack Node.js app with PostgreSQL and Redis",
+    "python_fastapi_postgres": "Python FastAPI with PostgreSQL",
+    "nodejs_mongodb": "Node.js app with MongoDB",
+    "python_django_mysql": "Python Django with MySQL"
+  }
+}

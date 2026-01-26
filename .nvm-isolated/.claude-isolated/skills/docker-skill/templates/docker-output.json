@@ -1,0 +1,130 @@
+{
+  "$comment": "Output template from docker-skill operations with comprehensive results",
+  "$schema": "../schemas/docker-output.schema.json",
+  "docker_operation": {
+    "operation": "{{operation: string, description: Operation performed (create-dockerfile, build-image, etc.)}}",
+    "status": "{{status: enum: success|partial|failed, description: Operation outcome}}",
+    "error_message": "{{error: string, description: Error details if status=failed, optional}}",
+
+    "dockerfile_generated": "{{generated: boolean, description: Whether Dockerfile was created/modified}}",
+    "dockerfile_path": "{{path: string, description: Path to Dockerfile, optional}}",
+    "dockerignore_path": "{{path: string, description: Path to .dockerignore, optional}}",
+    "docker_compose_path": "{{path: string, description: Path to docker-compose.yml, optional}}",
+
+    "base_image": "{{image: string, description: Base image used (e.g. node:18-alpine3.18)}}",
+    "multi_stage": "{{multi_stage: boolean, description: Whether multi-stage build is used}}",
+    "stages": [
+      {
+        "name": "{{name: string, description: Stage name (deps, builder, runtime)}}",
+        "base": "{{base: string, description: Base image for this stage}}",
+        "purpose": "{{purpose: string, description: Stage purpose description}}",
+        "size_estimate": "{{size: string, description: Estimated stage size, optional}}"
+      }
+    ],
+
+    "optimization_results": {
+      "layers_before": "{{count: integer, min: 0, description: Number of layers before optimization}}",
+      "layers_after": "{{count: integer, min: 0, description: Number of layers after optimization}}",
+      "layers_reduced": "{{count: integer, min: 0, description: Layers eliminated}}",
+      "size_estimate": "{{size: string, description: Estimated final image size}}",
+      "size_reduction": "{{reduction: string, description: Size reduction percentage, optional}}",
+      "optimizations_applied": [
+        "{{optimization: string, description: Applied optimization technique}}"
+      ],
+      "cache_efficiency": "{{efficiency: string, description: Layer caching efficiency estimate, optional}}"
+    },
+
+    "security_scan": {
+      "hadolint_available": "{{available: boolean, description: Whether hadolint is installed}}",
+      "hadolint_issues": "{{count: integer, min: 0, description: Total hadolint issues found}}",
+      "hadolint_warnings": [
+        {
+          "rule": "{{rule: string, description: Hadolint rule ID (e.g. DL3008)}}",
+          "severity": "{{severity: enum: error|warning|info, description: Issue severity}}",
+          "message": "{{message: string, description: Issue description}}",
+          "line": "{{line: integer, min: 1, description: Line number in Dockerfile}}"
+        }
+      ],
+      "non_root_user": "{{non_root: boolean, description: Whether USER directive is present}}",
+      "secrets_detected": "{{secrets: boolean, description: Whether potential secrets found}}",
+      "secrets_patterns": [
+        {
+          "pattern": "{{pattern: string, description: Matched secret pattern (e.g. API_KEY=)}}",
+          "line": "{{line: integer, min: 1, description: Line number}}",
+          "severity": "{{severity: enum: high|medium|low, description: Risk level}}"
+        }
+      ],
+      "cve_scan": {
+        "$comment": "Future enhancement (v1.1.0) - trivy/docker scout integration",
+        "enabled": "{{enabled: boolean, default: false}}",
+        "vulnerabilities_count": "{{count: integer, min: 0, optional}}",
+        "critical_vulnerabilities": "{{count: integer, min: 0, optional}}"
+      }
+    },
+
+    "build_info": {
+      "build_executed": "{{executed: boolean, description: Whether docker build was run}}",
+      "build_success": "{{success: boolean, description: Whether build succeeded, optional}}",
+      "build_time": "{{time: string, description: Build duration (e.g. 45s), optional}}",
+      "image_id": "{{id: string, description: Docker image ID (sha256:...), optional}}",
+      "image_tags": [
+        "{{tag: string, description: Image tag (e.g. myapp:latest)}}"
+      ],
+      "image_size": "{{size: string, description: Final image size (e.g. 185MB), optional}}",
+      "build_logs": "{{logs: string, description: Build output summary, optional}}"
+    },
+
+    "validation_results": {
+      "healthcheck_configured": "{{configured: boolean, description: Whether HEALTHCHECK is present}}",
+      "healthcheck_tested": "{{tested: boolean, description: Whether health check was tested, optional}}",
+      "healthcheck_status": "{{status: enum: healthy|unhealthy|untested, description: Health check result, optional}}",
+      "best_practices_followed": "{{count: integer, min: 0, max: 10, description: Number of best practices followed}}",
+      "best_practices_violations": [
+        {
+          "rule": "{{rule: string, description: Best practice rule name}}",
+          "description": "{{description: string, description: Violation explanation}}",
+          "severity": "{{severity: enum: critical|warning|info, description: Issue severity}}",
+          "fix": "{{fix: string, description: Suggested fix, optional}}"
+        }
+      ],
+      "overall_score": "{{score: integer, min: 0, max: 100, description: Overall Dockerfile quality score}}"
+    },
+
+    "compose_info": {
+      "$comment": "Docker Compose specific information (if generated)",
+      "compose_generated": "{{generated: boolean, description: Whether docker-compose.yml was created}}",
+      "services_count": "{{count: integer, min: 0, description: Number of services in compose file}}",
+      "services": [
+        {
+          "name": "{{name: string, description: Service name}}",
+          "image": "{{image: string, description: Image or build context}}",
+          "ports": ["{{port: string, description: Port mapping}}"],
+          "depends_on": ["{{service: string, description: Dependency service}}"]
+        }
+      ],
+      "networks_count": "{{count: integer, min: 0, description: Number of networks}}",
+      "volumes_count": "{{count: integer, min: 0, description: Number of volumes}}"
+    },
+
+    "next_steps": [
+      "{{step: string, description: Recommended next action}}"
+    ],
+
+    "toon": {
+      "$comment": "TOON-encoded data for token efficiency (applied if >= 5 elements)",
+      "hadolint_warnings_toon": "{{toon: string, description: TOON-encoded hadolint warnings, optional}}",
+      "layers_toon": "{{toon: string, description: TOON-encoded layer information, optional}}",
+      "violations_toon": "{{toon: string, description: TOON-encoded violations, optional}}",
+      "token_savings": "{{percentage: string, description: Token savings percentage, optional}}",
+      "toon_applied": "{{applied: boolean, description: Whether TOON encoding was used, default: false}}"
+    },
+
+    "metadata": {
+      "skill_version": "{{version: string, description: docker-skill version (e.g. 1.0.0)}}",
+      "execution_time": "{{time: string, description: Total execution time}}",
+      "timestamp": "{{timestamp: string, description: ISO 8601 timestamp}}",
+      "docker_version": "{{version: string, description: Docker client version, optional}}",
+      "hadolint_version": "{{version: string, description: hadolint version, optional}}"
+    }
+  }
+}

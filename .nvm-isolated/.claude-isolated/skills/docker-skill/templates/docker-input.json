@@ -1,0 +1,41 @@
+{
+  "$comment": "Input template for docker-skill operations (interactive mode - some fields filled by AskUserQuestion)",
+  "$schema": "../schemas/docker-input.schema.json",
+  "docker_input": {
+    "operation": "{{operation: enum: create-dockerfile|build-image|scan-image|optimize-layers|cleanup-images, description: Operation to perform}}",
+    "language": "{{language: enum: nodejs|python, description: Programming language (filled by Q1), required: true}}",
+    "framework": "{{framework: string, description: Framework name (e.g. express, fastapi), optional, filled by Q2}}",
+    "base_image": "{{base_image: string, description: Override default base image (e.g. node:18-alpine3.18), optional, filled by Q5}}",
+    "multi_stage": "{{multi_stage: boolean, description: Use multi-stage builds, default: true}}",
+    "optimization_level": "{{level: enum: minimal|standard|aggressive, description: Optimization level (filled by Q3), default: standard}}",
+    "security_scan": "{{security_scan: boolean, description: Run hadolint security scan, default: true}}",
+    "build_args": {
+      "$comment": "Build-time arguments for Docker build",
+      "{{arg_name: string}}": "{{arg_value: string}}"
+    },
+    "healthcheck": {
+      "enabled": "{{enabled: boolean, description: Add HEALTHCHECK directive, default: true}}",
+      "command": "{{command: string, description: Health check command (auto-generated if empty), optional}}",
+      "interval": "{{interval: string, description: Time between health checks, default: 30s}}",
+      "timeout": "{{timeout: string, description: Health check timeout, default: 3s}}",
+      "retries": "{{retries: integer, min: 1, max: 10, description: Consecutive failures before unhealthy, default: 3}}"
+    },
+    "docker_compose": "{{docker_compose: boolean, description: Generate docker-compose.yml (filled by Q4), default: false}}",
+    "compose_services": {
+      "$comment": "Additional services for Docker Compose (optional)",
+      "database": "{{database: enum: postgres|mysql|mongodb|redis|none, description: Database service, optional}}",
+      "custom_services": [
+        {
+          "name": "{{name: string, description: Service name}}",
+          "image": "{{image: string, description: Docker image}}",
+          "ports": ["{{port: string, description: Port mapping, e.g. 5432:5432}}"],
+          "environment": {
+            "{{var: string}}": "{{value: string}}"
+          }
+        }
+      ]
+    },
+    "dockerfile_path": "{{path: string, description: Path to existing Dockerfile for scan/optimize operations, default: ./Dockerfile}}",
+    "project_name": "{{name: string, description: Project name for image tagging, optional}}"
+  }
+}
