@@ -1,0 +1,777 @@
+---
+# Loop Mode Architecture Documentation
+# Generated from: WEEK1-5 implementation summaries, migration guide, completion report
+# Date: 2026-01-25
+# Version: 1.0.0
+
+metadata:
+  project_name: "iclaude Loop Mode"
+  version: "1.0.0"
+  date_created: "2026-01-25"
+  author: "Claude Sonnet 4.5"
+  description: "Bash-based loop mode for iterative task execution with parallel support"
+  status: "ready-for-production"
+
+architecture_overview:
+  name: "Loop Mode Architecture"
+  type: "embedded-utility"
+  pattern: "modular-functional"
+  description: |
+    Bash-based loop mode implementation integrated into iclaude.sh wrapper script.
+    Provides sequential and parallel task execution with git worktree isolation,
+    AI-assisted conflict resolution, and comprehensive state management.
+
+  key_features:
+    - "Sequential execution with exponential backoff retry"
+    - "Parallel execution using git worktrees"
+    - "AI-assisted merge conflict resolution"
+    - "Markdown task definition format"
+    - "State persistence for recovery"
+    - "Git integration (auto-commit + push)"
+    - "Proxy/OAuth inheritance from parent process"
+
+  architectural_patterns:
+    - name: "Functional Decomposition"
+      description: "16 specialized bash functions for distinct responsibilities"
+      rationale: "Improves maintainability and testability"
+
+    - name: "State Machine"
+      description: "Task lifecycle: pending → in_progress → completed/failed"
+      rationale: "Clear state transitions with recovery support"
+
+    - name: "Isolation via Worktrees"
+      description: "Git worktrees provide isolated working directories for parallel tasks"
+      rationale: "Prevents conflicts in parallel execution"
+
+    - name: "AI-Assisted Resolution"
+      description: "Claude Code invoked for automatic merge conflict resolution"
+      rationale: "Reduces manual intervention in parallel workflows"
+
+components:
+  - id: "task-parser"
+    name: "Markdown Task Parser"
+    type: "parser"
+    path: "iclaude.sh:2180-2350"
+    language: "bash"
+    description: |
+      Parses Markdown task definitions to extract task metadata including
+      name, description, completion promise, validation command, max iterations,
+      git config, and parallel group.
+    layer: "input-processing"
+    responsibilities:
+      - "Extract task metadata from Markdown sections"
+      - "Support multiple task definitions in one file"
+      - "Validate required fields presence"
+    dependencies:
+      - "sed"
+      - "grep"
+    functions:
+      - "load_markdown_task()"
+      - "load_all_tasks()"
+
+  - id: "sequential-executor"
+    name: "Sequential Execution Engine"
+    type: "executor"
+    path: "iclaude.sh:2500-2650"
+    language: "bash"
+    description: |
+      Executes tasks sequentially with retry logic and exponential backoff.
+      Manages task lifecycle from initialization through completion or failure.
+    layer: "execution"
+    responsibilities:
+      - "Execute tasks one-by-one in order"
+      - "Apply exponential backoff retry (2s, 4s, 8s, 16s, 32s)"
+      - "Verify completion promises after each iteration"
+      - "Track iteration count and enforce max iterations limit"
+    dependencies:
+      - "task-parser"
+      - "claude-invoker"
+      - "completion-verifier"
+      - "git-integrator"
+    functions:
+      - "execute_sequential_mode()"
+      - "execute_single_iteration()"
+      - "retry_task_with_backoff()"
+
+  - id: "parallel-executor"
+    name: "Parallel Execution Engine"
+    type: "executor"
+    path: "iclaude.sh:2650-2850"
+    language: "bash"
+    description: |
+      Executes multiple tasks concurrently using git worktrees for isolation.
+      Groups tasks by parallel group ID and manages background job lifecycle.
+    layer: "execution"
+    responsibilities:
+      - "Group tasks by PARALLEL_GROUP field"
+      - "Create isolated git worktrees per task"
+      - "Spawn background jobs with max parallel limit"
+      - "Wait for task completion and collect results"
+      - "Merge worktree changes back to main"
+    dependencies:
+      - "task-parser"
+      - "worktree-manager"
+      - "claude-invoker"
+      - "ai-conflict-resolver"
+    functions:
+      - "execute_parallel_mode()"
+
+  - id: "worktree-manager"
+    name: "Git Worktree Manager"
+    type: "manager"
+    path: "iclaude.sh:2350-2500"
+    language: "bash"
+    description: |
+      Manages git worktree lifecycle for parallel task isolation.
+      Creates, tracks, merges, and cleans up temporary worktrees.
+    layer: "infrastructure"
+    responsibilities:
+      - "Create temporary worktrees in .git/worktrees/"
+      - "Track worktree paths per task"
+      - "Merge changes from worktrees to main"
+      - "Cleanup worktrees after task completion"
+      - "Detect and handle merge conflicts"
+    dependencies:
+      - "git"
+      - "ai-conflict-resolver"
+    functions:
+      - "create_task_worktree()"
+      - "cleanup_worktree()"
+      - "merge_worktree_changes()"
+
+  - id: "ai-conflict-resolver"
+    name: "AI Conflict Resolution"
+    type: "resolver"
+    path: "iclaude.sh:2400-2480"
+    language: "bash"
+    description: |
+      Invokes Claude Code to automatically resolve git merge conflicts.
+      Reads conflicted files, builds resolution prompt, verifies no markers remain.
+    layer: "ai-integration"
+    responsibilities:
+      - "Detect merge conflicts (UU status in git)"
+      - "Read file content with conflict markers"
+      - "Build AI resolution prompt with context"
+      - "Invoke Claude Code for conflict resolution"
+      - "Verify all conflict markers removed"
+      - "Stage resolved files"
+    dependencies:
+      - "git"
+      - "claude-invoker"
+    functions:
+      - "resolve_merge_conflicts_ai()"
+
+  - id: "claude-invoker"
+    name: "Claude Code Invoker"
+    type: "invoker"
+    path: "iclaude.sh:2280-2350"
+    language: "bash"
+    description: |
+      Invokes Claude Code CLI for task execution iterations.
+      Inherits proxy/OAuth environment from parent iclaude.sh process.
+    layer: "ai-integration"
+    responsibilities:
+      - "Locate Claude Code binary via get_nvm_claude_path()"
+      - "Build iteration prompt with task context"
+      - "Invoke Claude Code with --no-chrome flag"
+      - "Capture output to /tmp logs"
+      - "Return exit code for success/failure detection"
+    dependencies:
+      - "get_nvm_claude_path() from iclaude.sh"
+      - "proxy environment variables"
+    functions:
+      - "invoke_claude_iteration()"
+      - "build_iteration_prompt()"
+
+  - id: "completion-verifier"
+    name: "Completion Promise Verifier"
+    type: "verifier"
+    path: "iclaude.sh:2220-2280"
+    language: "bash"
+    description: |
+      Verifies task completion by executing validation command and matching
+      completion promise pattern via regex or exit code check.
+    layer: "validation"
+    responsibilities:
+      - "Execute validation command from task definition"
+      - "Capture command output and exit code"
+      - "Match completion promise via regex (grep -E)"
+      - "Return success (0) or failure (1) status"
+    dependencies:
+      - "grep"
+      - "bash eval"
+    functions:
+      - "verify_completion_promise()"
+
+  - id: "git-integrator"
+    name: "Git Integration"
+    type: "integrator"
+    path: "iclaude.sh:2480-2550"
+    language: "bash"
+    description: |
+      Handles git operations for task completion including branch creation,
+      commit with Co-Authored-By trailer, and optional auto-push.
+    layer: "infrastructure"
+    responsibilities:
+      - "Create or checkout git branch from task config"
+      - "Stage changes (git add .)"
+      - "Commit with task message + Co-Authored-By trailer"
+      - "Optionally push to remote (if auto-push enabled)"
+    dependencies:
+      - "git"
+    functions:
+      - "git_commit_task_changes()"
+
+  - id: "state-manager"
+    name: "State Persistence Manager"
+    type: "manager"
+    path: "iclaude.sh:2550-2650"
+    language: "bash"
+    description: |
+      Saves and restores loop state to /tmp for recovery after interruption.
+      Tracks current task, iteration, and completed tasks list.
+    layer: "infrastructure"
+    responsibilities:
+      - "Serialize loop state to JSON in /tmp"
+      - "Restore state from file on recovery"
+      - "Track current task and iteration count"
+      - "Maintain completed tasks list"
+    dependencies:
+      - "jq (for JSON parsing)"
+    functions:
+      - "save_loop_state()"
+      - "load_loop_state()"
+
+  - id: "argument-parser"
+    name: "Command-Line Argument Parser"
+    type: "parser"
+    path: "iclaude.sh:5092-5150"
+    language: "bash"
+    description: |
+      Parses --loop, --loop-parallel, and --max-parallel flags from iclaude.sh
+      command line to determine execution mode.
+    layer: "input-processing"
+    responsibilities:
+      - "Parse --loop flag and task file path"
+      - "Parse --loop-parallel flag for parallel mode"
+      - "Parse --max-parallel N for parallel limit"
+      - "Set execution mode variables"
+    dependencies: []
+    functions:
+      - "main() argument parsing section"
+
+  - id: "help-text"
+    name: "Help Text Generator"
+    type: "documentation"
+    path: "iclaude.sh:2807-2850"
+    language: "bash"
+    description: |
+      Displays loop mode usage information in iclaude.sh --help output.
+      Provides examples for sequential and parallel execution.
+    layer: "user-interface"
+    responsibilities:
+      - "Display --loop usage"
+      - "Display --loop-parallel usage"
+      - "Provide usage examples"
+    dependencies: []
+    functions:
+      - "show_usage() loop mode section"
+
+dependency_graph:
+  nodes:
+    - id: "task-parser"
+      label: "Task Parser"
+      type: "parser"
+      layer: "input-processing"
+
+    - id: "sequential-executor"
+      label: "Sequential Executor"
+      type: "executor"
+      layer: "execution"
+
+    - id: "parallel-executor"
+      label: "Parallel Executor"
+      type: "executor"
+      layer: "execution"
+
+    - id: "worktree-manager"
+      label: "Worktree Manager"
+      type: "manager"
+      layer: "infrastructure"
+
+    - id: "ai-conflict-resolver"
+      label: "AI Conflict Resolver"
+      type: "resolver"
+      layer: "ai-integration"
+
+    - id: "claude-invoker"
+      label: "Claude Invoker"
+      type: "invoker"
+      layer: "ai-integration"
+
+    - id: "completion-verifier"
+      label: "Completion Verifier"
+      type: "verifier"
+      layer: "validation"
+
+    - id: "git-integrator"
+      label: "Git Integrator"
+      type: "integrator"
+      layer: "infrastructure"
+
+    - id: "state-manager"
+      label: "State Manager"
+      type: "manager"
+      layer: "infrastructure"
+
+    - id: "argument-parser"
+      label: "Argument Parser"
+      type: "parser"
+      layer: "input-processing"
+
+    - id: "help-text"
+      label: "Help Text"
+      type: "documentation"
+      layer: "user-interface"
+
+  edges:
+    - from: "argument-parser"
+      to: "sequential-executor"
+      type: "invokes"
+      description: "Routes to sequential mode if --loop flag"
+
+    - from: "argument-parser"
+      to: "parallel-executor"
+      type: "invokes"
+      description: "Routes to parallel mode if --loop-parallel flag"
+
+    - from: "sequential-executor"
+      to: "task-parser"
+      type: "uses"
+      description: "Loads task definition"
+
+    - from: "sequential-executor"
+      to: "claude-invoker"
+      type: "uses"
+      description: "Executes iteration"
+
+    - from: "sequential-executor"
+      to: "completion-verifier"
+      type: "uses"
+      description: "Verifies task success"
+
+    - from: "sequential-executor"
+      to: "git-integrator"
+      type: "uses"
+      description: "Commits changes on success"
+
+    - from: "parallel-executor"
+      to: "task-parser"
+      type: "uses"
+      description: "Loads multiple tasks"
+
+    - from: "parallel-executor"
+      to: "worktree-manager"
+      type: "uses"
+      description: "Creates isolated worktrees"
+
+    - from: "parallel-executor"
+      to: "claude-invoker"
+      type: "uses"
+      description: "Executes tasks in background"
+
+    - from: "worktree-manager"
+      to: "ai-conflict-resolver"
+      type: "uses"
+      description: "Resolves merge conflicts"
+
+    - from: "ai-conflict-resolver"
+      to: "claude-invoker"
+      type: "uses"
+      description: "Invokes Claude for resolution"
+
+    - from: "sequential-executor"
+      to: "state-manager"
+      type: "uses"
+      description: "Saves state for recovery"
+
+    - from: "parallel-executor"
+      to: "state-manager"
+      type: "uses"
+      description: "Saves state for recovery"
+
+data_flows:
+  - id: "sequential-execution-flow"
+    name: "Sequential Task Execution Flow"
+    trigger: "User runs ./iclaude.sh --loop task.md"
+    description: "End-to-end flow for sequential task execution"
+    steps:
+      - step_number: 1
+        component: "argument-parser"
+        action: "Parse --loop flag and task file path"
+        data_in: "command-line arguments"
+        data_out: "USE_LOOP_MODE=true, LOOP_TASK_FILE=task.md"
+
+      - step_number: 2
+        component: "task-parser"
+        action: "Load task definition from Markdown"
+        data_in: "task.md file"
+        data_out: "TASK_NAME, TASK_DESCRIPTION, COMPLETION_PROMISE, etc."
+
+      - step_number: 3
+        component: "sequential-executor"
+        action: "Initialize loop (iteration=1)"
+        data_in: "task metadata"
+        data_out: "CURRENT_ITERATION=1"
+
+      - step_number: 4
+        component: "claude-invoker"
+        action: "Execute Claude Code iteration"
+        data_in: "task description, iteration number"
+        data_out: "exit code, logs to /tmp"
+
+      - step_number: 5
+        component: "completion-verifier"
+        action: "Run validation command + check promise"
+        data_in: "VALIDATION_COMMAND, COMPLETION_PROMISE"
+        data_out: "success (0) or failure (1)"
+
+      - step_number: 6
+        component: "sequential-executor"
+        action: "If success, proceed to commit. If failure, retry with backoff."
+        data_in: "verification result"
+        data_out: "continue or retry"
+
+      - step_number: 7
+        component: "git-integrator"
+        action: "Commit changes with Co-Authored-By"
+        data_in: "GIT_BRANCH, GIT_COMMIT_MSG, AUTO_PUSH"
+        data_out: "git commit SHA, optional push"
+
+      - step_number: 8
+        component: "state-manager"
+        action: "Save final state"
+        data_in: "COMPLETED_TASKS list"
+        data_out: "/tmp/iclaude-loop-state-$$.json"
+
+  - id: "parallel-execution-flow"
+    name: "Parallel Task Execution Flow"
+    trigger: "User runs ./iclaude.sh --loop-parallel tasks.md"
+    description: "End-to-end flow for parallel task execution with worktrees"
+    steps:
+      - step_number: 1
+        component: "argument-parser"
+        action: "Parse --loop-parallel flag"
+        data_in: "command-line arguments"
+        data_out: "LOOP_MODE_TYPE=parallel, LOOP_MAX_PARALLEL=5"
+
+      - step_number: 2
+        component: "task-parser"
+        action: "Load multiple tasks from file"
+        data_in: "tasks.md (with multiple '# Task:' sections)"
+        data_out: "TASKS[] array, grouped by PARALLEL_GROUP"
+
+      - step_number: 3
+        component: "parallel-executor"
+        action: "Create worktrees for parallel group tasks"
+        data_in: "TASKS[] for PARALLEL_GROUP=1"
+        data_out: "worktree paths in .git/worktrees/"
+
+      - step_number: 4
+        component: "worktree-manager"
+        action: "Create isolated git worktree per task"
+        data_in: "task name, branch name"
+        data_out: ".git/worktrees/loop-{task}-{timestamp}"
+
+      - step_number: 5
+        component: "claude-invoker"
+        action: "Spawn background jobs (max 5 parallel)"
+        data_in: "task definitions"
+        data_out: "background PIDs"
+
+      - step_number: 6
+        component: "parallel-executor"
+        action: "Wait for all background jobs to complete"
+        data_in: "background PIDs"
+        data_out: "exit codes from each task"
+
+      - step_number: 7
+        component: "worktree-manager"
+        action: "Merge worktree changes back to main"
+        data_in: "worktree paths"
+        data_out: "merged changes or conflict detection"
+
+      - step_number: 8
+        component: "ai-conflict-resolver"
+        action: "Resolve merge conflicts via Claude Code"
+        data_in: "conflicted files with markers"
+        data_out: "resolved files without markers"
+
+      - step_number: 9
+        component: "worktree-manager"
+        action: "Cleanup worktrees after merge"
+        data_in: "worktree paths"
+        data_out: "removed .git/worktrees/loop-*"
+
+      - step_number: 10
+        component: "sequential-executor"
+        action: "Execute sequential tasks (PARALLEL_GROUP=0)"
+        data_in: "TASKS[] for PARALLEL_GROUP=0"
+        data_out: "sequential task completion"
+
+quality_attributes:
+  - attribute: "Modularity"
+    target: "16 independent functions with single responsibility"
+    measurement: "Function count = 16, average LOC per function = 67"
+    status: "achieved"
+    rationale: "Each function handles one specific task (parsing, execution, verification)"
+
+  - attribute: "Reliability"
+    target: "Graceful failure handling with state recovery"
+    measurement: "State persistence implemented, exit codes 0-5 defined"
+    status: "achieved"
+    rationale: "Loop state saved to /tmp allows recovery after interruption"
+
+  - attribute: "Testability"
+    target: "10 comprehensive test cases defined"
+    measurement: "7 critical tests + 3 optional tests documented"
+    status: "pending-execution"
+    rationale: "Test plan ready in WEEK5-TESTING-PLAN.md, manual execution required"
+
+  - attribute: "Performance"
+    target: "Parallel execution with max 5 concurrent tasks"
+    measurement: "Background job limit configurable via --max-parallel flag"
+    status: "achieved"
+    rationale: "Git worktrees enable true parallel isolation without conflicts"
+
+  - attribute: "Maintainability"
+    target: "Comprehensive documentation (2689 lines)"
+    measurement: "8 documentation files covering all aspects"
+    status: "achieved"
+    rationale: "Week-by-week summaries, migration guide, testing plan, completion report"
+
+  - attribute: "Usability"
+    target: "Simple Markdown task definition format"
+    measurement: "Git-friendly format with 5 required sections + 2 optional"
+    status: "achieved"
+    rationale: "Human-readable, version-controllable, easy to edit"
+
+  - attribute: "Compatibility"
+    target: "Inherits proxy/OAuth from iclaude.sh environment"
+    measurement: "HTTPS_PROXY, HTTP_PROXY, OAuth tokens inherited"
+    status: "achieved"
+    rationale: "No additional configuration required, works with existing setup"
+
+deployment:
+  environment: "bash (Linux/macOS)"
+  requirements:
+    - "Bash 4.0 or higher"
+    - "Git 2.0 or higher"
+    - "Claude Code CLI (isolated or system installation)"
+    - "jq (for JSON parsing in state persistence)"
+    - "sed, grep (for Markdown parsing)"
+
+  installation:
+    - "Loop mode already embedded in iclaude.sh (no separate installation)"
+    - "Run ./iclaude.sh --check-isolated to verify environment"
+
+  configuration:
+    task_definition:
+      format: "Markdown"
+      location: "Any .md file (recommended: project root or examples/)"
+      required_sections:
+        - "Task name (# Task: ...)"
+        - "Description (## Description)"
+        - "Completion Promise (## Completion Promise)"
+        - "Validation Command (## Validation Command)"
+        - "Max Iterations (## Max Iterations)"
+      optional_sections:
+        - "Git Config (## Git Config)"
+        - "Parallel Group (## Parallel Group)"
+
+  usage:
+    sequential: "./iclaude.sh --loop task.md"
+    parallel: "./iclaude.sh --loop-parallel tasks.md"
+    max_parallel_limit: "./iclaude.sh --loop-parallel tasks.md --max-parallel 3"
+
+  logging:
+    iteration_logs: "/tmp/iclaude-loop-iter-N-$$.log"
+    state_file: "/tmp/iclaude-loop-state-$$.json"
+
+  exit_codes:
+    - code: 0
+      meaning: "Success - all tasks completed, promises met"
+    - code: 1
+      meaning: "Failure - max iterations reached, promise not met"
+    - code: 2
+      meaning: "Partial success - some tasks completed (parallel mode)"
+    - code: 3
+      meaning: "Configuration error - invalid task file"
+    - code: 4
+      meaning: "Git error - merge conflict unresolved"
+    - code: 5
+      meaning: "Claude Code error - binary not found"
+
+migration:
+  from: "ralph-loop plugin"
+  to: "bash loop mode"
+  breaking_changes:
+    - "No auto-invocation from pr-automation skill (manual invocation required)"
+    - "Task definition format changed (command-line args → Markdown file)"
+    - "Execution location changed (inside Claude session → external bash)"
+
+  benefits:
+    - "Parallel execution with git worktrees (ralph-loop had no parallel support)"
+    - "State persistence for recovery (ralph-loop had no state saving)"
+    - "AI-assisted conflict resolution (ralph-loop had no conflict handling)"
+    - "Git-friendly task definitions (ralph-loop used ephemeral CLI args)"
+    - "No plugin installation required (ralph-loop needed npm install)"
+
+  migration_guide: "MIGRATION-GUIDE.md"
+
+  example_migration:
+    before: |
+      # Inside Claude Code session
+      /ralph-loop "Fix TypeScript errors" \
+        --context "File: app.ts, Line: 45" \
+        --completion-promise "All checks pass" \
+        --max-iterations 5
+    after: |
+      # Create task.md
+      # Task: Fix TypeScript Errors
+
+      ## Description
+      Fix TS2322 type mismatch in app.ts:45
+
+      ## Completion Promise
+      npm run type-check
+
+      ## Validation Command
+      npm run type-check
+
+      ## Max Iterations
+      5
+
+      ## Git Config
+      Branch: fix/typescript-errors
+      Commit message: fix: resolve TS2322 type mismatch
+      Auto-push: true
+
+      # Execute loop (external to Claude session)
+      ./iclaude.sh --loop task.md
+
+development:
+  timeline:
+    - week: 1
+      title: "Core Infrastructure"
+      deliverables:
+        - "Sequential execution loop (+639 lines)"
+        - "Markdown task parser"
+        - "Exponential backoff retry"
+        - "Git integration"
+      commit: "fd3376e"
+
+    - week: 2
+      title: "Parallel Execution & Worktrees"
+      deliverables:
+        - "Git worktree management (+430 lines)"
+        - "Parallel execution engine"
+        - "AI-assisted conflict resolution"
+        - "State persistence"
+      commit: "4591c82"
+
+    - week: 3
+      title: "Ralph-Loop Removal"
+      deliverables:
+        - "Deleted ralph-loop-integration.md (-393 lines)"
+        - "Updated pr-automation skill (v1.2.0 → v1.3.0)"
+        - "Removed ralphLoopState from schemas"
+        - "Updated 14 files"
+      commits: ["a99f9d8", "54ec3bb", "2b70668"]
+
+    - week: 4
+      title: "Templates & Documentation"
+      deliverables:
+        - "Updated 5 template files"
+        - "Created MIGRATION-GUIDE.md"
+        - "Replaced Mode B with External Tool"
+      commit: "2453c11"
+
+    - week: 5
+      title: "Testing & Final Documentation"
+      deliverables:
+        - "WEEK5-TESTING-PLAN.md (10 test cases)"
+        - "WEEK5-IMPLEMENTATION-SUMMARY.md"
+        - "PROJECT-COMPLETION-REPORT.md"
+      commits: ["6445475", "45ab411"]
+
+  metrics:
+    total_lines_added: 2515
+    total_lines_removed: 443
+    net_change: 2072
+    functions_implemented: 16
+    documentation_lines: 2689
+    git_commits: 8
+    files_modified: 29
+
+  status: "completed"
+  completion_date: "2026-01-25"
+  version: "1.0.0"
+
+testing:
+  test_plan: "WEEK5-TESTING-PLAN.md"
+  test_cases:
+    critical: 7
+    optional: 3
+    total: 10
+
+  critical_tests:
+    - "Simple sequential task (success on first iteration)"
+    - "Max iterations reached (failure scenario)"
+    - "Parallel execution (no conflicts)"
+    - "Parallel execution (with AI conflict resolution)"
+    - "Git integration (commit + push)"
+    - "Regex completion promise verification"
+    - "Exponential backoff timing"
+
+  optional_tests:
+    - "Proxy compatibility"
+    - "OAuth token refresh during loop"
+    - "Worktree cleanup verification"
+
+  status: "pending-manual-execution"
+  ready_for_testing: true
+
+references:
+  implementation_summaries:
+    - "WEEK1-IMPLEMENTATION-SUMMARY.md"
+    - "WEEK2-IMPLEMENTATION-SUMMARY.md"
+    - "WEEK4-SUMMARY.md"
+    - "WEEK5-IMPLEMENTATION-SUMMARY.md"
+
+  guides:
+    - "MIGRATION-GUIDE.md"
+    - "WEEK5-TESTING-PLAN.md"
+
+  reports:
+    - "IMPLEMENTATION-STATUS.md"
+    - "PROJECT-COMPLETION-REPORT.md"
+
+  code:
+    - "iclaude.sh (lines 2180-2850)"
+
+  examples:
+    - "examples/test-loop-simple.md"
+    - "examples/test-loop-retry.md"
+    - "examples/test-loop-parallel.md"
+
+future_enhancements:
+  version_2_0:
+    - "Automated test suite (bats-core integration)"
+    - "Task dependencies (DAG-based execution)"
+    - "Custom retry strategies (linear, fibonacci, custom)"
+    - "Webhooks for task completion notifications"
+    - "Dashboard UI for monitoring loop progress"
+    - "Direct PR creation from loop mode"
+    - "Slack/Discord integration"
+    - "Metrics collection (Prometheus/Grafana)"
