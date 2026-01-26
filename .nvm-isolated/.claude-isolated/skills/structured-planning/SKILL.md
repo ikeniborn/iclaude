@@ -95,10 +95,40 @@ changelog:
 
 - `acceptance_criteria`: минимум 1
 - `execution_steps`: минимум 1 (было 2)
-- `branch_name`: pattern `^(feature|fix|refactor)/`
+- `branch_name`: pattern `^(feature|fix|refactor|dev)/`
 - `commit_summary`: max 72 символа
 - `prd_sections`: ОПЦИОНАЛЬНО (не required)
 - `risks`: ОПЦИОНАЛЬНО
+
+## Branch Name Generation Rules
+
+**Format:** `{prefix}/{task_slug}_{timestamp}` (для dev/) или `{prefix}/{task_slug}` (для feature/fix/refactor/)
+
+**Prefixes:**
+- `dev/` - Development branches (timestamp-based, unique) - формат: `dev/<task_slug>_<YYYYMMDDhhmmss>`
+- `feature/` - Feature branches (manual naming)
+- `fix/` - Bug fix branches
+- `refactor/` - Refactoring branches
+
+**Timestamp generation (for dev/ branches only):**
+```javascript
+const timestamp = new Date().toISOString()
+  .replace(/[-:]/g, '')
+  .slice(0, 14); // YYYYMMDDhhmmss
+// Example: 20260126143022
+```
+
+**Task slug generation:**
+- Extract from task_name
+- Lowercase
+- Replace spaces/special chars with hyphens
+- Max 50 characters
+
+**Examples:**
+- `dev/add-user-authentication_20260126143022` - Development branch with timestamp
+- `feature/user-profile-endpoint` - Feature branch without timestamp
+- `fix/sql-injection-auth` - Bug fix branch
+- `refactor/extract-validator` - Refactoring branch
 
 ## Markdown Output
 
@@ -279,7 +309,7 @@ pytest tests/test_invoice.py
       }
     ],
     "git": {
-      "branch_name": "feature/user-profile-endpoint",
+      "branch_name": "dev/user-profile-endpoint_20260126143022",
       "commit_type": "feat",
       "commit_summary": "add GET /users/{id}/profile endpoint with auth and caching"
     }
@@ -480,7 +510,7 @@ Implement GET /users/{id}/profile with JWT authentication and response caching
       }
     ],
     "git": {
-      "branch_name": "feature/real-time-notifications",
+      "branch_name": "dev/real-time-notifications_20260126160000",
       "commit_type": "feat",
       "commit_summary": "add WebSocket notification system with FCM push and preferences"
     },

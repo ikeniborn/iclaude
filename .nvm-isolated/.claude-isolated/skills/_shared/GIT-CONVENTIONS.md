@@ -196,34 +196,56 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ### Pattern
 
+**Standard Pattern:**
 ```
 {type}/{slug}
 ```
 
+**Development Pattern (with timestamp):**
+```
+dev/{slug}_{timestamp}
+```
+
 **Components:**
-- `type` - Same types as commits (feat, fix, refactor, etc.)
+- `type` - Same types as commits (feat, fix, refactor, etc.) OR `dev` for timestamped branches
 - `slug` - Kebab-case description (lowercase, hyphens)
+- `timestamp` - YYYYMMDDhhmmss format (only for dev/ branches)
 
 ### Rules
 
 1. **Type:**
-   - Must match commit types (feat, fix, refactor, etc.)
+   - Must match commit types (feat, fix, refactor, docs, test, chore, perf, style) OR `dev`
    - Lowercase only
 
 2. **Slug:**
    - Kebab-case (lowercase, hyphens)
    - Descriptive but concise (2-5 words)
    - No special characters except hyphens
-   - No dates/timestamps (handled by git history)
+   - Max 50 characters (for dev/ branches)
 
-3. **Pattern:**
-   - Regex: `^(feat|fix|refactor|docs|test|chore|perf|style)/[a-z0-9-]+$`
-   - Valid: `feat/add-user-auth`
-   - Invalid: `Feature/Add_User_Auth`, `feat/add user auth`
+3. **Timestamp (dev/ branches only):**
+   - Format: YYYYMMDDhhmmss (e.g., 20260126143022)
+   - Generated from UTC time
+   - Ensures branch uniqueness
+   - Separator: underscore (_)
+
+4. **Pattern:**
+   - Standard: `^(feat|fix|refactor|docs|test|chore|perf|style)/[a-z0-9-]+$`
+   - Development: `^dev/[a-z0-9-]+_[0-9]{14}$`
+   - Valid: `feat/add-user-auth`, `dev/add-user-auth_20260126143022`
+   - Invalid: `Feature/Add_User_Auth`, `feat/add user auth`, `dev/add-user-auth` (missing timestamp)
 
 ### Reference Examples
 
-**Example 1: Feature Branch**
+**Example 1: Development Branch (with timestamp)**
+```
+dev/add-calculate-total_20260126143022
+dev/user-authentication_20260126150000
+dev/transaction-filtering_20260126160112
+dev/dashboard-widget_20260126143500
+```
+
+**Example 2: Feature Branch**
 ```
 feat/add-calculate-total
 feat/user-authentication
@@ -231,7 +253,7 @@ feat/transaction-filtering
 feat/dashboard-widget
 ```
 
-**Example 2: Bug Fix Branch**
+**Example 3: Bug Fix Branch**
 ```
 fix/null-pointer-validator
 fix/login-validation-bug
@@ -239,7 +261,7 @@ fix/transaction-calculation
 fix/memory-leak-service
 ```
 
-**Example 3: Refactoring Branch**
+**Example 4: Refactoring Branch**
 ```
 refactor/extract-order-validator
 refactor/cleanup-services
@@ -247,32 +269,83 @@ refactor/database-connection
 refactor/improve-error-handling
 ```
 
-**Example 4: Documentation Branch**
+**Example 5: Documentation Branch**
 ```
 docs/api-endpoints
 docs/setup-guide
 docs/architecture-diagrams
 ```
 
-**Example 5: Test Branch**
+**Example 6: Test Branch**
 ```
 test/add-integration-tests
 test/coverage-improvement
 test/e2e-scenarios
 ```
 
-**Example 6: Chore Branch**
+**Example 7: Chore Branch**
 ```
 chore/update-dependencies
 chore/cleanup-unused-files
 chore/eslint-config
 ```
 
-**Example 7: Performance Branch**
+**Example 8: Performance Branch**
 ```
 perf/optimize-database-queries
 perf/reduce-bundle-size
 perf/cache-api-responses
+```
+
+### Dev Branch Format Details
+
+**Purpose:** Uniquely identify development branches with temporal ordering
+
+**Format:** `dev/<task_slug>_<YYYYMMDDhhmmss>`
+
+**Components:**
+- `dev/` - Fixed prefix for development branches
+- `task_slug` - Slugified task name (lowercase, alphanumeric + hyphens, max 50 chars)
+- `_` - Separator (underscore)
+- `timestamp` - ISO 8601 compact (YYYYMMDDhhmmss from UTC)
+
+**Slug generation rules:**
+```javascript
+function generateSlug(taskName) {
+  return taskName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
+    .replace(/\s+/g, '-')           // Spaces to hyphens
+    .replace(/-+/g, '-')            // Collapse multiple hyphens
+    .slice(0, 50);                  // Max 50 chars
+}
+
+// Example: "Add User Authentication Endpoint"
+//       → "add-user-authentication-endpoint"
+```
+
+**Timestamp generation:**
+```javascript
+function generateTimestamp() {
+  return new Date().toISOString()
+    .replace(/[-:]/g, '')
+    .slice(0, 14); // YYYYMMDDhhmmss
+}
+
+// Example: 2026-01-26T14:30:22.123Z → 20260126143022
+```
+
+**Branch uniqueness:**
+If dev branch with same name exists, append version suffix:
+```
+dev/add-user-auth_20260126143022     # Original
+dev/add-user-auth_20260126143022_v2  # Duplicate
+dev/add-user-auth_20260126143022_v3  # Duplicate again
+```
+
+Check existence:
+```bash
+git rev-parse --verify dev/add-user-auth_20260126143022 2>/dev/null
 ```
 
 ---

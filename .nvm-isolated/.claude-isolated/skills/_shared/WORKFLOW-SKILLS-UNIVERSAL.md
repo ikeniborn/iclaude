@@ -46,6 +46,15 @@
 └──────────────────────────────────────────────────────────┘
                          ↓
 ┌──────────────────────────────────────────────────────────┐
+│ PHASE 1.5: Git Branch Setup [NEW]                        │
+│ Skill: git-workflow [mode: create-branch]                │
+│ Input: task_plan.git.branch_name                         │
+│ Output: {git_branch_result}                              │
+│ Actions: Checkout base → Pull → Create branch → Switch  │
+│ Note: Branch created BEFORE approval and code changes    │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+┌──────────────────────────────────────────────────────────┐
 │ PHASE 2: Approval [Conditional]                          │
 │ Skill: approval-gates                                    │
 │ Condition: Skip if complexity == minimal                 │
@@ -80,10 +89,11 @@
 └──────────────────────────────────────────────────────────┘
                          ↓
 ┌──────────────────────────────────────────────────────────┐
-│ PHASE 5A: Git Workflow                                   │
-│ Skill: git-workflow                                      │
-│ Actions: Stage files → Commit → Push                    │
-│ Output: {git_result}                                     │
+│ PHASE 5A: Git Commit & Push [MODIFIED]                   │
+│ Skill: git-workflow [mode: commit-and-push]              │
+│ Actions: Stage files → Commit → Push                     │
+│ Note: Assumes branch already created in PHASE 1.5        │
+│ Output: {git_result}                                      │
 └──────────────────────────────────────────────────────────┘
                          ↓
 ┌──────────────────────────────────────────────────────────┐
@@ -115,6 +125,7 @@
 | **0** | adaptive-workflow | ✅ Always | - | All |
 | **1** | thinking-framework | ✅ Always | - | All |
 | **1** | structured-planning | ✅ Always | - | All |
+| **1.5** | git-workflow (create-branch) | ✅ Always | - | All |
 | **2** | approval-gates | ⚠️ Conditional | Skip if minimal | standard, complex |
 | **3** | loop mode | ⚠️ Conditional | If iterative task | complex |
 | **3** | code-review | ⚠️ Conditional | Skip if minimal | standard, complex |
@@ -279,11 +290,38 @@ pr-automation
 - structured-planning uses `library_docs` для enriching execution_steps с code examples
 - structured-planning selects task-plan template based on `complexity`
 
-### PHASE 1 → PHASE 2
+### PHASE 1 → PHASE 1.5
 
 **Input:**
 ```json
 {
+  "task_plan": {
+    "task_name": "Add transaction filtering",
+    "git": {
+      "branch_name": "dev/transaction-filtering_20260126143022"
+    }
+  },
+  "project_context": {
+    "base_branch": "main"
+  }
+}
+```
+
+**Output to PHASE 1.5:**
+- git-workflow uses `task_plan.git.branch_name` для создания ветки
+- git-workflow uses `project_context.base_branch` (from CORE REQUIREMENTS #1) для checkout
+- git-workflow creates branch BEFORE user approval and code changes
+
+### PHASE 1.5 → PHASE 2
+
+**Input:**
+```json
+{
+  "git_branch_result": {
+    "branch": "dev/transaction-filtering_20260126143022",
+    "base_branch": "main",
+    "switched": true
+  },
   "task_plan": {
     "task_name": "Add transaction filtering",
     "execution_steps": [...],

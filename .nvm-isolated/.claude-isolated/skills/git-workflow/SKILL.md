@@ -30,9 +30,24 @@ changelog:
 
 ## Когда использовать
 
-- При создании ветки (Phase 1)
+- При создании ветки (Phase 1.5) [NEW]
 - При commit (Phase 5A)
 - При создании PR (Phase 5B)
+
+## Режимы работы
+
+git-workflow поддерживает 2 режима:
+
+**Mode 1: create-branch** (PHASE 1.5)
+- Input: branch_name from task_plan.git.branch_name
+- Actions: checkout base → pull → create branch → switch
+- Output: {branch, switched: true}
+
+**Mode 2: commit-and-push** (PHASE 5A)
+- Input: files, commit_message
+- Actions: stage → commit → push
+- Output: {commit_hash, files_committed, pushed}
+- Assumption: Already on correct branch (created in PHASE 1.5)
 
 ---
 
@@ -109,12 +124,99 @@ git push -u origin {branch_name}
 
 ---
 
+## Mode 1: Create Branch Only (PHASE 1.5)
+
+### Usage
+
+Called after structured-planning to create development branch before any code changes.
+
+### Input Schema
+
+```json
+{
+  "branch_name": "dev/add-user-auth_20260126143022",
+  "base_branch": "main"
+}
+```
+
+### Commands
+
+```bash
+# 1. Switch to base branch
+git checkout {base_branch}
+
+# 2. Pull latest changes
+git pull origin {base_branch}
+
+# 3. Create and switch to new branch
+git checkout -b {branch_name}
+
+# 4. Verify current branch
+git branch --show-current
+```
+
+### Output Schema
+
+```json
+{
+  "git_branch_result": {
+    "branch": "dev/add-user-auth_20260126143022",
+    "base_branch": "main",
+    "switched": true,
+    "timestamp": "2026-01-26T14:30:22Z"
+  }
+}
+```
+
+### Error Handling
+
+**Branch already exists:**
+- Check if branch exists: `git rev-parse --verify {branch_name}`
+- If exists: Use unique suffix `_v2`, `_v3`, etc.
+- Example: `dev/add-user-auth_20260126143022_v2`
+
+**Base branch not found:**
+- Fail with error message
+- User must specify correct base branch in CORE REQUIREMENTS #1
+
+**Uncommitted changes:**
+- Fail with error message
+- User must commit or stash changes before creating new branch
+
+---
+
+## Mode 2: Commit & Push (PHASE 5A)
+
+### Usage
+
+Called after code execution and validation to commit and push changes.
+
+**Assumption:** Already on development branch (created in PHASE 1.5)
+
+### Commands
+
+```bash
+# Verify we're on the correct branch
+current_branch=$(git branch --show-current)
+if [[ "$current_branch" != "$expected_branch" ]]; then
+  echo "ERROR: Expected branch $expected_branch, but on $current_branch"
+  exit 1
+fi
+
+git add {files}
+git commit -m "{message}"
+git push -u origin {branch}
+```
+
+---
+
 ## Output Schema
 
 ```json
 {
   "git_result": {
-    "branch": "feature/add-calculate-total",
+    "mode": "commit-and-push",
+    "branch": "dev/add-calculate-total_20260126143022",
     "commit_hash": "abc123def",
     "commit_message": "feat: add calculate_total method",
     "files_committed": ["service.py"],
@@ -139,14 +241,18 @@ git push -u origin {branch_name}
 ```
 
 **Fields:**
+- `mode` - Execution mode: "create-branch" (PHASE 1.5) or "commit-and-push" (PHASE 5A)
 - `branch` - Branch name (matches pattern from GIT-CONVENTIONS.md)
-- `commit_hash` - Short commit SHA
-- `commit_message` - Full commit message (Conventional Commits format)
-- `files_committed` - Array of file paths
-- `pushed` - Boolean (whether pushed to remote)
-- `remote` - Remote name (usually "origin")
-- `validation_checks` - Array of pre-commit validation results (optional)
-- `toon` - TOON optimization (optional, if validation_checks >= 5)
+- `commit_hash` - Short commit SHA (only for mode: commit-and-push)
+- `commit_message` - Full commit message (Conventional Commits format, only for mode: commit-and-push)
+- `files_committed` - Array of file paths (only for mode: commit-and-push)
+- `pushed` - Boolean (whether pushed to remote, only for mode: commit-and-push)
+- `remote` - Remote name (usually "origin", only for mode: commit-and-push)
+- `validation_checks` - Array of pre-commit validation results (optional, only for mode: commit-and-push)
+- `toon` - TOON optimization (optional, if validation_checks >= 5, only for mode: commit-and-push)
+- `switched` - Boolean (whether switched to new branch, only for mode: create-branch)
+- `base_branch` - Base branch name (only for mode: create-branch)
+- `timestamp` - ISO 8601 timestamp (only for mode: create-branch)
 
 ---
 

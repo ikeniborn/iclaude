@@ -5418,6 +5418,7 @@ OPTIONS:
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
   --system                          Force system installation (skip isolated environment)
   --loop FILE.md                    Execute task loop from Markdown definition (sequential mode)
+                                    (use quotes if path contains spaces)
   --loop-parallel FILE.md           Execute tasks in parallel (with git worktrees, Week 2)
   --max-parallel N                  Max parallel agents (default: 5, use with --loop-parallel)
 
@@ -5537,6 +5538,9 @@ ROUTER INTEGRATION:
 LOOP MODE (Iterative Task Execution):
   # Execute task sequentially with retry logic
   ./iclaude.sh --loop task.md
+
+  # If file path contains spaces, use quotes
+  ./iclaude.sh --loop "/path/with spaces/task.md"
 
   # Execute tasks in parallel (Week 2 - not yet implemented)
   ./iclaude.sh --loop-parallel task.md
@@ -6101,6 +6105,9 @@ main() {
     if [[ "$USE_LOOP_MODE" == true ]]; then
         if [[ ! -f "$LOOP_TASK_FILE" ]]; then
             print_error "Task file not found: $LOOP_TASK_FILE"
+            echo ""
+            echo "Tip: If the file path contains spaces, enclose it in quotes:"
+            echo "  ./iclaude.sh --loop \"/path/with spaces/task.md\""
             exit 1
         fi
 
