@@ -1,0 +1,386 @@
+# Universal Workflow Definition v7.2
+# Machine-readable workflow for all task-lite templates
+# Source of truth for phase orchestration, dependencies, and validation gates
+
+metadata:
+  name: "task-lite-universal"
+  version: "7.2.0"
+  description: "Адаптивный workflow с SGR + Structured Output"
+  last_updated: "2026-01-27"
+
+phases:
+  phase_0:
+    id: "phase_0"
+    name: "Context & Complexity Assessment"
+    type: mandatory
+    description: "Detect project context and determine task complexity"
+
+    skills:
+      - name: context-awareness
+        type: mandatory
+        output: project_context
+        description: "Detect project context"
+
+      - name: lsp-integration
+        type: optional
+        condition: "language IN ['TypeScript', 'Python', 'Go', 'Rust']"
+        output: lsp_status
+        description: "LSP integration for code intelligence"
+
+      - name: context7-integration
+        type: optional
+        condition: "library_docs_needed == true"
+        output: library_docs
+        description: "Library documentation loading"
+
+      - name: adaptive-workflow
+        type: mandatory
+        version: "2.0.0"
+        inputs: [project_context, lsp_status?, library_docs?]
+        output: {complexity, workflow_mode}
+        description: "Determine complexity and workflow mode"
+        triggers:
+          - condition: "complexity == 'complex'"
+            skill: task-decomposition
+            description: "Auto-trigger task decomposition for complex tasks"
+
+    dependencies: []
+    output: {project_context, lsp_status, library_docs, complexity, workflow_mode}
+
+  phase_1:
+    id: "phase_1"
+    name: "Analysis & Planning"
+    type: mandatory
+    description: "Analyze task and create structured plan"
+
+    skills:
+      - name: thinking-framework
+        type: mandatory
+        output: cot_reasoning
+        description: "COT reasoning with 3 templates"
+
+      - name: structured-planning
+        type: mandatory
+        version: "2.2.0"
+        inputs: [project_context, cot_reasoning, complexity]
+        output: task_plan
+        description: "Generate structured task plan"
+        fields:
+          task_plan.git.branch_name: "dev/<task_name>_<YYYYMMDDhhmmss>"
+
+    tools:
+      - name: TaskCreate
+        condition: "complexity != 'minimal'"
+        description: "Create tasks for non-trivial work"
+        when: "After structured-planning completes"
+
+    dependencies: [phase_0]
+    output: {cot_reasoning, task_plan}
+
+  phase_1_5:
+    id: "phase_1_5"
+    name: "Git Branch Setup"
+    type: mandatory
+    description: "Create development branch BEFORE approval"
+    marker: "⚠️ CHECKPOINT"
+    applies_to: [minimal, standard, complex]
+    critical: true
+
+    skill:
+      name: git-workflow
+      mode: create-branch
+      inputs:
+        branch_name: "task_plan.git.branch_name"
+        base_branch: "CORE_REQUIREMENTS.git.base_branch"
+      output: git_branch_result
+
+    validation:
+      required: true
+      check: "git_branch_result.switched === true"
+      on_failure: "STOP"
+      error_message: "Branch creation failed, cannot proceed"
+
+    side_effects:
+      - "All subsequent code changes happen on new branch"
+      - "Base branch remains clean until merge"
+      - "Git HEAD points to development branch"
+
+    dependencies: [phase_1]
+    blocks: [phase_2, phase_3]  # Cannot proceed without branch
+    output: {git_branch_result}
+
+  phase_2:
+    id: "phase_2"
+    name: "Approval"
+    type: conditional
+    description: "Get user approval for plan"
+    skip_if: "complexity == 'minimal'"
+
+    skill:
+      name: approval-gates
+      inputs: [task_plan, git_branch_result]
+      output: user_approval
+      description: "User approves plan knowing branch is created"
+
+    dependencies: [phase_1_5]
+    blocks: [phase_3]
+    output: {user_approval}
+
+  phase_3:
+    id: "phase_3"
+    name: "Execution"
+    type: mandatory
+    description: "Execute task using domain skills"
+    mode: "selected by adaptive-workflow"
+
+    constraints:
+      - "ALL code changes on branch from phase_1_5"
+      - "Branch must exist (validated in phase_1_5)"
+
+    skills:
+      - name: code-review
+        type: conditional
+        condition: "complexity != 'minimal'"
+        output: review_results
+        description: "Quality and security checks"
+
+      - name: error-handling
+        type: on-demand
+        trigger: "execution_error"
+        description: "Handle execution failures"
+
+      - name: rollback-recovery
+        type: on-demand
+        trigger: "critical_error"
+        description: "Rollback on critical errors"
+
+    tools:
+      - name: TaskUpdate
+        events:
+          before_step: "status → in_progress"
+          after_step: "status → completed"
+
+    dependencies: [phase_2]
+    output: {execution_results, review_results}
+
+  phase_4:
+    id: "phase_4"
+    name: "Validation"
+    type: mandatory
+    description: "Validate execution results"
+
+    skill:
+      name: validation-framework
+      inputs: [execution_results, task_plan, review_results]
+      output: validation_results
+      description: "Run validation checks"
+
+    dependencies: [phase_3]
+    output: {validation_results}
+
+  phase_5a:
+    id: "phase_5a"
+    name: "Git Commit & Push"
+    type: mandatory
+    description: "Commit and push changes to remote"
+
+    skill:
+      name: git-workflow
+      mode: commit-and-push
+      assumes: "Already on development branch from phase_1_5"
+      inputs: [validation_results, task_plan, execution_results]
+      output: commit_result
+
+    validation:
+      skip_branch_check: true  # Branch already validated in phase_1_5
+
+    dependencies: [phase_4]
+    output: {commit_result}
+
+  phase_5b:
+    id: "phase_5b"
+    name: "PR Automation"
+    type: optional
+    description: "Create pull request and monitor CI/CD"
+    ask_user: true
+
+    skill:
+      name: pr-automation
+      inputs: [commit_result, task_plan]
+      output: pr_result
+      description: "PR creation, CI/CD monitoring, auto-fix"
+
+    dependencies: [phase_5a]
+    output: {pr_result}
+
+  phase_5c:
+    id: "phase_5c"
+    name: "Task Summary"
+    type: mandatory
+    description: "Generate final task summary"
+
+    skill:
+      name: git-workflow
+      template: task-summary
+      inputs: [commit_result, pr_result?, validation_results]
+      output: final_summary
+      description: "Enhanced task summary"
+
+    dependencies: [phase_5a]  # phase_5b is optional
+    output: {final_summary}
+
+# Execution graph (auto-generated from dependencies)
+execution_order:
+  linear: [phase_0, phase_1, phase_1_5, phase_2, phase_3, phase_4, phase_5a, phase_5c]
+  optional_branches:
+    - after: phase_5a
+      branch: [phase_5b]
+      join_at: phase_5c
+      condition: "user_approval for PR"
+
+  critical_checkpoints:
+    - phase: phase_1_5
+      mandatory: true
+      blocks_all: true
+      reason: "Branch must exist before code changes"
+      validation: "git_branch_result.switched === true"
+
+# Data flow between phases
+data_flow:
+  phase_0:
+    outputs: [project_context, lsp_status, library_docs, complexity, workflow_mode]
+    consumed_by: [phase_1]
+
+  phase_1:
+    inputs: [project_context, complexity]
+    outputs: [cot_reasoning, task_plan]
+    consumed_by: [phase_1_5, phase_2, phase_3, phase_4, phase_5a, phase_5c]
+
+  phase_1_5:
+    inputs: [task_plan.git.branch_name, base_branch]
+    outputs: [git_branch_result]
+    consumed_by: [phase_2, phase_3]
+    side_effects: ["Git HEAD switches to new branch"]
+
+  phase_2:
+    inputs: [task_plan, git_branch_result]
+    outputs: [user_approval]
+    consumed_by: [phase_3]
+
+  phase_3:
+    inputs: [task_plan, user_approval, git_branch_result]
+    outputs: [execution_results, review_results]
+    consumed_by: [phase_4]
+
+  phase_4:
+    inputs: [execution_results, task_plan, review_results]
+    outputs: [validation_results]
+    consumed_by: [phase_5a, phase_5c]
+
+  phase_5a:
+    inputs: [validation_results, task_plan, execution_results]
+    outputs: [commit_result]
+    consumed_by: [phase_5b, phase_5c]
+
+  phase_5b:
+    inputs: [commit_result, task_plan]
+    outputs: [pr_result]
+    consumed_by: [phase_5c]
+
+  phase_5c:
+    inputs: [commit_result, pr_result?, validation_results]
+    outputs: [final_summary]
+    consumed_by: []
+
+# Complexity-based customization
+complexity_rules:
+  minimal:
+    skip_phases: [phase_2]  # Skip approval
+    skip_skills:
+      phase_3: [code-review]  # Skip code review
+    execution_mode: "fast"
+
+  standard:
+    skip_phases: []  # All phases execute
+    skip_skills: []
+    execution_mode: "standard"
+
+  complex:
+    skip_phases: []  # All phases execute
+    skip_skills: []
+    execution_mode: "thorough"
+    auto_triggers:
+      phase_0: [task-decomposition]  # Auto-trigger decomposition
+
+# Project-specific overrides (inheritance)
+project_overrides:
+  clickhouse:
+    phase_1_5:
+      skill:
+        inputs:
+          base_branch: "master"
+    phase_0:
+      additional_skills:
+        - name: clickhouse-compatibility-check
+          type: mandatory
+          output: v23_compatibility
+
+  familybudget:
+    phase_1_5:
+      skill:
+        inputs:
+          base_branch: "test"
+    phase_0:
+      additional_skills:
+        - name: lsp-integration
+          condition: "language IN ['TypeScript', 'Python']"
+
+  pihome:
+    phase_1_5:
+      skill:
+        inputs:
+          base_branch: "main"
+    phase_0:
+      additional_skills:
+        - name: monitoring-troubleshooting
+          type: mandatory
+          output: system_health
+        - name: arm-optimization
+          type: conditional
+          condition: "architecture == 'ARM64'"
+
+  vless:
+    phase_1_5:
+      skill:
+        inputs:
+          base_branch: "main"
+    phase_0:
+      context_loading:
+        - "docs/architecture/yaml/lib-modules.yaml"
+        - "docs/architecture/yaml/docker.yaml"
+        - ".claude/skills/_shared/vless-constants.json"
+
+# Validation schema
+validation_schema:
+  phase_outputs:
+    phase_0:
+      required_fields: [project_context, complexity, workflow_mode]
+      optional_fields: [lsp_status, library_docs]
+
+    phase_1:
+      required_fields: [task_plan]
+      task_plan_schema:
+        required: [git.branch_name, execution_steps]
+
+    phase_1_5:
+      required_fields: [git_branch_result]
+      validation: "git_branch_result.switched === true"
+      critical: true
+
+    phase_4:
+      required_fields: [validation_results]
+      validation: "validation_results.status == 'PASSED'"
+
+    phase_5a:
+      required_fields: [commit_result]
+      validation: "commit_result.pushed === true"

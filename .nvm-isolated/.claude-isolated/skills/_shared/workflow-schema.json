@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Universal Workflow Schema",
+  "description": "JSON Schema for validating workflow-universal.yaml",
+  "type": "object",
+  "required": ["metadata", "phases", "execution_order", "data_flow"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "description": { "type": "string" },
+        "last_updated": { "type": "string", "format": "date" }
+      }
+    },
+    "phases": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/phase"
+      }
+    },
+    "execution_order": {
+      "type": "object",
+      "required": ["linear"],
+      "properties": {
+        "linear": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "optional_branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["after", "branch", "join_at"],
+            "properties": {
+              "after": { "type": "string" },
+              "branch": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "join_at": { "type": "string" },
+              "condition": { "type": "string" }
+            }
+          }
+        },
+        "critical_checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phase", "mandatory", "reason"],
+            "properties": {
+              "phase": { "type": "string" },
+              "mandatory": { "type": "boolean" },
+              "blocks_all": { "type": "boolean" },
+              "reason": { "type": "string" },
+              "validation": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "data_flow": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "inputs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "outputs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "consumed_by": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "side_effects": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "complexity_rules": {
+      "type": "object",
+      "properties": {
+        "minimal": { "$ref": "#/definitions/complexity_rule" },
+        "standard": { "$ref": "#/definitions/complexity_rule" },
+        "complex": { "$ref": "#/definitions/complexity_rule" }
+      }
+    },
+    "project_overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "validation_schema": {
+      "type": "object",
+      "properties": {
+        "phase_outputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "required_fields": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "optional_fields": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "validation": { "type": "string" },
+              "critical": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "phase": {
+      "type": "object",
+      "required": ["id", "name", "type", "description", "dependencies"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": {
+          "enum": ["mandatory", "conditional", "optional"]
+        },
+        "description": { "type": "string" },
+        "marker": { "type": "string" },
+        "applies_to": {
+          "type": "array",
+          "items": {
+            "enum": ["minimal", "standard", "complex"]
+          }
+        },
+        "critical": { "type": "boolean" },
+        "skip_if": { "type": "string" },
+        "mode": { "type": "string" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/skill_reference" }
+        },
+        "skill": { "$ref": "#/definitions/skill_reference" },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "condition": { "type": "string" },
+              "description": { "type": "string" },
+              "when": { "type": "string" },
+              "events": { "type": "object" }
+            }
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "check": { "type": "string" },
+            "on_failure": { "type": "string" },
+            "error_message": { "type": "string" },
+            "skip_branch_check": { "type": "boolean" }
+          }
+        },
+        "side_effects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blocks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "output": {
+          "oneOf": [
+            { "type": "object" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        }
+      }
+    },
+    "skill_reference": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": {
+          "enum": ["mandatory", "optional", "conditional", "on-demand"]
+        },
+        "version": { "type": "string" },
+        "mode": { "type": "string" },
+        "condition": { "type": "string" },
+        "inputs": {
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" } },
+            { "type": "object" }
+          ]
+        },
+        "output": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" }
+          ]
+        },
+        "description": { "type": "string" },
+        "assumes": { "type": "string" },
+        "template": { "type": "string" },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["condition", "skill"],
+            "properties": {
+              "condition": { "type": "string" },
+              "skill": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "fields": { "type": "object" }
+      }
+    },
+    "complexity_rule": {
+      "type": "object",
+      "properties": {
+        "skip_phases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "skip_skills": { "type": "object" },
+        "execution_mode": {
+          "enum": ["fast", "standard", "thorough"]
+        },
+        "auto_triggers": { "type": "object" }
+      }
+    }
+  }
+}

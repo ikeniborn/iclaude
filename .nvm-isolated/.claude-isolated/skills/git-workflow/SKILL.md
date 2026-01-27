@@ -168,6 +168,20 @@ git branch --show-current
 }
 ```
 
+### Side Effects
+
+**After successful branch creation:**
+- ✅ All subsequent code changes happen on the new development branch
+- ✅ Base branch (main/master/test) remains clean until merge
+- ✅ Git HEAD points to new branch (`git branch --show-current` returns new branch name)
+- ✅ Local working directory is on new branch (ready for code execution in PHASE 3)
+
+**Implications:**
+- PHASE 3 (Execution) modifies files on development branch only
+- PHASE 5A (Commit & Push) commits to development branch, not base branch
+- Base branch is protected from unreviewed changes
+- PR creation (PHASE 5B) merges development branch → base branch
+
 ### Error Handling
 
 **Branch already exists:**
