@@ -1980,6 +1980,50 @@ setup_isolated_config() {
 }
 
 #######################################
+# Disable Claude Code auto-updates
+# Prevents Claude Code from automatically updating itself
+# Updates are managed via CI/CD (GitHub Actions) instead
+# Arguments:
+#   $1 - config directory path (optional, defaults to CLAUDE_CONFIG_DIR)
+# Returns:
+#   0 - success
+#   1 - failure (jq not found or file error)
+#######################################
+disable_auto_updates() {
+	local config_dir="${1:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+	local claude_json="$config_dir/.claude.json"
+
+	# Check if jq is available
+	if ! command -v jq &>/dev/null; then
+		return 0  # Silently skip if jq not available
+	fi
+
+	# Check if .claude.json exists
+	if [[ ! -f "$claude_json" ]]; then
+		return 0  # File doesn't exist yet, will be created on first run
+	fi
+
+	# Check current autoUpdates setting
+	local current_value=$(jq -r '.autoUpdates // "null"' "$claude_json" 2>/dev/null)
+
+	# Only update if currently enabled
+	if [[ "$current_value" == "true" ]]; then
+		local tmp_file="${claude_json}.tmp.$$"
+
+		if jq '.autoUpdates = false' "$claude_json" > "$tmp_file" 2>/dev/null; then
+			mv "$tmp_file" "$claude_json"
+			chmod 600 "$claude_json"
+			return 0
+		else
+			rm -f "$tmp_file"
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+#######################################
 # Check config directory status
 # Shows current CLAUDE_CONFIG_DIR and its content
 # Returns:
@@ -6078,11 +6122,13 @@ main() {
     # 3. If isolated environment exists and is default, use isolated config (unless --shared-config)
     if [[ "$use_isolated_config" == true ]]; then
         setup_isolated_config
+        disable_auto_updates "$CLAUDE_CONFIG_DIR"
         print_info "Using isolated configuration: $CLAUDE_CONFIG_DIR"
         echo ""
     elif [[ "$use_shared_config" == false ]] && [[ "$use_system" == false ]] && [[ -d "$ISOLATED_NVM_DIR" ]] && [[ "$USE_ISOLATED_BY_DEFAULT" == true ]]; then
         # Auto-enable isolated config for isolated installations (unless --shared-config)
         setup_isolated_config
+        disable_auto_updates "$CLAUDE_CONFIG_DIR"
         print_info "Using isolated configuration (automatic): $CLAUDE_CONFIG_DIR"
         echo ""
     else
@@ -6091,6 +6137,8 @@ main() {
             print_info "Using shared configuration: ${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
             echo ""
         fi
+        # Disable auto-updates for shared config too
+        disable_auto_updates
     fi
 
     echo ""

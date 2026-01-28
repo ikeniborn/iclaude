@@ -319,6 +319,34 @@ This installs exact versions of:
 ```
 At runtime, `${DEEPSEEK_API_KEY}` is replaced with value from environment.
 
+#### 9. Auto-update Management (`disable_auto_updates`)
+- **Location**: iclaude.sh:1982-2024
+- **Purpose**: Automatically disable Claude Code CLI auto-updates for CI/CD-managed installations
+- **Key Features**:
+  - Runs automatically on every `iclaude.sh` launch
+  - Sets `autoUpdates: false` in `.claude.json`
+  - Works for both isolated and shared configurations
+  - Idempotent (safe to run multiple times)
+  - Graceful handling of missing jq or config file
+- **Why This Matters**:
+  - Prevents Claude Code from updating itself
+  - Ensures all machines use same version from git
+  - Updates controlled via CI/CD (GitHub Actions)
+  - Consistent development environment across team
+- **Automatic Behavior**:
+  ```bash
+  # On every launch, iclaude.sh automatically:
+  # 1. Checks if .claude.json exists
+  # 2. If autoUpdates == true → sets to false
+  # 3. If autoUpdates == false → no action
+  # 4. If file missing → skips (will be created on first Claude run)
+  ```
+- **Manual Check**:
+  ```bash
+  # View current setting
+  jq '.autoUpdates' .nvm-isolated/.claude-isolated/.claude.json
+  ```
+
 ### Critical Functions
 
 #### `validate_proxy_url()` - iclaude.sh:56
@@ -401,6 +429,26 @@ Shows comprehensive router status:
 - Activation status (will be used on next launch)
 
 Useful for debugging router configuration and verifying setup.
+
+#### `disable_auto_updates()` - iclaude.sh:1982
+Disables Claude Code CLI auto-updates in configuration file:
+- Takes optional config directory path (defaults to `$CLAUDE_CONFIG_DIR`)
+- Checks if `.claude.json` exists, skips if missing
+- Sets `autoUpdates: false` if currently `true`
+- Uses atomic update (temp file + mv) for safety
+- Returns 0 on success or if no action needed
+- Returns 1 only on jq error (rarely happens)
+
+**Automatic invocation**:
+- Called after `setup_isolated_config()` (both explicit and auto-detected)
+- Called for shared config mode
+- Runs on every `./iclaude.sh` launch
+
+**Why automatic**:
+- Ensures consistent behavior across all machines
+- Prevents Claude Code from self-updating
+- Updates managed via CI/CD instead
+- Team always works on same version from git
 
 ### Environment Variables
 
