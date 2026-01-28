@@ -1,0 +1,115 @@
+name: Auto-update Claude Code
+
+on:
+  schedule:
+    # Запуск каждый день в 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Позволяет запустить вручную через GitHub UI
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Полная история для корректного коммита
+
+      - name: Get current Claude Code version from lockfile
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(jq -r '.claudeCodeVersion' .nvm-isolated-lockfile.json)
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version in lockfile: $CURRENT_VERSION"
+
+      - name: Get latest Claude Code version from npm
+        id: latest_version
+        run: |
+          LATEST_VERSION=$(npm view @anthropic-ai/claude-code version 2>/dev/null || echo "unknown")
+          echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest version on npm: $LATEST_VERSION"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          CURRENT="${{ steps.current_version.outputs.current }}"
+          LATEST="${{ steps.latest_version.outputs.latest }}"
+
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "✅ Already up to date ($CURRENT)"
+          else
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "🔄 Update available: $CURRENT → $LATEST"
+          fi
+
+      - name: Setup isolated environment
+        if: steps.compare.outputs.needs_update == 'true'
+        run: |
+          # Проверить, что изолированная среда работает
+          ./iclaude.sh --check-isolated || {
+            echo "❌ Isolated environment check failed"
+            exit 1
+          }
+
+      - name: Update Claude Code
+        if: steps.compare.outputs.needs_update == 'true'
+        run: |
+          echo "🔄 Updating Claude Code..."
+          ./iclaude.sh --update
+
+          # Проверить, что обновление успешно
+          NEW_VERSION=$(jq -r '.claudeCodeVersion' .nvm-isolated-lockfile.json)
+          echo "Updated to version: $NEW_VERSION"
+
+      - name: Check for changes
+        if: steps.compare.outputs.needs_update == 'true'
+        id: check_changes
+        run: |
+          if git diff --quiet .nvm-isolated-lockfile.json .nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "⚠️  No changes detected after update"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Changes detected"
+          fi
+
+      - name: Commit and push changes
+        if: steps.compare.outputs.needs_update == 'true' && steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          NEW_VERSION="${{ steps.latest_version.outputs.latest }}"
+
+          git add .nvm-isolated-lockfile.json
+          git add .nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/
+
+          git commit -m "chore(deps): auto-update Claude Code to v${NEW_VERSION} [skip ci]" \
+            -m "Automated update via GitHub Actions" \
+            -m "Previous version: ${{ steps.current_version.outputs.current }}" \
+            -m "New version: ${NEW_VERSION}"
+
+          git push origin master
+
+          echo "✅ Successfully updated and pushed Claude Code v${NEW_VERSION}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current version:** ${{ steps.current_version.outputs.current }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Latest version:** ${{ steps.latest_version.outputs.latest }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Update needed:** ${{ steps.compare.outputs.needs_update }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.compare.outputs.needs_update }}" = "true" ]; then
+            if [ "${{ steps.check_changes.outputs.has_changes }}" = "true" ]; then
+              echo "- **Status:** ✅ Updated successfully" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- **Status:** ⚠️  Update attempted but no changes" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- **Status:** ✅ Already up to date" >> $GITHUB_STEP_SUMMARY
+          fi
