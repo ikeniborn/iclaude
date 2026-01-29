@@ -121,6 +121,22 @@ bash -n iclaude.sh
 ./iclaude.sh --install-from-lockfile
 ```
 
+### Sandbox Commands
+
+```bash
+# Check sandbox availability and requirements
+./iclaude.sh --sandbox-check
+
+# Install system dependencies (Linux/WSL2 only)
+./iclaude.sh --sandbox-install
+
+# macOS - check status (always ready)
+./iclaude.sh --sandbox-check
+
+# Restore from lockfile (auto-installs if sandboxAvailable: true)
+./iclaude.sh --install-from-lockfile
+```
+
 ### Loop Mode Commands
 
 ```bash

@@ -379,6 +379,262 @@ get_router_path() {
 }
 
 #######################################
+# Detect platform for sandboxing support
+# Returns:
+#   0 - platform supported (macos, linux, wsl2)
+#   1 - platform not supported (wsl1, windows, unknown)
+# Output: platform name (macos|linux|wsl2|wsl1|windows|unsupported)
+#######################################
+detect_sandbox_platform() {
+	case $(uname -s) in
+		Darwin)
+			echo "macos"
+			return 0
+			;;
+		Linux)
+			if grep -qE "(Microsoft|WSL)" /proc/version 2>/dev/null; then
+				if grep -q "WSL2" /proc/version 2>/dev/null; then
+					echo "wsl2"
+					return 0
+				else
+					echo "wsl1"
+					return 1
+				fi
+			fi
+			echo "linux"
+			return 0
+			;;
+		MINGW*|MSYS*|CYGWIN*)
+			echo "windows"
+			return 1
+			;;
+		*)
+			echo "unsupported"
+			return 1
+			;;
+	esac
+}
+
+#######################################
+# Check sandbox system dependencies
+# Returns:
+#   0 - all dependencies installed
+#   1 - missing dependencies (outputs list to stdout)
+# Output: space-separated list of missing dependencies
+#######################################
+check_sandbox_dependencies() {
+	local platform=$(detect_sandbox_platform)
+
+	case "$platform" in
+		macos)
+			# macOS has native Seatbelt
+			return 0
+			;;
+		linux|wsl2)
+			local missing=()
+
+			# System packages
+			command -v bwrap &>/dev/null || missing+=("bubblewrap")
+			command -v socat &>/dev/null || missing+=("socat")
+
+			# NPM package for seccomp filter (blocks unix domain sockets)
+			local sandbox_runtime_installed=false
+			if command -v srt &>/dev/null; then
+				sandbox_runtime_installed=true
+			elif [[ -n "$ISOLATED_NVM_DIR" ]]; then
+				# Check in isolated environment
+				local sandbox_cli="$ISOLATED_NVM_DIR/npm-global/bin/srt"
+				[[ -x "$sandbox_cli" ]] && sandbox_runtime_installed=true
+			fi
+
+			if [[ "$sandbox_runtime_installed" == "false" ]]; then
+				missing+=("@anthropic-ai/sandbox-runtime")
+			fi
+
+			if [[ ${#missing[@]} -gt 0 ]]; then
+				echo "${missing[@]}"
+				return 1
+			fi
+			return 0
+			;;
+		*)
+			# Platform not supported
+			return 1
+			;;
+	esac
+}
+
+#######################################
+# Install sandbox system dependencies
+# Returns:
+#   0 - success or already installed
+#   1 - installation error (recoverable)
+#   2 - platform not supported (non-recoverable)
+#######################################
+install_sandbox_dependencies() {
+	local platform
+	platform=$(detect_sandbox_platform)
+	local platform_status=$?
+
+	echo ""
+	print_info "Installing sandbox dependencies..."
+	echo ""
+
+	# Check platform support
+	if [[ $platform_status -ne 0 ]]; then
+		case "$platform" in
+			wsl1)
+				print_error "WSL1 is not supported for sandboxing"
+				echo ""
+				echo "Please upgrade to WSL2:"
+				echo "  wsl --set-version <distro-name> 2"
+				echo "  wsl --shutdown"
+				echo ""
+				echo "Verify upgrade:"
+				echo "  wsl --list --verbose"
+				;;
+			windows)
+				print_error "Native Windows is not supported for sandboxing"
+				echo ""
+				echo "Please install WSL2:"
+				echo "  wsl --install"
+				echo ""
+				echo "Or install Ubuntu from Microsoft Store and enable WSL2"
+				;;
+			*)
+				print_error "Platform '$platform' is not supported for sandboxing"
+				;;
+		esac
+		return 2
+	fi
+
+	# macOS - native support
+	if [[ "$platform" == "macos" ]]; then
+		print_success "macOS uses native Seatbelt (no installation required)"
+		return 0
+	fi
+
+	# Linux/WSL2 - check current status
+	local missing
+	missing=$(check_sandbox_dependencies) || true
+	if check_sandbox_dependencies &>/dev/null; then
+		print_success "All dependencies already installed"
+		echo ""
+		return 0
+	fi
+
+	echo "Missing dependencies: $missing"
+	echo ""
+
+	# Ensure isolated environment is set up
+	if [[ -z "$ISOLATED_NVM_DIR" ]]; then
+		setup_isolated_nvm
+	fi
+
+	# A. Install system packages (bubblewrap, socat)
+	local system_packages=()
+	[[ "$missing" == *"bubblewrap"* ]] && system_packages+=("bubblewrap")
+	[[ "$missing" == *"socat"* ]] && system_packages+=("socat")
+
+	if [[ ${#system_packages[@]} -gt 0 ]]; then
+		print_info "Installing system packages: ${system_packages[*]}"
+		echo ""
+
+		# Detect package manager
+		local pkg_manager=""
+		if command -v apt-get &>/dev/null; then
+			pkg_manager="apt-get"
+		elif command -v dnf &>/dev/null; then
+			pkg_manager="dnf"
+		elif command -v yum &>/dev/null; then
+			pkg_manager="yum"
+		else
+			print_error "No supported package manager found (apt-get, dnf, yum)"
+			echo ""
+			echo "Please install manually:"
+			echo "  bubblewrap: https://github.com/containers/bubblewrap"
+			echo "  socat: http://www.dest-unreach.org/socat/"
+			return 1
+		fi
+
+		# Install packages
+		local install_cmd="sudo $pkg_manager install -y ${system_packages[*]}"
+		echo "Running: $install_cmd"
+		echo ""
+
+		if ! $install_cmd; then
+			print_error "Failed to install system packages"
+			echo ""
+			echo "Please ensure:"
+			echo "  1. You have sudo privileges"
+			echo "  2. Package manager is working: sudo $pkg_manager update"
+			echo ""
+			echo "Manual installation:"
+			echo "  $install_cmd"
+			return 1
+		fi
+
+		# Verify installation
+		for pkg in "${system_packages[@]}"; do
+			local binary="${pkg/bubblewrap/bwrap}"  # bubblewrap installs as 'bwrap'
+			if ! command -v "$binary" &>/dev/null; then
+				print_error "Package $pkg installed but binary not found"
+				return 1
+			fi
+		done
+
+		print_success "System packages installed successfully"
+		echo ""
+	fi
+
+	# B. Install NPM package (@anthropic-ai/sandbox-runtime)
+	if [[ "$missing" == *"@anthropic-ai/sandbox-runtime"* ]]; then
+		print_info "Installing @anthropic-ai/sandbox-runtime npm package..."
+		echo ""
+
+		# Setup PATH for npm
+		export PATH="$ISOLATED_NVM_DIR/npm-global/bin:$ISOLATED_NVM_DIR/versions/node/$(ls "$ISOLATED_NVM_DIR/versions/node" | head -1)/bin:$PATH"
+
+		if ! npm install -g @anthropic-ai/sandbox-runtime; then
+			print_error "Failed to install @anthropic-ai/sandbox-runtime"
+			echo ""
+			echo "Please check:"
+			echo "  1. Isolated environment is set up: ./iclaude.sh --check-isolated"
+			echo "  2. npm is working: npm --version"
+			return 1
+		fi
+
+		# Verify installation
+		if ! command -v srt &>/dev/null && [[ ! -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
+			print_error "@anthropic-ai/sandbox-runtime installed but binary not found"
+			return 1
+		fi
+
+		print_success "@anthropic-ai/sandbox-runtime installed successfully"
+		echo ""
+	fi
+
+	# Show versions
+	print_success "Sandbox dependencies installed:"
+	echo ""
+	if command -v bwrap &>/dev/null; then
+		local bwrap_ver=$(bwrap --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1)
+		echo "  bubblewrap: $bwrap_ver"
+	fi
+	if command -v socat &>/dev/null; then
+		local socat_ver=$(socat -V 2>&1 | grep "socat version" | grep -oP '\d+\.\d+\.\d+\.\d+')
+		echo "  socat: $socat_ver"
+	fi
+	if command -v srt &>/dev/null || [[ -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
+		local runtime_ver=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "installed")
+		echo "  @anthropic-ai/sandbox-runtime: $runtime_ver"
+	fi
+	echo ""
+
+	return 0
+}
+
+#######################################
 # Get version from cli.js installation
 #######################################
 get_cli_version() {
@@ -1115,6 +1371,41 @@ save_isolated_lockfile() {
 		router_version=$("$ccr_cmd" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
 	fi
 
+	# Detect sandbox availability
+	local sandbox_available="false"
+	local sandbox_platform=""
+	sandbox_platform=$(detect_sandbox_platform)
+
+	if [[ $? -eq 0 ]]; then
+		# Platform supported, check dependencies
+		if check_sandbox_dependencies &>/dev/null; then
+			sandbox_available="true"
+		fi
+	fi
+
+	# Get dependency versions (Linux/WSL2 only)
+	local sandbox_deps_json="{}"
+	local sandbox_runtime_version="not installed"
+
+	if [[ "$sandbox_available" == "true" && "$sandbox_platform" != "macos" ]]; then
+		local bwrap_version socat_version
+		bwrap_version=$(bwrap --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+		socat_version=$(socat -V 2>&1 | grep "socat version" | grep -oP '\d+\.\d+\.\d+\.\d+' || echo "unknown")
+		sandbox_deps_json="{\"bubblewrap\": \"$bwrap_version\", \"socat\": \"$socat_version\"}"
+
+		# Get sandbox-runtime version
+		if command -v srt &>/dev/null; then
+			sandbox_runtime_version=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+		elif [[ -n "$ISOLATED_NVM_DIR" && -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
+			sandbox_runtime_version=$("$ISOLATED_NVM_DIR/npm-global/bin/srt" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+		fi
+	fi
+
+	local sandbox_installed_at=""
+	if [[ "$sandbox_available" == "true" ]]; then
+		sandbox_installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+	fi
+
 	# Detect gh CLI version
 	local gh_version="not installed"
 	local gh_bin="$ISOLATED_NVM_DIR/npm-global/bin/gh"
@@ -1211,6 +1502,11 @@ save_isolated_lockfile() {
   "ghCliVersion": "$gh_version",
   "lspServers": $lsp_servers_json,
   "lspPlugins": $lsp_plugins_json,
+  "sandboxAvailable": $sandbox_available,
+  "sandboxPlatform": "$sandbox_platform",
+  "sandboxDependencies": $sandbox_deps_json,
+  "sandboxRuntimeVersion": "$sandbox_runtime_version",
+  "sandboxInstalledAt": "$sandbox_installed_at",
   "installedAt": "$installed_at",
   "nvmVersion": "0.39.7"
 }
@@ -1414,6 +1710,37 @@ install_from_lockfile() {
 			fi
 		fi
 	fi
+
+	# Restore sandbox dependencies if marked as available
+	echo ""
+	print_info "Checking sandbox availability from lockfile..."
+	local sandbox_available
+	sandbox_available=$(jq -r '.sandboxAvailable // false' "$ISOLATED_LOCKFILE" 2>/dev/null)
+
+	if [[ "$sandbox_available" == "true" ]]; then
+		print_info "Lockfile indicates sandbox was available"
+		echo ""
+
+		# Check if dependencies still need installation
+		if ! check_sandbox_dependencies &>/dev/null; then
+			print_warning "Sandbox dependencies missing - installing..."
+			echo ""
+
+			if install_sandbox_dependencies; then
+				print_success "Sandbox dependencies restored from lockfile"
+			else
+				print_warning "Failed to restore sandbox dependencies"
+				echo "  You may need to install manually:"
+				echo "  ./iclaude.sh --sandbox-install"
+			fi
+		else
+			print_success "Sandbox dependencies already installed"
+		fi
+	else
+		print_info "Sandbox was not available in original installation"
+		echo "  Run ./iclaude.sh --sandbox-install to enable"
+	fi
+	echo ""
 
 	print_success "Installation from lockfile complete"
 	echo ""
@@ -2217,6 +2544,196 @@ check_router_status() {
 	else
 		print_info "Router not fully configured"
 		echo "  Run --install-router to set up router"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Check sandbox status and configuration
+# Shows platform support, dependencies, and configuration info
+#######################################
+check_sandbox_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Claude Code Sandbox Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Platform Detection
+	print_info "Platform Detection:"
+	local os=$(uname -s)
+	local arch=$(uname -m)
+	echo "  OS: $os"
+	echo "  Architecture: $arch"
+
+	local platform
+	platform=$(detect_sandbox_platform)
+	local platform_status=$?
+	echo "  Sandbox Platform: $platform"
+
+	if [[ $platform_status -eq 0 ]]; then
+		echo "  Compatibility: ✓ Supported"
+	else
+		echo "  Compatibility: ❌ Not supported"
+	fi
+	echo ""
+
+	# Handle unsupported platforms
+	if [[ $platform_status -ne 0 ]]; then
+		case "$platform" in
+			wsl1)
+				print_error "WSL1 is not supported for sandboxing"
+				echo ""
+				echo "Upgrade to WSL2:"
+				echo "  wsl --set-version <distro-name> 2"
+				echo "  wsl --shutdown"
+				echo ""
+				echo "Verify upgrade:"
+				echo "  wsl --list --verbose"
+				;;
+			windows)
+				print_error "Native Windows is not supported"
+				echo ""
+				echo "Install WSL2:"
+				echo "  wsl --install"
+				;;
+			*)
+				print_error "Platform '$platform' is not supported"
+				;;
+		esac
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	# System Dependencies
+	print_info "System Dependencies:"
+
+	if [[ "$platform" == "macos" ]]; then
+		print_success "macOS Seatbelt (native, always available)"
+		echo ""
+	else
+		# Linux/WSL2
+		local missing
+		missing=$(check_sandbox_dependencies) || true
+		if check_sandbox_dependencies &>/dev/null; then
+			print_success "All dependencies installed"
+			echo ""
+
+			# Show versions
+			if command -v bwrap &>/dev/null; then
+				local bwrap_ver=$(bwrap --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+				echo "  bubblewrap:              bubblewrap $bwrap_ver"
+			fi
+			if command -v socat &>/dev/null; then
+				local socat_ver=$(socat -V 2>&1 | grep "socat version" | grep -oP '\d+\.\d+\.\d+\.\d+' || echo "unknown")
+				echo "  socat:                   socat version $socat_ver"
+			fi
+
+			# Check sandbox-runtime (srt binary)
+			local runtime_ver="not installed"
+			if command -v srt &>/dev/null; then
+				runtime_ver=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+			elif [[ -n "$ISOLATED_NVM_DIR" && -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
+				runtime_ver=$("$ISOLATED_NVM_DIR/npm-global/bin/srt" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
+			fi
+			echo "  sandbox-runtime (npm):   @anthropic-ai/sandbox-runtime $runtime_ver"
+			echo ""
+		else
+			print_warning "Missing dependencies: $missing"
+			echo ""
+			echo "Install with: ./iclaude.sh --sandbox-install"
+			echo ""
+		fi
+	fi
+
+	# Claude Code Version
+	print_info "Claude Code Version:"
+	local claude_path=$(get_nvm_claude_path)
+	if [[ -n "$claude_path" ]]; then
+		local claude_ver=$(get_cli_version "$claude_path")
+		echo "  Installed: v$claude_ver"
+
+		# Check if version supports sandboxing (v2.0.0+)
+		if [[ "$claude_ver" != "unknown" ]]; then
+			local major_ver=$(echo "$claude_ver" | cut -d. -f1)
+			if [[ "$major_ver" -ge 2 ]] 2>/dev/null; then
+				print_success "Sandboxing supported (v2.0.0+)"
+			else
+				print_warning "Sandboxing requires v2.0.0 or higher"
+				echo "  Current version: v$claude_ver"
+				echo "  Update with: ./iclaude.sh --update"
+			fi
+		fi
+	else
+		print_warning "Claude Code not found"
+		echo "  Install with: ./iclaude.sh --isolated-install"
+	fi
+	echo ""
+
+	# Lockfile Status
+	print_info "Lockfile Status:"
+	if [[ -f "$ISOLATED_LOCKFILE" ]]; then
+		local sandbox_available=$(jq -r '.sandboxAvailable // false' "$ISOLATED_LOCKFILE" 2>/dev/null)
+		if [[ "$sandbox_available" == "true" ]]; then
+			print_success "Sandbox marked as available in lockfile"
+			local lockfile_platform=$(jq -r '.sandboxPlatform // "unknown"' "$ISOLATED_LOCKFILE" 2>/dev/null)
+			echo "  Platform: $lockfile_platform"
+
+			local sandbox_installed_at=$(jq -r '.sandboxInstalledAt // "unknown"' "$ISOLATED_LOCKFILE" 2>/dev/null)
+			if [[ "$sandbox_installed_at" != "unknown" && "$sandbox_installed_at" != "null" ]]; then
+				echo "  Verified: $sandbox_installed_at"
+			fi
+		else
+			print_info "Sandbox not marked as available in lockfile"
+			echo "  Run ./iclaude.sh --sandbox-install to enable"
+		fi
+	else
+		print_info "No lockfile found"
+		echo "  Lockfile will be created after installation"
+	fi
+	echo ""
+
+	# Configuration Instructions
+	print_info "Configuration:"
+	echo "  Sandboxing is configured via Claude Code itself"
+	echo "  Enable in Claude Code session: /sandbox"
+	echo "  Settings stored in: settings.json (sandbox section)"
+	echo ""
+
+	# Summary
+	local all_ready=true
+	if [[ $platform_status -ne 0 ]]; then
+		all_ready=false
+	elif [[ "$platform" != "macos" ]]; then
+		if ! check_sandbox_dependencies &>/dev/null; then
+			all_ready=false
+		fi
+	fi
+
+	if [[ "$all_ready" == "true" ]]; then
+		print_success "Sandbox Ready"
+		echo "  ✓ Platform supported"
+		if [[ "$platform" == "macos" ]]; then
+			echo "  ✓ Native Seatbelt available"
+		else
+			echo "  ✓ Dependencies installed"
+		fi
+		echo "  ✓ Enable via /sandbox command in Claude Code"
+	else
+		print_warning "Sandbox Not Ready"
+		if [[ $platform_status -ne 0 ]]; then
+			echo "  ❌ Platform not supported"
+		else
+			echo "  ⚠ Dependencies missing"
+			echo "  → Run: ./iclaude.sh --sandbox-install"
+		fi
 	fi
 
 	echo ""
@@ -5575,6 +6092,9 @@ OPTIONS:
                                     Default: typescript and python
                                     Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
   --check-lsp                       Show LSP server and plugin installation status
+  --sandbox-install                 Install sandbox system dependencies (bubblewrap, socat)
+  --sandbox-check                   Show sandbox availability status and configuration
+  --check-sandbox                   (Alias for --sandbox-check)
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
   --save                            Enable permission checks (disables default --dangerously-skip-permissions)
@@ -5729,6 +6249,33 @@ LOOP MODE (Iterative Task Execution):
     Branch: fix/typescript-errors
     Commit message: fix: resolve TypeScript errors
     Auto-push: true
+
+SANDBOX INTEGRATION:
+  # Check sandbox availability and requirements
+  ./iclaude.sh --sandbox-check
+
+  # Install system dependencies (Linux/WSL2 only)
+  ./iclaude.sh --sandbox-install
+
+  # macOS users (no installation needed)
+  ./iclaude.sh --sandbox-check  # Shows "Ready" immediately
+
+  Sandboxing provides OS-level isolation:
+    - Filesystem isolation (restrict read/write access)
+    - Network isolation (domain allow/deny lists via proxy)
+    - OS enforcement: macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + @anthropic-ai/sandbox-runtime)
+
+  Configuration:
+    - Enable via /sandbox command inside Claude Code session
+    - Settings stored in settings.json (sandbox section)
+    - Two modes: auto-allow vs regular permissions
+
+  Platform Support:
+    ✓ macOS (native Seatbelt, always available)
+    ✓ Linux (requires bubblewrap + socat + @anthropic-ai/sandbox-runtime)
+    ✓ WSL2 (requires bubblewrap + socat + @anthropic-ai/sandbox-runtime)
+    ✗ WSL1 (not supported, upgrade to WSL2)
+    ✗ Windows native (use WSL2 instead)
 
 PROXY URL FORMAT:
   http://username:password@IP:port
@@ -6018,6 +6565,22 @@ main() {
                 ;;
             --check-lsp)
                 check_lsp_status
+                exit 0
+                ;;
+            --sandbox-install)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --sandbox-install"
+                    echo ""
+                    echo "Sandboxing is only available in isolated environment"
+                    exit 1
+                fi
+                install_sandbox_dependencies
+                # Update lockfile after installation
+                save_isolated_lockfile
+                exit $?
+                ;;
+            --sandbox-check|--check-sandbox)
+                check_sandbox_status
                 exit 0
                 ;;
             --router)
