@@ -75,6 +75,10 @@ scripts/.claude_proxy_credentials
 .nvm-isolated/npm-global/lib/node_modules/
 .nvm-isolated/versions/node/*/lib/node_modules/
 
+# EXCEPTION: Allow @anthropic-ai packages (required for isolated environment)
+!.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/
+!.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/**
+
 # Keep only package structure
 !.nvm-isolated/npm-global/lib/.gitkeep
 
