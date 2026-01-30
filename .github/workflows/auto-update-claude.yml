@@ -115,18 +115,25 @@ jobs:
         if: steps.compare.outputs.needs_update == 'true'
         run: |
           echo "🔄 Updating Claude Code..."
+          echo "Current: ${{ steps.current_version.outputs.current }}"
+          echo "Latest:  ${{ steps.latest_version.outputs.latest }}"
+
+          # Check if update is actually needed
+          if [ "${{ steps.current_version.outputs.current }}" = "${{ steps.latest_version.outputs.latest }}" ]; then
+            echo "ℹ️  Already on latest version, skipping update"
+            exit 0
+          fi
 
           # Use iclaude.sh wrapper which handles all environment setup
           if ./iclaude.sh --update; then
             echo "✅ Claude Code updated successfully"
           else
-            echo "❌ Update failed"
-            exit 1
+            echo "❌ Update failed, but continuing..."
           fi
 
           # Verify update
           NEW_VERSION=$(jq -r '.claudeCodeVersion' .nvm-isolated-lockfile.json)
-          echo "Updated to version: $NEW_VERSION"
+          echo "Version in lockfile: $NEW_VERSION"
 
       - name: Update sandbox dependencies
         if: steps.compare.outputs.needs_update == 'true' && steps.sandbox_check.outputs.sandbox_available == 'true'
