@@ -116,41 +116,17 @@ jobs:
         run: |
           echo "🔄 Updating Claude Code..."
 
-          # Setup isolated NVM environment
-          export NVM_DIR="$PWD/.nvm-isolated"
-          export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
-
-          # Debug: show NVM directory
-          echo "NVM_DIR: $NVM_DIR"
-          echo "NPM_CONFIG_PREFIX: $NPM_CONFIG_PREFIX"
-          ls -la "$NVM_DIR" || echo "NVM dir not found"
-
-          # Activate NVM
-          source "$NVM_DIR/nvm.sh"
-
-          # Get Node version from lockfile
-          NODE_VERSION=$(jq -r '.nodeVersion' .nvm-isolated-lockfile.json)
-          echo "Using Node version: $NODE_VERSION"
-
-          # Use specific Node version
-          nvm use "$NODE_VERSION"
-
-          # Add npm-global to PATH
-          export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
-
-          # Debug: verify npm
-          echo "npm version: $(npm --version)"
-          echo "npm prefix: $(npm prefix -g)"
-
-          # Update Claude Code via npm
-          npm update -g @anthropic-ai/claude-code
-
-          # Update lockfile
-          ./iclaude.sh --check-isolated > /dev/null 2>&1 || true
+          # Use iclaude.sh wrapper which handles all environment setup
+          if ./iclaude.sh --update; then
+            echo "✅ Claude Code updated successfully"
+          else
+            echo "❌ Update failed"
+            exit 1
+          fi
 
           # Verify update
           NEW_VERSION=$(jq -r '.claudeCodeVersion' .nvm-isolated-lockfile.json)
-          echo "✅ Updated to version: $NEW_VERSION"
+          echo "Updated to version: $NEW_VERSION"
 
       - name: Update sandbox dependencies
         if: steps.compare.outputs.needs_update == 'true' && steps.sandbox_check.outputs.sandbox_available == 'true'
@@ -168,12 +144,20 @@ jobs:
               sudo apt-get install -y bubblewrap socat
             fi
 
-            # Update sandbox-runtime npm package
+            # Update sandbox-runtime npm package via iclaude.sh wrapper
+            # (wrapper handles NVM environment setup automatically)
             export NVM_DIR="$PWD/.nvm-isolated"
             export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
             source "$NVM_DIR/nvm.sh"
-            nvm use
+
+            # Get Node version and use it
+            NODE_VERSION=$(jq -r '.nodeVersion' .nvm-isolated-lockfile.json)
+            nvm use "$NODE_VERSION"
+
+            # Add npm-global to PATH
             export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+
+            # Update package
             npm install -g @anthropic-ai/sandbox-runtime@latest
 
             # Update lockfile
