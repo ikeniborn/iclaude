@@ -120,12 +120,27 @@ jobs:
           export NVM_DIR="$PWD/.nvm-isolated"
           export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
 
+          # Debug: show NVM directory
+          echo "NVM_DIR: $NVM_DIR"
+          echo "NPM_CONFIG_PREFIX: $NPM_CONFIG_PREFIX"
+          ls -la "$NVM_DIR" || echo "NVM dir not found"
+
           # Activate NVM
           source "$NVM_DIR/nvm.sh"
-          nvm use
+
+          # Get Node version from lockfile
+          NODE_VERSION=$(jq -r '.nodeVersion' .nvm-isolated-lockfile.json)
+          echo "Using Node version: $NODE_VERSION"
+
+          # Use specific Node version
+          nvm use "$NODE_VERSION"
 
           # Add npm-global to PATH
           export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+
+          # Debug: verify npm
+          echo "npm version: $(npm --version)"
+          echo "npm prefix: $(npm prefix -g)"
 
           # Update Claude Code via npm
           npm update -g @anthropic-ai/claude-code
