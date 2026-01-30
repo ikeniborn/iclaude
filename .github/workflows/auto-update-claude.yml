@@ -47,10 +47,19 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          CURRENT="${{ steps.current_version.outputs.current }}"
-          LATEST="${{ steps.latest_version.outputs.latest }}"
-          CURRENT_SANDBOX="${{ steps.current_sandbox_version.outputs.current }}"
-          LATEST_SANDBOX="${{ steps.latest_sandbox_version.outputs.latest }}"
+          # Normalize version string (remove 'v' prefix, extract X.Y.Z)
+          normalize_version() {
+            local ver="$1"
+            # Remove 'v' prefix if present
+            ver="${ver#v}"
+            # Extract version pattern X.Y.Z
+            echo "$ver" | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "$ver"
+          }
+
+          CURRENT="$(normalize_version '${{ steps.current_version.outputs.current }}')"
+          LATEST="$(normalize_version '${{ steps.latest_version.outputs.latest }}')"
+          CURRENT_SANDBOX="$(normalize_version '${{ steps.current_sandbox_version.outputs.current }}')"
+          LATEST_SANDBOX="$(normalize_version '${{ steps.latest_sandbox_version.outputs.latest }}')"
 
           NEEDS_UPDATE=false
 
@@ -106,11 +115,20 @@ jobs:
         if: steps.compare.outputs.needs_update == 'true'
         run: |
           echo "🔄 Updating Claude Code..."
-          ./iclaude.sh --update
 
-          # Проверить, что обновление успешно
+          # Activate NVM environment
+          source .nvm-isolated/nvm.sh
+          nvm use
+
+          # Update Claude Code via npm
+          npm update -g @anthropic-ai/claude-code
+
+          # Update lockfile
+          ./iclaude.sh --check-isolated > /dev/null 2>&1 || true
+
+          # Verify update
           NEW_VERSION=$(jq -r '.claudeCodeVersion' .nvm-isolated-lockfile.json)
-          echo "Updated to version: $NEW_VERSION"
+          echo "✅ Updated to version: $NEW_VERSION"
 
       - name: Update sandbox dependencies
         if: steps.compare.outputs.needs_update == 'true' && steps.sandbox_check.outputs.sandbox_available == 'true'
