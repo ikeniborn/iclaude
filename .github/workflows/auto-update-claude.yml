@@ -116,9 +116,16 @@ jobs:
         run: |
           echo "🔄 Updating Claude Code..."
 
-          # Activate NVM environment
-          source .nvm-isolated/nvm.sh
+          # Setup isolated NVM environment
+          export NVM_DIR="$PWD/.nvm-isolated"
+          export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
+
+          # Activate NVM
+          source "$NVM_DIR/nvm.sh"
           nvm use
+
+          # Add npm-global to PATH
+          export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
 
           # Update Claude Code via npm
           npm update -g @anthropic-ai/claude-code
@@ -147,8 +154,11 @@ jobs:
             fi
 
             # Update sandbox-runtime npm package
-            source .nvm-isolated/nvm.sh
+            export NVM_DIR="$PWD/.nvm-isolated"
+            export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
+            source "$NVM_DIR/nvm.sh"
             nvm use
+            export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
             npm install -g @anthropic-ai/sandbox-runtime@latest
 
             # Update lockfile
