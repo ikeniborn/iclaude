@@ -625,8 +625,8 @@ install_sandbox_dependencies() {
 		local socat_ver=$(socat -V 2>&1 | grep "socat version" | grep -oP '\d+\.\d+\.\d+\.\d+')
 		echo "  socat: $socat_ver"
 	fi
-	if command -v srt &>/dev/null || [[ -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
-		local runtime_ver=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "installed")
+	local runtime_ver=$(get_sandbox_runtime_version)
+	if [[ "$runtime_ver" != "not installed" ]]; then
 		echo "  @anthropic-ai/sandbox-runtime: $runtime_ver"
 	fi
 	echo ""
@@ -667,6 +667,34 @@ get_cli_version() {
 
 	echo "$version"
 	return 0
+}
+
+#######################################
+# Get sandbox-runtime version
+# Returns:
+#   Version string or "not installed"
+#######################################
+get_sandbox_runtime_version() {
+	# Check if srt binary exists
+	if command -v srt &>/dev/null; then
+		# Get version from srt --version
+		local version=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)
+		if [[ -n "$version" ]]; then
+			echo "$version"
+			return 0
+		fi
+	elif [[ -n "$ISOLATED_NVM_DIR" ]] && [[ -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
+		# srt exists in isolated environment but not in PATH
+		local version=$("$ISOLATED_NVM_DIR/npm-global/bin/srt" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)
+		if [[ -n "$version" ]]; then
+			echo "$version"
+			return 0
+		fi
+	fi
+
+	# Not installed or version unavailable
+	echo "not installed"
+	return 1
 }
 
 #######################################
@@ -1394,11 +1422,7 @@ save_isolated_lockfile() {
 		sandbox_deps_json="{\"bubblewrap\": \"$bwrap_version\", \"socat\": \"$socat_version\"}"
 
 		# Get sandbox-runtime version
-		if command -v srt &>/dev/null; then
-			sandbox_runtime_version=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-		elif [[ -n "$ISOLATED_NVM_DIR" && -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
-			sandbox_runtime_version=$("$ISOLATED_NVM_DIR/npm-global/bin/srt" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-		fi
+		sandbox_runtime_version=$(get_sandbox_runtime_version)
 	fi
 
 	local sandbox_installed_at=""
@@ -2637,12 +2661,7 @@ check_sandbox_status() {
 			fi
 
 			# Check sandbox-runtime (srt binary)
-			local runtime_ver="not installed"
-			if command -v srt &>/dev/null; then
-				runtime_ver=$(srt --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-			elif [[ -n "$ISOLATED_NVM_DIR" && -x "$ISOLATED_NVM_DIR/npm-global/bin/srt" ]]; then
-				runtime_ver=$("$ISOLATED_NVM_DIR/npm-global/bin/srt" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-			fi
+			local runtime_ver=$(get_sandbox_runtime_version)
 			echo "  sandbox-runtime (npm):   @anthropic-ai/sandbox-runtime $runtime_ver"
 			echo ""
 		else
