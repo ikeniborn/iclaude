@@ -10,7 +10,7 @@ files:
   examples: ./examples/*.md
   rules: ./rules/*.md
   dockerfile-templates: ./dockerfile-templates/*.Dockerfile
-user-invocable: true
+user-invocable: false
 changelog:
   - version: 1.0.0
     date: 2026-01-26
