@@ -9,12 +9,16 @@ on:
 jobs:
   check-and-update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for git push
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Полная история для корректного коммита
+          token: ${{ secrets.GITHUB_TOKEN }}  # Explicit token for push access
+          persist-credentials: true  # Keep credentials for subsequent git operations
 
       - name: Get current Claude Code version from lockfile
         id: current_version
