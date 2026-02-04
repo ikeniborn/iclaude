@@ -1,0 +1,96 @@
+{
+  "$comment": "Template for generating rules/best-practices.md with comprehensive guidance",
+  "skill_name": "{{skill_name: string}}",
+  "rules_structure": {
+    "sections": [
+      {
+        "title": "Best Practices",
+        "$comment": "Guidelines for optimal usage of this skill",
+        "rules": [
+          {
+            "rule": "{{best_practice_1: string}}",
+            "rationale": "{{why_this_matters: string}}"
+          },
+          {
+            "rule": "{{best_practice_2: string}}",
+            "rationale": "{{why_this_matters: string}}"
+          },
+          {
+            "rule": "{{best_practice_3: string}}",
+            "rationale": "{{why_this_matters: string}}"
+          }
+        ]
+      },
+      {
+        "title": "Common Pitfalls",
+        "$comment": "Mistakes to avoid when using this skill",
+        "pitfalls": [
+          {
+            "pitfall": "{{common_mistake_1: string}}",
+            "consequence": "{{what_goes_wrong: string}}",
+            "solution": "{{how_to_avoid: string}}"
+          },
+          {
+            "pitfall": "{{common_mistake_2: string}}",
+            "consequence": "{{what_goes_wrong: string}}",
+            "solution": "{{how_to_avoid: string}}"
+          },
+          {
+            "pitfall": "{{common_mistake_3: string}}",
+            "consequence": "{{what_goes_wrong: string}}",
+            "solution": "{{how_to_avoid: string}}"
+          }
+        ]
+      },
+      {
+        "title": "Performance Tips",
+        "$comment": "Optimization strategies for this skill",
+        "tips": [
+          {
+            "tip": "{{performance_optimization_1: string}}",
+            "impact": "{{expected_improvement: string}}"
+          },
+          {
+            "tip": "{{performance_optimization_2: string}}",
+            "impact": "{{expected_improvement: string}}"
+          },
+          {
+            "tip": "{{performance_optimization_3: string}}",
+            "impact": "{{expected_improvement: string}}"
+          }
+        ]
+      }
+    ]
+  },
+  "markdown_template": {
+    "$comment": "Markdown structure for rules/best-practices.md",
+    "format": [
+      "# Best Practices: {{skill_name}}",
+      "",
+      "## Best Practices",
+      "",
+      "{{#each rules}}",
+      "### ✅ {{rule}}",
+      "**Rationale:** {{rationale}}",
+      "",
+      "{{/each}}",
+      "",
+      "## Common Pitfalls",
+      "",
+      "{{#each pitfalls}}",
+      "### ❌ {{pitfall}}",
+      "**Consequence:** {{consequence}}",
+      "**Solution:** {{solution}}",
+      "",
+      "{{/each}}",
+      "",
+      "## Performance Tips",
+      "",
+      "{{#each tips}}",
+      "### ⚡ {{tip}}",
+      "**Impact:** {{impact}}",
+      "",
+      "{{/each}}"
+    ]
+  }
+}
