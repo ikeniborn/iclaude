@@ -1,209 +1,141 @@
+---
+name: iclaude-commands
+version: 1.0.0
+description: CLI commands reference for iclaude.sh (8 categories)
+user-invocable: false
+dependencies: []
+tags: [reference, iclaude, cli, commands]
+files:
+  - path: SKILL.md
+    type: markdown
+  - path: examples/testing-commands.md
+    type: markdown
+  - path: examples/installation-commands.md
+    type: markdown
+  - path: examples/workflow-examples.md
+    type: markdown
+---
+
 # iclaude-commands
 
-Reference guide for all iclaude.sh CLI commands organized by category (Testing, Installation, Running, Router, Chrome, LSP, Sandbox, Loop Mode).
-
-## Quick Reference
-
-| Aspect | Details |
-|--------|---------|
-| **Invocation** | On-demand reference (not auto-invoked) |
-| **Purpose** | Provide command syntax and usage examples |
-| **Categories** | 8 categories × 3-8 commands each |
-| **Format** | Command → Description → Example → Notes |
-| **Integration** | Referenced by other iclaude-* skills |
-
----
+Reference guide for all iclaude.sh CLI commands organized by category.
 
 ## When to Use
 
 Use this skill when:
-- User asks "how to test proxy?"
-- User requests "list all --flags"
-- Planning implementation that needs specific command
+- User asks "how to test proxy?" or "list all --flags"
+- Planning implementation that needs specific command syntax
 - Writing documentation/examples
+- Troubleshooting command usage
 
 **Manual reference only** (not auto-invoked)
 
----
-
 ## Command Categories
 
-### 1. Testing and Validation
+### 1. Testing & Validation
+Commands for testing proxy, checking environment status, validating script.
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--test` | Test proxy without launching Claude | `./iclaude.sh --test` | Tests HTTP + HTTPS requests |
-| `--check-isolated` | Show isolated env status | `./iclaude.sh --check-isolated` | Versions, symlinks, lockfile |
-| `--check-config` | Show config status | `./iclaude.sh --check-config` | Isolated vs shared config |
-| `--refresh-token` | Refresh OAuth token | `./iclaude.sh --refresh-token` | Long-lived ~1 year token |
-| `bash -n` | Validate script syntax | `bash -n iclaude.sh` | Pre-commit check |
+**Key commands:** `--test`, `--check-isolated`, `--check-config`, `--refresh-token`
 
-### 2. Installation and Updates
+**См. подробнее:** `examples/testing-commands.md`
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--isolated-install` | Install isolated environment | `./iclaude.sh --isolated-install` | Recommended for development |
-| `--update` | Update Claude Code | `./iclaude.sh --update` | Updates isolated Claude only |
-| `--install-from-lockfile` | Install from lockfile | `./iclaude.sh --install-from-lockfile` | Exact versions |
-| `--repair-isolated` | Repair symlinks | `./iclaude.sh --repair-isolated` | After git clone |
-| `--cleanup-isolated` | Clean up isolated env | `./iclaude.sh --cleanup-isolated` | Preserves lockfile |
+### 2. Installation & Updates
+Commands for installing/updating isolated environment, managing lockfile.
+
+**Key commands:** `--isolated-install`, `--update`, `--install-from-lockfile`, `--repair-isolated`
+
+**См. подробнее:** `examples/installation-commands.md`
 
 ### 3. Running the Script
+Basic launch commands with proxy/router/chrome options.
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `./iclaude.sh` | Launch with saved proxy | `./iclaude.sh` | Default behavior |
-| `--no-proxy` | Launch without proxy | `./iclaude.sh --no-proxy` | Bypass saved credentials |
-| `--proxy URL` | Launch with custom proxy | `./iclaude.sh --proxy https://user:pass@proxy:8118` | Saves credentials |
-| `--system` | Use system installation | `./iclaude.sh --system` | Instead of isolated |
-| `-- ARGS` | Pass args to Claude | `./iclaude.sh -- --model opus` | After `--` separator |
+**Key commands:** `./iclaude.sh`, `--proxy URL`, `--no-proxy`, `--system`
 
 ### 4. Router Commands
+Managing Claude Code Router (alternative LLM providers).
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--install-router` | Install Router package | `./iclaude.sh --install-router` | npm install globally |
-| `--check-router` | Check router status | `./iclaude.sh --check-router` | Version, config, providers |
-| `--router` | Launch via router | `./iclaude.sh --router` | Opt-in activation |
-| Default (no flag) | Launch native Claude | `./iclaude.sh` | Without router |
+**Key commands:** `--install-router`, `--check-router`, `--router`
 
 ### 5. Chrome Integration
+Chrome browser automation controls (enabled by default).
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| Default (no flag) | Chrome enabled | `./iclaude.sh` | Enabled by default |
-| `--no-chrome` | Disable Chrome | `./iclaude.sh --no-chrome` | Reduce context usage |
-| Combined | Proxy without Chrome | `./iclaude.sh --proxy https://proxy:8118 --no-chrome` | Multiple flags |
+**Key commands:** `--no-chrome` (Chrome enabled by default)
 
 ### 6. LSP Server Management
+Installing and checking LSP servers for code intelligence.
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--install-lsp` | Install default LSP | `./iclaude.sh --install-lsp` | TypeScript + Python |
-| `--install-lsp python` | Install specific LSP | `./iclaude.sh --install-lsp python` | Python only |
-| `--install-lsp typescript go` | Install multiple LSP | `./iclaude.sh --install-lsp typescript go` | Space-separated |
-| `--check-lsp` | Check LSP status | `./iclaude.sh --check-lsp` | Installed servers |
+**Key commands:** `--install-lsp [lang...]`, `--check-lsp`
 
 ### 7. Sandbox Commands
+Docker/bubblewrap sandbox availability checks.
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--sandbox-check` | Check sandbox availability | `./iclaude.sh --sandbox-check` | Docker/bubblewrap |
-| `--sandbox-install` | Install dependencies | `./iclaude.sh --sandbox-install` | Linux/WSL2 only |
-| macOS | Check status | `./iclaude.sh --sandbox-check` | Always ready |
-| `--install-from-lockfile` | Restore with sandbox | `./iclaude.sh --install-from-lockfile` | If sandboxAvailable: true |
+**Key commands:** `--sandbox-check`, `--sandbox-install` (Linux only)
 
-### 8. Loop Mode Commands
+### 8. Loop Mode
+Sequential/parallel task execution with retry logic (experimental).
 
-| Command | Purpose | Example | Notes |
-|---------|---------|---------|-------|
-| `--loop task.md` | Execute sequentially | `./iclaude.sh --loop task.md` | With retry logic |
-| `--loop-parallel task.md` | Execute in parallel | `./iclaude.sh --loop-parallel task.md` | Week 2 (not implemented) |
-| `--max-parallel N` | Limit parallel agents | `./iclaude.sh --loop-parallel task.md --max-parallel 3` | Default: CPU count |
+**Key commands:** `--loop task.md`, `--loop-parallel task.md --max-parallel N`
 
----
+## Quick Reference Table
 
-## Loop Mode Task Format
+| Category | Command | Purpose |
+|----------|---------|---------|
+| Testing | `--test` | Test proxy without launching |
+| Testing | `--check-isolated` | Show versions/symlinks/lockfile |
+| Install | `--isolated-install` | Install isolated environment |
+| Install | `--update` | Update Claude Code |
+| Install | `--install-from-lockfile` | Restore exact versions |
+| Running | `./iclaude.sh` | Launch with saved proxy |
+| Running | `--proxy URL` | Launch with custom proxy |
+| Router | `--install-router` | Install Router package |
+| Router | `--router` | Launch via router |
+| LSP | `--install-lsp` | Install LSP servers |
+| Sandbox | `--sandbox-check` | Check sandbox availability |
 
-```markdown
-# Task: Fix TypeScript errors
-
-## Description
-Fix all TypeScript compilation errors in src/
-
-## Completion Promise
-npm run type-check
-
-## Validation Command
-npm run type-check
-
-## Max Iterations
-5
-
-## Git Config
-Branch: fix/typescript-errors
-Commit message: fix: resolve TypeScript errors
-Auto-push: true
-```
-
-**Features:**
-- Sequential execution with retry logic
-- Exponential backoff (2s, 4s, 8s, 16s, 32s, capped at 60s)
-- Completion promise verification
-- Git integration (auto-commit + push)
-
-**Example task files:**
-- `examples/test-loop-simple.md` - Basic task
-- `examples/test-loop-retry.md` - Retry logic test
-
----
+**Full tables:** См. `examples/testing-commands.md` и `examples/installation-commands.md`
 
 ## Command Combinations
 
 ### Development Workflow
-
 ```bash
-# 1. Install isolated environment
-./iclaude.sh --isolated-install
-
-# 2. Test proxy
-./iclaude.sh --test
-
-# 3. Launch with proxy
-./iclaude.sh --proxy https://proxy:8118
-
-# 4. Check status
-./iclaude.sh --check-isolated
+./iclaude.sh --isolated-install  # 1. Install
+./iclaude.sh --test              # 2. Test proxy
+./iclaude.sh --proxy https://..  # 3. Launch with proxy
+./iclaude.sh --check-isolated    # 4. Verify status
 ```
 
 ### CI/CD Workflow
-
 ```bash
-# 1. Restore from lockfile
-./iclaude.sh --install-from-lockfile
-
-# 2. Validate script
-bash -n iclaude.sh
-
-# 3. Run tests
-./iclaude.sh --test
-
-# 4. Check versions
-./iclaude.sh --check-isolated
+./iclaude.sh --install-from-lockfile  # Restore exact versions
+bash -n iclaude.sh                    # Validate syntax
+./iclaude.sh --test                   # Test configuration
 ```
 
 ### Router Development
-
 ```bash
-# 1. Install router
-./iclaude.sh --install-router
-
-# 2. Check status
-./iclaude.sh --check-router
-
-# 3. Launch with router
-./iclaude.sh --router
-
-# 4. Launch without router (native Claude)
-./iclaude.sh
+./iclaude.sh --install-router    # Install router
+./iclaude.sh --check-router      # Verify config
+./iclaude.sh --router            # Launch with router
+./iclaude.sh                     # Launch without router (native Claude)
 ```
 
----
+**См. больше примеров:** `examples/workflow-examples.md`
 
-## Integration with Other Skills
+## Integration
 
-### Input Dependencies
+**Input:** None (reference skill)
+**Output:** Command syntax and examples
 
-None (reference skill only)
+**Consumers:**
+- iclaude-validation → Test commands
+- iclaude-best-practices → Usage examples
+- User → Command reference
 
-### Output Consumers
+## Examples
 
-Referenced by:
-- `iclaude-validation` → Test commands
-- `iclaude-best-practices` → Usage examples
-- `iclaude-dev-tasks` → Command workflows
-
----
+- **Testing commands:** `examples/testing-commands.md` - All testing/validation commands with examples
+- **Installation commands:** `examples/installation-commands.md` - Install/update/repair commands
+- **Workflow examples:** `examples/workflow-examples.md` - Common development/CI workflows
 
 ## Notes
 
