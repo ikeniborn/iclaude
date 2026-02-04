@@ -1,8 +1,8 @@
 ---
 name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
-version: 1.3.0
-tags: [meta, generator, scaffolding, templates, schemas, validation, interactive, toon]
+version: 1.4.0
+tags: [meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition]
 dependencies: [thinking-framework, structured-planning, validation-framework, toon-skill]
 files:
   templates: ./templates/*.json
@@ -11,6 +11,17 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 changelog:
+  - version: 1.4.0
+    date: 2026-02-04
+    changes:
+      - "**Decomposition Support**: Generate skills with @example/@rules/@template references"
+      - "Added Q9-Q11: Examples Count (2-5), Examples Categories, Generate Rules (Y/n)"
+      - "Auto-generate 2-5 examples (basic, advanced, error-handling, performance, security)"
+      - "Auto-generate rules/best-practices.md with 3 sections (Best Practices, Common Pitfalls, Performance Tips)"
+      - "Added @template:rules-template.json for rules structure generation"
+      - "Added @example:multi-example-skill.md demonstrating decomposed structure"
+      - "SKILL.md now uses references instead of inline content (~30% token savings)"
+      - "Updated skill-template-base.json with examples_generation and rules_generation config"
   - version: 1.3.0
     date: 2026-01-26
     changes:
@@ -50,9 +61,10 @@ changelog:
 |--------|---------|
 | **Invocation** | `/skill-generator` (manual only, never auto-invoked) |
 | **Duration** | ~5 min (Q&A + generation) vs ~2-3 hours manual |
-| **Inputs** | 8-9 interactive questions (skill name, type, dependencies, templates) |
-| **Outputs** | SKILL.md + templates/*.json + schemas/*.schema.json + examples/*.md |
-| **Auto-generates** | JSON Schema from template placeholders (35-45% token savings) |
+| **Inputs** | 8-12 interactive questions (skill name, type, dependencies, templates, examples count/categories, rules) |
+| **Outputs** | SKILL.md + templates/*.json + schemas/*.schema.json + examples/*.md (2-5) + rules/best-practices.md |
+| **Decomposition** | SKILL.md uses @example/@rules/@template references (30% token savings) |
+| **Auto-generates** | JSON Schema from template placeholders (35-45% token savings) + rules structure from template |
 | **Validation** | 5 validators (YAML, JSON, Schema, Markdown, File Structure) |
 | **TOON Support** | Auto-generates TOON for files_created[] & validation_results[] |
 | **Target Location** | `.claude/skills/` (project) or `.nvm-isolated/.claude-isolated/skills/` (global) |
@@ -139,7 +151,10 @@ if (fs.existsSync(projectSkillsDir)) {
 | **Q6: Output Format** | 1=JSON, 2=YAML, 3=Markdown, 4=Text, 5=Mixed | enum [1,2,3,4,5] | JSON | Determines template structure |
 | **Q7: Templates** | Comma-separated template names | kebab-case | input, output | Each → `templates/{name}.json` |
 | **Q8: Features** | Comma-separated: rules, examples, shared-data | enum | examples | Controls directory creation |
-| **Q9: Target Location** | 1=project (.claude/skills/), 2=global (iclaude) | enum [1,2] | project | **Only if BOTH locations available** |
+| **Q9: Examples Count** | How many examples to generate? (2-5) | integer, 2-5 | 3 | 2=minimal (basic+advanced), 3=standard (basic+advanced+error), 5=comprehensive |
+| **Q10: Examples Categories** | Comma-separated: basic, advanced, error-handling, performance, security | enum | basic,advanced,error-handling | Determines example scenarios |
+| **Q11: Generate Rules** | Generate rules/best-practices.md? (Y/n) | boolean | y | Creates comprehensive rules file with best practices, pitfalls, performance tips |
+| **Q12: Target Location** | 1=project (.claude/skills/), 2=global (iclaude) | enum [1,2] | project | **Only if BOTH locations available** |
 
 **Output Structure:**
 ```json
@@ -153,6 +168,9 @@ if (fs.existsSync(projectSkillsDir)) {
     "output_format": "JSON",
     "templates": ["input", "output", "config"],
     "features": ["rules", "examples"],
+    "examples_count": 3,
+    "examples_categories": ["basic", "advanced", "error-handling"],
+    "generate_rules": true,
     "target_location": "project"
   }
 }
@@ -200,13 +218,13 @@ ACCEPTANCE CRITERIA:
 
 **Purpose:** Generate all skill files with correct content
 
-| Component | Description | Reference |
-|-----------|-------------|-----------|
-| **SKILL.md** | YAML frontmatter + standard sections (When to Use, How It Works, Output Format, etc.) | `@template:skill-template-base` |
-| **JSON Templates** | Input/output templates with `{{placeholder}}` syntax | `@example:simple-system-skill` |
-| **JSON Schemas** | Auto-generated from template placeholders (35-45% token savings) | `@rules:placeholder-mapping` |
-| **Examples** | Usage examples (Scenario, Input, Output, Explanation) | `@example:simple-system-skill` |
-| **Rules** | Best practices and common pitfalls (optional) | - |
+| Component | Description | Reference | Multiplicity |
+|-----------|-------------|-----------|--------------|
+| **SKILL.md** | YAML frontmatter + sections with @references (Examples, Rules, Templates) | `@template:skill-template-base` | 1 |
+| **examples/*.md** | Usage scenarios (basic, advanced, error-handling, performance, security) | `@example:multi-example-skill` | 2-5 |
+| **rules/best-practices.md** | Best practices + common pitfalls + performance tips | `@template:rules-template` | 0-1 |
+| **templates/*.json** | Input/output templates with `{{placeholder}}` syntax | `@example:simple-system-skill` | 1-N |
+| **schemas/*.schema.json** | Auto-generated from template placeholders (35-45% token savings) | `@rules:placeholder-mapping` | 1-N |
 
 **Placeholder Syntax:**
 
@@ -229,6 +247,49 @@ ACCEPTANCE CRITERIA:
 5. Generate JSON Schema Draft-7
 
 **See also:** `@example:simple-system-skill` for complete template → schema → example workflow
+
+**Examples Generation (decomposed structure):**
+
+Based on Q9 (Examples Count) and Q10 (Categories), generates 2-5 example files:
+
+| Count | Generated Files | Use Case |
+|-------|----------------|----------|
+| **2** | basic-usage.md, advanced-scenario.md | Minimal (quick start + advanced feature) |
+| **3** | basic-usage.md, advanced-scenario.md, error-handling.md | Standard (covers normal + edge cases) |
+| **5** | basic-usage.md, advanced-scenario.md, error-handling.md, performance-optimization.md, security-hardening.md | Comprehensive (all aspects) |
+
+Each example includes:
+- Scenario description
+- Input structure
+- Output/result
+- Explanation
+
+**SKILL.md uses @references:**
+```markdown
+## Examples
+- **@example:basic-usage.md** - Simple usage with default options
+- **@example:advanced-scenario.md** - Complex scenario with custom configuration
+- **@example:error-handling.md** - Handling edge cases and errors
+```
+
+**Rules Generation (optional):**
+
+If Q11 = yes, generates `rules/best-practices.md` using `@template:rules-template.json`:
+
+**Structure:**
+1. **Best Practices** - 3-5 guidelines with rationale
+2. **Common Pitfalls** - 3-5 mistakes with consequences + solutions
+3. **Performance Tips** - 3-5 optimizations with impact
+
+**SKILL.md reference:**
+```markdown
+## Rules
+- **@rules:best-practices.md** - Design patterns, common pitfalls, performance optimization
+```
+
+**Token savings:** ~30% compared to inline examples + rules (content in separate files)
+
+**See also:** `@example:multi-example-skill` for complete decomposed skill structure
 
 ### Step 5: Validation
 

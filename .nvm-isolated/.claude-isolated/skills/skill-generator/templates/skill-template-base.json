@@ -1,5 +1,5 @@
 {
-  "$comment": "Base template for generated SKILL.md frontmatter and structure",
+  "$comment": "Base template for generated SKILL.md frontmatter and structure with decomposition support",
   "skill_template": {
     "frontmatter": {
       "name": "{{name: string}}",
@@ -28,17 +28,50 @@
       "",
       "### Workflow Integration (JSON)",
       "",
+      "## Examples",
+      "",
+      "{{examples_list}}",
+      "",
+      "## Rules",
+      "",
+      "{{rules_section}}",
+      "",
       "## Templates",
       "",
-      "## Schemas",
+      "{{templates_section}}",
       "",
-      "## Examples",
+      "## Schemas",
       "",
       "## Workflow Integration",
       "",
       "### Input Dependencies",
       "",
       "### Output Consumers"
-    ]
+    ],
+    "examples_generation": {
+      "$comment": "Configuration for generating multiple examples",
+      "count": "{{examples_count: integer, min 2, max 5, default 3}}",
+      "categories": [
+        "basic-usage",
+        "advanced-scenario",
+        "error-handling"
+      ],
+      "format": "- **@example:{{filename}}.md** - {{description}}"
+    },
+    "rules_generation": {
+      "$comment": "Configuration for generating rules/best-practices.md",
+      "enabled": true,
+      "filename": "best-practices.md",
+      "sections": [
+        "Best Practices",
+        "Common Pitfalls",
+        "Performance Tips"
+      ],
+      "format": "- **@rules:{{filename}}** - {{description}}"
+    },
+    "templates_section": {
+      "$comment": "Configuration for templates references",
+      "format": "- **@template:{{filename}}.json** - {{description}}"
+    }
   }
 }
