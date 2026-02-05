@@ -39,6 +39,9 @@ SKILLS_TO_CHECK=(
   "context7-integration"
   "lsp-integration"
   "thinking-framework"
+  "prd-generator"
+  "toon-skill"
+  "structured-planning"
 )
 
 # Function to validate a single SKILL.md file

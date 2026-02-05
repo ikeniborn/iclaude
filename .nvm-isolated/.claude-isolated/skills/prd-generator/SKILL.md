@@ -648,18 +648,37 @@ See `templates/prd-output.json` for full schema
 
 **Error codes and actions:**
 
+<a id="error-codes"></a>
+
+**Quick Reference (First 3 Error Codes)**
+
 | Code | Error | Action |
 |------|-------|--------|
 | E001 | User cancellation | STOP, return cancellation message |
 | E002 | Invalid input (questionnaire) | Retry 3x with helpful message |
 | E003 | Context detection failed | Continue without pre-fill |
-| E004 | Directory permission error | STOP, suggest alternative |
-| E005 | Mermaid syntax error | Retry 2x, fallback to simplified |
-| E006 | Markdown syntax error | Auto-fix heading levels |
-| E007 | Broken navigation link | Remove link or mark TODO |
-| E008 | Merge conflict | Create .new file, ask user |
-| E009 | Content generation timeout | Skip section, add placeholder |
-| E010 | Validation failed (critical) | Mark status "partial" |
+
+*(See TOON block below for complete 10-error catalog)*
+
+**Complete Error Codes (TOON)**
+
+<!-- TOON-optimized: 42% token savings (estimated 380 → 220 tokens) -->
+
+```toon
+error_codes[10]{code,error,action}:
+  E001,User cancellation,STOP return cancellation message
+  E002,Invalid input (questionnaire),Retry 3x with helpful message
+  E003,Context detection failed,Continue without pre-fill
+  E004,Directory permission error,STOP suggest alternative
+  E005,Mermaid syntax error,Retry 2x fallback to simplified
+  E006,Markdown syntax error,Auto-fix heading levels
+  E007,Broken navigation link,Remove link or mark TODO
+  E008,Merge conflict,Create .new file ask user
+  E009,Content generation timeout,Skip section add placeholder
+  E010,Validation failed (critical),Mark status partial
+```
+
+**Usage:** Apply appropriate error recovery action based on error code.
 
 **Retry logic:**
 - Questionnaire: max 3 retries per question

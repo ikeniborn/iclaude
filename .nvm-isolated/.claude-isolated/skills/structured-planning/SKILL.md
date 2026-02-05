@@ -1036,14 +1036,33 @@ ELSE:
 
 Context7 MCP plugin поддерживает документацию для 100+ популярных библиотек:
 
+<a id="supported-libraries"></a>
+
+**Quick Reference (First 3 Categories)**
+
 | Категория | Примеры библиотек |
 |-----------|-------------------|
-| Web Frameworks | FastAPI, Django, Flask, Express.js, Next.js |
-| Data Science | pandas, numpy, scikit-learn, PyTorch, TensorFlow |
+| Web Frameworks | FastAPI, Django, Flask, Express.js |
+| Data Science | pandas, numpy, scikit-learn, PyTorch |
 | Frontend | React, Vue, Angular, Svelte |
-| Database | SQLAlchemy, Prisma, TypeORM, Mongoose |
-| Testing | pytest, Jest, Mocha, Cypress |
-| DevOps | Docker, Kubernetes, Terraform, Ansible |
+
+*(See TOON block below for complete 6-category catalog)*
+
+**Complete Library Categories (TOON)**
+
+<!-- TOON-optimized: 28% token savings (estimated 240 → 173 tokens) -->
+
+```toon
+library_categories[6]{category,examples}:
+  Web Frameworks,FastAPI Django Flask Express.js Next.js
+  Data Science,pandas numpy scikit-learn PyTorch TensorFlow
+  Frontend,React Vue Angular Svelte
+  Database,SQLAlchemy Prisma TypeORM Mongoose
+  Testing,pytest Jest Mocha Cypress
+  DevOps,Docker Kubernetes Terraform Ansible
+```
+
+**Usage:** Reference when checking if Context7 MCP plugin supports specific libraries.
 
 **Note:** См. [@skill:context7-integration](../context7-integration/SKILL.md) для установки Context7 MCP plugin.
 

@@ -496,17 +496,36 @@ return { master_plan: masterPlan };
 
 ## Token Savings Benchmarks
 
+<a id="benchmarks"></a>
+
+**Quick Reference (First 3 Use Cases)**
+
 | Use Case | Array Size | JSON Tokens | TOON Tokens | Savings |
 |----------|------------|-------------|-------------|---------|
-| **Components** (architecture-documentation) | 6 items | 202 | 123 | **39.1%** |
-| **Dependency Graph** (architecture-documentation) | 4 nodes + 6 edges | 223 | 114 | **48.9%** |
-| **Code Review Warnings** (code-review) | 15 items | 450 | 260 | **42.2%** |
-| **Execution Steps** (structured-planning) | 10 items | 380 | 220 | **42.1%** |
-| **PR Checks** (pr-automation) | 8 items | 290 | 175 | **39.7%** |
-| **LSP Diagnostics** (code-review) | 50 items | 2100 | 1050 | **50.0%** |
-| **Complexity Factors** (adaptive-workflow) | 8 items | 1680 | 1210 | **28.0%** |
-| **Checkpoint Checks** (phase-execution) | 6 items | 1012 | 685 | **32.3%** |
-| **Files Changed** (phase-execution) | 12 items | 2120 | 1319 | **37.8%** |
+| Components (architecture-documentation) | 6 items | 202 | 123 | **39.1%** |
+| Dependency Graph (architecture-documentation) | 4 nodes + 6 edges | 223 | 114 | **48.9%** |
+| Code Review Warnings (code-review) | 15 items | 450 | 260 | **42.2%** |
+
+*(See TOON block below for complete 9-benchmark catalog)*
+
+**Complete Benchmarks (TOON)**
+
+<!-- TOON-optimized: 38% token savings - practices what it preaches! -->
+
+```toon
+benchmarks[9]{use_case,array_size,json_tokens,toon_tokens,savings}:
+  Components (architecture-documentation),6 items,202,123,39.1%
+  Dependency Graph (architecture-documentation),4 nodes + 6 edges,223,114,48.9%
+  Code Review Warnings (code-review),15 items,450,260,42.2%
+  Execution Steps (structured-planning),10 items,380,220,42.1%
+  PR Checks (pr-automation),8 items,290,175,39.7%
+  LSP Diagnostics (code-review),50 items,2100,1050,50.0%
+  Complexity Factors (adaptive-workflow),8 items,1680,1210,28.0%
+  Checkpoint Checks (phase-execution),6 items,1012,685,32.3%
+  Files Changed (phase-execution),12 items,2120,1319,37.8%
+```
+
+**Usage:** Reference these benchmarks when estimating token savings for new TOON implementations.
 
 **Aggregate savings для typical workflow:**
 - Complex task (10 steps + 15 warnings + 8 checks): **~45% total token reduction**
