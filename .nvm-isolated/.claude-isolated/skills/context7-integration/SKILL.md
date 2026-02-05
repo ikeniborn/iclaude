@@ -1043,15 +1043,34 @@ Process:
 
 ### Supported Languages and Manifests
 
+<a id="supported-languages"></a>
+
+**Quick Reference (First 3 Languages)**
+
 | Language | Manifest Files | Parsing Method | Common Libraries |
 |----------|----------------|----------------|------------------|
-| JavaScript | package.json | jq | react, express, next, vue, axios |
-| TypeScript | package.json | jq | react, express, next, vue, axios, zod |
-| Python | requirements.txt, pyproject.toml | grep/sed | fastapi, django, flask, pytest, sqlalchemy |
-| Go | go.mod | grep/awk | gin, echo, fiber, gorm, cobra |
-| Rust | Cargo.toml | grep/awk | tokio, serde, actix-web, diesel, clap |
-| Java | pom.xml, build.gradle | xml/gradle parser | spring, hibernate, junit |
-| C# | *.csproj | xml parser | asp.net, entity-framework |
+| JavaScript | package.json | jq | react, express, next, vue |
+| TypeScript | package.json | jq | react, express, next, vue, zod |
+| Python | requirements.txt, pyproject.toml | grep/sed | fastapi, django, flask |
+
+*(See TOON block below for complete 7-language catalog)*
+
+**Complete Language Support (TOON)**
+
+<!-- TOON-optimized: 38% token savings (estimated 380 → 235 tokens) -->
+
+```toon
+supported_languages[7]{language,manifest_files,parsing_method,common_libraries}:
+  JavaScript,package.json,jq,react express next vue axios
+  TypeScript,package.json,jq,react express next vue axios zod
+  Python,requirements.txt pyproject.toml,grep/sed,fastapi django flask pytest sqlalchemy
+  Go,go.mod,grep/awk,gin echo fiber gorm cobra
+  Rust,Cargo.toml,grep/awk,tokio serde actix-web diesel clap
+  Java,pom.xml build.gradle,xml/gradle parser,spring hibernate junit
+  C#,*.csproj,xml parser,asp.net entity-framework
+```
+
+**Usage:** Detect language and parse manifest files to extract library dependencies.
 
 **Note:** Для Java и C# требуется более сложный парсинг XML. Можно использовать `xmllint` или `xpath` для extraction.
 

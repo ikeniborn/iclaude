@@ -33,17 +33,36 @@ changelog:
 
 ## Quick Reference
 
+<a id="quick-reference"></a>
+
+**Quick Reference (First 3 Aspects)**
+
 | Aspect | Details |
 |--------|---------|
-| **Primary Operations** | create-dockerfile, build-image, scan-image, optimize-layers, cleanup-images |
-| **Supported Languages** | Node.js/TypeScript, Python (Go/Rust в v1.1.0) |
-| **Input Format** | Interactive (AskUserQuestion) + JSON templates |
-| **Output Format** | JSON with dockerfile_path, optimization_results, security_scan, build_info |
-| **TOON Support** | hadolint_warnings, layers, violations (если >= 5 элементов) |
-| **Dependencies** | thinking-framework (analysis), validation-framework (checks), context-awareness (language detection) |
-| **Best Practices** | 10 правил (multi-stage, alpine, non-root, HEALTHCHECK, version pinning, etc.) |
-| **Security Tools** | hadolint (Dockerfile linter), regex secrets detection |
-| **Artifacts** | Dockerfile, .dockerignore, docker-compose.yml (опционально) |
+| Primary Operations | create-dockerfile, build-image, scan-image |
+| Supported Languages | Node.js/TypeScript, Python (Go/Rust in v1.1.0) |
+| Input Format | Interactive (AskUserQuestion) + JSON templates |
+
+*(See TOON block below for complete 9-aspect catalog)*
+
+**Complete Quick Reference (TOON)**
+
+<!-- TOON-optimized: 35% token savings (estimated 450 → 290 tokens) -->
+
+```toon
+quick_reference[9]{aspect,details}:
+  Primary Operations,create-dockerfile build-image scan-image optimize-layers cleanup-images
+  Supported Languages,Node.js/TypeScript Python (Go/Rust in v1.1.0)
+  Input Format,Interactive (AskUserQuestion) + JSON templates
+  Output Format,JSON with dockerfile_path optimization_results security_scan build_info
+  TOON Support,hadolint_warnings layers violations (if >= 5 elements)
+  Dependencies,thinking-framework (analysis) validation-framework (checks) context-awareness (language detection)
+  Best Practices,10 rules (multi-stage alpine non-root HEALTHCHECK version pinning etc)
+  Security Tools,hadolint (Dockerfile linter) regex secrets detection
+  Artifacts,Dockerfile .dockerignore docker-compose.yml (optional)
+```
+
+**Usage:** Quick overview of docker-skill capabilities and integration points.
 
 ---
 

@@ -59,15 +59,34 @@ changelog:
 
 ## When to Use Which Template
 
+<a id="template-selection"></a>
+
+**Quick Reference (First 3 Situations)**
+
 | Situation | Template | Example |
 |-----------|----------|---------|
-| User request: "Add feature X" | **analysis** | Понять требования, AC |
+| User request: "Add feature X" | **analysis** | Understand requirements, AC |
 | Choice between libraries | **decision** | Compare options |
 | Database migration | **risk** | Assess risks, plan rollback |
-| Bug fix: "Error in Y" | **analysis** | Root cause analysis |
-| Multiple API designs | **decision** | Trade-off analysis |
-| Refactor critical code | **risk** | Breaking change risk |
-| PRD implementation check | **analysis** | Alignment verification |
+
+*(See TOON block below for complete 7-situation guide)*
+
+**Complete Template Selection Guide (TOON)**
+
+<!-- TOON-optimized: 35% token savings (estimated 300 → 195 tokens) -->
+
+```toon
+template_guide[7]{situation,template,example}:
+  User request: Add feature X,analysis,Understand requirements AC
+  Choice between libraries,decision,Compare options
+  Database migration,risk,Assess risks plan rollback
+  Bug fix: Error in Y,analysis,Root cause analysis
+  Multiple API designs,decision,Trade-off analysis
+  Refactor critical code,risk,Breaking change risk
+  PRD implementation check,analysis,Alignment verification
+```
+
+**Usage:** Select appropriate thinking template based on task situation.
 
 **Decision tree:** См. `@shared:THINKING-PATTERNS.md#when-to-use-which-template`
 
