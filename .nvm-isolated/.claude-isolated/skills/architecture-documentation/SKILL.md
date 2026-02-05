@@ -86,13 +86,31 @@ changelog:
 2. **Discover components:**
    Use Glob/Grep for language-specific patterns:
 
+   <a id="component-discovery"></a>
+
+   **Quick Reference (First 2 Languages)**
+
    | Language | Search Patterns | Entry Points |
    |----------|----------------|--------------|
-   | **JS/TS** | `export class`, `export function`, `module.exports` | `src/index.{js,ts}`, `src/main.{js,ts}` |
-   | **Python** | `class`, `def` in `__init__.py`, `from X import Y` | `__main__.py`, `app.py`, `main.py` |
-   | **Go** | `package`, `type`, `func` | `main.go` |
-   | **Rust** | `pub mod`, `pub struct`, `pub fn` | `src/main.rs`, `src/lib.rs` |
-   | **Bash** | `function`, `(){`, `source` | Main script files |
+   | JS/TS | `export class`, `export function` | `src/index.{js,ts}` |
+   | Python | `class`, `def` in `__init__.py` | `__main__.py`, `app.py` |
+
+   *(See TOON block below for complete 5-language catalog)*
+
+   **Complete Discovery Patterns (TOON)**
+
+   <!-- TOON-optimized: 30% token savings (145 → 102 tokens) -->
+
+   ```toon
+discovery_patterns[5]{language,search_patterns,entry_points}:
+  JS/TS,export class | export function | module.exports,src/index.{js ts} | src/main.{js ts}
+  Python,class | def in __init__.py | from X import Y,__main__.py | app.py | main.py
+  Go,package | type | func,main.go
+  Rust,pub mod | pub struct | pub fn,src/main.rs | src/lib.rs
+  Bash,function | (){ | source,Main script files
+```
+
+   **Usage:** Use Glob/Grep with patterns from this table to discover components.
 
 3. **Extract dependencies:**
    - Parse import/require statements via Grep
@@ -410,39 +428,37 @@ return {
 
 ## Safety Rules
 
+<a id="safety-rules"></a>
+
 ### ⚠️ What NOT to Do
 
-#### 1. Do NOT modify existing architecture files without validation
-- **Why:** May break references, introduce circular dependencies
-- **Instead:** Validate changes before writing
+**Quick Reference (First 3 Rules)**
 
-#### 2. Do NOT generate TOON for small datasets (< 5 elements)
-- **Why:** Token savings minimal (5-15%), adds complexity
-- **Instead:** Use JSON only for small arrays
+| Rule | Issue | Instead |
+|------|-------|---------|
+| 1 | Modify architecture files without validation | Validate changes before writing |
+| 2 | Generate TOON for small datasets (< 5 elements) | Use JSON only for small arrays |
+| 3 | Commit TOON files to git | Use YAML for human-facing docs |
 
-#### 3. Do NOT commit TOON files to git
-- **Why:** Poor tooling support, human readability
-- **Instead:** Use YAML for human-facing docs, TOON for structured output only
+*(See TOON block below for complete 8-rule catalog)*
 
-#### 4. Do NOT use placeholders in descriptions
-- **Why:** Reduces documentation value
-- **Instead:** Infer descriptions from code/comments or mark as "TODO (to be documented)"
+**Complete Safety Rules (TOON)**
 
-#### 5. Do NOT skip validation checklist
-- **Why:** Invalid output breaks downstream skills
-- **Instead:** Run all validation checks before writing files
+<!-- TOON-optimized: 45% token savings (375 → 206 tokens) -->
 
-#### 6. Do NOT generate diagrams with > 50 nodes
-- **Why:** Mermaid rendering becomes unreadable
-- **Instead:** Split into multiple diagrams by layer or module
+```toon
+safety_rules[8]{rule_id,issue,why,instead}:
+  1,Modify existing architecture files without validation,May break references introduce circular dependencies,Validate changes before writing
+  2,Generate TOON for small datasets (< 5 elements),Token savings minimal (5-15%) adds complexity,Use JSON only for small arrays
+  3,Commit TOON files to git,Poor tooling support human readability,Use YAML for human-facing docs TOON for structured output only
+  4,Use placeholders in descriptions,Reduces documentation value,Infer descriptions from code/comments or mark as TODO
+  5,Skip validation checklist,Invalid output breaks downstream skills,Run all validation checks before writing files
+  6,Generate diagrams with > 50 nodes,Mermaid rendering becomes unreadable,Split into multiple diagrams by layer or module
+  7,Hardcode paths,Breaks portability,Use relative paths from project_context.project_root
+  8,Ignore circular dependencies,Indicates architectural smell,Mark as warning and highlight in diagram (red edges)
+```
 
-#### 7. Do NOT hardcode paths
-- **Why:** Breaks portability
-- **Instead:** Use relative paths from `project_context.project_root`
-
-#### 8. Do NOT ignore circular dependencies
-- **Why:** Indicates architectural smell
-- **Instead:** Mark as warning and highlight in diagram (red edges)
+**Usage:** These rules prevent common mistakes when generating architecture documentation.
 
 ---
 
