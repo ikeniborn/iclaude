@@ -33,6 +33,12 @@ INVALID_BLOCKS=0
 SKILLS_TO_CHECK=(
   "skill-generator"
   "architecture-documentation"
+  "code-review"
+  "docker-skill"
+  "error-handling"
+  "context7-integration"
+  "lsp-integration"
+  "thinking-framework"
 )
 
 # Function to validate a single SKILL.md file

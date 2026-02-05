@@ -32,16 +32,35 @@ changelog:
 
 ## Error Types и Actions
 
+<a id="error-types"></a>
+
+**Quick Reference (First 3 Error Types)**
+
 | Error Type | Action | Max Retries | Blocking |
 |------------|--------|-------------|----------|
 | SYNTAX_ERROR | FIX, RETRY | 2 | Yes |
 | VALIDATION_FAILED | FIX, RETRY | 2 | Yes |
 | ACCEPTANCE_NOT_MET | FIX, RETRY | 2 | Yes |
-| PRD_CONFLICT | ASK user | 0 | Yes |
-| APPROVAL_REJECTED | STOP | 0 | Yes |
-| GIT_FAILED | STOP | 0 | Yes |
-| FILE_NOT_FOUND | ASK user | 0 | No |
-| PERMISSION_DENIED | STOP | 0 | Yes |
+
+*(See TOON block below for complete 8-error catalog)*
+
+**Complete Error Types (TOON)**
+
+<!-- TOON-optimized: 35% token savings (estimated 320 → 208 tokens) -->
+
+```toon
+error_types[8]{error_type,action,max_retries,blocking}:
+  SYNTAX_ERROR,FIX RETRY,2,Yes
+  VALIDATION_FAILED,FIX RETRY,2,Yes
+  ACCEPTANCE_NOT_MET,FIX RETRY,2,Yes
+  PRD_CONFLICT,ASK user,0,Yes
+  APPROVAL_REJECTED,STOP,0,Yes
+  GIT_FAILED,STOP,0,Yes
+  FILE_NOT_FOUND,ASK user,0,No
+  PERMISSION_DENIED,STOP,0,Yes
+```
+
+**Usage:** Classify errors and apply appropriate recovery actions with retry limits.
 
 ## Error Handling Flow
 

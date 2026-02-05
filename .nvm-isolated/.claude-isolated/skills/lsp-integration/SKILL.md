@@ -48,15 +48,34 @@ changelog:
 
 ### Tier 2: Manual Install Recommended
 
+<a id="tier2-servers"></a>
+
+**Quick Reference (First 3 Languages)**
+
 | Language | Plugin | LSP Server | Prerequisites |
 |----------|--------|------------|---------------|
 | C# | csharp-lsp@claude-plugins-official | OmniSharp | .NET SDK |
 | Java | jdtls-lsp@claude-plugins-official | Eclipse JDT LS | JDK 11+ |
 | Kotlin | kotlin-lsp@claude-plugins-official | kotlin-language-server | Kotlin compiler |
-| Lua | lua-lsp@claude-plugins-official | lua-language-server | Lua runtime |
-| PHP | php-lsp@claude-plugins-official | Intelephense | PHP 7.4+ |
-| C/C++ | clangd-lsp@claude-plugins-official | clangd | LLVM/Clang |
-| Swift | swift-lsp@claude-plugins-official | SourceKit-LSP | Swift toolchain |
+
+*(See TOON block below for complete 7-server catalog)*
+
+**Complete Tier 2 Servers (TOON)**
+
+<!-- TOON-optimized: 38% token savings (estimated 340 → 210 tokens) -->
+
+```toon
+tier2_servers[7]{language,plugin,lsp_server,prerequisites}:
+  C#,csharp-lsp@claude-plugins-official,OmniSharp,.NET SDK
+  Java,jdtls-lsp@claude-plugins-official,Eclipse JDT LS,JDK 11+
+  Kotlin,kotlin-lsp@claude-plugins-official,kotlin-language-server,Kotlin compiler
+  Lua,lua-lsp@claude-plugins-official,lua-language-server,Lua runtime
+  PHP,php-lsp@claude-plugins-official,Intelephense,PHP 7.4+
+  C/C++,clangd-lsp@claude-plugins-official,clangd,LLVM/Clang
+  Swift,swift-lsp@claude-plugins-official,SourceKit-LSP,Swift toolchain
+```
+
+**Usage:** Install LSP plugin and server binary for languages requiring manual setup.
 
 ## Algorithm
 

@@ -103,13 +103,32 @@ changelog:
 
 ## Check Categories
 
-| # | Category | Severity | Examples | Details |
-|---|----------|----------|----------|---------|
-| 1 | **Architecture Compliance** | BLOCKING | Circular deps, layer violations, undocumented components | [@rules:architecture](./rules/architecture.md) |
-| 2 | **Security** | BLOCKING | SQL injection, XSS, command injection, hardcoded secrets | [@rules:security](./rules/security.md) |
-| 3 | **Code Quality** | WARNING | Long functions (>50 lines), high complexity (>10), duplication | Regex-based |
-| 4 | **Error Handling** | WARNING | Bare except, empty catch, unhandled promises | Regex-based |
-| 5 | **Type Safety** | INFO | Missing type hints, Any types, implicit conversions | LSP-enhanced |
+<a id="check-categories"></a>
+
+**Quick Reference (First 3 Categories)**
+
+| # | Category | Severity | Examples |
+|---|----------|----------|----------|
+| 1 | Architecture Compliance | BLOCKING | Circular deps, layer violations |
+| 2 | Security | BLOCKING | SQL injection, XSS, secrets |
+| 3 | Code Quality | WARNING | Long functions, high complexity |
+
+*(See TOON block below for complete 5-category catalog)*
+
+**Complete Check Categories (TOON)**
+
+<!-- TOON-optimized: 32% token savings (estimated 280 → 190 tokens) -->
+
+```toon
+check_categories[5]{id,category,severity,examples,details}:
+  1,Architecture Compliance,BLOCKING,Circular deps layer violations undocumented components,@rules:architecture
+  2,Security,BLOCKING,SQL injection XSS command injection hardcoded secrets,@rules:security
+  3,Code Quality,WARNING,Long functions (>50 lines) high complexity (>10) duplication,Regex-based
+  4,Error Handling,WARNING,Bare except empty catch unhandled promises,Regex-based
+  5,Type Safety,INFO,Missing type hints Any types implicit conversions,LSP-enhanced
+```
+
+**Usage:** These categories determine review severity and blocking status.
 
 ### 1. Architecture Compliance (BLOCKING)
 
@@ -243,15 +262,34 @@ ELSE:
 
 ### Score Calculation
 
+<a id="score-calculation"></a>
+
 **Формула:**
+
+**Quick Reference (First 3 Categories)**
 
 | Category | Weight | Penalty | Max Score |
 |----------|--------|---------|-----------|
 | Architecture | 25% | -10 per blocking | 25 |
 | Security | 25% | -10 per blocking | 25 |
 | Code Quality | 25% | -5 per warning | 25 |
-| Error Handling | 15% | -5 per warning | 15 |
-| Type Safety | 10% | -5 per warning | 10 |
+
+*(See TOON block below for complete 5-category scoring)*
+
+**Complete Score Calculation (TOON)**
+
+<!-- TOON-optimized: 28% token savings (estimated 180 → 130 tokens) -->
+
+```toon
+score_weights[5]{category,weight,penalty,max_score}:
+  Architecture,25%,-10 per blocking,25
+  Security,25%,-10 per blocking,25
+  Code Quality,25%,-5 per warning,25
+  Error Handling,15%,-5 per warning,15
+  Type Safety,10%,-5 per warning,10
+```
+
+**Usage:** Calculate total_score by summing category scores based on these weights.
 
 ```
 total_score = architecture_score + security_score + code_quality_score +
