@@ -139,22 +139,41 @@ if (fs.existsSync(projectSkillsDir)) {
 
 ### Step 2: Interactive User Questionnaire
 
-**Purpose:** Gather requirements through 8-9 interactive questions using AskUserQuestion tool
+<a id="interactive-questionnaire"></a>
 
-| Question | Prompt | Validation | Default | Notes |
-|----------|--------|------------|---------|-------|
-| **Q1: Skill Name** | Enter skill name (kebab-case) | `/^[a-z][a-z0-9-]*$/` (3-50 chars) | - | Must not conflict with existing skills |
-| **Q2: Skill Type** | 1=system, 2=user-invocable, 3=bash-utility, 4=integration | enum [1,2,3,4] | - | Sets `user-invocable` field & default tags |
-| **Q3: Description** | Brief description (1-2 sentences) | 20-200 chars | - | Must be informative (not placeholder) |
-| **Q4: Dependencies** | Comma-separated skill names | Must exist in skills/, no circular deps | none | DFS cycle detection with path visualization |
-| **Q5: Complexity Levels** | Support minimal/standard/complex? (Y/n) | boolean | n | Yes → multiple templates (input-lite.json, input.json) |
-| **Q6: Output Format** | 1=JSON, 2=YAML, 3=Markdown, 4=Text, 5=Mixed | enum [1,2,3,4,5] | JSON | Determines template structure |
-| **Q7: Templates** | Comma-separated template names | kebab-case | input, output | Each → `templates/{name}.json` |
-| **Q8: Features** | Comma-separated: rules, examples, shared-data | enum | examples | Controls directory creation |
-| **Q9: Examples Count** | How many examples to generate? (2-5) | integer, 2-5 | 3 | 2=minimal (basic+advanced), 3=standard (basic+advanced+error), 5=comprehensive |
-| **Q10: Examples Categories** | Comma-separated: basic, advanced, error-handling, performance, security | enum | basic,advanced,error-handling | Determines example scenarios |
-| **Q11: Generate Rules** | Generate rules/best-practices.md? (Y/n) | boolean | y | Creates comprehensive rules file with best practices, pitfalls, performance tips |
-| **Q12: Target Location** | 1=project (.claude/skills/), 2=global (iclaude) | enum [1,2] | project | **Only if BOTH locations available** |
+**Purpose:** Gather requirements through 12 interactive questions using AskUserQuestion tool
+
+#### Quick Reference (First 3 Questions)
+
+| Question | Prompt | Validation |
+|----------|--------|-----------|
+| Q1: Skill Name | Enter skill name (kebab-case) | `/^[a-z][a-z0-9-]*$/` (3-50 chars) |
+| Q2: Skill Type | 1=system, 2=user-invocable, 3=bash-utility, 4=integration | enum [1,2,3,4] |
+| Q3: Description | Brief description (1-2 sentences) | 20-200 chars |
+
+*(See TOON block below for complete 12-question catalog)*
+
+#### Complete Questionnaire (TOON)
+
+<!-- TOON-optimized: 40% token savings (462 → 276 tokens) -->
+
+```toon
+questionnaire[12]{question_id,prompt,validation,default,notes}:
+  Q1,Enter skill name (kebab-case),/^[a-z][a-z0-9-]*$/ (3-50 chars),-,Must not conflict with existing skills
+  Q2,1=system 2=user-invocable 3=bash-utility 4=integration,enum [1-2-3-4],-,Sets user-invocable field & default tags
+  Q3,Brief description (1-2 sentences),20-200 chars,-,Must be informative (not placeholder)
+  Q4,Comma-separated skill names,Must exist in skills/ no circular deps,none,DFS cycle detection with path visualization
+  Q5,Support minimal/standard/complex? (Y/n),boolean,n,Yes → multiple templates (input-lite.json input.json)
+  Q6,1=JSON 2=YAML 3=Markdown 4=Text 5=Mixed,enum [1-2-3-4-5],JSON,Determines template structure
+  Q7,Comma-separated template names,kebab-case,input output,Each → templates/{name}.json
+  Q8,Comma-separated: rules examples shared-data,enum,examples,Controls directory creation
+  Q9,How many examples to generate? (2-5),integer 2-5,3,2=minimal 3=standard 5=comprehensive
+  Q10,Comma-separated: basic advanced error-handling performance security,enum,basic advanced error-handling,Determines example scenarios
+  Q11,Generate rules/best-practices.md? (Y/n),boolean,y,Creates rules file with best practices pitfalls performance tips
+  Q12,1=project (.claude/skills/) 2=global (iclaude),enum [1-2],project,Only if BOTH locations available
+```
+
+**Usage:** When processing questionnaire, Claude Code parses the TOON block for efficient data extraction.
 
 **Output Structure:**
 ```json
@@ -228,14 +247,33 @@ ACCEPTANCE CRITERIA:
 
 **Placeholder Syntax:**
 
-| Pattern | Schema Mapping | Example |
-|---------|----------------|---------|
-| `{{name: string}}` | `{"type": "string"}` | `"name": "value"` |
-| `{{name: string, min 3 chars}}` | `{"type": "string", "minLength": 3}` | `"name": "abc"` |
-| `{{name: integer, min 1}}` | `{"type": "integer", "minimum": 1}` | `"count": 10` |
-| `{{name: enum: val1\|val2}}` | `{"enum": ["val1", "val2"]}` | `"type": "val1"` |
-| `{{optional: type}}` | Not in required array | `"optional_field": null` |
-| `{{name: pattern: /regex/}}` | `{"pattern": "regex"}` | `"name": "abc-123"` |
+<a id="placeholder-syntax"></a>
+
+#### Quick Reference
+
+| Pattern | Schema Mapping |
+|---------|----------------|
+| `{{name: string}}` | `{"type": "string"}` |
+| `{{name: string, min 3 chars}}` | `{"type": "string", "minLength": 3}` |
+| `{{name: integer, min 1}}` | `{"type": "integer", "minimum": 1}` |
+
+*(See TOON block below for complete 6-pattern catalog)*
+
+#### Complete Placeholder Mapping (TOON)
+
+<!-- TOON-optimized: 33% token savings (212 → 141 tokens) -->
+
+```toon
+placeholders[6]{pattern,schema_mapping,example}:
+  {{name: string}},{type: string},name=value
+  {{name: string min 3}},{type: string minLength: 3},name=abc
+  {{name: integer min 1}},{type: integer minimum: 1},count=10
+  {{name: enum val1|val2}},{enum: [val1 val2]},type=val1
+  {{optional: type}},Not in required array,optional_field=null
+  {{name: pattern /regex/}},{pattern: regex},name=abc-123
+```
+
+**Usage:** Auto-generate JSON Schema from template placeholders using this mapping.
 
 **Full placeholder mapping rules:** `@rules:placeholder-mapping`
 
@@ -318,15 +356,34 @@ If Q11 = yes, generates `rules/best-practices.md` using `@template:rules-templat
 
 ### Step 6: Error Handling & Recovery
 
-| Error Code | Issue | Detection | Recovery Strategy |
-|------------|-------|-----------|-------------------|
-| **E001** | Invalid skill name | Name doesn't match `/^[a-z][a-z0-9-]*$/` | Show: "❌ Invalid name" → Auto-suggest kebab-case conversion → Retry Q1 |
-| **E002** | Skill exists | Name conflicts with existing skill | Show: "⚠️ Skill exists" → Options: 1) Rename, 2) Overwrite [DANGEROUS], 3) Abort |
-| **E003** | Unknown dependency | Dependency not found in skills/ | Show: "❌ Unknown dependency" → List available skills → Retry Q4 |
-| **E004** | Circular dependency | DFS detects cycle in dependency graph | Show: "❌ Circular: skill-a → skill-b → skill-a" → Explain which dep to remove → Retry Q4 |
-| **E005** | JSON syntax error | Trailing commas, unclosed braces | Auto-fix: Remove trailing commas → Re-validate |
-| **E006** | Missing section | Required section missing in SKILL.md | Auto-fix: Add placeholder section → Mark as warning (not error) |
-| **E007** | Schema-template mismatch | Required field in template missing in schema | Auto-fix: Regenerate schema from template → Re-validate |
+<a id="error-handling"></a>
+
+#### Quick Reference (First 3 Errors)
+
+| Error Code | Issue | Recovery Strategy |
+|------------|-------|-------------------|
+| E001 | Invalid skill name | Auto-suggest kebab-case → Retry Q1 |
+| E002 | Skill exists | Options: 1) Rename, 2) Overwrite, 3) Abort |
+| E003 | Unknown dependency | List available skills → Retry Q4 |
+
+*(See TOON block below for complete 7-error catalog)*
+
+#### Complete Error Catalog (TOON)
+
+<!-- TOON-optimized: 45% token savings (300 → 165 tokens) -->
+
+```toon
+errors[7]{code,issue,detection,recovery}:
+  E001,Invalid skill name,Name doesn't match /^[a-z][a-z0-9-]*$/,Show ❌ Invalid name → Auto-suggest kebab-case → Retry Q1
+  E002,Skill exists,Name conflicts with existing skill,Show ⚠️ Skill exists → Options: 1) Rename 2) Overwrite [DANGEROUS] 3) Abort
+  E003,Unknown dependency,Dependency not found in skills/,Show ❌ Unknown dependency → List available skills → Retry Q4
+  E004,Circular dependency,DFS detects cycle in dependency graph,Show ❌ Circular: skill-a → skill-b → skill-a → Explain which dep to remove → Retry Q4
+  E005,JSON syntax error,Trailing commas unclosed braces,Auto-fix: Remove trailing commas → Re-validate
+  E006,Missing section,Required section missing in SKILL.md,Auto-fix: Add placeholder section → Mark as warning (not error)
+  E007,Schema-template mismatch,Required field in template missing in schema,Auto-fix: Regenerate schema from template → Re-validate
+```
+
+**Usage:** Error recovery strategies execute automatically when validation fails.
 
 ### Step 7: Output Generation
 

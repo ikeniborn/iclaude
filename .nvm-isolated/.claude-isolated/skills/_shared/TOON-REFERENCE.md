@@ -381,6 +381,141 @@ const items = upstreamOutput.items;
 
 ---
 
+## Pattern 6: Inline TOON in SKILL.md
+
+**Когда использовать:** Embedding TOON blocks directly in skill documentation for token-optimized directives
+
+**Use Cases:**
+- Large reference tables (>= 5 rows) in SKILL.md files
+- Questionnaires with structured data
+- Error catalogs with recovery strategies
+- Configuration reference tables
+- Placeholder syntax mappings
+
+**Criteria:**
+- ✅ Tables with >= 5 rows (meaningful token savings)
+- ✅ Consistent schema across all rows
+- ✅ Expected token savings >= 30%
+- ✅ Data needs both human readability AND machine parsing
+
+**Structure:**
+
+```markdown
+### Section Title
+
+<a id="section-anchor"></a>
+
+**Purpose:** Brief description of this data
+
+#### Quick Reference (Markdown)
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+| ... (abbreviated first 3 rows) |
+
+*(See TOON block below for complete N-item catalog)*
+
+#### Complete Data (TOON)
+
+<!-- TOON-optimized: XX% token savings (before → after tokens) -->
+
+\`\`\`toon
+arrayName[N]{field1,field2,field3}:
+  value1,value2,value3
+  value4,value5,value6
+  ...
+\`\`\`
+
+**Usage:** Brief note on how Claude Code should use this data
+```
+
+**Implementation Example:**
+
+See actual implementations:
+- **skill-generator/SKILL.md** - Interactive User Questionnaire (48.9% savings)
+- **skill-generator/SKILL.md** - Error Handling & Recovery (38.2% savings)
+- **architecture-documentation/SKILL.md** - Safety Rules (38.7% savings)
+
+**Benefits:**
+
+1. **Single Source of Truth** - Both formats in one file (no sync issues)
+2. **Human-Readable** - Markdown table for quick scanning
+3. **Machine-Efficient** - TOON block for efficient parsing by Claude
+4. **Git-Friendly** - Readable diffs, easy to review
+5. **Self-Documenting** - Token savings visible inline
+6. **Backward Compatible** - References still work (section anchors)
+
+**Token Savings Examples:**
+
+| Data Type | Before (Markdown) | After (TOON) | Savings |
+|-----------|-------------------|--------------|---------|
+| 12-question questionnaire | 462 tokens | 276 tokens | **40%** |
+| 7-error catalog | 300 tokens | 165 tokens | **45%** |
+| 6-placeholder mapping | 212 tokens | 141 tokens | **33%** |
+| 8-safety rules | 375 tokens | 206 tokens | **45%** |
+| 5-discovery patterns | 145 tokens | 102 tokens | **30%** |
+
+**Extraction API:**
+
+```javascript
+import { extractToonBlock, toonToJson } from '../toon-skill/converters/toon-converter.mjs';
+
+// Extract TOON block from SKILL.md by array name
+const toonContent = extractToonBlock('skill-generator/SKILL.md', 'questionnaire');
+
+// Convert to JSON for processing
+const json = toonToJson(toonContent);
+console.log(`Extracted ${json.questionnaire.length} questions`);
+// Output: Extracted 12 questions
+```
+
+**Validation API:**
+
+```javascript
+import { validateSkillMd } from '../toon-skill/converters/toon-converter.mjs';
+
+// Validate all TOON blocks in SKILL.md
+const results = validateSkillMd('skill-generator/SKILL.md');
+
+results.forEach(result => {
+  if (result.validation.valid) {
+    console.log(`✅ ${result.arrayName}: ${result.tokenSavings.savedPercent} savings`);
+  } else {
+    console.error(`❌ ${result.arrayName}: ${result.validation.error}`);
+  }
+});
+```
+
+**CLI Tool:**
+
+```bash
+# Extract specific TOON block
+node toon-converter.mjs extract-block skill-generator/SKILL.md questionnaire
+
+# Validate all TOON blocks
+node toon-converter.mjs validate-skill-md skill-generator/SKILL.md
+# Output:
+# ✅ questionnaire: 48.9% savings (327 tokens)
+# ✅ errors: 38.2% savings (145 tokens)
+```
+
+**Guidelines:**
+
+1. **Preserve Markdown Table** - Show first 3 rows for quick scanning
+2. **Add Section Anchor** - Enable cross-references (`<a id="section-name"></a>`)
+3. **Show Token Savings** - Include comment with before/after tokens
+4. **Add Usage Note** - Brief instruction for Claude Code
+5. **Test Round-Trip** - Verify lossless conversion (`extractToonBlock → toonToJson → jsonToToon`)
+
+**When NOT to Use:**
+
+- ❌ Tables with < 5 rows (minimal savings, adds complexity)
+- ❌ Inconsistent schemas (TOON requires uniform structure)
+- ❌ Highly nested data (use JSON/YAML instead)
+- ❌ Data that changes frequently (maintenance overhead)
+
+---
+
 ## Best Practices
 
 ### ✅ DO
@@ -670,6 +805,15 @@ if (yourArray.length < 5) {
 ---
 
 ## Version History
+
+### v1.1.0 (2026-02-05)
+
+- ✅ **Pattern 6: Inline TOON in SKILL.md** - Embed TOON blocks directly in documentation
+- ✅ New API functions: `extractToonBlock()`, `validateSkillMd()`
+- ✅ CLI commands: `extract-block`, `validate-skill-md`
+- ✅ Real-world examples: skill-generator, architecture-documentation
+- ✅ Token savings: 30-50% for documentation tables
+- ✅ Hybrid format (Markdown + TOON) with backward compatibility
 
 ### v1.0.0 (2026-01-23)
 

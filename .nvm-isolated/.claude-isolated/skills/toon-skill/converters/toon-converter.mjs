@@ -355,6 +355,107 @@ function roundTripTest(jsonObj) {
   }
 }
 
+/**
+ * Extract TOON code block from SKILL.md by array name
+ *
+ * Searches for ```toon code blocks in markdown and extracts the content
+ * of a specific array by name.
+ *
+ * @param {string} skillMdPath - Path to SKILL.md file
+ * @param {string} arrayName - Name of TOON array to extract (e.g., 'questionnaire')
+ * @returns {string|null} TOON block content or null if not found
+ *
+ * @example
+ * const toon = extractToonBlock('skill-generator/SKILL.md', 'questionnaire');
+ * if (toon) {
+ *   const json = toonToJson(toon);
+ *   console.log('Extracted', json.questionnaire.length, 'questions');
+ * }
+ */
+function extractToonBlock(skillMdPath, arrayName) {
+  try {
+    const content = readFileSync(skillMdPath, 'utf8');
+
+    // Regex to find ```toon blocks containing the specified array
+    const regex = new RegExp(`\`\`\`toon\\s*\\n(${arrayName}\\[.*?)\\n\`\`\``, 's');
+    const match = content.match(regex);
+
+    return match ? match[1].trim() : null;
+  } catch (error) {
+    throw new Error(`Failed to extract TOON block from ${skillMdPath}: ${error.message}`);
+  }
+}
+
+/**
+ * Validate all TOON blocks in SKILL.md file
+ *
+ * Finds all ```toon code blocks in a SKILL.md file, validates each one,
+ * and calculates token savings for each block.
+ *
+ * @param {string} skillMdPath - Path to SKILL.md file
+ * @returns {Array<Object>} Validation results for each TOON block
+ * @returns {string} returns[].arrayName - Name of array in TOON block
+ * @returns {Object} returns[].validation - Validation result from validateToon()
+ * @returns {Object} returns[].tokenSavings - Token statistics from calculateTokenSavings()
+ * @returns {string} returns[].toonContent - Original TOON content
+ *
+ * @example
+ * const results = validateSkillMd('skill-generator/SKILL.md');
+ * results.forEach(r => {
+ *   if (r.validation.valid) {
+ *     console.log(`✅ ${r.arrayName}: ${r.tokenSavings.savedPercent} savings`);
+ *   } else {
+ *     console.error(`❌ ${r.arrayName}: ${r.validation.error}`);
+ *   }
+ * });
+ */
+function validateSkillMd(skillMdPath) {
+  try {
+    const content = readFileSync(skillMdPath, 'utf8');
+
+    // Find all ```toon blocks
+    const toonBlockRegex = /```toon\s*\n(.*?)\n```/gs;
+    const matches = [...content.matchAll(toonBlockRegex)];
+
+    if (matches.length === 0) {
+      return [];
+    }
+
+    return matches.map(match => {
+      const toonContent = match[1].trim();
+
+      // Extract array name from TOON header (e.g., "questionnaire[12]" → "questionnaire")
+      const arrayNameMatch = toonContent.match(/^(\w+)\[/);
+      const arrayName = arrayNameMatch ? arrayNameMatch[1] : 'unknown';
+
+      // Validate TOON syntax
+      const validation = validateToon(toonContent);
+
+      // Calculate token savings (only if valid)
+      let tokenSavings = null;
+      if (validation.valid) {
+        try {
+          const jsonObj = toonToJson(toonContent);
+          tokenSavings = calculateTokenSavings(jsonObj);
+        } catch (error) {
+          // If token calculation fails, mark validation as invalid
+          validation.valid = false;
+          validation.error = `Token calculation failed: ${error.message}`;
+        }
+      }
+
+      return {
+        arrayName,
+        validation,
+        tokenSavings,
+        toonContent
+      };
+    });
+  } catch (error) {
+    throw new Error(`Failed to validate SKILL.md file ${skillMdPath}: ${error.message}`);
+  }
+}
+
 // Export all functions
 export {
   // Generic converters (PRIMARY API)
@@ -371,7 +472,11 @@ export {
   // Utilities
   calculateTokenSavings,
   validateToon,
-  roundTripTest
+  roundTripTest,
+
+  // SKILL.md integration
+  extractToonBlock,
+  validateSkillMd
 };
 
 // CLI mode
@@ -389,12 +494,16 @@ Commands:
   decode <input.toon>           Convert TOON file to JSON
   test <input.json>             Run round-trip test on JSON file
   stats <input.json>            Show token savings statistics
+  extract-block <SKILL.md> <arrayName>   Extract TOON block from SKILL.md
+  validate-skill-md <SKILL.md>           Validate all TOON blocks in SKILL.md
 
 Examples:
   node toon-converter.mjs encode components.json
   node toon-converter.mjs decode components.toon
   node toon-converter.mjs test components.json
   node toon-converter.mjs stats components.json
+  node toon-converter.mjs extract-block skill-generator/SKILL.md questionnaire
+  node toon-converter.mjs validate-skill-md skill-generator/SKILL.md
     `);
     process.exit(0);
   }
@@ -447,6 +556,50 @@ Examples:
   TOON: ~${stats.toonTokens} tokens (${stats.toonSize} bytes)
   Saved: ~${stats.savedTokens} tokens (-${stats.savedPercent})
         `);
+        break;
+      }
+
+      case 'extract-block': {
+        const arrayName = args[2];
+        if (!arrayName) {
+          console.error('Error: Array name required for extract-block command');
+          console.error('Usage: node toon-converter.mjs extract-block <SKILL.md> <arrayName>');
+          process.exit(1);
+        }
+
+        const toonBlock = extractToonBlock(inputFile, arrayName);
+        if (toonBlock) {
+          console.log(toonBlock);
+        } else {
+          console.error(`Error: TOON block '${arrayName}' not found in ${inputFile}`);
+          process.exit(1);
+        }
+        break;
+      }
+
+      case 'validate-skill-md': {
+        const results = validateSkillMd(inputFile);
+
+        if (results.length === 0) {
+          console.log(`No TOON blocks found in ${inputFile}`);
+          process.exit(0);
+        }
+
+        let allValid = true;
+        results.forEach((result, index) => {
+          if (result.validation.valid) {
+            console.log(`✅ ${result.arrayName}: ${result.tokenSavings.savedPercent} savings (${result.tokenSavings.savedTokens} tokens)`);
+          } else {
+            console.error(`❌ ${result.arrayName}: ${result.validation.error}`);
+            allValid = false;
+          }
+        });
+
+        console.log(`\nTotal: ${results.length} TOON block(s) found`);
+
+        if (!allValid) {
+          process.exit(1);
+        }
         break;
       }
 
