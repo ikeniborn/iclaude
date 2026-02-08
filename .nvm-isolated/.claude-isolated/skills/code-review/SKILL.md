@@ -9,7 +9,6 @@ files:
   rules: ./rules/*.md
 user-invocable: true
 context: fork
-agent: explore
 changelog:
   - version: 1.3.0
     date: 2026-01-26

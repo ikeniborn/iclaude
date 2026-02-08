@@ -9,6 +9,7 @@ files:
   schemas: ./schemas/*.json
   examples: ./examples/*.md
 user-invocable: false
+agent: Plan
 changelog:
   - version: 2.4.0
     date: 2026-01-25
