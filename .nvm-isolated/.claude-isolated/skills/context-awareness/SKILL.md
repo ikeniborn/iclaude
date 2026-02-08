@@ -8,6 +8,7 @@ files:
   templates: ./templates/*.json
   shared: ../_shared/syntax-commands.json
 user-invocable: false
+agent: Explore
 changelog:
   - version: 1.1.0
     date: 2026-01-25

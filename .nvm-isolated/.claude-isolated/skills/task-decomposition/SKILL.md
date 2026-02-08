@@ -5,6 +5,7 @@ version: 1.2.0
 tags: [phase-based, decomposition, planning, master-plan, workflow]
 dependencies: [thinking-framework, structured-planning, approval-gates, error-handling]
 user-invocable: false
+agent: Plan
 changelog:
   - version: 1.2.0
     date: 2026-01-25
