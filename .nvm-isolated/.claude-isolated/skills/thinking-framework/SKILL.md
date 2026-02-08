@@ -4,6 +4,7 @@ description: Структурированный reasoning через 3 унив�
 version: 2.1.0
 tags: [thinking, reasoning, decision-making, analysis, risk-assessment]
 dependencies: []
+context: fork
 files:
   templates: ./templates/*.xml
   examples: ./examples/*.md

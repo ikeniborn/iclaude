@@ -10,6 +10,7 @@ files:
   examples: ./examples/*.md
   shared: ../_shared/library-priority.json
 user-invocable: false
+context: fork
 changelog:
   - version: 1.1.0
     date: 2026-01-25
