@@ -1,15 +1,15 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.22",
+  "claudeCodeVersion": "2.1.37",
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
-  "lspServers": {"pyright": "1.1.408", "vtsls": "0.3.0"},
-  "lspPlugins": {"pyright-lsp@claude-plugins-official": "1.0.0", "typescript-lsp@claude-plugins-official": "1.0.0"},
+  "lspServers": {"pyright": "1.1.408", "vtsls": "0.3.0", "typescript-language-server": "0.3.0"},
+  "lspPlugins": {},
   "sandboxAvailable": true,
   "sandboxPlatform": "linux",
   "sandboxDependencies": {"bubblewrap": "0.9.0", "socat": "1.8.0.0"},
   "sandboxRuntimeVersion": "1.0.0",
-  "sandboxInstalledAt": "2026-01-29T15:34:10Z",
-  "installedAt": "2026-01-29T15:34:13Z",
+  "sandboxInstalledAt": "2026-02-08T04:43:12Z",
+  "installedAt": "2026-02-08T04:43:15Z",
   "nvmVersion": "0.39.7"
 }
