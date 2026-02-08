@@ -8,6 +8,8 @@ files:
   templates: ./templates/*.json
   rules: ./rules/*.md
 user-invocable: true
+context: fork
+agent: explore
 changelog:
   - version: 1.3.0
     date: 2026-01-26
@@ -39,23 +41,29 @@ changelog:
 
 ## Table of Contents
 
-- [Quick Start](#quick-start)
-- [Overview](#overview)
-- [Check Categories](#check-categories)
-  - [Architecture Compliance](#1-architecture-compliance-blocking)
-  - [Security](#2-security-blocking)
-  - [Code Quality](#3-code-quality-warning)
-  - [Error Handling](#4-error-handling-warning)
-  - [Type Safety](#5-type-safety-info)
-- [LSP Integration](#lsp-integration)
-- [Output Formats](#output-formats)
-  - [JSON Schema](#json-schema)
-  - [Score Calculation](#score-calculation)
-  - [TOON Optimization](#toon-optimization)
-- [Examples](#examples)
-- [Integration](#integration-with-other-skills)
-- [Advanced Topics](#advanced-topics)
-- [References](#references)
+- [Code Review](#code-review)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Overview](#overview)
+    - [Когда использовать](#когда-использовать)
+    - [Требования](#требования)
+  - [Check Categories](#check-categories)
+    - [1. Architecture Compliance (BLOCKING)](#1-architecture-compliance-blocking)
+    - [2. Security (BLOCKING)](#2-security-blocking)
+    - [3. Code Quality (WARNING)](#3-code-quality-warning)
+    - [4. Error Handling (WARNING)](#4-error-handling-warning)
+    - [5. Type Safety (INFO)](#5-type-safety-info)
+  - [LSP Integration](#lsp-integration)
+  - [Output Formats](#output-formats)
+    - [JSON Schema](#json-schema)
+    - [Score Calculation](#score-calculation)
+    - [TOON Optimization](#toon-optimization)
+  - [Examples](#examples)
+  - [Integration with Other Skills](#integration-with-other-skills)
+  - [Advanced Topics](#advanced-topics)
+    - [Custom Architecture Paths](#custom-architecture-paths)
+    - [Architecture Format Support](#architecture-format-support)
+  - [References](#references)
 
 ---
 

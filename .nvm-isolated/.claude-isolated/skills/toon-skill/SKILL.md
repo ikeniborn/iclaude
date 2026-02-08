@@ -8,6 +8,7 @@ dependencies:
     - "@toon-format/toon": "^1.0.0"
 tags: [toon, token-optimization, data-format, inter-skill-communication]
 author: Claude Code Team
+context: fork
 created_at: 2026-01-23
 updated_at: 2026-01-25
 changelog:
