@@ -1,0 +1,44 @@
+{
+  "$comment": "Template for validation result. References @shared:base-schema.json definition.",
+  "validation_result": {
+    "validator_name": "Acceptance Criteria|Test Suite|Completion Status",
+    "status": "passed|failed|warning",
+    "errors": [
+      "Acceptance criterion not met: Login endpoint returns 200 OK",
+      "3 tests failed in tests/test_auth.py"
+    ],
+    "warnings": [
+      "File src/models/user.py not modified",
+      "Task only 80% complete"
+    ],
+    "info": [
+      "25 tests passed",
+      "3/3 acceptance criteria met"
+    ]
+  },
+  "validation_results": {
+    "$comment": "Aggregated results from multiple validators",
+    "results": [
+      {
+        "validator_name": "Acceptance Criteria",
+        "status": "passed",
+        "errors": [],
+        "warnings": [],
+        "info": ["3/3 criteria met"]
+      },
+      {
+        "validator_name": "Test Suite",
+        "status": "failed",
+        "errors": ["3 tests failed"],
+        "warnings": [],
+        "info": ["25 tests passed"]
+      }
+    ],
+    "overall_status": "failed",
+    "summary": {
+      "passed": 1,
+      "failed": 1,
+      "warnings": 0
+    }
+  }
+}
