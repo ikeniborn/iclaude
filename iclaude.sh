@@ -6116,7 +6116,8 @@ OPTIONS:
   --check-sandbox                   (Alias for --sandbox-check)
   --no-test                         Skip proxy connectivity test
   --show-password                   Display password in output (default: masked)
-  --save                            Enable permission checks (disables default --dangerously-skip-permissions)
+  --no-save                         Disable permission checks (enables --dangerously-skip-permissions)
+  --save                            [DEPRECATED] Safe mode is now default, use --no-save for unsafe mode
   --system                          Force system installation (skip isolated environment)
   --loop FILE.md                    Execute task loop from Markdown definition (sequential mode)
                                     (use quotes if path contains spaces)
@@ -6166,8 +6167,8 @@ EXAMPLES:
   # Pass arguments to Claude Code
   iclaude -- --model claude-3-opus
 
-  # Enable permission checks (safe mode)
-  iclaude --save
+  # Disable permission checks (unsafe mode, skip confirmations)
+  iclaude --no-save
 
 ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time, NO system npm needed)
@@ -6364,7 +6365,7 @@ main() {
     local skip_test=false
     local show_password=false
     local proxy_url=""
-    local skip_permissions=true  # По умолчанию используется --dangerously-skip-permissions
+    local skip_permissions=false  # По умолчанию безопасный режим (БЕЗ --dangerously-skip-permissions)
     local no_proxy=false
     local use_system=false
     local use_isolated_config=false
@@ -6618,8 +6619,13 @@ main() {
                 show_password=true
                 shift
                 ;;
+            --no-save)
+                skip_permissions=true  # Включаем --dangerously-skip-permissions (небезопасный режим)
+                shift
+                ;;
             --save)
-                skip_permissions=false  # Отключаем --dangerously-skip-permissions для безопасного режима
+                # Backward compatibility: --save now does nothing (safe mode is default)
+                print_warning "--save is deprecated (safe mode is now default). Use --no-save for unsafe mode."
                 shift
                 ;;
             --system)
@@ -6747,7 +6753,7 @@ main() {
         # Check OAuth token expiration
         check_token_expiration
 
-        # Add --dangerously-skip-permissions by default (unless --save is used)
+        # Add --dangerously-skip-permissions only when --no-save is used
         if [[ "$skip_permissions" == true ]]; then
             claude_args+=("--dangerously-skip-permissions")
         fi
@@ -6839,7 +6845,7 @@ main() {
     # Check OAuth token expiration
     check_token_expiration
 
-    # Add --dangerously-skip-permissions by default (unless --save is used)
+    # Add --dangerously-skip-permissions only when --no-save is used
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
     fi
