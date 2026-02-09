@@ -1,0 +1,284 @@
+{
+  "$comment": "Adaptive validation rules for different plan complexity levels",
+  "validation_rules": {
+    "minimal": {
+      "$comment": "Rules for minimal plans (simple one-file changes)",
+      "required_sections": [
+        "task_name",
+        "problem",
+        "solution",
+        "critical_files",
+        "implementation_steps",
+        "verification"
+      ],
+      "optional_sections": [
+        "git_info",
+        "risks",
+        "dependencies"
+      ],
+      "skip_checks": [
+        "git_branch_pattern",
+        "commit_type_valid",
+        "steps_detail",
+        "acceptance_criteria_testable",
+        "risks_identified",
+        "dependencies_documented"
+      ],
+      "blocking_threshold": 0,
+      "min_score": 70,
+      "completeness_mode": "skip",
+      "validation_levels": {
+        "structural": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25
+        },
+        "semantic": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25,
+          "checks": {
+            "solution_addresses_problem": {
+              "enabled": true,
+              "confidence_threshold": 0.6
+            },
+            "file_alignment": {
+              "enabled": true,
+              "strict_mode": false
+            }
+          }
+        },
+        "technical": {
+          "enabled": false,
+          "blocking": false,
+          "max_score": 0
+        },
+        "completeness": {
+          "enabled": false,
+          "blocking": false,
+          "max_score": 0
+        }
+      }
+    },
+
+    "standard": {
+      "$comment": "Rules for standard plans (multi-file changes with git workflow)",
+      "required_sections": [
+        "task_name",
+        "problem",
+        "solution",
+        "critical_files",
+        "implementation_steps",
+        "verification",
+        "git_info"
+      ],
+      "optional_sections": [
+        "risks",
+        "dependencies"
+      ],
+      "skip_checks": [],
+      "blocking_threshold": 0,
+      "min_score": 75,
+      "completeness_mode": "warning",
+      "validation_levels": {
+        "structural": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25
+        },
+        "semantic": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25,
+          "checks": {
+            "solution_addresses_problem": {
+              "enabled": true,
+              "confidence_threshold": 0.6
+            },
+            "steps_lead_to_solution": {
+              "enabled": true,
+              "coverage_threshold": 0.7
+            },
+            "file_alignment": {
+              "enabled": true,
+              "strict_mode": true
+            },
+            "no_contradictions": {
+              "enabled": true
+            }
+          }
+        },
+        "technical": {
+          "enabled": true,
+          "blocking": false,
+          "max_score": 25,
+          "checks": {
+            "files_exist": {
+              "enabled": true,
+              "only_for_modify": true
+            },
+            "validation_commands_valid": {
+              "enabled": true
+            },
+            "git_branch_pattern": {
+              "enabled": true,
+              "pattern": "^(feature|fix|refactor|dev|chore|test|docs)/[a-z0-9_-]+$"
+            },
+            "commit_type_valid": {
+              "enabled": true,
+              "valid_types": ["feat", "fix", "refactor", "docs", "test", "chore", "perf", "style"]
+            },
+            "json_schema_compliance": {
+              "enabled": true
+            }
+          }
+        },
+        "completeness": {
+          "enabled": true,
+          "blocking": false,
+          "max_score": 25,
+          "checks": {
+            "steps_detail": {
+              "enabled": true,
+              "avg_actions_threshold": 3
+            },
+            "acceptance_criteria_testable": {
+              "enabled": true,
+              "testable_pct_threshold": 0.5
+            },
+            "root_cause_analysis": {
+              "enabled": true,
+              "only_for_fix": true
+            }
+          }
+        }
+      }
+    },
+
+    "complex": {
+      "$comment": "Rules for complex plans (architectural changes, multi-phase, high risk)",
+      "required_sections": [
+        "task_name",
+        "problem",
+        "solution",
+        "critical_files",
+        "implementation_steps",
+        "verification",
+        "git_info",
+        "risks",
+        "dependencies"
+      ],
+      "optional_sections": [],
+      "skip_checks": [],
+      "blocking_threshold": 0,
+      "min_score": 80,
+      "completeness_mode": "blocking",
+      "validation_levels": {
+        "structural": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25
+        },
+        "semantic": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25,
+          "checks": {
+            "solution_addresses_problem": {
+              "enabled": true,
+              "confidence_threshold": 0.7
+            },
+            "steps_lead_to_solution": {
+              "enabled": true,
+              "coverage_threshold": 0.8
+            },
+            "file_alignment": {
+              "enabled": true,
+              "strict_mode": true
+            },
+            "no_contradictions": {
+              "enabled": true
+            }
+          }
+        },
+        "technical": {
+          "enabled": true,
+          "blocking": false,
+          "max_score": 25,
+          "checks": {
+            "files_exist": {
+              "enabled": true,
+              "only_for_modify": true
+            },
+            "validation_commands_valid": {
+              "enabled": true
+            },
+            "git_branch_pattern": {
+              "enabled": true,
+              "pattern": "^(feature|fix|refactor|dev|chore|test|docs)/[a-z0-9_-]+$"
+            },
+            "commit_type_valid": {
+              "enabled": true,
+              "valid_types": ["feat", "fix", "refactor", "docs", "test", "chore", "perf", "style"]
+            },
+            "json_schema_compliance": {
+              "enabled": true
+            }
+          }
+        },
+        "completeness": {
+          "enabled": true,
+          "blocking": true,
+          "max_score": 25,
+          "checks": {
+            "steps_detail": {
+              "enabled": true,
+              "avg_actions_threshold": 3
+            },
+            "acceptance_criteria_testable": {
+              "enabled": true,
+              "testable_pct_threshold": 0.6
+            },
+            "risks_identified": {
+              "enabled": true,
+              "min_risks": 1
+            },
+            "root_cause_analysis": {
+              "enabled": true,
+              "only_for_fix": true
+            },
+            "dependencies_documented": {
+              "enabled": true,
+              "min_dependencies": 1
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "severity_levels": {
+    "$comment": "Severity classification for issues",
+    "BLOCKING": {
+      "description": "Critical issue that prevents plan execution",
+      "action": "Must be fixed before approval"
+    },
+    "WARNING": {
+      "description": "Non-critical issue that should be addressed",
+      "action": "Can proceed with caution"
+    },
+    "INFO": {
+      "description": "Informational suggestion for improvement",
+      "action": "Optional enhancement"
+    }
+  },
+
+  "score_weights": {
+    "$comment": "Score distribution across validation levels",
+    "structural": 25,
+    "semantic": 25,
+    "technical": 25,
+    "completeness": 25,
+    "total": 100
+  }
+}

@@ -335,6 +335,51 @@
       "required": ["validator_name", "status"],
       "additionalProperties": false
     },
+    "plan_validation_result": {
+      "$comment": "Plan validation result from plan-validation skill (PHASE 1.5)",
+      "type": "object",
+      "properties": {
+        "plan_type": {
+          "type": "string",
+          "enum": ["minimal", "standard", "complex"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Overall validation status"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "blocking_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "issue": {"type": "string"},
+              "severity": {"type": "string", "const": "BLOCKING"},
+              "level": {"type": "string"},
+              "message": {"type": "string"},
+              "suggestion": {"type": "string"}
+            },
+            "required": ["issue", "severity", "level", "message"]
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": ["plan_type", "timestamp", "passed", "score", "blocking_issues"],
+      "additionalProperties": true
+    },
     "skill_dependency": {
       "$comment": "Dependency between skills",
       "type": "object",

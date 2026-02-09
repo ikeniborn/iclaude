@@ -1,0 +1,321 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code.anthropic.com/schemas/plan-validation-result.schema.json",
+  "title": "Plan Validation Result",
+  "description": "Schema for plan validation output from plan-validation skill (PHASE 1.5)",
+  "type": "object",
+  "properties": {
+    "plan_validation_result": {
+      "type": "object",
+      "description": "Root object for plan validation results",
+      "properties": {
+        "plan_type": {
+          "type": "string",
+          "enum": ["minimal", "standard", "complex"],
+          "description": "Type of plan validated (from adaptive-workflow)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of validation execution",
+          "examples": ["2026-02-09T14:30:00Z"]
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Overall validation status (false if any blocking_issues)"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Total validation score (sum of all levels)"
+        },
+        "max_score": {
+          "type": "number",
+          "const": 100,
+          "description": "Maximum possible score (always 100)"
+        },
+        "structural_validation": {
+          "$ref": "#/definitions/validation_level",
+          "description": "Level 1: Structural validation results (BLOCKING)"
+        },
+        "semantic_validation": {
+          "$ref": "#/definitions/validation_level",
+          "description": "Level 2: Semantic validation results (BLOCKING)"
+        },
+        "technical_validation": {
+          "$ref": "#/definitions/validation_level",
+          "description": "Level 3: Technical validation results (WARNING only)"
+        },
+        "completeness_validation": {
+          "$ref": "#/definitions/validation_level",
+          "description": "Level 4: Completeness validation (WARNING for standard, BLOCKING for complex)"
+        },
+        "blocking_issues": {
+          "type": "array",
+          "description": "Aggregated blocking issues from all levels",
+          "items": {
+            "$ref": "#/definitions/blocking_issue"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "description": "Aggregated warnings from all levels",
+          "items": {
+            "$ref": "#/definitions/warning"
+          }
+        },
+        "suggestions": {
+          "type": "array",
+          "description": "Improvement suggestions (non-critical)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Scoring breakdown by validation level",
+          "properties": {
+            "structural_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 25
+            },
+            "semantic_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 25
+            },
+            "technical_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 25
+            },
+            "completeness_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 25
+            },
+            "total_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": ["structural_score", "semantic_score", "technical_score", "completeness_score", "total_score"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["plan_type", "timestamp", "passed", "score", "max_score", "structural_validation", "semantic_validation", "technical_validation", "completeness_validation", "blocking_issues", "warnings", "suggestions", "metrics"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["plan_validation_result"],
+  "additionalProperties": false,
+  "definitions": {
+    "validation_level": {
+      "type": "object",
+      "description": "Results for one validation level",
+      "properties": {
+        "passed": {
+          "type": "boolean",
+          "description": "Whether this level passed validation"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 25,
+          "description": "Score for this level (0-25)"
+        },
+        "checks": {
+          "type": "array",
+          "description": "Individual validation checks performed",
+          "items": {
+            "$ref": "#/definitions/validation_check"
+          }
+        },
+        "blocking_issues": {
+          "type": "array",
+          "description": "Blocking issues found at this level",
+          "items": {
+            "$ref": "#/definitions/blocking_issue"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "description": "Warnings found at this level (only for technical/completeness)",
+          "items": {
+            "$ref": "#/definitions/warning"
+          }
+        }
+      },
+      "required": ["passed", "score", "checks"],
+      "additionalProperties": false
+    },
+    "validation_check": {
+      "type": "object",
+      "description": "Individual validation check result",
+      "properties": {
+        "check": {
+          "type": "string",
+          "description": "Name of the check performed",
+          "examples": [
+            "frontmatter_complete",
+            "solution_addresses_problem",
+            "file_alignment",
+            "git_branch_pattern"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed", "warning"],
+          "description": "Check status"
+        }
+      },
+      "required": ["check", "status"],
+      "additionalProperties": true
+    },
+    "blocking_issue": {
+      "type": "object",
+      "description": "Blocking issue that prevents plan approval",
+      "properties": {
+        "issue": {
+          "type": "string",
+          "description": "Issue identifier",
+          "examples": [
+            "file_alignment_mismatch",
+            "missing_required_section",
+            "solution_confidence_low"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "const": "BLOCKING",
+          "description": "Severity level (always BLOCKING for blocking_issues)"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["structural", "semantic", "technical", "completeness"],
+          "description": "Validation level where issue was found"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "suggestion": {
+          "type": "string",
+          "description": "Suggested fix for the issue"
+        }
+      },
+      "required": ["issue", "severity", "level", "message"],
+      "additionalProperties": true
+    },
+    "warning": {
+      "type": "object",
+      "description": "Non-blocking warning",
+      "properties": {
+        "warning": {
+          "type": "string",
+          "description": "Warning identifier",
+          "examples": [
+            "git_branch_case",
+            "steps_detail_low"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "const": "WARNING",
+          "description": "Severity level (always WARNING)"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["technical", "completeness"],
+          "description": "Validation level where warning was found"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable warning message"
+        }
+      },
+      "required": ["warning", "severity", "level", "message"],
+      "additionalProperties": true
+    }
+  },
+  "examples": [
+    {
+      "plan_validation_result": {
+        "plan_type": "standard",
+        "timestamp": "2026-02-09T14:30:00Z",
+        "passed": false,
+        "score": 75,
+        "max_score": 100,
+        "structural_validation": {
+          "passed": true,
+          "score": 25,
+          "checks": [
+            {"check": "frontmatter_complete", "status": "passed"},
+            {"check": "critical_files_present", "status": "passed", "count": 3}
+          ],
+          "blocking_issues": [],
+          "warnings": []
+        },
+        "semantic_validation": {
+          "passed": false,
+          "score": 15,
+          "checks": [
+            {"check": "solution_addresses_problem", "status": "passed", "confidence": 0.85},
+            {"check": "file_alignment", "status": "failed", "missing_files": ["tests/test_jwt.py"]}
+          ],
+          "blocking_issues": [
+            {
+              "issue": "file_alignment_mismatch",
+              "severity": "BLOCKING",
+              "level": "semantic",
+              "message": "Step 3 references tests/test_jwt.py not in Critical Files",
+              "suggestion": "Add tests/test_jwt.py to Critical Files section"
+            }
+          ],
+          "warnings": []
+        },
+        "technical_validation": {
+          "passed": true,
+          "score": 20,
+          "checks": [
+            {"check": "git_branch_pattern", "status": "passed"}
+          ],
+          "blocking_issues": [],
+          "warnings": []
+        },
+        "completeness_validation": {
+          "passed": true,
+          "score": 15,
+          "checks": [
+            {"check": "steps_detail", "status": "passed", "avg_actions": 4.2}
+          ],
+          "blocking_issues": [],
+          "warnings": []
+        },
+        "blocking_issues": [
+          {
+            "issue": "file_alignment_mismatch",
+            "severity": "BLOCKING",
+            "level": "semantic",
+            "message": "Step 3 references tests/test_jwt.py not in Critical Files",
+            "suggestion": "Add tests/test_jwt.py to Critical Files section"
+          }
+        ],
+        "warnings": [],
+        "suggestions": [
+          "Consider adding error handling details to step 4"
+        ],
+        "metrics": {
+          "structural_score": 25,
+          "semantic_score": 15,
+          "technical_score": 20,
+          "completeness_score": 15,
+          "total_score": 75
+        }
+      }
+    }
+  ]
+}

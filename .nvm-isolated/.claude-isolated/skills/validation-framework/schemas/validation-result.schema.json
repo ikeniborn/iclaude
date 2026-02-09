@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code.anthropic.com/schemas/validation-result.schema.json",
+  "title": "Validation Result",
+  "description": "References validation_result definition from @shared:base-schema.json",
+  "$ref": "../../../_shared/base-schema.json#/definitions/validation_result"
+}

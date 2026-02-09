@@ -3,7 +3,7 @@ name: Approval Gates
 description: Упрощённые approval gates для подтверждения плана
 version: 2.2.0
 tags: [approval, confirmation, user-interaction]
-dependencies: [structured-planning]
+dependencies: [structured-planning, plan-validation]
 files:
   templates: ./templates/*.md
 user-invocable: false
@@ -440,6 +440,12 @@ if (approval.toon) {
 ---
 
 ## Integration with Other Skills
+
+**With plan-validation (PHASE 1.5):**
+- plan-validation runs BEFORE approval-gates
+- If `plan_validation_result.passed == false` → BLOCK approval
+- Show `plan_validation_result.blocking_issues` to user
+- If `warnings.length > 0` → SHOW warnings, allow approval
 
 **Used by:**
 - `structured-planning` → Invokes approval gates after plan generation

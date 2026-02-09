@@ -162,19 +162,22 @@ These skills are **required** for Template-based workflows and provide foundatio
 | **adaptive-workflow** | 2.0.0 | Автоматический выбор сложности workflow (minimal/standard/complex) | context-awareness, task-decomposition, phase-execution | ❌ |
 | **thinking-framework** | 1.0.0 | Структурированный reasoning через 3 универсальных шаблона (analysis/decision/risk) | - | ❌ |
 | **structured-planning** | 2.2.0 | Создание планов задач с адаптивной JSON Schema (lite/full) | thinking-framework, adaptive-workflow, skill-generator, prd-generator | ❌ |
-| **validation-framework** | 1.0.0 | Адаптивная валидация с partial validation | - | ❌ |
+| **plan-validation** | 1.0.0 | Multi-perspective validation of planning outputs before execution (PHASE 1.5) | structured-planning, adaptive-workflow, thinking-framework, toon-skill | ✅ |
+| **validation-framework** | 1.0.0 | Адаптивная валидация execution results с partial validation (PHASE 4) | thinking-framework, error-handling, toon-skill | ✅ |
 
 **Why Core:**
 - adaptive-workflow: Determines task complexity → selects appropriate workflow mode
 - thinking-framework: Provides structured reasoning for analysis, decisions, and risk assessment
 - structured-planning: Generates task plans with JSON schemas based on complexity
-- validation-framework: Validates execution results and detects errors
+- plan-validation: Validates plans BEFORE execution to catch errors early (PHASE 1.5)
+- validation-framework: Validates execution results and detects errors (PHASE 4)
 
 **Usage in Template:**
 ```
 PHASE 0: adaptive-workflow determines complexity
 PHASE 1: thinking-framework provides analysis → structured-planning creates task_plan
-PHASE 5: validation-framework validates execution results
+PHASE 1.5: plan-validation validates plan BEFORE execution
+PHASE 4: validation-framework validates execution results
 ```
 
 ---
@@ -359,7 +362,8 @@ PHASE 1: structured-planning recommends /prd-generator (if 5+ features, no PRD)
 10. ✅ **rollback-recovery** - Checkpoint and rollback
 11. ✅ **structured-planning** - Task plan generation
 12. ✅ **thinking-framework** - Structured reasoning
-13. ✅ **validation-framework** - Execution validation
+13. ✅ **plan-validation** - Plan validation (PHASE 1.5)
+14. ✅ **validation-framework** - Execution validation (PHASE 4)
 
 **Coverage:** Template-based workflows use all Core, Integration, Workflow, and Utility skills.
 
