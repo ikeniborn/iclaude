@@ -98,6 +98,43 @@
 |---------|----------|
 | `--proxy <url>` | Установка прокси (http/https/socks5) |
 | `--test` | Тестирование прокси подключения |
+
+### 🎛️ Claude Code Configuration
+
+Управление параметрами Claude Code через файл `.claude_proxy_credentials`.
+
+**Расположение:** `.claude_proxy_credentials` (в корне проекта)
+
+**Доступные переменные:**
+
+| Переменная | Описание | Значение по умолчанию |
+|------------|----------|----------------------|
+| `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | Лимит output токенов | 32000 (макс: 128000) |
+| `CLAUDE_CODE_ENABLE_TASKS` | Tasks system (вкл/выкл) | true |
+| `CLAUDE_CODE_NO_CHROME` | Отключить Chrome integration | false |
+| `CLAUDE_CODE_MODEL` | Выбор модели | claude-4-5-sonnet |
+| `CLAUDE_CODE_SESSION_TIMEOUT` | Таймаут сессии (секунды) | 3600 |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Agent Teams ⚠️ EXPERIMENTAL | не установлено (выкл) |
+
+**Пример конфигурации:**
+
+```bash
+# .claude_proxy_credentials
+
+# Proxy settings
+PROXY_URL=https://user:pass@proxy.example.com:8118
+PROXY_INSECURE=false
+NO_PROXY=localhost,127.0.0.1
+
+# Claude Code configuration
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000    # Увеличенный лимит (для сложных задач)
+# CLAUDE_CODE_MODEL=claude-3-opus       # Закомментировано = не используется
+# CLAUDE_CODE_NO_CHROME=true            # Закомментировано = не используется
+```
+
+**⚠️ Важно:** Только **раскомментированные** переменные будут экспортированы при запуске. Закомментированные (`#`) переменные игнорируются.
+
+**Подробная документация:** См. [CLAUDE_CONFIG.md](./docs/CLAUDE_CONFIG.md) для полного списка переменных и примеров.
 | `--clear` | Очистка сохраненных credentials |
 | `--no-proxy` | Запуск без прокси |
 | `--proxy-ca <file>` | CA сертификат для HTTPS прокси (✅ SECURE) |
@@ -1122,6 +1159,113 @@ https://user:pass@proxy.example.com:8118
 ./iclaude.sh  # изолированная
 iclaude       # системная
 ```
+
+### ⚙️ Конфигурация Claude Code через переменные окружения
+
+iclaude.sh поддерживает настройку параметров Claude Code через файл `.claude_proxy_credentials` в корне проекта.
+
+#### Решение проблемы "output token maximum exceeded"
+
+Если вы столкнулись с ошибкой:
+```
+API Error: Claude's response exceeded the 32000 output token maximum.
+To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable.
+```
+
+**Решение:** Добавьте в `.claude_proxy_credentials`:
+
+```bash
+# Увеличить лимит до 64000 токенов
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+```
+
+Или до максимума (128000):
+```bash
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
+```
+
+#### Доступные переменные конфигурации
+
+Отредактируйте файл `.claude_proxy_credentials`:
+
+```bash
+# Proxy settings (настраиваются автоматически)
+PROXY_URL=https://user:pass@proxy.example.com:8118
+PROXY_INSECURE=false
+NO_PROXY=localhost,127.0.0.1
+
+# ===== Claude Code Configuration =====
+
+# 1. Лимит output токенов (default: 32000, max: 128000)
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+
+# 2. Tasks system (default: true)
+# CLAUDE_CODE_ENABLE_TASKS=true
+
+# 3. Chrome integration (default: включена)
+# CLAUDE_CODE_NO_CHROME=false
+
+# 4. Выбор модели (default: claude-4-5-sonnet)
+# CLAUDE_CODE_MODEL=claude-3-opus
+
+# 5. Session timeout в секундах (default: 3600)
+# CLAUDE_CODE_SESSION_TIMEOUT=7200
+```
+
+**⚠️ Важно:**
+- Только **раскомментированные** переменные (без `#`) будут применены
+- Закомментированные переменные игнорируются при запуске
+- Изменения применяются при следующем запуске `./iclaude.sh`
+
+#### Практические примеры конфигурации
+
+**Пример 1: Работа со сложными задачами (рефакторинг, большие файлы)**
+
+```bash
+# Максимальный лимит + модель Opus
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
+CLAUDE_CODE_MODEL=claude-3-opus
+CLAUDE_CODE_SESSION_TIMEOUT=7200
+```
+
+**Пример 2: Экономия контекста (отключить Chrome)**
+
+```bash
+# Базовая конфигурация без браузера
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+CLAUDE_CODE_NO_CHROME=true
+```
+
+**Пример 3: Быстрые правки (модель Haiku)**
+
+```bash
+# Быстрая и дешевая модель
+CLAUDE_CODE_MODEL=claude-3-haiku
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000
+```
+
+#### Проверка применения конфигурации
+
+Проверить, что переменные загружаются правильно:
+
+```bash
+bash -c "source ./iclaude.sh && load_claude_config && env | grep CLAUDE_CODE"
+```
+
+Ожидаемый вывод:
+```
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+CLAUDE_CODE_ENABLE_TASKS=true
+...
+```
+
+#### Подробная документация
+
+См. [CLAUDE_CONFIG.md](./docs/CLAUDE_CONFIG.md) для:
+- Полного списка переменных
+- Описания каждого параметра
+- Дополнительных примеров
+- Troubleshooting
 
 ### Безопасная работа с HTTPS прокси
 

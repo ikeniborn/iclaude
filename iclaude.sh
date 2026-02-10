@@ -723,6 +723,9 @@ setup_isolated_nvm() {
 	# Enable Claude Code tasks system (set CLAUDE_CODE_ENABLE_TASKS=false to use old system temporarily)
 	export CLAUDE_CODE_ENABLE_TASKS="${CLAUDE_CODE_ENABLE_TASKS:-true}"
 
+	# Load additional Claude Code configuration from credentials file
+	load_claude_config
+
 	# Auto-repair plugin paths silently (if function is defined)
 	if declare -f repair_plugin_paths &>/dev/null; then
 		repair_plugin_paths "quiet" 2>/dev/null || true
@@ -4463,6 +4466,29 @@ load_credentials() {
 
     # Return URL and NO_PROXY (pipe-separated for reliable parsing)
     echo "$PROXY_URL|${NO_PROXY}"
+    return 0
+}
+
+#######################################
+# Load and export Claude Code configuration variables
+# Reads additional Claude Code settings from credentials file
+#######################################
+load_claude_config() {
+    if [[ ! -f "$CREDENTIALS_FILE" ]]; then
+        return 0
+    fi
+
+    # Source the credentials file to get Claude Code variables
+    source "$CREDENTIALS_FILE"
+
+    # Export Claude Code configuration variables if set
+    [[ -n "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}" ]] && export CLAUDE_CODE_MAX_OUTPUT_TOKENS
+    [[ -n "${CLAUDE_CODE_ENABLE_TASKS:-}" ]] && export CLAUDE_CODE_ENABLE_TASKS
+    [[ -n "${CLAUDE_CODE_NO_CHROME:-}" ]] && export CLAUDE_CODE_NO_CHROME
+    [[ -n "${CLAUDE_CODE_MODEL:-}" ]] && export CLAUDE_CODE_MODEL
+    [[ -n "${CLAUDE_CODE_SESSION_TIMEOUT:-}" ]] && export CLAUDE_CODE_SESSION_TIMEOUT
+    [[ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]] && export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+
     return 0
 }
 
