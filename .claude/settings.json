@@ -3,6 +3,6 @@
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
-  "language": "russian",
+  "language": "Russian",
   "alwaysThinkingEnabled": true
 }
