@@ -50,7 +50,10 @@ fi
 
 # Parse Claude session data (tokens, model, cost)
 # Support multiple field name formats for compatibility
+# Claude Code v2.1+ uses nested context_window object
+# Older versions use flat structure with "last" prefix
 TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '
+  .context_window.total_input_tokens //
   .lastTotalInputTokens //
   .totalInputTokens //
   .inputTokens //
@@ -58,6 +61,7 @@ TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '
 ' 2>/dev/null)
 
 TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '
+  .context_window.total_output_tokens //
   .lastTotalOutputTokens //
   .totalOutputTokens //
   .outputTokens //
@@ -90,27 +94,39 @@ MODEL=$(echo "$SESSION_DATA" | jq -r '
   end
 ' 2>/dev/null)
 
-# Detect context limit based on model
-case "$MODEL" in
-    *opus*|*Opus*)
-        CONTEXT_LIMIT=200000
-        ;;
-    *sonnet*|*Sonnet*)
-        CONTEXT_LIMIT=200000
-        ;;
-    *haiku*|*Haiku*)
-        CONTEXT_LIMIT=200000
-        ;;
-    *)
-        CONTEXT_LIMIT=200000  # Default
-        ;;
-esac
+# Try to get context limit from session data (Claude Code v2.1+)
+# Fall back to model-based detection for older versions
+CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 0' 2>/dev/null)
 
-# Use floating-point arithmetic to avoid truncation for small token counts
-PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+if [[ "$CONTEXT_LIMIT" == "0" ]] || [[ -z "$CONTEXT_LIMIT" ]]; then
+    # Fallback: detect context limit based on model
+    case "$MODEL" in
+        *opus*|*Opus*)
+            CONTEXT_LIMIT=200000
+            ;;
+        *sonnet*|*Sonnet*)
+            CONTEXT_LIMIT=200000
+            ;;
+        *haiku*|*Haiku*)
+            CONTEXT_LIMIT=200000
+            ;;
+        *)
+            CONTEXT_LIMIT=200000  # Default
+            ;;
+    esac
+fi
+
+# Try to get percentage directly from session data (Claude Code v2.1+)
+# This is more accurate as it accounts for cache tokens
+PERCENT=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
+
+if [[ "$PERCENT" == "0" ]] || [[ -z "$PERCENT" ]]; then
+    # Fallback: calculate percentage from total tokens
+    PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+fi
 
 COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '
-  .lastCost // .totalCost // .cost // 0
+  .cost.total_cost_usd // .lastCost // .totalCost // .cost // 0
 ' 2>/dev/null)")
 
 # Proxy detection (environment variables + fallback)
