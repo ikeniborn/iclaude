@@ -51,6 +51,7 @@ fi
 
 # Parse Claude session data (tokens, model, cost)
 # Requires Claude Code v2.1+ (nested context_window object)
+# Note: total_input/output_tokens = billing tokens (excludes cache reads)
 TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
 TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
 
@@ -76,13 +77,13 @@ MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonne
 # Get context limit from session data (Claude Code v2.1+)
 CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
 
-# Calculate percentage from actual context window usage (input + output tokens)
-# Note: Claude Code's .context_window.used_percentage includes cache tokens,
-# which inflates the percentage. We calculate cumulative percentage here.
+# Calculate API tokens percentage (billing only, excludes cache reads)
+# Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
 # Parse active context percentage (resets after /clear)
-# This shows the actual context size for the NEXT message
+# This shows the actual context size for the NEXT message (includes cache reads!)
+# Active context = API tokens + cache_read_tokens (often > API tokens)
 ACTIVE_PERCENT=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // null' 2>/dev/null)
 
 # Calculate active context tokens (if available)
@@ -202,7 +203,8 @@ CONTEXT_LIMIT_FMT=$(printf "%'d" $CONTEXT_LIMIT 2>/dev/null || echo "$CONTEXT_LI
 ACTIVE_TOKENS_FMT=$(printf "%'d" $ACTIVE_TOKENS 2>/dev/null || echo "$ACTIVE_TOKENS")
 
 # Build context display string
-# Always show both cumulative and active context (Claude Code v2.1+ format)
+# Shows: API tokens (billing) | active context (includes cache reads)
+# Note: Active context often > API tokens due to prompt caching
 # Handle temporary null values immediately after /clear
 if [[ "$ACTIVE_PERCENT" == "null" ]] || [[ -z "$ACTIVE_PERCENT" ]]; then
     # Immediately after /clear: used_percentage is null for ~10-40 seconds
@@ -227,7 +229,7 @@ else
     fi
 fi
 
-CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} total | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
+CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} API | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
 
 # Output formatted status line
 echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
