@@ -4912,6 +4912,16 @@ load_credentials() {
         export PROXY_INSECURE=true
     fi
 
+    # Export Claude Code configuration variables (for statusline and other scripts)
+    [[ -n "${DEBUG_STATUSLINE:-}" ]] && export DEBUG_STATUSLINE
+    [[ -n "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}" ]] && export CLAUDE_CODE_MAX_OUTPUT_TOKENS
+    [[ -n "${CLAUDE_CODE_ENABLE_TASKS:-}" ]] && export CLAUDE_CODE_ENABLE_TASKS
+    [[ -n "${CLAUDE_CODE_NO_CHROME:-}" ]] && export CLAUDE_CODE_NO_CHROME
+    [[ -n "${CLAUDE_CODE_MODEL:-}" ]] && export CLAUDE_CODE_MODEL
+    [[ -n "${CLAUDE_CODE_SESSION_TIMEOUT:-}" ]] && export CLAUDE_CODE_SESSION_TIMEOUT
+    [[ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]] && export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+    [[ -n "${TOKEN_REFRESH_THRESHOLD:-}" ]] && export TOKEN_REFRESH_THRESHOLD
+
     if [[ -z "$PROXY_URL" ]]; then
         return 1
     fi
