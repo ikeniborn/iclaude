@@ -195,12 +195,21 @@ else
     COLOR=$RED
 fi
 
-# Format tokens with thousands separator
-# Set locale for number formatting (with fallback)
-export LC_NUMERIC="${LC_NUMERIC:-en_US.UTF-8}"
-TOTAL_TOKENS_FMT=$(printf "%'d" $TOTAL_TOKENS 2>/dev/null || echo "$TOTAL_TOKENS")
-CONTEXT_LIMIT_FMT=$(printf "%'d" $CONTEXT_LIMIT 2>/dev/null || echo "$CONTEXT_LIMIT")
-ACTIVE_TOKENS_FMT=$(printf "%'d" $ACTIVE_TOKENS 2>/dev/null || echo "$ACTIVE_TOKENS")
+# Format tokens in compact K/M format (like cache display)
+# Format: K for thousands, M for millions
+format_tokens() {
+    local tokens=$1
+    if [[ $tokens -ge 1000000 ]]; then
+        awk "BEGIN {printf \"%.0fM\", ($tokens / 1000000.0)}"
+    elif [[ $tokens -ge 1000 ]]; then
+        awk "BEGIN {printf \"%.0fK\", ($tokens / 1000.0)}"
+    else
+        echo "$tokens"
+    fi
+}
+
+TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
+ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 
 # Build context display string
 # Shows: API tokens (billing) | active context (includes cache reads)
@@ -229,7 +238,7 @@ else
     fi
 fi
 
-CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} billing | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
+CONTEXT_DISPLAY="💳${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
 
 # Output formatted status line
 echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
