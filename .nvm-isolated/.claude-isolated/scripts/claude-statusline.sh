@@ -25,9 +25,20 @@ fi
 # Read session data from STDIN
 SESSION_DATA=$(cat)
 
+# Debug: Log session data to file for diagnostics
+LOG_FILE="/tmp/claude-statusline-debug.log"
+if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+    {
+        echo "=== $(date '+%Y-%m-%d %H:%M:%S') ==="
+        echo "Session data received:"
+        echo "$SESSION_DATA"
+        echo "---"
+    } >> "$LOG_FILE"
+fi
+
 # Debug: Log session data if debug mode enabled
 if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
-    echo "DEBUG: Session data received:" >&2
+    echo "DEBUG: Session data received (logged to $LOG_FILE):" >&2
     echo "$SESSION_DATA" >&2
 fi
 
