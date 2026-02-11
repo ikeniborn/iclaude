@@ -89,7 +89,8 @@ case "$MODEL" in
         ;;
 esac
 
-PERCENT=$((TOTAL_TOKENS * 100 / CONTEXT_LIMIT))
+# Use floating-point arithmetic to avoid truncation for small token counts
+PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
 COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '
   .lastCost // .totalCost // .cost // 0
