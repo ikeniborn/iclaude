@@ -102,13 +102,6 @@ export interface BashInput {
    * Set this to true to dangerously override sandbox mode and run commands without sandboxing.
    */
   dangerouslyDisableSandbox?: boolean;
-  /**
-   * Internal: pre-computed sed edit result from preview
-   */
-  _simulatedSedEdit?: {
-    filePath: string;
-    newContent: string;
-  };
 }
 export interface TaskOutputInput {
   /**
