@@ -409,10 +409,7 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 
 **Data Source**: Receives JSON session data via STDIN from Claude Code
 
-**Supported Formats**:
-- Claude Code v2.1+ (nested `context_window` object)
-- Claude Code v2.0 (flat structure with `last*` prefixes)
-- Automatic fallback for backward compatibility
+**Required Version**: Claude Code v2.1+ (uses nested `context_window` object)
 
 **Displayed Information**:
 ```
@@ -420,8 +417,8 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```
 
 **Format Notes**:
-- **Claude Code v2.1+**: Shows both cumulative and active context (as above)
-- **Older versions**: Falls back to `112,762/200,000 (56%)` format (when `used_percentage` unavailable)
+- **Always shows dual context**: cumulative (billing) and active (next message)
+- **After /clear**: Shows `0 active (0%)` for ~10-40 seconds until Claude Code sends first API response
 
 **Components** (left to right):
 1. **Context usage**:
@@ -443,15 +440,17 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 - **Dual context tracking**: Shows both cumulative (billing) and active (next message) token counts
 - **Automatic /clear detection**: Active context resets when user runs `/clear`, cumulative continues
 - **Cache visibility**: Shows prompt cache usage separately to understand reuse vs fresh tokens
-- **Fallback chains**: Supports multiple JSON field name formats for cross-version compatibility
+- **Null-safe**: Handles temporary `null` values after `/clear` (shows `0 active (0%)` until data arrives)
 - **Debug logging**: Set `DEBUG_STATUSLINE=1` to log session data to `/tmp/claude-statusline-debug.log`
 
-**Token Parsing** (v2.1+ → v2.0 fallback):
+**Token Parsing** (Claude Code v2.1+):
 ```bash
-Input:  .context_window.total_input_tokens → .lastTotalInputTokens → .totalInputTokens → .inputTokens
-Output: .context_window.total_output_tokens → .lastTotalOutputTokens → .totalOutputTokens → .outputTokens
-Cost:   .cost.total_cost_usd → .lastCost → .totalCost → .cost
-Model:  .model.display_name → .model.displayName → .model.id → .modelId → .modelName
+Input:  .context_window.total_input_tokens
+Output: .context_window.total_output_tokens
+Active: .context_window.used_percentage × .context_window.context_window_size
+Cost:   .cost.total_cost_usd
+Model:  .model.display_name
+Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
 ```
 
 **Configuration**:
