@@ -1,11 +1,12 @@
 #!/bin/bash
 # Claude Code Status Line Script
-# Displays context usage, model, cost, proxy/router status, and git info
+# Displays dual context tracking (cumulative + active), model, cost, cache, proxy/router status, and git info
+#
+# Requirements: Claude Code v2.1+ (uses context_window object)
 #
 # Debug mode: export DEBUG_STATUSLINE=1 to enable verbose logging
-#   - Shows session data JSON structure
-#   - Logs detected field names (filtered: token/cost/model fields only)
-#   - Displays parsed token values
+#   - Logs session data JSON to /tmp/claude-statusline-debug.log
+#   - Shows detected field names and parsed values
 #
 # Enable debug mode: DEBUG_STATUSLINE=1
 [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && set -x
@@ -49,24 +50,9 @@ if ! command -v jq &>/dev/null; then
 fi
 
 # Parse Claude session data (tokens, model, cost)
-# Support multiple field name formats for compatibility
-# Claude Code v2.1+ uses nested context_window object
-# Older versions use flat structure with "last" prefix
-TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '
-  .context_window.total_input_tokens //
-  .lastTotalInputTokens //
-  .totalInputTokens //
-  .inputTokens //
-  0
-' 2>/dev/null)
-
-TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '
-  .context_window.total_output_tokens //
-  .lastTotalOutputTokens //
-  .totalOutputTokens //
-  .outputTokens //
-  0
-' 2>/dev/null)
+# Requires Claude Code v2.1+ (nested context_window object)
+TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
+TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
 
 # Debug: Log detected field names and parsed values
 if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
@@ -84,37 +70,11 @@ fi
 
 TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 
-# Parse model - handle both string and object formats
-# Support multiple field names for compatibility with different Claude Code versions
-MODEL=$(echo "$SESSION_DATA" | jq -r '
-  if .model | type == "object" then
-    .model.display_name // .model.displayName // .model.id // .model.modelId // .model.modelName // "unknown"
-  else
-    .model // .modelId // .modelName // "sonnet-4.5"
-  end
-' 2>/dev/null)
+# Parse model display name (Claude Code v2.1+)
+MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
 
-# Try to get context limit from session data (Claude Code v2.1+)
-# Fall back to model-based detection for older versions
-CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 0' 2>/dev/null)
-
-if [[ "$CONTEXT_LIMIT" == "0" ]] || [[ -z "$CONTEXT_LIMIT" ]]; then
-    # Fallback: detect context limit based on model
-    case "$MODEL" in
-        *opus*|*Opus*)
-            CONTEXT_LIMIT=200000
-            ;;
-        *sonnet*|*Sonnet*)
-            CONTEXT_LIMIT=200000
-            ;;
-        *haiku*|*Haiku*)
-            CONTEXT_LIMIT=200000
-            ;;
-        *)
-            CONTEXT_LIMIT=200000  # Default
-            ;;
-    esac
-fi
+# Get context limit from session data (Claude Code v2.1+)
+CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
 
 # Calculate percentage from actual context window usage (input + output tokens)
 # Note: Claude Code's .context_window.used_percentage includes cache tokens,
@@ -150,9 +110,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     CACHE_DISPLAY=" 📦${CACHE_FMT}"
 fi
 
-COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '
-  .cost.total_cost_usd // .lastCost // .totalCost // .cost // 0
-' 2>/dev/null)")
+COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
 
 # Proxy detection (environment variables + fallback)
 # Note: HTTPS_PROXY/HTTP_PROXY may not be set when Claude Code calls this script
@@ -244,8 +202,21 @@ CONTEXT_LIMIT_FMT=$(printf "%'d" $CONTEXT_LIMIT 2>/dev/null || echo "$CONTEXT_LI
 ACTIVE_TOKENS_FMT=$(printf "%'d" $ACTIVE_TOKENS 2>/dev/null || echo "$ACTIVE_TOKENS")
 
 # Build context display string
-# Show both cumulative and active context (if active context available)
-if [[ "$ACTIVE_PERCENT" != "null" ]] && [[ -n "$ACTIVE_PERCENT" ]] && [[ "$ACTIVE_PERCENT" != "0" ]]; then
+# Always show both cumulative and active context (Claude Code v2.1+ format)
+# Handle temporary null values immediately after /clear
+if [[ "$ACTIVE_PERCENT" == "null" ]] || [[ -z "$ACTIVE_PERCENT" ]]; then
+    # Immediately after /clear: used_percentage is null for ~10-40 seconds
+    # Show 0% active until Claude Code sends real data
+    ACTIVE_COLOR=$GREEN
+    ACTIVE_TOKENS=0
+    ACTIVE_TOKENS_FMT="0"
+    ACTIVE_PERCENT="0"
+elif [[ "$ACTIVE_PERCENT" == "0" ]] || [[ "$ACTIVE_PERCENT" == "0.0" ]]; then
+    # Active context reset to 0% (only system prompt)
+    ACTIVE_COLOR=$GREEN
+    ACTIVE_TOKENS=0
+    ACTIVE_TOKENS_FMT="0"
+else
     # Color active context based on its percentage (not cumulative)
     if [[ ${ACTIVE_PERCENT%.*} -lt 50 ]]; then
         ACTIVE_COLOR=$GREEN
@@ -254,11 +225,9 @@ if [[ "$ACTIVE_PERCENT" != "null" ]] && [[ -n "$ACTIVE_PERCENT" ]] && [[ "$ACTIV
     else
         ACTIVE_COLOR=$RED
     fi
-    CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} total | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
-else
-    # Fallback: show only cumulative (for old Claude Code versions or when active context unavailable)
-    CONTEXT_DISPLAY="${COLOR}${TOTAL_TOKENS_FMT}/${CONTEXT_LIMIT_FMT} (${PERCENT}%)${RESET}"
 fi
+
+CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} total | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
 
 # Output formatted status line
 echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
