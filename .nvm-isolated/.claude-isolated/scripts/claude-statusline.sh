@@ -118,8 +118,18 @@ fi
 
 # Calculate percentage from actual context window usage (input + output tokens)
 # Note: Claude Code's .context_window.used_percentage includes cache tokens,
-# which inflates the percentage. We want to show only real context usage.
+# which inflates the percentage. We calculate cumulative percentage here.
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+
+# Parse active context percentage (resets after /clear)
+# This shows the actual context size for the NEXT message
+ACTIVE_PERCENT=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // null' 2>/dev/null)
+
+# Calculate active context tokens (if available)
+ACTIVE_TOKENS=0
+if [[ "$ACTIVE_PERCENT" != "null" ]] && [[ -n "$ACTIVE_PERCENT" ]]; then
+    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $ACTIVE_PERCENT / 100.0)}")
+fi
 
 # Parse cache tokens (Claude Code v2.1+)
 CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
@@ -231,6 +241,24 @@ fi
 export LC_NUMERIC="${LC_NUMERIC:-en_US.UTF-8}"
 TOTAL_TOKENS_FMT=$(printf "%'d" $TOTAL_TOKENS 2>/dev/null || echo "$TOTAL_TOKENS")
 CONTEXT_LIMIT_FMT=$(printf "%'d" $CONTEXT_LIMIT 2>/dev/null || echo "$CONTEXT_LIMIT")
+ACTIVE_TOKENS_FMT=$(printf "%'d" $ACTIVE_TOKENS 2>/dev/null || echo "$ACTIVE_TOKENS")
+
+# Build context display string
+# Show both cumulative and active context (if active context available)
+if [[ "$ACTIVE_PERCENT" != "null" ]] && [[ -n "$ACTIVE_PERCENT" ]] && [[ "$ACTIVE_PERCENT" != "0" ]]; then
+    # Color active context based on its percentage (not cumulative)
+    if [[ ${ACTIVE_PERCENT%.*} -lt 50 ]]; then
+        ACTIVE_COLOR=$GREEN
+    elif [[ ${ACTIVE_PERCENT%.*} -lt 75 ]]; then
+        ACTIVE_COLOR=$YELLOW
+    else
+        ACTIVE_COLOR=$RED
+    fi
+    CONTEXT_DISPLAY="${TOTAL_TOKENS_FMT} total | ${ACTIVE_COLOR}${ACTIVE_TOKENS_FMT} active (${ACTIVE_PERCENT}%)${RESET}"
+else
+    # Fallback: show only cumulative (for old Claude Code versions or when active context unavailable)
+    CONTEXT_DISPLAY="${COLOR}${TOTAL_TOKENS_FMT}/${CONTEXT_LIMIT_FMT} (${PERCENT}%)${RESET}"
+fi
 
 # Output formatted status line
-echo -e "${COLOR}${TOTAL_TOKENS_FMT}/${CONTEXT_LIMIT_FMT} (${PERCENT}%)${RESET}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
+echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"

@@ -416,12 +416,20 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 
 **Displayed Information**:
 ```
-14,869/200,000 (7%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider  branch
+112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider  branch
 ```
 
+**Format Notes**:
+- **Claude Code v2.1+**: Shows both cumulative and active context (as above)
+- **Older versions**: Falls back to `112,762/200,000 (56%)` format (when `used_percentage` unavailable)
+
 **Components** (left to right):
-1. **Context usage**: `total_input + total_output / context_window_size`
-   - Color coded: 🟢 <50%, 🟡 50-75%, 🔴 >75%
+1. **Context usage**:
+   - **Cumulative tokens** (`total_input + total_output`): Total tokens used in session for billing
+   - **Active context** (`used_percentage × context_window_size`): Current context size for next message
+   - Active context resets to ~0-5% after `/clear` (only system prompt remains)
+   - Cumulative tokens continue to grow (billing tracking)
+   - Color coded based on active context: 🟢 <50%, 🟡 50-75%, 🔴 >75%
 2. **Cache tokens**: `📦79K` (cache_read + cache_creation)
    - Format: K for thousands, M for millions
    - Only shown when cache > 0
@@ -432,7 +440,8 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 7. **Git info**: Branch name + uncommitted changes count
 
 **Key Features**:
-- **Accurate percentage**: Calculates from real tokens (input + output), NOT Claude's `used_percentage` which includes cache
+- **Dual context tracking**: Shows both cumulative (billing) and active (next message) token counts
+- **Automatic /clear detection**: Active context resets when user runs `/clear`, cumulative continues
 - **Cache visibility**: Shows prompt cache usage separately to understand reuse vs fresh tokens
 - **Fallback chains**: Supports multiple JSON field name formats for cross-version compatibility
 - **Debug logging**: Set `DEBUG_STATUSLINE=1` to log session data to `/tmp/claude-statusline-debug.log`
