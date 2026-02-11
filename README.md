@@ -1803,3 +1803,70 @@ iclaude --help
 
 - Репозиторий: https://github.com/ikeniborn/claude
 - Issues: https://github.com/ikeniborn/claude/issues
+
+---
+
+## Context Management System
+
+Управление контекстом Claude Code и Auto Memory с best practices от Anthropic.
+
+### ⚡ Быстрый старт
+
+**CLI (вне сессии):**
+```bash
+./iclaude.sh --context-status              # Статус контекста
+./iclaude.sh --context-export              # Экспорт в архив
+./iclaude.sh --context-sync pull           # Синхронизация worktree
+./iclaude.sh --context-clean 30            # Очистка старых данных
+./iclaude.sh --context-backup manual       # Создание backup
+```
+
+**Skill (внутри сессии):**
+```bash
+/context-management status                 # Статус контекста
+/context-management export                 # Экспорт в архив
+/context-management sync pull              # Синхронизация worktree
+```
+
+### 🧠 Auto Memory (Best Practices)
+
+MEMORY.md хранится в `.claude/memory/` проекта, версионируется в git.
+
+**CLI:**
+```bash
+./iclaude.sh --context-memory-init         # Создать MEMORY.md
+./iclaude.sh --context-memory-validate     # Проверить 200 строк лимит
+./iclaude.sh --context-memory-add "text"   # Добавить запись
+./iclaude.sh --context-memory-status       # Статус Auto Memory
+```
+
+**Skill:**
+```bash
+/context-management memory-init            # Создать MEMORY.md
+/context-management memory-validate        # Проверить best practices
+/context-management memory-add "text"      # Добавить запись
+/context-management memory-status          # Статус Auto Memory
+```
+
+**Best Practices:**
+- ✅ Первые 200 строк → system prompt каждой сессии
+- ✅ Специфичные записи: "Use 2-space YAML indent" (не "proper indent")
+- ✅ Организация с заголовками
+- ✅ Топик-файлы для деталей >200 строк
+
+### 🎯 Решенные проблемы
+
+| Проблема | Решение |
+|----------|---------|
+| Потеря контекста при `/compact` | beforeCompact hook + snapshots |
+| Память в `~/.claude/` | MEMORY.md в `.claude/memory/` проекта |
+| Нет версионирования памяти | MEMORY.md в git |
+| Изоляция git worktrees | Shared memory sync |
+| Рост истории (10 MB+) | Автоочистка + trimming |
+
+### 📚 Документация
+
+- **Best Practices**: https://code.claude.com/docs/en/memory
+- **Skill**: `.nvm-isolated/.claude-isolated/skills/context-management/SKILL.md`
+
+**Версия**: 1.0.0 | **Статус**: ✅ Готово к использованию
