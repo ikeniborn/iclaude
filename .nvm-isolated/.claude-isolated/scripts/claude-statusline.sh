@@ -116,13 +116,28 @@ if [[ "$CONTEXT_LIMIT" == "0" ]] || [[ -z "$CONTEXT_LIMIT" ]]; then
     esac
 fi
 
-# Try to get percentage directly from session data (Claude Code v2.1+)
-# This is more accurate as it accounts for cache tokens
-PERCENT=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
+# Calculate percentage from actual context window usage (input + output tokens)
+# Note: Claude Code's .context_window.used_percentage includes cache tokens,
+# which inflates the percentage. We want to show only real context usage.
+PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-if [[ "$PERCENT" == "0" ]] || [[ -z "$PERCENT" ]]; then
-    # Fallback: calculate percentage from total tokens
-    PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+# Parse cache tokens (Claude Code v2.1+)
+CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
+CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
+TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
+
+# Format cache display (show only if >0)
+CACHE_DISPLAY=""
+if [[ $TOTAL_CACHE -gt 0 ]]; then
+    # Format: K for thousands, M for millions
+    if [[ $TOTAL_CACHE -ge 1000000 ]]; then
+        CACHE_FMT=$(awk "BEGIN {printf \"%.1fM\", ($TOTAL_CACHE / 1000000.0)}")
+    elif [[ $TOTAL_CACHE -ge 1000 ]]; then
+        CACHE_FMT=$(awk "BEGIN {printf \"%.0fK\", ($TOTAL_CACHE / 1000.0)}")
+    else
+        CACHE_FMT="$TOTAL_CACHE"
+    fi
+    CACHE_DISPLAY=" 📦${CACHE_FMT}"
 fi
 
 COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '
@@ -218,4 +233,4 @@ TOTAL_TOKENS_FMT=$(printf "%'d" $TOTAL_TOKENS 2>/dev/null || echo "$TOTAL_TOKENS
 CONTEXT_LIMIT_FMT=$(printf "%'d" $CONTEXT_LIMIT 2>/dev/null || echo "$CONTEXT_LIMIT")
 
 # Output formatted status line
-echo -e "${COLOR}${TOTAL_TOKENS_FMT}/${CONTEXT_LIMIT_FMT} (${PERCENT}%)${RESET} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
+echo -e "${COLOR}${TOTAL_TOKENS_FMT}/${CONTEXT_LIMIT_FMT} (${PERCENT}%)${RESET}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
