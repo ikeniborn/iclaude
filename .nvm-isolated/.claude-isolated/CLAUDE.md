@@ -402,6 +402,64 @@ Shows comprehensive router status:
 
 Useful for debugging router configuration and verifying setup.
 
+#### `claude-statusline.sh` - .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
+Custom status line script that displays context usage, cost, and metadata in Claude Code UI.
+
+**Purpose**: Provide real-time session statistics in Claude Code status bar
+
+**Data Source**: Receives JSON session data via STDIN from Claude Code
+
+**Supported Formats**:
+- Claude Code v2.1+ (nested `context_window` object)
+- Claude Code v2.0 (flat structure with `last*` prefixes)
+- Automatic fallback for backward compatibility
+
+**Displayed Information**:
+```
+14,869/200,000 (7%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider  branch
+```
+
+**Components** (left to right):
+1. **Context usage**: `total_input + total_output / context_window_size`
+   - Color coded: 🟢 <50%, 🟡 50-75%, 🔴 >75%
+2. **Cache tokens**: `📦79K` (cache_read + cache_creation)
+   - Format: K for thousands, M for millions
+   - Only shown when cache > 0
+3. **Model**: `display_name` from session data
+4. **Cost**: `total_cost_usd` in USD
+5. **Proxy**: `🌐` icon if proxy configured
+6. **Router**: `🔀provider` if router active
+7. **Git info**: Branch name + uncommitted changes count
+
+**Key Features**:
+- **Accurate percentage**: Calculates from real tokens (input + output), NOT Claude's `used_percentage` which includes cache
+- **Cache visibility**: Shows prompt cache usage separately to understand reuse vs fresh tokens
+- **Fallback chains**: Supports multiple JSON field name formats for cross-version compatibility
+- **Debug logging**: Set `DEBUG_STATUSLINE=1` to log session data to `/tmp/claude-statusline-debug.log`
+
+**Token Parsing** (v2.1+ → v2.0 fallback):
+```bash
+Input:  .context_window.total_input_tokens → .lastTotalInputTokens → .totalInputTokens → .inputTokens
+Output: .context_window.total_output_tokens → .lastTotalOutputTokens → .totalOutputTokens → .outputTokens
+Cost:   .cost.total_cost_usd → .lastCost → .totalCost → .cost
+Model:  .model.display_name → .model.displayName → .model.id → .modelId → .modelName
+```
+
+**Configuration**:
+- Enabled via `settings.json`: `"statusLine": {"type": "command", "command": "/path/to/claude-statusline.sh"}`
+- Debug mode: Add `DEBUG_STATUSLINE=1` to `.claude_proxy_credentials`
+- Exported by iclaude.sh `load_credentials()` function
+
+**Dependencies**:
+- `jq` for JSON parsing (required)
+- `git` for branch/status info (optional)
+- `oh-my-posh` for enhanced git rendering (optional)
+
+**Error Handling**:
+- Missing jq: Shows warning message instead of breaking UI
+- Invalid data: Shows `[Status line: awaiting session data...]`
+- Git timeout: 2-second timeout prevents hanging on slow repos
+
 ### Environment Variables
 
 The script configures these variables:
@@ -444,6 +502,8 @@ CLAUDE_CODE_ENABLE_TASKS="true"                    # Enable tasks system (set to
           settings.json              # User settings
           skills/                    # Claude Code skills
           projects/                  # Project-specific configs
+          scripts/                   # Custom scripts
+             claude-statusline.sh   # Status line script (context, cost, cache, git)
    .nvm-isolated-lockfile.json        # Version lockfile (in git)
    README.md                          # User documentation
 ```
