@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.0 (Modular Architecture - Phase 0)
+# Version: 2.0 (Modular Architecture - Phase 0-2)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/lib"
 
 #######################################
-# Load core modules
+# Load core modules (Phase 0)
 #######################################
 if [[ ! -d "$LIB_DIR/core" ]]; then
     echo "ERROR: Core modules not found at $LIB_DIR/core"
@@ -41,8 +41,18 @@ source "${LIB_DIR}/core/json.sh"
 init_environment
 
 #######################################
+# Load proxy modules (Phase 2)
+#######################################
+if [[ -d "$LIB_DIR/proxy" ]]; then
+    source "${LIB_DIR}/proxy/validate.sh"
+    source "${LIB_DIR}/proxy/credentials.sh"
+    source "${LIB_DIR}/proxy/configure.sh"
+    source "${LIB_DIR}/proxy/git.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 1-9 will gradually extract modules from legacy
+# TODO: Phase 3-9 will gradually extract remaining modules from legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
