@@ -171,12 +171,17 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
         if command -v timeout &>/dev/null; then
             BRANCH=$(timeout $GIT_TIMEOUT git symbolic-ref --short HEAD 2>/dev/null || timeout $GIT_TIMEOUT git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             CHANGES=$(timeout $GIT_TIMEOUT git status --porcelain 2>/dev/null | wc -l || echo "?")
+            # Get commits ahead of upstream
+            AHEAD=$(timeout $GIT_TIMEOUT git rev-list --count @{upstream}..HEAD 2>/dev/null || echo "0")
         else
             BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             CHANGES=$(git status --porcelain 2>/dev/null | wc -l || echo "?")
+            # Get commits ahead of upstream
+            AHEAD=$(git rev-list --count @{upstream}..HEAD 2>/dev/null || echo "0")
         fi
-        GIT_INFO=" | ⎇ $BRANCH"
+        GIT_INFO=" | 🔱 $BRANCH"
         [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO+=" ●$CHANGES"
+        [[ "$AHEAD" != "0" ]] && GIT_INFO+=" ↑$AHEAD"
     else
         # Add separator for Oh My Posh output
         GIT_INFO=" | ${GIT_INFO}"
