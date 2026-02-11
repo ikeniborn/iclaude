@@ -108,7 +108,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     else
         CACHE_FMT="$TOTAL_CACHE"
     fi
-    CACHE_DISPLAY=" 📦${CACHE_FMT}"
+    CACHE_DISPLAY=" 📦 ${CACHE_FMT}"
 fi
 
 COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
@@ -238,7 +238,7 @@ else
     fi
 fi
 
-CONTEXT_DISPLAY="💳${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
+CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
 
 # Output formatted status line
 echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} ${BLUE}${MODEL}${RESET} \$${COST}${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
