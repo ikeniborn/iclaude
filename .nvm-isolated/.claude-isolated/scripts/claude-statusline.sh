@@ -1,7 +1,12 @@
 #!/bin/bash
 # Claude Code Status Line Script
 # Displays context usage, model, cost, proxy/router status, and git info
-
+#
+# Debug mode: export DEBUG_STATUSLINE=1 to enable verbose logging
+#   - Shows session data JSON structure
+#   - Logs detected field names (filtered: token/cost/model fields only)
+#   - Displays parsed token values
+#
 # Enable debug mode: DEBUG_STATUSLINE=1
 [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && set -x
 
@@ -50,8 +55,8 @@ TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '
 
 # Debug: Log detected field names and parsed values
 if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
-    echo "DEBUG: Detected field names:" >&2
-    echo "$SESSION_DATA" | jq -r 'keys | join(", ")' >&2
+    echo "DEBUG: Detected relevant field names:" >&2
+    echo "$SESSION_DATA" | jq -r 'keys | map(select(test("token|cost|model"; "i"))) | join(", ")' >&2
     echo "DEBUG: Parsed tokens: INPUT=$TOTAL_INPUT, OUTPUT=$TOTAL_OUTPUT" >&2
 fi
 
@@ -65,9 +70,10 @@ fi
 TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 
 # Parse model - handle both string and object formats
+# Support multiple field names for compatibility with different Claude Code versions
 MODEL=$(echo "$SESSION_DATA" | jq -r '
   if .model | type == "object" then
-    .model.display_name // .model.displayName // .model.id // "unknown"
+    .model.display_name // .model.displayName // .model.id // .model.modelId // .model.modelName // "unknown"
   else
     .model // .modelId // .modelName // "sonnet-4.5"
   end
