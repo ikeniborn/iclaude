@@ -1,0 +1,102 @@
+{
+  "name": "context-management",
+  "version": "1.0.0",
+  "description": "Управление контекстом Claude Code: экспорт, импорт, синхронизация worktrees, backup и cleanup",
+  "author": "iclaude.sh",
+  "commands": {
+    "export": {
+      "description": "Экспортировать контекст проекта в архив",
+      "usage": "/context-management export [path]",
+      "args": {
+        "path": {
+          "type": "string",
+          "required": false,
+          "description": "Путь к проекту (по умолчанию: текущая директория)"
+        }
+      }
+    },
+    "import": {
+      "description": "Импортировать контекст из архива",
+      "usage": "/context-management import <archive>",
+      "args": {
+        "archive": {
+          "type": "string",
+          "required": true,
+          "description": "Путь к архиву .tar.gz"
+        }
+      }
+    },
+    "sync": {
+      "description": "Синхронизировать память worktree",
+      "usage": "/context-management sync [pull|push]",
+      "args": {
+        "direction": {
+          "type": "string",
+          "required": false,
+          "default": "pull",
+          "enum": ["pull", "push"],
+          "description": "pull - из shared в worktree, push - из worktree в shared"
+        }
+      }
+    },
+    "clean": {
+      "description": "Очистить старые сессии и историю",
+      "usage": "/context-management clean [days] [--aggressive]",
+      "args": {
+        "days": {
+          "type": "number",
+          "required": false,
+          "default": 30,
+          "description": "Удалить сессии старше N дней"
+        },
+        "aggressive": {
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Также удалить неактивные проекты (60+ дней)"
+        }
+      }
+    },
+    "backup": {
+      "description": "Создать backup контекста",
+      "usage": "/context-management backup [mode]",
+      "args": {
+        "mode": {
+          "type": "string",
+          "required": false,
+          "default": "manual",
+          "enum": ["manual", "daily", "weekly"],
+          "description": "Режим backup: manual, daily (для cron), weekly (для cron)"
+        }
+      }
+    },
+    "status": {
+      "description": "Показать статус контекста проекта",
+      "usage": "/context-management status [path]",
+      "args": {
+        "path": {
+          "type": "string",
+          "required": false,
+          "description": "Путь к проекту (по умолчанию: текущая директория)"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "required": ["bash", "tar", "gzip"],
+    "optional": ["jq", "rsync"]
+  },
+  "files": {
+    "library": "lib/context-manager.sh",
+    "hook": ".nvm-isolated/.claude-isolated/hooks/beforeCompact.hook.sh",
+    "wrapper": "context"
+  },
+  "documentation": {
+    "readme": "CONTEXT_README.md",
+    "quickstart": "docs/CONTEXT_QUICK_START.md",
+    "examples": "examples/CONTEXT_USAGE_EXAMPLES.md",
+    "architecture": "docs/CONTEXT_ARCHITECTURE_DIAGRAM.md"
+  },
+  "tags": ["context", "memory", "backup", "worktree", "sync", "cleanup"],
+  "category": "utilities"
+}

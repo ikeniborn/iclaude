@@ -1,0 +1,5 @@
+# Ignore all files in .claude/ except memory/
+*
+!memory/
+!memory/**
+!.gitignore
