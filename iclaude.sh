@@ -379,6 +379,90 @@ get_router_path() {
 }
 
 #######################################
+# Detect if statusline script is installed
+# Returns:
+#   0 - statusline available
+#   1 - statusline not available
+#######################################
+
+#######################################
+# Detect Oh My Posh platform
+# Returns platform identifier for binary selection
+# Output: linux-amd64|linux-arm64|darwin-amd64|darwin-arm64
+# Returns 1 if platform unsupported
+#######################################
+detect_ohmyposh_platform() {
+    local os=$(uname -s)
+    local arch=$(uname -m)
+
+    case "$os" in
+        Linux)
+            case "$arch" in
+                x86_64) echo "linux-amd64"; return 0 ;;
+                aarch64|arm64) echo "linux-arm64"; return 0 ;;
+                *) echo "unsupported"; return 1 ;;
+            esac
+            ;;
+        Darwin)
+            case "$arch" in
+                x86_64) echo "darwin-amd64"; return 0 ;;
+                arm64) echo "darwin-arm64"; return 0 ;;
+                *) echo "unsupported"; return 1 ;;
+            esac
+            ;;
+        *)
+            echo "unsupported"
+            return 1
+            ;;
+    esac
+}
+
+#######################################
+# Get path to oh-my-posh binary
+# Returns:
+#   oh-my-posh binary path or empty string
+#######################################
+get_ohmyposh_path() {
+	# Check isolated environment first
+	if [[ -d "$ISOLATED_NVM_DIR" ]]; then
+		local npm_global_bin="$ISOLATED_NVM_DIR/npm-global/bin"
+		[[ -x "$npm_global_bin/oh-my-posh" ]] && echo "$npm_global_bin/oh-my-posh" && return 0
+	fi
+
+	# Check system PATH
+	command -v oh-my-posh &> /dev/null && command -v oh-my-posh && return 0
+
+	echo ""
+	return 1
+}
+
+#######################################
+# Detect if Oh My Posh is installed
+# Returns:
+#   0 - Oh My Posh available
+#   1 - Oh My Posh not available
+#######################################
+detect_ohmyposh() {
+	local posh_path=$(get_ohmyposh_path)
+	[[ -n "$posh_path" ]] && return 0
+	return 1
+}
+
+detect_statusline() {
+	# Quietly setup isolated environment to get ISOLATED_CONFIG_DIR
+	setup_isolated_nvm &>/dev/null || true
+
+	local statusline_script="$ISOLATED_CONFIG_DIR/scripts/claude-statusline.sh"
+
+	if [[ -f "$statusline_script" ]] && [[ -x "$statusline_script" ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+
+#######################################
 # Detect platform for sandboxing support
 # Returns:
 #   0 - platform supported (macos, linux, wsl2)
@@ -707,6 +791,7 @@ setup_isolated_nvm() {
 	# Export isolated environment
 	export NVM_DIR="$ISOLATED_NVM_DIR"
 	export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
+	export ISOLATED_CONFIG_DIR="$ISOLATED_NVM_DIR/.claude-isolated"
 
 	# Найти установленную версию Node.js (раскрыть глоб)
 	local node_version_dir=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | head -1)
@@ -969,6 +1054,136 @@ install_isolated_router() {
 
 	return 0
 }
+
+#######################################
+# Configure statusLine in settings.json
+# Updates Claude Code settings to enable custom status line script
+# Arguments:
+#   $1 - absolute path to statusline script
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+configure_statusline_in_settings() {
+    local script_path="$1"
+
+    # Ensure isolated environment is set up
+    setup_isolated_nvm
+
+    # Determine settings file location (always use isolated config for statusline)
+    local settings_file="$ISOLATED_CONFIG_DIR/settings.json"
+
+    print_info "Configuring statusLine in settings.json..."
+    echo "  Settings file: $settings_file"
+
+    # Ensure settings file exists
+    if [[ ! -f "$settings_file" ]]; then
+        echo "{}" > "$settings_file"
+    fi
+
+    # Check for jq
+    if ! command -v jq &> /dev/null; then
+        print_error "jq is required for settings configuration"
+        echo "  Install with: sudo apt install jq (Ubuntu/Debian) or brew install jq (macOS)"
+        return 1
+    fi
+
+    # Add statusLine configuration with correct format
+    local temp_file="${settings_file}.tmp"
+    jq --arg script "$script_path" \
+       '. + {
+           "statusLine": {
+               "type": "command",
+               "command": $script,
+               "padding": 1
+           }
+       }' "$settings_file" > "$temp_file"
+
+    if [[ $? -eq 0 ]]; then
+        mv "$temp_file" "$settings_file"
+        chmod 600 "$settings_file"
+        print_success "StatusLine configured successfully"
+        return 0
+    else
+        rm -f "$temp_file"
+        print_error "Failed to update settings.json"
+        return 1
+    fi
+}
+
+#######################################
+# Install statusline script for Claude Code
+# Creates claude-statusline.sh and configures settings.json
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_statusline_script() {
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Installing Claude Status Line"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Setup isolated environment
+    setup_isolated_nvm
+
+    # Create scripts directory
+    local scripts_dir="$ISOLATED_CONFIG_DIR/scripts"
+    mkdir -p "$scripts_dir"
+
+    local script_path="$scripts_dir/claude-statusline.sh"
+
+    # Check if script already exists
+    if [[ -f "$script_path" ]]; then
+        print_info "Script already exists: $script_path"
+        print_info "Regenerating..."
+        echo ""
+    fi
+
+    # Get absolute path for settings.json
+    local abs_script_path
+    if command -v realpath &>/dev/null; then
+        abs_script_path=$(realpath "$script_path")
+    else
+        abs_script_path="$(cd "$(dirname "$script_path")" && pwd)/$(basename "$script_path")"
+    fi
+
+    print_info "Installing claude-statusline.sh script..."
+
+    # Script is already created manually, just ensure it's executable
+    if [[ ! -f "$script_path" ]]; then
+        print_error "Script not found: $script_path"
+        echo "  Expected location: $script_path"
+        return 1
+    fi
+
+    chmod +x "$script_path"
+    print_success "Created statusline script: $script_path"
+
+    # Configure settings.json
+    if ! configure_statusline_in_settings "$abs_script_path"; then
+        return 1
+    fi
+
+    # Update lockfile
+    save_isolated_lockfile
+
+    echo ""
+    echo "✅ StatusLine installation complete!"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Launch Claude Code: ./iclaude.sh"
+    echo "  2. Status line will appear at the bottom of Claude interface"
+    echo "  3. Customize the script at: $script_path"
+    echo ""
+    echo "Check status: ./iclaude.sh --check-statusline"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    return 0
+}
+
 
 #######################################
 # Install gh CLI in isolated environment
@@ -1267,6 +1482,69 @@ install_isolated_lsp_servers() {
 }
 
 #######################################
+# Install Oh My Posh in isolated environment (pre-bundled)
+# Uses pre-bundled platform-specific binary from git repository
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_ohmyposh() {
+	setup_isolated_nvm
+	
+	local platform
+	platform=$(detect_ohmyposh_platform)
+	if [ $? -ne 0 ]; then
+		echo "Error: Platform not supported for Oh My Posh ($platform)" >&2
+		return 1
+	fi
+	
+	local omp_binary="${ISOLATED_NVM_DIR}/npm-global/bin/oh-my-posh-${platform}"
+	local omp_symlink="${ISOLATED_NVM_DIR}/npm-global/bin/oh-my-posh"
+	
+	# Verify pre-bundled binary exists
+	if [ ! -f "$omp_binary" ]; then
+		echo "Error: Pre-bundled Oh My Posh binary not found: $omp_binary" >&2
+		echo "Expected file: oh-my-posh-${platform}" >&2
+		echo "" >&2
+		echo "Please ensure the git repository includes the pre-bundled binary." >&2
+		return 1
+	fi
+	
+	# Create symlink
+	echo "Creating symlink: oh-my-posh -> oh-my-posh-${platform}"
+	ln -sf "oh-my-posh-${platform}" "$omp_symlink"
+	if [ $? -ne 0 ]; then
+		echo "Error: Failed to create symlink" >&2
+		return 1
+	fi
+	
+	# Set executable permissions
+	chmod +x "$omp_binary" "$omp_symlink"
+	
+	# Verify installation
+	local version
+	version=$("$omp_symlink" --version 2>/dev/null | head -n 1)
+	if [ $? -ne 0 ]; then
+		echo "Error: Oh My Posh installation verification failed" >&2
+		return 1
+	fi
+	
+	# Update lockfile
+	save_isolated_lockfile
+	
+	echo ""
+	echo "Oh My Posh installed successfully!"
+	echo "Version: $version"
+	echo "Platform: $platform"
+	echo "Binary: $omp_binary"
+	echo ""
+	echo "Next steps:"
+	echo "1. Theme file already created: .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json"
+	echo "2. Customize theme (optional): edit .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json"
+	echo "3. Oh My Posh will be used automatically by statusline script when available"
+}
+
+#######################################
 # Update Claude Code in isolated environment
 # Returns:
 #   0 - success
@@ -1503,9 +1781,9 @@ save_isolated_lockfile() {
 
 			# Check if plugin is enabled for this project
 			if echo "$plugin_info" | grep -q "enabled"; then
-				# Extract version
+				# Extract version and take only first line to avoid multiline issues
 				local plugin_version
-				plugin_version=$(echo "$plugin_info" | grep "Version:" | awk '{print $2}')
+				plugin_version=$(echo "$plugin_info" | grep "Version:" | head -1 | awk '{print $2}' | tr -d '\n\r' | xargs)
 
 				if [[ -n "$plugin_version" ]]; then
 					[[ "$first" == false ]] && lsp_plugins_json+=", "
@@ -1520,24 +1798,66 @@ save_isolated_lockfile() {
 
 	local installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-	# Create lockfile
-	cat > "$ISOLATED_LOCKFILE" << EOF
-{
-  "nodeVersion": "$node_version",
-  "claudeCodeVersion": "$claude_version",
-  "routerVersion": "$router_version",
-  "ghCliVersion": "$gh_version",
-  "lspServers": $lsp_servers_json,
-  "lspPlugins": $lsp_plugins_json,
-  "sandboxAvailable": $sandbox_available,
-  "sandboxPlatform": "$sandbox_platform",
-  "sandboxDependencies": $sandbox_deps_json,
-  "sandboxRuntimeVersion": "$sandbox_runtime_version",
-  "sandboxInstalledAt": "$sandbox_installed_at",
-  "installedAt": "$installed_at",
-  "nvmVersion": "0.39.7"
-}
-EOF
+	# Detect status line configuration
+	local statusline_enabled="false"
+	local statusline_script="not configured"
+	if detect_statusline &>/dev/null; then
+		statusline_enabled="true"
+		statusline_script="claude-statusline.sh"
+	fi
+
+	# Detect Oh My Posh version
+	local omp_version="not installed"
+	local omp_platform="unknown"
+	local omp_installed_at=""
+	if detect_ohmyposh &>/dev/null; then
+		local posh_path=$(get_ohmyposh_path)
+		if [[ -n "$posh_path" ]] && [[ -x "$posh_path" ]]; then
+			omp_version=$("$posh_path" --version 2>&1 | head -1 | awk '{print $NF}' || echo "unknown")
+			omp_platform=$(detect_ohmyposh_platform 2>/dev/null || echo "unknown")
+			omp_installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+		fi
+	fi
+
+	# Create lockfile using jq for safe JSON generation
+	jq -n \
+		--arg nodeVer "$node_version" \
+		--arg claudeVer "$claude_version" \
+		--arg routerVer "$router_version" \
+		--arg ghVer "$gh_version" \
+		--argjson lspServers "$lsp_servers_json" \
+		--argjson lspPlugins "$lsp_plugins_json" \
+		--arg sandboxAvail "$sandbox_available" \
+		--arg sandboxPlat "$sandbox_platform" \
+		--argjson sandboxDeps "$sandbox_deps_json" \
+		--arg sandboxRuntimeVer "$sandbox_runtime_version" \
+		--arg sandboxInstAt "$sandbox_installed_at" \
+		--arg statusEnabled "$statusline_enabled" \
+		--arg statusScript "$statusline_script" \
+		--arg ompVer "$omp_version" \
+		--arg ompPlat "$omp_platform" \
+		--arg ompInstAt "$omp_installed_at" \
+		--arg instAt "$installed_at" \
+		'{
+			nodeVersion: $nodeVer,
+			claudeCodeVersion: $claudeVer,
+			routerVersion: $routerVer,
+			ghCliVersion: $ghVer,
+			lspServers: $lspServers,
+			lspPlugins: $lspPlugins,
+			sandboxAvailable: ($sandboxAvail == "true"),
+			sandboxPlatform: $sandboxPlat,
+			sandboxDependencies: $sandboxDeps,
+			sandboxRuntimeVersion: $sandboxRuntimeVer,
+			sandboxInstalledAt: $sandboxInstAt,
+			statusLineEnabled: ($statusEnabled == "true"),
+			statusLineScript: $statusScript,
+			ohMyPoshVersion: $ompVer,
+			ohMyPoshPlatform: $ompPlat,
+			ohMyPoshInstalledAt: $ompInstAt,
+			installedAt: $instAt,
+			nvmVersion: "0.39.7"
+		}' > "$ISOLATED_LOCKFILE"
 
 	chmod 644 "$ISOLATED_LOCKFILE"
 
@@ -2579,6 +2899,158 @@ check_router_status() {
 
 	return 0
 }
+
+#######################################
+# Check statusline status and configuration
+# Shows script installation, settings config, data sources, and capabilities
+#######################################
+check_statusline_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Claude Code Statusline Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Setup isolated environment to get paths
+	setup_isolated_nvm
+
+	# Check if statusline script exists
+	local statusline_script="$ISOLATED_CONFIG_DIR/scripts/claude-statusline.sh"
+
+	if [[ ! -f "$statusline_script" ]]; then
+		print_warning "Statusline script not found"
+		echo "  Expected location: $statusline_script"
+		echo ""
+		echo "Install with: ./iclaude.sh --install-statusline"
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	print_success "Statusline script found: $statusline_script"
+
+	# Check if executable
+	if [[ -x "$statusline_script" ]]; then
+		print_success "Script is executable"
+	else
+		print_warning "Script is not executable"
+		echo "  Run: chmod +x $statusline_script"
+	fi
+	echo ""
+
+	# Check settings.json configuration
+	local settings_file="$ISOLATED_CONFIG_DIR/settings.json"
+
+	print_info "Settings file location:"
+	echo "  $settings_file"
+	echo ""
+
+	if [[ ! -f "$settings_file" ]]; then
+		print_warning "Settings file not found"
+		echo ""
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+		echo ""
+		return 0
+	fi
+
+	print_success "Settings file exists"
+	echo ""
+
+	# Check statusLine configuration
+	print_info "Statusline configuration:"
+	if command -v jq &>/dev/null; then
+		local configured=$(jq -r '.statusLine.command // "not configured"' "$settings_file" 2>/dev/null)
+		if [[ "$configured" != "not configured" ]]; then
+			print_success "  Command: $configured"
+			local refresh=$(jq -r '.statusLine.refresh // "not configured"' "$settings_file" 2>/dev/null)
+			if [[ "$refresh" != "not configured" ]]; then
+				echo "  Refresh: $refresh"
+			fi
+		else
+			print_warning "  Command: not configured"
+			echo "  Add to settings.json:"
+			echo "    \"statusLine\": {"
+			echo "      \"type\": \"command\","
+			echo "      \"command\": \"$statusline_script\","
+			echo "      \"padding\": 1"
+			echo "    }"
+		fi
+	else
+		echo "  (Install jq to check configuration)"
+	fi
+	echo ""
+
+	# Show data sources
+	print_info "Data sources:"
+	echo "  - Session info (tokens, model, cost)"
+	echo "  - Proxy status (from .claude_proxy_credentials)"
+	echo "  - Router status (from router.json)"
+	echo "  - Git branch and status"
+	echo ""
+
+	# Display capabilities
+	print_info "Capabilities:"
+	echo "  - Context usage (tokens + percentage)"
+	echo "  - Model name"
+	echo "  - Session cost (USD)"
+	echo "  - Proxy indicator (🌐)"
+	echo "  - Router indicator (🔀 provider)"
+	echo "  - Git branch + uncommitted changes"
+	echo ""
+
+	print_success "Statusline ready to use"
+	if [[ "$(jq -r '.statusLine.command // "not configured"' "$settings_file" 2>/dev/null)" == "not configured" ]]; then
+		echo "  Add configuration to settings.json to enable"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
+#######################################
+# Check Oh My Posh status and configuration
+# Shows installation, version, platform
+#######################################
+check_ohmyposh_status() {
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo "  Oh My Posh Status"
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	# Setup isolated environment
+	setup_isolated_nvm
+
+	local posh_binary="$ISOLATED_NVM_DIR/npm-global/bin/oh-my-posh"
+
+	print_info "Installation Status:"
+	if [[ -f "$posh_binary" ]] && [[ -x "$posh_binary" ]]; then
+		print_success "Installed"
+		echo "  Location: $posh_binary"
+
+		# Get version
+		local version=$("$posh_binary" --version 2>&1 | head -1 | awk '{print $NF}')
+		echo "  Version: $version"
+
+		# Get platform
+		local platform=$(detect_ohmyposh_platform 2>/dev/null || echo "unknown")
+		echo "  Platform: $platform"
+	else
+		print_error "Not installed"
+		echo "  Run: ./iclaude.sh --install-posh"
+	fi
+
+	echo ""
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	echo ""
+
+	return 0
+}
+
 
 #######################################
 # Check sandbox status and configuration
@@ -4186,6 +4658,11 @@ check_gh_status() {
 	return 0
 }
 
+#######################################
+# Check Oh My Posh installation status
+# Returns:
+#   0 - success
+#######################################
 #######################################
 # Export config directory to backup location
 # Arguments:
@@ -6141,6 +6618,10 @@ OPTIONS:
   --sandbox-check                   Show sandbox availability status and configuration
   --check-sandbox                   (Alias for --sandbox-check)
   --no-test                         Skip proxy connectivity test
+
+Oh My Posh Commands:
+  --install-posh, --install-ohmyposh    Install Oh My Posh binary in isolated environment
+  --check-posh, --check-ohmyposh        Show Oh My Posh installation status
   --show-password                   Display password in output (default: masked)
   --no-save                         Disable permission checks (enables --dangerously-skip-permissions)
   --save                            [DEPRECATED] Safe mode is now default, use --no-save for unsafe mode
@@ -6613,6 +7094,44 @@ main() {
                 check_lsp_status
                 exit 0
                 ;;
+            --install-statusline)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-statusline"
+                    echo ""
+                    echo "Status line is only available in isolated environment"
+                    exit 1
+                fi
+                install_statusline_script
+                exit $?
+                ;;
+            --check-statusline)
+                check_statusline_status
+                exit 0
+                ;;
+            --regenerate-statusline)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --regenerate-statusline"
+                    echo ""
+                    echo "Status line is only available in isolated environment"
+                    exit 1
+                fi
+                install_statusline_script
+                exit $?
+                ;;
+            --install-posh|--install-ohmyposh)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-posh"
+                    echo ""
+                    echo "Oh My Posh is only available in isolated environment"
+                    exit 1
+                fi
+                install_isolated_ohmyposh
+                exit $?
+                ;;
+            --check-posh|--check-ohmyposh)
+                check_ohmyposh_status
+                exit 0
+                ;;
             --sandbox-install)
                 if [[ "$use_system" == true ]]; then
                     print_error "--system cannot be used with --sandbox-install"
@@ -6627,6 +7146,20 @@ main() {
                 ;;
             --sandbox-check|--check-sandbox)
                 check_sandbox_status
+                exit 0
+                ;;
+            --install-posh|--install-ohmyposh)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-posh"
+                    echo ""
+                    echo "Oh My Posh is only available in isolated environment"
+                    exit 1
+                fi
+                install_isolated_ohmyposh
+                exit $?
+                ;;
+            --check-posh|--check-ohmyposh)
+                check_ohmyposh_status
                 exit 0
                 ;;
             --router)
