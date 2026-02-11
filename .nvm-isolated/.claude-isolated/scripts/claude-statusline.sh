@@ -33,8 +33,27 @@ if ! command -v jq &>/dev/null; then
 fi
 
 # Parse Claude session data (tokens, model, cost)
-TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.lastTotalInputTokens // 0' 2>/dev/null)
-TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.lastTotalOutputTokens // 0' 2>/dev/null)
+# Support multiple field name formats for compatibility
+TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '
+  .lastTotalInputTokens //
+  .totalInputTokens //
+  .inputTokens //
+  0
+' 2>/dev/null)
+
+TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '
+  .lastTotalOutputTokens //
+  .totalOutputTokens //
+  .outputTokens //
+  0
+' 2>/dev/null)
+
+# Debug: Log detected field names and parsed values
+if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+    echo "DEBUG: Detected field names:" >&2
+    echo "$SESSION_DATA" | jq -r 'keys | join(", ")' >&2
+    echo "DEBUG: Parsed tokens: INPUT=$TOTAL_INPUT, OUTPUT=$TOTAL_OUTPUT" >&2
+fi
 
 # Validate parsed data
 if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
@@ -48,9 +67,9 @@ TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 # Parse model - handle both string and object formats
 MODEL=$(echo "$SESSION_DATA" | jq -r '
   if .model | type == "object" then
-    .model.display_name // .model.id // "unknown"
+    .model.display_name // .model.displayName // .model.id // "unknown"
   else
-    .model // "sonnet-4.5"
+    .model // .modelId // .modelName // "sonnet-4.5"
   end
 ' 2>/dev/null)
 
@@ -72,7 +91,9 @@ esac
 
 PERCENT=$((TOTAL_TOKENS * 100 / CONTEXT_LIMIT))
 
-COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.lastCost // 0' 2>/dev/null)")
+COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '
+  .lastCost // .totalCost // .cost // 0
+' 2>/dev/null)")
 
 # Proxy detection (environment variables + fallback)
 # Note: HTTPS_PROXY/HTTP_PROXY may not be set when Claude Code calls this script
