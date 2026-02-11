@@ -67,6 +67,12 @@ scripts/.claude_proxy_credentials
 !.nvm-isolated/.claude-isolated/router.json.example
 !.nvm-isolated/.claude-isolated/router.json
 
+# Status line scripts and themes (Phase 1 & 2)
+!.nvm-isolated/.claude-isolated/scripts/
+!.nvm-isolated/.claude-isolated/scripts/**
+!.nvm-isolated/.claude-isolated/themes/
+!.nvm-isolated/.claude-isolated/themes/**
+
 # Prevent accidental commit of runtime router config
 .claude-code-router/
 
@@ -82,3 +88,8 @@ scripts/.claude_proxy_credentials
 # Keep only package structure
 !.nvm-isolated/npm-global/lib/.gitkeep
 
+
+# Oh My Posh symlink (created by install, not committed)
+.nvm-isolated/npm-global/bin/oh-my-posh
+
+# Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
