@@ -175,8 +175,11 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
             BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             CHANGES=$(git status --porcelain 2>/dev/null | wc -l || echo "?")
         fi
-        GIT_INFO="  $BRANCH"
+        GIT_INFO=" | ⎇ $BRANCH"
         [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO+=" ●$CHANGES"
+    else
+        # Add separator for Oh My Posh output
+        GIT_INFO=" | ${GIT_INFO}"
     fi
 fi
 
