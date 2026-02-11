@@ -108,7 +108,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     else
         CACHE_FMT="$TOTAL_CACHE"
     fi
-    CACHE_DISPLAY=" 📦 ${CACHE_FMT}"
+    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
 fi
 
 COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
@@ -142,7 +142,7 @@ fi
 ROUTER_ICON=""
 if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     PROVIDER=$(jq -r '.routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
-    ROUTER_ICON=" 🔀$PROVIDER"
+    ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
 # Git info (branch + uncommitted changes)
