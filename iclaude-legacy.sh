@@ -5813,6 +5813,8 @@ fi  # End guard for cleanup_old_claude_installations
 #######################################
 # Recreate Claude symlinks after update (NVM only)
 #######################################
+# Guard: Check if recreate_claude_symlinks is already defined by update/cleanup.sh module
+if ! declare -F recreate_claude_symlinks &>/dev/null; then
 recreate_claude_symlinks() {
 	if [[ -z "${NVM_DIR:-}" ]]; then
 		return 0  # Only for NVM installations
@@ -5869,12 +5871,15 @@ recreate_claude_symlinks() {
 
 	return 0
 }
+fi  # End guard for recreate_claude_symlinks
 
 #######################################
 # Update Claude Code
 # Arguments:
 #   $1 - skip_isolated (optional): "true" to skip isolated environment
 #######################################
+# Guard: Check if update_claude_code is already defined by update/update.sh module
+if ! declare -F update_claude_code &>/dev/null; then
 update_claude_code() {
     local skip_isolated="${1:-false}"
     local using_nvm=false
@@ -6102,6 +6107,7 @@ update_claude_code() {
         return 1
     fi
 }
+fi  # End guard for update_claude_code
 
 #######################################
 # Check and install dependencies
