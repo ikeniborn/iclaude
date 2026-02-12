@@ -5380,6 +5380,8 @@ fi  # End guard for clear_credentials
 #   1 - token expired
 #   2 - token expiring soon (< 1 hour)
 #######################################
+# Guard: Only define if not already loaded from lib/oauth/token.sh
+if ! declare -F check_token_expiration &>/dev/null; then
 check_token_expiration() {
     local warn_threshold=3600  # 1 hour in seconds
     local credentials_files=()
@@ -5440,6 +5442,7 @@ check_token_expiration() {
 
     return $most_critical_status
 }
+fi  # End guard for check_token_expiration
 
 #######################################
 # Install Node.js and npm
@@ -6372,6 +6375,8 @@ uninstall_symlink_only() {
 #   0 - Token valid or doesn't exist
 #   1 - Token expired and requires login
 #######################################
+# Guard: Only define if not already loaded from lib/oauth/token.sh
+if ! declare -F check_oauth_token &>/dev/null; then
 check_oauth_token() {
     local skip_isolated="${1:-false}"
 
@@ -6470,6 +6475,7 @@ check_oauth_token() {
 
     return 0
 }
+fi  # End guard for check_oauth_token
 
 #######################################
 # Refresh OAuth token using setup-token
@@ -6480,6 +6486,8 @@ check_oauth_token() {
 #   0 - Token refreshed successfully
 #   1 - Failed to refresh token
 #######################################
+# Guard: Only define if not already loaded from lib/oauth/token.sh
+if ! declare -F refresh_oauth_token &>/dev/null; then
 refresh_oauth_token() {
     local skip_isolated="${1:-false}"
 
@@ -6528,6 +6536,7 @@ refresh_oauth_token() {
         return 1
     fi
 }
+fi  # End guard for refresh_oauth_token
 
 #######################################
 # Validate that jq is installed
@@ -6536,10 +6545,13 @@ refresh_oauth_token() {
 #   0 - jq is installed
 #   1 - jq is not installed
 #######################################
+# Guard: Only define if not already loaded from lib/oauth/token.sh
+if ! declare -F validate_jq_installed &>/dev/null; then
 validate_jq_installed() {
     # Delegated to core/validation.sh
     validate_dependency "jq" "Install jq: sudo apt-get install jq (Debian/Ubuntu) or brew install jq (macOS)"
 }
+fi  # End guard for validate_jq_installed
 
 #######################################
 # Launch Claude Code
