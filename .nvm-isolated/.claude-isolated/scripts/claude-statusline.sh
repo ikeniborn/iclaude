@@ -391,14 +391,11 @@ ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
 EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
 
-# Calculate percentage of effective window
+# Calculate percentage of effective window (excludes reserved buffer)
 # This shows why auto-compact triggers earlier than expected from status line percentage
+# Active tokens already exclude the reserved buffer (calculated from used_percentage)
 EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $EFFECTIVE_WINDOW)}")
 EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
-BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
-
-# Format buffer display (show reserved buffer separately)
-BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT} reserved"
 
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
@@ -435,8 +432,9 @@ else
 fi
 
 # Always show effective window to help user understand real context usage
-# Format: 📊 114K/155K (73%) - shows percentage of effective window
-# Reserved buffer shown separately: 🔒 45K reserved
+# Format: 📊 114K/155K (73%) - shows percentage of effective window (excluding reserved buffer)
+# Active tokens (114K) = actual conversation context (excludes 45K reserved buffer)
+# Effective window (155K) = available space for conversation (200K - 45K reserved)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]]; then
         # Exceeded effective window - add ⚠️ warning icon
@@ -451,4 +449,4 @@ else
 fi
 
 # Output formatted status line
-echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
+echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
