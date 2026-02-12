@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.0 (Modular Architecture - Phase 0-3)
+# Version: 2.1 (Modular Architecture - Phase 0-4)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -63,8 +63,16 @@ if [[ -d "$LIB_DIR/nvm" ]]; then
 fi
 
 #######################################
+# Load lockfile modules (Phase 4)
+#######################################
+if [[ -d "$LIB_DIR/lockfile" ]]; then
+    source "${LIB_DIR}/lockfile/save.sh"
+    source "${LIB_DIR}/lockfile/install.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 4-9 will gradually extract remaining modules from legacy
+# TODO: Phase 5-9 will gradually extract remaining modules from legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
