@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.7 (Modular Architecture - Phase 0-8.3)
+# Version: 2.8 (Modular Architecture - Phase 0-9.1)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -120,6 +120,15 @@ if [[ -d "$LIB_DIR/ohmyposh" ]]; then
     source "${LIB_DIR}/ohmyposh/detect.sh"
     source "${LIB_DIR}/ohmyposh/install.sh"
     source "${LIB_DIR}/ohmyposh/status.sh"
+fi
+
+#######################################
+# Load Sandbox modules (Phase 9.1)
+#######################################
+if [[ -d "$LIB_DIR/sandbox" ]]; then
+    source "${LIB_DIR}/sandbox/detect.sh"
+    source "${LIB_DIR}/sandbox/install.sh"
+    source "${LIB_DIR}/sandbox/status.sh"
 fi
 
 #######################################
