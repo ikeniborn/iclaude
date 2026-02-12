@@ -7497,6 +7497,7 @@ fi
 #######################################
 # Show usage
 #######################################
+if ! declare -F show_usage &>/dev/null; then
 show_usage() {
     cat << EOF
 Usage: iclaude [OPTIONS] [CLAUDE_ARGS...]
@@ -7805,6 +7806,7 @@ INSTALLATION:
 
 EOF
 }
+fi
 
 #######################################
 # Main
