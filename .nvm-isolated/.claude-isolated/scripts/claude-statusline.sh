@@ -431,17 +431,17 @@ else
     fi
 fi
 
-# Always show effective window to help user understand real context usage
-# Format: 📊 114K/155K (73%) - shows percentage of effective window (excluding reserved buffer)
-# Active tokens (114K) = actual conversation context (excludes 45K reserved buffer)
-# Effective window (155K) = available space for conversation (200K - 45K reserved)
+# Show active context and percentage of available space
+# Format: 📊 120K (77%) - active tokens and % of effective window
+# Active tokens (120K) = actual conversation context (excludes 45K reserved buffer)
+# Percentage (77%) = how much of available space is used (120K / 155K effective window)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]]; then
         # Exceeded effective window - add ⚠️ warning icon
-        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
-        # Normal display with effective window
-        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        # Normal display: active tokens and percentage
+        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
     # Zero active tokens (after /clear)
