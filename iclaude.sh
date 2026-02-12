@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.9 (Modular Architecture - Phase 0-9.2)
+# Version: 3.0 (Modular Architecture - Phase 0-9.5)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -137,6 +137,15 @@ fi
 if [[ -d "$LIB_DIR/gh" ]]; then
     source "${LIB_DIR}/gh/install.sh"
     source "${LIB_DIR}/gh/status.sh"
+fi
+
+#######################################
+# Load Update modules (Phase 9.5)
+#######################################
+if [[ -d "$LIB_DIR/update" ]]; then
+    source "${LIB_DIR}/update/isolated.sh"
+    source "${LIB_DIR}/update/cleanup.sh"
+    source "${LIB_DIR}/update/update.sh"
 fi
 
 #######################################
