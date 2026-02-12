@@ -417,9 +417,9 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```
 
 **Format Notes**:
-- **Always shows dual context**: cumulative (billing) and active (next message)
+- **Always shows dual context**: cumulative (billing) and active NEW tokens (excludes cache)
 - **After /clear**: Shows `0 active (0%)` for ~10-40 seconds until Claude Code sends first API response
-- **After /compact**: Shows high active context (50-80%) due to cached summary - this is CORRECT behavior. The summary is cached and reused in the next message, so active context reflects the cache size (~154K tokens)
+- **After /compact**: Shows LOW active context (~0.3%) because only new input/output tokens are counted. Cache tokens are shown separately in `📦 150K` to avoid confusion. This makes it clear what is "new" context vs "reused" cached context
 
 **Components** (left to right):
 1. **Context usage**:
@@ -431,9 +431,9 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 2. **Cache tokens**: `📦79K` (cache_read + cache_creation)
    - Format: K for thousands, M for millions
    - Only shown when cache > 0
-   - **Important**: `cache_read_input_tokens` is included in `used_percentage` calculation by Claude Code
-   - After `/compact`, active context is HIGH (~77%) because it includes cached summary size
-   - This is correct behavior - the cache represents tokens that will be reused in the next message
+   - **Important**: Cache tokens are shown SEPARATELY from active context
+   - Active context (📊) shows only NEW tokens (input + output), excluding cache
+   - After `/compact`, active context is LOW (~0.3%) while cache is high (~150K) - this clearly distinguishes new vs reused context
 3. **Model**: `display_name` from session data
 4. **Cost**: `total_cost_usd` in USD
 5. **Proxy**: `🌐` icon if proxy configured
@@ -451,16 +451,19 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```bash
 Input:  .context_window.total_input_tokens
 Output: .context_window.total_output_tokens
-Active: .context_window.used_percentage × .context_window.context_window_size
+Active: .context_window.current_usage.input_tokens + current_usage.output_tokens  (excludes cache!)
 Cost:   .cost.total_cost_usd
 Model:  .model.display_name
 Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
 
-# How Claude Code calculates used_percentage:
-# used_percentage = (cache_read + input + output) / context_window_size × 100
+# How statusline calculates active context (NEW approach):
+# active_tokens = current_input + current_output  (cache NOT included)
+# active_percent = (active_tokens / context_window_size) × 100
 # Example after /compact:
-#   cache_read: 154576, input: 0, output: 652
-#   used_percentage = (154576 + 0 + 652) / 200000 × 100 = 77%
+#   current_input: 0, current_output: 652
+#   active_tokens = 0 + 652 = 652
+#   active_percent = (652 / 200000) × 100 = 0.3%
+#   Cache shown separately: 📦 154K (cache_read: 154576)
 ```
 
 **Configuration**:

@@ -81,15 +81,20 @@ CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_siz
 # Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-# Parse active context percentage (resets after /clear)
-# This shows the actual context size for the NEXT message (includes cache reads!)
-# Active context = API tokens + cache_read_tokens (often > API tokens)
-ACTIVE_PERCENT=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // null' 2>/dev/null)
+# Parse active context tokens (NEW + CACHED separately)
+# Claude Code's used_percentage includes cache_read, which is misleading after /compact
+# We calculate active context WITHOUT cache to show only new tokens
+CURRENT_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.input_tokens // 0' 2>/dev/null)
+CURRENT_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.output_tokens // 0' 2>/dev/null)
 
-# Calculate active context tokens (if available)
-ACTIVE_TOKENS=0
-if [[ "$ACTIVE_PERCENT" != "null" ]] && [[ -n "$ACTIVE_PERCENT" ]]; then
-    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $ACTIVE_PERCENT / 100.0)}")
+# Active tokens = NEW tokens only (excludes cache)
+# This shows actual "fresh" context, not reused cached tokens
+ACTIVE_TOKENS=$((CURRENT_INPUT + CURRENT_OUTPUT))
+
+# Calculate percentage based on new tokens only
+ACTIVE_PERCENT=0
+if [[ $ACTIVE_TOKENS -gt 0 ]]; then
+    ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 fi
 
 # Parse cache tokens (Claude Code v2.1+)
@@ -220,26 +225,33 @@ TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
 ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 
 # Build context display string
-# Shows: API tokens (billing) | active context (includes cache reads)
-# Note: Active context often > API tokens due to prompt caching
-# Handle temporary null values immediately after /clear
-if [[ "$ACTIVE_PERCENT" == "null" ]] || [[ -z "$ACTIVE_PERCENT" ]]; then
-    # Immediately after /clear: used_percentage is null for ~10-40 seconds
+# Shows: Cumulative tokens (billing) | Active NEW tokens (excludes cache)
+# After /compact: Shows 0% active (new tokens) + cache shown separately in 📦
+# Handle temporary null/zero values after /clear
+if [[ "$CURRENT_INPUT" == "null" ]] || [[ "$CURRENT_OUTPUT" == "null" ]] || \
+   [[ -z "$CURRENT_INPUT" ]] || [[ -z "$CURRENT_OUTPUT" ]]; then
+    # Immediately after /clear: current_usage fields may be null for ~10-40 seconds
     # Show 0% active until Claude Code sends real data
     ACTIVE_COLOR=$GREEN
     ACTIVE_TOKENS=0
     ACTIVE_TOKENS_FMT="0"
-    ACTIVE_PERCENT="0"
-elif [[ "$ACTIVE_PERCENT" == "0" ]] || [[ "$ACTIVE_PERCENT" == "0.0" ]]; then
-    # Active context reset to 0% (only system prompt)
+    ACTIVE_PERCENT="0.0"
+elif [[ $ACTIVE_TOKENS -eq 0 ]]; then
+    # Active context reset to 0 (only system prompt cached)
     ACTIVE_COLOR=$GREEN
-    ACTIVE_TOKENS=0
     ACTIVE_TOKENS_FMT="0"
+    ACTIVE_PERCENT="0.0"
 else
     # Color active context based on its percentage (not cumulative)
-    if [[ ${ACTIVE_PERCENT%.*} -lt 50 ]]; then
+    # Use integer comparison for awk output (format: "12.5")
+    ACTIVE_PERCENT_INT=${ACTIVE_PERCENT%.*}
+    if [[ -z "$ACTIVE_PERCENT_INT" ]]; then
+        ACTIVE_PERCENT_INT=0
+    fi
+
+    if [[ $ACTIVE_PERCENT_INT -lt 50 ]]; then
         ACTIVE_COLOR=$GREEN
-    elif [[ ${ACTIVE_PERCENT%.*} -lt 75 ]]; then
+    elif [[ $ACTIVE_PERCENT_INT -lt 75 ]]; then
         ACTIVE_COLOR=$YELLOW
     else
         ACTIVE_COLOR=$RED
