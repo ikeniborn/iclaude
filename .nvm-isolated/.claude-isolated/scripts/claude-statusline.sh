@@ -81,24 +81,41 @@ CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_siz
 # Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-# Parse active context (shows accumulated conversation INCLUDING cache)
-# This represents the TOTAL context window usage for next message
-# Cache is part of this total, shown separately in 📦
+# Parse used_percentage (includes cache + input + output)
+# Claude Code calculates: used_percentage = (cache_read + input + output) / context_window × 100
 USED_PERCENTAGE=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
 
-# Calculate active tokens from used_percentage
-# This shows accumulated context (cache + conversation)
-ACTIVE_TOKENS=0
-ACTIVE_PERCENT="0.0"
+# Calculate total context from used_percentage (includes cache!)
+TOTAL_CONTEXT=0
 if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USED_PERCENTAGE" != "0" ]]; then
-    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $USED_PERCENTAGE / 100.0)}")
-    ACTIVE_PERCENT="$USED_PERCENTAGE"
+    TOTAL_CONTEXT=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $USED_PERCENTAGE / 100.0)}")
 fi
 
 # Parse cache tokens (Claude Code v2.1+)
 CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
 CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
+
+# Calculate active tokens (NEW tokens only, excluding cache)
+# Active tokens = TOTAL context (cache + input + output) - cache
+# This shows only fresh conversation tokens (input + output)
+# Example after /compact:
+#   TOTAL_CONTEXT = 155K (77% of 200K)
+#   TOTAL_CACHE = 154K
+#   ACTIVE_TOKENS = 155K - 154K = 1K (only new messages)
+ACTIVE_TOKENS=$((TOTAL_CONTEXT - TOTAL_CACHE))
+
+# Ensure non-negative (edge case: cache may slightly exceed total)
+if [[ $ACTIVE_TOKENS -lt 0 ]]; then
+    ACTIVE_TOKENS=0
+fi
+
+# Calculate percentage of effective window for active tokens
+ACTIVE_PERCENT="0.0"
+if [[ $ACTIVE_TOKENS -gt 0 ]]; then
+    # Use CONTEXT_LIMIT for percentage (full window, not effective)
+    ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+fi
 
 # Format cache display (show only if >0)
 CACHE_DISPLAY=""
@@ -455,9 +472,9 @@ BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
 BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT}"
 
 # Build context display string
-# Shows: Cumulative tokens (billing) | Active context (includes cache)
-# Active context represents TOTAL accumulated conversation for next message
-# Cache (shown in 📦) is part of active context that's reused from prompt cache
+# Shows: Cumulative tokens (billing) | Active context (NEW tokens only, excluding cache)
+# Active context = fresh conversation tokens (input + output), cache shown separately
+# Cache (shown in 📦) is reused context from prompt cache, not counted in active tokens
 # Handle temporary null/zero values after /clear
 if [[ "$USED_PERCENTAGE" == "null" ]] || [[ -z "$USED_PERCENTAGE" ]]; then
     # Immediately after /clear: used_percentage may be null for ~10-40 seconds
@@ -489,9 +506,10 @@ else
 fi
 
 # Show active context and percentage of available space
-# Format: 📊 120K (77%) - active tokens and % of effective window
-# Active tokens (120K) = actual conversation context (excludes 45K reserved buffer)
-# Percentage (77%) = how much of available space is used (120K / 155K effective window)
+# Format: 📊 1K (0.5%) - NEW tokens only (input + output), excluding cache
+# Active tokens (1K) = fresh conversation context (excludes cache, excludes reserved buffer)
+# Cache shown separately (📦 154K) to clearly distinguish cached vs new context
+# Percentage (0.5%) = active tokens / effective window (1K / 155K)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]]; then
         # Exceeded effective window - add ⚠️ warning icon
