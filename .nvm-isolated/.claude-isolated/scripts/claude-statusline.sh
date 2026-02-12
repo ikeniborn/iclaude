@@ -395,6 +395,10 @@ EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
 # This shows why auto-compact triggers earlier than expected from status line percentage
 EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $EFFECTIVE_WINDOW)}")
 EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
+BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
+
+# Format buffer display (show reserved buffer separately)
+BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT} reserved"
 
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
@@ -430,14 +434,21 @@ else
     fi
 fi
 
-# Show effective window when active tokens exceed it (explains auto-compact trigger)
-# Format: 📊 166K/155K (107%) - shows why "Context left: 0%" appears
-# Otherwise: 📊 166K (83%) - normal display
-if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]] && [[ $ACTIVE_TOKENS -gt 0 ]]; then
-    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET} 🔒"
+# Always show effective window to help user understand real context usage
+# Format: 📊 114K/155K (73%) - shows percentage of effective window
+# Reserved buffer shown separately: 🔒 45K reserved
+if [[ $ACTIVE_TOKENS -gt 0 ]]; then
+    if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]]; then
+        # Exceeded effective window - add ⚠️ warning icon
+        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+    else
+        # Normal display with effective window
+        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+    fi
 else
-    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
+    # Zero active tokens (after /clear)
+    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
 # Output formatted status line
-echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
+echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
