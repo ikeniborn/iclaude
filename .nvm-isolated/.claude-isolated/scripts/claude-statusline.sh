@@ -123,11 +123,14 @@ PROXY_ICON=""
 if [[ -n "$HTTPS_PROXY" ]] || [[ -n "$HTTP_PROXY" ]]; then
     PROXY_ICON=" 🌐"
 else
-    # Try multiple fallback locations
+    # Try multiple fallback locations (new .claude_config + legacy .claude_proxy_credentials)
     PROXY_CREDS_LOCATIONS=(
-        "$CLAUDE_CONFIG_DIR/../../.claude_proxy_credentials"  # Isolated
-        "$HOME/.claude_proxy_credentials"                      # Home directory
-        "$(pwd)/.claude_proxy_credentials"                     # Current directory
+        "$CLAUDE_CONFIG_DIR/../../.claude_config"              # Isolated (new name)
+        "$CLAUDE_CONFIG_DIR/../../.claude_proxy_credentials"   # Isolated (legacy)
+        "$HOME/.claude_config"                                 # Home directory (new name)
+        "$HOME/.claude_proxy_credentials"                      # Home directory (legacy)
+        "$(pwd)/.claude_config"                                # Current directory (new name)
+        "$(pwd)/.claude_proxy_credentials"                     # Current directory (legacy)
     )
 
     for creds_file in "${PROXY_CREDS_LOCATIONS[@]}"; do

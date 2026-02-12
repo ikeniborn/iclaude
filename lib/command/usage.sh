@@ -281,12 +281,12 @@ PROXY URL FORMAT:
 
   Note: TLS certificate verification is disabled by default (NODE_TLS_REJECT_UNAUTHORIZED=0)
 
-CREDENTIALS:
+CONFIGURATION:
   - Saved to: ${CREDENTIALS_FILE}
   - File permissions: 600 (owner read/write only)
   - Automatically excluded from git (.gitignore)
   - Reused on subsequent runs (prompt to confirm/change)
-  - Includes: PROXY_URL, NO_PROXY
+  - Includes: PROXY_URL, NO_PROXY, CLAUDE_CODE_* settings, DEBUG flags
 
 AUTHENTICATION:
   OAuth Token (default):
