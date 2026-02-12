@@ -3955,6 +3955,7 @@ fi
 #   1 - Creation failed
 # Sets WORKTREE_PATH global variable
 #######################################
+if ! declare -F create_task_worktree &>/dev/null; then
 create_task_worktree() {
 	local task_id="$1"
 	local task_name="${TASK_NAME[$task_id]}"
@@ -3988,6 +3989,7 @@ create_task_worktree() {
 	print_success "Worktree created: $worktree_path"
 	return 0
 }
+fi
 
 #######################################
 # Cleanup git worktree after task completion
@@ -3997,6 +3999,7 @@ create_task_worktree() {
 #   0 - Worktree removed successfully
 #   1 - Removal failed
 #######################################
+if ! declare -F cleanup_worktree &>/dev/null; then
 cleanup_worktree() {
 	local task_id="$1"
 	local worktree_path_var="WORKTREE_PATH_${task_id}"
@@ -4029,6 +4032,7 @@ cleanup_worktree() {
 
 	return 0
 }
+fi
 
 #######################################
 # Merge worktree changes back to main branch
@@ -4038,6 +4042,7 @@ cleanup_worktree() {
 #   0 - Merge successful
 #   1 - Merge failed (conflicts)
 #######################################
+if ! declare -F merge_worktree_changes &>/dev/null; then
 merge_worktree_changes() {
 	local task_id="$1"
 	local task_name="${TASK_NAME[$task_id]}"
@@ -4096,6 +4101,7 @@ merge_worktree_changes() {
 	print_error "Merge failed for unknown reason"
 	return 1
 }
+fi
 
 #######################################
 # Resolve merge conflicts using AI
@@ -4105,6 +4111,7 @@ merge_worktree_changes() {
 #   0 - Conflicts resolved
 #   1 - Resolution failed
 #######################################
+if ! declare -F resolve_merge_conflicts_ai &>/dev/null; then
 resolve_merge_conflicts_ai() {
 	local task_id="$1"
 
@@ -4184,6 +4191,7 @@ Output the complete resolved file content:"
 	print_success "All conflicts resolved and committed"
 	return 0
 }
+fi
 
 #######################################
 # Execute tasks in sequential mode
@@ -4300,6 +4308,7 @@ fi
 #   1 - One or more tasks failed
 #   2 - Partial success
 #######################################
+if ! declare -F execute_parallel_mode &>/dev/null; then
 execute_parallel_mode() {
 	local task_file="$1"
 	local max_parallel="${2:-5}"
@@ -4404,6 +4413,7 @@ execute_parallel_mode() {
 		return 0
 	fi
 }
+fi
 
 #######################################
 # Execute single task with retry logic
@@ -4414,6 +4424,7 @@ execute_parallel_mode() {
 #   0 - Task completed
 #   1 - Task failed
 #######################################
+if ! declare -F execute_task_with_retry &>/dev/null; then
 execute_task_with_retry() {
 	local task_id="$1"
 	local task_name="${TASK_NAME[$task_id]}"
@@ -4445,6 +4456,7 @@ execute_task_with_retry() {
 		return 1
 	fi
 }
+fi
 
 #######################################
 # Execute parallel group of tasks
@@ -4455,6 +4467,7 @@ execute_task_with_retry() {
 #   0 - All tasks in group completed
 #   1 - One or more tasks failed
 #######################################
+if ! declare -F execute_parallel_group &>/dev/null; then
 execute_parallel_group() {
 	local group_tasks="$1"
 	local max_parallel="$2"
@@ -4580,6 +4593,7 @@ execute_parallel_group() {
 
 	return 0
 }
+fi
 
 #######################################
 # Check LSP server and plugin installation status
