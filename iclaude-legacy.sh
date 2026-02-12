@@ -6779,6 +6779,7 @@ CONTEXT_MAX_HISTORY_SIZE=$((5 * 1024 * 1024))
 CONTEXT_AUTO_SYNC=true
 
 # Initialize context directories
+if ! declare -F init_context_directories &>/dev/null; then
 init_context_directories() {
     mkdir -p "$CONTEXT_EXPORTS_DIR"
     mkdir -p "$CONTEXT_SHARED_DIR"
@@ -6787,39 +6788,51 @@ init_context_directories() {
     mkdir -p "$CONTEXT_BACKUPS_DIR/manual"
     mkdir -p "$CONTEXT_TEMPLATES_DIR"
 }
+fi
 
 # Get project name
+if ! declare -F get_context_project_name &>/dev/null; then
 get_context_project_name() {
     local project_path="${1:-$(pwd)}"
     basename "$project_path"
 }
+fi
 
 # Get project hash (Claude Code format)
+if ! declare -F get_context_project_hash &>/dev/null; then
 get_context_project_hash() {
     local project_path="${1:-$(pwd)}"
     echo "$project_path" | sed 's|/|-|g' | sed 's|^-||'
 }
+fi
 
 # Get project memory directory
+if ! declare -F get_context_project_memory_dir &>/dev/null; then
 get_context_project_memory_dir() {
     local project_path="${1:-$(pwd)}"
     echo "$project_path/.claude/memory"
 }
+fi
 
 # Get shared memory directory
+if ! declare -F get_context_shared_memory_dir &>/dev/null; then
 get_context_shared_memory_dir() {
     local project_name=$(get_context_project_name "$1")
     local base_name=$(echo "$project_name" | sed 's|-worktrees-.*||')
     echo "$CONTEXT_SHARED_DIR/$base_name"
 }
+fi
 
 # Check if worktree
+if ! declare -F is_context_worktree &>/dev/null; then
 is_context_worktree() {
     local project_path="${1:-$(pwd)}"
     [[ -f "$project_path/.git" ]] && grep -q "gitdir:" "$project_path/.git" 2>/dev/null
 }
+fi
 
 # Get main worktree
+if ! declare -F get_context_main_worktree &>/dev/null; then
 get_context_main_worktree() {
     local project_path="${1:-$(pwd)}"
     if is_context_worktree "$project_path"; then
@@ -6830,8 +6843,10 @@ get_context_main_worktree() {
         echo "$project_path"
     fi
 }
+fi
 
 # Export context
+if ! declare -F context_cmd_export &>/dev/null; then
 context_cmd_export() {
     local project_path="${1:-$(pwd)}"
     local project_name=$(get_context_project_name "$project_path")
@@ -6885,8 +6900,10 @@ EOF
     echo "✅ Exported: $archive_file ($archive_size)"
     echo "   Import with: ./iclaude.sh --context-import $archive_file"
 }
+fi
 
 # Import context
+if ! declare -F context_cmd_import &>/dev/null; then
 context_cmd_import() {
     local archive_file="$1"
     local target_project="${2:-$(pwd)}"
@@ -6949,8 +6966,10 @@ context_cmd_import() {
     echo ""
     echo "✅ Imported to: $target_memory"
 }
+fi
 
 # Sync context
+if ! declare -F context_cmd_sync &>/dev/null; then
 context_cmd_sync() {
     local direction="${1:-pull}"
     local project_path="${2:-$(pwd)}"
@@ -6991,8 +7010,10 @@ context_cmd_sync() {
         echo "✅ Shared: $shared_dir"
     fi
 }
+fi
 
 # Clean context
+if ! declare -F context_cmd_clean &>/dev/null; then
 context_cmd_clean() {
     local days="${1:-$CONTEXT_CLEANUP_DAYS}"
     local claude_dir="${CLAUDE_DIR:-$HOME/.claude}"
@@ -7033,8 +7054,10 @@ context_cmd_clean() {
     echo ""
     echo "✅ Cleanup complete"
 }
+fi
 
 # Backup context
+if ! declare -F context_cmd_backup &>/dev/null; then
 context_cmd_backup() {
     local mode="${1:-manual}"
     local timestamp=$(date +%Y%m%d-%H%M%S)
@@ -7063,8 +7086,10 @@ context_cmd_backup() {
     echo ""
     echo "✅ Backup: $backup_dir ($size)"
 }
+fi
 
 # Status
+if ! declare -F context_cmd_status &>/dev/null; then
 context_cmd_status() {
     local project_path="${1:-$(pwd)}"
     local project_name=$(get_context_project_name "$project_path")
@@ -7120,12 +7145,14 @@ context_cmd_status() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
+fi
 
 #######################################
 # Auto Memory Functions (Best Practices from Anthropic)
 #######################################
 
 # Initialize MEMORY.md with best practices
+if ! declare -F context_memory_init &>/dev/null; then
 context_memory_init() {
     local project_path="${1:-$(pwd)}"
     local project_memory=$(get_context_project_memory_dir "$project_path")
@@ -7197,8 +7224,10 @@ EOF
     echo "   - Move details to topic files when >200 lines"
     echo "   - First 200 lines = system prompt"
 }
+fi
 
 # Validate MEMORY.md against best practices
+if ! declare -F context_memory_validate &>/dev/null; then
 context_memory_validate() {
     local project_path="${1:-$(pwd)}"
     local project_memory=$(get_context_project_memory_dir "$project_path")
@@ -7266,8 +7295,10 @@ context_memory_validate() {
     echo "✅ Validation complete"
     echo "   Location: $memory_file"
 }
+fi
 
 # Organize MEMORY.md - suggest topic files
+if ! declare -F context_memory_organize &>/dev/null; then
 context_memory_organize() {
     local project_path="${1:-$(pwd)}"
     local project_memory=$(get_context_project_memory_dir "$project_path")
@@ -7327,8 +7358,10 @@ context_memory_organize() {
     echo "   ## Debugging"
     echo "   See debugging.md for common errors and solutions."
 }
+fi
 
 # Add entry to MEMORY.md
+if ! declare -F context_memory_add &>/dev/null; then
 context_memory_add() {
     local entry="$1"
     local project_path="${2:-$(pwd)}"
@@ -7360,8 +7393,10 @@ context_memory_add() {
         echo "   Run: ./iclaude.sh --context-memory-organize"
     fi
 }
+fi
 
 # Auto Memory status
+if ! declare -F context_memory_status &>/dev/null; then
 context_memory_status() {
     local project_path="${1:-$(pwd)}"
     local project_memory=$(get_context_project_memory_dir "$project_path")
@@ -7421,6 +7456,7 @@ context_memory_status() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
+fi
 
 #######################################
 # Show usage
