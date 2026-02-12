@@ -3605,6 +3605,7 @@ fi
 # Returns:
 #   Exit code from Claude Code execution
 #######################################
+if ! declare -F invoke_claude_iteration &>/dev/null; then
 invoke_claude_iteration() {
 	local task_id="$1"
 	local iteration="$2"
@@ -3657,6 +3658,7 @@ This is iteration $iteration. Focus on meeting the completion promise.
 
 	return "$exit_code"
 }
+fi
 
 #######################################
 # Verify completion promise is met
@@ -3666,6 +3668,7 @@ This is iteration $iteration. Focus on meeting the completion promise.
 #   0 - Promise met (task successful)
 #   1 - Promise not met (retry needed)
 #######################################
+if ! declare -F verify_completion_promise &>/dev/null; then
 verify_completion_promise() {
 	local task_id="$1"
 
@@ -3712,6 +3715,7 @@ verify_completion_promise() {
 		return 1
 	fi
 }
+fi
 
 #######################################
 # Retry task with exponential backoff
@@ -3722,6 +3726,7 @@ verify_completion_promise() {
 #   0 - Task succeeded within max iterations
 #   1 - Max iterations reached without success
 #######################################
+if ! declare -F retry_task_with_backoff &>/dev/null; then
 retry_task_with_backoff() {
 	local task_id="$1"
 	local iteration="${2:-1}"
@@ -3763,6 +3768,7 @@ retry_task_with_backoff() {
 	echo "  Task did not complete successfully"
 	return 1
 }
+fi
 
 #######################################
 # Execute single iteration (no retry logic)
@@ -3773,6 +3779,7 @@ retry_task_with_backoff() {
 #   0 - Iteration executed (does not verify promise)
 #   1 - Execution failed
 #######################################
+if ! declare -F execute_single_iteration &>/dev/null; then
 execute_single_iteration() {
 	local task_id="$1"
 	local iteration="${2:-1}"
@@ -3789,6 +3796,7 @@ execute_single_iteration() {
 
 	return 0
 }
+fi
 
 #######################################
 # Git commit task changes
@@ -3798,6 +3806,7 @@ execute_single_iteration() {
 #   0 - Changes committed successfully
 #   1 - No changes or commit failed
 #######################################
+if ! declare -F git_commit_task_changes &>/dev/null; then
 git_commit_task_changes() {
 	local task_id="$1"
 	local task_name="${TASK_NAME[$task_id]}"
@@ -3872,6 +3881,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || {
 
 	return 0
 }
+fi
 
 #######################################
 # Save loop state to file for recovery
@@ -4184,6 +4194,7 @@ Output the complete resolved file content:"
 #   1 - One or more tasks failed
 #   2 - Partial success (some tasks completed)
 #######################################
+if ! declare -F execute_sequential_mode &>/dev/null; then
 execute_sequential_mode() {
 	local task_file="$1"
 
@@ -4276,6 +4287,7 @@ execute_sequential_mode() {
 		return 0
 	fi
 }
+fi
 
 #######################################
 # Execute tasks in parallel mode
