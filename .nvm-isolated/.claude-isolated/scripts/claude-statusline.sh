@@ -150,19 +150,14 @@ fi
 
 # Session context link (OSC 8 hyperlink to session file)
 # Allows clicking to view full conversation context in editor
+# Claude Code provides transcript_path directly in session data
 SESSION_LINK=""
-SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.id // empty' 2>/dev/null)
-if [[ -n "$SESSION_ID" ]]; then
-    # Find session file in projects directory (Claude Code v2.x structure)
-    # Convert /home/user/project -> -home-user-project
-    CURRENT_PROJECT_PATH=$(pwd | sed 's|/|-|g')
-    SESSION_FILE="$CLAUDE_CONFIG_DIR/projects/$CURRENT_PROJECT_PATH/${SESSION_ID}.jsonl"
+SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
 
-    if [[ -f "$SESSION_FILE" ]]; then
-        # Create OSC 8 hyperlink (works in iTerm2, kitty, GNOME Terminal 3.x+)
-        # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
-        SESSION_LINK=" | \e]8;;file://${SESSION_FILE}\e\\📄context\e]8;;\e\\"
-    fi
+if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]]; then
+    # Create OSC 8 hyperlink (works in iTerm2, kitty, GNOME Terminal 3.x+)
+    # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
+    SESSION_LINK=" | \e]8;;file://${SESSION_FILE}\e\\📄context\e]8;;\e\\"
 fi
 
 # Git info (branch + uncommitted changes)
