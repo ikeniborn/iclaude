@@ -6618,6 +6618,8 @@ fi  # End guard for validate_jq_installed
 #   $1 - skip_isolated (optional): "true" to skip isolated environment
 #   Remaining arguments: passed to Claude Code
 #######################################
+# Guard: Check if launch_claude is already defined by launcher/launch.sh module
+if ! declare -F launch_claude &>/dev/null; then
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
@@ -6758,6 +6760,7 @@ launch_claude() {
         exec "$claude_cmd" "$@"
     fi
 }
+fi  # End guard for launch_claude
 
 #######################################
 # Context Management Functions
