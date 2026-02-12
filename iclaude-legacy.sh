@@ -2506,6 +2506,8 @@ fi  # End guard for repair_isolated_environment
 # Returns:
 #   0 - success
 #######################################
+# Guard: Only define if not already loaded from lib/config/status.sh
+if ! declare -F check_isolated_status &>/dev/null; then
 check_isolated_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -2627,11 +2629,14 @@ check_isolated_status() {
 
 	return 0
 }
+fi  # End guard for check_isolated_status
 
 #######################################
 # Display native installer information
 # Показывает информацию о рекомендации Anthropic использовать native installer
 #######################################
+# Guard: Only define if not already loaded from lib/config/status.sh
+if ! declare -F show_native_installer_info &>/dev/null; then
 show_native_installer_info() {
 	# Проверяем версию Claude Code из package.json
 	local package_json="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
@@ -2688,6 +2693,7 @@ show_native_installer_info() {
 
 	return 0
 }
+fi  # End guard for show_native_installer_info
 
 #######################################
 # Setup isolated config directory for Claude Code
@@ -2695,6 +2701,8 @@ show_native_installer_info() {
 # Returns:
 #   0 - success
 #######################################
+# Guard: Only define if not already loaded from lib/config/isolated.sh
+if ! declare -F setup_isolated_config &>/dev/null; then
 setup_isolated_config() {
 	local isolated_config_dir="${ISOLATED_NVM_DIR}/.claude-isolated"
 
@@ -2709,6 +2717,7 @@ setup_isolated_config() {
 
 	return 0
 }
+fi  # End guard for setup_isolated_config
 
 #######################################
 # Disable Claude Code auto-updates
@@ -2720,6 +2729,8 @@ setup_isolated_config() {
 #   0 - success
 #   1 - failure (jq not found or file error)
 #######################################
+# Guard: Only define if not already loaded from lib/config/isolated.sh
+if ! declare -F disable_auto_updates &>/dev/null; then
 disable_auto_updates() {
 	local config_dir="${1:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 	local claude_json="$config_dir/.claude.json"
@@ -2753,6 +2764,7 @@ disable_auto_updates() {
 
 	return 0
 }
+fi  # End guard for disable_auto_updates
 
 #######################################
 # Check config directory status
@@ -2760,6 +2772,8 @@ disable_auto_updates() {
 # Returns:
 #   0 - success
 #######################################
+# Guard: Only define if not already loaded from lib/config/status.sh
+if ! declare -F check_config_status &>/dev/null; then
 check_config_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -2856,6 +2870,7 @@ check_config_status() {
 
 	return 0
 }
+fi  # End guard for check_config_status
 
 #######################################
 # Check router status
@@ -4729,6 +4744,8 @@ check_gh_status() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from lib/config/export.sh
+if ! declare -F export_config &>/dev/null; then
 export_config() {
 	local dest_dir=$1
 
@@ -4772,6 +4789,7 @@ export_config() {
 
 	return 0
 }
+fi  # End guard for export_config
 
 #######################################
 # Import config directory from backup location
@@ -4781,6 +4799,8 @@ export_config() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from lib/config/export.sh
+if ! declare -F import_config &>/dev/null; then
 import_config() {
 	local source_dir=$1
 
@@ -4841,6 +4861,7 @@ import_config() {
 
 	return 0
 }
+fi  # End guard for import_config
 
 #######################################
 # Save credentials to file
@@ -5024,6 +5045,8 @@ fi  # End guard for load_credentials
 # Load and export Claude Code configuration variables
 # Reads additional Claude Code settings from credentials file
 #######################################
+# Guard: Only define if not already loaded from lib/config/isolated.sh
+if ! declare -F load_claude_config &>/dev/null; then
 load_claude_config() {
     if [[ ! -f "$CREDENTIALS_FILE" ]]; then
         return 0
@@ -5042,6 +5065,7 @@ load_claude_config() {
 
     return 0
 }
+fi  # End guard for load_claude_config
 
 #######################################
 # Prompt for proxy URL
