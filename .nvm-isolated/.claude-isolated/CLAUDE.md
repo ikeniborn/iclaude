@@ -413,33 +413,32 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 
 **Displayed Information**:
 ```
-112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1.06 [proxy] [router]provider [session]  branch
+112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider 📄  branch
 ```
 
 **Format Notes**:
-- **Always shows dual context**: cumulative (billing) and active (NEW tokens only, excluding cache)
+- **Always shows dual context**: cumulative (billing) and active (total context for next message)
 - **After /clear**: Shows `0 active (0%)` for ~10-40 seconds until Claude Code sends first API response
-- **After /compact**: Shows only NEW tokens (input + output), excluding cache. For example, if used_percentage=77% (155K total), cache=154K, active context shows 1K (0.5%). Cache portion shown separately in `[cache] 154K`. This clearly distinguishes fresh conversation from cached context.
+- **After /compact**: Shows accumulated TOTAL context including cache. For example, if used_percentage=77% (150K total including 150K cache), active context shows 150K (77%). Cache portion shown separately in `📦 150K`. This represents the full context window usage - cache is part of the context that's reused via prompt caching
 
 **Components** (left to right):
 1. **Context usage**:
    - **Cumulative tokens** (`total_input + total_output`): Total tokens used in session for billing
-   - **Active context** (`(used_percentage × context_window_size) - cache`): NEW tokens only (input + output)
-   - Active context resets to ~0 after `/clear` (only system prompt remains)
-   - Active context stays LOW after `/compact` (~1K) while cache is HIGH (~150K)
+   - **Active context** (`used_percentage × context_window_size`): Current context size for next message
+   - Active context resets to ~0-5% after `/clear` (only system prompt remains)
    - Cumulative tokens continue to grow (billing tracking)
-   - Color coded based on active context: green <50%, yellow 50-75%, red >75%
-2. **Cache tokens**: `[cache]79K` (cache_read + cache_creation)
+   - Color coded based on active context: 🟢 <50%, 🟡 50-75%, 🔴 >75%
+2. **Cache tokens**: `📦79K` (cache_read + cache_creation)
    - Format: K for thousands, M for millions
    - Only shown when cache > 0
    - **Important**: Cache tokens are shown SEPARATELY from active context
-   - Active context ([stats]) shows only NEW tokens (input + output), excluding cache
+   - Active context (📊) shows only NEW tokens (input + output), excluding cache
    - After `/compact`, active context is LOW (~0.3%) while cache is high (~150K) - this clearly distinguishes new vs reused context
 3. **Model**: `display_name` from session data
 4. **Cost**: `total_cost_usd` in USD
-5. **Proxy**: `[proxy]` icon if proxy configured
-6. **Router**: `[router]provider` if router active
-7. **Session link**: `[session]` - clickable link to readable session file (OSC 8 hyperlink)
+5. **Proxy**: `🌐` icon if proxy configured
+6. **Router**: `🔀provider` if router active
+7. **Session link**: `📄` - clickable link to readable session file (OSC 8 hyperlink)
    - Click to open human-readable conversation in your editor
    - **Session-specific files**: Each session has unique readable file (no conflicts)
    - **Append-only optimization**: Only processes new messages (19x faster)
@@ -447,8 +446,8 @@ Custom status line script that displays context usage, cost, and metadata in Cla
    - **Performance**: 94ms append vs 1.87s full regen (200 lines)
    - Readable file saved to: `<project>/.claude-sessions/readable-{session-id}.txt`
    - Metadata tracking: `.claude-sessions/readable-{session-id}.txt.meta` (processed lines count)
-   - **Compact detection**: Shows `━━━ [cache] Context Compact ━━━` marker after /compact
-   - Format: [user] USER / [assistant] ASSISTANT prefixes with word wrap (80 chars)
+   - **Compact detection**: Shows `━━━ 📦 Context Compact ━━━` marker after /compact
+   - Format: 👤 USER / 🤖 ASSISTANT prefixes with word wrap (80 chars)
    - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
    - Falls back to plain text in terminals without hyperlink support
 8. **Git info**: Branch name + uncommitted changes count
@@ -467,25 +466,19 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```bash
 Input:  .context_window.total_input_tokens
 Output: .context_window.total_output_tokens
-Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
+Active: .context_window.used_percentage × context_window_size  (includes cache!)
 Cost:   .cost.total_cost_usd
 Model:  .model.display_name
+Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
 
 # How Claude Code calculates used_percentage:
 # used_percentage = (cache_read + input + output) / context_window_size × 100
-
-# How statusline calculates active tokens (NEW logic - subtracts cache):
-# TOTAL_CONTEXT = used_percentage × context_window_size  (includes cache!)
-# ACTIVE_TOKENS = TOTAL_CONTEXT - CACHE  (excludes cache, shows only NEW tokens)
-
 # Example after /compact:
 #   cache_read: 154576, input: 0, output: 652
 #   used_percentage = (154576 + 0 + 652) / 200000 × 100 = 77.6%
-#   TOTAL_CONTEXT = 77.6% × 200000 = 155228 tokens
-#   CACHE = 154576 tokens
-#   ACTIVE_TOKENS = 155228 - 154576 = 652 tokens ← Only NEW conversation!
-#   Display: 📊 652 (0.3%) | 📦 154K
-# This clearly separates fresh conversation (652) from cached context (154K)
+#   active_tokens = 77.6% × 200000 = 155228 tokens total
+#   Cache portion shown separately: 📦 154K
+# This shows FULL context window usage (accumulated conversation including cache)
 ```
 
 **Session Link Optimizations** (Phase 2.1):
@@ -621,25 +614,25 @@ CLAUDE_CODE_ENABLE_TASKS="true"                    # Enable tasks system (set to
 
 ```
 .
-  iclaude.sh                          # Main wrapper script (3325 lines)
-  .claude_proxy_credentials           # Encrypted proxy credentials (chmod 600, not in git)
-  .nvm-isolated/                      # Isolated NVM environment (~278MB, in git)
-      nvm.sh                         # NVM installation script
-      versions/node/v18.20.8/        # Node.js installation
-          bin/                       # Binaries (npm, npx, node, claude)
-          lib/node_modules/          # Global npm packages
-      npm-global/                    # Global npm packages
-      .claude-isolated/              # Isolated Claude configuration
-          history.jsonl              # Command history
-          session-env/               # Active sessions
-          .credentials.json          # Anthropic credentials
-          settings.json              # User settings
-          skills/                    # Claude Code skills
-          projects/                  # Project-specific configs
+   iclaude.sh                          # Main wrapper script (3325 lines)
+   .claude_proxy_credentials           # Encrypted proxy credentials (chmod 600, not in git)
+   .nvm-isolated/                      # Isolated NVM environment (~278MB, in git)
+      nvm.sh                         # NVM installation script
+      versions/node/v18.20.8/        # Node.js installation
+         bin/                       # Binaries (npm, npx, node, claude)
+         lib/node_modules/          # Global npm packages
+      npm-global/                    # Global npm packages
+      .claude-isolated/              # Isolated Claude configuration
+          history.jsonl              # Command history
+          session-env/               # Active sessions
+          .credentials.json          # Anthropic credentials
+          settings.json              # User settings
+          skills/                    # Claude Code skills
+          projects/                  # Project-specific configs
           scripts/                   # Custom scripts
              claude-statusline.sh   # Status line script (context, cost, cache, git)
-  .nvm-isolated-lockfile.json        # Version lockfile (in git)
-  README.md                          # User documentation
+   .nvm-isolated-lockfile.json        # Version lockfile (in git)
+   README.md                          # User documentation
 ```
 
 ### Files NOT in Git
