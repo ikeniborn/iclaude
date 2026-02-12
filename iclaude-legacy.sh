@@ -3391,6 +3391,7 @@ CURRENT_ITERATION=0
 #   1 - File not found or parse error
 # Sets global TASK_* variables for the loaded task
 #######################################
+if ! declare -F load_markdown_task &>/dev/null; then
 load_markdown_task() {
 	local task_file="$1"
 	local task_index="${2:-0}"
@@ -3402,9 +3403,9 @@ load_markdown_task() {
 
 	print_info "Loading task from: $task_file"
 
-	# Extract task name (first line after "# Task:")
+	# Extract task name (from "# Task:" line)
 	local task_name
-	task_name=$(grep -A1 "^# Task:" "$task_file" | tail -n1 | sed 's/^# Task: //' | xargs)
+	task_name=$(grep "^# Task:" "$task_file" | head -n1 | sed 's/^# Task: //' | xargs)
 
 	if [[ -z "$task_name" ]]; then
 		print_error "Task name not found in file. Expected '# Task: [name]'"
@@ -3465,6 +3466,7 @@ load_markdown_task() {
 
 	return 0
 }
+fi
 
 #######################################
 # Validate task file format
@@ -3474,6 +3476,7 @@ load_markdown_task() {
 #   0 - Valid format
 #   1 - Invalid format or user rejected
 #######################################
+if ! declare -F validate_task_file_format &>/dev/null; then
 validate_task_file_format() {
 	local task_file="$1"
 
@@ -3519,6 +3522,7 @@ validate_task_file_format() {
 
 	return 0
 }
+fi
 
 #######################################
 # Load all tasks from Markdown file
@@ -3529,6 +3533,7 @@ validate_task_file_format() {
 #   0 - Success (at least one task loaded)
 #   1 - No tasks found or error
 #######################################
+if ! declare -F load_all_tasks &>/dev/null; then
 load_all_tasks() {
 	local task_file="$1"
 
@@ -3590,6 +3595,7 @@ load_all_tasks() {
 
 	return 0
 }
+fi
 
 #######################################
 # Invoke Claude Code for one iteration
@@ -3874,6 +3880,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || {
 # Returns:
 #   0 - State saved successfully
 #######################################
+if ! declare -F save_loop_state &>/dev/null; then
 save_loop_state() {
 	local state_file="/tmp/iclaude-loop-state-$$.json"
 
@@ -3889,6 +3896,7 @@ EOF
 
 	return 0
 }
+fi
 
 #######################################
 # Load loop state from file
@@ -3898,6 +3906,7 @@ EOF
 #   0 - State loaded successfully
 #   1 - No state file found
 #######################################
+if ! declare -F load_loop_state &>/dev/null; then
 load_loop_state() {
 	local state_file="/tmp/iclaude-loop-state-$$.json"
 
@@ -3925,6 +3934,7 @@ load_loop_state() {
 	print_info "Loaded loop state from $state_file"
 	return 0
 }
+fi
 
 #######################################
 # Create git worktree for task isolation
