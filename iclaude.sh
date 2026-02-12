@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 3.3 (Modular Architecture - Phase 0-11)
+# Version: 3.4 (Modular Architecture - Phase 0-12)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -165,17 +165,20 @@ if [[ -d "$LIB_DIR/context" ]]; then
 fi
 
 #######################################
-# Load Loop Mode modules (Phase 11)
+# Load Loop Mode modules (Phase 11-12)
 #######################################
 if [[ -d "$LIB_DIR/loop" ]]; then
     source "${LIB_DIR}/loop/validator.sh"
     source "${LIB_DIR}/loop/parser.sh"
     source "${LIB_DIR}/loop/state.sh"
+    source "${LIB_DIR}/loop/retry.sh"
+    source "${LIB_DIR}/loop/git.sh"
+    source "${LIB_DIR}/loop/executor.sh"
 fi
 
 #######################################
 # Load legacy implementation
-# TODO: Phase 12-13 (Loop Mode execution) remain in legacy
+# TODO: Phase 13 (Loop Mode parallel) remain in legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
