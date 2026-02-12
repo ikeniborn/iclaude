@@ -424,6 +424,7 @@ fi  # End guard for get_router_path
 # Output: linux-amd64|linux-arm64|darwin-amd64|darwin-arm64
 # Returns 1 if platform unsupported
 #######################################
+if ! declare -F detect_ohmyposh_platform &>/dev/null; then
 detect_ohmyposh_platform() {
     local os=$(uname -s)
     local arch=$(uname -m)
@@ -451,10 +452,12 @@ detect_ohmyposh_platform() {
 }
 
 #######################################
+fi  # End guard for detect_ohmyposh_platform
 # Get path to oh-my-posh binary
 # Returns:
 #   oh-my-posh binary path or empty string
 #######################################
+if ! declare -F get_ohmyposh_path &>/dev/null; then
 get_ohmyposh_path() {
 	# Check isolated environment first
 	if [[ -d "$ISOLATED_NVM_DIR" ]]; then
@@ -470,17 +473,20 @@ get_ohmyposh_path() {
 }
 
 #######################################
+fi  # End guard for get_ohmyposh_path
 # Detect if Oh My Posh is installed
 # Returns:
 #   0 - Oh My Posh available
 #   1 - Oh My Posh not available
 #######################################
+if ! declare -F detect_ohmyposh &>/dev/null; then
 detect_ohmyposh() {
 	local posh_path=$(get_ohmyposh_path)
 	[[ -n "$posh_path" ]] && return 0
 	return 1
 }
 
+fi  # End guard for detect_ohmyposh
 if ! declare -F detect_statusline &>/dev/null; then
 detect_statusline() {
 	# Quietly setup isolated environment to get ISOLATED_CONFIG_DIR
@@ -1542,6 +1548,7 @@ fi  # End guard for install_isolated_lsp_servers
 #   0 - success
 #   1 - error
 #######################################
+if ! declare -F install_isolated_ohmyposh &>/dev/null; then
 install_isolated_ohmyposh() {
 	setup_isolated_nvm
 	
@@ -1599,6 +1606,7 @@ install_isolated_ohmyposh() {
 }
 
 #######################################
+fi  # End guard for install_isolated_ohmyposh
 # Update Claude Code in isolated environment
 # Returns:
 #   0 - success
@@ -3107,6 +3115,7 @@ fi  # End guard for check_statusline_status
 # Check Oh My Posh status and configuration
 # Shows installation, version, platform
 #######################################
+if ! declare -F check_ohmyposh_status &>/dev/null; then
 check_ohmyposh_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -3143,6 +3152,7 @@ check_ohmyposh_status() {
 	return 0
 }
 
+fi  # End guard for check_ohmyposh_status
 
 #######################################
 # Check sandbox status and configuration
