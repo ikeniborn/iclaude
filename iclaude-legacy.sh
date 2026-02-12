@@ -1680,6 +1680,8 @@ fi  # End guard for update_isolated_claude
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from lib/lockfile/save.sh
+if ! declare -F save_isolated_lockfile &>/dev/null; then
 save_isolated_lockfile() {
 	setup_isolated_nvm
 
@@ -1931,6 +1933,7 @@ save_isolated_lockfile() {
 
 	return 0
 }
+fi  # End guard for save_isolated_lockfile
 
 #######################################
 # Install from lockfile
@@ -1938,6 +1941,8 @@ save_isolated_lockfile() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from lib/lockfile/install.sh
+if ! declare -F install_from_lockfile &>/dev/null; then
 install_from_lockfile() {
 	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
 		print_error "Lockfile not found: $ISOLATED_LOCKFILE"
@@ -2139,6 +2144,7 @@ install_from_lockfile() {
 
 	return 0
 }
+fi  # End guard for install_from_lockfile
 
 #######################################
 # Cleanup isolated NVM installation
