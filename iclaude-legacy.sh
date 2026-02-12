@@ -1262,6 +1262,8 @@ fi  # End guard for install_statusline_script
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Check if install_isolated_gh is already defined by gh/install.sh module
+if ! declare -F install_isolated_gh &>/dev/null; then
 install_isolated_gh() {
 	setup_isolated_nvm
 
@@ -1357,6 +1359,7 @@ install_isolated_gh() {
 
 	return 0
 }
+fi  # End guard for install_isolated_gh
 
 #######################################
 # Install LSP servers and plugins in isolated environment
@@ -4731,6 +4734,8 @@ fi  # End guard for check_lsp_status
 # Returns:
 #   0 - success
 #######################################
+# Guard: Check if check_gh_status is already defined by gh/status.sh module
+if ! declare -F check_gh_status &>/dev/null; then
 check_gh_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -4777,6 +4782,7 @@ check_gh_status() {
 
 	return 0
 }
+fi  # End guard for check_gh_status
 
 #######################################
 # Check Oh My Posh installation status
