@@ -19,6 +19,9 @@
 .*.swo
 tmp
 
+# Session-specific readable files (statusline generated)
+.claude-sessions/
+
 # OS files
 .DS_Store
 Thumbs.db
