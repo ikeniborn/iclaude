@@ -8,9 +8,9 @@ This directory contains the modularized implementation of iclaude.sh. The monoli
 
 **Current Status:** 100% Complete (Phase 0-15) ✅
 
-- **56 modules** created across 17 categories
-- **130 functions** extracted from monolith
-- **8,913 lines** fully modular architecture
+- **57 modules** created across 18 categories
+- **133 functions** extracted from monolith
+- **8,988 lines** fully modular architecture
 - **iclaude-legacy.sh REMOVED** - no legacy dependencies
 
 **Migration Status:** Phase 0-15 complete (100% Modular) ✅
@@ -115,6 +115,9 @@ lib/
 ├── autoupdates/               # 🔜 Phase 8 - Auto-updates control (PLANNED)
 │   ├── detect.sh              # get_autoupdate_status()
 │   └── disable.sh             # disable_auto_updates()
+│
+├── chrome/                    # ✅ Chrome Integration (COMPLETE)
+│   └── detection.sh           # is_chrome_running(), is_claude_chrome_extension_installed(), warn_chrome_integration()
 │
 └── launcher/                  # 🔜 Phase 8 - Launch logic (PLANNED)
     ├── detect.sh              # get_launch_binary()
