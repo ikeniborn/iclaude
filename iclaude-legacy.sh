@@ -1092,12 +1092,8 @@ configure_statusline_in_settings() {
         echo "{}" > "$settings_file"
     fi
 
-    # Check for jq
-    if ! command -v jq &> /dev/null; then
-        print_error "jq is required for settings configuration"
-        echo "  Install with: sudo apt install jq (Ubuntu/Debian) or brew install jq (macOS)"
-        return 1
-    fi
+    # Check for jq (using core/validation.sh)
+    validate_dependency "jq" "Install with: sudo apt install jq (Ubuntu/Debian) or brew install jq (macOS)" || return 1
 
     # Add statusLine configuration with correct format
     local temp_file="${settings_file}.tmp"
@@ -2073,7 +2069,9 @@ install_from_lockfile() {
 	echo ""
 	print_info "Checking sandbox availability from lockfile..."
 	local sandbox_available
-	sandbox_available=$(jq -r '.sandboxAvailable // false' "$ISOLATED_LOCKFILE" 2>/dev/null)
+	# Using core/json.sh get_lockfile_field()
+	sandbox_available=$(get_lockfile_field "sandboxAvailable" 2>/dev/null || echo "false")
+	[[ "$sandbox_available" == "unknown" ]] && sandbox_available="false"
 
 	if [[ "$sandbox_available" == "true" ]]; then
 		print_info "Lockfile indicates sandbox was available"
@@ -3185,13 +3183,14 @@ check_sandbox_status() {
 	# Lockfile Status
 	print_info "Lockfile Status:"
 	if [[ -f "$ISOLATED_LOCKFILE" ]]; then
-		local sandbox_available=$(jq -r '.sandboxAvailable // false' "$ISOLATED_LOCKFILE" 2>/dev/null)
+		local sandbox_available=$(get_lockfile_field "sandboxAvailable" 2>/dev/null || echo "false")
+	[[ "$sandbox_available" == "unknown" ]] && sandbox_available="false"
 		if [[ "$sandbox_available" == "true" ]]; then
 			print_success "Sandbox marked as available in lockfile"
-			local lockfile_platform=$(jq -r '.sandboxPlatform // "unknown"' "$ISOLATED_LOCKFILE" 2>/dev/null)
+			local lockfile_platform=$(get_lockfile_field "sandboxPlatform" 2>/dev/null || echo "unknown")
 			echo "  Platform: $lockfile_platform"
 
-			local sandbox_installed_at=$(jq -r '.sandboxInstalledAt // "unknown"' "$ISOLATED_LOCKFILE" 2>/dev/null)
+			local sandbox_installed_at=$(get_lockfile_field "sandboxInstalledAt" 2>/dev/null || echo "unknown")
 			if [[ "$sandbox_installed_at" != "unknown" && "$sandbox_installed_at" != "null" ]]; then
 				echo "  Verified: $sandbox_installed_at"
 			fi
@@ -6433,12 +6432,8 @@ refresh_oauth_token() {
 #   1 - jq is not installed
 #######################################
 validate_jq_installed() {
-    if ! command -v jq &>/dev/null; then
-        print_error "jq is not installed. Cannot parse credentials file."
-        print_info "Install jq: sudo apt-get install jq (Debian/Ubuntu) or brew install jq (macOS)"
-        return 1
-    fi
-    return 0
+    # Delegated to core/validation.sh
+    validate_dependency "jq" "Install jq: sudo apt-get install jq (Debian/Ubuntu) or brew install jq (macOS)"
 }
 
 #######################################
