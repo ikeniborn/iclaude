@@ -20,6 +20,7 @@
 tmp
 
 # Session-specific readable files (statusline generated)
+# Includes both TOON format (.toon) and legacy text format (.txt)
 .claude-sessions/
 
 # OS files
