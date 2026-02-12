@@ -417,9 +417,9 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```
 
 **Format Notes**:
-- **Always shows dual context**: cumulative (billing) and active NEW tokens (excludes cache)
+- **Always shows dual context**: cumulative (billing) and active (total context for next message)
 - **After /clear**: Shows `0 active (0%)` for ~10-40 seconds until Claude Code sends first API response
-- **After /compact**: Shows LOW active context (~0.3%) because only new input/output tokens are counted. Cache tokens are shown separately in `📦 150K` to avoid confusion. This makes it clear what is "new" context vs "reused" cached context
+- **After /compact**: Shows accumulated TOTAL context including cache. For example, if used_percentage=77% (150K total including 150K cache), active context shows 150K (77%). Cache portion shown separately in `📦 150K`. This represents the full context window usage - cache is part of the context that's reused via prompt caching
 
 **Components** (left to right):
 1. **Context usage**:
@@ -456,19 +456,19 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```bash
 Input:  .context_window.total_input_tokens
 Output: .context_window.total_output_tokens
-Active: .context_window.current_usage.input_tokens + current_usage.output_tokens  (excludes cache!)
+Active: .context_window.used_percentage × context_window_size  (includes cache!)
 Cost:   .cost.total_cost_usd
 Model:  .model.display_name
 Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
 
-# How statusline calculates active context (NEW approach):
-# active_tokens = current_input + current_output  (cache NOT included)
-# active_percent = (active_tokens / context_window_size) × 100
+# How Claude Code calculates used_percentage:
+# used_percentage = (cache_read + input + output) / context_window_size × 100
 # Example after /compact:
-#   current_input: 0, current_output: 652
-#   active_tokens = 0 + 652 = 652
-#   active_percent = (652 / 200000) × 100 = 0.3%
-#   Cache shown separately: 📦 154K (cache_read: 154576)
+#   cache_read: 154576, input: 0, output: 652
+#   used_percentage = (154576 + 0 + 652) / 200000 × 100 = 77.6%
+#   active_tokens = 77.6% × 200000 = 155228 tokens total
+#   Cache portion shown separately: 📦 154K
+# This shows FULL context window usage (accumulated conversation including cache)
 ```
 
 **Configuration**:

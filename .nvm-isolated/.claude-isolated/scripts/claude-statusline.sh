@@ -81,20 +81,18 @@ CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_siz
 # Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-# Parse active context tokens (NEW + CACHED separately)
-# Claude Code's used_percentage includes cache_read, which is misleading after /compact
-# We calculate active context WITHOUT cache to show only new tokens
-CURRENT_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.input_tokens // 0' 2>/dev/null)
-CURRENT_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.output_tokens // 0' 2>/dev/null)
+# Parse active context (shows accumulated conversation INCLUDING cache)
+# This represents the TOTAL context window usage for next message
+# Cache is part of this total, shown separately in 📦
+USED_PERCENTAGE=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
 
-# Active tokens = NEW tokens only (excludes cache)
-# This shows actual "fresh" context, not reused cached tokens
-ACTIVE_TOKENS=$((CURRENT_INPUT + CURRENT_OUTPUT))
-
-# Calculate percentage based on new tokens only
-ACTIVE_PERCENT=0
-if [[ $ACTIVE_TOKENS -gt 0 ]]; then
-    ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
+# Calculate active tokens from used_percentage
+# This shows accumulated context (cache + conversation)
+ACTIVE_TOKENS=0
+ACTIVE_PERCENT="0.0"
+if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USED_PERCENTAGE" != "0" ]]; then
+    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $USED_PERCENTAGE / 100.0)}")
+    ACTIVE_PERCENT="$USED_PERCENTAGE"
 fi
 
 # Parse cache tokens (Claude Code v2.1+)
@@ -155,8 +153,11 @@ fi
 SESSION_LINK=""
 SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.id // empty' 2>/dev/null)
 if [[ -n "$SESSION_ID" ]]; then
-    # Find session file in session-env directory
-    SESSION_FILE="$CLAUDE_CONFIG_DIR/session-env/${SESSION_ID}.jsonl"
+    # Find session file in projects directory (Claude Code v2.x structure)
+    # Convert /home/user/project -> -home-user-project
+    CURRENT_PROJECT_PATH=$(pwd | sed 's|/|-|g')
+    SESSION_FILE="$CLAUDE_CONFIG_DIR/projects/$CURRENT_PROJECT_PATH/${SESSION_ID}.jsonl"
+
     if [[ -f "$SESSION_FILE" ]]; then
         # Create OSC 8 hyperlink (works in iTerm2, kitty, GNOME Terminal 3.x+)
         # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
@@ -239,19 +240,19 @@ TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
 ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 
 # Build context display string
-# Shows: Cumulative tokens (billing) | Active NEW tokens (excludes cache)
-# After /compact: Shows 0% active (new tokens) + cache shown separately in 📦
+# Shows: Cumulative tokens (billing) | Active context (includes cache)
+# Active context represents TOTAL accumulated conversation for next message
+# Cache (shown in 📦) is part of active context that's reused from prompt cache
 # Handle temporary null/zero values after /clear
-if [[ "$CURRENT_INPUT" == "null" ]] || [[ "$CURRENT_OUTPUT" == "null" ]] || \
-   [[ -z "$CURRENT_INPUT" ]] || [[ -z "$CURRENT_OUTPUT" ]]; then
-    # Immediately after /clear: current_usage fields may be null for ~10-40 seconds
+if [[ "$USED_PERCENTAGE" == "null" ]] || [[ -z "$USED_PERCENTAGE" ]]; then
+    # Immediately after /clear: used_percentage may be null for ~10-40 seconds
     # Show 0% active until Claude Code sends real data
     ACTIVE_COLOR=$GREEN
     ACTIVE_TOKENS=0
     ACTIVE_TOKENS_FMT="0"
     ACTIVE_PERCENT="0.0"
 elif [[ $ACTIVE_TOKENS -eq 0 ]]; then
-    # Active context reset to 0 (only system prompt cached)
+    # Active context is 0 (only system prompt)
     ACTIVE_COLOR=$GREEN
     ACTIVE_TOKENS_FMT="0"
     ACTIVE_PERCENT="0.0"
