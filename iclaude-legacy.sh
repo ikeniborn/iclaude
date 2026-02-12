@@ -68,6 +68,8 @@ set -euo pipefail
 #######################################
 # Validate proxy URL format (requires IP address)
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F validate_proxy_url &>/dev/null; then
 validate_proxy_url() {
     local url=$1
 
@@ -97,10 +99,13 @@ validate_proxy_url() {
 
     return 0
 }
+fi  # End guard for validate_proxy_url
 
 #######################################
 # Check if host is IP address (IPv4)
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F is_ip_address &>/dev/null; then
 is_ip_address() {
     local host=$1
     # Regex for IPv4 address
@@ -117,11 +122,14 @@ is_ip_address() {
     fi
     return 1
 }
+fi  # End guard for is_ip_address
 
 #######################################
 # Resolve domain to IP address
 # Returns IP address on success, empty on failure
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F resolve_domain_to_ip &>/dev/null; then
 resolve_domain_to_ip() {
     local domain=$1
 
@@ -163,10 +171,13 @@ resolve_domain_to_ip() {
 
     return 1
 }
+fi  # End guard for resolve_domain_to_ip
 
 #######################################
 # Parse proxy URL and extract components
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F parse_proxy_url &>/dev/null; then
 parse_proxy_url() {
     local url=$1
 
@@ -205,6 +216,7 @@ parse_proxy_url() {
         echo "port=$port"
     fi
 }
+fi  # End guard for parse_proxy_url
 
 #######################################
 # Detect if NVM is installed and active
@@ -212,6 +224,8 @@ parse_proxy_url() {
 # Arguments:
 #   $1 - skip_isolated (optional): "true" to skip isolated environment check
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F detect_nvm &>/dev/null; then
 detect_nvm() {
 	local skip_isolated="${1:-false}"
 
@@ -242,10 +256,13 @@ detect_nvm() {
 
 	return 1
 }
+fi  # End guard for detect_nvm
 
 #######################################
 # Get Claude path from NVM environment
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F get_nvm_claude_path &>/dev/null; then
 get_nvm_claude_path() {
 	# Try to find claude in active NVM node version
 	if [[ -n "${NVM_DIR:-}" ]]; then
@@ -331,6 +348,7 @@ get_nvm_claude_path() {
 
 	return 1
 }
+fi  # End guard for get_nvm_claude_path
 
 #######################################
 # Detect if router should be used
@@ -732,6 +750,8 @@ install_sandbox_dependencies() {
 #######################################
 # Get version from cli.js installation
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F get_cli_version &>/dev/null; then
 get_cli_version() {
 	local cli_path=$1
 
@@ -763,6 +783,7 @@ get_cli_version() {
 	echo "$version"
 	return 0
 }
+fi  # End guard for get_cli_version
 
 #######################################
 # Get sandbox-runtime version
@@ -798,6 +819,8 @@ get_sandbox_runtime_version() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F setup_isolated_nvm &>/dev/null; then
 setup_isolated_nvm() {
 	# Export isolated environment
 	export NVM_DIR="$ISOLATED_NVM_DIR"
@@ -829,6 +852,7 @@ setup_isolated_nvm() {
 
 	return 0
 }
+fi  # End guard for setup_isolated_nvm
 
 #######################################
 # Install NVM to isolated directory
@@ -836,6 +860,8 @@ setup_isolated_nvm() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F install_isolated_nvm &>/dev/null; then
 install_isolated_nvm() {
 	setup_isolated_nvm
 
@@ -903,6 +929,7 @@ install_isolated_nvm() {
 	print_success "NVM installed to isolated environment"
 	return 0
 }
+fi  # End guard for install_isolated_nvm
 
 #######################################
 # Install Node.js in isolated NVM
@@ -912,6 +939,8 @@ install_isolated_nvm() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F install_isolated_nodejs &>/dev/null; then
 install_isolated_nodejs() {
 	local node_version=${1:-18}
 
@@ -952,6 +981,7 @@ install_isolated_nodejs() {
 
 	return 0
 }
+fi  # End guard for install_isolated_nodejs
 
 #######################################
 # Install Claude Code in isolated environment
@@ -959,6 +989,8 @@ install_isolated_nodejs() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F install_isolated_claude &>/dev/null; then
 install_isolated_claude() {
 	setup_isolated_nvm
 
@@ -1010,6 +1042,7 @@ install_isolated_claude() {
 
 	return 0
 }
+fi  # End guard for install_isolated_claude
 
 #######################################
 # Install Claude Code Router in isolated environment
@@ -1557,6 +1590,8 @@ install_isolated_ohmyposh() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F update_isolated_claude &>/dev/null; then
 update_isolated_claude() {
 	setup_isolated_nvm
 
@@ -1637,6 +1672,7 @@ update_isolated_claude() {
 		return 1
 	fi
 }
+fi  # End guard for update_isolated_claude
 
 #######################################
 # Save lockfile with installed versions
@@ -2110,6 +2146,8 @@ install_from_lockfile() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F cleanup_isolated_nvm &>/dev/null; then
 cleanup_isolated_nvm() {
 	if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
 		print_info "No isolated installation found"
@@ -2146,6 +2184,7 @@ cleanup_isolated_nvm() {
 
 	echo ""
 }
+fi  # End guard for cleanup_isolated_nvm
 
 #######################################
 # Repair plugin marketplace paths after project move
@@ -2284,6 +2323,8 @@ repair_plugin_paths() {
 #   0 - success
 #   1 - error
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F repair_isolated_environment &>/dev/null; then
 repair_isolated_environment() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -2452,6 +2493,7 @@ repair_isolated_environment() {
 
 	return $errors
 }
+fi  # End guard for repair_isolated_environment
 
 #######################################
 # Check isolated environment status
@@ -4800,6 +4842,8 @@ import_config() {
 # HTTP proxies: Offers to convert domain to IP (optional, for reliability)
 # Returns: final proxy URL (domain preserved for HTTPS, may be IP for HTTP)
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F save_credentials &>/dev/null; then
 save_credentials() {
     local proxy_url=$1
     local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
@@ -4893,10 +4937,13 @@ EOF
     # Return final URL (after possible domain-to-IP conversion)
     echo "$proxy_url"
 }
+fi  # End guard for save_credentials
 
 #######################################
 # Load credentials from file
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F load_credentials &>/dev/null; then
 load_credentials() {
     if [[ ! -f "$CREDENTIALS_FILE" ]]; then
         return 1
@@ -4965,6 +5012,7 @@ load_credentials() {
     echo "$PROXY_URL|${NO_PROXY}"
     return 0
 }
+fi  # End guard for load_credentials
 
 #######################################
 # Load and export Claude Code configuration variables
@@ -4992,6 +5040,8 @@ load_claude_config() {
 #######################################
 # Prompt for proxy URL
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F prompt_proxy_url &>/dev/null; then
 prompt_proxy_url() {
     local saved_credentials
 
@@ -5072,10 +5122,13 @@ prompt_proxy_url() {
         return 0
     done
 }
+fi  # End guard for prompt_proxy_url
 
 #######################################
 # Configure proxy from URL
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F configure_proxy_from_url &>/dev/null; then
 configure_proxy_from_url() {
     local proxy_url=$1
     local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
@@ -5117,10 +5170,13 @@ configure_proxy_from_url() {
     # Configure git to ignore proxy
     configure_git_no_proxy
 }
+fi  # End guard for configure_proxy_from_url
 
 #######################################
 # Save current git proxy settings
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F save_git_proxy_settings &>/dev/null; then
 save_git_proxy_settings() {
     # Create backup file with restricted permissions
     touch "$GIT_BACKUP_FILE"
@@ -5136,10 +5192,13 @@ HTTP_PROXY=$http_proxy
 HTTPS_PROXY=$https_proxy
 EOF
 }
+fi  # End guard for save_git_proxy_settings
 
 #######################################
 # Configure git to ignore proxy (deprecated - now we don't modify git config)
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F configure_git_no_proxy &>/dev/null; then
 configure_git_no_proxy() {
     # IMPORTANT: We no longer modify git config globally as it can break other tools
     # Git will automatically use NO_PROXY environment variable if set
@@ -5150,10 +5209,13 @@ configure_git_no_proxy() {
     # Note: We keep save_git_proxy_settings call for compatibility with restore function
     # but we don't actually modify git config anymore
 }
+fi  # End guard for configure_git_no_proxy
 
 #######################################
 # Restore git proxy settings from backup
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F restore_git_proxy &>/dev/null; then
 restore_git_proxy() {
     if [[ ! -f "$GIT_BACKUP_FILE" ]]; then
         print_info "No git proxy backup found"
@@ -5181,10 +5243,13 @@ restore_git_proxy() {
     # Remove backup file
     rm -f "$GIT_BACKUP_FILE"
 }
+fi  # End guard for restore_git_proxy
 
 #######################################
 # Display proxy info
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F display_proxy_info &>/dev/null; then
 display_proxy_info() {
     local show_password=${1:-false}
 
@@ -5211,10 +5276,13 @@ display_proxy_info() {
     print_info "Git will bypass proxy for: localhost, 127.0.0.1, github.com, gitlab.com, bitbucket.org"
     echo ""
 }
+fi  # End guard for display_proxy_info
 
 #######################################
 # Test proxy connectivity
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F test_proxy &>/dev/null; then
 test_proxy() {
     print_info "Testing proxy connectivity..."
 
@@ -5257,10 +5325,13 @@ test_proxy() {
         return 1
     fi
 }
+fi  # End guard for test_proxy
 
 #######################################
 # Clear saved credentials
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F clear_credentials &>/dev/null; then
 clear_credentials() {
     if [[ -f "$CREDENTIALS_FILE" ]]; then
         rm -f "$CREDENTIALS_FILE"
@@ -5269,6 +5340,7 @@ clear_credentials() {
         print_info "No saved credentials found"
     fi
 }
+fi  # End guard for clear_credentials
 
 #######################################
 # Check OAuth token expiration
@@ -5514,6 +5586,8 @@ check_update() {
 #######################################
 # Cleanup old Claude Code installations (NVM only)
 #######################################
+# Guard: Only define if not already loaded from module
+if ! declare -F cleanup_old_claude_installations &>/dev/null; then
 cleanup_old_claude_installations() {
 	if [[ -z "${NVM_DIR:-}" ]]; then
 		return 0  # Only for NVM installations
@@ -5648,6 +5722,7 @@ cleanup_old_claude_installations() {
 
 	return 0
 }
+fi  # End guard for cleanup_old_claude_installations
 
 #######################################
 # Recreate Claude symlinks after update (NVM only)
