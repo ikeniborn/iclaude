@@ -6217,7 +6217,7 @@ check_dependencies() {
 # Install script globally
 #######################################
 install_script() {
-    local script_path="${BASH_SOURCE[0]}"
+    local script_path="$SCRIPT_DIR/iclaude.sh"
     local target_path="/usr/local/bin/iclaude"
 
     # Check if running with sudo
@@ -6292,7 +6292,7 @@ uninstall_script() {
 # (Does NOT require system npm - uses .nvm-isolated/)
 #######################################
 create_symlink_only() {
-    local script_path="${BASH_SOURCE[0]}"
+    local script_path="$SCRIPT_DIR/iclaude.sh"
     local target_path="/usr/local/bin/iclaude"
 
     # Check if running with sudo
