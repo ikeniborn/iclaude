@@ -481,6 +481,7 @@ detect_ohmyposh() {
 	return 1
 }
 
+if ! declare -F detect_statusline &>/dev/null; then
 detect_statusline() {
 	# Quietly setup isolated environment to get ISOLATED_CONFIG_DIR
 	setup_isolated_nvm &>/dev/null || true
@@ -495,6 +496,7 @@ detect_statusline() {
 }
 
 
+fi  # End guard for detect_statusline
 #######################################
 # Detect platform for sandboxing support
 # Returns:
@@ -1114,6 +1116,7 @@ fi  # End guard for install_isolated_router
 #   0 - success
 #   1 - error
 #######################################
+if ! declare -F configure_statusline_in_settings &>/dev/null; then
 configure_statusline_in_settings() {
     local script_path="$1"
 
@@ -1159,11 +1162,13 @@ configure_statusline_in_settings() {
 
 #######################################
 # Install statusline script for Claude Code
+fi  # End guard for configure_statusline_in_settings
 # Creates claude-statusline.sh and configures settings.json
 # Returns:
 #   0 - success
 #   1 - error
 #######################################
+if ! declare -F install_statusline_script &>/dev/null; then
 install_statusline_script() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -1231,6 +1236,7 @@ install_statusline_script() {
 }
 
 
+fi  # End guard for install_statusline_script
 #######################################
 # Install gh CLI in isolated environment
 # Downloads gh CLI tarball, extracts to npm-global/bin
@@ -2988,6 +2994,7 @@ fi  # End guard for check_router_status
 # Check statusline status and configuration
 # Shows script installation, settings config, data sources, and capabilities
 #######################################
+if ! declare -F check_statusline_status &>/dev/null; then
 check_statusline_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -3095,6 +3102,7 @@ check_statusline_status() {
 	return 0
 }
 
+fi  # End guard for check_statusline_status
 #######################################
 # Check Oh My Posh status and configuration
 # Shows installation, version, platform
