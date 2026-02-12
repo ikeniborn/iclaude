@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.4 (Modular Architecture - Phase 0-7)
+# Version: 2.5 (Modular Architecture - Phase 0-8.1)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -96,8 +96,17 @@ if [[ -d "$LIB_DIR/router" ]]; then
 fi
 
 #######################################
+# Load LSP modules (Phase 8.1)
+#######################################
+if [[ -d "$LIB_DIR/lsp" ]]; then
+    source "${LIB_DIR}/lsp/install.sh"
+    source "${LIB_DIR}/lsp/repair.sh"
+    source "${LIB_DIR}/lsp/status.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 8-9 will gradually extract remaining modules from legacy
+# TODO: Phase 8.2-9 will gradually extract remaining modules from legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
