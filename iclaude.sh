@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.2 (Modular Architecture - Phase 0-5)
+# Version: 2.3 (Modular Architecture - Phase 0-6)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -80,8 +80,15 @@ if [[ -d "$LIB_DIR/config" ]]; then
 fi
 
 #######################################
+# Load OAuth modules (Phase 6)
+#######################################
+if [[ -d "$LIB_DIR/oauth" ]]; then
+    source "${LIB_DIR}/oauth/token.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 6-9 will gradually extract remaining modules from legacy
+# TODO: Phase 7-9 will gradually extract remaining modules from legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
