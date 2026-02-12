@@ -359,6 +359,7 @@ fi  # End guard for get_nvm_claude_path
 #   0 - router should be used
 #   1 - use native Claude Code
 #######################################
+if ! declare -F detect_router &>/dev/null; then
 detect_router() {
 	local skip_isolated="${1:-false}"
 	local router_config=""
@@ -384,6 +385,7 @@ detect_router() {
 	return 0  # Router available
 }
 
+fi  # End guard for detect_router
 #######################################
 # Get path to ccr binary
 # Arguments:
@@ -391,6 +393,7 @@ detect_router() {
 # Returns:
 #   ccr binary path or empty string
 #######################################
+if ! declare -F get_router_path &>/dev/null; then
 get_router_path() {
 	local skip_isolated="${1:-false}"
 
@@ -407,6 +410,7 @@ get_router_path() {
 	return 1
 }
 
+fi  # End guard for get_router_path
 #######################################
 # Detect if statusline script is installed
 # Returns:
@@ -1050,6 +1054,7 @@ fi  # End guard for install_isolated_claude
 #   0 - success
 #   1 - error
 #######################################
+if ! declare -F install_isolated_router &>/dev/null; then
 install_isolated_router() {
 	setup_isolated_nvm
 
@@ -1099,6 +1104,7 @@ install_isolated_router() {
 	return 0
 }
 
+fi  # End guard for install_isolated_router
 #######################################
 # Configure statusLine in settings.json
 # Updates Claude Code settings to enable custom status line script
@@ -2878,6 +2884,7 @@ fi  # End guard for check_config_status
 # Returns:
 #   0 - success
 #######################################
+if ! declare -F check_router_status &>/dev/null; then
 check_router_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -2972,6 +2979,7 @@ check_router_status() {
 	return 0
 }
 
+fi  # End guard for check_router_status
 #######################################
 # Check statusline status and configuration
 # Shows script installation, settings config, data sources, and capabilities
