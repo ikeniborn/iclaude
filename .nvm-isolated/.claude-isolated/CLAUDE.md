@@ -413,7 +413,7 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 
 **Displayed Information**:
 ```
-112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider 📄context  branch
+112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider 📄  branch
 ```
 
 **Format Notes**:
@@ -438,11 +438,13 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 4. **Cost**: `total_cost_usd` in USD
 5. **Proxy**: `🌐` icon if proxy configured
 6. **Router**: `🔀provider` if router active
-7. **Session link**: `📄context` - clickable link to session file (OSC 8 hyperlink)
-   - Click to open full conversation context in your editor
+7. **Session link**: `📄` - clickable link to readable session file (OSC 8 hyperlink)
+   - Click to open human-readable conversation in your editor
+   - Automatically generates readable version (with 👤 USER / 🤖 ASSISTANT prefixes)
+   - Uses mtime caching: only regenerates if JSONL file changed
+   - Readable file saved to: `<project>/tmp/claude-session-readable.txt`
    - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
    - Falls back to plain text in terminals without hyperlink support
-   - Links to: `.claude-isolated/session-env/{session-id}.jsonl`
 8. **Git info**: Branch name + uncommitted changes count
 
 **Key Features**:
@@ -477,7 +479,7 @@ Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_i
 - Exported by iclaude.sh `load_credentials()` function
 
 **Dependencies**:
-- `jq` for JSON parsing (required)
+- `jq` for JSON parsing (required, included in isolated environment)
 - `git` for branch/status info (optional)
 - `oh-my-posh` for enhanced git rendering (optional)
 

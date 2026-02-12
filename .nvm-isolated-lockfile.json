@@ -22,6 +22,8 @@
   "sandboxInstalledAt": "2026-02-11T04:38:39Z",
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
+  "jqVersion": "1.7.1",
+  "jqPath": ".nvm-isolated/npm-global/bin/jq",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",

@@ -1,0 +1,2 @@
+# Binary files that should be tracked in git
+.nvm-isolated/npm-global/bin/jq binary

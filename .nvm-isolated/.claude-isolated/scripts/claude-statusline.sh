@@ -148,16 +148,87 @@ if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
-# Session context link (OSC 8 hyperlink to session file)
-# Allows clicking to view full conversation context in editor
-# Claude Code provides transcript_path directly in session data
+# Generate readable session format for OSC 8 hyperlink
+# Converts JSONL to user-friendly text with role prefixes
+# Uses mtime caching to avoid regenerating unchanged sessions
+generate_readable_session() {
+    local jsonl_file="$1"
+    local output_file="$2"
+
+    # Create output directory if needed
+    mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
+
+    # Check if readable file exists and is newer than JSONL (mtime cache)
+    if [[ -f "$output_file" ]] && [[ "$output_file" -nt "$jsonl_file" ]]; then
+        return 0  # Readable file is up-to-date, skip regeneration
+    fi
+
+    {
+        echo "📄 Session: $(basename "$jsonl_file" .jsonl)"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        # Parse JSONL (reusing logic from claude-show-cache.sh)
+        cat "$jsonl_file" | while IFS= read -r line; do
+            ROLE=$(echo "$line" | jq -r '.message.role // .userType // empty' 2>/dev/null)
+            CONTENT_TYPE=$(echo "$line" | jq -r '.message.content[0].type // empty' 2>/dev/null)
+
+            # Extract content based on type
+            case "$CONTENT_TYPE" in
+                text)
+                    CONTENT=$(echo "$line" | jq -r '.message.content[0].text // empty' 2>/dev/null)
+                    LABEL=""
+                    ;;
+                thinking)
+                    CONTENT=$(echo "$line" | jq -r '.message.content[0].thinking // empty' 2>/dev/null)
+                    LABEL=" [thinking]"
+                    ;;
+                *)
+                    # Skip tool_use, tool_result, etc for cleaner output
+                    continue
+                    ;;
+            esac
+
+            # Skip empty content
+            [[ -z "$CONTENT" ]] || [[ "$CONTENT" == "null" ]] && continue
+
+            # Format with role prefix
+            case "$ROLE" in
+                user|external)
+                    echo ""
+                    echo "👤 USER${LABEL}:"
+                    ;;
+                assistant)
+                    echo ""
+                    echo "🤖 ASSISTANT${LABEL}:"
+                    ;;
+                *)
+                    continue
+                    ;;
+            esac
+
+            # Output content with word wrap
+            echo "$CONTENT" | fold -w 80 -s
+        done
+    } > "$output_file" 2>/dev/null
+}
+
+# Session context link (OSC 8 hyperlink to readable session file)
+# Generates human-readable version in project tmp/ on each statusline update
+# Uses mtime caching to avoid regenerating unchanged sessions
 SESSION_LINK=""
 SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
+CWD=$(echo "$SESSION_DATA" | jq -r '.cwd // empty' 2>/dev/null)
 
-if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]]; then
-    # Create OSC 8 hyperlink (works in iTerm2, kitty, GNOME Terminal 3.x+)
-    # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
-    SESSION_LINK=" | \e]8;;file://${SESSION_FILE}\e\\📄context\e]8;;\e\\"
+if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$CWD" ]] && [[ -d "$CWD" ]]; then
+    # Generate readable version in project tmp/
+    READABLE_FILE="$CWD/tmp/claude-session-readable.txt"
+
+    if generate_readable_session "$SESSION_FILE" "$READABLE_FILE"; then
+        # Create OSC 8 hyperlink to readable file (icon only, no text)
+        # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
+        SESSION_LINK=" | \e]8;;file://${READABLE_FILE}\e\\📄\e]8;;\e\\"
+    fi
 fi
 
 # Git info (branch + uncommitted changes)
