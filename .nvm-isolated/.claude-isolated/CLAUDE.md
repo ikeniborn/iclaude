@@ -493,6 +493,18 @@ Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_i
 # IMPORTANT: Cache is PART OF active context, shown separately for visibility
 ```
 
+**Cache and Billing:**
+
+Anthropic Prompt Caching reduces costs by 90% on cached tokens:
+- **Cache read**: $0.30 / 1M (vs $3.00 regular input)
+- **Cache IS billed** (counted in `total_input_tokens` at reduced rate)
+- **Cache IS part of active context** (affects auto-compact trigger)
+- **Cache has 5-min TTL** (expires if session idle)
+
+Example: After `/compact` with 100K cache, 10 requests save $2.70 vs without cache.
+
+**Detailed architecture and billing examples**: See `docs/architecture/statusline-architecture.md`
+
 **Session Link Optimizations** (Phase 2.1):
 
 The readable session generation uses three key optimizations for performance:

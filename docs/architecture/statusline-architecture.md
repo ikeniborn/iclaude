@@ -210,6 +210,147 @@ User Action: Click on 📄
 
 ---
 
+## Cache and Billing
+
+### How Anthropic Prompt Caching Works
+
+Claude Code uses **Prompt Caching** to significantly reduce costs for long conversations.
+
+**Workflow:**
+
+1. **Cache Creation** (during `/compact`):
+   - Claude Code compresses conversation into summary
+   - Summary stored in prompt cache (server-side)
+   - Billed as regular input tokens: $3.00 / 1M
+
+2. **Cache Reuse** (subsequent requests):
+   - Cached summary automatically read from server
+   - Billed at reduced rate: $0.30 / 1M (**90% discount!**)
+   - New user messages added as regular input
+
+3. **Cache Expiration**:
+   - 5-minute TTL (Time To Live)
+   - Cache cleared if session idle > 5 minutes
+   - Next request creates new cache
+
+### Pricing Model (Sonnet 4.5)
+
+| Token Type | Price per 1M | Description |
+|------------|--------------|-------------|
+| Regular Input | $3.00 | User messages, system prompts |
+| Cache Write | $3.00 | Creating cached summary (same as input) |
+| Cache Read | $0.30 | Reusing cached summary (**90% cheaper!**) |
+| Output | $15.00 | Claude's responses |
+
+### Example Cost Calculation
+
+**Scenario**: 150 message conversation with `/compact` at 100 messages
+
+**Before `/compact`** (Request #100):
+```
+Input: 100K tokens × $3.00/1M = $0.30
+Output: 2K tokens × $15.00/1M = $0.03
+Total: $0.33
+```
+
+**After `/compact`** (Request #101 - cache creation):
+```
+Input: 100K tokens × $3.00/1M = $0.30
+Cache creation: 98K × $3.00/1M = $0.29
+Output: 2K × $15.00/1M = $0.03
+Total: $0.62 (one-time cache creation cost)
+```
+
+**Subsequent requests** (#102-150, using cache):
+```
+Cache read: 98K × $0.30/1M = $0.03 (90% discount!)
+New input: 500 tokens × $3.00/1M = $0.0015
+Output: 1K × $15.00/1M = $0.015
+Total per request: ~$0.05
+
+50 requests × $0.05 = $2.50
+```
+
+**Savings**:
+- **Without cache**: 50 × $0.33 = $16.50
+- **With cache**: $0.62 (creation) + $2.50 (50 reads) = $3.12
+- **Savings**: $13.38 (**81% cost reduction!**)
+
+### Status Line Display
+
+```
+💳 250K | 📊 100K (50%) | 📦 98K | Sonnet 4.5 | $2.45
+```
+
+**What each component means:**
+
+- `💳 250K` - **Cumulative tokens billed**
+  - Includes ALL tokens: regular input, cache read, output
+  - Cache read counted at $0.30/1M (not $3.00/1M)
+  - Running total for entire session
+
+- `📊 100K (50%)` - **Active context**
+  - Current conversation window: cache + new messages
+  - Used for auto-compact trigger (95% of effective 155K)
+  - Includes cache as part of context
+
+- `📦 98K` - **Cache portion**
+  - How much of active context is cached
+  - Shown separately for cost visibility
+  - Reused across multiple requests at 90% discount
+
+- `$2.45` - **Total session cost**
+  - Actual billed amount (cache at reduced rate)
+  - Savings: ~$2.64 vs without cache
+  - Cost tracking for budget awareness
+
+### Key Points
+
+✅ **Cache DOES participate in billing**
+- Counted in `total_input_tokens`
+- But charged at 90% discount ($0.30 vs $3.00)
+
+✅ **Cache IS PART OF active context**
+- Affects auto-compact trigger (context window limit)
+- Shows in `used_percentage`
+
+✅ **Cache read saves 90% on input costs**
+- Multiple reads multiply savings
+- 10 requests: $0.30 vs $3.00 (10x cheaper)
+
+✅ **Cache benefits long conversations**
+- Break-even at ~3-4 requests after cache creation
+- Maximum savings at 50+ requests
+
+⚠️ **Cache has limitations**
+- 5-minute TTL (expires if idle)
+- Server-side storage (not in status line data)
+- Automatic management by Claude Code
+
+### Implementation in Statusline
+
+**Cache detection** (`claude-statusline.sh:98-115`):
+```bash
+# Parse cache tokens from session data
+CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
+CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
+TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
+
+# Format cache display (show only if >0)
+if [[ $TOTAL_CACHE -gt 0 ]]; then
+    if [[ $TOTAL_CACHE -ge 1000000 ]]; then
+        CACHE_FMT=$(awk "BEGIN {printf \"%.1fM\", ($TOTAL_CACHE / 1000000.0)}")
+    elif [[ $TOTAL_CACHE -ge 1000 ]]; then
+        CACHE_FMT=$(awk "BEGIN {printf \"%.0fK\", ($TOTAL_CACHE / 1000.0)}")
+    fi
+    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
+fi
+```
+
+**Important**: `current_usage.cache_*` shows cache for **CURRENT API request only**, not cumulative cache across all requests in session.
+
+---
+
 ## Key Components
 
 ### 1. JSON Parser (jq)
