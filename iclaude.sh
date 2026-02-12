@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 2.6 (Modular Architecture - Phase 0-8.2)
+# Version: 2.7 (Modular Architecture - Phase 0-8.3)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -114,8 +114,17 @@ if [[ -d "$LIB_DIR/statusline" ]]; then
 fi
 
 #######################################
+# Load Oh-My-Posh modules (Phase 8.3)
+#######################################
+if [[ -d "$LIB_DIR/ohmyposh" ]]; then
+    source "${LIB_DIR}/ohmyposh/detect.sh"
+    source "${LIB_DIR}/ohmyposh/install.sh"
+    source "${LIB_DIR}/ohmyposh/status.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 8.3-9 will gradually extract remaining modules from legacy
+# TODO: Phase 9 will gradually extract remaining modules from legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
