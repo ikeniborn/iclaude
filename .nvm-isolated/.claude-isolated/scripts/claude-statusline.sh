@@ -153,79 +153,156 @@ fi
 
 # Generate readable session format for OSC 8 hyperlink
 # Converts JSONL to user-friendly text with role prefixes
-# Uses mtime caching to avoid regenerating unchanged sessions
+# Uses append-only optimization for performance (only processes new messages)
+# Detects /compact and regenerates file when context is compressed
 generate_readable_session() {
     local jsonl_file="$1"
     local output_file="$2"
+    local metadata_file="${output_file}.meta"
 
     # Create output directory if needed
     mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
 
-    # Check if readable file exists and is newer than JSONL (mtime cache)
-    if [[ -f "$output_file" ]] && [[ "$output_file" -nt "$jsonl_file" ]]; then
-        return 0  # Readable file is up-to-date, skip regeneration
+    # Get current line count in JSONL
+    local current_lines=$(wc -l < "$jsonl_file" 2>/dev/null || echo 0)
+
+    # Check for /compact in recent messages (last 5 lines)
+    # /compact creates a summary message that compresses context
+    local has_compact=false
+    if [[ $current_lines -gt 0 ]]; then
+        local last_lines=$(tail -5 "$jsonl_file" 2>/dev/null || echo "")
+        if echo "$last_lines" | jq -e '.message.content[]? | select(.type=="compact")' >/dev/null 2>&1; then
+            has_compact=true
+        fi
     fi
 
-    {
-        echo "📄 Session: $(basename "$jsonl_file" .jsonl)"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo ""
+    # Read metadata (processed lines count)
+    local processed_lines=0
+    if [[ -f "$metadata_file" ]]; then
+        processed_lines=$(cat "$metadata_file" 2>/dev/null || echo 0)
+    fi
 
-        # Parse JSONL (reusing logic from claude-show-cache.sh)
-        cat "$jsonl_file" | while IFS= read -r line; do
-            ROLE=$(echo "$line" | jq -r '.message.role // .userType // empty' 2>/dev/null)
-            CONTENT_TYPE=$(echo "$line" | jq -r '.message.content[0].type // empty' 2>/dev/null)
+    # Decide regeneration strategy
+    local need_full_regen=false
 
-            # Extract content based on type
-            case "$CONTENT_TYPE" in
-                text)
-                    CONTENT=$(echo "$line" | jq -r '.message.content[0].text // empty' 2>/dev/null)
-                    LABEL=""
-                    ;;
-                thinking)
-                    CONTENT=$(echo "$line" | jq -r '.message.content[0].thinking // empty' 2>/dev/null)
-                    LABEL=" [thinking]"
-                    ;;
-                *)
-                    # Skip tool_use, tool_result, etc for cleaner output
-                    continue
-                    ;;
-            esac
+    # Full regeneration needed if:
+    # 1. Output file doesn't exist
+    # 2. /compact detected (context compressed, need fresh start)
+    # 3. JSONL was truncated (current < processed)
+    if [[ ! -f "$output_file" ]] || [[ "$has_compact" == "true" ]] || [[ $current_lines -lt $processed_lines ]]; then
+        need_full_regen=true
+    fi
 
-            # Skip empty content
-            [[ -z "$CONTENT" ]] || [[ "$CONTENT" == "null" ]] && continue
+    # Helper function to parse and format a single JSONL line
+    parse_message() {
+        local line="$1"
+        local ROLE=$(echo "$line" | jq -r '.message.role // .userType // empty' 2>/dev/null)
+        local CONTENT_TYPE=$(echo "$line" | jq -r '.message.content[0].type // empty' 2>/dev/null)
 
-            # Format with role prefix
-            case "$ROLE" in
-                user|external)
-                    echo ""
-                    echo "👤 USER${LABEL}:"
-                    ;;
-                assistant)
-                    echo ""
-                    echo "🤖 ASSISTANT${LABEL}:"
-                    ;;
-                *)
-                    continue
-                    ;;
-            esac
+        # Detect compact message
+        if [[ "$CONTENT_TYPE" == "compact" ]]; then
+            echo ""
+            echo "━━━ 📦 Context Compact ━━━"
+            local SUMMARY=$(echo "$line" | jq -r '.message.content[0].compact // empty' 2>/dev/null)
+            if [[ -n "$SUMMARY" ]] && [[ "$SUMMARY" != "null" ]]; then
+                echo "$SUMMARY" | fold -w 80 -s
+            fi
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            return
+        fi
 
-            # Output content with word wrap
-            echo "$CONTENT" | fold -w 80 -s
-        done
-    } > "$output_file" 2>/dev/null
+        # Extract content based on type
+        local CONTENT LABEL
+        case "$CONTENT_TYPE" in
+            text)
+                CONTENT=$(echo "$line" | jq -r '.message.content[0].text // empty' 2>/dev/null)
+                LABEL=""
+                ;;
+            thinking)
+                CONTENT=$(echo "$line" | jq -r '.message.content[0].thinking // empty' 2>/dev/null)
+                LABEL=" [thinking]"
+                ;;
+            *)
+                # Skip tool_use, tool_result, etc for cleaner output
+                return
+                ;;
+        esac
+
+        # Skip empty content
+        [[ -z "$CONTENT" ]] || [[ "$CONTENT" == "null" ]] && return
+
+        # Format with role prefix
+        case "$ROLE" in
+            user|external)
+                echo ""
+                echo "👤 USER${LABEL}:"
+                ;;
+            assistant)
+                echo ""
+                echo "🤖 ASSISTANT${LABEL}:"
+                ;;
+            *)
+                return
+                ;;
+        esac
+
+        # Output content with word wrap
+        echo "$CONTENT" | fold -w 80 -s
+    }
+
+    # Full regeneration
+    if [[ "$need_full_regen" == "true" ]]; then
+        {
+            echo "📄 Session: $(basename "$jsonl_file" .jsonl)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+
+            # Parse all lines
+            while IFS= read -r line; do
+                parse_message "$line"
+            done < "$jsonl_file"
+        } > "$output_file" 2>/dev/null
+
+        # Update metadata
+        echo "$current_lines" > "$metadata_file"
+        return 0
+    fi
+
+    # Append-only optimization: process only new messages
+    if [[ $current_lines -gt $processed_lines ]]; then
+        # Extract new lines (from processed_lines+1 to end)
+        local new_lines=$((current_lines - processed_lines))
+
+        {
+            # Append new messages
+            tail -n "$new_lines" "$jsonl_file" | while IFS= read -r line; do
+                parse_message "$line"
+            done
+        } >> "$output_file" 2>/dev/null
+
+        # Update metadata
+        echo "$current_lines" > "$metadata_file"
+    fi
+
+    return 0
 }
 
 # Session context link (OSC 8 hyperlink to readable session file)
-# Generates human-readable version in project tmp/ on each statusline update
-# Uses mtime caching to avoid regenerating unchanged sessions
+# Generates human-readable version in project .claude-sessions/ directory
+# Uses append-only optimization for performance (only processes new messages)
+# Session-specific filename prevents conflicts between parallel sessions
 SESSION_LINK=""
 SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
 CWD=$(echo "$SESSION_DATA" | jq -r '.cwd // empty' 2>/dev/null)
 
 if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$CWD" ]] && [[ -d "$CWD" ]]; then
-    # Generate readable version in project tmp/
-    READABLE_FILE="$CWD/tmp/claude-session-readable.txt"
+    # Use session-specific filename to avoid conflicts between parallel sessions
+    # Store in .claude-sessions/ to keep project root clean
+    # Format: .claude-sessions/readable-{session-id}.txt
+    SESSION_ID=$(basename "$SESSION_FILE" .jsonl)
+    SESSIONS_DIR="$CWD/.claude-sessions"
+    READABLE_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.txt"
 
     if generate_readable_session "$SESSION_FILE" "$READABLE_FILE"; then
         # Create OSC 8 hyperlink to readable file (icon only, no text)
@@ -308,6 +385,17 @@ format_tokens() {
 TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
 ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 
+# Calculate effective window (context limit minus reserved buffer)
+# Claude Code reserves ~40-45K tokens as a safety buffer for operations
+# This explains why "Context left until auto-compact: 0%" appears at lower percentages
+BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
+EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
+
+# Calculate percentage of effective window
+# This shows why auto-compact triggers earlier than expected from status line percentage
+EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $EFFECTIVE_WINDOW)}")
+EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
+
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
 # Active context represents TOTAL accumulated conversation for next message
@@ -342,7 +430,14 @@ else
     fi
 fi
 
-CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
+# Show effective window when active tokens exceed it (explains auto-compact trigger)
+# Format: 📊 166K/155K (107%) - shows why "Context left: 0%" appears
+# Otherwise: 📊 166K (83%) - normal display
+if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]] && [[ $ACTIVE_TOKENS -gt 0 ]]; then
+    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT}/${EFFECTIVE_WINDOW_FMT} (${EFFECTIVE_PERCENT}%)${RESET} 🔒"
+else
+    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
+fi
 
 # Output formatted status line
 echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
