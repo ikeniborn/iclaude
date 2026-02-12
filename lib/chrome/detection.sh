@@ -20,18 +20,18 @@ is_claude_chrome_extension_installed() {
     local chromium_dir="$HOME/.config/chromium"
 
     # Check Google Chrome
-    if [[ -d "$chrome_dir/Default/Extensions" ]]; then
-        # Look for Claude extension ID pattern
-        if ls "$chrome_dir"/*/Extensions/*/*/manifest.json 2>/dev/null | \
-           xargs grep -l "Claude in Chrome\|claude.*chrome" > /dev/null 2>&1; then
+    if [[ -d "$chrome_dir" ]]; then
+        # Look for Claude extension in any profile (handles spaces in profile names)
+        if find "$chrome_dir" -path "*/Extensions/*/manifest.json" -print0 2>/dev/null | \
+           xargs -0 grep -l "Claude in Chrome\|claude.*chrome" > /dev/null 2>&1; then
             return 0
         fi
     fi
 
     # Check Chromium
-    if [[ -d "$chromium_dir/Default/Extensions" ]]; then
-        if ls "$chromium_dir"/*/Extensions/*/*/manifest.json 2>/dev/null | \
-           xargs grep -l "Claude in Chrome\|claude.*chrome" > /dev/null 2>&1; then
+    if [[ -d "$chromium_dir" ]]; then
+        if find "$chromium_dir" -path "*/Extensions/*/manifest.json" -print0 2>/dev/null | \
+           xargs -0 grep -l "Claude in Chrome\|claude.*chrome" > /dev/null 2>&1; then
             return 0
         fi
     fi
