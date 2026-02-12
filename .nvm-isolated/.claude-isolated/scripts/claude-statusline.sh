@@ -396,6 +396,10 @@ EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
 # Active tokens already exclude the reserved buffer (calculated from used_percentage)
 EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $EFFECTIVE_WINDOW)}")
 EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
+BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
+
+# Format buffer display (show reserved buffer)
+BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT}"
 
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
@@ -449,4 +453,4 @@ else
 fi
 
 # Output formatted status line
-echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
+echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
