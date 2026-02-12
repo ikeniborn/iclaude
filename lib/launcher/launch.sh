@@ -141,7 +141,18 @@ launch_claude() {
     if [[ "$used_version" != "unknown" ]]; then
         print_info "Version: $used_version"
     fi
-    echo ""
+
+    # Debug: Show command that will be executed
+    if [[ "${DEBUG_LAUNCH:-0}" == "1" ]]; then
+        echo ""
+        print_info "Debug: Launching with arguments:"
+        printf "  %s\n" "$claude_cmd" "$@"
+        print_info "Debug: Environment variables:"
+        echo "  CLAUDE_CONFIG_DIR=${CLAUDE_CONFIG_DIR:-not set}"
+        echo "  NVM_DIR=${NVM_DIR:-not set}"
+        echo "  HTTPS_PROXY=${HTTPS_PROXY:0:50}..."
+        echo ""
+    fi
 
     # Pass through any additional arguments
     # Use eval if command contains spaces (e.g., "node /path/to/cli.js")
