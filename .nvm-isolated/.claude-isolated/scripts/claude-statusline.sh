@@ -151,7 +151,50 @@ if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
-# Generate readable session format for OSC 8 hyperlink
+# Generate TOON-formatted session for token efficiency
+# Converts JSONL to compact TOON format (30-60% token savings)
+# TOON format: messages[N]{role,type,content}: user,text,"content" ...
+generate_toon_session() {
+    local jsonl_file="$1"
+    local output_file="$2"
+
+    # Check if TOON CLI available
+    if ! command -v toon &>/dev/null; then
+        return 1
+    fi
+
+    # Create output directory
+    mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
+
+    # Parse JSONL and extract messages into JSON array
+    local messages_json=$(jq -s '[.[] | {
+        role: (.message.role // .userType),
+        type: (.message.content[0].type // "unknown"),
+        content: (
+            if .message.content[0].type == "text" then
+                .message.content[0].text
+            elif .message.content[0].type == "thinking" then
+                .message.content[0].thinking
+            elif .message.content[0].type == "compact" then
+                "📦 COMPACT: " + (.message.content[0].compact // "")
+            else
+                ""
+            end
+        )
+    } | select(.content != "" and .content != null)]' "$jsonl_file" 2>/dev/null)
+
+    # Convert to TOON format
+    echo "$messages_json" | toon --encode --stats 2>/dev/null > "$output_file"
+
+    # Check if conversion succeeded
+    if [[ -s "$output_file" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Generate readable session format for OSC 8 hyperlink (LEGACY - text format)
 # Converts JSONL to user-friendly text with role prefixes
 # Uses append-only optimization for performance (only processes new messages)
 # Detects /compact and regenerates file when context is compressed
@@ -299,12 +342,22 @@ CWD=$(echo "$SESSION_DATA" | jq -r '.cwd // empty' 2>/dev/null)
 if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$CWD" ]] && [[ -d "$CWD" ]]; then
     # Use session-specific filename to avoid conflicts between parallel sessions
     # Store in .claude-sessions/ to keep project root clean
-    # Format: .claude-sessions/readable-{session-id}.txt
     SESSION_ID=$(basename "$SESSION_FILE" .jsonl)
     SESSIONS_DIR="$CWD/.claude-sessions"
-    READABLE_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.txt"
 
-    if generate_readable_session "$SESSION_FILE" "$READABLE_FILE"; then
+    # Try TOON format first (30-60% token savings)
+    TOON_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.toon"
+    TXT_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.txt"
+
+    READABLE_FILE=""
+    if generate_toon_session "$SESSION_FILE" "$TOON_FILE"; then
+        READABLE_FILE="$TOON_FILE"
+    elif generate_readable_session "$SESSION_FILE" "$TXT_FILE"; then
+        # Fallback to text format if TOON failed
+        READABLE_FILE="$TXT_FILE"
+    fi
+
+    if [[ -n "$READABLE_FILE" ]] && [[ -f "$READABLE_FILE" ]]; then
         # Create OSC 8 hyperlink to readable file (icon only, no text)
         # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
         SESSION_LINK=" | \e]8;;file://${READABLE_FILE}\e\\📄\e]8;;\e\\"
