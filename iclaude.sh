@@ -189,6 +189,13 @@ if [[ -d "$LIB_DIR/command" ]]; then
 fi
 
 #######################################
+# Load Chrome Integration modules
+#######################################
+if [[ -d "$LIB_DIR/chrome" ]]; then
+    source "${LIB_DIR}/chrome/detection.sh"
+fi
+
+#######################################
 # Main execution (Phase 15: inline from legacy main())
 # All business logic functions loaded from modules above
 #######################################
@@ -789,9 +796,17 @@ fi
         claude_args+=("--dangerously-skip-permissions")
     fi
 
-    # Add --chrome flag if enabled (default)
+    # Add --chrome flag if enabled (default) and Chrome extension available
     if [[ "$USE_CHROME" == true ]]; then
-        claude_args+=("--chrome")
+        # Check if Chrome extension is installed
+        if warn_chrome_integration 2>/dev/null; then
+            claude_args+=("--chrome")
+        else
+            # Extension not available - automatically disable Chrome integration
+            print_info "Chrome integration disabled (extension not detected)"
+            print_info "Launching without browser automation..."
+            echo ""
+        fi
     fi
 
     # Check if loop mode is enabled
