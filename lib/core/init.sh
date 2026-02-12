@@ -29,7 +29,17 @@ init_environment() {
     SCRIPT_DIR="${SCRIPT_DIR:-$(resolve_script_directory)}"
 
     # Constants
-    CREDENTIALS_FILE="${SCRIPT_DIR}/.claude_proxy_credentials"
+    CONFIG_FILE="${SCRIPT_DIR}/.claude_config"
+    LEGACY_CREDENTIALS_FILE="${SCRIPT_DIR}/.claude_proxy_credentials"
+
+    # Backward compatibility: auto-migrate old filename to new
+    if [[ -f "$LEGACY_CREDENTIALS_FILE" ]] && [[ ! -f "$CONFIG_FILE" ]]; then
+        mv "$LEGACY_CREDENTIALS_FILE" "$CONFIG_FILE"
+        echo -e "${BLUE}ℹ${NC} Config file migrated: .claude_proxy_credentials → .claude_config" >&2
+    fi
+
+    # Use new config file path
+    CREDENTIALS_FILE="$CONFIG_FILE"
     GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
     ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
     ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"

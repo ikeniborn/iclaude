@@ -38,9 +38,11 @@ users.json
 *.pem
 qr_codes/
 
-# Proxy credentials (init_claude script)
-.claude_proxy_credentials
-scripts/.claude_proxy_credentials
+# Configuration file (proxy, Claude Code settings, debug flags)
+.claude_config
+.claude_proxy_credentials  # Legacy filename (for backward compatibility)
+scripts/.claude_config
+scripts/.claude_proxy_credentials  # Legacy
 
 # Isolated NVM environment - temporary/cache files only
 .nvm-isolated/.cache/

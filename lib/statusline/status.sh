@@ -88,7 +88,7 @@ check_statusline_status() {
 	# Show data sources
 	print_info "Data sources:"
 	echo "  - Session info (tokens, model, cost)"
-	echo "  - Proxy status (from .claude_proxy_credentials)"
+	echo "  - Proxy status (from .claude_config)"
 	echo "  - Router status (from router.json)"
 	echo "  - Git branch and status"
 	echo ""
