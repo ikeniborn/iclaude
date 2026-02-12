@@ -1342,6 +1342,7 @@ install_isolated_gh() {
 #   0 - success
 #   1 - error (Claude Code not installed)
 #######################################
+if ! declare -F install_isolated_lsp_servers &>/dev/null; then
 install_isolated_lsp_servers() {
 	local servers=("$@")  # Allow selecting specific servers
 
@@ -1527,6 +1528,7 @@ install_isolated_lsp_servers() {
 	return 0
 }
 
+fi  # End guard for install_isolated_lsp_servers
 #######################################
 # Install Oh My Posh in isolated environment (pre-bundled)
 # Uses pre-bundled platform-specific binary from git repository
@@ -2208,6 +2210,7 @@ fi  # End guard for cleanup_isolated_nvm
 #   0 - success (or nothing to fix)
 #   1 - error
 #######################################
+if ! declare -F repair_plugin_paths &>/dev/null; then
 repair_plugin_paths() {
 	local quiet_mode="${1:-}"
 	local plugins_dir="$ISOLATED_NVM_DIR/.claude-isolated/plugins"
@@ -2328,6 +2331,7 @@ repair_plugin_paths() {
 	return 0
 }
 
+fi  # End guard for repair_plugin_paths
 #######################################
 # Repair isolated environment after git clone
 # Restores symlinks and file permissions
@@ -4524,6 +4528,7 @@ execute_parallel_group() {
 # Returns:
 #   0 - always succeeds (informational only)
 #######################################
+if ! declare -F check_lsp_status &>/dev/null; then
 check_lsp_status() {
 	# Check jq dependency
 	if ! command -v jq &>/dev/null; then
@@ -4686,6 +4691,7 @@ check_lsp_status() {
 	return 0
 }
 
+fi  # End guard for check_lsp_status
 #######################################
 # Check gh CLI status
 # Shows installation status, version, authentication
