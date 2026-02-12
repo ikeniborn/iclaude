@@ -413,7 +413,7 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 
 **Displayed Information**:
 ```
-112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider  branch
+112,762 total | 50,000 active (25%) 📦79K Sonnet 4.5 $1.06 🌐 🔀provider 📄context  branch
 ```
 
 **Format Notes**:
@@ -438,7 +438,12 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 4. **Cost**: `total_cost_usd` in USD
 5. **Proxy**: `🌐` icon if proxy configured
 6. **Router**: `🔀provider` if router active
-7. **Git info**: Branch name + uncommitted changes count
+7. **Session link**: `📄context` - clickable link to session file (OSC 8 hyperlink)
+   - Click to open full conversation context in your editor
+   - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
+   - Falls back to plain text in terminals without hyperlink support
+   - Links to: `.claude-isolated/session-env/{session-id}.jsonl`
+8. **Git info**: Branch name + uncommitted changes count
 
 **Key Features**:
 - **Dual context tracking**: Shows both cumulative (billing) and active (next message) token counts
@@ -480,6 +485,31 @@ Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_i
 - Missing jq: Shows warning message instead of breaking UI
 - Invalid data: Shows `[Status line: awaiting session data...]`
 - Git timeout: 2-second timeout prevents hanging on slow repos
+
+**Helper Scripts**:
+
+The `claude-show-cache.sh` script allows viewing session context and cached summary:
+
+```bash
+# View cached summary (after /compact)
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --cache
+
+# View last 5 messages (default)
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh
+
+# View last N messages
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --last 10
+
+# View full conversation
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --full
+```
+
+**Features**:
+- Shows current session ID and file location
+- Displays cached summary from /compact (if available)
+- Shows recent messages with role indicators (👤 USER, 🤖 ASSISTANT)
+- Truncates long messages by default (use --full to see complete text)
+- Provides clickable file:// link for opening in editor
 
 ### Environment Variables
 

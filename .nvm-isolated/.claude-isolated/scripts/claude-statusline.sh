@@ -150,6 +150,20 @@ if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
+# Session context link (OSC 8 hyperlink to session file)
+# Allows clicking to view full conversation context in editor
+SESSION_LINK=""
+SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.id // empty' 2>/dev/null)
+if [[ -n "$SESSION_ID" ]]; then
+    # Find session file in session-env directory
+    SESSION_FILE="$CLAUDE_CONFIG_DIR/session-env/${SESSION_ID}.jsonl"
+    if [[ -f "$SESSION_FILE" ]]; then
+        # Create OSC 8 hyperlink (works in iTerm2, kitty, GNOME Terminal 3.x+)
+        # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
+        SESSION_LINK=" | \e]8;;file://${SESSION_FILE}\e\\📄context\e]8;;\e\\"
+    fi
+fi
+
 # Git info (branch + uncommitted changes)
 GIT_INFO=""
 GIT_TIMEOUT=2  # 2 second timeout
@@ -261,4 +275,4 @@ fi
 CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${ACTIVE_PERCENT}%)${RESET}"
 
 # Output formatted status line
-echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${GIT_INFO}"
+echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
