@@ -417,23 +417,25 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 ```
 
 **Format Notes**:
-- **Always shows dual context**: cumulative (billing) and active (total context for next message)
+- **Always shows dual context**: cumulative (billing) and active (total context including cache)
 - **After /clear**: Shows `0 active (0%)` for ~10-40 seconds until Claude Code sends first API response
-- **After /compact**: Shows accumulated TOTAL context including cache. For example, if used_percentage=77% (150K total including 150K cache), active context shows 150K (77%). Cache portion shown separately in `📦 150K`. This represents the full context window usage - cache is part of the context that's reused via prompt caching
+- **After /compact**: Active context shows FULL context (cache + conversation). For example, if used_percentage=50% (100K total), active shows 100K (50%). Cache shown separately as `📦 98K` for information. Cache is PART OF active context, not separate. After /compact: active≈50% (mostly cache), as conversation grows: active grows to 52%, 55%, etc. (cache stays constant ~50%, new messages add 2%, 5%, etc.)
 
 **Components** (left to right):
 1. **Context usage**:
    - **Cumulative tokens** (`total_input + total_output`): Total tokens used in session for billing
-   - **Active context** (`used_percentage × context_window_size`): Current context size for next message
+   - **Active context** (`used_percentage × context_window_size`): Current FULL context (cache + conversation)
    - Active context resets to ~0-5% after `/clear` (only system prompt remains)
+   - After `/compact`: Active stays at ~50% (mostly cache), grows gradually as conversation continues
+   - Example: 50% → 52% → 55% (cache ~50% constant, new messages +2%, +5%)
    - Cumulative tokens continue to grow (billing tracking)
-   - Color coded based on active context: 🟢 <50%, 🟡 50-75%, 🔴 >75%
+   - Color coded based on active context: green <50%, yellow 50-75%, red >75%
 2. **Cache tokens**: `📦79K` (cache_read + cache_creation)
    - Format: K for thousands, M for millions
    - Only shown when cache > 0
-   - **Important**: Cache tokens are shown SEPARATELY from active context
-   - Active context (📊) shows only NEW tokens (input + output), excluding cache
-   - After `/compact`, active context is LOW (~0.3%) while cache is high (~150K) - this clearly distinguishes new vs reused context
+   - **Important**: Cache is PART OF active context, shown separately for information only
+   - After `/compact`: cache≈100K, active≈100K (50%) — cache IS the active context
+   - As conversation grows: cache stays ~100K, active grows to 104K (52%) — +4K new messages
 3. **Model**: `display_name` from session data
 4. **Cost**: `total_cost_usd` in USD
 5. **Proxy**: `🌐` icon if proxy configured
@@ -472,13 +474,23 @@ Model:  .model.display_name
 Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_input_tokens
 
 # How Claude Code calculates used_percentage:
-# used_percentage = (cache_read + input + output) / context_window_size × 100
-# Example after /compact:
-#   cache_read: 154576, input: 0, output: 652
-#   used_percentage = (154576 + 0 + 652) / 200000 × 100 = 77.6%
-#   active_tokens = 77.6% × 200000 = 155228 tokens total
-#   Cache portion shown separately: 📦 154K
-# This shows FULL context window usage (accumulated conversation including cache)
+# used_percentage = (cache + input + output) / context_window × 100
+#
+# Example immediately after /compact:
+#   cache: 98203, input: 8, output: 2
+#   used% = (98203 + 8 + 2) / 200000 × 100 = 49%
+#   active_tokens = 49% × 200000 = 98000 tokens
+#   Display: 📊 98K (49%) | 📦 98K
+#   Note: Cache (98K) IS the active context, not separate!
+#
+# Example after 10 new messages:
+#   cache: 98203 (same!), input: 8, output: 4000 (accumulated)
+#   used% = (98203 + 8 + 4000) / 200000 × 100 = 51%
+#   active_tokens = 51% × 200000 = 102000 tokens
+#   Display: 📊 102K (51%) | 📦 98K
+#   Breakdown: 98K cache + 4K new messages = 102K total active context
+#
+# IMPORTANT: Cache is PART OF active context, shown separately for visibility
 ```
 
 **Session Link Optimizations** (Phase 2.1):
