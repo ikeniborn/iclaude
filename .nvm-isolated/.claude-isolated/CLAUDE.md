@@ -224,35 +224,35 @@ For detailed architecture documentation, see **@skill:iclaude-architecture**.
 
 **Quick overview:**
 
-1. **Proxy Management** (iclaude.sh:1343-1666)
+1. **Proxy Management** (lib/proxy/*.sh)
    - URL validation, credential storage, environment configuration
    - Domain-to-IP resolution, secure storage (chmod 600)
 
-2. **Isolated Environment** (iclaude.sh:361-978)
+2. **Isolated Environment** (lib/nvm/*.sh)
    - Portable NVM+Node.js+Claude in `.nvm-isolated/`
    - Symlink management, lockfile-based pinning
 
-3. **Version Management** (iclaude.sh:616-768)
+3. **Version Management** (lib/lockfile/*.sh)
    - Lockfile tracking: Node.js, npm, Claude Code, Router, gh CLI, LSP servers
    - Installation from lockfile: `./iclaude.sh --install-from-lockfile`
 
-4. **Configuration Isolation** (iclaude.sh:1099-1341)
+4. **Configuration Isolation** (lib/config/*.sh)
    - Separate state between isolated and system installations
    - Config directory: `.nvm-isolated/.claude-isolated/`
 
-5. **NVM Detection** (iclaude.sh:200-318)
+5. **NVM Detection** (lib/nvm/detect.sh)
    - Find Claude Code binary in isolated/system/NVM environments
    - Handle temporary `.claude-*` binaries
 
-6. **Update Management** (iclaude.sh:529-2389)
+6. **Update Management** (lib/update/*.sh)
    - Safe updates with cleanup of `.claude-code-*` temporary folders
    - Symlink recreation, lockfile auto-update
 
-7. **OAuth Token Management** (iclaude.sh:2749-2874)
+7. **OAuth Token Management** (lib/oauth/token.sh)
    - Automatic expiration checks and refresh
    - `claude setup-token` for long-lived tokens (~1 year)
 
-8. **Router Management** (iclaude.sh:324-379, 584-637, 1333-1430)
+8. **Router Management** (lib/router/*.sh)
    - Opt-in activation via `--router` flag
    - Configuration with environment variable substitution
 
@@ -290,11 +290,46 @@ PATH="$ISOLATED_NVM_DIR/npm-global/bin:$ISOLATED_NVM_DIR/versions/node/.../bin:$
 CLAUDE_CODE_ENABLE_TASKS="true"  # Enable tasks system
 ```
 
+## Modular Architecture
+
+**Version 4.0** - Fully modular bash architecture with zero legacy dependencies.
+
+### Library Structure
+
+All functionality organized in `lib/` modules:
+
+```
+lib/
+├── core/          # Validation, logging, JSON parsing
+├── command/       # CLI argument parsing, help text
+├── proxy/         # Proxy configuration and validation
+├── nvm/           # NVM/Node.js/Claude detection and setup
+├── oauth/         # OAuth token management
+├── router/        # Claude Code Router integration
+├── lsp/           # LSP server installation and management
+├── config/        # Configuration isolation and export
+├── lockfile/      # Version locking and reproducibility
+├── update/        # Update management and cleanup
+├── launcher/      # Claude Code launch orchestration
+├── loop/          # Loop mode execution (8 modules)
+├── context/       # Context management system
+├── statusline/    # Status line integration
+├── chrome/        # Chrome integration detection
+├── ohmyposh/      # oh-my-posh integration
+├── sandbox/       # Sandbox environment detection
+└── gh/            # GitHub CLI integration
+```
+
+**Module loading:** All modules are sourced in `iclaude.sh` entry point. Each module is self-contained and reusable.
+
+**Testing:** Module-specific tests in `tests/` directory verify core functionality.
+
 ## File Structure
 
 ```
 .
-├── iclaude.sh                          # Main wrapper script (3325 lines)
+├── iclaude.sh                          # Modular entry point (~200 lines)
+├── lib/                                # Modular bash libraries (v4.0)
 ├── .claude_proxy_credentials           # Proxy credentials (chmod 600, not in git)
 ├── .nvm-isolated/                      # Isolated environment (~278MB)
 │   ├── nvm.sh                         # NVM installation
