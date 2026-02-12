@@ -510,6 +510,8 @@ fi  # End guard for detect_statusline
 #   1 - platform not supported (wsl1, windows, unknown)
 # Output: platform name (macos|linux|wsl2|wsl1|windows|unsupported)
 #######################################
+# Guard: Check if detect_sandbox_platform is already defined by sandbox/detect.sh module
+if ! declare -F detect_sandbox_platform &>/dev/null; then
 detect_sandbox_platform() {
 	case $(uname -s) in
 		Darwin)
@@ -539,6 +541,7 @@ detect_sandbox_platform() {
 			;;
 	esac
 }
+fi  # End guard for detect_sandbox_platform
 
 #######################################
 # Check sandbox system dependencies
@@ -547,6 +550,8 @@ detect_sandbox_platform() {
 #   1 - missing dependencies (outputs list to stdout)
 # Output: space-separated list of missing dependencies
 #######################################
+# Guard: Check if check_sandbox_dependencies is already defined by sandbox/install.sh module
+if ! declare -F check_sandbox_dependencies &>/dev/null; then
 check_sandbox_dependencies() {
 	local platform=$(detect_sandbox_platform)
 
@@ -588,6 +593,7 @@ check_sandbox_dependencies() {
 			;;
 	esac
 }
+fi  # End guard for check_sandbox_dependencies
 
 #######################################
 # Install sandbox system dependencies
@@ -596,6 +602,8 @@ check_sandbox_dependencies() {
 #   1 - installation error (recoverable)
 #   2 - platform not supported (non-recoverable)
 #######################################
+# Guard: Check if install_sandbox_dependencies is already defined by sandbox/install.sh module
+if ! declare -F install_sandbox_dependencies &>/dev/null; then
 install_sandbox_dependencies() {
 	local platform
 	platform=$(detect_sandbox_platform)
@@ -758,6 +766,7 @@ install_sandbox_dependencies() {
 
 	return 0
 }
+fi  # End guard for install_sandbox_dependencies
 
 #######################################
 # Get version from cli.js installation
@@ -802,6 +811,8 @@ fi  # End guard for get_cli_version
 # Returns:
 #   Version string or "not installed"
 #######################################
+# Guard: Check if get_sandbox_runtime_version is already defined by sandbox/status.sh module
+if ! declare -F get_sandbox_runtime_version &>/dev/null; then
 get_sandbox_runtime_version() {
 	# Check if srt binary exists
 	if command -v srt &>/dev/null; then
@@ -824,6 +835,7 @@ get_sandbox_runtime_version() {
 	echo "not installed"
 	return 1
 }
+fi  # End guard for get_sandbox_runtime_version
 
 #######################################
 # Setup isolated NVM environment in project directory
@@ -3158,6 +3170,8 @@ fi  # End guard for check_ohmyposh_status
 # Check sandbox status and configuration
 # Shows platform support, dependencies, and configuration info
 #######################################
+# Guard: Check if check_sandbox_status is already defined by sandbox/status.sh module
+if ! declare -F check_sandbox_status &>/dev/null; then
 check_sandbox_status() {
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -3339,6 +3353,7 @@ check_sandbox_status() {
 
 	return 0
 }
+fi  # End guard for check_sandbox_status
 
 #######################################
 # LOOP MODE FUNCTIONS
