@@ -2,7 +2,7 @@
 
 #######################################
 # iclaude.sh - Modular Entry Point
-# Version: 3.0 (Modular Architecture - Phase 0-9.5)
+# Version: 3.1 (Modular Architecture - Phase 0-9.6)
 # Description: Wrapper that loads modular components and delegates to legacy implementation
 #######################################
 
@@ -149,8 +149,15 @@ if [[ -d "$LIB_DIR/update" ]]; then
 fi
 
 #######################################
+# Load Launcher modules (Phase 9.6)
+#######################################
+if [[ -d "$LIB_DIR/launcher" ]]; then
+    source "${LIB_DIR}/launcher/launch.sh"
+fi
+
+#######################################
 # Load legacy implementation
-# TODO: Phase 9 will gradually extract remaining modules from legacy
+# TODO: Phase 9.3/9.4 (Loop/Context - optional) remain in legacy
 #######################################
 if [[ ! -f "${SCRIPT_DIR}/iclaude-legacy.sh" ]]; then
     print_error "Legacy implementation not found: ${SCRIPT_DIR}/iclaude-legacy.sh"
