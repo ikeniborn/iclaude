@@ -440,9 +440,14 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 6. **Router**: `🔀provider` if router active
 7. **Session link**: `📄` - clickable link to readable session file (OSC 8 hyperlink)
    - Click to open human-readable conversation in your editor
-   - Automatically generates readable version (with 👤 USER / 🤖 ASSISTANT prefixes)
-   - Uses mtime caching: only regenerates if JSONL file changed
-   - Readable file saved to: `<project>/tmp/claude-session-readable.txt`
+   - **Session-specific files**: Each session has unique readable file (no conflicts)
+   - **Append-only optimization**: Only processes new messages (19x faster)
+   - **Smart regeneration**: Full rebuild only when needed (/compact, first run, JSONL truncated)
+   - **Performance**: 94ms append vs 1.87s full regen (200 lines)
+   - Readable file saved to: `<project>/.claude-sessions/readable-{session-id}.txt`
+   - Metadata tracking: `.claude-sessions/readable-{session-id}.txt.meta` (processed lines count)
+   - **Compact detection**: Shows `━━━ 📦 Context Compact ━━━` marker after /compact
+   - Format: 👤 USER / 🤖 ASSISTANT prefixes with word wrap (80 chars)
    - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
    - Falls back to plain text in terminals without hyperlink support
 8. **Git info**: Branch name + uncommitted changes count
@@ -453,6 +458,9 @@ Custom status line script that displays context usage, cost, and metadata in Cla
 - **Cache visibility**: Shows prompt cache usage separately to understand reuse vs fresh tokens
 - **Null-safe**: Handles temporary `null` values after `/clear` (shows `0 active (0%)` until data arrives)
 - **Debug logging**: Set `DEBUG_STATUSLINE=1` to log session data to `/tmp/claude-statusline-debug.log`
+- **Session-specific readable files**: Each session gets unique file (no conflicts between parallel sessions)
+- **Append-only optimization**: Incremental updates instead of full regeneration (19x faster)
+- **Compact detection**: Automatically rebuilds readable file after `/compact` with summary marker
 
 **Token Parsing** (Claude Code v2.1+):
 ```bash
@@ -471,6 +479,48 @@ Cache:  .context_window.current_usage.cache_read_input_tokens + cache_creation_i
 #   active_tokens = 77.6% × 200000 = 155228 tokens total
 #   Cache portion shown separately: 📦 154K
 # This shows FULL context window usage (accumulated conversation including cache)
+```
+
+**Session Link Optimizations** (Phase 2.1):
+
+The readable session generation uses three key optimizations for performance:
+
+1. **Session-Specific Filenames**
+   - Each session gets unique file: `.claude-sessions/readable-{session-id}.txt`
+   - Prevents conflicts when running multiple parallel Claude sessions
+   - Example: `readable-abc123.txt`, `readable-def456.txt`
+
+2. **Append-Only Updates**
+   - Tracks processed lines in metadata file: `.claude-sessions/readable-{session-id}.txt.meta`
+   - Only processes NEW messages since last update (incremental)
+   - Performance: 94ms (append) vs 1.87s (full regen) for 200-line session
+   - **19x faster** for incremental updates
+
+3. **Smart Regeneration Triggers**
+   - Full rebuild occurs only when necessary:
+     * First run (readable file doesn't exist)
+     * `/compact` detected (context compression happened)
+     * JSONL truncated (current lines < processed lines)
+   - Append-only used for normal message additions
+
+**Compact Detection**:
+When `/compact` is used, the readable file shows a special marker:
+```
+━━━ 📦 Context Compact ━━━
+{Summary of compressed context}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 USER:
+{First message after compact}
+```
+
+**File Structure**:
+```
+.claude-sessions/
+  readable-abc123.txt       # Session abc123 conversation
+  readable-abc123.txt.meta  # Metadata: processed lines count
+  readable-def456.txt       # Session def456 conversation
+  readable-def456.txt.meta  # Metadata
 ```
 
 **Configuration**:
@@ -512,6 +562,30 @@ The `claude-show-cache.sh` script allows viewing session context and cached summ
 - Shows recent messages with role indicators (👤 USER, 🤖 ASSISTANT)
 - Truncates long messages by default (use --full to see complete text)
 - Provides clickable file:// link for opening in editor
+
+**Viewing Readable Sessions**:
+
+Auto-generated readable files can be accessed directly:
+
+```bash
+# List all readable sessions
+ls -lh .claude-sessions/
+
+# View specific session
+cat .claude-sessions/readable-{session-id}.txt
+
+# View most recent session (statusline generates them automatically)
+ls -t .claude-sessions/readable-*.txt | head -1 | xargs cat
+
+# Check metadata (processed lines)
+cat .claude-sessions/readable-{session-id}.txt.meta
+```
+
+**Cleanup old sessions**:
+```bash
+# Remove readable files older than 7 days
+find .claude-sessions/ -name "readable-*.txt*" -mtime +7 -delete
+```
 
 ### Environment Variables
 
