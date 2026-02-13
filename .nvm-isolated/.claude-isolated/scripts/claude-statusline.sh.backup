@@ -49,31 +49,11 @@ if ! command -v jq &>/dev/null; then
     exit 0  # Don't break Claude Code UI
 fi
 
-# Source provider adapter system (if available)
-PROVIDER_ADAPTER_AVAILABLE=0
-if [[ -f "$SCRIPT_DIR/lib/provider-adapter.sh" ]]; then
-    source "$SCRIPT_DIR/lib/provider-adapter.sh"
-    PROVIDER_ADAPTER_AVAILABLE=1
-fi
-
-# Parse session data using adapter system (if available) or legacy parsing
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]]; then
-    # Use adapter system for multi-provider support
-    if parse_with_adapter "$SESSION_DATA"; then
-        # Adapter system set global variables: TOTAL_INPUT, TOTAL_OUTPUT, etc.
-        # PROVIDER_TYPE is also set for icon display
-        :
-    else
-        # Adapter failed, show awaiting message
-        echo "[Status line: awaiting session data...]"
-        exit 0
-    fi
-else
-    # Legacy parsing (Anthropic Claude API format only)
-    # 100% backward compatible with original logic
-    TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
-    TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
-fi
+# Parse Claude session data (tokens, model, cost)
+# Requires Claude Code v2.1+ (nested context_window object)
+# Note: total_input/output_tokens = billing tokens (excludes cache reads)
+TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
+TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
 
 # Debug: Log detected field names and parsed values
 if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
@@ -82,25 +62,20 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "DEBUG: Parsed tokens: INPUT=$TOTAL_INPUT, OUTPUT=$TOTAL_OUTPUT" >&2
 fi
 
-# Validate parsed data (for legacy path only)
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
-       [[ "$TOTAL_INPUT" == "null" ]] || [[ "$TOTAL_OUTPUT" == "null" ]]; then
-        echo "[Status line: awaiting session data...]"
-        exit 0  # Show message instead of breaking
-    fi
-
-    # Legacy parsing continues (only when adapter system unavailable)
-    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
-    MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
-    CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
-    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
-    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
-else
-    # Adapter system already parsed everything
-    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
+# Validate parsed data
+if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
+   [[ "$TOTAL_INPUT" == "null" ]] || [[ "$TOTAL_OUTPUT" == "null" ]]; then
+    echo "[Status line: awaiting session data...]"
+    exit 0  # Show message instead of breaking
 fi
+
+TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
+
+# Parse model display name (Claude Code v2.1+)
+MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
+
+# Get context limit from session data (Claude Code v2.1+)
+CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
 
 # Calculate API tokens percentage (billing only, excludes cache reads)
 # Note: This is different from used_percentage which includes cache tokens
@@ -120,13 +95,9 @@ if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USE
     ACTIVE_PERCENT="$USED_PERCENTAGE"
 fi
 
-# Parse/calculate cache tokens
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    # Legacy: parse cache from Claude API
-    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
-fi
-# Adapter system already set CACHE_READ and CACHE_CREATION
+# Parse cache tokens (Claude Code v2.1+)
+CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
+CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
 
 # Format cache display (show only if >0)
@@ -143,10 +114,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
 fi
 
-# Parse cost (legacy mode only, adapter already set COST)
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
-fi
+COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
 
 # Proxy detection (environment variables + fallback)
 # Note: HTTPS_PROXY/HTTP_PROXY may not be set when Claude Code calls this script
@@ -181,28 +149,6 @@ ROUTER_ICON=""
 if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     PROVIDER=$(jq -r '.routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
     ROUTER_ICON=" | 🔀 $PROVIDER"
-fi
-
-# Provider icon display (when using adapter system)
-PROVIDER_ICON=""
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]] && [[ -n "${PROVIDER_TYPE:-}" ]]; then
-    case "$PROVIDER_TYPE" in
-        anthropic)
-            # No icon for native Claude (default)
-            ;;
-        openai)
-            PROVIDER_ICON=" 🤖"
-            ;;
-        ollama)
-            PROVIDER_ICON=" 🦙"
-            ;;
-        gemini)
-            PROVIDER_ICON=" ✨"
-            ;;
-        unknown|generic)
-            PROVIDER_ICON=" ❓"
-            ;;
-    esac
 fi
 
 # Generate TOON-formatted session for token efficiency
@@ -734,7 +680,7 @@ fi
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты без сокращений, proxy в конце
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${PROVIDER_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -752,7 +698,7 @@ case "$DISPLAY_MODE" in
         fi
 
         # Git info компактный: только иконка + изменения
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
         ;;
 
     minimal)
