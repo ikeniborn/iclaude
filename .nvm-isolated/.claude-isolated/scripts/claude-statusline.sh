@@ -712,6 +712,7 @@ esac
 # System messages can appear multiple times in first ~30 seconds
 SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
 SESSION_START_TIME_FILE="/tmp/claude-statusline-start-time-${SESSION_ID}"
+SESSION_READY_MARKER="/tmp/claude-statusline-ready-${SESSION_ID}"
 
 # Track session start time (first script invocation)
 if [[ ! -f "$SESSION_START_TIME_FILE" ]]; then
@@ -723,19 +724,16 @@ SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
 CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
-# OPTION 1: Show minimal placeholder in first 30 seconds (default)
-# Avoids race conditions with async system messages
-if [[ "${STATUSLINE_SKIP_STARTUP:-1}" == "1" ]] && [[ $SESSION_AGE -lt 30 ]]; then
-    # Minimal placeholder (single character to minimize race window)
-    printf "\n\n⏳\n\n"
+# Phase 1: Startup period (0-30 seconds) - no output
+if [[ $SESSION_AGE -lt 30 ]]; then
     exit 0
 fi
 
-# OPTION 2: Wait for stability (for testing/debugging)
-# Enable with: export STATUSLINE_SKIP_STARTUP=0
-if [[ "${STATUSLINE_SKIP_STARTUP:-1}" == "0" ]] && [[ $SESSION_AGE -lt 30 ]]; then
-    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
+# Phase 2: After 30s, but first message after wait - mark ready, no output yet
+if [[ ! -f "$SESSION_READY_MARKER" ]]; then
+    touch "$SESSION_READY_MARKER" 2>/dev/null
+    exit 0
 fi
 
-# Output status line (only after startup period)
+# Phase 3: After 30s + first message sent - normal output
 printf "\n\n%b\n\n" "$STATUS_LINE"
