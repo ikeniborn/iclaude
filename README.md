@@ -152,6 +152,46 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000    # Увеличенный лимит (дл
 
 <sub>✨ **Поддерживаемые провайдеры:** OpenRouter, DeepSeek, Ollama, Gemini, OpenAI, Volcengine, SiliconFlow</sub>
 
+### 🎨 Oh My Posh
+
+Интеграция с oh-my-posh для кастомных prompts.
+
+| Команда | Описание |
+|---------|----------|
+| `--install-posh` | Установка oh-my-posh + кастомных тем |
+| `--install-ohmyposh` | Алиас для `--install-posh` |
+| `--check-posh` | Статус oh-my-posh установки |
+
+### 📊 Status Line & Display
+
+Метрики и визуализация для Claude Code.
+
+| Команда | Описание |
+|---------|----------|
+| `--install-statusline` | Установка скрипта метрик для Claude Code |
+| `--check-statusline` | Проверка статуса statusline |
+
+### 🔧 Repair & Restore
+
+Восстановление и ремонт конфигурации.
+
+| Команда | Описание |
+|---------|----------|
+| `--restore-git-proxy` | Восстановить git proxy из backup |
+| `--refresh-token` | Обновить OAuth токен (~1 year lifetime) |
+
+### 🧠 Auto Memory
+
+Управление памятью Claude Code (MEMORY.md).
+
+| Команда | Описание |
+|---------|----------|
+| `--context-memory-organize [PATH]` | Разбить MEMORY.md на топик-файлы |
+| `--context-memory-init` | Создать MEMORY.md |
+| `--context-memory-validate` | Проверить 200 строк лимит |
+| `--context-memory-add "text"` | Добавить запись |
+| `--context-memory-status` | Статус Auto Memory |
+
 ### 🔒 Sandbox Integration
 
 OS-level изоляция файловой системы и сети для безопасного выполнения.
@@ -287,44 +327,25 @@ sudo ./iclaude.sh --create-symlink
 
 ### Use Case 5: Автоматизация создания Pull Request
 
-Скилл **pr-automation** автоматизирует полный цикл создания PR с автоматическим исправлением ошибок:
+Автоматизация PR workflow с мониторингом CI/CD и автоисправлением ошибок:
 
 ```bash
-# Шаг 1: Установить gh CLI (один раз)
+# Установить gh CLI (один раз)
 ./iclaude.sh --install-gh
 gh auth login
 
-# Шаг 2: Проверить статус
-./iclaude.sh --check-gh
-
-# Шаг 3: Запустить Claude и создать PR
+# Создать PR через Claude
 ./iclaude.sh
-# Внутри Claude Code:
 "Создать PR из feature/my-feature в test"
 ```
 
-**Что происходит автоматически:**
-1. **Auto-detect** стека из `/docs/architecture/index.yaml`
-2. **Анализ** CI/CD конфигурации (`.github/workflows/`)
-3. **Создание** Draft PR с описанием
-4. **Мониторинг** GitHub Actions checks
-5. **Исправление** ошибок (TypeScript, ESLint, tests, build)
-6. **Commit** фиксов с Conventional Commits
-7. **Mark ready** для review после успешных проверок
+**Возможности:**
+- ✅ Auto-detect стека и CI/CD конфигурации
+- ✅ Создание Draft PR с описанием
+- ✅ Мониторинг GitHub Actions checks
+- ✅ Автоматическое исправление ошибок (TypeScript, ESLint, tests)
 
-**Поддерживаемые ошибки:**
-- TypeScript: TS2322, TS2304, TS2345, TS2531, TS2532
-- ESLint: no-console, no-unused-vars
-- Vitest: assertion failures, mock issues
-- Build: module not found, syntax errors
-
-**Преимущества:**
-- ✅ Экономия времени (автоматические итерации через ralph-loop)
-- ✅ Качество (автоматическая валидация CI/CD)
-- ✅ Консистентность (Conventional Commits)
-- ✅ Адаптивность (работает с любым стеком через auto-detection)
-
-**Документация:** `.nvm-isolated/.claude-isolated/skills/pr-automation/SKILL.md`
+**Подробнее:** См. `.nvm-isolated/.claude-isolated/skills/pr-automation/SKILL.md`
 
 ---
 
@@ -384,103 +405,63 @@ export DEEPSEEK_API_KEY="your-key-here"
 
 ---
 
-### Use Case 7: Безопасное выполнение с OS-level Sandboxing
+### Use Case 7: Кастомная Status Line
 
-Claude Code v2.0+ включает встроенный sandboxing для изоляции файловой системы и сети:
+Показывает метрики Claude Code в терминале:
 
 ```bash
-# Шаг 1: Проверить доступность sandboxing
+# Установка
+./iclaude.sh --install-posh
+./iclaude.sh --install-statusline
+
+# Запуск
+./iclaude.sh
+# Отображается: 50,000 tokens | Sonnet 4.5 | $1.06
+```
+
+**Метрики:**
+- Token usage (cumulative + active)
+- Cache visibility
+- Model name
+- Cost tracking
+- Session links (OSC 8 hyperlinks)
+
+**Подробнее:** См. [docs/STATUSLINE.md](./docs/STATUSLINE.md)
+
+---
+
+### Use Case 8: Безопасное выполнение с OS-level Sandboxing
+
+OS-level изоляция файловой системы и сети:
+
+```bash
+# Проверить доступность
 ./iclaude.sh --sandbox-check
 
-# Шаг 2: Установить зависимости (Linux/WSL2)
+# Установить зависимости (Linux/WSL2)
 ./iclaude.sh --sandbox-install
-# Устанавливает:
-#   - bubblewrap (system package via apt-get/dnf)
-#   - socat (system package via apt-get/dnf)
-#   - @anthropic-ai/sandbox-runtime (npm package for seccomp filter)
 
-# Шаг 3: Запустить Claude Code
+# Запустить Claude Code
 ./iclaude.sh
 
-# Шаг 4: Включить sandbox в сессии
-# Внутри Claude Code выполнить команду: /sandbox
-
-# macOS пользователям (без установки)
-./iclaude.sh --sandbox-check  # Shows "Ready" immediately
+# Включить sandbox в сессии: /sandbox
 ```
 
 **Поддержка платформ:**
 
-| Платформа | Поддержка | Требования | Команда |
-|-----------|-----------|------------|---------|
-| macOS | ✅ Native | Нет (встроенный Seatbelt) | N/A |
-| Linux | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` | `--sandbox-install` |
-| WSL2 | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` | `--sandbox-install` |
-| WSL1 | ❌ Не поддерживается | Обновление до WSL2 | См. сообщение об ошибке |
-| Windows | ❌ Не поддерживается | Использовать WSL2 | См. сообщение об ошибке |
+| Платформа | Поддержка | Требования |
+|-----------|-----------|------------|
+| macOS | ✅ Native | Нет (встроенный Seatbelt) |
+| Linux | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` |
+| WSL2 | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` |
+| WSL1/Windows | ❌ Не поддерживается | Использовать WSL2 |
 
-**Возможности изоляции:**
+**Возможности:**
+- Ограничение доступа к файловой системе
+- Контроль сетевых запросов
+- Allow/deny списки для доменов
 
-1. **Файловая система:**
-   - Ограничение доступа к чтению/записи для конкретных директорий
-   - Защита от доступа к sensitive файлам (credentials, SSH keys)
-
-2. **Сеть:**
-   - Контроль доступа к доменам через proxy сервер
-   - Allow/deny списки для доменов
-   - Мониторинг сетевых запросов
-
-**Два режима работы:**
-- **Auto-allow**: Sandboxed команды авто-одобряются (быстрая итерация)
-- **Regular permissions**: Требуется подтверждение пользователя (безопаснее)
-
-**Интеграция с lockfile:**
-
-Sandbox availability отслеживается в `.nvm-isolated-lockfile.json`:
-
-```json
-{
-  "sandboxAvailable": true,
-  "sandboxPlatform": "linux",
-  "sandboxDependencies": {
-    "bubblewrap": "0.8.0",
-    "socat": "1.7.4.4"
-  },
-  "sandboxRuntimeVersion": "1.0.5",
-  "sandboxInstalledAt": "2026-01-29T12:00:00Z"
-}
-```
-
-При выполнении `./iclaude.sh --install-from-lockfile` зависимости sandboxing автоматически восстанавливаются, если `sandboxAvailable: true`.
-
-**Troubleshooting:**
-
-**WSL1 обнаружен:**
-```bash
-# Обновление до WSL2
-wsl --set-version Ubuntu 2
-wsl --shutdown
-# Проверка
-wsl --list --verbose
-```
-
-**Permission Denied:**
-```bash
-# Убедитесь в доступе sudo для системных пакетов
-sudo apt-get install bubblewrap socat
-
-# NPM пакет устанавливается в изолированную среду (sudo не требуется)
-npm install -g @anthropic-ai/sandbox-runtime
-```
-
-**Примечания по безопасности:**
-- Sandboxing не является идеальным (см. escape hatch механизм)
-- Риск domain fronting (CDN могут обходить фильтры доменов)
-- Возможна privilege escalation через unix socket
-- Используйте доверенный proxy для сетевой изоляции
-- Проверяйте настройки sandbox перед включением auto-allow режима
-
-Полная документация: https://code.claude.com/docs/en/sandboxing
+**Документация:** https://code.claude.com/docs/en/sandboxing
 
 ---
 
@@ -579,297 +560,52 @@ npm install -g @anthropic-ai/sandbox-runtime
 **Project Documentation:**
 - **[CLAUDE.md](CLAUDE.md)** - Архитектура проекта и Phase-Based Workflow
 
+**Дополнительные руководства:**
+- **[docs/STATUSLINE.md](./docs/STATUSLINE.md)** - Метрики в терминале
+- **[lib/loop/README.md](./lib/loop/README.md)** - Параллельное выполнение задач
+- **[lib/context/README.md](./lib/context/README.md)** - Управление памятью
+
 ---
 
 ## 🔄 Ralph-Wiggum Plugin: Итеративное выполнение
 
-Ralph-wiggum - официальный плагин Claude Code для **самореферентных итеративных циклов**. Интегрирован в Task Execution Template v6.0 как опциональный режим выполнения Phase 3.
+Официальный плагин Claude Code для автоматических итеративных циклов с самокоррекцией.
 
-### Что это такое?
+### Что это?
 
-**Ralph-wiggum** использует Stop hook для блокировки выхода из сессии и повторной инъекции того же prompt'а. Claude видит результаты предыдущих итераций (файлы, git history) и самостоятельно корректирует работу до достижения completion promise.
+Ralph-wiggum автоматически повторяет задачу до достижения успешного результата. Claude видит предыдущие попытки и корректирует код на основе ошибок валидации.
 
-**Принцип работы:**
-```
-User: /ralph-loop "Fix all TypeScript errors" --completion-promise "BUILD SUCCESS"
-  ↓
-Iteration 1: Claude fixes 5 errors → npm run build → 12 errors remain → Loop continues
-  ↓
-Iteration 2: Claude fixes 7 errors → npm run build → 5 errors remain → Loop continues
-  ↓
-Iteration 3: Claude fixes 5 errors → npm run build → Success! → Outputs "BUILD SUCCESS" → EXIT
-```
-
-### Интеграция с Template v6.0
-
-Template v6.0 добавляет **двухрежимное выполнение** в Phase 3:
-
-| Mode | Описание | Когда использовать |
-|------|----------|-------------------|
-| **Mode A: Standard** | Традиционное выполнение | Single-pass задачи, ручная валидация |
-| **Mode B: Ralph-Loop** | Итеративное выполнение | Автоматическая валидация, refinement tasks |
-
-**Decision Criteria (автоматическая рекомендация):**
-```
-✓ Has automatic validation? (tests, linting, build)
-✓ Multiple iterations expected? (>2 refinements)
-✓ Completion detectable via validation output?
-✓ Complexity = complex OR execution_steps > 5?
-→ Claude recommends ralph-loop mode
-```
-
-### Когда использовать ralph-loop?
-
-**✅ Используйте ralph-loop для:**
-- Исправление compilation errors (TypeScript, Rust, Go)
-- Рефакторинг для соответствия linting rules (ESLint, Pylint)
-- Прохождение acceptance tests (pytest, jest)
-- Задачи с чётким критерием завершения
-- Greenfield проекты с автоматической валидацией
-
-**❌ НЕ используйте ralph-loop для:**
-- Single-pass задачи (добавление API endpoint)
-- Ручная валидация (UI review, документация)
-- Задачи без автоматической проверки
-- Исследовательские задачи (exploration)
-
-### Примеры использования
-
-#### Пример 1: TypeScript Compilation Errors
-
+**Пример использования:**
 ```bash
-# Standard workflow (v5.0)
-"Fix all TypeScript compilation errors"
-→ Manual iterations: fix → test → fix → test → fix → test (5+ prompts)
-
-# Ralph-loop workflow (v6.0)
-/ralph-loop "Fix all TypeScript compilation errors" \
+# Автоматическое исправление TypeScript ошибок
+/ralph-loop "Fix all TypeScript errors" \
   --completion-promise "COMPILED SUCCESSFULLY" \
   --max-iterations 20
 
-→ Autonomous iterations: 3 iterations, automatic exit on success (1 prompt)
+# Итерации: fix → build → fix → build → SUCCESS
 ```
 
-**Mode Selection (automatic):**
-- ✓ Automatic validation: `npm run build`
-- ✓ Iterations expected: Unknown (potentially many)
-- ✓ Completion detectable: "Compiled successfully" in output
-- ✓ Complexity: standard
-- → **Claude recommends ralph-loop mode**
+### Когда использовать?
 
-#### Пример 2: ESLint Refactoring
+**✅ Подходит для:**
+- Исправление compilation errors (TypeScript, Rust, Go)
+- Рефакторинг для linting rules (ESLint, Pylint)
+- Прохождение тестов (pytest, jest)
+- Задачи с автоматической валидацией
 
-```bash
-/ralph-loop "Refactor codebase to pass ESLint rules" \
-  --completion-promise "LINT CLEAN" \
-  --max-iterations 50
-```
-
-**Loop behavior:**
-```
-Iteration 1: Fix 15 violations → npm run lint → 47 violations remain
-Iteration 2: Fix 22 violations → npm run lint → 25 violations remain
-Iteration 3: Fix 18 violations → npm run lint → 7 violations remain
-Iteration 4: Fix 7 violations → npm run lint → Success! → Output "LINT CLEAN" → EXIT
-```
-
-#### Пример 3: API Endpoint (Standard Mode)
-
-```bash
-# Ralph-loop НЕ рекомендуется (ручная валидация)
-"Add GET /api/users endpoint"
-
-Mode Selection:
-- ✗ Single-pass task (create file, write code, test manually)
-- ✗ Manual verification needed
-- → Use standard execution
-```
-
-### Явная постановка задачи с ralph-loop
-
-Если вы хотите **принудительно** использовать ralph-loop (минуя автоматический выбор режима), укажите параметры явно в описании задачи в template v6.0:
-
-#### Способ 1: Структурированная инструкция (рекомендуется)
-
-```markdown
-## Задачи
-
-Исправить все ошибки компиляции TypeScript в проекте.
-
-**Режим выполнения:** ralph-loop
-**Completion promise:** "COMPILED SUCCESSFULLY"
-**Max iterations:** 20
-**Validation command:** npm run build
-```
-
-#### Способ 2: Компактный формат
-
-```markdown
-## Задачи
-
-Исправить все TypeScript ошибки используя ralph-loop
-(promise: "COMPILED SUCCESSFULLY", max: 20, validation: npm run build)
-```
-
-#### Способ 3: Дополнительная секция
-
-```markdown
-## Задачи
-
-Исправить все ошибки компиляции TypeScript.
-
-## Execution Mode
-
-**Force ralph-loop mode:**
-- Task: "Fix all TypeScript compilation errors"
-- Completion promise: "COMPILED SUCCESSFULLY"
-- Max iterations: 20
-- Validation: npm run build
-
----
-
-## Execution Flow
-...
-```
-
-**Важно указать:**
-- ✅ **Completion promise** - точный текст из вывода валидации при успехе
-- ✅ **Max iterations** - разумное число (20-50 в зависимости от сложности)
-- ✅ **Validation command** - команда для проверки (если не очевидна из контекста)
-
-**Поведение Claude:**
-- Когда Claude видит явные параметры ralph-loop в Phase 1, он пропустит автоматический выбор режима
-- В Phase 3 Claude сразу запустит ralph-loop с указанными параметрами
-- Не требуется подтверждение пользователя (параметры уже заданы явно)
-
-### Интеграция с Skills
-
-Ralph-loop **дополняет** существующие skills, а не заменяет их:
-
-| Phase | Skills (v5.0) | Ralph-loop (v6.0) |
-|-------|--------------|------------------|
-| 0 | context-awareness, adaptive-workflow | ← Same |
-| 1 | thinking-framework, structured-planning | **+ execution_mode_recommendation** |
-| 2 | approval-gates | ← Same |
-| 3 | code-review | **+ ralph-loop [conditional]** |
-| 4 | validation-framework, error-handling | ← Same |
-| 5 | git-workflow | ← Same |
-
-**Workflow в Phase 1:**
-```json
-{
-  "task_plan": {
-    "execution_mode_recommendation": {
-      "mode": "ralph-loop",
-      "confidence": "high",
-      "reasoning": "Task has automatic validation (npm test) and requires iterative refinement",
-      "ralph_config": {
-        "completion_promise": "ALL TESTS PASSING",
-        "max_iterations": 30,
-        "validation_command": "npm test"
-      }
-    }
-  }
-}
-```
-
-**Workflow в Phase 3:**
-```
-Claude: "I recommend using ralph-loop for this task.
-  - Validation: npm run build
-  - Completion promise: 'COMPILED SUCCESSFULLY'
-  - Max iterations: 20
-
-Proceed with ralph-loop? (yes/no)"
-
-User: "yes"
-
-Claude: [Launches /ralph-loop command]
-```
-
-### Template v6.0 File Location
-
-**Расположение:**
-- **Repository:** `.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md`
-- **External:** `/home/ikeniborn/Documents/Notes/Work/ИИ/Prompt/Системные промты/template/task-lite-template-v6.0.md`
-
-**Использование:**
-```bash
-# Передать template Claude при запуске
-./iclaude.sh
-# Внутри Claude:
-"Use task-lite-template-v6.0.md for this task"
-```
-
-### Error Handling
-
-Template v6.0 добавляет специальные error types для ralph-loop:
-
-| Error Type | Action | Max Retries | Description |
-|------------|--------|-------------|-------------|
-| RALPH_MAX_ITERATIONS | STOP, report progress | 0 | Max iterations exhausted without completion |
-| RALPH_STUCK_LOOP | Cancel ralph, ASK user | 0 | Same error repeated 3+ iterations |
-
-**Recovery:**
-```bash
-# If ralph-loop gets stuck
-/cancel-ralph  # Manual cancellation
-
-# Check iteration count
-grep '^iteration:' .claude/ralph-loop.local.md
-```
-
-### Monitoring Ralph-Loop
-
-**Current iteration:**
-```bash
-# Ralph stores state in .claude/ralph-loop.local.md
-cat .claude/ralph-loop.local.md
-```
-
-**Expected output:**
-```yaml
----
-iteration: 3
-maxIterations: 20
-completionPromise: "BUILD SUCCESS"
-prompt: |
-  Fix all TypeScript compilation errors
----
-```
+**❌ НЕ подходит для:**
+- Single-pass задачи
+- Ручная валидация (UI review, документация)
+- Исследовательские задачи
 
 ### Преимущества
 
-**Для разработчика:**
-- ✅ Снижение числа ручных итераций (1 prompt вместо 5-10)
+- ✅ Экономия времени (1 команда вместо 5-10 ручных итераций)
 - ✅ Автономная коррекция ошибок
-- ✅ Гарантированное достижение completion promise
 - ✅ Прозрачность через iteration count
+- ✅ Atomic commits с полным результатом
 
-**Для AI:**
-- ✅ Видимость предыдущих попыток (files + git history)
-- ✅ Самокоррекция на основе validation feedback
-- ✅ Детерминированный exit condition
-
-**Для проекта:**
-- ✅ Atomic commits с полным результатом (не промежуточные состояния)
-- ✅ Reproducible builds через completion promise
-- ✅ Меньше мусора в git history
-
-### Ограничения
-
-**Ralph-loop НЕ подходит для:**
-- ❌ Задач без автоматической валидации
-- ❌ Исследовательских задач (exploration)
-- ❌ UI/UX review (субъективная оценка)
-- ❌ Задач с изменяющимися requirements
-- ❌ Debugging без чёткого completion criteria
-
-### Документация
-
-- **Template v6.0:** `.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md`
-- **Plugin Source:** `.nvm-isolated/.claude-isolated/plugins/marketplaces/claude-plugins-official/plugins/ralph-loop/`
-- **Official Docs:** [Ralph Technique](https://ghuntley.com/ralph/)
+**Подробнее:** См. [lib/loop/README.md](./lib/loop/README.md) и [task-lite-template-v6.0.md](.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md)
 
 ---
 
@@ -1293,168 +1029,42 @@ openssl s_client -showcerts -connect proxy.example.com:8118 < /dev/null 2>/dev/n
 ./iclaude.sh --help-export-cert
 ```
 
-### 🔍 Выбор протокола прокси: HTTPS vs HTTP vs SOCKS5
-
-#### Поддержка протоколов (официальная документация)
+### 🔍 Выбор протокола прокси
 
 | Протокол | Статус | Рекомендация |
 |----------|--------|--------------|
 | **HTTPS** | ✅ Полная поддержка | **✅ Рекомендуется** |
-| **HTTP** | ✅ Полная поддержка | ⚠️ Fallback вариант |
+| **HTTP** | ✅ Полная поддержка | ⚠️ Только для localhost |
 | **SOCKS5** | ❌ **НЕ поддерживается** | ❌ Вызывает краш приложения |
 
-**Источник:** [Claude Code: Corporate Proxy Configuration](https://docs.claude.com/en/docs/claude-code/corporate-proxy)
-
----
-
-#### ✅ HTTPS прокси (рекомендуется)
-
-**Преимущества:**
-- ✅ Официально рекомендован Anthropic
-- ✅ Шифрование соединения клиент↔прокси
-- ✅ Защита credentials от перехвата
-- ✅ Поддержка самоподписанных сертификатов через `NODE_EXTRA_CA_CERTS`
-
-**Недостатки:**
-- ⚠️ **Критическая уязвимость:** undici не проверяет сертификаты целевых серверов ([HackerOne #1583680](https://hackerone.com/reports/1583680))
-- ⚠️ Прокси-сервер может перехватывать весь HTTPS трафик (MitM)
-- ⚠️ Требует доверия к прокси-серверу
-
-**Когда использовать:**
-- ✅ Корпоративные сети с доверенным прокси
-- ✅ Приватные прокси в вашем контроле
-- ✅ Когда важна защита credentials
-
-**Конфигурация:**
+**HTTPS прокси (рекомендуется):**
 ```bash
-# С сертификатом (SECURE)
+# С сертификатом (безопасно)
 ./iclaude.sh --proxy https://proxy:8118 --proxy-ca /path/to/cert.pem
 
-# Небезопасно (не рекомендуется)
+# Без проверки сертификата (не рекомендуется)
 ./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
 ```
 
----
-
-#### ⚠️ HTTP прокси (fallback)
-
-**Преимущества:**
-- ✅ Официально поддерживается
-- ✅ Простая настройка (не требует сертификаты)
-- ✅ Работает как fallback если HTTPS недоступен
-
-**Недостатки:**
-- ❌ **Весь трафик передается открытым текстом** между клиентом и прокси
-- ❌ Прокси видит все запросы, включая API ключи Claude
-- ❌ Уязвим к перехвату на сетевом уровне
-- ❌ Та же уязвимость undici с непроверкой сертификатов
-
-**Когда использовать:**
-- ⚠️ Только для локальных прокси (localhost)
-- ⚠️ Разработка и тестирование
-- ❌ НЕ использовать через интернет
-- ❌ НЕ использовать в production
-
-**Конфигурация:**
+**HTTP прокси (только для localhost):**
 ```bash
-# Только для localhost!
+# Для локальной разработки
 ./iclaude.sh --proxy http://localhost:8118
 ```
 
----
-
-#### ❌ SOCKS5 прокси (НЕ РАБОТАЕТ)
-
-**Статус:** **Полностью не поддерживается**
-
-**Проблема:**
-- Claude Code использует библиотеку `undici` для HTTP запросов
-- undici [не поддерживает SOCKS протокол](https://github.com/nodejs/undici/issues/2224)
-- При попытке использования **приложение крашится** с ошибкой:
-  ```
-  InvalidArgumentError: Invalid URL protocol:
-  the URL must start with `http:` or `https:`
-  ```
-
-**Официальный комментарий Anthropic:**
-> "This is a limitation of the undici proxy library that we use."
-> — [GitHub Issue #3387](https://github.com/anthropics/claude-code/issues/3387)
-
-**Обходные пути:**
-1. **HTTP/HTTPS прокси** - используйте вместо SOCKS5
-2. **Privoxy/squid** - локальный переходник SOCKS5 → HTTP:
-   ```bash
-   # Установить privoxy
-   sudo apt install privoxy
-
-   # Настроить forward-socks5 в /etc/privoxy/config
-   forward-socks5 / 127.0.0.1:1080 .
-
-   # Использовать privoxy как HTTP прокси
-   ./iclaude.sh --proxy http://127.0.0.1:8118
-   ```
-3. **LLM Gateway** (LiteLLM) с поддержкой SOCKS5
-
----
-
-#### 🎯 Рекомендации по выбору
-
-**Для корпоративных сетей:**
+**SOCKS5 - обходные пути:**
 ```bash
-# ЛУЧШИЙ ВАРИАНТ: HTTPS с корпоративным сертификатом
-export HTTPS_PROXY=https://proxy.company.com:8118
-export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/company-proxy-ca.pem
-./iclaude.sh
+# Используйте Privoxy как переходник
+sudo apt install privoxy
+# Настроить: forward-socks5 / 127.0.0.1:1080 .
+./iclaude.sh --proxy http://127.0.0.1:8118
 ```
 
-**Для разработки (localhost):**
-```bash
-# ПРИЕМЛЕМО: HTTP для локального прокси
-export HTTP_PROXY=http://localhost:8118
-export NO_PROXY="localhost,127.0.0.1"
-./iclaude.sh
-```
+⚠️ **Важно:** Используйте только доверенные прокси-серверы. Библиотека undici не проверяет сертификаты целевых серверов ([HackerOne #1583680](https://hackerone.com/reports/1583680)).
 
-**Для production:**
-```bash
-# Рассмотрите LiteLLM Gateway вместо прямого прокси:
-# - Продвинутая аутентификация (NTLM, Kerberos)
-# - Централизованное управление безопасностью
-# - Обход ограничений undici
-```
-
----
-
-#### ⚠️ Важные предупреждения безопасности
-
-**Критическая уязвимость undici ProxyAgent:**
-
-Независимо от использования HTTPS или HTTP прокси, библиотека undici имеет фундаментальную проблему:
-
-- ❌ **Не проверяет сертификаты** целевых HTTPS серверов при работе через прокси
-- ❌ Весь HTTPS трафик **потенциально уязвим к MitM атакам** со стороны прокси
-- ❌ При HTTP прокси **весь трафик передается открытым текстом** клиент↔прокси
-
-**Это означает:**
-- Прокси-сервер может видеть и модифицировать все запросы к Anthropic API
-- Прокси видит ваши API ключи, код проекта, персональные данные
-- **Используйте только доверенные прокси-серверы**
-
-**Источник:** [HackerOne Report #1583680](https://hackerone.com/reports/1583680)
-
----
-
-#### 📊 Сравнительная таблица
-
-| Критерий | HTTPS | HTTP | SOCKS5 |
-|----------|-------|------|--------|
-| **Официальная поддержка** | ✅ Рекомендуется | ✅ Поддерживается | ❌ Не работает |
-| **Безопасность клиент↔прокси** | ✅ Шифрование | ❌ Открытый текст | N/A |
-| **Безопасность прокси↔API** | ⚠️ Без проверки сертификатов | ⚠️ Без проверки сертификатов | N/A |
-| **Простота настройки** | ⚠️ Требует сертификаты | ✅ Простая | N/A |
-| **Корпоративные сети** | ✅✅ Лучший выбор | ⚠️ Не рекомендуется | ❌ Невозможно |
-| **Локальная разработка** | ✅ Хороший выбор | ✅ Приемлемо | ❌ Невозможно |
-| **Production** | ✅ С доверенным прокси | ❌ Не рекомендуется | ❌ Невозможно |
+**Источники:**
+- [Claude Code: Corporate Proxy](https://docs.claude.com/en/docs/claude-code/corporate-proxy)
+- [GitHub Issue #3387](https://github.com/anthropics/claude-code/issues/3387)
 
 ---
 
@@ -1522,256 +1132,70 @@ iclaude --update
 
 ## Troubleshooting
 
-### SOCKS5 прокси - краш приложения
-
-**Проблема:** `InvalidArgumentError: Invalid URL protocol: the URL must start with 'http:' or 'https:'`
-
-**Причина:** Claude Code НЕ поддерживает SOCKS5 из-за ограничений библиотеки undici.
-
-**Решение:** См. раздел [SOCKS5 прокси не работает](#socks5-прокси-не-работает) ниже или используйте HTTP/HTTPS прокси.
-
----
-
 ### После git clone симлинки не работают
 
-**Симптомы:**
-- `./iclaude.sh` выдает ошибки
-- Claude Code не найден
-- Команды npm/node не работают
-
 **Решение:**
 ```bash
-# Восстановить симлинки и права
 ./iclaude.sh --repair-isolated
-
-# Проверить статус
 ./iclaude.sh --check-isolated
 ```
 
-### LSP плагины не устанавливаются ("Plugin not found")
+### LSP плагины не устанавливаются
 
-**Симптомы:**
-- `./iclaude.sh --install-lsp` выдает ошибку:
-  ```
-  Plugin "typescript-lsp" not found in marketplace "claude-plugins-official"
-  Plugin "pyright-lsp" not found in marketplace "claude-plugins-official"
-  ```
-- Плагины не находятся после переноса/переименования директории проекта
-
-**Причина:**
-- Claude Code хранит абсолютные пути в `known_marketplaces.json` и `installed_plugins.json`
-- После переноса проекта пути становятся невалидными (например `/Project/claude/` → `/Project/iclaude/`)
+**Причина:** Claude Code хранит абсолютные пути. После переноса проекта пути становятся невалидными.
 
 **Решение:**
 ```bash
-# Вариант 1: Автоматическое исправление через --repair-isolated
-./iclaude.sh --repair-isolated
-
-# Вариант 2: Только исправление путей плагинов
 ./iclaude.sh --repair-plugins
-
-# После исправления повторить установку LSP
 ./iclaude.sh --install-lsp
-./iclaude.sh --check-lsp
 ```
 
-**Примечание:** Начиная с версии от 19.01.2026, пути плагинов автоматически проверяются и исправляются при каждом запуске (тихий режим).
+### SOCKS5 прокси не работает
 
-### Проверка симлинков
+**Причина:** Claude Code НЕ поддерживает SOCKS5 (ограничение undici).
 
+**Решение:**
 ```bash
-./iclaude.sh --check-isolated
+# Вариант 1: Использовать HTTP/HTTPS
+./iclaude.sh --proxy https://proxy:8118
 
-# Вывод покажет статус всех симлинков:
-# Symlinks Status:
-#   ✓ npm
-#   ✓ npx
-#   ✓ corepack
-#   ✓ claude
-#
-# Если есть ✗ - запустить --repair-isolated
+# Вариант 2: Privoxy как переходник
+sudo apt install privoxy
+# Настроить: forward-socks5 / 127.0.0.1:1080 .
+./iclaude.sh --proxy http://127.0.0.1:8118
+```
+
+### HTTPS прокси с самоподписанным сертификатом
+
+**Решение (безопасно):**
+```bash
+openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
+  openssl x509 -outform PEM > proxy-cert.pem
+./iclaude.sh --proxy https://proxy:8118 --proxy-ca ./proxy-cert.pem
+```
+
+**Решение (небезопасно):**
+```bash
+./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
 ```
 
 ### Прокси не работает
 
 ```bash
-# Тестировать подключение
 ./iclaude.sh --test
-
-# Очистить настройки и ввести заново
 ./iclaude.sh --clear
-./iclaude.sh
-```
-
-### HTTPS прокси с самоподписанным сертификатом
-
-**Проблема:** `SSL certificate problem: self signed certificate`
-
-**Решение 1 (безопасно):**
-```bash
-# Экспортировать сертификат прокси
-openssl s_client -showcerts -connect proxy:8118 < /dev/null 2>/dev/null | \
-  openssl x509 -outform PEM > proxy-cert.pem
-
-# Использовать с --proxy-ca
-./iclaude.sh --proxy https://proxy:8118 --proxy-ca ./proxy-cert.pem
-```
-
-**Решение 2 (небезопасно):**
-```bash
-# Отключить проверку TLS (не рекомендуется)
-./iclaude.sh --proxy https://proxy:8118 --proxy-insecure
-```
-
-### Lockfile не обновляется после обновления
-
-**Симптомы:**
-- Claude Code обновился, но версия в lockfile осталась старой
-- `./iclaude.sh --check-isolated` показывает разные версии:
-  ```
-  Claude Code: 2.0.26
-  claudeCodeVersion: "2.0.25"  ← НЕ СОВПАДАЕТ
-  ```
-
-**Решение:**
-
-✅ **Исправлено в версии от 24.10.2025** - обновите скрипт:
-```bash
-git pull
-./iclaude.sh --update
-```
-
-Для старых версий скрипта:
-```bash
-# Вручную обновить lockfile
-bash -c 'source ./iclaude.sh && save_isolated_lockfile'
-
-# Проверить результат
-./iclaude.sh --check-isolated
-```
-
-### Обновление не работает (NVM)
-
-**Симптомы:** `ENOTEMPTY` ошибки при обновлении
-
-**Решение для изолированной установки:**
-```bash
-# Очистить и переустановить
-./iclaude.sh --cleanup-isolated
-./iclaude.sh --install-from-lockfile
-```
-
-**Решение для системного NVM:**
-```bash
-# Запустить обновление повторно (автоматическая очистка)
-iclaude --update
-
-# Или вручную:
-rm -rf ~/.nvm/versions/node/*/lib/node_modules/@anthropic-ai/.claude-code-*
-npm install -g @anthropic-ai/claude-code@latest
-```
-
-### Git на Windows - симлинки не работают
-
-**Проблема:** На Windows симлинки могут быть сохранены как текстовые файлы.
-
-**Решение:**
-```bash
-# Включить поддержку симлинков в git
-git config --global core.symlinks true
-
-# Пересоздать репозиторий
-cd ..
-rm -rf claude
-git clone https://github.com/ikeniborn/claude.git
-cd claude
-
-# Восстановить симлинки
-./iclaude.sh --repair-isolated
 ```
 
 ### Конфликт изолированной и системной установки
 
-**Симптомы:** Скрипт использует неправильную установку
-
 **Решение:**
-
-**Вариант 1: Флаг `--system` (Рекомендуется)**
 ```bash
-# Проверить какая установка активна
-./iclaude.sh --check-isolated
-
-# Принудительно использовать системную установку (игнорируя изолированную)
+# Принудительно использовать системную
 ./iclaude.sh --system
-./iclaude.sh --system --update
-./iclaude.sh --system --check-update
 
-# Без флага --system (по умолчанию)
-./iclaude.sh          # Использует изолированную (если есть)
-./iclaude.sh --update # Обновит изолированную (если есть)
-```
-
-**Вариант 2: Использовать разные команды**
-```bash
-# Изолированная установка: ./iclaude.sh (с ./)
+# По умолчанию использует изолированную (если есть)
 ./iclaude.sh
-
-# Системная установка: iclaude (без ./)
-iclaude
 ```
-
-**Приоритет окружения (без `--system`):**
-1. Изолированное окружение (`.nvm-isolated/`) - если существует
-2. Системный NVM - если установлен
-3. Системный Node.js - если установлен
-
-**С флагом `--system`:**
-1. Системный NVM - если установлен
-2. Системный Node.js - если установлен
-3. Изолированное окружение пропускается
-
-### SOCKS5 прокси не работает
-
-**Симптомы:**
-- Приложение крашится с ошибкой: `InvalidArgumentError: Invalid URL protocol`
-- Ошибка: `the URL must start with 'http:' or 'https:'`
-
-**Причина:**
-- Claude Code использует библиотеку undici, которая **НЕ поддерживает SOCKS5**
-- Это ограничение на уровне зависимости, не специфичное для Claude Code
-
-**Решение:**
-
-**Вариант 1: Использовать HTTP/HTTPS прокси**
-```bash
-# Вместо SOCKS5 используйте HTTP/HTTPS
-./iclaude.sh --proxy https://proxy:8118
-```
-
-**Вариант 2: Прокси-переходник (Privoxy)**
-```bash
-# Установить privoxy
-sudo apt install privoxy
-
-# Настроить /etc/privoxy/config
-echo "forward-socks5 / 127.0.0.1:1080 ." | sudo tee -a /etc/privoxy/config
-
-# Перезапустить
-sudo systemctl restart privoxy
-
-# Использовать privoxy как HTTP прокси
-./iclaude.sh --proxy http://127.0.0.1:8118
-```
-
-**Вариант 3: LLM Gateway**
-```bash
-# Использовать LiteLLM Gateway с поддержкой SOCKS5
-# См. https://docs.litellm.ai/
-```
-
-**Официальный источник:**
-- [GitHub Issue #3387](https://github.com/anthropics/claude-code/issues/3387)
-- [Claude Docs: Corporate Proxy](https://docs.claude.com/en/docs/claude-code/corporate-proxy)
 
 ---
 
@@ -1809,6 +1233,8 @@ iclaude --help
 ## Context Management System
 
 Управление контекстом Claude Code и Auto Memory с best practices от Anthropic.
+
+**Подробнее:** См. [lib/context/README.md](./lib/context/README.md)
 
 ### ⚡ Быстрый старт
 
