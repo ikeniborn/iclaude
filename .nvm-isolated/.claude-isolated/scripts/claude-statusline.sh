@@ -674,25 +674,26 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# Smart handling: skip status line on first run to avoid system message injection
-# System messages appear at session start and interrupt status line output
+# Smart handling: wait for system messages during session startup period
+# System messages can appear multiple times in first ~30 seconds
 SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
-FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
+SESSION_START_TIME_FILE="/tmp/claude-statusline-start-time-${SESSION_ID}"
 
-if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
-    # First run - wait for system messages to clear before showing status line
-    # Smart waiting: monitors transcript file for stability
-
-    # Wait for system messages to complete (adaptive delay + stability check)
-    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
-
-    # Mark this session as seen
-    touch "$FIRST_RUN_MARKER" 2>/dev/null
-
-    # Output status line after messages cleared
-    printf "\n\n%b\n\n" "$STATUS_LINE"
-    exit 0
+# Track session start time (first script invocation)
+if [[ ! -f "$SESSION_START_TIME_FILE" ]]; then
+    date +%s > "$SESSION_START_TIME_FILE" 2>/dev/null
 fi
 
-# Subsequent runs - output status line normally
+# Calculate session age
+SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
+CURRENT_TIME=$(date +%s)
+SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
+
+# In first 30 seconds of session: always check for system message completion
+# This handles both initial startup AND first user message (when messages still appear)
+if [[ $SESSION_AGE -lt 30 ]]; then
+    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
+fi
+
+# Output status line (after messages cleared if in startup period)
 printf "\n\n%b\n\n" "$STATUS_LINE"

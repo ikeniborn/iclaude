@@ -181,14 +181,19 @@ Claude Code asynchronously inserts system messages (e.g., "Claude Code has switc
 
 **Solution**: Smart waiting with stability detection
 
-- **Detection**: Uses session-specific marker file `/tmp/claude-statusline-first-run-${SESSION_ID}`
-- **First run behavior**:
+- **Detection**: Uses session start time tracker `/tmp/claude-statusline-start-time-${SESSION_ID}`
+- **Startup period (first 30 seconds)**:
   1. **Minimum delay** (3 seconds): Wait for system messages to appear
   2. **Stability check**: Monitor session transcript file for changes
   3. **Adaptive waiting**: Exit when file stable for 2 seconds (no changes)
   4. **Timeout protection**: Maximum 15 seconds wait
   5. **Output**: Show status line after messages cleared
-- **Subsequent runs**: Normal instant output (no delay)
+- **After 30 seconds**: Normal instant output (no delay)
+
+**Why 30 seconds?**
+- System messages can appear at session start AND after first user message
+- 30 seconds covers both startup + first message interaction
+- After 30s, session is stable and no more system messages expected
 
 **How stability detection works:**
 - Monitors session transcript file: `.claude-isolated/projects/[project]/${SESSION_ID}.jsonl`
