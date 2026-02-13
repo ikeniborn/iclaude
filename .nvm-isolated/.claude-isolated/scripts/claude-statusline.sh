@@ -616,10 +616,22 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# Wait for Claude Code system messages to finish before outputting status line
-# System messages typically appear immediately and disappear after ~2 seconds
-# This delay ensures status line appears after messages disappear, keeping it intact
-sleep 2
+# Smart delay: wait for system messages only on first run
+# System messages typically appear only at session start or after updates
+SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
+FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
+
+if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
+    # First run of this session - system message likely present
+    # Wait for it to appear and disappear (~2-3 seconds)
+    sleep 3
+    # Mark this session as seen
+    touch "$FIRST_RUN_MARKER" 2>/dev/null
+else
+    # Subsequent runs - no system message expected, output immediately
+    # Small delay to ensure smooth rendering
+    sleep 0.1
+fi
 
 # Atomic output to STDOUT
 # Output entire status line in single printf call
