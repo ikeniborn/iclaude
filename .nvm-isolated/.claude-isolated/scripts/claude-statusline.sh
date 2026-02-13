@@ -623,8 +623,8 @@ FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
 
 if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
     # First run - skip status line to avoid message injection
-    # Show brief placeholder message instead
-    printf "\n⏳ Status line will appear after system messages clear...\n\n"
+    # Show minimal placeholder (just icon) to avoid breaking by system message
+    printf "\n⏳\n\n"
 
     # Mark this session as seen
     touch "$FIRST_RUN_MARKER" 2>/dev/null
