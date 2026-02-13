@@ -616,31 +616,23 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# Smart delay: wait for system messages only on first run
-# System messages typically appear only at session start or after updates
+# Smart handling: skip status line on first run to avoid system message injection
+# System messages appear at session start and interrupt status line output
 SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
 FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
 
 if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
-    # First run of this session - system message likely present
-    # Wait longer for system message to appear and fully disappear
-    # System messages can take 5-7 seconds to clear completely
-    sleep 7
-
-    # Additional polling: wait for output to stabilize
-    # Check if there's recent activity (other processes writing)
-    for i in {1..3}; do
-        sleep 0.5
-        # Small additional delay to ensure message cleared
-    done
+    # First run - skip status line to avoid message injection
+    # Show brief placeholder message instead
+    printf "\n⏳ Status line will appear after system messages clear...\n\n"
 
     # Mark this session as seen
     touch "$FIRST_RUN_MARKER" 2>/dev/null
-else
-    # Subsequent runs - no system message expected, output immediately
-    sleep 0.1
+
+    # Exit early - don't output status line on first run
+    exit 0
 fi
 
-# Atomic output to STDOUT
-# Output entire status line in single printf call
+# Subsequent runs - output status line normally
+# Atomic output to STDOUT in single printf call
 printf "\n%b\n\n" "$STATUS_LINE"
