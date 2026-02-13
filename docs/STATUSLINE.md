@@ -179,16 +179,30 @@ COLUMNS=120 ./iclaude.sh
 
 Claude Code asynchronously inserts system messages (e.g., "Claude Code has switched from npm to native installer...") into stdout during session startup. This can interrupt status line output and cause line wrapping.
 
-**Solution**: Smart waiting with stability detection
+**Solution**: Skip output during startup period (default)
 
 - **Detection**: Uses session start time tracker `/tmp/claude-statusline-start-time-${SESSION_ID}`
-- **Startup period (first 30 seconds)**:
-  1. **Minimum delay** (3 seconds): Wait for system messages to appear
-  2. **Stability check**: Monitor session transcript file for changes
-  3. **Adaptive waiting**: Exit when file stable for 2 seconds (no changes)
-  4. **Timeout protection**: Maximum 15 seconds wait
-  5. **Output**: Show status line after messages cleared
-- **After 30 seconds**: Normal instant output (no delay)
+- **Startup period (first 30 seconds)**: No status line output (skip completely)
+- **After 30 seconds**: Normal instant output
+
+**Why skip instead of wait?**
+- System messages are inserted asynchronously by Claude Code main process
+- Race condition: Message can appear DURING script printf execution
+- No bash-level solution can prevent async stdout insertion
+- Skipping eliminates race condition entirely
+
+**Alternative mode** (stability detection - experimental):
+```bash
+export STATUSLINE_SKIP_STARTUP=0  # Enable wait mode
+./iclaude.sh
+```
+
+Wait mode behavior:
+- Minimum delay: 8 seconds
+- Monitors transcript file for changes
+- Stable period: 3 seconds of no changes
+- Maximum timeout: 20 seconds
+- Debug: `export DEBUG_STATUSLINE=1`
 
 **Why 30 seconds?**
 - System messages can appear at session start AND after first user message
