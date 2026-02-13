@@ -684,6 +684,297 @@ scrape_configs:
 
 ---
 
+### Вариант H: Built-in Status Line (Встроенный в iclaude.sh) ✨
+
+**Концепция**: "Real-time мониторинг прямо в Claude Code UI через statusLine"
+
+#### Как работает
+Claude Code v2.1+ поддерживает custom status line через настройку `statusLine.command` в `settings.json`. iclaude.sh включает готовый скрипт `claude-statusline.sh`, который:
+1. Получает session data от Claude Code через STDIN (JSON формат)
+2. Парсит токены, стоимость, модель, кэш
+3. Отображает всё в одной строке внизу экрана
+
+#### Автоматическая установка
+```bash
+# Устанавливается автоматически при isolated installation
+./iclaude.sh --isolated-install
+
+# Уже включен в isolated environment!
+# Проверить статус:
+./iclaude.sh --check-isolated
+```
+
+#### Конфигурация (settings.json)
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/path/to/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh",
+    "padding": 0
+  }
+}
+```
+
+#### Пример вывода
+
+**В Claude Code UI (внизу экрана)**:
+```
+💳 112K | 📊 50K (25%) | 📦 79K | Sonnet 4.5 | $1.06 | 🌐 | 🔀provider | 📄 | 🔱 main
+```
+
+**Компоненты**:
+1. **💳 112K** - Cumulative tokens (billing) - всего использовано токенов
+2. **📊 50K (25%)** - Active context - текущий размер контекста для следующего сообщения
+   - 🟢 Зеленый (<50%)
+   - 🟡 Желтый (50-75%)
+   - 🔴 Красный (>75%)
+3. **📦 79K** - Cache tokens - токены из prompt cache (экономия)
+4. **Sonnet 4.5** - Модель
+5. **$1.06** - Общая стоимость сессии
+6. **🌐** - Proxy активен (если настроен)
+7. **🔀provider** - Router активен (если используется)
+8. **📄** - Session link - **кликабельная** ссылка на readable версию conversation
+9. **🔱 main** - Git branch + uncommitted changes
+
+#### Session Link Feature (Phase 2) 🆕
+
+**Проблема**: При клике на 📄 открывался нечитабельный JSONL файл.
+
+**Решение**:
+- Автоматическая генерация **readable версии** session файла
+- **mtime кэширование** - регенерация только если JSONL изменился
+- Readable файл сохраняется в `<project>/tmp/claude-session-readable.txt`
+- OSC 8 hyperlink работает в современных терминалах (iTerm2, kitty, GNOME Terminal 3.x+)
+
+**Readable формат**:
+```
+📄 Session: session-id
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 USER:
+Привет! Как дела?
+
+🤖 ASSISTANT:
+Здравствуйте! У меня всё отлично.
+
+🤖 ASSISTANT [thinking]:
+Внутренние размышления модели...
+```
+
+**Технические детали**:
+- Функция `generate_readable_session()` в `claude-statusline.sh`
+- Проверка mtime: `[[ "$readable_file" -nt "$jsonl_file" ]]`
+- Парсинг только text/thinking контента (tool_use/tool_result пропускаются)
+- Автоматический word wrap (80 символов)
+- Требует jq (включен в isolated environment)
+
+#### Dual Context Tracking
+
+**Cumulative Tokens** (💳):
+- Сумма `total_input + total_output` токенов
+- Используется для **billing** - сколько вы заплатили
+- **Растет постоянно** даже после `/clear`
+
+**Active Context** (📊):
+- Вычисляется: `used_percentage × context_window_size`
+- Показывает **размер контекста для следующего сообщения**
+- **Сбрасывается** после `/clear` (остается только system prompt ~0-5%)
+- **Включает cache** - после `/compact` показывает полный размер окна
+
+**Пример после /compact**:
+```
+💳 1.2M | 📊 155K (77%) | 📦 154K | Sonnet 4.5 | $97.20
+```
+- Cumulative: 1.2M (вся сессия для billing)
+- Active: 155K (77% окна) - включает 154K cache + 1K новых токенов
+- Cache: 154K - reused from prompt cache
+
+#### Преимущества ✅
+- ✅ **Встроен по умолчанию** в isolated environment
+- ✅ **Real-time обновление** при каждом API ответе
+- ✅ **Comprehensive view** - токены, cost, cache, proxy, router, git
+- ✅ **Dual context tracking** - billing и active context
+- ✅ **Цветовая индикация** - видно на глаз когда приближаешься к лимиту
+- ✅ **Нулевая конфигурация** - работает из коробки
+- ✅ **Кликабельный session link** - открывает readable версию conversation
+- ✅ **mtime кэширование** - минимальная нагрузка на CPU
+- ✅ **Git integration** - показывает branch и uncommitted changes
+- ✅ **Debug mode** - `DEBUG_STATUSLINE=1` для диагностики
+
+#### Недостатки ⚠️
+- ⚠️ Требует Claude Code v2.1+ (nested `context_window` object)
+- ⚠️ Занимает одну строку внизу экрана (постоянно)
+- ⚠️ Не работает вне Claude Code (только внутри UI)
+- ⚠️ Обновляется после turn, не во время streaming
+
+#### Рекомендуется для
+- **Все пользователи iclaude.sh** (enabled by default)
+- Пользователей, которым нужен full visibility без усилий
+- Работы с длинными сессиями и большим контекстом
+- Мониторинга стоимости в real-time
+- Debugging proxy/router конфигураций
+
+#### Кастомизация
+
+**Включить debug mode**:
+```bash
+# Добавить в .claude_proxy_credentials
+DEBUG_STATUSLINE=1
+
+# Перезапустить Claude Code
+./iclaude.sh
+
+# Логи в:
+/tmp/claude-statusline-debug.log
+```
+
+**Изменить themes** (git rendering):
+```bash
+# Установить Oh My Posh для enhanced git info
+./iclaude.sh --install-ohmyposh
+
+# Редактировать тему:
+nano .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json
+```
+
+**Отключить statusline** (не рекомендуется):
+```json
+// .nvm-isolated/.claude-isolated/settings.json
+{
+  "statusLine": null
+}
+```
+
+#### Архитектура
+
+```
+┌──────────────────┐
+│ Claude Code API  │
+│ (每次 response)  │
+└────────┬─────────┘
+         │ JSON via STDIN
+         ▼
+┌──────────────────────┐
+│ claude-statusline.sh │
+│ - Parse session data │
+│ - Calculate metrics  │
+│ - Format output      │
+│ - Generate readable  │
+└────────┬─────────────┘
+         │ ANSI formatted string
+         ▼
+┌──────────────────────┐
+│ Claude Code UI       │
+│ (status line bottom) │
+└──────────────────────┘
+
+Session Link Flow:
+┌──────────────────────┐
+│ User clicks 📄       │
+└────────┬─────────────┘
+         │ OSC 8 hyperlink
+         ▼
+┌──────────────────────┐
+│ generate_readable()  │
+│ - Check mtime cache  │
+│ - Parse JSONL        │
+│ - Format w/ prefixes │
+└────────┬─────────────┘
+         │ Write to tmp/
+         ▼
+┌──────────────────────┐
+│ Editor opens file    │
+│ (readable format)    │
+└──────────────────────┘
+```
+
+#### Dependencies
+
+**Included in isolated environment**:
+- `jq` 1.7.1 - JSON parsing (`.nvm-isolated/npm-global/bin/jq`)
+- `claude-statusline.sh` - Main script
+- `claude-show-cache.sh` - Helper для viewing cache
+
+**Optional**:
+- `git` - Branch/status info
+- `oh-my-posh` - Enhanced git rendering
+
+#### Troubleshooting
+
+**Status line не отображается**:
+```bash
+# Проверить настройки:
+cat .nvm-isolated/.claude-isolated/settings.json | jq '.statusLine'
+
+# Должно быть:
+{
+  "type": "command",
+  "command": "/path/to/claude-statusline.sh",
+  "padding": 0
+}
+```
+
+**Session link не кликабельный**:
+- Терминал должен поддерживать OSC 8 hyperlinks
+- Работает в: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
+- Не работает в: старых версиях terminal, tmux без proper config
+
+**Readable file не генерируется**:
+```bash
+# Проверить jq:
+.nvm-isolated/npm-global/bin/jq --version
+
+# Проверить директорию:
+ls -la tmp/
+
+# Включить debug:
+DEBUG_STATUSLINE=1 ./iclaude.sh
+```
+
+**Неправильные токены после /clear**:
+- Active context сбрасывается до ~0-5% (только system prompt)
+- Cumulative tokens продолжают расти (billing tracking)
+- Это **expected behavior** - dual tracking
+
+#### Version History
+
+- **Phase 1** (2026-01-10): Initial statusline implementation
+  - Dual context tracking
+  - Cost, model, cache display
+  - Proxy/router detection
+  - Git integration
+
+- **Phase 2** (2026-02-12): Session link improvements ✨
+  - Icon-only display (📄 without "context" text)
+  - Readable session generation
+  - mtime caching for performance
+  - jq included in isolated environment
+
+#### Файлы
+
+```
+.nvm-isolated/
+  npm-global/bin/jq                           # jq binary (2.3MB)
+  .claude-isolated/
+    scripts/
+      claude-statusline.sh                    # Main statusline script
+      claude-show-cache.sh                    # Helper для viewing
+    themes/
+      claude-statusline.omp.json              # Oh My Posh theme
+    settings.json                             # StatusLine config
+.nvm-isolated-lockfile.json                   # jq version tracking
+tmp/
+  claude-session-readable.txt                 # Generated readable (gitignored)
+```
+
+#### См. также
+
+- `.nvm-isolated/.claude-isolated/CLAUDE.md` - Detailed statusline documentation
+- `docs/architecture/diagrams/data-flow-statusline.md` - Flow diagram (TBD)
+- Claude Code docs: https://code.claude.com/docs/en/status-line
+
+---
+
 ## 📊 Сравнительная таблица
 
 | Вариант | Сложность | Зависимости | Real-time? | UX Impact | Для кого |
@@ -691,10 +982,11 @@ scrape_configs:
 | **A. Threshold Alerts** | 🟢 Низкая | jq | ⚠️ После turn | 🟢 Минимальный | Все пользователи |
 | **B. Always-On Status** | 🟢 Низкая | jq | ⚠️ После turn | 🟡 Шумный | Power users |
 | **C. Startup Summary** | 🟢 Низкая | jq | ❌ Прошлая сессия | 🟢 Нулевой | Короткие сессии |
-| **D. Combined** | 🟡 Средняя | jq | ⚠️ После turn | 🟢 Оптимальный | **Рекомендуется** |
+| **D. Combined** | 🟡 Средняя | jq | ⚠️ После turn | 🟢 Оптимальный | Рекомендуется |
 | **E. Oh My Posh** | 🟡 Средняя | Oh My Posh | ✅ Real-time | 🟡 Занимает место | Rich UI fans |
 | **F. Live Dashboard** | 🟡 Средняя | inotify-tools | ⚠️ После turn | 🟡 Отдельное окно | tmux users |
 | **G. OpenTelemetry** | 🔴 Высокая | Docker, Prometheus | ✅ Real-time | 🟢 Отдельная система | Enterprise |
+| **H. Built-in Status** ✨ | 🟢 Низкая | jq (included) | ✅ Real-time | 🟢 Comprehensive | **iclaude.sh users** |
 
 **Легенда**:
 - 🟢 = Хорошо
@@ -707,6 +999,14 @@ scrape_configs:
 ---
 
 ## 🎯 Рекомендации по выбору
+
+### Для пользователей iclaude.sh (Рекомендуется) ✨
+→ **Вариант H** (Built-in Status Line)
+- **Включен по умолчанию** в isolated environment
+- Real-time мониторинг без настройки
+- Dual context tracking (billing + active)
+- Кликабельный session link
+- Comprehensive view (токены, cost, cache, proxy, router, git)
 
 ### Для начинающих пользователей
 → **Вариант A** (Threshold Alerts)
@@ -721,9 +1021,10 @@ scrape_configs:
 - Лучший баланс UX/функциональность
 
 ### Для power users
-→ **Вариант F** (Live Dashboard) + **Вариант A** (Alerts)
-- Полный контроль через отдельное окно
-- Alerts как fallback
+→ **Вариант H** (Built-in) + **Вариант F** (Live Dashboard)
+- Built-in для постоянного мониторинга
+- Dashboard для deep analysis
+- Best of both worlds
 
 ### Для enterprise
 → **Вариант G** (OpenTelemetry)
@@ -835,6 +1136,11 @@ tail -f /tmp/claude-context-monitor.log
 
 ## 📝 Changelog
 
+- **2026-02-12**: Добавлен **Вариант H** (Built-in Status Line) с session link improvements
+  - Icon-only display (📄 без "context")
+  - Readable session generation с mtime кэшированием
+  - jq включен в isolated environment
+  - Полная документация Phase 2
 - **2026-02-10**: Создан документ с описанием 7 вариантов мониторинга
 - **TBD**: Реализация Варианта D (Combined) в iclaude.sh
 - **TBD**: Интеграция Oh My Posh (Вариант E)
