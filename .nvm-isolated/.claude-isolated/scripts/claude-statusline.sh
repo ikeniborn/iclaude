@@ -725,12 +725,15 @@ CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
 # Phase 1: Startup period (0-30 seconds) - no output
-if [[ $SESSION_AGE -lt 30 ]]; then
+# ВАЖНО: Применяется только к НОВЫМ сессиям (TOTAL_TOKENS == 0)
+# Для продолжающихся сессий (после /clear) всегда показываем статус лайн
+if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
     exit 0
 fi
 
 # Phase 2: After 30s, but first message after wait - mark ready, no output yet
-if [[ ! -f "$SESSION_READY_MARKER" ]]; then
+# ВАЖНО: Также только для новых сессий
+if [[ ! -f "$SESSION_READY_MARKER" ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
     touch "$SESSION_READY_MARKER" 2>/dev/null
     exit 0
 fi
