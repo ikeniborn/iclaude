@@ -616,6 +616,6 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# Atomic output: print entire status line in one operation
-# This minimizes window for Claude Code to inject system messages
-printf "\n%b\n\n" "$STATUS_LINE"
+# Atomic output to STDERR to avoid Claude Code system message injection
+# Claude Code only injects messages into STDOUT, so using STDERR keeps status line intact
+printf "\n%b\n\n" "$STATUS_LINE" >&2
