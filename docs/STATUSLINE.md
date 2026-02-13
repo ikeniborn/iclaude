@@ -179,23 +179,22 @@ COLUMNS=120 ./iclaude.sh
 
 Claude Code asynchronously inserts system messages (e.g., "Claude Code has switched from npm to native installer...") into stdout during session startup. This can interrupt status line output and cause line wrapping.
 
-**Solution**: Smart first-run detection with delayed output
+**Solution**: Skip first run, show on second run
 
 - **Detection**: Uses session-specific marker file `/tmp/claude-statusline-first-run-${SESSION_ID}`
-- **First run behavior**:
-  1. Waits 15 seconds for system messages to complete
-  2. Outputs full status line after messages cleared
-- **Subsequent runs**: Normal instant output (no delay)
+- **First run behavior**: Skip output completely (no status line)
+- **Subsequent runs**: Normal output starting from user's first message
 
-**Why 15 seconds?**
-- System messages typically take 5-10 seconds to clear
-- 15 seconds provides buffer for slow networks/systems
-- Only affects first run per session (minimal UX impact)
+**Why skip first run?**
+- System messages appear only at session startup
+- Status line updates on every user message
+- Second run happens after user's first message (when system messages finished)
+- Zero delay, zero conflicts, simple and reliable
 
-**Alternative approaches tested** (did not work):
+**Alternative approaches tested** (did not work consistently):
+- Time-based delays (2s, 7s, 10s, 15s): Unreliable on slow systems
 - `printf` with flush: Cannot control async stdout from Claude Code
 - Stderr redirection: Status line not visible
-- Shorter delays (2s, 7s, 10s): Inconsistent results
 - Atomic output with buffering: No control over external process output
 
 ### Token Parsing (Claude Code v2.1+)

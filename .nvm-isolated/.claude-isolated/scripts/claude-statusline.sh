@@ -622,21 +622,11 @@ SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null
 FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
 
 if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
-    # First run - wait for system messages to complete before showing status line
-    # System messages typically take 5-10 seconds to fully clear
-
-    # Wait for system messages to clear (15 seconds for stable output)
-    sleep 15
-
-    # Mark this session as seen
+    # First run - skip output completely to avoid system message conflicts
+    # Status line will appear on second run (after user's first message)
     touch "$FIRST_RUN_MARKER" 2>/dev/null
-
-    # Now output full status line after messages cleared
-    printf "\n\n%b\n\n" "$STATUS_LINE"
     exit 0
 fi
 
 # Subsequent runs - output status line normally
-# Atomic output to STDOUT in single printf call
-# Output on 3rd line (2 blank lines before) for visual separation
 printf "\n\n%b\n\n" "$STATUS_LINE"
