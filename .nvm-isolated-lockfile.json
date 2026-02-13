@@ -1,6 +1,6 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.39",
+  "claudeCodeVersion": "2.1.41",
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
   "lspServers": {
@@ -8,10 +8,7 @@
     "vtsls": "0.3.0",
     "typescript-language-server": "0.3.0"
   },
-  "lspPlugins": {
-    "pyright-lsp@claude-plugins-official": "1.0.0",
-    "typescript-lsp@claude-plugins-official": "1.0.0"
-  },
+  "lspPlugins": {},
   "sandboxAvailable": true,
   "sandboxPlatform": "linux",
   "sandboxDependencies": {
@@ -19,14 +16,12 @@
     "socat": "1.8.0.0"
   },
   "sandboxRuntimeVersion": "1.0.0",
-  "sandboxInstalledAt": "2026-02-11T04:38:39Z",
+  "sandboxInstalledAt": "2026-02-13T03:58:16Z",
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
-  "jqVersion": "1.7.1",
-  "jqPath": ".nvm-isolated/npm-global/bin/jq",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-02-11T04:38:42Z",
+  "installedAt": "2026-02-13T03:58:19Z",
   "nvmVersion": "0.39.7"
 }
