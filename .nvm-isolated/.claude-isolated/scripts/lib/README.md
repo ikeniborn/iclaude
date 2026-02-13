@@ -122,6 +122,102 @@ Generic:   Fallback for unknown formats
 - Common aliases: `input_tokens`, `output_tokens`
 - Always succeeds (returns valid data even with minimal info)
 
+### 4. Streaming Support Modules (NEW - Week 2)
+
+#### Streaming Detector (`streaming-detector.sh`)
+
+**Functions:**
+- `is_streaming_chunk(data)` - Detect SSE chunk vs complete response
+- `get_chunk_type(data)` - Extract type (start, delta, stop, ping)
+- `is_final_chunk(data)` - Check if stream completed
+- `get_streaming_provider(data)` - Auto-detect provider from chunk
+
+**Supported formats:**
+- **Anthropic**: message_start, content_block_delta, message_delta, message_stop
+- **OpenAI**: choices[].delta with finish_reason
+- **Ollama**: done: false/true
+- **Gemini**: candidates[].finishReason
+
+#### State Management (`streaming-state.sh`)
+
+**Functions:**
+- `init_streaming_state(session_id, provider, model)` - Create session state
+- `update_streaming_state(session_id, data)` - Accumulate tokens from chunks
+- `get_streaming_state(session_id)` - Read current accumulated state
+- `finalize_streaming_state(session_id)` - Mark stream as completed
+- `is_streaming_active(session_id)` - Check if streaming in progress
+- `cleanup_old_states()` - Remove states older than 1 hour
+
+**State file location:**
+```
+$CLAUDE_DIR/streaming-state/$SESSION_ID.state
+```
+
+**State format:**
+```json
+{
+  "session_id": "abc123",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4.5",
+  "streaming": true,
+  "input_tokens": 1000,
+  "output_tokens": 127,
+  "cache_read_tokens": 500,
+  "cache_creation_tokens": 100,
+  "chunks_received": 15,
+  "last_update": 1707854321,
+  "completed": false
+}
+```
+
+#### Chunk Parser (`streaming-parser.sh`)
+
+**Functions:**
+- `parse_anthropic_chunk(chunk)` - Extract tokens from Anthropic SSE events
+- `parse_openai_chunk(chunk)` - Parse OpenAI streaming delta
+- `parse_ollama_chunk(chunk)` - Parse Ollama done=true format
+- `parse_gemini_chunk(chunk)` - Parse Gemini streaming response
+- `parse_streaming_chunk(chunk)` - Auto-detect and parse
+
+**Anthropic chunk example:**
+```json
+// message_start
+{"type":"message_start","message":{"usage":{"input_tokens":1000}}}
+
+// message_delta
+{"type":"message_delta","usage":{"output_tokens":50}}
+
+// message_stop
+{"type":"message_stop"}
+```
+
+**Token accumulation:**
+- `message_start` → Initialize input tokens, cache tokens
+- `message_delta` → Accumulate output tokens
+- `message_stop` → Mark completed
+
+#### Integration with Provider Adapter
+
+**Streaming detection in `parse_with_adapter()`:**
+1. Check if data is streaming chunk (via `is_streaming_chunk()`)
+2. If streaming:
+   - Get provider from chunk
+   - Parse chunk (extract tokens)
+   - Initialize state (first chunk) or update state (subsequent chunks)
+   - Return accumulated state for display
+3. If not streaming:
+   - Use existing adapter logic (complete response)
+
+**Session-based state:**
+- Each session has unique state file
+- State persists across chunks
+- Automatic cleanup after 1 hour
+
+**Real-time display:**
+- Statusline shows accumulated tokens during streaming
+- 🔄 indicator appears when `STREAMING_ACTIVE=1`
+- Updates on each chunk received
+
 ## Unified Data Format
 
 All adapters return this JSON structure:
