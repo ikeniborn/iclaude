@@ -496,6 +496,64 @@ shorten_router_provider() {
     echo "$provider" | sed 's/^claude-//g'
 }
 
+# Smart waiting: wait for system messages to clear
+# Monitors session transcript file for stability
+wait_for_system_messages_to_clear() {
+    local session_id="$1"
+    local project_dir="$2"
+
+    # Convert project path to Claude's internal format
+    # /home/user/project -> -home-user-project
+    local project_key=$(echo "$project_dir" | sed 's|/|-|g')
+
+    # Path to session transcript file
+    local transcript_file="${CLAUDE_CONFIG_DIR}/projects/${project_key}/${session_id}.jsonl"
+
+    # Parameters
+    local min_delay=3        # Minimum wait (system messages start appearing)
+    local max_wait=15        # Maximum timeout (protection)
+    local stable_period=2    # Seconds of no changes = stable
+
+    # Initial delay (let system messages appear)
+    sleep $min_delay
+
+    local start_time=$(date +%s)
+    local last_mtime=0
+    local stable_count=0
+
+    # Wait for stability (transcript file stops changing)
+    while true; do
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+
+        # Timeout protection
+        if [[ $elapsed -ge $max_wait ]]; then
+            break
+        fi
+
+        # Check transcript file modification time
+        if [[ -f "$transcript_file" ]]; then
+            local current_mtime=$(stat -c %Y "$transcript_file" 2>/dev/null || echo 0)
+
+            if [[ $current_mtime -eq $last_mtime ]]; then
+                # File unchanged - increment stability counter
+                stable_count=$((stable_count + 1))
+
+                # If stable for N seconds, consider messages cleared
+                if [[ $stable_count -ge $stable_period ]]; then
+                    break
+                fi
+            else
+                # File changed - reset counter
+                stable_count=0
+                last_mtime=$current_mtime
+            fi
+        fi
+
+        sleep 1
+    done
+}
+
 # Adaptive status line: display mode selection
 # Returns display mode based on terminal width
 # - full (≥130 cols): all components
@@ -622,9 +680,17 @@ SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null
 FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
 
 if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
-    # First run - skip output completely to avoid system message conflicts
-    # Status line will appear on second run (after user's first message)
+    # First run - wait for system messages to clear before showing status line
+    # Smart waiting: monitors transcript file for stability
+
+    # Wait for system messages to complete (adaptive delay + stability check)
+    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
+
+    # Mark this session as seen
     touch "$FIRST_RUN_MARKER" 2>/dev/null
+
+    # Output status line after messages cleared
+    printf "\n\n%b\n\n" "$STATUS_LINE"
     exit 0
 fi
 

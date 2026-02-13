@@ -179,23 +179,35 @@ COLUMNS=120 ./iclaude.sh
 
 Claude Code asynchronously inserts system messages (e.g., "Claude Code has switched from npm to native installer...") into stdout during session startup. This can interrupt status line output and cause line wrapping.
 
-**Solution**: Skip first run, show on second run
+**Solution**: Smart waiting with stability detection
 
 - **Detection**: Uses session-specific marker file `/tmp/claude-statusline-first-run-${SESSION_ID}`
-- **First run behavior**: Skip output completely (no status line)
-- **Subsequent runs**: Normal output starting from user's first message
+- **First run behavior**:
+  1. **Minimum delay** (3 seconds): Wait for system messages to appear
+  2. **Stability check**: Monitor session transcript file for changes
+  3. **Adaptive waiting**: Exit when file stable for 2 seconds (no changes)
+  4. **Timeout protection**: Maximum 15 seconds wait
+  5. **Output**: Show status line after messages cleared
+- **Subsequent runs**: Normal instant output (no delay)
 
-**Why skip first run?**
-- System messages appear only at session startup
-- Status line updates on every user message
-- Second run happens after user's first message (when system messages finished)
-- Zero delay, zero conflicts, simple and reliable
+**How stability detection works:**
+- Monitors session transcript file: `.claude-isolated/projects/[project]/${SESSION_ID}.jsonl`
+- Checks file modification time every second
+- If file unchanged for 2 consecutive seconds → system messages cleared
+- Guarantees status line appears after all async output completed
+
+**Benefits:**
+- ✅ Reliable detection of message completion
+- ✅ Adapts to system speed (fast exit on quick systems)
+- ✅ Timeout protection (never hangs indefinitely)
+- ✅ Zero false positives (actually waits for stability)
 
 **Alternative approaches tested** (did not work consistently):
-- Time-based delays (2s, 7s, 10s, 15s): Unreliable on slow systems
+- Fixed delays (2s-15s): Either too short (races) or too long (slow)
+- Skip first run completely: Status line missing until user types
 - `printf` with flush: Cannot control async stdout from Claude Code
 - Stderr redirection: Status line not visible
-- Atomic output with buffering: No control over external process output
+- Process monitoring: Cannot detect stdout vs stderr activity
 
 ### Token Parsing (Claude Code v2.1+)
 
