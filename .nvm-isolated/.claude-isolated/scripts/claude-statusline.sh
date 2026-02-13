@@ -625,9 +625,6 @@ if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
     # First run - wait for system messages to complete before showing status line
     # System messages typically take 5-10 seconds to fully clear
 
-    # Show placeholder immediately
-    printf "\n⏳\n\n"
-
     # Wait for system messages to clear (15 seconds for stable output)
     sleep 15
 

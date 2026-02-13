@@ -183,9 +183,8 @@ Claude Code asynchronously inserts system messages (e.g., "Claude Code has switc
 
 - **Detection**: Uses session-specific marker file `/tmp/claude-statusline-first-run-${SESSION_ID}`
 - **First run behavior**:
-  1. Shows placeholder `⏳` immediately
-  2. Waits 15 seconds for system messages to complete
-  3. Outputs full status line after messages cleared
+  1. Waits 15 seconds for system messages to complete
+  2. Outputs full status line after messages cleared
 - **Subsequent runs**: Normal instant output (no delay)
 
 **Why 15 seconds?**
