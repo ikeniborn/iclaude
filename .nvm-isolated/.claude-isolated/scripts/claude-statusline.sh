@@ -502,6 +502,14 @@ wait_for_system_messages_to_clear() {
     local session_id="$1"
     local project_dir="$2"
 
+    # Debug mode
+    local debug_log="/tmp/claude-statusline-wait-debug.log"
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "=== wait_for_system_messages_to_clear() called ===" >> "$debug_log"
+        echo "Session ID: $session_id" >> "$debug_log"
+        echo "Project DIR: $project_dir" >> "$debug_log"
+    fi
+
     # Convert project path to Claude's internal format
     # /home/user/project -> -home-user-project
     local project_key=$(echo "$project_dir" | sed 's|/|-|g')
@@ -509,10 +517,15 @@ wait_for_system_messages_to_clear() {
     # Path to session transcript file
     local transcript_file="${CLAUDE_CONFIG_DIR}/projects/${project_key}/${session_id}.jsonl"
 
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "Transcript file: $transcript_file" >> "$debug_log"
+        echo "File exists: $(test -f "$transcript_file" && echo YES || echo NO)" >> "$debug_log"
+    fi
+
     # Parameters
-    local min_delay=3        # Minimum wait (system messages start appearing)
-    local max_wait=15        # Maximum timeout (protection)
-    local stable_period=2    # Seconds of no changes = stable
+    local min_delay=8        # Minimum wait (increased from 3 to 8)
+    local max_wait=20        # Maximum timeout (increased from 15 to 20)
+    local stable_period=3    # Seconds of no changes (increased from 2 to 3)
 
     # Initial delay (let system messages appear)
     sleep $min_delay
@@ -520,14 +533,19 @@ wait_for_system_messages_to_clear() {
     local start_time=$(date +%s)
     local last_mtime=0
     local stable_count=0
+    local check_count=0
 
     # Wait for stability (transcript file stops changing)
     while true; do
         local current_time=$(date +%s)
         local elapsed=$((current_time - start_time))
+        check_count=$((check_count + 1))
 
         # Timeout protection
         if [[ $elapsed -ge $max_wait ]]; then
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                echo "TIMEOUT reached after ${elapsed}s" >> "$debug_log"
+            fi
             break
         fi
 
@@ -535,12 +553,19 @@ wait_for_system_messages_to_clear() {
         if [[ -f "$transcript_file" ]]; then
             local current_mtime=$(stat -c %Y "$transcript_file" 2>/dev/null || echo 0)
 
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                echo "Check #${check_count}: mtime=${current_mtime}, last=${last_mtime}, stable=${stable_count}" >> "$debug_log"
+            fi
+
             if [[ $current_mtime -eq $last_mtime ]]; then
                 # File unchanged - increment stability counter
                 stable_count=$((stable_count + 1))
 
                 # If stable for N seconds, consider messages cleared
                 if [[ $stable_count -ge $stable_period ]]; then
+                    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                        echo "STABLE detected after ${elapsed}s (${stable_count} checks)" >> "$debug_log"
+                    fi
                     break
                 fi
             else
@@ -548,10 +573,19 @@ wait_for_system_messages_to_clear() {
                 stable_count=0
                 last_mtime=$current_mtime
             fi
+        else
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && [[ $check_count -eq 1 ]]; then
+                echo "WARNING: Transcript file not found!" >> "$debug_log"
+            fi
         fi
 
         sleep 1
     done
+
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "wait_for_system_messages_to_clear() finished after $(($(date +%s) - start_time + min_delay))s total" >> "$debug_log"
+        echo "" >> "$debug_log"
+    fi
 }
 
 # Adaptive status line: display mode selection
