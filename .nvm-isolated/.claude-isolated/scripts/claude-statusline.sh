@@ -723,11 +723,11 @@ SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
 CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
-# OPTION 1: Show placeholder in first 30 seconds (default)
+# OPTION 1: Show minimal placeholder in first 30 seconds (default)
 # Avoids race conditions with async system messages
 if [[ "${STATUSLINE_SKIP_STARTUP:-1}" == "1" ]] && [[ $SESSION_AGE -lt 30 ]]; then
-    # Show placeholder during startup period (no line breaks)
-    printf "\n\n⏳ Status Line ...\n\n"
+    # Minimal placeholder (single character to minimize race window)
+    printf "\n\n⏳\n\n"
     exit 0
 fi
 

@@ -179,11 +179,16 @@ COLUMNS=120 ./iclaude.sh
 
 Claude Code asynchronously inserts system messages (e.g., "Claude Code has switched from npm to native installer...") into stdout during session startup. This can interrupt status line output and cause line wrapping.
 
-**Solution**: Show placeholder during startup period (default)
+**Solution**: Show minimal placeholder during startup period (default)
 
 - **Detection**: Uses session start time tracker `/tmp/claude-statusline-start-time-${SESSION_ID}`
-- **Startup period (first 30 seconds)**: Shows `⏳ Status Line ...` placeholder
+- **Startup period (first 30 seconds)**: Shows `⏳` (minimal single-character placeholder)
 - **After 30 seconds**: Normal full status line
+
+**Why minimal placeholder?**
+- System messages can interrupt output at character level
+- Shorter output = smaller race condition window
+- Single character `⏳` minimizes interruption risk
 
 **Why skip instead of wait?**
 - System messages are inserted asynchronously by Claude Code main process
