@@ -628,8 +628,8 @@ if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
     # Show placeholder immediately
     printf "\n⏳\n\n"
 
-    # Wait for system messages to clear (10 seconds should be safe)
-    sleep 10
+    # Wait for system messages to clear (15 seconds for stable output)
+    sleep 15
 
     # Mark this session as seen
     touch "$FIRST_RUN_MARKER" 2>/dev/null

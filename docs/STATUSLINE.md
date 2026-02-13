@@ -175,6 +175,30 @@ COLUMNS=120 ./iclaude.sh
 - **Fallback**: If detection fails, defaults to 80 cols (compact mode)
 - **Zero configuration**: Adapts automatically based on terminal
 
+#### System Message Handling
+
+Claude Code asynchronously inserts system messages (e.g., "Claude Code has switched from npm to native installer...") into stdout during session startup. This can interrupt status line output and cause line wrapping.
+
+**Solution**: Smart first-run detection with delayed output
+
+- **Detection**: Uses session-specific marker file `/tmp/claude-statusline-first-run-${SESSION_ID}`
+- **First run behavior**:
+  1. Shows placeholder `⏳` immediately
+  2. Waits 15 seconds for system messages to complete
+  3. Outputs full status line after messages cleared
+- **Subsequent runs**: Normal instant output (no delay)
+
+**Why 15 seconds?**
+- System messages typically take 5-10 seconds to clear
+- 15 seconds provides buffer for slow networks/systems
+- Only affects first run per session (minimal UX impact)
+
+**Alternative approaches tested** (did not work):
+- `printf` with flush: Cannot control async stdout from Claude Code
+- Stderr redirection: Status line not visible
+- Shorter delays (2s, 7s, 10s): Inconsistent results
+- Atomic output with buffering: No control over external process output
+
 ### Token Parsing (Claude Code v2.1+)
 
 ```bash
