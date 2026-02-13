@@ -116,6 +116,64 @@ Branch name + uncommitted changes count (e.g., "master" or "feature-branch +3")
 - **Session-specific readable files**: Each session gets unique file (no conflicts between parallel sessions)
 - **Append-only optimization**: Incremental updates instead of full regeneration (19x faster)
 - **Compact detection**: Automatically rebuilds readable file after `/compact` with summary marker
+- **Adaptive display**: Three display modes based on terminal width to prevent line wrapping
+
+### Adaptive Display Modes
+
+The status line automatically adapts to terminal width to prevent line wrapping and maintain readability.
+
+#### Display Modes
+
+**Full Mode (≥130 columns)**
+```
+💳 113K | 📊 51K (26%) | 📦 79K | 🔒 45K | Sonnet 4.5 | $1.06 🌐 | 🔀 claude-sonnet-4-5 | 📄 | 🔱 test ●2
+```
+- All components visible without abbreviations
+- Shows buffer (🔒), full model name, full router provider
+- Optimal for wide terminals (≥130 cols)
+
+**Compact Mode (110-129 columns)**
+```
+💳 113K | 📊 51K (26%) | 📦 79K | S4.5 | $1.06 🌐 | 🔀 sonnet-4-5 | 📄 | 🔱 test ●2
+```
+- Smart abbreviations to save space
+- Model abbreviated: "Sonnet 4.5" → "S4.5"
+- Router abbreviated: "claude-sonnet-4-5" → "sonnet-4-5"
+- Buffer hidden (not critical)
+- Saves ~24 characters compared to full mode
+
+**Minimal Mode (<110 columns)**
+```
+💳 113K | 📊 51K (26%) | S4.5 | $1.06
+```
+- Only critical metrics: tokens, model, cost
+- Hides cache, proxy, router, session link, git info
+- Guaranteed to fit in narrow terminals
+- Saves ~84 characters compared to full mode
+
+#### Configuration
+
+**Disable adaptive mode** (always use full mode):
+```bash
+export STATUSLINE_ADAPTIVE=0
+./iclaude.sh
+```
+
+**Debug terminal width detection**:
+```bash
+# Check detected width
+tput cols
+
+# Test with specific width
+COLUMNS=120 ./iclaude.sh
+```
+
+#### Implementation Details
+
+- **Width detection**: Uses `tput cols` (fallback to `stty size`, then 80 cols)
+- **Overhead**: ~5ms per status line update (negligible)
+- **Fallback**: If detection fails, defaults to 80 cols (compact mode)
+- **Zero configuration**: Adapts automatically based on terminal
 
 ### Token Parsing (Claude Code v2.1+)
 
@@ -475,7 +533,14 @@ grep -l "search term" .claude-sessions/readable-*.txt
 
 ## Changelog
 
-### Phase 2.1 (Current)
+### Phase 2.2 (Current)
+- Added adaptive display modes (full/compact/minimal)
+- Automatic terminal width detection
+- Smart abbreviations for narrow terminals
+- Prevents line wrapping on all terminal sizes
+- Configurable via STATUSLINE_ADAPTIVE environment variable
+
+### Phase 2.1
 - Added append-only optimization (19x faster)
 - Session-specific readable files (no conflicts)
 - Smart regeneration triggers
