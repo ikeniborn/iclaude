@@ -583,24 +583,12 @@ else
     CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
-# Output formatted status line with adaptive display
-# Three display modes:
-# - full (≥130 cols): all components without abbreviations
-# - compact (70-129 cols): smart abbreviations, hide buffer, abbreviated branch
-# - minimal (<70 cols): only critical metrics (tokens, cache, model, cost)
-#
-# Add empty line before status line for visual separation
-echo ""
-
+# Build status line string based on display mode
+# Collect entire string first for atomic output to prevent system message injection
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты без сокращений, proxy в конце
-        # Добавляем перенос строки для визуального разделения от системных сообщений
-        # Принудительный flush буфера для предотвращения смешивания с системными сообщениями
-        {
-            printf "%b\n" "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
-            printf "\n"
-        } >&1
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -617,25 +605,17 @@ case "$DISPLAY_MODE" in
             ROUTER_ICON_COMPACT=" 🔀${ROUTER_SHORT}"
         fi
 
-        # Скрыть buffer и название ветки для экономии места
-        # Показываем: tokens, cache, model, cost, router, session link, git info (компактный), proxy
-        # Git info компактный: только иконка + изменения (🔱 test… ●6 вместо 🔱 very-long-branch-name ●6)
-        # Добавляем перенос строки для визуального разделения от системных сообщений
-        # Принудительный flush буфера для предотвращения смешивания с системными сообщениями
-        {
-            printf "%b\n" "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
-            printf "\n"
-        } >&1
+        # Git info компактный: только иконка + изменения
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
         ;;
 
     minimal)
         # Minimal mode: только критичное (tokens, cache, model, cost)
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        # Добавляем перенос строки для визуального разделения от системных сообщений
-        # Принудительный flush буфера для предотвращения смешивания с системными сообщениями
-        {
-            printf "%b\n" "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
-            printf "\n"
-        } >&1
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
         ;;
 esac
+
+# Atomic output: print entire status line in one operation
+# This minimizes window for Claude Code to inject system messages
+printf "\n%b\n\n" "$STATUS_LINE"
