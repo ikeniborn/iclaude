@@ -17,6 +17,16 @@
 # Get script directory for relative paths
 ADAPTER_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Source streaming modules (if available)
+if [[ -f "$ADAPTER_LIB_DIR/streaming-detector.sh" ]]; then
+    source "$ADAPTER_LIB_DIR/streaming-detector.sh"
+    source "$ADAPTER_LIB_DIR/streaming-state.sh"
+    source "$ADAPTER_LIB_DIR/streaming-parser.sh"
+    STREAMING_SUPPORT_AVAILABLE=1
+else
+    STREAMING_SUPPORT_AVAILABLE=0
+fi
+
 # Detect provider type from session JSON structure
 # Args: $1 - session_data (JSON string)
 # Returns: "anthropic" | "openai" | "ollama" | "gemini" | "unknown"
@@ -116,11 +126,91 @@ EOF
 
 # Parse session data using provider-specific adapter
 # Args: $1 - session_data (JSON string)
+#       $2 - session_id (optional, for streaming state)
 # Returns: 0 on success, 1 on error
 # Side effects: Sets global variables for statusline
 parse_with_adapter() {
     local session_data="$1"
+    local session_id="${2:-}"
 
+    # Check for streaming mode (if streaming support available)
+    if [[ "$STREAMING_SUPPORT_AVAILABLE" == "1" ]] && is_streaming_chunk "$session_data"; then
+        # Streaming mode: parse chunk and update state
+        if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+            echo "[DEBUG] Streaming chunk detected" >&2
+        fi
+
+        # Get provider from chunk
+        local provider_type
+        provider_type=$(get_streaming_provider "$session_data")
+
+        if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+            echo "[DEBUG] Streaming provider: $provider_type" >&2
+        fi
+
+        # Parse chunk
+        local chunk_data
+        chunk_data=$(parse_streaming_chunk "$session_data")
+
+        if [[ -z "$chunk_data" ]]; then
+            [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && \
+                echo "[DEBUG] Failed to parse streaming chunk" >&2
+            return 1
+        fi
+
+        # Initialize state if needed
+        if [[ -n "$session_id" ]] && ! is_streaming_active "$session_id"; then
+            local model=$(echo "$session_data" | jq -r '.message.model // .model // "Unknown"' 2>/dev/null)
+            init_streaming_state "$session_id" "$provider_type" "$model"
+        fi
+
+        # Update state with chunk data
+        if [[ -n "$session_id" ]]; then
+            update_streaming_state "$session_id" "$chunk_data"
+
+            # Get accumulated state for display
+            local unified_data
+            unified_data=$(get_streaming_state "$session_id")
+
+            if [[ -z "$unified_data" ]]; then
+                [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && \
+                    echo "[DEBUG] Failed to get streaming state" >&2
+                return 1
+            fi
+
+            # Convert state format to unified format
+            local input=$(echo "$unified_data" | jq -r '.input_tokens // 0')
+            local output=$(echo "$unified_data" | jq -r '.output_tokens // 0')
+            local cache_read=$(echo "$unified_data" | jq -r '.cache_read_tokens // 0')
+            local cache_creation=$(echo "$unified_data" | jq -r '.cache_creation_tokens // 0')
+            local model=$(echo "$unified_data" | jq -r '.model // "Unknown"')
+            local context_limit=200000  # Default, could be model-specific
+
+            # Create unified data for statusline
+            unified_data=$(create_unified_data "$input" "$output" "$context_limit" \
+                          "$cache_read" "$cache_creation" "$model" "0")
+
+            # Set global variables
+            TOTAL_INPUT=$input
+            TOTAL_OUTPUT=$output
+            CONTEXT_LIMIT=$context_limit
+            CACHE_READ=$cache_read
+            CACHE_CREATION=$cache_creation
+            MODEL=$model
+            COST="0.00"  # Will be calculated at the end
+            PROVIDER_TYPE="$provider_type"
+            STREAMING_ACTIVE=1
+
+            export PROVIDER_TYPE STREAMING_ACTIVE
+
+            return 0
+        fi
+
+        # Fallback if no session_id
+        return 1
+    fi
+
+    # Non-streaming mode (existing logic)
     # Detect provider
     local provider_type
     provider_type=$(detect_provider_type "$session_data")
