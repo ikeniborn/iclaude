@@ -5,6 +5,7 @@
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
+  "plansDirectory": "docs/plans",
   "permissions": {
     "allow": [
       "Read",
