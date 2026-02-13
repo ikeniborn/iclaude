@@ -623,13 +623,21 @@ FIRST_RUN_MARKER="/tmp/claude-statusline-first-run-${SESSION_ID}"
 
 if [[ ! -f "$FIRST_RUN_MARKER" ]]; then
     # First run of this session - system message likely present
-    # Wait for it to appear and disappear (~2-3 seconds)
-    sleep 3
+    # Wait longer for system message to appear and fully disappear
+    # System messages can take 5-7 seconds to clear completely
+    sleep 7
+
+    # Additional polling: wait for output to stabilize
+    # Check if there's recent activity (other processes writing)
+    for i in {1..3}; do
+        sleep 0.5
+        # Small additional delay to ensure message cleared
+    done
+
     # Mark this session as seen
     touch "$FIRST_RUN_MARKER" 2>/dev/null
 else
     # Subsequent runs - no system message expected, output immediately
-    # Small delay to ensure smooth rendering
     sleep 0.1
 fi
 
