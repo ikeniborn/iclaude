@@ -723,11 +723,18 @@ SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
 CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
-# In first 30 seconds of session: always check for system message completion
-# This handles both initial startup AND first user message (when messages still appear)
-if [[ $SESSION_AGE -lt 30 ]]; then
+# OPTION 1: Skip output in first 30 seconds (cleanest solution)
+# Avoids race conditions with async system messages
+if [[ "${STATUSLINE_SKIP_STARTUP:-1}" == "1" ]] && [[ $SESSION_AGE -lt 30 ]]; then
+    # Skip output during startup period
+    exit 0
+fi
+
+# OPTION 2: Wait for stability (for testing/debugging)
+# Enable with: export STATUSLINE_SKIP_STARTUP=0
+if [[ "${STATUSLINE_SKIP_STARTUP:-1}" == "0" ]] && [[ $SESSION_AGE -lt 30 ]]; then
     wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
 fi
 
-# Output status line (after messages cleared if in startup period)
+# Output status line (only after startup period)
 printf "\n\n%b\n\n" "$STATUS_LINE"
