@@ -616,6 +616,11 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
+# Wait for Claude Code system messages to finish before outputting status line
+# System messages typically appear immediately and disappear after ~2 seconds
+# This delay ensures status line appears after messages disappear, keeping it intact
+sleep 2
+
 # Atomic output to STDOUT
 # Output entire status line in single printf call
 printf "\n%b\n\n" "$STATUS_LINE"
