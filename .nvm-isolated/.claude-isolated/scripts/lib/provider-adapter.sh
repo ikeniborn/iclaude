@@ -55,8 +55,8 @@ detect_provider_type() {
         # Distinguish between OpenAI and Ollama by model name
         local model_name=$(echo "$session_data" | jq -r '.model // empty' 2>/dev/null)
 
-        # Ollama models: llama*, mistral*, qwen*, codellama*, etc.
-        if [[ "$model_name" =~ ^(llama|mistral|qwen|codellama|deepseek-coder|phi|vicuna|orca) ]]; then
+        # Ollama models: llama*, mistral*, qwen*, codellama*, gemma*, phi*, etc.
+        if [[ "$model_name" =~ ^(llama|mistral|qwen|codellama|deepseek-coder|phi|vicuna|orca|gemma|starcoder|solar|yi) ]]; then
             echo "ollama"
             return 0
         fi

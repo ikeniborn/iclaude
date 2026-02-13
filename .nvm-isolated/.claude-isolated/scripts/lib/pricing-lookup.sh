@@ -141,6 +141,11 @@ calculate_cost() {
                 break
             fi
         done
+
+        # Debug: log if model still not found after partial match
+        if [[ "$input_price" == "0" ]] && [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+            echo "[DEBUG] Model not in pricing DB: $normalized_model (original: $model)" >&2
+        fi
     fi
 
     # Calculate cost
