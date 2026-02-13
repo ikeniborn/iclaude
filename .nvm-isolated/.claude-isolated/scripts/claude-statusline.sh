@@ -635,4 +635,5 @@ fi
 
 # Subsequent runs - output status line normally
 # Atomic output to STDOUT in single printf call
-printf "\n%b\n\n" "$STATUS_LINE"
+# Output on 3rd line (2 blank lines before) for visual separation
+printf "\n\n%b\n\n" "$STATUS_LINE"
