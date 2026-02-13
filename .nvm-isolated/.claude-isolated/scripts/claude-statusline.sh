@@ -438,16 +438,13 @@ format_tokens() {
 TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
 ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
 
-# Calculate effective window (context limit minus reserved buffer)
-# Claude Code reserves ~40-45K tokens as a safety buffer for operations
-# This explains why "Context left until auto-compact: 0%" appears at lower percentages
+# Calculate reserved buffer (Claude Code reserves ~40-45K tokens as a safety buffer)
 BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
 EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
 
-# Calculate percentage of effective window (excludes reserved buffer)
-# This shows why auto-compact triggers earlier than expected from status line percentage
-# Active tokens already exclude the reserved buffer (calculated from used_percentage)
-EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $EFFECTIVE_WINDOW)}")
+# Calculate percentage of FULL context window (200K, not effective 155K)
+# This shows actual context usage relative to the full window
+EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
 BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
 
@@ -488,16 +485,15 @@ else
     fi
 fi
 
-# Show active context and percentage of available space
-# Format: 📊 120K (77%) - active tokens and % of effective window
-# Active tokens (120K) = actual conversation context (excludes 45K reserved buffer)
-# Percentage (77%) = how much of available space is used (120K / 155K effective window)
+# Show active context and percentage of FULL context window
+# Format: 📊 120K (60%) - active tokens and % of full 200K window
+# Percentage shows actual usage relative to full context limit (not effective window)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
-    if [[ $ACTIVE_TOKENS -gt $EFFECTIVE_WINDOW ]]; then
-        # Exceeded effective window - add ⚠️ warning icon
+    if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
+        # Exceeded full context limit - add ⚠️ warning icon (should never happen)
         CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
-        # Normal display: active tokens and percentage
+        # Normal display: active tokens and percentage of full window
         CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
