@@ -20,6 +20,157 @@ Claude Code v2.1+ (uses nested `context_window` object)
 
 `.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh`
 
+## ✨ Multi-Provider Support (NEW)
+
+**Version:** 4.1+ (February 2026)
+
+Status line now automatically detects and supports multiple LLM providers:
+
+### Supported Providers
+
+| Provider | Icon | Cost Calculation | Cache Support | Notes |
+|----------|------|------------------|---------------|-------|
+| **Anthropic** (Claude) | None | Pre-calculated | ✅ Yes | Native provider, 100% backward compatible |
+| **OpenAI** | 🤖 | Calculated | ❌ No | gpt-4, gpt-3.5-turbo, o1 models |
+| **DeepSeek** | 🤖 | Calculated | ❌ No | deepseek-chat, deepseek-coder, deepseek-r1 |
+| **OpenRouter** | 🤖 | Calculated | ❌ No | Various models via OpenRouter API |
+| **Ollama** | 🦙 | Zero (local) | ❌ No | Local models (llama, mistral, qwen, etc.) |
+| **Gemini** | ✨ | Calculated | ❌ No | Google Gemini API (2.5 Pro, 2.0 Flash) |
+| **Unknown** | ❓ | Zero | ❌ No | Generic fallback for unrecognized providers |
+
+### Provider Detection
+
+Automatic detection based on JSON structure:
+
+```bash
+# Anthropic Claude format
+{ "context_window": { "total_input_tokens": ... } }
+
+# OpenAI-compatible format (OpenAI, DeepSeek, OpenRouter)
+{ "usage": { "prompt_tokens": ..., "completion_tokens": ... } }
+
+# Ollama format (OpenAI-compatible + local model names)
+{ "usage": { ... }, "model": "llama3.1:70b-instruct" }
+
+# Google Gemini format
+{ "usageMetadata": { "promptTokenCount": ... } }
+```
+
+### Cost Calculation
+
+**Pre-calculated (Anthropic):**
+- Native Claude API provides `total_cost_usd`
+- No calculation needed
+
+**Calculated (Others):**
+- Pricing database with 30+ models
+- Formula: `(input_tokens / 1M) × input_price + (output_tokens / 1M) × output_price`
+- Updated: February 2026
+
+**Zero cost (Ollama):**
+- Local models are free
+- Always shows `$0.00`
+
+### Provider Icons
+
+Icons appear after cost, before Router icon:
+
+```
+Σ 2K | DeepSeek | $0.00 🤖 | 🔀 provider | ...
+```
+
+**Icon meanings:**
+- 🤖 = OpenAI-compatible (OpenAI, DeepSeek, OpenRouter)
+- 🦙 = Ollama (local models)
+- ✨ = Google Gemini
+- ❓ = Unknown provider (generic fallback)
+- No icon = Native Anthropic Claude
+
+### Architecture
+
+**Adapter System:**
+
+```
+Session JSON → Provider Detection → Adapter → Unified Format → Display
+                      ↓
+            anthropic | openai | ollama | gemini | generic
+```
+
+**Location:** `.nvm-isolated/.claude-isolated/scripts/lib/`
+
+**Files:**
+- `provider-adapter.sh` - Factory & detection logic
+- `pricing-lookup.sh` - Cost calculation (30+ models)
+- `adapters/anthropic.sh` - Claude API adapter
+- `adapters/openai.sh` - OpenAI/DeepSeek/OpenRouter adapter
+- `adapters/ollama.sh` - Local models adapter
+- `adapters/gemini.sh` - Google Gemini adapter
+- `adapters/generic.sh` - Fallback adapter
+
+### Usage Examples
+
+**With Claude Code Router:**
+
+```bash
+# Configure Router with DeepSeek
+./iclaude.sh --router
+
+# Status line automatically detects and shows:
+# Σ 1.5K | DeepSeek Chat | $0.0004 🤖 | ...
+```
+
+**With Ollama (local):**
+
+```bash
+# Status line shows zero cost:
+# Σ 850 | Llama3.1 (local) | $0.00 🦙 | ...
+```
+
+**With native Claude (unchanged):**
+
+```bash
+# No provider icon, works exactly as before:
+# Σ 50K | 25K active (12%) | 📦 10K | Sonnet 4.5 | $1.05 | ...
+```
+
+### Backward Compatibility
+
+**100% compatible** with existing setups:
+
+- ✅ Native Claude users see no changes
+- ✅ Falls back to legacy parsing if adapters unavailable
+- ✅ No breaking changes to output format
+- ✅ Graceful degradation for unknown providers
+
+### Troubleshooting
+
+**Provider not detected:**
+
+```bash
+# Enable debug mode
+export DEBUG_STATUSLINE=1
+cat session.json | claude-statusline.sh
+
+# Check detection
+# Output: "[DEBUG] Detected provider: openai"
+```
+
+**Wrong cost:**
+
+- Check model name: `cat session.json | jq '.model'`
+- Update pricing in `lib/pricing-lookup.sh` if model missing
+- Pricing updated Feb 2026, may need refresh for new models
+
+**No provider icon:**
+
+- Anthropic/Claude: No icon by design (native provider)
+- Unknown format: Shows ❓ icon (generic fallback)
+- Debug with `DEBUG_STATUSLINE=1`
+
+### Adding New Providers
+
+See `lib/README.md` for complete guide on adding new provider adapters.
+
 ## Display Format
 
 ### Example Output

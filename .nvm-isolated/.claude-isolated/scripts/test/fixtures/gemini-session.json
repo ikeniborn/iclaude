@@ -1,0 +1,21 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Test response from Gemini"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP"
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 2500,
+    "candidatesTokenCount": 800,
+    "totalTokenCount": 3300
+  },
+  "modelVersion": "models/gemini-2.5-pro-001"
+}

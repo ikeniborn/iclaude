@@ -1,0 +1,14 @@
+{
+  "model": "llama3.1:70b-instruct",
+  "created_at": "2026-02-13T10:30:00Z",
+  "message": {
+    "role": "assistant",
+    "content": "Test response from Ollama"
+  },
+  "done": true,
+  "usage": {
+    "prompt_tokens": 850,
+    "completion_tokens": 320,
+    "total_tokens": 1170
+  }
+}
