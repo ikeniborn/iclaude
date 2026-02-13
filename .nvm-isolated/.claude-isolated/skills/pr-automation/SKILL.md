@@ -11,6 +11,7 @@ triggers:
   - "сделать pr"
   - "открыть pull request"
 user-invocable: true
+context: fork
 changelog:
   - version: 1.3.0
     date: 2026-01-25

@@ -19,6 +19,10 @@
 .*.swo
 tmp
 
+# Session-specific readable files (statusline generated)
+# Includes both TOON format (.toon) and legacy text format (.txt)
+.claude-sessions/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -38,9 +42,11 @@ users.json
 *.pem
 qr_codes/
 
-# Proxy credentials (init_claude script)
-.claude_proxy_credentials
-scripts/.claude_proxy_credentials
+# Configuration file (proxy, Claude Code settings, debug flags)
+.claude_config
+.claude_proxy_credentials  # Legacy filename (for backward compatibility)
+scripts/.claude_config
+scripts/.claude_proxy_credentials  # Legacy
 
 # Isolated NVM environment - temporary/cache files only
 .nvm-isolated/.cache/
