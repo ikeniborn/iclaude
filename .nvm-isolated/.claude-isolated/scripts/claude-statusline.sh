@@ -205,6 +205,12 @@ if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]] && [[ -n "${PROVIDER_TYPE:-}" ]]; 
     esac
 fi
 
+# Streaming indicator (when active streaming detected)
+STREAMING_ICON=""
+if [[ "${STREAMING_ACTIVE:-0}" == "1" ]]; then
+    STREAMING_ICON=" 🔄"
+fi
+
 # Generate TOON-formatted session for token efficiency
 # Converts JSONL to compact TOON format (30-60% token savings)
 # TOON format: messages[N]{role,type,content}: user,text,"content" ...
@@ -734,7 +740,7 @@ fi
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты без сокращений, proxy в конце
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${PROVIDER_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -752,7 +758,7 @@ case "$DISPLAY_MODE" in
         fi
 
         # Git info компактный: только иконка + изменения
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
         ;;
 
     minimal)
