@@ -332,18 +332,20 @@ generate_readable_session() {
 }
 
 # Session context link (OSC 8 hyperlink to readable session file)
-# Generates human-readable version in project .claude-sessions/ directory
+# Generates human-readable version in project .claude/sessions/ directory
 # Uses append-only optimization for performance (only processes new messages)
 # Session-specific filename prevents conflicts between parallel sessions
 SESSION_LINK=""
 SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
-CWD=$(echo "$SESSION_DATA" | jq -r '.cwd // empty' 2>/dev/null)
 
-if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$CWD" ]] && [[ -d "$CWD" ]]; then
+# Use project_dir (root) instead of cwd (may be subdirectory)
+PROJECT_DIR=$(echo "$SESSION_DATA" | jq -r '.workspace.project_dir // .cwd // empty' 2>/dev/null)
+
+if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" ]] && [[ -d "$PROJECT_DIR" ]]; then
     # Use session-specific filename to avoid conflicts between parallel sessions
-    # Store in .claude-sessions/ to keep project root clean
+    # Store in project root .claude/sessions/ for standardized structure
     SESSION_ID=$(basename "$SESSION_FILE" .jsonl)
-    SESSIONS_DIR="$CWD/.claude-sessions"
+    SESSIONS_DIR="$PROJECT_DIR/.claude/sessions"
 
     # Try TOON format first (30-60% token savings)
     TOON_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.toon"
@@ -398,12 +400,24 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
             # Get commits ahead of upstream
             AHEAD=$(git rev-list --count @{upstream}..HEAD 2>/dev/null || echo "0")
         fi
+        # Full git info (with full branch name)
         GIT_INFO=" | 🔱 $BRANCH"
         [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO+=" ●$CHANGES"
         [[ "$AHEAD" != "0" ]] && GIT_INFO+=" ↑$AHEAD"
+
+        # Compact git info (abbreviated branch name to save space)
+        # Show first 8 chars of branch name + changes
+        BRANCH_SHORT="${BRANCH:0:8}"
+        [[ ${#BRANCH} -gt 8 ]] && BRANCH_SHORT+="…"
+
+        GIT_INFO_COMPACT=" | 🔱 $BRANCH_SHORT"
+        [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO_COMPACT+=" ●$CHANGES"
+        [[ "$AHEAD" != "0" ]] && GIT_INFO_COMPACT+=" ↑$AHEAD"
     else
         # Add separator for Oh My Posh output
         GIT_INFO=" | ${GIT_INFO}"
+        # For Oh My Posh, compact version is same as full (already formatted)
+        GIT_INFO_COMPACT="${GIT_INFO}"
     fi
 fi
 
@@ -437,6 +451,74 @@ format_tokens() {
 
 TOTAL_TOKENS_FMT=$(format_tokens $TOTAL_TOKENS)
 ACTIVE_TOKENS_FMT=$(format_tokens $ACTIVE_TOKENS)
+
+# Adaptive status line: terminal width detection
+# Determines terminal width for adaptive display modes
+get_terminal_width() {
+    # Попытка 1: tput (наиболее надежно)
+    if command -v tput &>/dev/null; then
+        local width=$(tput cols 2>/dev/null)
+        if [[ -n "$width" ]] && [[ "$width" =~ ^[0-9]+$ ]]; then
+            echo "$width"
+            return
+        fi
+    fi
+
+    # Попытка 2: stty (fallback)
+    if command -v stty &>/dev/null; then
+        local width=$(stty size 2>/dev/null | cut -d' ' -f2)
+        if [[ -n "$width" ]] && [[ "$width" =~ ^[0-9]+$ ]]; then
+            echo "$width"
+            return
+        fi
+    fi
+
+    # Fallback: 80 колонок (compact mode)
+    echo "80"
+}
+
+# Adaptive status line: model name shortening
+# Shortens model names for compact display
+shorten_model_name() {
+    local model="$1"
+    case "$model" in
+        *"Sonnet"*) echo "$model" | sed 's/Sonnet /S/g' ;;
+        *"Opus"*) echo "$model" | sed 's/Opus /O/g' ;;
+        *"Haiku"*) echo "$model" | sed 's/Haiku /H/g' ;;
+        *) echo "${model:0:8}" ;;
+    esac
+}
+
+# Adaptive status line: router provider shortening
+# Removes 'claude-' prefix from router providers
+shorten_router_provider() {
+    local provider="$1"
+    echo "$provider" | sed 's/^claude-//g'
+}
+
+# Adaptive status line: display mode selection
+# Returns display mode based on terminal width
+# - full (≥130 cols): all components
+# - compact (70-129 cols): smart abbreviations + git info
+# - minimal (<70 cols): critical metrics only (tokens, cache, model, cost)
+get_display_mode() {
+    local width=$1
+    if [[ $width -ge 130 ]]; then
+        echo "full"
+    elif [[ $width -ge 70 ]]; then
+        echo "compact"
+    else
+        echo "minimal"
+    fi
+}
+
+# Detect terminal width and display mode
+# Can be disabled with STATUSLINE_ADAPTIVE=0 for debugging
+TERM_WIDTH=$(get_terminal_width)
+DISPLAY_MODE="full"
+if [[ "${STATUSLINE_ADAPTIVE:-1}" == "1" ]]; then
+    DISPLAY_MODE=$(get_display_mode "$TERM_WIDTH")
+fi
 
 # Calculate reserved buffer (Claude Code reserves ~40-45K tokens as a safety buffer)
 BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
@@ -491,15 +573,50 @@ fi
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
         # Exceeded full context limit - add ⚠️ warning icon (should never happen)
-        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
         # Normal display: active tokens and percentage of full window
-        CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
     # Zero active tokens (after /clear)
-    CONTEXT_DISPLAY="💳 ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
+    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
-# Output formatted status line
-echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST} |${PROXY_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO}"
+# Output formatted status line with adaptive display
+# Three display modes:
+# - full (≥120 cols): all components without abbreviations
+# - compact (80-119 cols): smart abbreviations, hide buffer
+# - minimal (<80 cols): only critical metrics (tokens, model, cost)
+case "$DISPLAY_MODE" in
+    full)
+        # Full mode: все компоненты без сокращений, proxy в конце
+        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        ;;
+
+    compact)
+        # Compact mode: умные сокращения + session link + git info
+        MODEL_SHORT=$(shorten_model_name "$MODEL")
+
+        # Сократить router provider (если есть)
+        ROUTER_ICON_COMPACT=""
+        if [[ -n "$ROUTER_ICON" ]]; then
+            # Извлечь provider из строки " | 🔀 provider"
+            ROUTER_PROVIDER=$(echo "$ROUTER_ICON" | sed 's/.* | 🔀 //')
+            ROUTER_SHORT=$(shorten_router_provider "$ROUTER_PROVIDER")
+            # Показываем только иконку + сокращенный provider
+            ROUTER_ICON_COMPACT=" 🔀${ROUTER_SHORT}"
+        fi
+
+        # Скрыть buffer и название ветки для экономии места
+        # Показываем: tokens, cache, model, cost, router, session link, git info (компактный), proxy
+        # Git info компактный: только иконка + изменения (🔱●6 вместо 🔱 test ●6)
+        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
+        ;;
+
+    minimal)
+        # Minimal mode: только критичное (tokens, cache, model, cost)
+        MODEL_SHORT=$(shorten_model_name "$MODEL")
+        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        ;;
+esac

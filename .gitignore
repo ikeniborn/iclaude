@@ -99,3 +99,4 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/npm-global/bin/oh-my-posh
 
 # Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
+.claude/
