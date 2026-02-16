@@ -770,17 +770,21 @@ CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 # Show active context and percentage of FULL context window
 # Format: 📊 120K (60%) - active tokens and % of full 200K window
 # Percentage shows actual usage relative to full context limit (not effective window)
+# TESTING: Remove ANSI codes to check if they cause wrapping
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
         # Exceeded full context limit - add ⚠️ warning icon (should never happen)
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%) ⚠️"
     else
         # Normal display: active tokens and percentage of full window
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)"
     fi
 else
     # Zero active tokens (after /clear)
-    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
+    # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
+    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 0 (0%)"
 fi
 
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
@@ -807,8 +811,10 @@ case "$DISPLAY_MODE" in
         # Compact mode: MINIMAL components for 70-129 cols terminals
         # Remove: router, proxy, session link, git info
         # Keep: tokens, cache, model, cost
+        # TESTING: Remove all ANSI codes to check if they cause wrapping
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        # STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${MODEL_SHORT} | \$${COST}"
         ;;
 
     minimal)
