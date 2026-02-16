@@ -510,7 +510,7 @@ format_tokens() {
     elif [[ $tokens -ge 1000 ]]; then
         awk "BEGIN {printf \"%.0fK\", ($tokens / 1000.0)}"
     else
-        echo "$tokens"
+        printf "%s" "$tokens"  # FIX: Use printf, not echo (echo adds \n)
     fi
 }
 
