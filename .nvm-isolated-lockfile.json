@@ -1,6 +1,6 @@
 {
-  "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.41",
+  "nodeVersion": "20.20.0",
+  "claudeCodeVersion": "2.1.42",
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
   "lspServers": {
@@ -16,12 +16,12 @@
     "socat": "1.8.0.0"
   },
   "sandboxRuntimeVersion": "1.0.0",
-  "sandboxInstalledAt": "2026-02-13T03:58:16Z",
+  "sandboxInstalledAt": "2026-02-16T17:09:49Z",
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-02-13T03:58:19Z",
+  "installedAt": "2026-02-16T17:09:52Z",
   "nvmVersion": "0.39.7"
 }
