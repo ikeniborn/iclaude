@@ -775,6 +775,14 @@ fi
 
 # Build status line string based on display mode
 # Collect entire string first for atomic output to prevent system message injection
+# CRITICAL: Remove any newlines from components to prevent line wrapping
+# Clean all variables before assembly
+TOTAL_TOKENS_FMT=$(echo "$TOTAL_TOKENS_FMT" | tr -d '\n\r')
+ACTIVE_TOKENS_FMT=$(echo "$ACTIVE_TOKENS_FMT" | tr -d '\n\r')
+CACHE_FMT=$(echo "${CACHE_FMT:-}" | tr -d '\n\r')
+MODEL=$(echo "$MODEL" | tr -d '\n\r')
+COST=$(echo "$COST" | tr -d '\n\r')
+
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты без сокращений, proxy в конце
