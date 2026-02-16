@@ -831,12 +831,16 @@ if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_R
 fi
 
 # Quick stability check: prevent statusline appearing ABOVE system messages
-# If transcript was modified in last 2 seconds, wait for system messages to finish
-if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
-    # Transcript unstable - system messages may be appearing
-    # Exit silently, statusline will show on next invocation
-    exit 0
+# IMPORTANT: Only check during startup period (first 30 seconds of new sessions)
+# For established sessions, system messages are rare, so skip the check
+if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -lt 1000 ]]; then
+    # Startup period: check transcript stability to avoid collision with system messages
+    if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
+        # Transcript unstable - system messages may be appearing
+        # Exit silently, statusline will show on next invocation
+        exit 0
+    fi
 fi
 
-# Phase 3: After stability confirmed - normal output
+# Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
 printf "\n\n%b\n\n" "$STATUS_LINE"
