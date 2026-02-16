@@ -488,12 +488,12 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
     fi
 fi
 
-# Color selection based on context usage
-GREEN="\033[32m"
-YELLOW="\033[33m"
-RED="\033[31m"
-BLUE="\033[34m"
-RESET="\033[0m"
+# Color selection based on context usage (using $'...' for real ANSI codes)
+GREEN=$'\033[32m'
+YELLOW=$'\033[33m'
+RED=$'\033[31m'
+BLUE=$'\033[34m'
+RESET=$'\033[0m'
 
 if [[ $PERCENT -lt 50 ]]; then
     COLOR=$GREEN
@@ -817,11 +817,10 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# CRITICAL FIX: Clean STATUS_LINE following Oh My Posh approach
-# 1. Remove ANSI color codes (they break in Claude Code UI)
-# 2. Strip newlines and extra spaces
-# 3. Use printf %s to avoid interpreting escape sequences
-STATUS_LINE=$(printf '%s' "$STATUS_LINE" | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\n\r' | tr -s ' ')
+# CRITICAL FIX: Clean STATUS_LINE from embedded newlines
+# With real ANSI codes ($'\033[...'), don't strip them with sed
+# Only clean newlines and extra spaces for safety
+STATUS_LINE=$(printf '%s' "$STATUS_LINE" | tr -d '\n\r' | tr -s ' ')
 
 # Smart handling: wait for system messages during session startup period
 # System messages can appear multiple times in first ~30 seconds
@@ -879,10 +878,11 @@ fi
 # Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
 # ATOMIC OUTPUT: Buffer entire output then write at once
 # Prevents Claude Code from inserting system messages between components
+# Use printf "%s" instead of "%b" to prevent interpreting \n as newlines
 {
     echo ""
     echo ""
-    printf "%b\n" "$STATUS_LINE"
+    printf "%s\n" "$STATUS_LINE"
     echo ""
     echo ""
 } 2>&1
