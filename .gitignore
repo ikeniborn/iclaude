@@ -100,3 +100,5 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
 .claude/
+# Claude Code plans (optional - can be committed)
+# docs/plans/*.md

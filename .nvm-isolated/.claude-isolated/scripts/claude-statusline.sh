@@ -49,11 +49,31 @@ if ! command -v jq &>/dev/null; then
     exit 0  # Don't break Claude Code UI
 fi
 
-# Parse Claude session data (tokens, model, cost)
-# Requires Claude Code v2.1+ (nested context_window object)
-# Note: total_input/output_tokens = billing tokens (excludes cache reads)
-TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
-TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
+# Source provider adapter system (if available)
+PROVIDER_ADAPTER_AVAILABLE=0
+if [[ -f "$SCRIPT_DIR/lib/provider-adapter.sh" ]]; then
+    source "$SCRIPT_DIR/lib/provider-adapter.sh"
+    PROVIDER_ADAPTER_AVAILABLE=1
+fi
+
+# Parse session data using adapter system (if available) or legacy parsing
+if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]]; then
+    # Use adapter system for multi-provider support
+    if parse_with_adapter "$SESSION_DATA"; then
+        # Adapter system set global variables: TOTAL_INPUT, TOTAL_OUTPUT, etc.
+        # PROVIDER_TYPE is also set for icon display
+        :
+    else
+        # Adapter failed, show awaiting message
+        echo "[Status line: awaiting session data...]"
+        exit 0
+    fi
+else
+    # Legacy parsing (Anthropic Claude API format only)
+    # 100% backward compatible with original logic
+    TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
+    TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
+fi
 
 # Debug: Log detected field names and parsed values
 if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
@@ -62,20 +82,25 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "DEBUG: Parsed tokens: INPUT=$TOTAL_INPUT, OUTPUT=$TOTAL_OUTPUT" >&2
 fi
 
-# Validate parsed data
-if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
-   [[ "$TOTAL_INPUT" == "null" ]] || [[ "$TOTAL_OUTPUT" == "null" ]]; then
-    echo "[Status line: awaiting session data...]"
-    exit 0  # Show message instead of breaking
+# Validate parsed data (for legacy path only)
+if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
+    if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
+       [[ "$TOTAL_INPUT" == "null" ]] || [[ "$TOTAL_OUTPUT" == "null" ]]; then
+        echo "[Status line: awaiting session data...]"
+        exit 0  # Show message instead of breaking
+    fi
+
+    # Legacy parsing continues (only when adapter system unavailable)
+    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
+    MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
+    CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
+    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
+    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
+    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
+else
+    # Adapter system already parsed everything
+    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 fi
-
-TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
-
-# Parse model display name (Claude Code v2.1+)
-MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
-
-# Get context limit from session data (Claude Code v2.1+)
-CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
 
 # Calculate API tokens percentage (billing only, excludes cache reads)
 # Note: This is different from used_percentage which includes cache tokens
@@ -95,9 +120,13 @@ if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USE
     ACTIVE_PERCENT="$USED_PERCENTAGE"
 fi
 
-# Parse cache tokens (Claude Code v2.1+)
-CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
+# Parse/calculate cache tokens
+if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
+    # Legacy: parse cache from Claude API
+    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
+    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
+fi
+# Adapter system already set CACHE_READ and CACHE_CREATION
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
 
 # Format cache display (show only if >0)
@@ -114,7 +143,10 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
 fi
 
-COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
+# Parse cost (legacy mode only, adapter already set COST)
+if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
+    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
+fi
 
 # Proxy detection (environment variables + fallback)
 # Note: HTTPS_PROXY/HTTP_PROXY may not be set when Claude Code calls this script
@@ -149,6 +181,34 @@ ROUTER_ICON=""
 if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
     PROVIDER=$(jq -r '.routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
     ROUTER_ICON=" | 🔀 $PROVIDER"
+fi
+
+# Provider icon display (when using adapter system)
+PROVIDER_ICON=""
+if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]] && [[ -n "${PROVIDER_TYPE:-}" ]]; then
+    case "$PROVIDER_TYPE" in
+        anthropic)
+            # No icon for native Claude (default)
+            ;;
+        openai)
+            PROVIDER_ICON=" 🤖"
+            ;;
+        ollama)
+            PROVIDER_ICON=" 🦙"
+            ;;
+        gemini)
+            PROVIDER_ICON=" ✨"
+            ;;
+        unknown|generic)
+            PROVIDER_ICON=" ❓"
+            ;;
+    esac
+fi
+
+# Streaming indicator (when active streaming detected)
+STREAMING_ICON=""
+if [[ "${STREAMING_ACTIVE:-0}" == "1" ]]; then
+    STREAMING_ICON=" 🔄"
 fi
 
 # Generate TOON-formatted session for token efficiency
@@ -496,6 +556,98 @@ shorten_router_provider() {
     echo "$provider" | sed 's/^claude-//g'
 }
 
+# Smart waiting: wait for system messages to clear
+# Monitors session transcript file for stability
+wait_for_system_messages_to_clear() {
+    local session_id="$1"
+    local project_dir="$2"
+
+    # Debug mode
+    local debug_log="/tmp/claude-statusline-wait-debug.log"
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "=== wait_for_system_messages_to_clear() called ===" >> "$debug_log"
+        echo "Session ID: $session_id" >> "$debug_log"
+        echo "Project DIR: $project_dir" >> "$debug_log"
+    fi
+
+    # Convert project path to Claude's internal format
+    # /home/user/project -> -home-user-project
+    local project_key=$(echo "$project_dir" | sed 's|/|-|g')
+
+    # Path to session transcript file
+    local transcript_file="${CLAUDE_CONFIG_DIR}/projects/${project_key}/${session_id}.jsonl"
+
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "Transcript file: $transcript_file" >> "$debug_log"
+        echo "File exists: $(test -f "$transcript_file" && echo YES || echo NO)" >> "$debug_log"
+    fi
+
+    # Parameters
+    local min_delay=8        # Minimum wait (increased from 3 to 8)
+    local max_wait=20        # Maximum timeout (increased from 15 to 20)
+    local stable_period=3    # Seconds of no changes (increased from 2 to 3)
+
+    # Initial delay (let system messages appear)
+    sleep $min_delay
+
+    local start_time=$(date +%s)
+    local last_mtime=0
+    local stable_count=0
+    local check_count=0
+
+    # Wait for stability (transcript file stops changing)
+    while true; do
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+        check_count=$((check_count + 1))
+
+        # Timeout protection
+        if [[ $elapsed -ge $max_wait ]]; then
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                echo "TIMEOUT reached after ${elapsed}s" >> "$debug_log"
+            fi
+            break
+        fi
+
+        # Check transcript file modification time
+        if [[ -f "$transcript_file" ]]; then
+            local current_mtime=$(stat -c %Y "$transcript_file" 2>/dev/null || echo 0)
+
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                echo "Check #${check_count}: mtime=${current_mtime}, last=${last_mtime}, stable=${stable_count}" >> "$debug_log"
+            fi
+
+            if [[ $current_mtime -eq $last_mtime ]]; then
+                # File unchanged - increment stability counter
+                stable_count=$((stable_count + 1))
+
+                # If stable for N seconds, consider messages cleared
+                if [[ $stable_count -ge $stable_period ]]; then
+                    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+                        echo "STABLE detected after ${elapsed}s (${stable_count} checks)" >> "$debug_log"
+                    fi
+                    break
+                fi
+            else
+                # File changed - reset counter
+                stable_count=0
+                last_mtime=$current_mtime
+            fi
+        else
+            if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && [[ $check_count -eq 1 ]]; then
+                echo "WARNING: Transcript file not found!" >> "$debug_log"
+            fi
+        fi
+
+        sleep 1
+    done
+
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "wait_for_system_messages_to_clear() finished after $(($(date +%s) - start_time + min_delay))s total" >> "$debug_log"
+        echo "" >> "$debug_log"
+    fi
+}
+
 # Adaptive status line: display mode selection
 # Returns display mode based on terminal width
 # - full (≥130 cols): all components
@@ -583,15 +735,12 @@ else
     CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
-# Output formatted status line with adaptive display
-# Three display modes:
-# - full (≥120 cols): all components without abbreviations
-# - compact (80-119 cols): smart abbreviations, hide buffer
-# - minimal (<80 cols): only critical metrics (tokens, model, cost)
+# Build status line string based on display mode
+# Collect entire string first for atomic output to prevent system message injection
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты без сокращений, proxy в конце
-        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -608,15 +757,46 @@ case "$DISPLAY_MODE" in
             ROUTER_ICON_COMPACT=" 🔀${ROUTER_SHORT}"
         fi
 
-        # Скрыть buffer и название ветки для экономии места
-        # Показываем: tokens, cache, model, cost, router, session link, git info (компактный), proxy
-        # Git info компактный: только иконка + изменения (🔱●6 вместо 🔱 test ●6)
-        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
+        # Git info компактный: только иконка + изменения
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
         ;;
 
     minimal)
         # Minimal mode: только критичное (tokens, cache, model, cost)
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        echo -e "${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
         ;;
 esac
+
+# Smart handling: wait for system messages during session startup period
+# System messages can appear multiple times in first ~30 seconds
+SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
+SESSION_START_TIME_FILE="/tmp/claude-statusline-start-time-${SESSION_ID}"
+SESSION_READY_MARKER="/tmp/claude-statusline-ready-${SESSION_ID}"
+
+# Track session start time (first script invocation)
+if [[ ! -f "$SESSION_START_TIME_FILE" ]]; then
+    date +%s > "$SESSION_START_TIME_FILE" 2>/dev/null
+fi
+
+# Calculate session age
+SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
+CURRENT_TIME=$(date +%s)
+SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
+
+# Phase 1: Startup period (0-30 seconds) - no output
+# ВАЖНО: Применяется только к НОВЫМ сессиям (TOTAL_TOKENS == 0)
+# Для продолжающихся сессий (после /clear) всегда показываем статус лайн
+if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
+    exit 0
+fi
+
+# Phase 2: After 30s, but first message after wait - mark ready, no output yet
+# ВАЖНО: Также только для новых сессий
+if [[ ! -f "$SESSION_READY_MARKER" ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
+    touch "$SESSION_READY_MARKER" 2>/dev/null
+    exit 0
+fi
+
+# Phase 3: After 30s + first message sent - normal output
+printf "\n\n%b\n\n" "$STATUS_LINE"
