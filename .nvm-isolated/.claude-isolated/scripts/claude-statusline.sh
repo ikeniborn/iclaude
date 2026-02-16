@@ -422,8 +422,9 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
 
     if [[ -n "$READABLE_FILE" ]] && [[ -f "$READABLE_FILE" ]]; then
         # Create OSC 8 hyperlink to readable file (icon only, no text)
-        # Format: \e]8;;URL\e\\TEXT\e]8;;\e\\
-        SESSION_LINK=" | \e]8;;file://${READABLE_FILE}\e\\📄\e]8;;\e\\"
+        # Format: \033]8;;URL\033\\TEXT\033]8;;\033\\
+        # Note: Using \033 instead of \e for printf %b compatibility
+        SESSION_LINK=" | \033]8;;file://${READABLE_FILE}\033\\\\📄\033]8;;\033\\\\"
     fi
 fi
 
@@ -831,11 +832,11 @@ if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_R
 fi
 
 # Quick stability check: prevent statusline appearing ABOVE system messages
-# IMPORTANT: Only check during startup period (first 30 seconds)
-# After 30 seconds, system messages are unlikely, so always show statusline
+# IMPORTANT: Only check during initial startup (first 10 seconds of new sessions)
+# After 10 seconds or first message, system messages are unlikely
 # This prevents infinite blocking when Claude Code calls script immediately after transcript write
-if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
-    # Startup period of NEW sessions only: check transcript stability
+if [[ $SESSION_AGE -lt 10 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
+    # Initial startup of NEW sessions only: check transcript stability
     if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
         # Transcript unstable - system messages may be appearing
         # Exit silently, statusline will show on next invocation
