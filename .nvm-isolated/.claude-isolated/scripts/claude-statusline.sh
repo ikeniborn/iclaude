@@ -487,19 +487,11 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
 fi
 
 # Color selection based on context usage
-# TEMPORARY FIX: Disable colors to debug line wrapping
-# Colors (ANSI escape sequences) may be causing issues in Claude Code UI
-GREEN=""
-YELLOW=""
-RED=""
-BLUE=""
-RESET=""
-# Original colors (disabled):
-# GREEN="\033[32m"
-# YELLOW="\033[33m"
-# RED="\033[31m"
-# BLUE="\033[34m"
-# RESET="\033[0m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+RESET="\033[0m"
 
 if [[ $PERCENT -lt 50 ]]; then
     COLOR=$GREEN
@@ -867,13 +859,7 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "---" >> /tmp/claude-statusline-debug.log
 fi
 
-# EXTREME DEBUG: Test with simple string to isolate the issue
-# If even "Hello World" wraps, the problem is in Claude Code UI or output method
-echo ""
-echo ""
-# Test 1: Simple string
-echo "Test statusline: Tokens=580 Model=Sonnet Cost=0.08"
-# Test 2: Actual statusline (commented out for now)
-# printf "%s\n" "$STATUS_LINE"
-echo ""
-echo ""
+# Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
+# ATOMIC OUTPUT: Output entire statusline as single write to prevent race conditions
+# Use printf %b for proper escape sequence interpretation
+printf "\n\n%b\n\n" "$STATUS_LINE"
