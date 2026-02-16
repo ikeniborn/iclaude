@@ -147,6 +147,8 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
         CACHE_FMT="$TOTAL_CACHE"
     fi
     CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
+    # Clean cache display immediately
+    CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
 
 # Parse cost (legacy mode only, adapter already set COST)
@@ -779,6 +781,10 @@ else
     # Zero active tokens (after /clear)
     CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
+
+# CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
+# Newlines appear during string concatenation, not from variables
+CONTEXT_DISPLAY=$(printf '%s' "$CONTEXT_DISPLAY" | tr -d '\n\r' | tr -s ' ')
 
 # Build status line string based on display mode
 # Collect entire string first for atomic output to prevent system message injection
