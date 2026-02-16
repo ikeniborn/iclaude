@@ -424,7 +424,10 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
         # Create OSC 8 hyperlink to readable file (icon only, no text)
         # Format: \033]8;;URL\033\\TEXT\033]8;;\033\\
         # Note: Using \033 instead of \e for printf %b compatibility
-        SESSION_LINK=" | \033]8;;file://${READABLE_FILE}\033\\\\📄\033]8;;\033\\\\"
+        # TEMPORARY FIX: OSC 8 hyperlinks cause line wrapping in some terminals
+        # Use simple icon without hyperlink
+        SESSION_LINK=" | 📄"
+        # Disabled: SESSION_LINK=" | \033]8;;file://${READABLE_FILE}\033\\\\📄\033]8;;\033\\\\"
     fi
 fi
 
