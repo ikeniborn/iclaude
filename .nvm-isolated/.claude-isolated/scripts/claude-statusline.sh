@@ -804,9 +804,11 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
-# CRITICAL FIX: Strip ALL newlines from final STATUS_LINE
-# Newlines appear during variable concatenation despite cleaning components
-STATUS_LINE=$(echo "$STATUS_LINE" | tr -d '\n\r' | tr -s ' ')
+# CRITICAL FIX: Clean STATUS_LINE following Oh My Posh approach
+# 1. Remove ANSI color codes (they break in Claude Code UI)
+# 2. Strip newlines and extra spaces
+# 3. Use printf %s to avoid interpreting escape sequences
+STATUS_LINE=$(printf '%s' "$STATUS_LINE" | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\n\r' | tr -s ' ')
 
 # Smart handling: wait for system messages during session startup period
 # System messages can appear multiple times in first ~30 seconds
