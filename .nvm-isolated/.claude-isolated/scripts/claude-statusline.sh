@@ -557,6 +557,39 @@ shorten_router_provider() {
     echo "$provider" | sed 's/^claude-//g'
 }
 
+# Quick transcript stability check (lightweight, no delays)
+# Returns 0 if stable, 1 if recently changed
+# Used on every invocation to detect late system messages
+check_transcript_stability() {
+    local session_id="$1"
+    local project_dir="$2"
+
+    # Convert project path to Claude's internal format
+    local project_key=$(echo "$project_dir" | sed 's|/|-|g')
+    local transcript_file="${CLAUDE_CONFIG_DIR}/projects/${project_key}/${session_id}.jsonl"
+
+    # If transcript doesn't exist, consider it stable
+    [[ ! -f "$transcript_file" ]] && return 0
+
+    # Get last modification time
+    local current_mtime=$(stat -c %Y "$transcript_file" 2>/dev/null || echo 0)
+    local current_time=$(date +%s)
+    local age=$((current_time - current_mtime))
+
+    # If modified in last 2 seconds, consider unstable (system message may be appearing)
+    if [[ $age -lt 2 ]]; then
+        if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+            echo "check_transcript_stability: UNSTABLE (modified ${age}s ago)" >> /tmp/claude-statusline-debug.log
+        fi
+        return 1
+    fi
+
+    if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+        echo "check_transcript_stability: STABLE (modified ${age}s ago)" >> /tmp/claude-statusline-debug.log
+    fi
+    return 0
+}
+
 # Smart waiting: wait for system messages to clear
 # Monitors session transcript file for stability
 wait_for_system_messages_to_clear() {
@@ -797,5 +830,13 @@ if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_R
     exit 0
 fi
 
-# Phase 3: After 30s + first message sent - normal output
+# Quick stability check: prevent statusline appearing ABOVE system messages
+# If transcript was modified in last 2 seconds, wait for system messages to finish
+if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
+    # Transcript unstable - system messages may be appearing
+    # Exit silently, statusline will show on next invocation
+    exit 0
+fi
+
+# Phase 3: After stability confirmed - normal output
 printf "\n\n%b\n\n" "$STATUS_LINE"
