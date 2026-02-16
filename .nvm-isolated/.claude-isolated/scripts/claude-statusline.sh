@@ -757,6 +757,13 @@ else
     fi
 fi
 
+# CRITICAL: Clean ALL variables from newlines BEFORE assembly
+# Problem: Newlines appear in multiple places, not just format_tokens
+TOTAL_TOKENS_FMT=$(printf '%s' "$TOTAL_TOKENS_FMT" | tr -d '\n\r')
+ACTIVE_TOKENS_FMT=$(printf '%s' "$ACTIVE_TOKENS_FMT" | tr -d '\n\r')
+EFFECTIVE_PERCENT=$(printf '%s' "$EFFECTIVE_PERCENT" | tr -d '\n\r')
+CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
+
 # Show active context and percentage of FULL context window
 # Format: 📊 120K (60%) - active tokens and % of full 200K window
 # Percentage shows actual usage relative to full context limit (not effective window)
