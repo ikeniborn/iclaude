@@ -867,12 +867,13 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "---" >> /tmp/claude-statusline-debug.log
 fi
 
-# TEMPORARY FIX: Use printf %s (raw output, escape sequences as literals)
-# Both printf %b and echo -e cause line wrapping issues
-# printf %s outputs everything as-is without interpretation
-# This means ANSI colors will be visible as raw codes, but statusline will be readable
+# EXTREME DEBUG: Test with simple string to isolate the issue
+# If even "Hello World" wraps, the problem is in Claude Code UI or output method
 echo ""
 echo ""
-printf "%s\n" "$STATUS_LINE"
+# Test 1: Simple string
+echo "Test statusline: Tokens=580 Model=Sonnet Cost=0.08"
+# Test 2: Actual statusline (commented out for now)
+# printf "%s\n" "$STATUS_LINE"
 echo ""
 echo ""
