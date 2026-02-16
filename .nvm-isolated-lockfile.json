@@ -1,7 +1,27 @@
 {
-  "node": "v20.20.0",
-  "npm": "10.8.2",
-  "claude-code": "2.1.41",
-  "claude-code-router": "2.0.0",
-  "updated": "2026-02-13T14:08:38Z"
+  "nodeVersion": "20.20.0",
+  "claudeCodeVersion": "2.1.42",
+  "routerVersion": "unknown",
+  "ghCliVersion": "2.45.0",
+  "lspServers": {
+    "pyright": "1.1.408",
+    "vtsls": "0.3.0",
+    "typescript-language-server": "0.3.0"
+  },
+  "lspPlugins": {},
+  "sandboxAvailable": true,
+  "sandboxPlatform": "linux",
+  "sandboxDependencies": {
+    "bubblewrap": "0.9.0",
+    "socat": "1.8.0.0"
+  },
+  "sandboxRuntimeVersion": "1.0.0",
+  "sandboxInstalledAt": "2026-02-16T17:09:49Z",
+  "statusLineEnabled": true,
+  "statusLineScript": "claude-statusline.sh",
+  "ohMyPoshVersion": "not installed",
+  "ohMyPoshPlatform": "unknown",
+  "ohMyPoshInstalledAt": "",
+  "installedAt": "2026-02-16T17:09:52Z",
+  "nvmVersion": "0.39.7"
 }
