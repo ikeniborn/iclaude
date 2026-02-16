@@ -693,9 +693,9 @@ wait_for_system_messages_to_clear() {
 # - minimal (<70 cols): critical metrics only (tokens, cache, model, cost)
 get_display_mode() {
     local width=$1
-    if [[ $width -ge 130 ]]; then
+    if [[ $width -ge 150 ]]; then
         echo "full"
-    elif [[ $width -ge 70 ]]; then
+    elif [[ $width -ge 60 ]]; then
         echo "compact"
     else
         echo "minimal"
@@ -782,21 +782,11 @@ case "$DISPLAY_MODE" in
         ;;
 
     compact)
-        # Compact mode: умные сокращения + session link + git info
+        # Compact mode: MINIMAL components for 70-129 cols terminals
+        # Remove: router, proxy, session link, git info
+        # Keep: tokens, cache, model, cost
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-
-        # Сократить router provider (если есть)
-        ROUTER_ICON_COMPACT=""
-        if [[ -n "$ROUTER_ICON" ]]; then
-            # Извлечь provider из строки " | 🔀 provider"
-            ROUTER_PROVIDER=$(echo "$ROUTER_ICON" | sed 's/.* | 🔀 //')
-            ROUTER_SHORT=$(shorten_router_provider "$ROUTER_PROVIDER")
-            # Показываем только иконку + сокращенный provider
-            ROUTER_ICON_COMPACT=" 🔀${ROUTER_SHORT}"
-        fi
-
-        # Git info компактный: только иконка + изменения
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON} |${ROUTER_ICON_COMPACT}${SESSION_LINK}${GIT_INFO_COMPACT} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
         ;;
 
     minimal)
