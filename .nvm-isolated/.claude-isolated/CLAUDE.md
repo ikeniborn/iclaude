@@ -368,6 +368,41 @@ See **@skill:iclaude-commands** for best practices and troubleshooting.
 - Verify lockfile after `--update`
 - Test proxy with `--test` before launching
 
+### Plan Directory Configuration
+
+Claude Code сохраняет планы выполнения задач в режиме планирования (plan mode).
+
+**Настройка пути:** `.claude/settings.json`
+
+```json
+{
+  "plansDirectory": "docs/plans"
+}
+```
+
+**Особенности:**
+- **По умолчанию**: Планы сохраняются в `~/.claude/plans/` (глобальный каталог)
+- **С настройкой**: Планы сохраняются в каталоге проекта относительно корня
+- **Версионирование**: Локальные планы можно коммитить в git
+- **Совместная работа**: Команда видит историю планирования
+
+**Преимущества локального хранения:**
+- ✅ Планы под версионным контролем вместе с кодом
+- ✅ Легко найти в IDE и через поиск
+- ✅ Служат документацией принятых решений
+- ✅ Прозрачность для команды
+
+**Использование:**
+```bash
+# Создание плана в режиме планирования
+./iclaude.sh
+> /plan Implement user authentication
+
+# Планы автоматически сохраняются в docs/plans/
+```
+
+См. [docs/plans/README.md](../../../docs/plans/README.md) для подробной информации.
+
 ### Chrome Integration
 
 Chrome integration is **ENABLED BY DEFAULT**.
