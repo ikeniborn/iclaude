@@ -9,7 +9,8 @@
 #   - Shows detected field names and parsed values
 #
 # Enable debug mode: DEBUG_STATUSLINE=1
-[[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && set -x
+# TEMPORARILY DISABLED for testing - set -x causes formatting artifacts
+# [[ "${DEBUG_STATUSLINE:-0}" == "1" ]] && set -x
 
 # Detect config directory (isolated vs system)
 # When Claude Code calls this script, $CLAUDE_CONFIG_DIR is not set
