@@ -850,6 +850,12 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
 fi
 
 # Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
-# ATOMIC OUTPUT: Output entire statusline as single write to prevent race conditions
-# Use printf %b for proper escape sequence interpretation
-printf "\n\n%b\n\n" "$STATUS_LINE"
+# ATOMIC OUTPUT: Buffer entire output then write at once
+# Prevents Claude Code from inserting system messages between components
+{
+    echo ""
+    echo ""
+    printf "%b\n" "$STATUS_LINE"
+    echo ""
+    echo ""
+} 2>&1
