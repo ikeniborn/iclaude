@@ -120,6 +120,12 @@ if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USE
     ACTIVE_PERCENT="$USED_PERCENTAGE"
 fi
 
+# Parse session context (session_id, project_dir, transcript_path)
+# Used by multiple features: smart waiting, session links, TOON generation
+SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
+SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
+PROJECT_DIR=$(echo "$SESSION_DATA" | jq -r '.workspace.project_dir // .cwd // empty' 2>/dev/null)
+
 # Parse/calculate cache tokens
 if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
     # Legacy: parse cache from Claude API
@@ -396,15 +402,10 @@ generate_readable_session() {
 # Uses append-only optimization for performance (only processes new messages)
 # Session-specific filename prevents conflicts between parallel sessions
 SESSION_LINK=""
-SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
-
-# Use project_dir (root) instead of cwd (may be subdirectory)
-PROJECT_DIR=$(echo "$SESSION_DATA" | jq -r '.workspace.project_dir // .cwd // empty' 2>/dev/null)
 
 if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" ]] && [[ -d "$PROJECT_DIR" ]]; then
     # Use session-specific filename to avoid conflicts between parallel sessions
     # Store in project root .claude/sessions/ for standardized structure
-    SESSION_ID=$(basename "$SESSION_FILE" .jsonl)
     SESSIONS_DIR="$PROJECT_DIR/.claude/sessions"
 
     # Try TOON format first (30-60% token savings)
@@ -770,7 +771,7 @@ esac
 
 # Smart handling: wait for system messages during session startup period
 # System messages can appear multiple times in first ~30 seconds
-SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
+# SESSION_ID and PROJECT_DIR already parsed above (after active context parsing)
 SESSION_START_TIME_FILE="/tmp/claude-statusline-start-time-${SESSION_ID}"
 SESSION_READY_MARKER="/tmp/claude-statusline-ready-${SESSION_ID}"
 
@@ -784,16 +785,14 @@ SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
 CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
-# Phase 1: Startup period (0-30 seconds) - no output
+# Phase 1: Startup period - active monitoring of system messages
 # ВАЖНО: Применяется только к НОВЫМ сессиям (TOTAL_TOKENS == 0)
 # Для продолжающихся сессий (после /clear) всегда показываем статус лайн
-if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
-    exit 0
-fi
-
-# Phase 2: After 30s, but first message after wait - mark ready, no output yet
-# ВАЖНО: Также только для новых сессий
-if [[ ! -f "$SESSION_READY_MARKER" ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
+# Active monitoring: waits for transcript file to stabilize (system messages cleared)
+if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_READY_MARKER" ]]; then
+    # Wait for system messages to clear before showing statusline
+    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
+    # Mark session as ready after waiting
     touch "$SESSION_READY_MARKER" 2>/dev/null
     exit 0
 fi
