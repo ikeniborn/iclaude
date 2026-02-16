@@ -831,10 +831,11 @@ if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_R
 fi
 
 # Quick stability check: prevent statusline appearing ABOVE system messages
-# IMPORTANT: Only check during startup period (first 30 seconds of new sessions)
-# For established sessions, system messages are rare, so skip the check
-if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -lt 1000 ]]; then
-    # Startup period: check transcript stability to avoid collision with system messages
+# IMPORTANT: Only check during startup period (first 30 seconds)
+# After 30 seconds, system messages are unlikely, so always show statusline
+# This prevents infinite blocking when Claude Code calls script immediately after transcript write
+if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
+    # Startup period of NEW sessions only: check transcript stability
     if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
         # Transcript unstable - system messages may be appearing
         # Exit silently, statusline will show on next invocation
