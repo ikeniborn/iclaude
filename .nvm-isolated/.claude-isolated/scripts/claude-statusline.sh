@@ -848,4 +848,21 @@ if [[ $SESSION_AGE -lt 10 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
 fi
 
 # Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
-printf "\n\n%b\n\n" "$STATUS_LINE"
+# Debug: Log terminal width and display mode
+if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
+    echo "=== STATUSLINE OUTPUT DEBUG ===" >> /tmp/claude-statusline-debug.log
+    echo "TERM_WIDTH: $TERM_WIDTH" >> /tmp/claude-statusline-debug.log
+    echo "DISPLAY_MODE: $DISPLAY_MODE" >> /tmp/claude-statusline-debug.log
+    echo "RAW STATUS_LINE:" >> /tmp/claude-statusline-debug.log
+    echo "$STATUS_LINE" >> /tmp/claude-statusline-debug.log
+    echo "STATUS_LINE length: ${#STATUS_LINE}" >> /tmp/claude-statusline-debug.log
+    echo "---" >> /tmp/claude-statusline-debug.log
+fi
+
+# TEMPORARY FIX: Use echo -e instead of printf %b
+# printf %b may be causing character-by-character output in Claude Code UI
+echo ""
+echo ""
+echo -e "$STATUS_LINE"
+echo ""
+echo ""
