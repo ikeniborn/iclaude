@@ -804,6 +804,10 @@ case "$DISPLAY_MODE" in
         ;;
 esac
 
+# CRITICAL FIX: Strip ALL newlines from final STATUS_LINE
+# Newlines appear during variable concatenation despite cleaning components
+STATUS_LINE=$(echo "$STATUS_LINE" | tr -d '\n\r' | tr -s ' ')
+
 # Smart handling: wait for system messages during session startup period
 # System messages can appear multiple times in first ~30 seconds
 # SESSION_ID and PROJECT_DIR already parsed above (after active context parsing)
