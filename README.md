@@ -115,6 +115,11 @@ cd claude
 ./iclaude.sh --install-gh              # Установить GitHub CLI
 ./iclaude.sh --sandbox-install         # Установить sandboxing (Linux/WSL2)
 
+# Oh My Posh (опционально, для красивого status line)
+./iclaude.sh --install-posh            # Скачать и установить (автоматически)
+./iclaude.sh --insecure --install-posh # То же, но с корпоративным прокси (TLS)
+./iclaude.sh --check-posh              # Проверить статус
+
 # Управление
 ./iclaude.sh --check-config            # Статус конфигурации
 ./iclaude.sh --export-config /path     # Backup конфигурации

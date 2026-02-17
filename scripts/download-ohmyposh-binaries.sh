@@ -1,18 +1,33 @@
 #!/bin/bash
 # Download Oh My Posh binaries for all platforms
-# Usage: ./scripts/download-ohmyposh-binaries.sh [VERSION]
+# Usage: ./scripts/download-ohmyposh-binaries.sh [--insecure] VERSION
 # Example: ./scripts/download-ohmyposh-binaries.sh v24.19.2
+# Example: ./scripts/download-ohmyposh-binaries.sh --insecure v24.19.2
 
 set -e
 
-VERSION="${1:-}"
+INSECURE=""
+VERSION=""
+for arg in "$@"; do
+    if [[ "$arg" == "--insecure" ]]; then
+        INSECURE="-k"
+    else
+        VERSION="$arg"
+    fi
+done
+
+if [[ -n "$INSECURE" ]]; then
+    echo "Warning: TLS verification disabled (--insecure)"
+    echo ""
+fi
 
 # Validate version argument
 if [[ -z "$VERSION" ]]; then
     echo "Error: VERSION argument required"
     echo ""
-    echo "Usage: $0 vX.Y.Z"
+    echo "Usage: $0 [--insecure] vX.Y.Z"
     echo "Example: $0 v24.19.2"
+    echo "Example: $0 --insecure v24.19.2"
     echo ""
     echo "Find versions at: https://github.com/JanDeDobbeleer/oh-my-posh/releases"
     exit 1
@@ -39,7 +54,7 @@ for platform in "${PLATFORMS[@]}"; do
     target="$TARGET_DIR/oh-my-posh-${platform}"
 
     echo "Downloading $platform..."
-    if curl -fsSL "$url" -o "$target"; then
+    if curl $INSECURE -fsSL "$url" -o "$target"; then
         chmod +x "$target"
         size=$(du -h "$target" | cut -f1)
         echo "  ✓ Downloaded: $target ($size)"
