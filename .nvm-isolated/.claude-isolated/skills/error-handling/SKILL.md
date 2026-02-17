@@ -1,30 +1,9 @@
 ---
-name: Error Handling
+name: error-handling
 description: Структурированная обработка ошибок workflow
-version: 2.2.0
-tags: [errors, recovery, retry, handling]
-dependencies: []
-files:
-  templates: ./templates/*.json
 user-invocable: false
-changelog:
-  - version: 2.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 3 примера (single error, multiple errors, TOON optimization)"
-      - "Skill-specific TOON usage notes для error_history[]"
-      - "Обновлены references"
-  - version: 2.1.0
-    date: 2026-01-23
-    changes:
-      - "TOON Format Support для error_history[]"
-      - "Extended error history для complex tasks"
-  - version: 2.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Structured error types и actions"
 ---
+<!-- version: 2.2.0 | tags: errors, recovery, retry, handling | dependencies: [] | files: templates: ./templates/*.json -->
 
 # Error Handling v2.2
 
@@ -409,3 +388,18 @@ Token savings: 35.2% (TOON format)
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### 2.2.0 (2026-01-25)
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Добавлено: 3 примера (single error, multiple errors, TOON optimization)
+- Skill-specific TOON usage notes для error_history[]
+- Обновлены references
+
+### 2.1.0 (2026-01-23)
+- TOON Format Support для error_history[]
+- Extended error history для complex tasks
+
+### 2.0.0 (2025-XX-XX)
+- Structured error types и actions

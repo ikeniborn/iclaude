@@ -1,24 +1,10 @@
 ---
-name: Context7 Integration
+name: context7-integration
 description: Автоматическая загрузка документации библиотек через Context7 MCP плагин
-version: 1.1.0
-tags: [context7, documentation, libraries, mcp, api-docs]
-dependencies: [context-awareness]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.json
-  examples: ./examples/*.md
-  shared: ../_shared/library-priority.json
 user-invocable: false
 context: fork
-changelog:
-  - version: 1.1.0
-    date: 2026-01-25
-    changes:
-      - "Добавлено: 3 примера (Plugin Not Available, Budget Exhausted, Version-Specific Query)"
-      - "Обновлены references на @shared:"
-      - "Улучшена документация error handling"
 ---
+<!-- version: 1.1.0 | tags: [context7, documentation, libraries, mcp, api-docs] | dependencies: [context-awareness] | files: {templates: ./templates/*.json, schemas: ./schemas/*.json, examples: ./examples/*.md, shared: ../_shared/library-priority.json} -->
 
 # Context7 Integration
 
@@ -1322,3 +1308,10 @@ A: Некоторые библиотеки успешно загружены, н
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### 1.1.0 (2026-01-25)
+- Добавлено: 3 примера (Plugin Not Available, Budget Exhausted, Version-Specific Query)
+- Обновлены references на @shared:
+- Улучшена документация error handling

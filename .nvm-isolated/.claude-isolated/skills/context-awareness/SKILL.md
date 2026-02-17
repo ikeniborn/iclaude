@@ -1,26 +1,10 @@
 ---
-name: Context Awareness
+name: context-awareness
 description: Автоматическое определение контекста проекта
-version: 1.1.0
-tags: [context, detection, project, language, framework]
-dependencies: []
-files:
-  templates: ./templates/*.json
-  shared: ../_shared/syntax-commands.json
 user-invocable: false
 agent: Explore
-changelog:
-  - version: 1.1.0
-    date: 2026-01-25
-    changes:
-      - "Добавлено: 5 примеров (Python FastAPI, TypeScript React, Go with PRD, Bash, multi-language)"
-      - "Обновлены references на @shared:"
-      - "Улучшена документация detection алгоритмов"
-  - version: 1.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Initial release"
 ---
+<!-- version: 1.1.0 | tags: context, detection, project, language, framework | dependencies: [] | files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json -->
 
 # Context Awareness
 
@@ -296,3 +280,13 @@ JavaScript:
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### 1.1.0 (2026-01-25)
+- Добавлено: 5 примеров (Python FastAPI, TypeScript React, Go with PRD, Bash, multi-language)
+- Обновлены references на @shared:
+- Улучшена документация detection алгоритмов
+
+### 1.0.0 (2025-XX-XX)
+- Initial release

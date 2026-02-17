@@ -1,21 +1,9 @@
 ---
-name: LSP Integration
+name: lsp-integration
 description: Автоматическая установка и конфигурация LSP плагинов
-version: 1.1.0
-tags: [lsp, language-server, code-intelligence, plugins]
-dependencies: [context-awareness]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.json
 user-invocable: false
-changelog:
-  - version: 1.1.0
-    date: 2026-01-25
-    changes:
-      - "Добавлено: 3 примера (Python LSP setup, TypeScript LSP, LSP not available)"
-      - "Обновлены references на @shared:"
-      - "Улучшена документация manual fallback"
 ---
+<!-- version: 1.1.0 | tags: lsp, language-server, code-intelligence, plugins | dependencies: context-awareness | files: templates: ./templates/*.json, schemas: ./schemas/*.json -->
 
 # LSP Integration
 
@@ -792,7 +780,15 @@ A: Нет. LSP integration полностью non-blocking. Prompts информ
 
 ---
 
-🤖 Generated with Claude Code
+Generated with Claude Code
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### v1.1.0 — 2026-01-25
+
+- Добавлено: 3 примера (Python LSP setup, TypeScript LSP, LSP not available)
+- Обновлены references на @shared:
+- Улучшена документация manual fallback

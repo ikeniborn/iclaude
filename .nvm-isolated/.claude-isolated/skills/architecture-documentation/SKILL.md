@@ -1,44 +1,9 @@
 ---
 name: architecture-documentation
 description: Generate detailed architectural documentation in YAML and TOON formats with component dependencies and relationships
-version: 1.3.0
-tags: [documentation, architecture, yaml, toon, dependencies, graph, token-efficiency]
-dependencies: [context-awareness, thinking-framework, toon-skill]
-author: Claude Code Skills Team
-files:
-  templates: ./templates/*.yaml
-  templates_toon: ./templates/toon/*.toon.template
-  converters: ./converters/*.mjs
-  schemas: ./schemas/*.schema.json
-  examples: ./examples/*.md
-  examples_toon: ./examples/toon/*.toon.example
 user-invocable: true
-changelog:
-  - version: 1.3.0
-    date: 2026-01-26
-    changes:
-      - "**Optimized Documentation**: Reduced redundancy, improved structure"
-      - "Consolidated TOON information → reference to @skill:toon-skill"
-      - "Workflow: 11 steps → 4 phases for better clarity"
-      - "Added Safety Rules section (what NOT to do)"
-      - "Added Validation Checklist before file generation"
-      - "Improved examples with concrete file references"
-      - "Added Data Flow diagram for skill integration"
-  - version: 1.2.0
-    date: 2026-01-23
-    changes:
-      - "TOON Format Integration (30-60% token savings)"
-      - "Dual-format output: YAML (human) + TOON (LLM)"
-      - "Added TOON converter with full API"
-  - version: 1.1.0
-    date: 2026-01-20
-    changes:
-      - "Updated to Markdown with embedded Mermaid blocks"
-  - version: 1.0.0
-    date: 2025-11-23
-    changes:
-      - "Initial release"
 ---
+<!-- version: 1.3.0 | tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency | dependencies: context-awareness, thinking-framework, toon-skill | author: Claude Code Skills Team | files: templates: ./templates/*.yaml, templates_toon: ./templates/toon/*.toon.template, converters: ./converters/*.mjs, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, examples_toon: ./examples/toon/*.toon.example -->
 
 # Architecture Documentation Skill
 
@@ -430,7 +395,7 @@ return {
 
 <a id="safety-rules"></a>
 
-### ⚠️ What NOT to Do
+### What NOT to Do
 
 **Quick Reference (First 3 Rules)**
 
@@ -625,9 +590,24 @@ console.log(`Savings: ${stats.savedPercent}`); // Expected: 30-60%
 
 ---
 
-## Version History
+## Changelog
 
-**v1.3.0 (2026-01-26):** Optimized documentation structure
-**v1.2.0 (2026-01-23):** TOON format integration
-**v1.1.0 (2026-01-20):** Markdown with embedded Mermaid
-**v1.0.0 (2025-11-23):** Initial release
+### v1.3.0 (2026-01-26)
+- Optimized Documentation: Reduced redundancy, improved structure
+- Consolidated TOON information → reference to @skill:toon-skill
+- Workflow: 11 steps → 4 phases for better clarity
+- Added Safety Rules section (what NOT to do)
+- Added Validation Checklist before file generation
+- Improved examples with concrete file references
+- Added Data Flow diagram for skill integration
+
+### v1.2.0 (2026-01-23)
+- TOON Format Integration (30-60% token savings)
+- Dual-format output: YAML (human) + TOON (LLM)
+- Added TOON converter with full API
+
+### v1.1.0 (2026-01-20)
+- Updated to Markdown with embedded Mermaid blocks
+
+### v1.0.0 (2025-11-23)
+- Initial release

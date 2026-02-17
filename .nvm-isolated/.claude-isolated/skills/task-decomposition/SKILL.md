@@ -1,28 +1,10 @@
 ---
-name: Task Decomposition
+name: task-decomposition
 description: Автоматизация разбиения задачи на 2-5 логических фаз с генерацией master plan и individual phase files
-version: 1.2.0
-tags: [phase-based, decomposition, planning, master-plan, workflow]
-dependencies: [thinking-framework, structured-planning, approval-gates, error-handling]
 user-invocable: false
 agent: Plan
-changelog:
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Удалён author field (cleanup)"
-  - version: 1.1.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: Thinking templates → @shared:THINKING-PATTERNS.md"
-      - "Централизация: Task structure → @shared:TASK-STRUCTURE.md"
-      - "Добавлено: 6 полных примеров multi-phase decomposition (auth system, e-commerce, API migration, UI redesign, third-party integration, caching layer)"
-      - "Обновлено: References используют @shared: syntax вместо устаревших \"Шаблон N\""
-  - version: 1.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Initial release: Multi-phase task decomposition"
 ---
+<!-- version: 1.2.0 | tags: phase-based, decomposition, planning, master-plan, workflow | dependencies: thinking-framework, structured-planning, approval-gates, error-handling -->
 
 # Task Decomposition v1.1
 
@@ -1135,3 +1117,13 @@ A: Теоретически ДА (если нет dependencies), но **НЕ Р�
 **Support:** См. @shared:THINKING-PATTERNS.md, @shared:TASK-STRUCTURE.md для детальной документации
 
 🤖 Generated with Claude Code
+
+## Changelog
+
+- **v1.2.0** (2026-01-25): Удалён author field (cleanup)
+- **v1.1.0** (2026-01-25):
+  - Централизация: Thinking templates → @shared:THINKING-PATTERNS.md
+  - Централизация: Task structure → @shared:TASK-STRUCTURE.md
+  - Добавлено: 6 полных примеров multi-phase decomposition (auth system, e-commerce, API migration, UI redesign, third-party integration, caching layer)
+  - Обновлено: References используют @shared: syntax вместо устаревших "Шаблон N"
+- **v1.0.0** (2025-XX-XX): Initial release: Multi-phase task decomposition

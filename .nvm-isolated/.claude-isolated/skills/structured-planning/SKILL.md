@@ -1,39 +1,10 @@
 ---
-name: Structured Planning
+name: structured-planning
 description: Создание планов задач с адаптивной JSON Schema
-version: 2.4.0
-tags: [planning, json-schema, structured-output, skill-generation, prd, toon]
-dependencies: [thinking-framework, adaptive-workflow, skill-generator, prd-generator, toon-skill]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.json
-  examples: ./examples/*.md
 user-invocable: false
 agent: Plan
-changelog:
-  - version: 2.4.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON Format specification → @shared:TOON-REFERENCE.md"
-      - "Удалено: ~162 строки TOON дубликатов"
-      - "Добавлено: 7 полных примеров task planning (simple, standard, complex, refactor, bug fix, DB migration, integration)"
-      - "Улучшено: Skill-specific TOON usage notes для execution_steps[] и files_to_change[]"
-  - version: 2.3.0
-    date: 2026-01-23
-    changes:
-      - "**TOON Format Support**: Автоматическая генерация TOON для token efficiency"
-      - "TOON для execution_steps[] и files_to_change[] (когда >= 5 элементов)"
-      - "35-45% token savings для standard/complex tasks"
-      - "100% backward compatibility (JSON остаётся primary format)"
-      - "Special handling для nested actions[] (inline в description)"
-      - "Integration examples для producers и consumers"
-  - version: 2.2.0
-    date: 2025-XX-XX
-    changes:
-      - "PRD Generator integration"
-      - "Skill Generator recommendations"
-      - "Context7 library documentation support"
 ---
+<!-- version: 2.4.0 | tags: planning, json-schema, structured-output, skill-generation, prd, toon | dependencies: thinking-framework, adaptive-workflow, skill-generator, prd-generator, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md | agent: Plan -->
 
 # Structured Planning v2.4
 
@@ -1213,3 +1184,24 @@ IF domain_skill_exists(f".claude/skills/{tech}-development/"):
 **Author:** Claude Code Team
 **License:** MIT
 **Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md для детальной документации
+
+## Changelog
+
+### v2.4.0 (2026-01-25)
+- Централизация: TOON Format specification → @shared:TOON-REFERENCE.md
+- Удалено: ~162 строки TOON дубликатов
+- Добавлено: 7 полных примеров task planning (simple, standard, complex, refactor, bug fix, DB migration, integration)
+- Улучшено: Skill-specific TOON usage notes для execution_steps[] и files_to_change[]
+
+### v2.3.0 (2026-01-23)
+- **TOON Format Support**: Автоматическая генерация TOON для token efficiency
+- TOON для execution_steps[] и files_to_change[] (когда >= 5 элементов)
+- 35-45% token savings для standard/complex tasks
+- 100% backward compatibility (JSON остаётся primary format)
+- Special handling для nested actions[] (inline в description)
+- Integration examples для producers и consumers
+
+### v2.2.0 (2025-XX-XX)
+- PRD Generator integration
+- Skill Generator recommendations
+- Context7 library documentation support

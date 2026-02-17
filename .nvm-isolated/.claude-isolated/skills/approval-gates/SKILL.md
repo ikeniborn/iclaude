@@ -1,25 +1,9 @@
 ---
-name: Approval Gates
+name: approval-gates
 description: Упрощённые approval gates для подтверждения плана
-version: 2.2.0
-tags: [approval, confirmation, user-interaction]
-dependencies: [structured-planning, plan-validation]
-files:
-  templates: ./templates/*.md
 user-invocable: false
-changelog:
-  - version: 2.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 3 примера (lite approval, full approval, TOON optimization)"
-      - "Skill-specific TOON usage notes для files_to_change[] и phase_details[]"
-      - "Обновлены references"
-  - version: 2.1.0
-    date: 2026-01-23
-    changes:
-      - "TOON Format Support для files_to_change[] и phase_details[]"
 ---
+<!-- version: 2.2.0 | tags: approval, confirmation, user-interaction | dependencies: structured-planning, plan-validation | files.templates: ./templates/*.md -->
 
 # Approval Gates v2.0
 
@@ -460,3 +444,14 @@ if (approval.toon) {
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### v2.2.0 (2026-01-25)
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Добавлено: 3 примера (lite approval, full approval, TOON optimization)
+- Skill-specific TOON usage notes для files_to_change[] и phase_details[]
+- Обновлены references
+
+### v2.1.0 (2026-01-23)
+- TOON Format Support для files_to_change[] и phase_details[]

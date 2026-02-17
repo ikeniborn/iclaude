@@ -1,22 +1,9 @@
 ---
-name: Phase Execution
+name: phase-execution
 description: Автоматизация выполнения одной фазы из готового phase file с checkpoint validation и structured output
-version: 1.2.0
-author: Claude Code Team
-tags: [phase-based, execution, checkpoint, validation, workflow]
-dependencies: [thinking-framework, validation-framework, git-workflow, error-handling]
 user-invocable: false
-changelog:
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Удалено: TOON Format Support дублирование (~148 строк)"
-      - "Добавлено: References к @shared:TOON-REFERENCE.md, @shared:THINKING-PATTERNS.md, @shared:GIT-CONVENTIONS.md, @shared:TASK-STRUCTURE.md"
-      - "Обновлено: Устаревшие references \"Шаблон N\" заменены на @shared: links"
-      - "Добавлено: 7 complete working examples (simple, standard, complex, checkpoint failures, multi-step, complete workflow)"
-      - "Добавлено: Skill-specific TOON usage notes для checkpoint.checks[] и files_changed[]"
 ---
-
+<!-- version: 1.2.0 | author: Claude Code Team | tags: phase-based, execution, checkpoint, validation, workflow | dependencies: thinking-framework, validation-framework, git-workflow, error-handling -->
 # Phase Execution
 
 Автоматизация выполнения ОДНОЙ фазы из готового phase file. Этот скил parse phase file, проходит 2 обязательных checkpoint, выполняет steps, валидирует completion criteria и создает git commit с structured output.
@@ -1364,3 +1351,12 @@ A: НЕТ! Phase file - read-only reference во время execution. Если 
 **Author:** Claude Code Team
 **License:** MIT
 **Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:THINKING-PATTERNS.md, @shared:GIT-CONVENTIONS.md
+
+## Changelog
+
+- **1.2.0** (2026-01-25)
+  - Удалено: TOON Format Support дублирование (~148 строк)
+  - Добавлено: References к @shared:TOON-REFERENCE.md, @shared:THINKING-PATTERNS.md, @shared:GIT-CONVENTIONS.md, @shared:TASK-STRUCTURE.md
+  - Обновлено: Устаревшие references "Шаблон N" заменены на @shared: links
+  - Добавлено: 7 complete working examples (simple, standard, complex, checkpoint failures, multi-step, complete workflow)
+  - Добавлено: Skill-specific TOON usage notes для checkpoint.checks[] и files_changed[]

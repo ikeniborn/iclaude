@@ -1,36 +1,10 @@
 ---
 name: code-review
 description: Автоматический review кода перед commit
-version: 1.3.0
-tags: [review, quality, security, code-smells, toon]
-dependencies: [toon-skill, lsp-integration]
-files:
-  templates: ./templates/*.json
-  rules: ./rules/*.md
 user-invocable: true
 context: fork
-changelog:
-  - version: 1.3.0
-    date: 2026-01-26
-    changes:
-      - "Структурная оптимизация: TOC, Quick Start, компактные секции"
-      - "Консолидация TOON информации в Output Formats"
-      - "Примеры сокращены (inline summary + ссылки на examples/*.md)"
-      - "Агрессивное удаление дублирования (619 → ~400 строк, 35% сокращение)"
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 3 примера (simple review, LSP integration, TOON optimization)"
-      - "Skill-specific TOON usage notes для warnings[] и lsp_diagnostics[]"
-  - version: 1.1.0
-    date: 2026-01-23
-    changes:
-      - "**TOON Format Support**: Автоматическая генерация TOON для token efficiency"
-      - "TOON для warnings[] и lsp_diagnostics[] (когда >= 5 элементов)"
-      - "40-50% token savings для больших review reports"
-      - "100% backward compatibility (JSON остаётся primary format)"
 ---
+<!-- version: 1.3.0 | tags: review, quality, security, code-smells, toon | dependencies: toon-skill, lsp-integration | files: templates: ./templates/*.json, rules: ./rules/*.md -->
 
 # Code Review
 
@@ -63,6 +37,7 @@ changelog:
     - [Custom Architecture Paths](#custom-architecture-paths)
     - [Architecture Format Support](#architecture-format-support)
   - [References](#references)
+  - [Changelog](#changelog)
 
 ---
 
@@ -520,3 +495,24 @@ files_changed[] → code-review skill
 
 **Author:** ikeniborn
 **License:** MIT
+
+---
+
+## Changelog
+
+### 1.3.0 (2026-01-26)
+- Структурная оптимизация: TOC, Quick Start, компактные секции
+- Консолидация TOON информации в Output Formats
+- Примеры сокращены (inline summary + ссылки на examples/*.md)
+- Агрессивное удаление дублирования (619 → ~400 строк, 35% сокращение)
+
+### 1.2.0 (2026-01-25)
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Добавлено: 3 примера (simple review, LSP integration, TOON optimization)
+- Skill-specific TOON usage notes для warnings[] и lsp_diagnostics[]
+
+### 1.1.0 (2026-01-23)
+- **TOON Format Support**: Автоматическая генерация TOON для token efficiency
+- TOON для warnings[] и lsp_diagnostics[] (когда >= 5 элементов)
+- 40-50% token savings для больших review reports
+- 100% backward compatibility (JSON остаётся primary format)

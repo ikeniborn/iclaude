@@ -1,24 +1,9 @@
 ---
-skill_name: toon-skill
-version: 1.1.0
+name: toon-skill
 description: Централизованный API для конвертации JSON ↔ TOON и расчёта token savings
-category: utility
-dependencies:
-  npm:
-    - "@toon-format/toon": "^1.0.0"
-tags: [toon, token-optimization, data-format, inter-skill-communication]
-author: Claude Code Team
 context: fork
-created_at: 2026-01-23
-updated_at: 2026-01-25
-changelog:
-  - version: 1.1.0
-    date: 2026-01-25
-    changes:
-      - "Обновлено: References с ../_shared/TOON-PATTERNS.md на @shared:TOON-REFERENCE.md"
-      - "Добавлено: 3 additional integration examples (adaptive-workflow, phase-execution, task-decomposition)"
-      - "Улучшено: Reference structure для совместимости с другими skills"
 ---
+<!-- version: 1.1.0 | category: utility | tags: toon, token-optimization, data-format, inter-skill-communication | author: Claude Code Team | created_at: 2026-01-23 | updated_at: 2026-01-25 | dependencies: npm: @toon-format/toon ^1.0.0 -->
 
 # TOON Skill - Token-Oriented Object Notation Support
 
@@ -707,7 +692,17 @@ node converters/toon-converter.mjs stats input.json
 
 ---
 
-## Version History
+## License
+
+MIT License
+
+---
+
+**Разработан командой Claude Code для оптимизации inter-skill коммуникации и снижения token costs.**
+
+---
+
+## Changelog
 
 ### v1.1.0 (2026-01-25)
 - ✅ Обновлены references: `../_shared/TOON-PATTERNS.md` → `@shared:TOON-REFERENCE.md`
@@ -723,13 +718,3 @@ node converters/toon-converter.mjs stats input.json
 - ✅ CLI interface
 - ✅ Full documentation (SKILL.md, converters/README.md)
 - ✅ Examples и tests
-
----
-
-## License
-
-MIT License
-
----
-
-**Разработан командой Claude Code для оптимизации inter-skill коммуникации и снижения token costs.**
