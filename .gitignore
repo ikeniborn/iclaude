@@ -109,4 +109,5 @@ scripts/.claude_proxy_credentials  # Legacy
 .claude/workspace/
 
 # Ignore all files in .claude/ except memory/
-.claude/memory
+!.claude/memory
+.claude/sessions
