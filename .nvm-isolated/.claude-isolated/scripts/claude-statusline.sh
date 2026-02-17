@@ -550,10 +550,18 @@ get_terminal_width() {
 shorten_model_name() {
     local model="$1"
     case "$model" in
-        *"Sonnet"*) echo "$model" | sed 's/Sonnet /S/g' ;;
-        *"Opus"*) echo "$model" | sed 's/Opus /O/g' ;;
-        *"Haiku"*) echo "$model" | sed 's/Haiku /H/g' ;;
-        *) echo "${model:0:8}" ;;
+        *"claude-sonnet-4-5"*) echo "Sonnet 4.5" ;;
+        *"claude-sonnet-4"*) echo "Sonnet 4" ;;
+        *"claude-opus-4-6"*) echo "Opus 4.6" ;;
+        *"claude-opus-4"*) echo "Opus 4" ;;
+        *"claude-haiku-4-5"*) echo "Haiku 4.5" ;;
+        *"claude-haiku-4"*) echo "Haiku 4" ;;
+        *"Sonnet 4.5"*) echo "Sonnet 4.5" ;;
+        *"Sonnet 4"*) echo "Sonnet 4" ;;
+        *"Sonnet"*) echo "$model" | sed 's/claude-sonnet/Sonnet/g; s/Sonnet /Sonnet/g; s/-20[0-9]*//g' ;;
+        *"Opus"*) echo "$model" | sed 's/claude-opus/Opus/g; s/Opus /Opus/g; s/-20[0-9]*//g' ;;
+        *"Haiku"*) echo "$model" | sed 's/claude-haiku/Haiku/g; s/Haiku /Haiku/g; s/-20[0-9]*//g' ;;
+        *) echo "${model:0:15}" ;;
     esac
 }
 
@@ -696,9 +704,9 @@ wait_for_system_messages_to_clear() {
 # - minimal (<70 cols): critical metrics only (tokens, cache, model, cost)
 get_display_mode() {
     local width=$1
-    if [[ $width -ge 150 ]]; then
+    if [[ $width -ge 80 ]]; then
         echo "full"
-    elif [[ $width -ge 60 ]]; then
+    elif [[ $width -ge 40 ]]; then
         echo "compact"
     else
         echo "minimal"
@@ -798,8 +806,9 @@ COST=$(echo "$COST" | tr -d '\n\r')
 
 case "$DISPLAY_MODE" in
     full)
-        # Full mode: все компоненты без сокращений, proxy в конце
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        # Full mode: все компоненты, модель в читаемом виде
+        MODEL_SHORT=$(shorten_model_name "$MODEL")
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
