@@ -429,12 +429,10 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
 
     if [[ -n "$READABLE_FILE" ]] && [[ -f "$READABLE_FILE" ]]; then
         # Create OSC 8 hyperlink to readable file (icon only, no text)
-        # Format: \033]8;;URL\033\\TEXT\033]8;;\033\\
-        # Note: Using \033 instead of \e for printf %b compatibility
-        # TEMPORARY FIX: OSC 8 hyperlinks cause line wrapping in some terminals
-        # Use simple icon without hyperlink
-        SESSION_LINK=" | 📄"
-        # Disabled: SESSION_LINK=" | \033]8;;file://${READABLE_FILE}\033\\\\📄\033]8;;\033\\\\"
+        # Format: ESC]8;;URL ESC\ TEXT ESC]8;; ESC\
+        # Use $'\033' (same as color codes) to get actual ESC character
+        OSC8_ESC=$'\033'
+        SESSION_LINK=" | ${OSC8_ESC}]8;;file://${READABLE_FILE}${OSC8_ESC}\\📄${OSC8_ESC}]8;;${OSC8_ESC}\\"
     fi
 fi
 
@@ -459,6 +457,10 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
         fi
     fi
 
+    # Build OSC 8 hyperlink to branch on remote (GitHub/GitLab)
+    GIT_ESC=$'\033'
+    GIT_REMOTE_URL=$(git remote get-url origin 2>/dev/null | sed 's/\.git$//' | sed 's|^git@\([^:]*\):\(.*\)|https://\1/\2|')
+
     # Fallback to bash git parsing if Oh My Posh unavailable or failed
     if [[ -z "$GIT_INFO" ]]; then
         if command -v timeout &>/dev/null; then
@@ -472,22 +474,35 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
             # Get commits ahead of upstream
             AHEAD=$(git rev-list --count @{upstream}..HEAD 2>/dev/null || echo "0")
         fi
+
+        # Wrap branch icon in OSC 8 hyperlink if remote available
+        GIT_BRANCH_LABEL="🔱 $BRANCH"
+        BRANCH_SHORT="${BRANCH:0:8}"
+        [[ ${#BRANCH} -gt 8 ]] && BRANCH_SHORT+="…"
+        GIT_BRANCH_LABEL_SHORT="🔱 $BRANCH_SHORT"
+        if [[ -n "$GIT_REMOTE_URL" ]]; then
+            BRANCH_URL="${GIT_REMOTE_URL}/tree/${BRANCH}"
+            GIT_BRANCH_LABEL="${GIT_ESC}]8;;${BRANCH_URL}${GIT_ESC}\\🔱 $BRANCH${GIT_ESC}]8;;${GIT_ESC}\\"
+            GIT_BRANCH_LABEL_SHORT="${GIT_ESC}]8;;${BRANCH_URL}${GIT_ESC}\\🔱 $BRANCH_SHORT${GIT_ESC}]8;;${GIT_ESC}\\"
+        fi
+
         # Full git info (with full branch name)
-        GIT_INFO=" | 🔱 $BRANCH"
+        GIT_INFO=" | ${GIT_BRANCH_LABEL}"
         [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO+=" ●$CHANGES"
         [[ "$AHEAD" != "0" ]] && GIT_INFO+=" ↑$AHEAD"
 
         # Compact git info (abbreviated branch name to save space)
-        # Show first 8 chars of branch name + changes
-        BRANCH_SHORT="${BRANCH:0:8}"
-        [[ ${#BRANCH} -gt 8 ]] && BRANCH_SHORT+="…"
-
-        GIT_INFO_COMPACT=" | 🔱 $BRANCH_SHORT"
+        GIT_INFO_COMPACT=" | ${GIT_BRANCH_LABEL_SHORT}"
         [[ "$CHANGES" != "0" ]] && [[ "$CHANGES" != "?" ]] && GIT_INFO_COMPACT+=" ●$CHANGES"
         [[ "$AHEAD" != "0" ]] && GIT_INFO_COMPACT+=" ↑$AHEAD"
     else
         # Add separator for Oh My Posh output
-        GIT_INFO=" | ${GIT_INFO}"
+        # Wrap the entire oh-my-posh output in a hyperlink to the remote
+        if [[ -n "$GIT_REMOTE_URL" ]]; then
+            GIT_INFO=" | ${GIT_ESC}]8;;${GIT_REMOTE_URL}${GIT_ESC}\\${GIT_INFO}${GIT_ESC}]8;;${GIT_ESC}\\"
+        else
+            GIT_INFO=" | ${GIT_INFO}"
+        fi
         # For Oh My Posh, compact version is same as full (already formatted)
         GIT_INFO_COMPACT="${GIT_INFO}"
     fi
