@@ -215,6 +215,7 @@ fi
     USE_ROUTER_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
     USE_LOOP_MODE=false
+    posh_insecure=false
     LOOP_TASK_FILE=""
     LOOP_MAX_PARALLEL=5
     LOOP_MODE_TYPE="sequential"  # sequential | parallel
@@ -252,6 +253,10 @@ fi
             --proxy-insecure)
                 export PROXY_INSECURE=true
                 unset PROXY_CA
+                shift
+                ;;
+            --insecure)
+                posh_insecure=true
                 shift
                 ;;
             -t|--test)
@@ -513,7 +518,7 @@ fi
                     echo "Oh My Posh is only available in isolated environment"
                     exit 1
                 fi
-                install_isolated_ohmyposh
+                install_isolated_ohmyposh ${posh_insecure:+--insecure}
                 exit $?
                 ;;
             --check-posh|--check-ohmyposh)
@@ -543,7 +548,7 @@ fi
                     echo "Oh My Posh is only available in isolated environment"
                     exit 1
                 fi
-                install_isolated_ohmyposh
+                install_isolated_ohmyposh ${posh_insecure:+--insecure}
                 exit $?
                 ;;
             --check-posh|--check-ohmyposh)

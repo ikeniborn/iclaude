@@ -3,13 +3,23 @@
 # Provides function for installing Oh-My-Posh in isolated environment
 
 #######################################
-# Install Oh My Posh in isolated environment (pre-bundled)
-# Uses pre-bundled platform-specific binary from git repository
+# Install Oh My Posh in isolated environment (pre-bundled or auto-downloaded)
+# Uses pre-bundled platform-specific binary from git repository.
+# If binary is missing, automatically downloads the latest version from GitHub.
+# Arguments:
+#   [--insecure] - disable TLS verification for download (corporate proxy)
 # Returns:
 #   0 - success
 #   1 - error
 #######################################
 install_isolated_ohmyposh() {
+	local insecure_flag=""
+	for arg in "$@"; do
+		if [[ "$arg" == "--insecure" ]]; then
+			insecure_flag="--insecure"
+		fi
+	done
+
 	setup_isolated_nvm
 
 	local platform
@@ -22,13 +32,38 @@ install_isolated_ohmyposh() {
 	local omp_binary="${ISOLATED_NVM_DIR}/npm-global/bin/oh-my-posh-${platform}"
 	local omp_symlink="${ISOLATED_NVM_DIR}/npm-global/bin/oh-my-posh"
 
-	# Verify pre-bundled binary exists
+	# If binary missing — auto-download latest version from GitHub
 	if [ ! -f "$omp_binary" ]; then
-		echo "Error: Pre-bundled Oh My Posh binary not found: $omp_binary" >&2
-		echo "Expected file: oh-my-posh-${platform}" >&2
-		echo "" >&2
-		echo "Please ensure the git repository includes the pre-bundled binary." >&2
-		return 1
+		echo "Binary not found: oh-my-posh-${platform}"
+		echo "Auto-downloading latest version from GitHub..."
+		echo ""
+
+		local version
+		version=$(curl ${insecure_flag:+-k} -fsSL \
+			"https://api.github.com/repos/JanDeDobbeleer/oh-my-posh/releases/latest" \
+			2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null)
+
+		if [[ -z "$version" ]]; then
+			echo "Error: Failed to fetch latest Oh My Posh version from GitHub" >&2
+			echo "" >&2
+			echo "Download manually:" >&2
+			echo "  ./scripts/download-ohmyposh-binaries.sh ${insecure_flag} vX.Y.Z" >&2
+			echo "  ./iclaude.sh --install-posh" >&2
+			return 1
+		fi
+
+		local download_script="${SCRIPT_DIR}/scripts/download-ohmyposh-binaries.sh"
+		if [ ! -f "$download_script" ]; then
+			echo "Error: Download script not found: $download_script" >&2
+			return 1
+		fi
+
+		bash "$download_script" ${insecure_flag} "$version"
+		if [ $? -ne 0 ]; then
+			echo "Error: Download failed" >&2
+			return 1
+		fi
+		echo ""
 	fi
 
 	# Create symlink
