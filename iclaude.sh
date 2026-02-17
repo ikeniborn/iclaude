@@ -627,6 +627,10 @@ fi
                 check_config_status
                 exit 0
                 ;;
+            --list-sessions)
+                list_sessions_cmd
+                exit 0
+                ;;
             --refresh-token)
                 # Setup isolated environment if needed for refresh
                 if [[ "$use_system" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then

@@ -366,3 +366,91 @@ context_cmd_status() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
+
+#######################################
+# list_sessions_cmd
+# Lists all active Claude Code sessions with metadata
+# Arguments:
+#   none
+# Returns:
+#   0 on success
+# Outputs:
+#   Table of sessions with date, slug, branch, project
+#######################################
+list_sessions_cmd() {
+    # Resolve CLAUDE_DIR manually (runs before setup_isolated_config)
+    local claude_dir
+    if [[ -d "${ISOLATED_NVM_DIR}/.claude-isolated" ]]; then
+        claude_dir="${ISOLATED_NVM_DIR}/.claude-isolated"
+    else
+        claude_dir="${CLAUDE_DIR:-$HOME/.claude}"
+    fi
+
+    local sessions_dir="${claude_dir}/session-env"
+    local projects_dir="${claude_dir}/projects"
+
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📋 Claude Code Sessions"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    if [[ ! -d "$sessions_dir" ]] || \
+       [[ -z "$(ls -A "$sessions_dir" 2>/dev/null)" ]]; then
+        echo "  No active sessions."
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        return 0
+    fi
+
+    # Header
+    printf "  %-10s  %-16s  %-28s  %-16s  %s\n" \
+        "SESSION" "DATE" "SLUG" "BRANCH" "PROJECT"
+    echo "  ──────────  ────────────────  ────────────────────────────  ────────────────  ──────────────────────"
+
+    # Iterate session-env/ UUIDs, find matching JSONL for metadata
+    while IFS= read -r -d '' session_dir; do
+        local session_id
+        session_id=$(basename "$session_dir")
+        local short_id="${session_id:0:8}"
+
+        # Date from mtime of session dir
+        local mtime
+        mtime=$(stat -c %Y "$session_dir" 2>/dev/null \
+             || stat -f %m "$session_dir" 2>/dev/null \
+             || echo 0)
+        local date_str
+        date_str=$(date -d "@${mtime}" '+%Y-%m-%d %H:%M' 2>/dev/null \
+                || date -r "${mtime}" '+%Y-%m-%d %H:%M' 2>/dev/null \
+                || echo "unknown")
+
+        # Find JSONL for this session ID in projects/
+        local slug="" branch="" cwd_raw=""
+        local jsonl
+        jsonl=$(find "$projects_dir" -name "${session_id}.jsonl" \
+                     -maxdepth 3 2>/dev/null | head -1)
+        if [[ -n "$jsonl" ]]; then
+            # Read first few lines to extract metadata (head -5 for safety)
+            local first_line
+            first_line=$(head -5 "$jsonl" 2>/dev/null | \
+                grep '"sessionId"' | head -1 || true)
+            slug=$(echo "$first_line" | \
+                grep -o '"slug":"[^"]*"' | cut -d'"' -f4 || true)
+            branch=$(echo "$first_line" | \
+                grep -o '"gitBranch":"[^"]*"' | cut -d'"' -f4 || true)
+            cwd_raw=$(echo "$first_line" | \
+                grep -o '"cwd":"[^"]*"' | cut -d'"' -f4 || true)
+        fi
+
+        # Shorten paths for display
+        local project_display="${cwd_raw##*/}"   # basename only
+        [[ -z "$project_display" ]] && project_display="${session_id:24:12}..."
+        [[ -z "$slug" ]] && slug="(no slug)"
+        [[ -z "$branch" ]] && branch="—"
+
+        printf "  %-10s  %-16s  %-28s  %-16s  %s\n" \
+            "$short_id" "$date_str" "${slug:0:28}" "${branch:0:16}" "$project_display"
+
+    done < <(find "$sessions_dir" -mindepth 1 -maxdepth 1 \
+                  -type d -print0 2>/dev/null | sort -z)
+
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Config: $claude_dir"
+}
