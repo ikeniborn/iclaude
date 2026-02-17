@@ -147,7 +147,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     else
         CACHE_FMT="$TOTAL_CACHE"
     fi
-    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
+    CACHE_DISPLAY=" | C${CACHE_FMT}"  # TESTING: ASCII only
     # Clean cache display immediately
     CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
@@ -770,21 +770,16 @@ CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 # Show active context and percentage of FULL context window
 # Format: 📊 120K (60%) - active tokens and % of full 200K window
 # Percentage shows actual usage relative to full context limit (not effective window)
-# TESTING: Remove ANSI codes to check if they cause wrapping
+# TESTING: Remove ALL unicode/emoji to check if they cause wrapping
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
-        # Exceeded full context limit - add ⚠️ warning icon (should never happen)
-        # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%) ⚠️"
+        CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%) !"
     else
-        # Normal display: active tokens and percentage of full window
-        # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)"
+        CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)"
     fi
 else
     # Zero active tokens (after /clear)
-    # CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
-    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | 📊 0 (0%)"
+    CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A0 (0%)"
 fi
 
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
