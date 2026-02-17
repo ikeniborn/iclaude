@@ -881,14 +881,5 @@ fi
 printf '%s' "$STATUS_LINE" | od -c > /tmp/claude-statusline-hexdump.log 2>&1
 printf "STATUS_LINE len=%d\n" "${#STATUS_LINE}" >> /tmp/claude-statusline-hexdump.log
 
-# Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
-# ATOMIC OUTPUT: Buffer entire output then write at once
-# Prevents Claude Code from inserting system messages between components
-# Use printf "%s" instead of "%b" to prevent interpreting \n as newlines
-{
-    echo ""
-    echo ""
-    printf "%s\n" "$STATUS_LINE"
-    echo ""
-    echo ""
-} 2>&1
+# Phase 3: MINIMAL TEST - just one short line
+printf '%s\n' "OK"
