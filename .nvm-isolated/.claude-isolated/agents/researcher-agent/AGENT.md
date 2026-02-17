@@ -107,8 +107,86 @@ mcp__context7__get_library_docs({library_id, topic})
 
 ### Шаг 5: Записать research.toon
 
-Сформировать JSON-структуру согласно `./schemas/output.schema.json`.
-Для `relevant_files` >= 5 элементов — использовать TOON-блок.
+Файл ВСЕГДА начинается с `---JSON---` (даже без TOON-блоков).
+
+**Если `relevant_files` < 5 элементов** — чистый JSON:
+
+```
+---JSON---
+{
+  "research_results": {
+    "project_context": {
+      "language": "bash",
+      "framework": "none",
+      "entry_point": "iclaude.sh",
+      "architecture_style": "modular"
+    },
+    "codebase_analysis": {
+      "relevant_files": [
+        { "path": "lib/core/json.sh", "relevance": "high", "reason": "Primary target file" }
+      ],
+      "reusable_components": [
+        { "name": "get_lockfile_field()", "file": "lib/core/json.sh", "description": "reads scalar field via jq" }
+      ],
+      "existing_implementations": []
+    },
+    "architecture_analysis": {
+      "affected_components": ["lib/core/"],
+      "integration_points": ["iclaude.sh sources lib/core/json.sh"],
+      "dependency_chain": "iclaude.sh → lib/core/json.sh"
+    },
+    "risk_assessment": {
+      "breaking_changes_potential": "none",
+      "risks": [
+        { "id": "R1", "description": "...", "severity": "low", "mitigation": "..." }
+      ]
+    },
+    "external_docs": { "context7_status": "PLUGIN_NOT_AVAILABLE" },
+    "recommendations": {
+      "complexity_hint": "minimal",
+      "key_insights": ["insight1", "insight2"]
+    }
+  }
+}
+```
+
+**Если `relevant_files` >= 5 элементов** — гибридный TOON+JSON:
+
+TOON-блок идёт ПЕРЕД `---JSON---`. В JSON поле заменяется ссылкой `"<<TOON:relevant_files>>"`:
+
+```
+TOON:relevant_files:v1
+path|relevance|reason
+lib/command/args.sh|high|CLI argument parsing module
+lib/command/help.sh|medium|Help text needs updating
+lib/context/sessions.sh|high|Session management source
+iclaude.sh|medium|Entry point sources all lib/ modules
+lib/launcher/launch.sh|low|Launch orchestration
+
+---JSON---
+{
+  "research_results": {
+    "project_context": { ... },
+    "codebase_analysis": {
+      "relevant_files": "<<TOON:relevant_files>>",
+      "reusable_components": [...],
+      "existing_implementations": []
+    },
+    "architecture_analysis": { ... },
+    "risk_assessment": { ... },
+    "external_docs": { ... },
+    "recommendations": { ... }
+  }
+}
+```
+
+**Правила TOON:**
+- Строка TOON-блока: `TOON:{name}:v1`
+- Вторая строка: имена полей через `|`
+- Остальные строки: значения через `|`
+- `<<TOON:{name}>>` в JSON = ссылка на блок выше
+- Пустая строка между TOON-блоком и `---JSON---`
+- Если несколько TOON-блоков — каждый отделён пустой строкой
 
 Записать в `{WORKSPACE}/research.toon`.
 
@@ -134,12 +212,6 @@ mcp__context7__get_library_docs({library_id, topic})
 - Если Context7 недоступен → записать `context7_status: "PLUGIN_NOT_AVAILABLE"`, продолжить
 - Если файл не найден → не включать в relevant_files, не прерывать
 - Если sub-agent вернул пустой результат → записать что не найдено, продолжить
-
-## Формат research.toon
-
-Смотри `@shared:toon-protocol.md` раздел "research.toon".
-
-Пример: `./examples/example-research.toon`
 
 ## Сигнал завершения
 

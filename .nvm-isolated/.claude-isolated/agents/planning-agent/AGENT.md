@@ -104,8 +104,95 @@ files_to_change = пересечение с relevant_files
 
 ### Шаг 5: Записать plan.toon
 
-Сформировать JSON-структуру согласно `./schemas/output.schema.json`.
-TOON для steps если >= 5 шагов в фазе.
+Файл ВСЕГДА начинается с `---JSON---` (или TOON-блоки перед ним).
+
+**Если шагов в фазе < 5** — шаги как JSON-массив:
+
+```
+---JSON---
+{
+  "execution_plan": {
+    "metadata": {
+      "task_description": "...",
+      "complexity": "minimal",
+      "total_phases": 1,
+      "estimated_steps": 3
+    },
+    "phases": [
+      {
+        "phase_number": 1,
+        "phase_name": "Имя фазы",
+        "risk": "low",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "что делает шаг",
+            "action": "конкретное действие",
+            "file": "lib/core/json.sh",
+            "validation": "bash -n lib/core/json.sh"
+          }
+        ],
+        "files_to_change": ["lib/core/json.sh"],
+        "validation": "bash -n lib/core/json.sh",
+        "commit_message": "docs(core): ..."
+      }
+    ],
+    "files_to_change": ["lib/core/json.sh"],
+    "research_references": {
+      "reusable_components_used": ["get_lockfile_field() — lib/core/json.sh"],
+      "risks_mitigated": ["R1: ..."]
+    }
+  }
+}
+```
+
+**Если шагов в фазе >= 5** — TOON-блок ПЕРЕД `---JSON---`:
+
+```
+TOON:phase_1_steps:v1
+step_number|description|action|file|validation
+1|Parse --list-sessions flag|add case to parse_args()|lib/command/args.sh|bash -n lib/command/args.sh
+2|Implement session listing|read session-env/ directory|lib/context/sessions.sh|bash -n lib/context/sessions.sh
+3|Update help text|add --list-sessions description|lib/command/help.sh|bash -n lib/command/help.sh
+4|Add to iclaude.sh dispatch|route --list-sessions to handler|iclaude.sh|bash -n iclaude.sh
+5|Write tests|add test for --list-sessions|tests/test_sessions.sh|bash tests/test_sessions.sh
+
+---JSON---
+{
+  "execution_plan": {
+    ...
+    "phases": [
+      {
+        "phase_number": 1,
+        "steps": "<<TOON:phase_1_steps>>",
+        ...
+      }
+    ]
+  }
+}
+```
+
+**Если files_to_change >= 5** — тоже TOON-блок:
+
+```
+TOON:files_to_change:v1
+file|action|phase
+lib/command/args.sh|modify|1
+...
+
+---JSON---
+{
+  "execution_plan": {
+    "files_to_change": "<<TOON:files_to_change>>",
+    ...
+  }
+}
+```
+
+**Правила TOON:**
+- TOON-блоки идут перед `---JSON---`, каждый отделён пустой строкой
+- `<<TOON:{name}>>` в JSON — ссылка на блок выше
+- При < 5 элементов — JSON-массив объектов напрямую
 
 Записать в `{WORKSPACE}/plan.toon`.
 
@@ -139,12 +226,6 @@ TOON для steps если >= 5 шагов в фазе.
 
 Если research.toon недостаточен → записать в plan.toon `missing_info: [...]`
 и продолжить с тем что есть.
-
-## Формат plan.toon
-
-Смотри `@shared:toon-protocol.md` раздел "plan.toon".
-
-Пример: `./examples/example-plan.toon`
 
 ## Сигнал завершения
 
