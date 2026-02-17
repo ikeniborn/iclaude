@@ -62,6 +62,8 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/.claude-isolated/*
 !.nvm-isolated/.claude-isolated/skills/
 !.nvm-isolated/.claude-isolated/skills/**
+!.nvm-isolated/.claude-isolated/agents/
+!.nvm-isolated/.claude-isolated/agents/**
 !.nvm-isolated/.claude-isolated/CLAUDE.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v5.0.md
@@ -102,3 +104,6 @@ scripts/.claude_proxy_credentials  # Legacy
 .claude/
 # Claude Code plans (optional - can be committed)
 # docs/plans/*.md
+
+# Claude Code Agent Workspace
+.iclaude/
