@@ -74,6 +74,7 @@ Context Management:
   --context-clean [DAYS]            Clean old sessions and trim history (default: 30 days)
   --context-backup [MODE]           Backup all context data (manual/daily/weekly)
   --context-status [PATH]           Show context status for project
+  --list-sessions                   List all active Claude Code sessions
 
 Auto Memory (Best Practices):
   --context-memory-init [PATH]      Initialize MEMORY.md with best practices template

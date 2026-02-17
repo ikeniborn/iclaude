@@ -66,6 +66,47 @@ cd claude
 - **PR Automation** - создание PR + CI/CD мониторинг
 - **Ralph-Loop** - итеративное выполнение с автокоррекцией
 
+### 🤖 Agent System
+
+Трёхуровневый пайплайн специализированных суб-агентов:
+
+```
+Пользователь → Researcher → [Gate] → Planner → [Gate] → Executor → report.md
+```
+
+| Агент | Что делает | Файлы |
+|-------|-----------|-------|
+| **Researcher** | Исследует кодовую базу (2 параллельных Explore) | → `research.toon` |
+| **Planner** | Создаёт пошаговый план на основе research | → `plan.toon` |
+| **Executor** | Вносит изменения в код, валидирует, коммитит | → `report.md` |
+
+**Запуск:**
+```
+/agent-orchestrator <описание задачи>
+```
+
+**Артефакты** хранятся в `.iclaude/workspace/{session-id}/` (в `.gitignore`).
+Approval gates после каждого агента — можно остановиться на любом этапе.
+
+**Пример 1 — простая задача:**
+```
+/agent-orchestrator Добавить флаг --list-sessions в iclaude.sh
+```
+→ Researcher: находит `lib/command/args.sh`, complexity=minimal
+→ Planner: 2 фазы, 4 шага
+→ Executor: 2 коммита, report.md со статусом COMPLETED
+
+**Пример 2 — сложная задача:**
+```
+/agent-orchestrator Refactor proxy management to use async/await
+```
+→ Researcher: 8 файлов, complexity=complex, риски high
+→ Planner: 4 фазы, approval gate для фаз с риском high
+→ Executor: запрашивает подтверждение перед breaking changes
+
+**Агенты:** `.nvm-isolated/.claude-isolated/agents/`
+**Оркестратор:** `.nvm-isolated/.claude-isolated/skills/agent-orchestrator/SKILL.md`
+
 ---
 
 ## 📖 Документация
@@ -223,7 +264,7 @@ export DEEPSEEK_API_KEY="your-key"
 
 ## 🤝 Вклад и поддержка
 
-- **Issues:** https://github.com/ikeniborn/claude/issues
+- **Issues:** https://github.com/ikeniborn/iclaude/issues
 - **Pull Requests:** приветствуются
 - **Документация:** [CLAUDE.md](./CLAUDE.md) - архитектура для контрибьюторов
 
