@@ -9,6 +9,8 @@
 # Print colored info message
 # Arguments:
 #   $1 - Message to print
+# Returns:
+#   0 always
 #######################################
 print_info() {
     echo -e "${BLUE}ℹ${NC} $1"
@@ -18,6 +20,8 @@ print_info() {
 # Print colored success message
 # Arguments:
 #   $1 - Message to print
+# Returns:
+#   0 always
 #######################################
 print_success() {
     echo -e "${GREEN}✓${NC} $1"
@@ -27,6 +31,8 @@ print_success() {
 # Print colored warning message
 # Arguments:
 #   $1 - Message to print
+# Returns:
+#   0 always
 #######################################
 print_warning() {
     echo -e "${YELLOW}⚠${NC} $1"
@@ -36,6 +42,8 @@ print_warning() {
 # Print colored error message
 # Arguments:
 #   $1 - Message to print
+# Returns:
+#   0 always
 #######################################
 print_error() {
     echo -e "${RED}✗${NC} $1"
