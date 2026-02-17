@@ -1,6 +1,6 @@
 {
   "nodeVersion": "20.20.0",
-  "claudeCodeVersion": "2.1.42",
+  "claudeCodeVersion": "2.1.44",
   "routerVersion": "unknown",
   "ghCliVersion": "2.45.0",
   "lspServers": {
