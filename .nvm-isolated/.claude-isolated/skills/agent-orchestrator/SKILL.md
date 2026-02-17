@@ -50,7 +50,13 @@ invocation: /agent-orchestrator
 ### Шаг 1: Инициализация Workspace
 
 ```bash
-# Определить project root
+# Агенты находятся в изолированной среде iclaude, не в рабочем проекте.
+# SKILL_BASE_DIR — директория этого скилла (из заголовка "Base directory for this skill:")
+# Пример: /home/user/.nvm-isolated/.claude-isolated/skills/agent-orchestrator
+AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
+# Результат: /home/user/.nvm-isolated/.claude-isolated/agents
+
+# Определить project root (рабочий проект, где будут docs/ и .iclaude/)
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
@@ -90,7 +96,7 @@ ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.iclaude/latest"
 ### Шаг 3: Запустить Researcher Agent
 
 ```
-Прочитать: agents/researcher-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/researcher-agent/AGENT.md
 Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}\nTASK: {task_description}"
 Запустить: Task(subagent_type="general-purpose", prompt=researcher_prompt)
 ```
@@ -105,7 +111,7 @@ cp "${WORKSPACE}/research.toon" "${PROJECT_ROOT}/docs/explore/${SESSION_ID}.toon
 ### Шаг 3.5: Запустить Critic Agent (mode=research)
 
 ```
-Прочитать: agents/critic-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
 
 retry_count = 0
 loop:
@@ -175,7 +181,7 @@ loop:
 ### Шаг 5: Запустить Planning Agent
 
 ```
-Прочитать: agents/planning-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/planning-agent/AGENT.md
 Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}"
 Запустить: Task(subagent_type="general-purpose", prompt=planner_prompt)
 ```
@@ -190,7 +196,7 @@ cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
 ### Шаг 5.5: Запустить Critic Agent (mode=plan)
 
 ```
-Прочитать: agents/critic-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
 
 retry_count = 0
 loop:
@@ -260,7 +266,7 @@ loop:
 ### Шаг 7: Запустить Execution Agent
 
 ```
-Прочитать: agents/execution-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/execution-agent/AGENT.md
 Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}"
 Запустить: Task(subagent_type="general-purpose", prompt=executor_prompt)
 ```
@@ -270,7 +276,7 @@ loop:
 ### Шаг 7.5: Запустить Critic Agent (mode=execution)
 
 ```
-Прочитать: agents/critic-agent/AGENT.md
+Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
 
 critic_prompt = critic_md + """
 WORKSPACE: {WORKSPACE}
@@ -323,7 +329,8 @@ Workspace сохранён: {WORKSPACE}
 
 ```python
 # Псевдокод - оркестратор выполняет это напрямую
-agent_md_path = f"agents/{agent_name}/AGENT.md"
+# AGENTS_DIR = "${SKILL_BASE_DIR}/../../agents"  (из Шага 1)
+agent_md_path = f"{AGENTS_DIR}/{agent_name}/AGENT.md"
 agent_md_content = Read(agent_md_path)
 
 prompt = f"""{agent_md_content}
@@ -339,6 +346,10 @@ result = Task(subagent_type="general-purpose", prompt=prompt)
 
 **Важно:** AGENT.md содержит полные инструкции для агента. Он читается и передаётся
 в prompt как есть — агент получает роль, алгоритм и правила.
+
+**Разделение путей:**
+- `AGENTS_DIR` — изолированная среда iclaude (не меняется при смене проекта)
+- `PROJECT_ROOT` — рабочий проект пользователя (pwd при запуске оркестратора)
 
 ## Параллельность
 
@@ -404,23 +415,30 @@ rm -rf "${WORKSPACE}"
 
 ## Связанные файлы
 
+Агенты находятся в изолированной среде iclaude (`${AGENTS_DIR}`):
+
 ```
-agents/
+${AGENTS_DIR}/                   # = ${SKILL_BASE_DIR}/../../agents
 ├── _shared/
-│   ├── workspace.md         # Правила workspace
-│   └── toon-protocol.md     # TOON-спецификация для агентов
+│   ├── workspace.md             # Правила workspace
+│   └── toon-protocol.md         # TOON-спецификация для агентов
 ├── researcher-agent/
-│   ├── AGENT.md             # Роль + инструкции Researcher
-│   └── ...
+│   └── AGENT.md                 # Роль + инструкции Researcher
 ├── planning-agent/
-│   ├── AGENT.md             # Роль + инструкции Planner
-│   └── ...
+│   └── AGENT.md                 # Роль + инструкции Planner
 ├── execution-agent/
-│   ├── AGENT.md             # Роль + инструкции Executor
-│   └── ...
+│   └── AGENT.md                 # Роль + инструкции Executor
 └── critic-agent/
-    ├── AGENT.md             # Роль + инструкции Critic
-    └── examples/            # Примеры critique файлов
+    ├── AGENT.md                 # Роль + инструкции Critic
+    └── examples/                # Примеры critique файлов
+```
+
+Рабочий проект (`${PROJECT_ROOT}`):
+```
+${PROJECT_ROOT}/
+├── docs/explore/                # Постоянные артефакты research (git tracked)
+├── docs/plans/                  # Постоянные артефакты plans (git tracked)
+└── .iclaude/workspace/          # Временные workspace данные (gitignored)
 ```
 
 ## Пример end-to-end
