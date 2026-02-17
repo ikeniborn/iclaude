@@ -24,7 +24,7 @@ output_schema: ./schemas/output.schema.json
 
 Ты получишь в начале этого prompt:
 ```
-WORKSPACE: /path/to/.iclaude/workspace/{session-id}
+WORKSPACE: /path/to/.claude/workspace/{session-id}
 TASK: {описание задачи пользователя}
 ```
 

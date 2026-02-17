@@ -34,7 +34,7 @@ Researcher → [Critic:research] → [Gate] → Planner → [Critic:plan] → [G
 
 Ты получишь в начале этого prompt:
 ```
-WORKSPACE: /path/to/.iclaude/workspace/{session-id}
+WORKSPACE: /path/to/.claude/workspace/{session-id}
 EVALUATION_MODE: research|plan|execution
 RETRY_NUMBER: 0|1|2
 PREVIOUS_CRITIQUE: null|{WORKSPACE}/{mode}-critique.toon

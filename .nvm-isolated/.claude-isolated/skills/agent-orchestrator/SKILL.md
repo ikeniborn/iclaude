@@ -56,10 +56,10 @@ invocation: /agent-orchestrator
 AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
 # Результат: /home/user/.nvm-isolated/.claude-isolated/agents
 
-# Определить project root (рабочий проект, где будут docs/ и .iclaude/)
+# Определить project root (рабочий проект, где будут docs/ и .claude/)
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
-WORKSPACE="${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
+WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 
 # Создать структуру workspace (временные данные, gitignored)
 mkdir -p "${WORKSPACE}"
@@ -68,12 +68,12 @@ mkdir -p "${WORKSPACE}"
 mkdir -p "${PROJECT_ROOT}/docs/explore"
 mkdir -p "${PROJECT_ROOT}/docs/plans"
 
-# Добавить .iclaude/ в .gitignore проекта (если нет)
-grep -q "^\.iclaude/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
-  echo -e "\n# Claude Code Agent Workspace\n.iclaude/" >> "${PROJECT_ROOT}/.gitignore"
+# Добавить .claude/workspace/ в .gitignore проекта (если нет)
+grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
+  echo -e "\n# Claude Code Agent Workspace\n.claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 
 # Обновить симлинк latest
-ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.iclaude/latest"
+ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.claude/latest"
 ```
 
 ### Шаг 2: Записать input.toon
@@ -438,7 +438,7 @@ ${AGENTS_DIR}/                   # = ${SKILL_BASE_DIR}/../../agents
 ${PROJECT_ROOT}/
 ├── docs/explore/                # Постоянные артефакты research (git tracked)
 ├── docs/plans/                  # Постоянные артефакты plans (git tracked)
-└── .iclaude/workspace/          # Временные workspace данные (gitignored)
+└── .claude/workspace/          # Временные workspace данные (gitignored)
 ```
 
 ## Пример end-to-end
@@ -449,7 +449,7 @@ ${PROJECT_ROOT}/
 ```
 
 **Пайплайн:**
-1. Workspace создан: `.iclaude/workspace/2026-02-17T1523/`
+1. Workspace создан: `.claude/workspace/2026-02-17T1523/`
 2. `docs/explore/` и `docs/plans/` созданы (если нет)
 3. input.toon записан
 4. Researcher → `docs/explore/2026-02-17T1523.toon` сохранён
