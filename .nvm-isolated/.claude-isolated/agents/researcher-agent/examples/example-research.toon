@@ -1,0 +1,83 @@
+TOON:relevant_files:v1
+path|relevance|reason
+lib/command/args.sh|high|CLI argument parsing — add --list-sessions case
+lib/command/help.sh|medium|Help text needs --list-sessions entry
+lib/context/sessions.sh|high|Session management — source of session list
+iclaude.sh|medium|Entry point sources all lib/ modules
+lib/launcher/launch.sh|low|Launch orchestration — may check sessions
+
+---JSON---
+{
+  "research_results": {
+    "project_context": {
+      "language": "bash",
+      "framework": "none",
+      "entry_point": "iclaude.sh",
+      "architecture_style": "modular"
+    },
+    "codebase_analysis": {
+      "relevant_files": "<<TOON:relevant_files>>",
+      "reusable_components": [
+        {
+          "name": "parse_args()",
+          "file": "lib/command/args.sh",
+          "description": "Add --list-sessions) case to existing argument switch"
+        },
+        {
+          "name": "show_help()",
+          "file": "lib/command/help.sh",
+          "description": "Add --list-sessions flag description to help output"
+        }
+      ],
+      "existing_implementations": [
+        {
+          "description": "Session environment files stored in session-env/",
+          "file": "lib/context/",
+          "pattern": "ls -la $CLAUDE_DIR/session-env/ pattern for listing"
+        }
+      ]
+    },
+    "architecture_analysis": {
+      "affected_components": [
+        "lib/command/",
+        "lib/context/"
+      ],
+      "integration_points": [
+        "iclaude.sh sources lib/command/args.sh → parse_args() called early in main()",
+        "CLAUDE_DIR env var points to .claude-isolated/ where session-env/ lives"
+      ],
+      "dependency_chain": "iclaude.sh → lib/command/args.sh → parse_args() → dispatch to lib/context/sessions.sh"
+    },
+    "risk_assessment": {
+      "breaking_changes_potential": "low",
+      "risks": [
+        {
+          "id": "R1",
+          "description": "session-env/ directory may be empty or not exist",
+          "severity": "low",
+          "mitigation": "Check directory existence and print 'No active sessions' if empty"
+        },
+        {
+          "id": "R2",
+          "description": "Session format may change in future Claude Code versions",
+          "severity": "low",
+          "mitigation": "Use defensive parsing, handle unknown session formats gracefully"
+        }
+      ]
+    },
+    "external_docs": {
+      "context7_status": "NO_LIBRARIES_DETECTED",
+      "docs_found": []
+    },
+    "recommendations": {
+      "complexity_hint": "minimal",
+      "key_insights": [
+        "parse_args() in lib/command/args.sh is the correct injection point for new flags",
+        "lib/context/sessions.sh contains session management logic (or needs creation)",
+        "CLAUDE_DIR variable is always set by iclaude.sh before parse_args() runs",
+        "Pattern: other flags like --check-isolated follow same add-case-to-switch pattern",
+        "session-env/ directory contains active session files as JSON files"
+      ]
+    }
+  }
+}
