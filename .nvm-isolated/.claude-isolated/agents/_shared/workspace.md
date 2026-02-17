@@ -9,7 +9,7 @@
 
 ```
 {project_root}/
-└── .iclaude/
+└── .claude/
     ├── workspace/
     │   └── {session-id}/          # ID = дата+время запуска (2026-02-17T1523)
     │       ├── input.toon         # Входная задача (пишет оркестратор)
@@ -47,7 +47,7 @@ Retry 2: {mode}-critique.toon → {mode}-critique-r2.toon
 ```bash
 # Генерация session-id
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
-WORKSPACE="${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
+WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 ```
 
 **Почему этот формат:**
@@ -63,17 +63,17 @@ WORKSPACE="${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
 PROJECT_ROOT=$(pwd)
 
 # 2. Создать структуру
-mkdir -p "${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
+mkdir -p "${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 
 # 3. Записать input.toon
 # (json файл с задачей пользователя)
 
 # 4. Обновить симлинк latest
-ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.iclaude/latest"
+ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.claude/latest"
 
-# 5. Добавить .iclaude/ в .gitignore проекта (если ещё нет)
-grep -q "^.iclaude/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
-  echo ".iclaude/" >> "${PROJECT_ROOT}/.gitignore"
+# 5. Добавить .claude/workspace/ в .gitignore проекта (если ещё нет)
+grep -q "^.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
+  echo ".claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 ```
 
 ## Правила для Агентов
@@ -106,7 +106,7 @@ Critic Agent **НЕ ДОЛЖЕН** изменять файлы проекта.
 Оркестратор передаёт `workspace_path` в prompt каждого агента:
 
 ```
-WORKSPACE: /path/to/project/.iclaude/workspace/2026-02-17T1523
+WORKSPACE: /path/to/project/.claude/workspace/2026-02-17T1523
 ```
 
 Агент использует этот путь для чтения input-файлов и записи output-файлов.
@@ -141,7 +141,7 @@ execution-critique.toon ← Critic[execution] пишет
 
 ## Постоянные артефакты (docs/)
 
-Workspace (`.iclaude/`) — временный, gitignored. Для долгосрочного хранения оркестратор
+Workspace (`.claude/workspace/`) — временный, gitignored. Для долгосрочного хранения оркестратор
 копирует ключевые артефакты в проект **после** успешного завершения каждого агента:
 
 ```
@@ -151,7 +151,7 @@ Workspace (`.iclaude/`) — временный, gitignored. Для долгос�
 │   │   └── {SESSION_ID}.toon   ← research.toon (копия, tracked by git)
 │   └── plans/
 │       └── {SESSION_ID}.toon   ← plan.toon (копия, tracked by git)
-└── .iclaude/workspace/{SESSION_ID}/   ← временные данные (gitignored)
+└── .claude/workspace/{SESSION_ID}/   ← временные данные (gitignored)
 ```
 
 **Копирование выполняет оркестратор (не агенты):**
@@ -172,12 +172,12 @@ cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
 
 ## .gitignore Integration
 
-`.iclaude/` содержит временные данные сессий и **не должен коммититься** в git.
+`.claude/workspace/` содержит временные данные сессий и **не должен коммититься** в git.
 
 Оркестратор автоматически добавляет в `.gitignore` проекта:
 ```
 # Claude Code Agent Workspace (временные данные сессий)
-.iclaude/
+.claude/workspace/
 ```
 
 ## Cleanup
@@ -185,7 +185,7 @@ cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
 После успешного завершения пайплайна оркестратор предлагает очистку:
 
 ```
-Workspace: /path/to/.iclaude/workspace/2026-02-17T1523
+Workspace: /path/to/.claude/workspace/2026-02-17T1523
 Файлы: input.toon, research.toon, research-critique*.toon,
        plan.toon, plan-critique*.toon, report.md, execution-critique.toon
 

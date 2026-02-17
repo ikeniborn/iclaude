@@ -106,4 +106,4 @@ scripts/.claude_proxy_credentials  # Legacy
 # docs/plans/*.md
 
 # Claude Code Agent Workspace
-.iclaude/
+.claude/workspace/
