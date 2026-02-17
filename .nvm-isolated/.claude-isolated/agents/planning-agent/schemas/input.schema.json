@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "planning-agent/input.schema.json",
+  "title": "Planning Agent Input",
+  "description": "Входные данные для Planning Agent (= output schema Researcher Agent: research.toon)",
+  "$ref": "../researcher-agent/schemas/output.schema.json",
+  "note": "Planning Agent читает research.toon, структура которого определена в researcher-agent/schemas/output.schema.json"
+}

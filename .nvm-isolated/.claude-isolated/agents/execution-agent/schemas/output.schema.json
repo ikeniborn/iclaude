@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "execution-agent/output.schema.json",
+  "title": "Execution Agent Output",
+  "description": "Отчёт о выполнении (report.md) — Markdown формат, не JSON",
+  "type": "object",
+  "note": "report.md — Markdown документ для ревью пользователем. Не JSON схема.",
+  "properties": {
+    "report_sections": {
+      "type": "object",
+      "description": "Обязательные секции report.md",
+      "properties": {
+        "header": {
+          "type": "string",
+          "description": "# Execution Report: {task_description}"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "session": { "type": "string" },
+            "status": {
+              "type": "string",
+              "enum": ["✅ COMPLETED", "❌ FAILED", "⚠️ PARTIAL"]
+            }
+          }
+        },
+        "summary": {
+          "type": "string",
+          "description": "Краткое описание что было сделано (1-3 предложения)"
+        },
+        "phase_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase_number": { "type": "integer" },
+              "phase_name": { "type": "string" },
+              "status": {
+                "type": "string",
+                "enum": ["✅ COMPLETED", "❌ FAILED", "⏭️ SKIPPED"]
+              },
+              "files": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "validation_result": { "type": "string" },
+              "commit_hash": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "risks_encountered": {
+          "type": "array",
+          "description": "Риски которые проявились при выполнении",
+          "items": {
+            "type": "object",
+            "properties": {
+              "risk": { "type": "string" },
+              "severity": { "type": "string" },
+              "resolution": { "type": "string" }
+            }
+          }
+        },
+        "next_steps": {
+          "type": "array",
+          "description": "Что нужно сделать вручную после выполнения",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "markdown_template": {
+    "description": "Шаблон для report.md",
+    "template": "# Execution Report: {task_description}\n\n**Session:** {session_id}\n**Status:** {status}\n\n## Summary\n\n{summary_text}\n\n## Phase Results\n\n### Phase {N}: {phase_name}\n- **Status:** {phase_status}\n- **Files:** `{file1}`, `{file2}`\n- **Validation:** `{validation_command}` → {validation_result}\n- **Commit:** `{commit_message}` ({short_hash})\n\n## Risks Encountered\n\n| Risk | Severity | Resolution |\n|------|----------|------------|\n| {risk} | {severity} | {resolution} |\n\n## Next Steps\n\n- [ ] {next_step_1}\n- [ ] {next_step_2}"
+  }
+}

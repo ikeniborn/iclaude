@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "researcher-agent/input.schema.json",
+  "title": "Researcher Agent Input",
+  "description": "Входная задача для Researcher Agent (input.toon)",
+  "type": "object",
+  "required": ["task_input"],
+  "additionalProperties": false,
+  "properties": {
+    "task_input": {
+      "type": "object",
+      "required": ["task_description", "focus_areas"],
+      "additionalProperties": false,
+      "properties": {
+        "task_description": {
+          "type": "string",
+          "description": "Описание задачи пользователя (оригинальный запрос)",
+          "minLength": 5,
+          "examples": [
+            "Добавить флаг --list-sessions в iclaude.sh",
+            "Implement user authentication endpoint"
+          ]
+        },
+        "focus_areas": {
+          "type": "array",
+          "description": "Области исследования (все по умолчанию)",
+          "items": {
+            "type": "string",
+            "enum": ["codebase", "architecture", "risks", "external_docs"]
+          },
+          "minItems": 1,
+          "default": ["codebase", "architecture", "risks", "external_docs"],
+          "examples": [
+            ["codebase", "architecture", "risks", "external_docs"]
+          ]
+        },
+        "hints": {
+          "type": "object",
+          "description": "Опциональные подсказки для ускорения исследования",
+          "additionalProperties": false,
+          "properties": {
+            "language_hint": {
+              "type": ["string", "null"],
+              "description": "Подсказка языка проекта (null = автоопределение)",
+              "examples": ["bash", "python", "typescript", null]
+            },
+            "skip_context7": {
+              "type": "boolean",
+              "description": "Пропустить Context7 MCP вызовы",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "task_input": {
+        "task_description": "Добавить флаг --list-sessions в iclaude.sh",
+        "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
+        "hints": {
+          "language_hint": null,
+          "skip_context7": false
+        }
+      }
+    }
+  ]
+}
