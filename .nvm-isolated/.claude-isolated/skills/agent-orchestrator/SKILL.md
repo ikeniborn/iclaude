@@ -56,24 +56,18 @@ invocation: /agent-orchestrator
 AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
 # Результат: /home/user/.nvm-isolated/.claude-isolated/agents
 
-# Определить project root (рабочий проект, где будут docs/ и .claude/)
+# Определить project root
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 
-# Создать структуру workspace (временные данные, gitignored)
+# Создать структуру workspace
 mkdir -p "${WORKSPACE}"
-
-# Создать dirs для постоянных артефактов (tracked by git)
-mkdir -p "${PROJECT_ROOT}/docs/explore"
-mkdir -p "${PROJECT_ROOT}/docs/plans"
 
 # Добавить .claude/workspace/ в .gitignore проекта (если нет)
 grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
   echo -e "\n# Claude Code Agent Workspace\n.claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 
-# Обновить симлинк latest
-ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.claude/latest"
 ```
 
 ### Шаг 2: Записать input.toon
@@ -102,11 +96,6 @@ ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.claude/latest"
 ```
 
 Дождаться завершения. Показать пользователю key_insights из вывода агента.
-
-Сохранить research артефакт в проект:
-```bash
-cp "${WORKSPACE}/research.toon" "${PROJECT_ROOT}/docs/explore/${SESSION_ID}.toon"
-```
 
 ### Шаг 3.5: Запустить Critic Agent (mode=research)
 
@@ -168,15 +157,13 @@ loop:
 Оценка критика: {score}/100 [{verdict}]
 {if WARN: "⚠️  Предупреждения: {critique.dimensions.*issues суммарно}"}
 
-Артефакты:
-  Research: docs/explore/{SESSION_ID}.toon
-  Critique: {WORKSPACE}/research-critique.toon
+Workspace: {WORKSPACE}
 
 Продолжить к планированию? [yes/no]
 ════════════════════════════════════════════
 ```
 
-Если `no` → STOP. Артефакт сохранён в `docs/explore/{SESSION_ID}.toon`.
+Если `no` → STOP. Артефакт в `{WORKSPACE}/research.toon`.
 
 ### Шаг 5: Запустить Planning Agent
 
@@ -187,11 +174,6 @@ loop:
 ```
 
 Дождаться завершения. Показать пользователю summary плана.
-
-Сохранить plan артефакт в проект:
-```bash
-cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
-```
 
 ### Шаг 5.5: Запустить Critic Agent (mode=plan)
 
@@ -251,17 +233,15 @@ loop:
 Оценка критика: {score}/100 [{verdict}]
 {if WARN: "⚠️  Предупреждения: {critique.dimensions.*issues суммарно}"}
 
-Артефакты:
-  Plan:    docs/plans/{SESSION_ID}.toon
-  Critique: {WORKSPACE}/plan-critique.toon
+Workspace: {WORKSPACE}
 
 Выполнить план? [yes/no/show-plan]
 ════════════════════════════════════════════
 ```
 
-При `show-plan` → показать полное содержимое `docs/plans/{SESSION_ID}.toon`, затем снова спросить.
+При `show-plan` → показать полное содержимое `{WORKSPACE}/plan.toon`, затем снова спросить.
 
-Если `no` → STOP. Артефакт сохранён в `docs/plans/{SESSION_ID}.toon`.
+Если `no` → STOP. Артефакт в `{WORKSPACE}/plan.toon`.
 
 ### Шаг 7: Запустить Execution Agent
 
@@ -436,9 +416,14 @@ ${AGENTS_DIR}/                   # = ${SKILL_BASE_DIR}/../../agents
 Рабочий проект (`${PROJECT_ROOT}`):
 ```
 ${PROJECT_ROOT}/
-├── docs/explore/                # Постоянные артефакты research (git tracked)
-├── docs/plans/                  # Постоянные артефакты plans (git tracked)
-└── .claude/workspace/          # Временные workspace данные (gitignored)
+└── .claude/workspace/{SESSION_ID}/   # Все артефакты сессии (gitignored)
+    ├── input.toon
+    ├── research.toon
+    ├── research-critique.toon
+    ├── plan.toon
+    ├── plan-critique.toon
+    ├── report.md
+    └── execution-critique.toon
 ```
 
 ## Пример end-to-end
@@ -450,17 +435,16 @@ ${PROJECT_ROOT}/
 
 **Пайплайн:**
 1. Workspace создан: `.claude/workspace/2026-02-17T1523/`
-2. `docs/explore/` и `docs/plans/` созданы (если нет)
-3. input.toon записан
-4. Researcher → `docs/explore/2026-02-17T1523.toon` сохранён
-5. Critic[research]: score=88/100, verdict=PASS
-6. [Gate] Пользователь: "yes"
-7. Planner → `docs/plans/2026-02-17T1523.toon` сохранён
-8. Critic[plan]: score=92/100, verdict=PASS
-9. [Gate] Пользователь: "yes"
-10. Executor → изменяет 4 файла, 2 коммита
-11. Critic[execution]: score=95/100, verdict=PASS
-12. report.md записан: status=COMPLETED
+2. input.toon записан
+3. Researcher → research.toon
+4. Critic[research]: score=88/100, verdict=PASS
+5. [Gate] Пользователь: "yes"
+6. Planner → plan.toon
+7. Critic[plan]: score=92/100, verdict=PASS
+8. [Gate] Пользователь: "yes"
+9. Executor → изменяет 4 файла, 2 коммита
+10. Critic[execution]: score=95/100, verdict=PASS
+11. report.md записан: status=COMPLETED
 
 **Выход:**
 ```
