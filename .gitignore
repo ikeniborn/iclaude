@@ -107,3 +107,6 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Claude Code Agent Workspace
 .claude/workspace/
+
+# Ignore all files in .claude/ except memory/
+.claude/memory
