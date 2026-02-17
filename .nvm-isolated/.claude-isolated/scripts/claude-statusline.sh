@@ -236,21 +236,25 @@ generate_toon_session() {
     mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
 
     # Parse JSONL and extract messages into JSON array
-    local messages_json=$(jq -s '[.[] | {
-        role: (.message.role // .userType),
-        type: (.message.content[0].type // "unknown"),
-        content: (
-            if .message.content[0].type == "text" then
-                .message.content[0].text
-            elif .message.content[0].type == "thinking" then
-                .message.content[0].thinking
-            elif .message.content[0].type == "compact" then
-                "📦 COMPACT: " + (.message.content[0].compact // "")
-            else
-                ""
-            end
-        )
-    } | select(.content != "" and .content != null)]' "$jsonl_file" 2>/dev/null)
+    # Guard: skip lines where message.content is a string (not array) to avoid
+    # "Cannot index string with number" jq error that causes silent empty output
+    local messages_json=$(jq -s '[.[] |
+        select(.message.content | type == "array") |
+        {
+            role: (.message.role // .userType),
+            type: (.message.content[0].type // "unknown"),
+            content: (
+                if .message.content[0].type == "text" then
+                    .message.content[0].text
+                elif .message.content[0].type == "thinking" then
+                    .message.content[0].thinking
+                elif .message.content[0].type == "compact" then
+                    "📦 COMPACT: " + (.message.content[0].compact // "")
+                else
+                    ""
+                end
+            )
+        } | select(.content != "" and .content != null)]' "$jsonl_file" 2>/dev/null)
 
     # Convert to TOON format
     echo "$messages_json" | toon --encode --stats 2>/dev/null > "$output_file"
