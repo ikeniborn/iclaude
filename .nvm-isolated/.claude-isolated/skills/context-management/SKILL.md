@@ -1,3 +1,8 @@
+---
+name: context-management
+description: Manages Claude Code context lifecycle — export, import, backup, cleanup, and worktree sync. Use this skill when you need to save or restore project context, synchronize memory between git worktrees, clean up old sessions, or create/restore backups of Claude Code history and memory files.
+user-invocable: false
+---
 # Context Management Skill
 
 Управление контекстом Claude Code: экспорт, импорт, синхронизация worktrees, backup и cleanup.

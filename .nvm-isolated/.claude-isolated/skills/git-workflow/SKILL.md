@@ -1,28 +1,9 @@
 ---
-name: Git Workflow
+name: git-workflow
 description: Стандартизированный git workflow с Conventional Commits
-version: 2.2.0
-tags: [git, commit, branch, conventional-commits, toon]
-dependencies: []
-files:
-  templates: ./templates/*.txt
-  examples: ./examples/*.md
-  shared: ../_shared/commit-types.json
 user-invocable: false
-changelog:
-  - version: 2.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: Branch naming и commit format → @shared:GIT-CONVENTIONS.md"
-      - "Централизация: TOON support → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 7 полных workflow примеров (feature, hotfix, multi-file, etc.)"
-      - "Сокращено: -95 строк дублированного контента"
-  - version: 2.1.0
-    date: 2026-01-23
-    changes:
-      - "TOON Format Support для validation_checks[] (26% token savings)"
-      - "Pre-commit validation checks массив"
 ---
+<!-- version: 2.2.0 | tags: git, commit, branch, conventional-commits, toon -->
 
 # Git Workflow v2.2
 
@@ -765,7 +746,7 @@ pr-automation uses `git_result.branch` для creating PR from current branch to
 
 ## Best Practices
 
-### ✅ DO
+### DO
 
 1. **Always verify branch** before committing (`git branch --show-current`)
 2. **Review staged files** before commit (`git diff --staged`)
@@ -775,7 +756,7 @@ pr-automation uses `git_result.branch` для creating PR from current branch to
 6. **Run validation checks** before commit (if configured)
 7. **Push after commit** to backup work to remote
 
-### ❌ DON'T
+### DON'T
 
 1. **Skip commit message body** for non-trivial changes
 2. **Use generic messages** ("fix bug", "update code")
@@ -791,26 +772,40 @@ pr-automation uses `git_result.branch` для creating PR from current branch to
 
 ### v2.2.0 (2026-01-25)
 
-- ✅ Centralized git conventions → `@shared:GIT-CONVENTIONS.md`
-- ✅ Centralized TOON support → `@shared:TOON-REFERENCE.md`
-- ✅ Added 7 complete workflow examples (feature, hotfix, multi-file, breaking, validation, docs, perf)
-- ✅ Reduced duplication: -95 lines (TOON секция удалена)
-- ✅ Enhanced task summary template
+- Centralized git conventions → `@shared:GIT-CONVENTIONS.md`
+- Centralized TOON support → `@shared:TOON-REFERENCE.md`
+- Added 7 complete workflow examples (feature, hotfix, multi-file, breaking, validation, docs, perf)
+- Reduced duplication: -95 lines (TOON секция удалена)
+- Enhanced task summary template
 
 ### v2.1.0 (2026-01-23)
 
-- ✅ TOON Format Support для validation_checks[]
-- ✅ Pre-commit validation checks массив
-- ✅ Token savings: 20-30% для 5+ checks
+- TOON Format Support для validation_checks[]
+- Pre-commit validation checks массив
+- Token savings: 20-30% для 5+ checks
 
 ### v2.0.0
 
-- ✅ Initial standardized workflow
-- ✅ Conventional Commits integration
-- ✅ Co-authored commits для AI code
+- Initial standardized workflow
+- Conventional Commits integration
+- Co-authored commits для AI code
 
 ---
 
 **Author:** Claude Code Team
 **License:** MIT
 **Support:** См. @shared:GIT-CONVENTIONS.md для полной git спецификации
+
+## Changelog
+
+### 2.2.0 (2026-01-25)
+
+- Централизация: Branch naming и commit format → @shared:GIT-CONVENTIONS.md
+- Централизация: TOON support → @shared:TOON-REFERENCE.md
+- Добавлено: 7 полных workflow примеров (feature, hotfix, multi-file, etc.)
+- Сокращено: -95 строк дублированного контента
+
+### 2.1.0 (2026-01-23)
+
+- TOON Format Support для validation_checks[] (26% token savings)
+- Pre-commit validation checks массив

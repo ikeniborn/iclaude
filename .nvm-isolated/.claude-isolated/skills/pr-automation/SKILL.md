@@ -1,47 +1,10 @@
 ---
 name: pr-automation
 description: Автоматизация создания PR с мониторингом CI/CD и автоматическим исправлением ошибок
-version: 1.3.0
-author: ikeniborn
-tags: [github, pr, ci/cd, automation, github-actions, typescript, eslint, toon, loop-mode]
-dependencies: [git-workflow, code-review, toon-skill]
-triggers:
-  - "создать pr"
-  - "создать pull request"
-  - "сделать pr"
-  - "открыть pull request"
 user-invocable: true
 context: fork
-changelog:
-  - version: 1.3.0
-    date: 2026-01-25
-    changes:
-      - "**BREAKING**: Удален ralph-loop plugin (deprecated)"
-      - "Замена: Bash loop mode через ./iclaude.sh --loop task.md"
-      - "External tool для итеративных фиксов (не auto-invocation)"
-      - "Обновлены examples для manual loop invocation"
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 7 полных примеров (simple, TS errors, multiple types, max iterations, TOON optimization, production, CI timeout)"
-      - "Skill-specific TOON usage notes для checks[], autoFixedErrors[], commits[]"
-      - "Обновлены references: @shared:GIT-CONVENTIONS.md, @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md"
-  - version: 1.1.0
-    date: 2026-01-23
-    changes:
-      - "**TOON Format Support**: Автоматическая генерация TOON для token efficiency"
-      - "TOON для checks[], autoFixedErrors[], commits[] (когда >= 5 элементов)"
-      - "35-45% token savings для PR с множественными checks/fixes"
-      - "100% backward compatibility (JSON остаётся primary format)"
-      - "Complete audit trail сохраняется в TOON"
-      - "Use cases: CI/CD monitoring, auto-fix analysis, commit history, PR metrics"
-  - version: 1.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Initial release"
-      - "Auto-detection stack & CI/CD"
 ---
+<!-- version: 1.3.0 | author: ikeniborn | tags: github, pr, ci/cd, automation, github-actions, typescript, eslint, toon, loop-mode | dependencies: git-workflow, code-review, toon-skill | triggers: создать pr, создать pull request, сделать pr, открыть pull request -->
 
 # PR Automation Skill
 
@@ -1237,3 +1200,33 @@ pr-automation/
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### v1.3.0 (2026-01-25)
+
+- **BREAKING**: Удален ralph-loop plugin (deprecated)
+- Замена: Bash loop mode через ./iclaude.sh --loop task.md
+- External tool для итеративных фиксов (не auto-invocation)
+- Обновлены examples для manual loop invocation
+
+### v1.2.0 (2026-01-25)
+
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Добавлено: 7 полных примеров (simple, TS errors, multiple types, max iterations, TOON optimization, production, CI timeout)
+- Skill-specific TOON usage notes для checks[], autoFixedErrors[], commits[]
+- Обновлены references: @shared:GIT-CONVENTIONS.md, @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md
+
+### v1.1.0 (2026-01-23)
+
+- **TOON Format Support**: Автоматическая генерация TOON для token efficiency
+- TOON для checks[], autoFixedErrors[], commits[] (когда >= 5 элементов)
+- 35-45% token savings для PR с множественными checks/fixes
+- 100% backward compatibility (JSON остаётся primary format)
+- Complete audit trail сохраняется в TOON
+- Use cases: CI/CD monitoring, auto-fix analysis, commit history, PR metrics
+
+### v1.0.0 (2025-XX-XX)
+
+- Initial release
+- Auto-detection stack & CI/CD

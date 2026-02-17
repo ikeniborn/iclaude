@@ -1,25 +1,9 @@
 ---
-name: Rollback Recovery
+name: rollback-recovery
 description: Механизм отката и восстановления при критических ошибках
-version: 1.2.0
-tags: [rollback, recovery, git, backup]
-dependencies: [error-handling]
-files:
-  templates: ./templates/*.json
 user-invocable: false
-changelog:
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Добавлено: 3 примера (git reset soft, git reset hard, file restore)"
-      - "Skill-specific TOON usage notes для files_affected[]"
-      - "Обновлены references"
-  - version: 1.1.0
-    date: 2026-01-23
-    changes:
-      - "TOON Format Support для files_affected[]"
 ---
+<!-- version: 1.2.0 | tags: rollback, recovery, git, backup | dependencies: error-handling | files.templates: ./templates/*.json -->
 
 # Rollback Recovery
 
@@ -372,3 +356,14 @@ git status
 
 **Author:** ikeniborn
 **License:** MIT
+
+## Changelog
+
+### v1.2.0 (2026-01-25)
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Добавлено: 3 примера (git reset soft, git reset hard, file restore)
+- Skill-specific TOON usage notes для files_affected[]
+- Обновлены references
+
+### v1.1.0 (2026-01-23)
+- TOON Format Support для files_affected[]

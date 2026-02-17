@@ -1,18 +1,9 @@
 ---
 name: agent-orchestrator
-description: Оркестратор пайплайна Researcher → Planner → Executor для выполнения задач через специализированные суб-агенты
-version: 1.0.0
-tags: [agents, orchestration, pipeline, researcher, planner, executor]
-dependencies:
-  - agents/researcher-agent/AGENT.md
-  - agents/planning-agent/AGENT.md
-  - agents/execution-agent/AGENT.md
-  - agents/critic-agent/AGENT.md
-  - agents/_shared/workspace.md
-  - agents/_shared/toon-protocol.md
+description: Оркестратор пайплайна Researcher → Planner → Executor
 user-invocable: true
-invocation: /agent-orchestrator
 ---
+<!-- version: 1.0.0 | tags: agents, orchestration, pipeline, researcher, planner, executor | invocation: /agent-orchestrator | dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md -->
 
 # Agent Orchestrator
 

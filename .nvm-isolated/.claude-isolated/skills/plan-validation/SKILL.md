@@ -1,25 +1,10 @@
 ---
-name: Plan Validation
+name: plan-validation
 description: Multi-perspective validation of planning outputs before execution
-version: 1.0.1
-tags: [validation, planning, quality-assurance, blocking, pre-execution]
-dependencies: [structured-planning, adaptive-workflow, thinking-framework, toon-skill]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.json
-  examples: ./examples/*.md
-  rules: ./rules/*.md
-  levels: ./levels/*.md
 user-invocable: true
 agent: Validation
-changelog:
-  - version: 1.0.1
-    date: 2026-02-09
-    changes:
-      - "Optimization: Moved detailed validation level docs to levels/ directory"
-      - "Optimization: Extracted complexity rules to complexity-rules.md"
-      - "Reduced SKILL.md from 663 to ~400 lines (39% reduction)"
 ---
+<!-- version: 1.0.1 | tags: validation, planning, quality-assurance, blocking, pre-execution | dependencies: structured-planning, adaptive-workflow, thinking-framework, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md, levels=./levels/*.md -->
 
 # Plan Validation
 
@@ -410,14 +395,14 @@ blocking_issues[3]{issue,severity,level}:
 
 ### v1.0.1 (2026-02-09)
 
-- ✅ Optimization: Moved detailed validation level docs to levels/ directory
-- ✅ Optimization: Extracted complexity rules to complexity-rules.md
-- ✅ Reduced SKILL.md from 663 to ~430 lines (35% reduction)
+- Optimization: Moved detailed validation level docs to levels/ directory
+- Optimization: Extracted complexity rules to complexity-rules.md
+- Reduced SKILL.md from 663 to ~430 lines (35% reduction)
 
 ### v1.0.0 (2026-02-09)
 
-- ✅ Initial release
-- ✅ 4-level validation system (structural, semantic, technical, completeness)
-- ✅ Adaptive rules для minimal/standard/complex
-- ✅ TOON optimization для complex планов
-- ✅ Integration с structured-planning, approval-gates, adaptive-workflow
+- Initial release
+- 4-level validation system (structural, semantic, technical, completeness)
+- Adaptive rules для minimal/standard/complex
+- TOON optimization для complex планов
+- Integration с structured-planning, approval-gates, adaptive-workflow

@@ -1,21 +1,9 @@
 ---
-name: Adaptive Workflow
+name: adaptive-workflow
 description: Автоматический выбор сложности workflow
-version: 2.2.0
-tags: [workflow, complexity, adaptation, optimization, task-decomposition]
-dependencies: [context-awareness, task-decomposition, phase-execution]
-files:
-  templates: ./templates/*.json
 user-invocable: false
-changelog:
-  - version: 2.2.0
-    date: 2026-01-25
-    changes:
-      - "Удалено: TOON Format Support дублирование (~107 строк)"
-      - "Добавлено: References к @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:WORKFLOW-SKILLS-UNIVERSAL.md"
-      - "Добавлено: 7 complete working examples (minimal, standard, complex, escalation, downgrade, extended analysis, TOON optimization)"
-      - "Добавлено: Skill-specific TOON usage notes для complexity_factors[]"
 ---
+<!-- version: 2.2.0 | tags: workflow, complexity, adaptation, optimization, task-decomposition | dependencies: context-awareness, task-decomposition, phase-execution | files: templates: ./templates/*.json -->
 
 # Adaptive Workflow
 
@@ -855,7 +843,7 @@ Total: 100 minutes, 3 checkpoints, systematic execution
 
 ## Best Practices
 
-### ✅ DO
+### DO
 
 1. **Use extended analysis для complex tasks** - track all factors для transparency
 2. **Trust the algorithm** - don't force complexity level without justification
@@ -863,7 +851,7 @@ Total: 100 minutes, 3 checkpoints, systematic execution
 4. **Document downgrade reasons** - explain why simpler workflow is sufficient
 5. **Activate TOON для 5+ factors** - significant token savings для detailed analysis
 
-### ❌ DON'T
+### DON'T
 
 1. **Force complex workflow для simple tasks** - wastes time and resources
 2. **Skip minimal workflow checks** - can save significant time
@@ -876,3 +864,14 @@ Total: 100 minutes, 3 checkpoints, systematic execution
 **Author:** Claude Code Team
 **License:** MIT
 **Support:** См. @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:WORKFLOW-SKILLS-UNIVERSAL.md
+
+---
+
+## Changelog
+
+### v2.2.0 (2026-01-25)
+
+- Удалено: TOON Format Support дублирование (~107 строк)
+- Добавлено: References к @shared:TOON-REFERENCE.md, @shared:TASK-STRUCTURE.md, @shared:WORKFLOW-SKILLS-UNIVERSAL.md
+- Добавлено: 7 complete working examples (minimal, standard, complex, escalation, downgrade, extended analysis, TOON optimization)
+- Добавлено: Skill-specific TOON usage notes для complexity_factors[]

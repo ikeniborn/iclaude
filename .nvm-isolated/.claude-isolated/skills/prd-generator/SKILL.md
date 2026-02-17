@@ -1,35 +1,9 @@
 ---
 name: prd-generator
 description: Автоматизированное создание Product Requirements Document (PRD) с интерактивными вопросами, AI-генерацией 14 разделов и 5 Mermaid диаграмм
-version: 1.2.0
-tags: [documentation, prd, product-management, mermaid, interactive, ai-generation, toon]
-dependencies: [thinking-framework, context-awareness, validation-framework, toon-skill]
-author: iclaude Skills Team
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.schema.json
-  examples: ./examples/*.md
-  rules: ./rules/*.md
 user-invocable: true
-changelog:
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specs → @shared:TOON-REFERENCE.md"
-      - "Обновлены references на @shared: (thinking patterns, task structure)"
-      - "Улучшена документация integration with workflow"
-  - version: 1.1.0
-    date: 2026-01-23
-    changes:
-      - "**TOON Format Support**: Token-efficient PRD reporting"
-      - "TOON для sections (14) и diagrams (5) - всегда генерируется"
-      - "45-55% token savings (highly structured data)"
-      - "Object → array conversion для TOON compatibility"
-  - version: 1.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Initial release"
 ---
+<!-- version: 1.2.0 | tags: documentation, prd, product-management, mermaid, interactive, ai-generation, toon | dependencies: thinking-framework, context-awareness, validation-framework, toon-skill | author: iclaude Skills Team | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
 # PRD Generator Skill
 
@@ -805,3 +779,21 @@ prdGeneration.toon = {
 - This skill generates files in user's project directory (`docs/prd/`), NOT in skill directory
 - Skill files (`templates/`, `rules/`, `examples/`) are read-only references
 - Generated PRD can be committed to git separately by user or via `git-workflow` skill
+
+---
+
+## Changelog
+
+### v1.2.0 (2026-01-25)
+- Централизация: TOON specs → @shared:TOON-REFERENCE.md
+- Обновлены references на @shared: (thinking patterns, task structure)
+- Улучшена документация integration with workflow
+
+### v1.1.0 (2026-01-23)
+- **TOON Format Support**: Token-efficient PRD reporting
+- TOON для sections (14) и diagrams (5) - всегда генерируется
+- 45-55% token savings (highly structured data)
+- Object → array conversion для TOON compatibility
+
+### v1.0.0 (2025-XX-XX)
+- Initial release

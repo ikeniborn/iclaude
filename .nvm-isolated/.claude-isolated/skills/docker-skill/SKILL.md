@@ -1,29 +1,9 @@
 ---
 name: docker-skill
 description: Create and manage optimized Docker images with best practices, multi-stage builds, security scanning (hadolint), and Docker Compose generation
-version: 1.0.0
-tags: [docker, containers, optimization, security, multi-stage, devops, automation, compose]
-dependencies: [thinking-framework, validation-framework, context-awareness]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.schema.json
-  examples: ./examples/*.md
-  rules: ./rules/*.md
-  dockerfile-templates: ./dockerfile-templates/*.Dockerfile
 user-invocable: false
-changelog:
-  - version: 1.0.0
-    date: 2026-01-26
-    changes:
-      - "Initial release"
-      - "Interactive mode with AskUserQuestion for language/framework/optimization selection"
-      - "Multi-stage build generation for Node.js/TypeScript and Python"
-      - "Docker Compose generation for multi-container applications"
-      - "hadolint integration for Dockerfile linting and security scanning"
-      - "TOON support for vulnerability lists and layer optimization (40-50% token savings)"
-      - "Best practices enforcement (10+ rules from Docker official docs + Habr)"
-      - "5 operations: create-dockerfile, build-image, scan-image, optimize-layers, cleanup-images"
 ---
+<!-- version: 1.0.0 | tags: docker, containers, optimization, security, multi-stage, devops, automation, compose | dependencies: thinking-framework, validation-framework, context-awareness | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md, dockerfile-templates: ./dockerfile-templates/*.Dockerfile -->
 
 # docker-skill
 
@@ -766,3 +746,17 @@ context-awareness → docker-skill → validation-framework → git-workflow
 **Status**: ✅ Ready for use
 **Maintainer**: iclaude project
 **License**: MIT
+
+---
+
+## Changelog
+
+### v1.0.0 (2026-01-26)
+- Initial release
+- Interactive mode with AskUserQuestion for language/framework/optimization selection
+- Multi-stage build generation for Node.js/TypeScript and Python
+- Docker Compose generation for multi-container applications
+- hadolint integration for Dockerfile linting and security scanning
+- TOON support for vulnerability lists and layer optimization (40-50% token savings)
+- Best practices enforcement (10+ rules from Docker official docs + Habr)
+- 5 operations: create-dockerfile, build-image, scan-image, optimize-layers, cleanup-images

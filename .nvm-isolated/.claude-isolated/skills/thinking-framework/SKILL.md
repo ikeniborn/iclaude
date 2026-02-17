@@ -1,33 +1,10 @@
 ---
-name: Thinking Framework
+name: thinking-framework
 description: Структурированный reasoning через 3 универсальных шаблона
-version: 2.2.0
-tags: [thinking, reasoning, decision-making, analysis, risk-assessment]
-dependencies: []
-context: fork
-files:
-  templates: ./templates/*.xml
-  examples: ./examples/*.md
-  shared: @shared:THINKING-PATTERNS.md
 user-invocable: false
-changelog:
-  - version: 2.2.0
-    date: 2026-02-08
-    changes:
-      - "Оптимизация: Удалено 56.7% дублирования с THINKING-PATTERNS.md"
-      - "Удалено: 4 дублирующихся примера (Bug Fix, Library Choice, Architecture, DB Migration)"
-      - "Удалено: Best Practices section (ссылка на PATTERNS.md)"
-      - "Создано: 2 уникальных примера (Feature Implementation, API Breaking Change)"
-      - "SKILL.md сокращен с 460 до ~267 строк (42% reduction)"
-      - "Сохранен уникальный контент: Rules section (33 строки)"
-      - "Навигационная роль: SKILL.md → reference layer, PATTERNS.md → source of truth"
-  - version: 2.1.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: Templates и rules → @shared:THINKING-PATTERNS.md"
-      - "Добавлено: 6 полных примеров (PRD analysis, library choice, migration risk, etc.)"
-      - "Улучшено: Integration guide для других skills"
+context: fork
 ---
+<!-- version: 2.2.0 | tags: thinking, reasoning, decision-making, analysis, risk-assessment | dependencies: [] | files: { templates: ./templates/*.xml, examples: ./examples/*.md, shared: @shared:THINKING-PATTERNS.md } | context: fork -->
 
 # Thinking Framework v2.2
 
@@ -96,7 +73,7 @@ template_guide[7]{situation,template,example}:
 
 **Quick summary:**
 
-### ✅ When Thinking is Required
+### When Thinking is Required
 
 1. **Перед началом каждой фазы**
    - PHASE 1: analysis thinking перед planning
@@ -112,13 +89,13 @@ template_guide[7]{situation,template,example}:
    - Database migrations
    - Production deployments
 
-### ⚠️ When Thinking is Optional
+### When Thinking is Optional
 
 - Простые однозначные задачи (typo fix, add constant)
 - Когда решение очевидно (one clear approach)
 - Repetitive operations (same pattern as before)
 
-### 🚫 Thinking is NOT Outputted
+### Thinking is NOT Outputted
 
 **IMPORTANT:** Thinking - внутренний процесс Claude. User видит только:
 - Structured output (JSON)
@@ -176,11 +153,11 @@ Thinking НЕ включается в user-facing output.
 ## Best Practices
 
 **Critical reminders:**
-- ✅ Use thinking BEFORE structured output (reasoning first, then JSON)
-- ✅ Be specific in ВЫВОДЫ/ОБОСНОВАНИЕ (actionable conclusions)
-- ✅ Use appropriate template (см. Template Selection Guide выше)
-- ❌ Don't skip thinking for complex tasks (даже если obvious)
-- ❌ Don't output thinking to user (it's internal reasoning process)
+- Use thinking BEFORE structured output (reasoning first, then JSON)
+- Be specific in ВЫВОДЫ/ОБОСНОВАНИЕ (actionable conclusions)
+- Use appropriate template (см. Template Selection Guide выше)
+- Don't skip thinking for complex tasks (даже если obvious)
+- Don't output thinking to user (it's internal reasoning process)
 
 **Full best practices (DO/DON'T lists):** См. `@shared:THINKING-PATTERNS.md#best-practices`
 
@@ -198,21 +175,37 @@ Thinking НЕ включается в user-facing output.
 
 ### v2.2.0 (2026-02-08)
 
-- ✅ Оптимизация: Устранено 56.7% дублирования с THINKING-PATTERNS.md
-- ✅ Удалено: 4 дублирующихся примера (Bug Fix, Library Choice, Architecture, DB Migration)
-- ✅ Удалено: Best Practices section (ссылка на PATTERNS.md)
-- ✅ Создано: 2 уникальных примера в examples/ (Feature Implementation, API Breaking Change)
-- ✅ SKILL.md сокращен с 459 до ~267 строк (42% reduction / ~192 строки removed)
-- ✅ Роль: SKILL.md = navigation layer, PATTERNS.md = single source of truth
+- Оптимизация: Устранено 56.7% дублирования с THINKING-PATTERNS.md
+- Удалено: 4 дублирующихся примера (Bug Fix, Library Choice, Architecture, DB Migration)
+- Удалено: Best Practices section (ссылка на PATTERNS.md)
+- Создано: 2 уникальных примера в examples/ (Feature Implementation, API Breaking Change)
+- SKILL.md сокращен с 459 до ~267 строк (42% reduction / ~192 строки removed)
+- Роль: SKILL.md = navigation layer, PATTERNS.md = single source of truth
 
 ### v2.1.0 (2026-01-25)
 
-- ✅ Централизация: Templates и rules → `@shared:THINKING-PATTERNS.md`
-- ✅ Добавлено: 6 полных примеров (PRD analysis, library choice, migration risk, etc.)
-- ✅ Улучшено: Integration guide для других skills
+- Централизация: Templates и rules → `@shared:THINKING-PATTERNS.md`
+- Добавлено: 6 полных примеров (PRD analysis, library choice, migration risk, etc.)
+- Улучшено: Integration guide для других skills
 
 ---
 
 **Author:** Claude Code Team
 **License:** MIT
 **Support:** См. `@shared:THINKING-PATTERNS.md` для полной документации templates
+
+## Changelog
+
+### 2.2.0 (2026-02-08)
+- Оптимизация: Удалено 56.7% дублирования с THINKING-PATTERNS.md
+- Удалено: 4 дублирующихся примера (Bug Fix, Library Choice, Architecture, DB Migration)
+- Удалено: Best Practices section (ссылка на PATTERNS.md)
+- Создано: 2 уникальных примера (Feature Implementation, API Breaking Change)
+- SKILL.md сокращен с 460 до ~267 строк (42% reduction)
+- Сохранен уникальный контент: Rules section (33 строки)
+- Навигационная роль: SKILL.md → reference layer, PATTERNS.md → source of truth
+
+### 2.1.0 (2026-01-25)
+- Централизация: Templates и rules → @shared:THINKING-PATTERNS.md
+- Добавлено: 6 полных примеров (PRD analysis, library choice, migration risk, etc.)
+- Улучшено: Integration guide для других skills

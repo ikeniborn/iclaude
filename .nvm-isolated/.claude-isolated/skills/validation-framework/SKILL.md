@@ -1,17 +1,10 @@
 ---
-name: Validation Framework
+name: validation-framework
 description: Адаптивная валидация execution results с partial validation support (PHASE 4)
-version: 1.0.0
-tags: [validation, execution, acceptance-criteria, testing, post-execution]
-dependencies: [thinking-framework, error-handling, toon-skill]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.json
-  examples: ./examples/*.md
-  rules: ./rules/*.md
 user-invocable: false
 agent: Validation
 ---
+<!-- version: 1.0.0 | tags: validation, execution, acceptance-criteria, testing, post-execution | dependencies: thinking-framework, error-handling, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md -->
 
 # Validation Framework
 

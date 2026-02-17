@@ -1,55 +1,9 @@
 ---
 name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
-version: 1.4.0
-tags: [meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition]
-dependencies: [thinking-framework, structured-planning, validation-framework, toon-skill]
-files:
-  templates: ./templates/*.json
-  schemas: ./schemas/*.schema.json
-  examples: ./examples/*.md
-  rules: ./rules/*.md
 user-invocable: true
-changelog:
-  - version: 1.4.0
-    date: 2026-02-04
-    changes:
-      - "**Decomposition Support**: Generate skills with @example/@rules/@template references"
-      - "Added Q9-Q11: Examples Count (2-5), Examples Categories, Generate Rules (Y/n)"
-      - "Auto-generate 2-5 examples (basic, advanced, error-handling, performance, security)"
-      - "Auto-generate rules/best-practices.md with 3 sections (Best Practices, Common Pitfalls, Performance Tips)"
-      - "Added @template:rules-template.json for rules structure generation"
-      - "Added @example:multi-example-skill.md demonstrating decomposed structure"
-      - "SKILL.md now uses references instead of inline content (~30% token savings)"
-      - "Updated skill-template-base.json with examples_generation and rules_generation config"
-  - version: 1.3.0
-    date: 2026-01-26
-    changes:
-      - "**Documentation Optimization**: 27% reduction (578 → 423 lines)"
-      - "Added Quick Reference table at top for instant understanding"
-      - "Compacted How It Works with tables instead of verbose lists"
-      - "Added Best Practices section (Skill Design + Common Pitfalls + Template Tips)"
-      - "Converted Error Handling to table with recovery strategies"
-      - "Optimized TOON section - removed redundant examples"
-      - "Replaced verbose JSON examples with references to @example and @rules"
-  - version: 1.2.0
-    date: 2026-01-25
-    changes:
-      - "Централизация: TOON specification → @shared:TOON-REFERENCE.md"
-      - "Обновлены references: ../_shared/TOON-PATTERNS.md → @shared:TOON-REFERENCE.md"
-      - "Удалён author field"
-  - version: 1.1.0
-    date: 2026-01-23
-    changes:
-      - "**TOON Format Support**: Token-efficient skill generation reporting"
-      - "TOON для files_created[] и validation_results (5 validators)"
-      - "40-50% token savings для skills с множественными files"
-      - "Special handling: validation_results object → array conversion"
-  - version: 1.0.0
-    date: 2025-XX-XX
-    changes:
-      - "Initial release"
 ---
+<!-- version: 1.4.0 | tags: meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition | dependencies: thinking-framework, structured-planning, validation-framework, toon-skill | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
 # Skill Generator
 
@@ -549,3 +503,40 @@ Provides data to:
 - User → Review and customize generated skill
 - `git-workflow` → Commit skill to repository
 - Other developers → Use generated skill as template
+
+---
+
+## Changelog
+
+### v1.4.0 (2026-02-04)
+- **Decomposition Support**: Generate skills with @example/@rules/@template references
+- Added Q9-Q11: Examples Count (2-5), Examples Categories, Generate Rules (Y/n)
+- Auto-generate 2-5 examples (basic, advanced, error-handling, performance, security)
+- Auto-generate rules/best-practices.md with 3 sections (Best Practices, Common Pitfalls, Performance Tips)
+- Added @template:rules-template.json for rules structure generation
+- Added @example:multi-example-skill.md demonstrating decomposed structure
+- SKILL.md now uses references instead of inline content (~30% token savings)
+- Updated skill-template-base.json with examples_generation and rules_generation config
+
+### v1.3.0 (2026-01-26)
+- **Documentation Optimization**: 27% reduction (578 → 423 lines)
+- Added Quick Reference table at top for instant understanding
+- Compacted How It Works with tables instead of verbose lists
+- Added Best Practices section (Skill Design + Common Pitfalls + Template Tips)
+- Converted Error Handling to table with recovery strategies
+- Optimized TOON section - removed redundant examples
+- Replaced verbose JSON examples with references to @example and @rules
+
+### v1.2.0 (2026-01-25)
+- Централизация: TOON specification → @shared:TOON-REFERENCE.md
+- Обновлены references: ../_shared/TOON-PATTERNS.md → @shared:TOON-REFERENCE.md
+- Удалён author field
+
+### v1.1.0 (2026-01-23)
+- **TOON Format Support**: Token-efficient skill generation reporting
+- TOON для files_created[] и validation_results (5 validators)
+- 40-50% token savings для skills с множественными files
+- Special handling: validation_results object → array conversion
+
+### v1.0.0 (2025-XX-XX)
+- Initial release
