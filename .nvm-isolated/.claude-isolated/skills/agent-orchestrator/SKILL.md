@@ -55,8 +55,12 @@ PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.iclaude/workspace/${SESSION_ID}"
 
-# Создать структуру
+# Создать структуру workspace (временные данные, gitignored)
 mkdir -p "${WORKSPACE}"
+
+# Создать dirs для постоянных артефактов (tracked by git)
+mkdir -p "${PROJECT_ROOT}/docs/explore"
+mkdir -p "${PROJECT_ROOT}/docs/plans"
 
 # Добавить .iclaude/ в .gitignore проекта (если нет)
 grep -q "^\.iclaude/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
@@ -92,6 +96,11 @@ ln -sfn "workspace/${SESSION_ID}" "${PROJECT_ROOT}/.iclaude/latest"
 ```
 
 Дождаться завершения. Показать пользователю key_insights из вывода агента.
+
+Сохранить research артефакт в проект:
+```bash
+cp "${WORKSPACE}/research.toon" "${PROJECT_ROOT}/docs/explore/${SESSION_ID}.toon"
+```
 
 ### Шаг 3.5: Запустить Critic Agent (mode=research)
 
@@ -142,7 +151,7 @@ loop:
 ════════════════════════════════════════════
 📋 RESEARCH COMPLETE
 ════════════════════════════════════════════
-Исследование завершено. Workspace: {WORKSPACE}
+Исследование завершено.
 
 Ключевые находки:
 {вывод из research.toon.recommendations.key_insights}
@@ -153,11 +162,15 @@ loop:
 Оценка критика: {score}/100 [{verdict}]
 {if WARN: "⚠️  Предупреждения: {critique.dimensions.*issues суммарно}"}
 
+Артефакты:
+  Research: docs/explore/{SESSION_ID}.toon
+  Critique: {WORKSPACE}/research-critique.toon
+
 Продолжить к планированию? [yes/no]
 ════════════════════════════════════════════
 ```
 
-Если `no` → STOP. Артефакты: `{WORKSPACE}/research.toon`, `{WORKSPACE}/research-critique.toon`.
+Если `no` → STOP. Артефакт сохранён в `docs/explore/{SESSION_ID}.toon`.
 
 ### Шаг 5: Запустить Planning Agent
 
@@ -168,6 +181,11 @@ loop:
 ```
 
 Дождаться завершения. Показать пользователю summary плана.
+
+Сохранить plan артефакт в проект:
+```bash
+cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
+```
 
 ### Шаг 5.5: Запустить Critic Agent (mode=plan)
 
@@ -217,8 +235,6 @@ loop:
 ════════════════════════════════════════════
 📝 PLAN READY
 ════════════════════════════════════════════
-План готов. Workspace: {WORKSPACE}
-
 Фаз: {total_phases}, Шагов: {estimated_steps}
 Файлы к изменению: {files_list}
 
@@ -229,13 +245,17 @@ loop:
 Оценка критика: {score}/100 [{verdict}]
 {if WARN: "⚠️  Предупреждения: {critique.dimensions.*issues суммарно}"}
 
+Артефакты:
+  Plan:    docs/plans/{SESSION_ID}.toon
+  Critique: {WORKSPACE}/plan-critique.toon
+
 Выполнить план? [yes/no/show-plan]
 ════════════════════════════════════════════
 ```
 
-При `show-plan` → показать полное содержимое `plan.toon`, затем снова спросить.
+При `show-plan` → показать полное содержимое `docs/plans/{SESSION_ID}.toon`, затем снова спросить.
 
-Если `no` → STOP. Артефакты: `{WORKSPACE}/plan.toon`, `{WORKSPACE}/plan-critique.toon`.
+Если `no` → STOP. Артефакт сохранён в `docs/plans/{SESSION_ID}.toon`.
 
 ### Шаг 7: Запустить Execution Agent
 
@@ -412,16 +432,17 @@ agents/
 
 **Пайплайн:**
 1. Workspace создан: `.iclaude/workspace/2026-02-17T1523/`
-2. input.toon записан
-3. Researcher запущен → находит `lib/command/args.sh`, `lib/context/`, complexity=minimal
-4. Critic[research]: score=88/100, verdict=PASS
-5. [Gate] Пользователь: "yes"
-6. Planner запущен → создаёт 2-фазный план (4 шага)
-7. Critic[plan]: score=92/100, verdict=PASS
-8. [Gate] Пользователь: "yes"
-9. Executor запущен → изменяет 4 файла, 2 коммита
-10. Critic[execution]: score=95/100, verdict=PASS
-11. report.md записан: status=COMPLETED
+2. `docs/explore/` и `docs/plans/` созданы (если нет)
+3. input.toon записан
+4. Researcher → `docs/explore/2026-02-17T1523.toon` сохранён
+5. Critic[research]: score=88/100, verdict=PASS
+6. [Gate] Пользователь: "yes"
+7. Planner → `docs/plans/2026-02-17T1523.toon` сохранён
+8. Critic[plan]: score=92/100, verdict=PASS
+9. [Gate] Пользователь: "yes"
+10. Executor → изменяет 4 файла, 2 коммита
+11. Critic[execution]: score=95/100, verdict=PASS
+12. report.md записан: status=COMPLETED
 
 **Выход:**
 ```

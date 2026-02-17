@@ -139,6 +139,37 @@ report.md               ← Executor пишет
 execution-critique.toon ← Critic[execution] пишет
 ```
 
+## Постоянные артефакты (docs/)
+
+Workspace (`.iclaude/`) — временный, gitignored. Для долгосрочного хранения оркестратор
+копирует ключевые артефакты в проект **после** успешного завершения каждого агента:
+
+```
+{project_root}/
+├── docs/
+│   ├── explore/
+│   │   └── {SESSION_ID}.toon   ← research.toon (копия, tracked by git)
+│   └── plans/
+│       └── {SESSION_ID}.toon   ← plan.toon (копия, tracked by git)
+└── .iclaude/workspace/{SESSION_ID}/   ← временные данные (gitignored)
+```
+
+**Копирование выполняет оркестратор (не агенты):**
+```bash
+# После Researcher Agent (Шаг 3)
+cp "${WORKSPACE}/research.toon" "${PROJECT_ROOT}/docs/explore/${SESSION_ID}.toon"
+
+# После Planning Agent (Шаг 5)
+cp "${WORKSPACE}/plan.toon" "${PROJECT_ROOT}/docs/plans/${SESSION_ID}.toon"
+```
+
+**Назначение:**
+- `docs/explore/` — история исследований кодовой базы по задачам (searchable, versionable)
+- `docs/plans/` — история планов выполнения (аудит изменений, трассируемость)
+- При retry: файл в docs/ перезаписывается финальной версией (workspace хранит историю retry)
+
+**Агенты работают только с workspace.** Docs/ пути — исключительно ответственность оркестратора.
+
 ## .gitignore Integration
 
 `.iclaude/` содержит временные данные сессий и **не должен коммититься** в git.
