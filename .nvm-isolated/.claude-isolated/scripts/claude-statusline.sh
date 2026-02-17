@@ -147,7 +147,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     else
         CACHE_FMT="$TOTAL_CACHE"
     fi
-    CACHE_DISPLAY=" | C${CACHE_FMT}"  # TESTING: ASCII only
+    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
     # Clean cache display immediately
     CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
@@ -770,16 +770,16 @@ CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 # Show active context and percentage of FULL context window
 # Format: 📊 120K (60%) - active tokens and % of full 200K window
 # Percentage shows actual usage relative to full context limit (not effective window)
-# TESTING: Remove ALL unicode/emoji to check if they cause wrapping
+# Show active context and percentage of FULL context window
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
-        CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%) !"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
-        CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)"
+        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
     # Zero active tokens (after /clear)
-    CONTEXT_DISPLAY="T${TOTAL_TOKENS_FMT} | A0 (0%)"
+    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
@@ -803,13 +803,11 @@ case "$DISPLAY_MODE" in
         ;;
 
     compact)
-        # Compact mode: MINIMAL components for 70-129 cols terminals
+        # Compact mode: MINIMAL components for 60-149 cols terminals
         # Remove: router, proxy, session link, git info
         # Keep: tokens, cache, model, cost
-        # TESTING: Remove all ANSI codes to check if they cause wrapping
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        # STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${MODEL_SHORT} | \$${COST}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
         ;;
 
     minimal)
@@ -881,5 +879,5 @@ fi
 printf '%s' "$STATUS_LINE" | od -c > /tmp/claude-statusline-hexdump.log 2>&1
 printf "STATUS_LINE len=%d\n" "${#STATUS_LINE}" >> /tmp/claude-statusline-hexdump.log
 
-# Phase 3: MINIMAL TEST - just one short line
-printf '%s\n' "OK"
+# Phase 3: Normal output - single line, no empty lines around it
+printf '%s\n' "$STATUS_LINE"
