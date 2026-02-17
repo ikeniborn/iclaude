@@ -115,7 +115,7 @@ loop:
 
   IF verdict == "ABORT":
     ❌ RESEARCH ABORTED (score: {score}/100)
-    Причины: {critique.abort_triggers}
+    Причины: {critique.blocking_issues}
     Файл critique: {WORKSPACE}/research-critique.toon
     STOP.
 
@@ -191,7 +191,7 @@ loop:
 
   IF verdict == "ABORT":
     ❌ PLAN ABORTED (score: {score}/100)
-    Причины: {critique.abort_triggers}
+    Причины: {critique.blocking_issues}
     Файл critique: {WORKSPACE}/plan-critique.toon
     STOP.
 
@@ -262,13 +262,16 @@ Task(subagent_type="general-purpose", prompt=critic_prompt)
 
 verdict = parse(Read("{WORKSPACE}/execution-critique.toon").critique.verdict)
 
-IF verdict == "ABORT":
-  # НЕ останавливать — добавить в финальный отчёт как FAILED section
-  report_status = "FAILED (critic verification)"
-  # Записать секцию с abort_triggers в итоговый вывод
+IF verdict == "PASS":
+  # Всё в порядке — продолжить к шагу 8
 
 IF verdict == "WARN":
-  # Продолжить, показать предупреждения в финальном отчёте
+  # Продолжить к шагу 8, показать предупреждения в финальном отчёте
+
+IF verdict == "ABORT":
+  # НЕ останавливать пайплайн — добавить секцию критика в итоговый отчёт
+  report_status = "FAILED (critic verification)"
+  # В шаге 8: вывести blocking_issues из execution-critique.toon
 
 # НЕТ retry loop для execution — ошибки выполнения требуют human judgment
 ```
@@ -288,7 +291,7 @@ Report: {WORKSPACE}/report.md
 
 Execution Review: {score}/100 [{verdict}]
 {if WARN: "⚠️  {critique.dimensions.* issues суммарно}"}
-{if ABORT: "❌ Critic выявил критические проблемы: {abort_triggers}"}
+{if ABORT: "❌ Critic выявил критические проблемы: {execution-critique.blocking_issues}"}
 
 Workspace сохранён: {WORKSPACE}
 ════════════════════════════════════════════
