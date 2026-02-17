@@ -236,15 +236,21 @@ generate_toon_session() {
     mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
 
     # Parse JSONL and extract messages into JSON array
-    # Guard: skip lines where message.content is a string (not array) to avoid
-    # "Cannot index string with number" jq error that causes silent empty output
-    local messages_json=$(jq -s '[.[] |
-        select(.message.content | type == "array") |
+    # Handle both content formats:
+    #   string: user plain text / command-messages (content is a raw string)
+    #   array:  structured messages with type+text blocks
+    local messages_json=$(jq -s '[.[] | select(.message != null) |
         {
-            role: (.message.role // .userType),
-            type: (.message.content[0].type // "unknown"),
+            role: (.message.role // .userType // "unknown"),
+            type: (
+                if (.message.content | type) == "string" then "text"
+                else (.message.content[0].type // "unknown")
+                end
+            ),
             content: (
-                if .message.content[0].type == "text" then
+                if (.message.content | type) == "string" then
+                    .message.content
+                elif .message.content[0].type == "text" then
                     .message.content[0].text
                 elif .message.content[0].type == "thinking" then
                     .message.content[0].thinking
@@ -254,7 +260,7 @@ generate_toon_session() {
                     ""
                 end
             )
-        } | select(.content != "" and .content != null)]' "$jsonl_file" 2>/dev/null)
+        } | select(.content != null and .content != "")]' "$jsonl_file" 2>/dev/null)
 
     # Convert to TOON format
     echo "$messages_json" | toon --encode --stats 2>/dev/null > "$output_file"
@@ -415,16 +421,12 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
     # Store in project root .claude/sessions/ for standardized structure
     SESSIONS_DIR="$PROJECT_DIR/.claude/sessions"
 
-    # Try TOON format first (30-60% token savings)
+    # Always write TOON format (compact, 30-60% token savings)
     TOON_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.toon"
-    TXT_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.txt"
 
     READABLE_FILE=""
     if generate_toon_session "$SESSION_FILE" "$TOON_FILE"; then
         READABLE_FILE="$TOON_FILE"
-    elif generate_readable_session "$SESSION_FILE" "$TXT_FILE"; then
-        # Fallback to text format if TOON failed
-        READABLE_FILE="$TXT_FILE"
     fi
 
     if [[ -n "$READABLE_FILE" ]] && [[ -f "$READABLE_FILE" ]]; then
