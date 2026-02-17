@@ -882,6 +882,10 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "---" >> /tmp/claude-statusline-debug.log
 fi
 
+# ALWAYS log hex dump for debugging embedded newlines
+printf '%s' "$STATUS_LINE" | od -c > /tmp/claude-statusline-hexdump.log 2>&1
+printf "STATUS_LINE len=%d\n" "${#STATUS_LINE}" >> /tmp/claude-statusline-hexdump.log
+
 # Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
 # ATOMIC OUTPUT: Buffer entire output then write at once
 # Prevents Claude Code from inserting system messages between components
