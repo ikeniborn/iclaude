@@ -838,29 +838,12 @@ SESSION_START_TIME=$(cat "$SESSION_START_TIME_FILE" 2>/dev/null || echo 0)
 CURRENT_TIME=$(date +%s)
 SESSION_AGE=$((CURRENT_TIME - SESSION_START_TIME))
 
-# Phase 1: Startup period - active monitoring of system messages
-# ВАЖНО: Применяется только к НОВЫМ сессиям (TOTAL_TOKENS == 0)
-# Для продолжающихся сессий (после /clear) всегда показываем статус лайн
-# Active monitoring: waits for transcript file to stabilize (system messages cleared)
-if [[ $SESSION_AGE -lt 30 ]] && [[ $TOTAL_TOKENS -eq 0 ]] && [[ ! -f "$SESSION_READY_MARKER" ]]; then
-    # Wait for system messages to clear before showing statusline
-    wait_for_system_messages_to_clear "$SESSION_ID" "$PROJECT_DIR"
-    # Mark session as ready after waiting
-    touch "$SESSION_READY_MARKER" 2>/dev/null
-    exit 0
-fi
-
-# Quick stability check: prevent statusline appearing ABOVE system messages
-# IMPORTANT: Only check during initial startup (first 10 seconds of new sessions)
-# After 10 seconds or first message, system messages are unlikely
-# This prevents infinite blocking when Claude Code calls script immediately after transcript write
-if [[ $SESSION_AGE -lt 10 ]] && [[ $TOTAL_TOKENS -eq 0 ]]; then
-    # Initial startup of NEW sessions only: check transcript stability
-    if ! check_transcript_stability "$SESSION_ID" "$PROJECT_DIR"; then
-        # Transcript unstable - system messages may be appearing
-        # Exit silently, statusline will show on next invocation
-        exit 0
-    fi
+# Phase 1: Startup guard - wait 30 seconds for system messages to clear
+# Only for NEW sessions (TOTAL_TOKENS == 0, no user messages yet)
+# After 30 seconds or after first message (TOTAL_TOKENS > 0) - show normally
+# This guarantees statusline appears AFTER system messages (npm installer notice etc.)
+if [[ $TOTAL_TOKENS -eq 0 ]] && [[ $SESSION_AGE -lt 30 ]]; then
+    exit 0  # Silent exit - statusline will appear after 30s or first message
 fi
 
 # Phase 3: After stability confirmed (or check skipped for established sessions) - normal output
@@ -875,9 +858,5 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
     echo "---" >> /tmp/claude-statusline-debug.log
 fi
 
-# ALWAYS log hex dump for debugging embedded newlines
-printf '%s' "$STATUS_LINE" | od -c > /tmp/claude-statusline-hexdump.log 2>&1
-printf "STATUS_LINE len=%d\n" "${#STATUS_LINE}" >> /tmp/claude-statusline-hexdump.log
-
-# Phase 3: Normal output - single line, no empty lines around it
+# Phase 3: Output statusline
 printf '%s\n' "$STATUS_LINE"
