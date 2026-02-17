@@ -363,7 +363,6 @@ Retry 2: {mode}-critique.toon → {mode}-critique-r2.toon
       "complexity_calibration":   { "score": 25, "max": 25, "issues": [] },
       "component_identification": { "score": 20, "max": 25, "issues": ["missing function names in reusable_components"] }
     },
-    "abort_triggers": [],
     "blocking_issues": [],
     "retry_guidance": [
       {
@@ -401,7 +400,6 @@ component_identification|missing function names|medium|Указать имена
     "score": 62,
     "max_score": 100,
     "dimensions": { ... },
-    "abort_triggers": [],
     "blocking_issues": [],
     "retry_guidance": "<<TOON:retry_guidance>>"
   }
@@ -411,7 +409,48 @@ component_identification|missing function names|medium|Указать имена
 **Примечания:**
 - TOON блок всегда идёт перед `---JSON---`
 - В JSON поле `retry_guidance` заменяется ссылкой `"<<TOON:retry_guidance>>"`
-- Для mode=execution поле называется `warnings` (не `retry_guidance`) — RETRY невозможен
+
+### Вариант C: mode=execution (нет retry_guidance, только warnings)
+
+Для execution mode поле `retry_guidance` **отсутствует**. Вместо него — `warnings`:
+
+```
+---JSON---
+{
+  "critique": {
+    "metadata": {
+      "evaluation_mode": "execution",
+      "session_id": "2026-02-17T1523",
+      "retry_number": 0,
+      "timestamp": "2026-02-17T15:55:00Z"
+    },
+    "verdict": "PASS|WARN|ABORT",
+    "score": 91,
+    "max_score": 100,
+    "dimensions": {
+      "file_compliance":      { "score": 25, "max": 25, "issues": [] },
+      "validation_results":   { "score": 22, "max": 25, "issues": ["Phase 2 validation cmd differs from plan"] },
+      "pattern_compliance":   { "score": 25, "max": 25, "issues": [] },
+      "report_completeness":  { "score": 19, "max": 25, "issues": ["Next Steps section missing"] }
+    },
+    "blocking_issues": [],
+    "warnings": [
+      {
+        "dimension": "validation_results",
+        "issue": "Phase 2 validation cmd differs from plan",
+        "severity": "low"
+      },
+      {
+        "dimension": "report_completeness",
+        "issue": "Next Steps section missing",
+        "severity": "low"
+      }
+    ]
+  }
+}
+```
+
+**Execution mode verdicts:** только `PASS`, `WARN`, `ABORT` (нет `RETRY`).
 
 ---
 
@@ -430,8 +469,9 @@ Dimensions:
   component_identification: {n}/25  {k issue(s)}
 
 {if RETRY: "Retry guidance: {count} items — агент перезапустится с инструкциями"}
-{if WARN:  "⚠️  Предупреждения: {warnings_summary}"}
-{if ABORT: "❌ ABORT triggers: {list}"}
+{if WARN and mode != execution:  "⚠️  Предупреждения: {retry_guidance summary}"}
+{if WARN and mode == execution:  "⚠️  Предупреждения: {warnings summary}"}
+{if ABORT: "❌ Blocking issues: {blocking_issues list}"}
 
 Critique: {WORKSPACE}/{mode}-critique.toon
 ════════════════════════════════════════════
