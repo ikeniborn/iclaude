@@ -159,7 +159,7 @@ PREVIOUS_CRITIQUE: null|{WORKSPACE}/{mode}-critique.toon
 | Условие | Вычет |
 |---------|-------|
 | `research_references` пустой | **ABORT trigger** |
-| Файл в `files_to_change` отсутствует в `research.relevant_files` | -8 per file |
+| Файл в `files_to_change` отсутствует в `research.research_results.codebase_analysis.relevant_files` | -8 per file |
 | `research_references.reusable_components_used` пустой | -10 |
 | Компонент в `reusable_components_used` ссылается на несуществующий файл | -7 |
 
