@@ -12,8 +12,10 @@
 # Returns:
 #   Field value on stdout, or "unknown" if not found
 #   Exit code: 0 on success, 1 on error
-# Example:
+# Examples:
 #   node_version=$(get_lockfile_field "nodeVersion") || return 1
+#   is_sandbox=$(get_lockfile_field "sandboxAvailable") || return 1
+#   pyright_ver=$(get_lockfile_field "lspServers.pyright") || return 1
 #######################################
 get_lockfile_field() {
     local field_path="$1"
@@ -48,8 +50,10 @@ get_lockfile_field() {
 #   $2 - Value to write
 # Returns:
 #   Exit code: 0 on success, 1 on error
-# Example:
-#   set_lockfile_field "nodeVersion" "18.20.8" || return 1
+# Examples:
+#   set_lockfile_field "claudeCodeVersion" "2.1.44" || return 1
+#   set_lockfile_field "sandboxAvailable" "true" || return 1
+#   set_lockfile_field "$lockfile_field" "$new_version" 2>/dev/null || true
 #######################################
 set_lockfile_field() {
     local field_path="$1"
@@ -85,8 +89,9 @@ set_lockfile_field() {
 # Returns:
 #   JSON object on stdout, or {} if not found
 #   Exit code: 0 on success, 1 on error
-# Example:
+# Examples:
 #   lsp_servers=$(get_lockfile_object "lspServers") || return 1
+#   deps=$(get_lockfile_object "sandboxDependencies") || return 1
 #######################################
 get_lockfile_object() {
     local field_path="$1"
