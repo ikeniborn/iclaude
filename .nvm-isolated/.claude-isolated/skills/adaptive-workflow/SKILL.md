@@ -2,7 +2,6 @@
 name: adaptive-workflow
 description: Автоматический выбор сложности workflow
 user-invocable: false
-context: fork
 ---
 <!-- version: 2.2.0 | tags: workflow, complexity, adaptation, optimization, task-decomposition | dependencies: context-awareness, task-decomposition, phase-execution | files: templates: ./templates/*.json -->
 
