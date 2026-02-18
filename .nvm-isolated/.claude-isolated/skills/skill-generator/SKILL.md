@@ -2,6 +2,7 @@
 name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
 user-invocable: true
+context: fork
 ---
 <!-- version: 1.4.0 | tags: meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition | dependencies: thinking-framework, structured-planning, validation-framework, toon-skill | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
