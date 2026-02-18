@@ -2,6 +2,7 @@
 name: phase-execution
 description: Автоматизация выполнения одной фазы из готового phase file с checkpoint validation и structured output
 user-invocable: false
+context: fork
 ---
 <!-- version: 1.2.0 | author: Claude Code Team | tags: phase-based, execution, checkpoint, validation, workflow | dependencies: thinking-framework, validation-framework, git-workflow, error-handling -->
 # Phase Execution

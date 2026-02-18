@@ -2,6 +2,7 @@
 name: docker-skill
 description: Create and manage optimized Docker images with best practices, multi-stage builds, security scanning (hadolint), and Docker Compose generation
 user-invocable: false
+context: fork
 ---
 <!-- version: 1.0.0 | tags: docker, containers, optimization, security, multi-stage, devops, automation, compose | dependencies: thinking-framework, validation-framework, context-awareness | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md, dockerfile-templates: ./dockerfile-templates/*.Dockerfile -->
 

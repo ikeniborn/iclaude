@@ -2,6 +2,7 @@
 name: task-decomposition
 description: Автоматизация разбиения задачи на 2-5 логических фаз с генерацией master plan и individual phase files
 user-invocable: false
+context: fork
 agent: Plan
 ---
 <!-- version: 1.2.0 | tags: phase-based, decomposition, planning, master-plan, workflow | dependencies: thinking-framework, structured-planning, approval-gates, error-handling -->
