@@ -15,7 +15,7 @@ user-invocable: true
 |--------|---------|
 | **Invocation** | `/skill-generator` (manual only, never auto-invoked) |
 | **Duration** | ~5 min (Q&A + generation) vs ~2-3 hours manual |
-| **Inputs** | 8-12 interactive questions (skill name, type, dependencies, templates, examples count/categories, rules) |
+| **Inputs** | 14 interactive questions (skill name, type, context:fork, agent type, dependencies, templates, examples count/categories, rules) |
 | **Outputs** | SKILL.md + templates/*.json + schemas/*.schema.json + examples/*.md (2-5) + rules/best-practices.md |
 | **Decomposition** | SKILL.md uses @example/@rules/@template references (30% token savings) |
 | **Auto-generates** | JSON Schema from template placeholders (35-45% token savings) + rules structure from template |
@@ -104,27 +104,32 @@ if (fs.existsSync(projectSkillsDir)) {
 | Q1: Skill Name | Enter skill name (kebab-case) | `/^[a-z][a-z0-9-]*$/` (3-50 chars) |
 | Q2: Skill Type | 1=system, 2=user-invocable, 3=bash-utility, 4=integration | enum [1,2,3,4] |
 | Q3: Description | Brief description (1-2 sentences) | 20-200 chars |
+| Q4: context:fork | Run in isolated subagent? (heavy processing/many tools) | boolean |
+| Q5: agent type | Subagent type: none/Explore/Plan/Bash/general-purpose | enum |
+| Q6: Dependencies | Skill dependencies (→ HTML comment, NOT frontmatter) | skill names |
 
-*(See TOON block below for complete 12-question catalog)*
+*(See TOON block below for complete 14-question catalog)*
 
 #### Complete Questionnaire (TOON)
 
 <!-- TOON-optimized: 40% token savings (462 → 276 tokens) -->
 
 ```toon
-questionnaire[12]{question_id,prompt,validation,default,notes}:
+questionnaire[14]{question_id,prompt,validation,default,notes}:
   Q1,Enter skill name (kebab-case),/^[a-z][a-z0-9-]*$/ (3-50 chars),-,Must not conflict with existing skills
   Q2,1=system 2=user-invocable 3=bash-utility 4=integration,enum [1-2-3-4],-,Sets user-invocable field & default tags
   Q3,Brief description (1-2 sentences),20-200 chars,-,Must be informative (not placeholder)
-  Q4,Comma-separated skill names,Must exist in skills/ no circular deps,none,DFS cycle detection with path visualization
-  Q5,Support minimal/standard/complex? (Y/n),boolean,n,Yes → multiple templates (input-lite.json input.json)
-  Q6,1=JSON 2=YAML 3=Markdown 4=Text 5=Mixed,enum [1-2-3-4-5],JSON,Determines template structure
-  Q7,Comma-separated template names,kebab-case,input output,Each → templates/{name}.json
-  Q8,Comma-separated: rules examples shared-data,enum,examples,Controls directory creation
-  Q9,How many examples to generate? (2-5),integer 2-5,3,2=minimal 3=standard 5=comprehensive
-  Q10,Comma-separated: basic advanced error-handling performance security,enum,basic advanced error-handling,Determines example scenarios
-  Q11,Generate rules/best-practices.md? (Y/n),boolean,y,Creates rules file with best practices pitfalls performance tips
-  Q12,1=project (.claude/skills/) 2=global (iclaude),enum [1-2],project,Only if BOTH locations available
+  Q4,Run in isolated subagent? context:fork (Y/n),boolean,n,Y → adds context:fork (heavy processing/many tool calls)
+  Q5,Subagent type? (none/Explore/Plan/Bash/general-purpose),enum,none,Adds agent: field (official); none → omit field
+  Q6,Comma-separated skill dependencies,Must exist in skills/ no circular deps,none,Stored in HTML comment NOT frontmatter
+  Q7,Support minimal/standard/complex? (Y/n),boolean,n,Yes → multiple templates (input-lite.json input.json)
+  Q8,1=JSON 2=YAML 3=Markdown 4=Text 5=Mixed,enum [1-2-3-4-5],JSON,Determines template structure
+  Q9,Comma-separated template names,kebab-case,input output,Each → templates/{name}.json
+  Q10,Comma-separated: rules examples shared-data,enum,examples,Controls directory creation
+  Q11,How many examples to generate? (2-5),integer 2-5,3,2=minimal 3=standard 5=comprehensive
+  Q12,Comma-separated: basic advanced error-handling performance security,enum,basic advanced error-handling,Determines example scenarios
+  Q13,Generate rules/best-practices.md? (Y/n),boolean,y,Creates rules file with best practices pitfalls performance tips
+  Q14,1=project (.claude/skills/) 2=global (iclaude),enum [1-2],project,Only if BOTH locations available
 ```
 
 **Usage:** When processing questionnaire, Claude Code parses the TOON block for efficient data extraction.
@@ -136,6 +141,8 @@ questionnaire[12]{question_id,prompt,validation,default,notes}:
     "skill_name": "my-awesome-skill",
     "skill_type": "user-invocable",
     "description": "...",
+    "context_fork": false,
+    "agent_type": "none",
     "dependencies": ["thinking-framework"],
     "complexity_levels": true,
     "output_format": "JSON",
@@ -191,9 +198,17 @@ ACCEPTANCE CRITERIA:
 
 **Purpose:** Generate all skill files with correct content
 
+**Official SKILL.md frontmatter fields** (only these are allowed):
+`name`, `description`, `user-invocable`, `context`, `agent`, `allowed-tools`, `model`, `hooks`, `license`, `argument-hint`, `disable-model-invocation`
+
+**Non-official metadata** (`version`, `tags`, `dependencies`) → placed in HTML comment AFTER closing `---`:
+```
+<!-- version: 1.0.0 | tags: ... | dependencies: ... -->
+```
+
 | Component | Description | Reference | Multiplicity |
 |-----------|-------------|-----------|--------------|
-| **SKILL.md** | YAML frontmatter + sections with @references (Examples, Rules, Templates) | `@template:skill-template-base` | 1 |
+| **SKILL.md** | YAML frontmatter (official fields only) + HTML comment (metadata) + sections with @references | `@template:skill-template-base` | 1 |
 | **examples/*.md** | Usage scenarios (basic, advanced, error-handling, performance, security) | `@example:multi-example-skill` | 2-5 |
 | **rules/best-practices.md** | Best practices + common pitfalls + performance tips | `@template:rules-template` | 0-1 |
 | **templates/*.json** | Input/output templates with `{{placeholder}}` syntax | `@example:simple-system-skill` | 1-N |
@@ -289,7 +304,7 @@ If Q11 = yes, generates `rules/best-practices.md` using `@template:rules-templat
 
 | Validator | Checks | Status | Reference |
 |-----------|--------|--------|-----------|
-| **YAML Frontmatter** | Required fields, types, semver format, dependencies, circular deps | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
+| **YAML Frontmatter** | Official fields only (name, description, user-invocable, context, agent, allowed-tools, model, hooks, license, argument-hint, disable-model-invocation); name format /^[a-z][a-z0-9-]{0,63}$/; no non-official fields (version/tags/dependencies → HTML comment) | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
 | **JSON Templates** | JSON syntax, root key naming, placeholder extraction, placeholder format | passed/failed | `@rules:placeholder-mapping` |
 | **JSON Schemas** | JSON Schema syntax, `$schema` field = Draft-7, meta-schema validation, template cross-check | passed/failed | - |
 | **Markdown Formatting** | Frontmatter exists, required sections (When to Use, How It Works, Output Format), code blocks, references | passed/warning/failed | - |

@@ -2,16 +2,22 @@
   "$comment": "Base template for generated SKILL.md frontmatter and structure with decomposition support",
   "skill_template": {
     "frontmatter": {
+      "$comment": "Only official Claude Code SKILL.md fields allowed here. Docs: https://code.claude.com/docs/en/skills",
       "name": "{{name: string}}",
       "description": "{{description: string}}",
-      "version": "1.0.0",
-      "tags": [
-        "{{tag: string}}"
-      ],
-      "dependencies": [
-        "{{dependency: string}}"
-      ],
-      "user-invocable": "{{user_invocable: boolean}}"
+      "user-invocable": "{{user_invocable: boolean}}",
+      "context": "{{context: enum fork|null, optional}}",
+      "agent": "{{agent: enum Explore|Plan|Bash|general-purpose|null, optional}}",
+      "allowed-tools": "{{allowed_tools: string, optional}}"
+    },
+    "metadata_comment": {
+      "$comment": "Non-official metadata goes in HTML comment AFTER closing ---, NOT in frontmatter",
+      "format": "<!-- version: 1.0.0 | tags: {{tags}} | dependencies: {{dependencies}} -->",
+      "fields": {
+        "version": "1.0.0",
+        "tags": ["{{tag: string}}"],
+        "dependencies": ["{{dependency: string}}"]
+      }
     },
     "markdown_sections": [
       "# {{Skill Name}}",
