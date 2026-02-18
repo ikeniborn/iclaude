@@ -106,7 +106,7 @@ if (fs.existsSync(projectSkillsDir)) {
 | Q2: Skill Type | 1=system, 2=user-invocable, 3=bash-utility, 4=integration | enum [1,2,3,4] |
 | Q3: Description | Brief description (1-2 sentences) | 20-200 chars |
 | Q4: context:fork | Run in isolated subagent? (heavy processing/many tools) | boolean |
-| Q5: agent type | Subagent type: none/Explore/Plan/Bash/general-purpose | enum |
+| Q5: agent type | `Explore` = read-only codebase search (Haiku); `Plan` = architecture/planning (read-only); `general-purpose` = complex multi-step + writes; `Bash` = terminal commands; `none` = omit field (defaults to general-purpose) | enum |
 | Q6: Dependencies | Skill dependencies (→ HTML comment, NOT frontmatter) | skill names |
 
 *(See TOON block below for complete 14-question catalog)*
@@ -120,8 +120,8 @@ questionnaire[14]{question_id,prompt,validation,default,notes}:
   Q1,Enter skill name (kebab-case),/^[a-z][a-z0-9-]*$/ (3-50 chars),-,Must not conflict with existing skills
   Q2,1=system 2=user-invocable 3=bash-utility 4=integration,enum [1-2-3-4],-,Sets user-invocable field & default tags
   Q3,Brief description (1-2 sentences),20-200 chars,-,Must be informative (not placeholder)
-  Q4,Run in isolated subagent? context:fork (Y/n),boolean,n,Y → adds context:fork (heavy processing/many tool calls)
-  Q5,Subagent type? (none/Explore/Plan/Bash/general-purpose),enum,none,Adds agent: field (official); none → omit field
+  Q4,Run in isolated subagent? context:fork (Y/n),boolean,n,Y → adds context:fork (heavy processing/many tool calls/large output)
+  Q5,Subagent type? none/Explore/Plan/general-purpose/Bash,enum,none,Explore=read-only Haiku; Plan=planning read-only; general-purpose=writes+complex; Bash=terminal; none=omit (default general-purpose). NEVER use Validation — not official!
   Q6,Comma-separated skill dependencies,Must exist in skills/ no circular deps,none,Stored in HTML comment NOT frontmatter
   Q7,Support minimal/standard/complex? (Y/n),boolean,n,Yes → multiple templates (input-lite.json input.json)
   Q8,1=JSON 2=YAML 3=Markdown 4=Text 5=Mixed,enum [1-2-3-4-5],JSON,Determines template structure
@@ -201,6 +201,19 @@ ACCEPTANCE CRITERIA:
 
 **Official SKILL.md frontmatter fields** (only these are allowed):
 `name`, `description`, `user-invocable`, `context`, `agent`, `allowed-tools`, `model`, `hooks`, `license`, `argument-hint`, `disable-model-invocation`
+
+**Agent type selection guide** (for `agent:` field):
+
+| Value | Model | Tools | Use when |
+|-------|-------|-------|----------|
+| `Explore` | Haiku (fast) | All except Edit/Write | Read-only codebase search, file discovery, pattern matching |
+| `Plan` | Inherits | Read-only | Architecture research, planning analysis (no file creation) |
+| `general-purpose` | Inherits | All | Complex multi-step tasks that write files or need full capability |
+| `Bash` | Inherits | Bash | Terminal-focused command execution |
+| *(omit field)* | Inherits | All | Defaults to `general-purpose` — safest when unsure |
+
+**CRITICAL:** `Validation` is NOT a valid agent type. Do not use it.
+**Custom agents** from `.claude/agents/` directory are also valid values.
 
 **Non-official metadata** (`version`, `tags`, `dependencies`) → placed in HTML comment AFTER closing `---`:
 ```
@@ -305,7 +318,7 @@ If Q11 = yes, generates `rules/best-practices.md` using `@template:rules-templat
 
 | Validator | Checks | Status | Reference |
 |-----------|--------|--------|-----------|
-| **YAML Frontmatter** | Official fields only (name, description, user-invocable, context, agent, allowed-tools, model, hooks, license, argument-hint, disable-model-invocation); name format /^[a-z][a-z0-9-]{0,63}$/; no non-official fields (version/tags/dependencies → HTML comment) | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
+| **YAML Frontmatter** | Official fields only (name, description, user-invocable, context, agent, allowed-tools, model, hooks, license, argument-hint, disable-model-invocation); name format /^[a-z][a-z0-9-]{0,63}$/; agent value must be one of: Explore, Plan, general-purpose, Bash, or custom agent name from .claude/agents/ — NEVER "Validation"; no non-official fields (version/tags/dependencies → HTML comment) | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
 | **JSON Templates** | JSON syntax, root key naming, placeholder extraction, placeholder format | passed/failed | `@rules:placeholder-mapping` |
 | **JSON Schemas** | JSON Schema syntax, `$schema` field = Draft-7, meta-schema validation, template cross-check | passed/failed | - |
 | **Markdown Formatting** | Frontmatter exists, required sections (When to Use, How It Works, Output Format), code blocks, references | passed/warning/failed | - |
