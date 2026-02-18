@@ -3,7 +3,6 @@ name: plan-validation
 description: Multi-perspective validation of planning outputs before execution
 user-invocable: true
 context: fork
-agent: Validation
 ---
 <!-- version: 1.0.1 | tags: validation, planning, quality-assurance, blocking, pre-execution | dependencies: structured-planning, adaptive-workflow, thinking-framework, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md, levels=./levels/*.md -->
 
