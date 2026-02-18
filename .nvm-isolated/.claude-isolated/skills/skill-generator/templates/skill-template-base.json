@@ -6,8 +6,8 @@
       "name": "{{name: string}}",
       "description": "{{description: string}}",
       "user-invocable": "{{user_invocable: boolean}}",
-      "context": "{{context: enum fork|null, optional}}",
-      "agent": "{{agent: enum Explore|Plan|Bash|general-purpose|null, optional}}",
+      "context": "{{context: enum fork|null, optional, use fork for heavy processing/many tool calls}}",
+      "agent": "{{agent: enum Explore|Plan|general-purpose|Bash|null, optional, Explore=read-only Haiku; Plan=planning read-only; general-purpose=writes+complex (default); Bash=terminal; NEVER use Validation}}",
       "allowed-tools": "{{allowed_tools: string, optional}}"
     },
     "metadata_comment": {
