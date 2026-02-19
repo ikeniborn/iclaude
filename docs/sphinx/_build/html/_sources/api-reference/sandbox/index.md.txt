@@ -1,0 +1,8 @@
+# Module: sandbox
+
+> Source: `lib/sandbox/`
+
+- [detect](detect.md) — 1 functions
+- [install](install.md) — 2 functions
+- [status](status.md) — 2 functions
+

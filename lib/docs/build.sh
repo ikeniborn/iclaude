@@ -70,18 +70,39 @@ build_sphinx_docs() {
     print_info "Running sphinx-build..."
     echo ""
 
+    # Determine source root: if conf.py sets root_doc (docs outside docs/sphinx/),
+    # use docs/ as source root with -c pointing to docs/sphinx/.
+    local source_root="$sphinx_dir"
+    local confdir_flag=()
+    local doctrees_dir="${sphinx_dir}/_build/.doctrees"
+    if grep -q "^root_doc" "${sphinx_dir}/conf.py" 2>/dev/null; then
+        # docs/ is the source root; conf.py is in docs/sphinx/
+        source_root="${project_path}/docs"
+        confdir_flag=("-c" "$sphinx_dir")
+    fi
+
     local build_output
-    if build_output=$(sphinx-build -b html "$sphinx_dir" "$build_dir" -q 2>&1); then
+    if build_output=$(sphinx-build -b html \
+        -d "$doctrees_dir" \
+        "${confdir_flag[@]}" \
+        "$source_root" "$build_dir" -q 2>&1); then
         deactivate
         echo ""
         print_success "Documentation built successfully"
         echo ""
         echo "  HTML:     $build_dir/index.html"
 
-        # Check for llms.txt
+        # Copy llms.txt / llms-full.txt to docs/ for git tracking
+        local docs_dir="${project_path}/docs"
         if [[ -f "$build_dir/llms.txt" ]]; then
-            print_success "llms.txt generated for AI agents"
-            echo "  llms.txt: $build_dir/llms.txt"
+            cp "$build_dir/llms.txt" "${docs_dir}/llms.txt"
+            print_success "llms.txt → docs/llms.txt (committed to git)"
+            echo "  llms.txt: ${docs_dir}/llms.txt"
+        fi
+        if [[ -f "$build_dir/llms-full.txt" ]]; then
+            cp "$build_dir/llms-full.txt" "${docs_dir}/llms-full.txt"
+            print_success "llms-full.txt → docs/llms-full.txt (committed to git)"
+            echo "  llms-full: ${docs_dir}/llms-full.txt"
         fi
 
         echo ""

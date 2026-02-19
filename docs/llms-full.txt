@@ -1,0 +1,3040 @@
+---
+title: iclaude Documentation
+---
+
+# iclaude
+
+Bash-based wrapper for Claude Code with automatic proxy configuration, isolated environment, and AI agent integration.
+
+**Key features:** Dual installation modes · Proxy management · OAuth token refresh · Router integration · Loop mode · LSP servers
+
+```{toctree}
+:maxdepth: 1
+:caption: Getting Started
+
+../README
+../INSTALLATION
+../MIGRATION
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Configuration
+
+../CONFIGURATION
+../CONFIG_HIERARCHY
+../CLAUDE_CONFIG
+../QUICK_CONFIG
+../PROXY
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Features
+
+../STATUSLINE
+../USE_CASES
+../features/context-monitoring
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Architecture
+
+../architecture/README
+../architecture/statusline-architecture
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Development
+
+../PLANNING
+../MODULARIZATION-COMPLETE
+../REMAINING_WORK
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: API Reference
+:hidden:
+
+api-reference/index
+```
+
+---
+
+:::{note}
+**For AI agents:** This documentation generates `llms.txt` and `llms-full.txt` at build time.
+Use them for efficient navigation: `docs/sphinx/_build/html/llms.txt`
+:::
+
+
+# API Reference
+
+Auto-generated from bash module comments in `lib/`.
+
+| Module | Description |
+|--------|-------------|
+| [chrome](chrome/index.md) | — |
+| [command](command/index.md) | — |
+| [config](config/index.md) | Config Export Module |
+| [context](context/index.md) | — |
+| [core](core/index.md) | Core Initialization Module |
+| [docs](docs/index.md) | — |
+| [gh](gh/index.md) | GitHub CLI installation module |
+| [install](install/index.md) | — |
+| [launcher](launcher/index.md) | Launcher module |
+| [lockfile](lockfile/index.md) | Lockfile Install Module |
+| [loop](loop/index.md) | — |
+| [lsp](lsp/index.md) | LSP installation module |
+| [nvm](nvm/index.md) | Claude Code Management Module |
+| [oauth](oauth/index.md) | OAuth Token Module |
+| [ohmyposh](ohmyposh/index.md) | Oh-My-Posh detection module |
+| [proxy](proxy/index.md) | Proxy Configuration Module |
+| [router](router/index.md) | Router detection module |
+| [sandbox](sandbox/index.md) | Sandbox detection module |
+| [statusline](statusline/index.md) | Statusline detection module |
+| [update](update/index.md) | Update cleanup module |
+
+```{toctree}
+:hidden:
+
+chrome/index
+command/index
+config/index
+context/index
+core/index
+docs/index
+gh/index
+install/index
+launcher/index
+lockfile/index
+loop/index
+lsp/index
+nvm/index
+oauth/index
+ohmyposh/index
+proxy/index
+router/index
+sandbox/index
+statusline/index
+update/index
+```
+
+
+# Module: chrome
+
+> Source: `lib/chrome/`
+
+- [detection](detection.md) — 0 functions
+
+
+
+# detection
+
+> **Module:** `chrome` | **File:** `lib/chrome/detection.sh`
+
+lib/chrome/detection.sh
+Chrome browser and extension detection utilities
+
+---
+
+
+
+# Module: command
+
+> Source: `lib/command/`
+
+- [dispatch](dispatch.md) — 1 functions
+- [parse](parse.md) — 1 functions
+- [usage](usage.md) — 1 functions
+
+
+
+# dispatch
+
+> **Module:** `command` | **File:** `lib/command/dispatch.sh`
+
+lib/command/dispatch.sh
+Command Handling - Command Dispatcher
+Part of Phase 14: Command Handling extraction from iclaude-legacy.sh
+NOTE: This is a thin wrapper. Full extraction deferred to post-v4.0 refactoring.
+      Current implementation delegates to main() in legacy for command dispatch.
+
+---
+
+### `dispatch_command`
+
+Dispatch to appropriate command handler
+
+**Arguments:**
+
+- `  None (uses global flags set by parse_cli_arguments)`
+
+**Returns:**
+
+-   0 - Command executed successfully
+-   1 - Command failed
+
+
+
+# parse
+
+> **Module:** `command` | **File:** `lib/command/parse.sh`
+
+lib/command/parse.sh
+Command Handling - CLI Argument Parsing
+Part of Phase 14: Command Handling extraction from iclaude-legacy.sh
+NOTE: This is a thin wrapper. Full extraction deferred to post-v4.0 refactoring.
+      Current implementation delegates to main() in legacy for argument parsing.
+
+---
+
+### `parse_cli_arguments`
+
+Parse CLI arguments and set global flags
+
+**Arguments:**
+
+- `  $@ - Command line arguments`
+
+**Returns:**
+
+-   0 - Always succeeds (parsing happens in main)
+
+
+
+# usage
+
+> **Module:** `command` | **File:** `lib/command/usage.sh`
+
+lib/command/usage.sh
+Command Handling - Usage/Help Text
+Part of Phase 14: Command Handling extraction from iclaude-legacy.sh
+Contains help message displayed with --help flag
+
+---
+
+### `show_usage`
+
+Display comprehensive help message Shows all available CLI options, examples, and documentation
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 - Always succeeds
+
+
+
+# Module: config
+
+> Source: `lib/config/`
+
+- [export](export.md) — 2 functions
+- [isolated](isolated.md) — 3 functions
+- [status](status.md) — 3 functions
+
+
+
+# export
+
+> **Module:** `config` | **File:** `lib/config/export.sh`
+
+Config Export Module
+Description: Export and import Claude Code configuration for backup/restore
+
+---
+
+### `export_config`
+
+Export config directory to backup location
+
+**Arguments:**
+
+- `  $1 - destination directory (required)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  export_config /path/to/backup || return 1
+```
+
+### `import_config`
+
+Import config directory from backup location
+
+**Arguments:**
+
+- `  $1 - source directory (required)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  import_config /path/to/backup || return 1
+```
+
+
+
+# isolated
+
+> **Module:** `config` | **File:** `lib/config/isolated.sh`
+
+Config Isolated Module
+Description: Isolated configuration setup for project-local Claude Code config
+
+---
+
+### `setup_isolated_config`
+
+Setup isolated configuration directory Creates .claude-isolated directory and exports CLAUDE_CONFIG_DIR
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  setup_isolated_config || return 1
+```
+
+### `disable_auto_updates`
+
+Disable Claude Code auto-updates Prevents Claude Code from automatically updating itself Updates are managed via CI/CD (GitHub Actions) instead
+
+**Arguments:**
+
+- `  $1 - config directory path (optional, defaults to CLAUDE_CONFIG_DIR)`
+
+**Returns:**
+
+-   0 - success
+-   1 - failure (jq not found or file error)
+
+### `load_claude_config`
+
+Load Claude Code configuration variables Loads CLAUDE_CODE_* environment variables from credentials file
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  load_claude_config || return 1
+```
+
+
+
+# status
+
+> **Module:** `config` | **File:** `lib/config/status.sh`
+
+Config Status Module
+Description: Status checking for configuration and isolated environment
+
+---
+
+### `check_config_status`
+
+Check config directory status Shows current CLAUDE_CONFIG_DIR and its content
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  check_config_status || return 1
+```
+
+### `check_isolated_status`
+
+Check isolated environment status Shows NVM, Node.js, Claude, symlinks, lockfile status
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  check_isolated_status || return 1
+```
+
+### `show_native_installer_info`
+
+Display native installer information Shows information about Anthropic's recommendation to use native installer
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: context
+
+> Source: `lib/context/`
+
+- [init](init.md) — 7 functions
+- [memory](memory.md) — 5 functions
+- [operations](operations.md) — 7 functions
+
+
+
+# init
+
+> **Module:** `context` | **File:** `lib/context/init.sh`
+
+lib/context/init.sh
+Context Management - Initialization & Path Helpers
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 7 path helper functions (trivial, low risk)
+
+---
+
+### `init_context_directories`
+
+Initialize context directories Creates directory structure for context exports/backups
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 on success
+
+### `get_context_project_name`
+
+Get project name from path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Project basename
+
+### `get_context_project_hash`
+
+Get project hash (Claude Code format) Converts path to hash by replacing slashes
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Hashed project path
+
+### `get_context_project_memory_dir`
+
+Get project memory directory
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Path to .claude/memory
+
+### `get_context_shared_memory_dir`
+
+Get shared memory directory For worktree synchronization
+
+**Arguments:**
+
+- `  $1 - Project path`
+
+**Returns:**
+
+-   Path to shared memory directory
+
+### `is_context_worktree`
+
+Check if current directory is a git worktree
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 if worktree, 1 otherwise
+
+### `get_context_main_worktree`
+
+Get main worktree path If current path is a worktree, returns main repo path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Main worktree path or input path
+
+
+
+# memory
+
+> **Module:** `context` | **File:** `lib/context/memory.sh`
+
+lib/context/memory.sh
+Context Management - Auto Memory Functions
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 5 MEMORY.md management functions (init/validate/organize/add/status)
+Based on Anthropic best practices: https://code.claude.com/docs/en/memory
+
+---
+
+### `context_memory_init`
+
+Initialize MEMORY.md with best practices template Creates structured MEMORY.md following Anthropic guidelines
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Initialization status and best practices tips
+
+### `context_memory_validate`
+
+Validate MEMORY.md against best practices Checks size, structure, and language clarity
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if MEMORY.md not found
+- Outputs:
+-   Validation report with recommendations
+
+### `context_memory_organize`
+
+Organize MEMORY.md - suggest topic files Analyzes content and recommends split into topic files
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if MEMORY.md not found
+- Outputs:
+-   Topic file suggestions and reorganization steps
+
+### `context_memory_add`
+
+Add entry to MEMORY.md Appends new entry with auto-validation
+
+**Arguments:**
+
+- `  $1 - Entry text (required)`
+- `  $2 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if entry missing or MEMORY.md not found
+- Outputs:
+-   Confirmation and auto-validation warning if >200 lines
+
+### `context_memory_status`
+
+Auto Memory status Shows MEMORY.md size, usage, topic files, commands
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Detailed MEMORY.md status
+
+
+
+# operations
+
+> **Module:** `context` | **File:** `lib/context/operations.sh`
+
+lib/context/operations.sh
+Context Management - CRUD Operations
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 6 context operation functions (export/import/sync/clean/backup/status)
+
+---
+
+### `context_cmd_export`
+
+Export context to archive Creates tar.gz with memory + filtered history
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 on failure
+- Outputs:
+-   Archive path and instructions
+
+### `context_cmd_import`
+
+Import context from archive Extracts memory + history to current project
+
+**Arguments:**
+
+- `  $1 - Archive file path`
+- `  $2 - Target project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 on failure
+- Outputs:
+-   Import progress and confirmation
+
+### `context_cmd_sync`
+
+Sync context between main repo and worktrees Bidirectional sync via shared directory
+
+**Arguments:**
+
+- `  $1 - Direction: "pull" or "push" (default: pull)`
+- `  $2 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Sync progress
+
+### `context_cmd_clean`
+
+Clean old context data Removes old sessions and trims history
+
+**Arguments:**
+
+- `  $1 - Days threshold (default: CONTEXT_CLEANUP_DAYS)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Cleanup progress
+
+### `context_cmd_backup`
+
+Backup context data Creates timestamped backup of history + projects
+
+**Arguments:**
+
+- `  $1 - Backup mode: "manual", "daily", "weekly" (default: manual)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Backup location and size
+
+### `context_cmd_status`
+
+Show context status Displays memory, history, sessions, worktree info
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Detailed context status
+
+### `list_sessions_cmd`
+
+list_sessions_cmd Lists all active Claude Code sessions with metadata
+
+**Arguments:**
+
+- `  none`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Table of sessions with date, slug, branch, project
+
+
+
+# Module: core
+
+> Source: `lib/core/`
+
+- [init](init.md) — 0 functions
+- [json](json.md) — 3 functions
+- [logging](logging.md) — 4 functions
+- [remaining](remaining.md) — 0 functions
+- [validation](validation.md) — 3 functions
+
+
+
+# init
+
+> **Module:** `core` | **File:** `lib/core/init.sh`
+
+Core Initialization Module
+Description: Constants, environment variables, and initialization logic
+
+---
+
+
+
+# json
+
+> **Module:** `core` | **File:** `lib/core/json.sh`
+
+JSON Utilities Module
+Description: Helpers for reading/writing JSON files, especially lockfile
+
+---
+
+### `get_lockfile_field`
+
+Read a field from the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "nodeVersion" or ".lspServers.pyright")`
+
+**Returns:**
+
+-   Field value on stdout, or "unknown" if not found
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  node_version=$(get_lockfile_field "nodeVersion") || return 1
+  is_sandbox=$(get_lockfile_field "sandboxAvailable") || return 1
+  pyright_ver=$(get_lockfile_field "lspServers.pyright") || return 1
+```
+
+### `set_lockfile_field`
+
+Write a field to the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "nodeVersion" or ".lspServers.pyright")`
+- `  $2 - Value to write`
+
+**Returns:**
+
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  set_lockfile_field "claudeCodeVersion" "2.1.44" || return 1
+  set_lockfile_field "sandboxAvailable" "true" || return 1
+  set_lockfile_field "$lockfile_field" "$new_version" 2>/dev/null || true
+```
+
+### `get_lockfile_object`
+
+Read a nested object field from the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "lspServers" to get entire object)`
+
+**Returns:**
+
+-   JSON object on stdout, or {} if not found
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  lsp_servers=$(get_lockfile_object "lspServers") || return 1
+  deps=$(get_lockfile_object "sandboxDependencies") || return 1
+```
+
+
+
+# logging
+
+> **Module:** `core` | **File:** `lib/core/logging.sh`
+
+Logging Module
+Description: Colored output functions for info, success, warning, and error messages
+
+---
+
+### `print_info`
+
+Print colored info message
+
+**Arguments:**
+
+- `  $1 - Message to print`
+
+**Returns:**
+
+-   0 always
+
+### `print_success`
+
+Print colored success message
+
+**Arguments:**
+
+- `  $1 - Message to print`
+
+**Returns:**
+
+-   0 always
+
+### `print_warning`
+
+Print colored warning message
+
+**Arguments:**
+
+- `  $1 - Message to print`
+
+**Returns:**
+
+-   0 always
+
+### `print_error`
+
+Print colored error message
+
+**Arguments:**
+
+- `  $1 - Message to print`
+
+**Returns:**
+
+-   0 always
+
+
+
+# remaining
+
+> **Module:** `core` | **File:** `lib/core/remaining.sh`
+
+lib/core/remaining.sh
+Remaining utility functions from legacy (Phase 15 extraction)
+Contains functions that were not extracted in Phases 0-14:
+- System installation utilities (install_script, etc.)
+- Legacy/deprecated functions (install_nodejs, etc.)
+- Update checking utilities (check_update, etc.)
+
+---
+
+
+
+# validation
+
+> **Module:** `core` | **File:** `lib/core/validation.sh`
+
+Validation Module
+Description: Utility functions for validating dependencies, files, and other preconditions
+
+---
+
+### `validate_dependency`
+
+Validate that a command exists on the system
+
+**Arguments:**
+
+- `  $1 - Command name (e.g., "jq", "git", "node")`
+- `  $2 - Installation hint (optional, e.g., "Install with: sudo apt install jq")`
+
+**Returns:**
+
+-   0 - Command exists
+-   1 - Command not found
+
+**Example:**
+
+```bash
+  validate_dependency "jq" "Install with: sudo apt install jq" || return 1
+```
+
+### `validate_file_exists`
+
+Validate that a file exists
+
+**Arguments:**
+
+- `  $1 - File path`
+
+**Returns:**
+
+-   0 - File exists
+-   1 - File not found
+
+### `validate_directory_exists`
+
+Validate that a directory exists
+
+**Arguments:**
+
+- `  $1 - Directory path`
+
+**Returns:**
+
+-   0 - Directory exists
+-   1 - Directory not found
+
+
+
+# Module: docs
+
+> Source: `lib/docs/`
+
+- [bash-parser](bash-parser.md) — 6 functions
+- [build](build.md) — 1 functions
+- [init](init.md) — 6 functions
+- [install](install.md) — 1 functions
+- [resolve](resolve.md) — 8 functions
+- [serve](serve.md) — 1 functions
+- [status](status.md) — 1 functions
+
+
+
+# bash-parser
+
+> **Module:** `docs` | **File:** `lib/docs/bash-parser.sh`
+
+lib/docs/bash-parser.sh
+Sphinx Documentation - Bash Function Parser
+Parses #######...####### comment blocks from lib/*.sh files
+and generates structured Markdown API reference documentation
+
+---
+
+### `generate_api_reference`
+
+Generate API reference Markdown from bash module comments Parses structured comments (#####...##### blocks) from lib/ files
+
+**Arguments:**
+
+- `  $1 - Source directory (default: $SCRIPT_DIR/lib)`
+- `  $2 - Output directory (default: $SCRIPT_DIR/docs/api-reference)`
+
+**Returns:**
+
+-   0 - Success
+-   1 - Source directory not found
+
+**Example:**
+
+```bash
+generate_api_reference lib/ docs/api-reference/
+```
+
+### `_parse_bash_module`
+
+Parse a single bash module file into Markdown
+
+**Arguments:**
+
+- `  $1 - Input .sh file path`
+- `  $2 - File name (without .sh)`
+- `  $3 - Module name (parent directory)`
+
+**Returns:**
+
+-   Markdown output to stdout
+
+**Example:**
+
+```bash
+_parse_bash_module lib/proxy/validate.sh validate proxy
+```
+
+### `_extract_functions_from_file`
+
+Extract and format all documented functions from a bash file
+
+**Arguments:**
+
+- `  $1 - Input .sh file path`
+
+**Returns:**
+
+-   Markdown function documentation to stdout
+
+**Example:**
+
+```bash
+_extract_functions_from_file lib/proxy/validate.sh
+```
+
+### `_format_function_doc`
+
+Format function documentation as Markdown
+
+**Arguments:**
+
+- `  $1 - Function name`
+- `  $2+ - Comment lines (from #####...##### block)`
+
+**Returns:**
+
+-   Formatted Markdown to stdout
+
+**Example:**
+
+```bash
+_format_function_doc my_func "# Description" "# Arguments:"
+```
+
+### `_write_module_index`
+
+Write module index page
+
+**Arguments:**
+
+- `  $1 - Output directory for this module`
+- `  $2 - Module name`
+- `  $3 - Source module directory`
+
+**Returns:**
+
+-   0 - Success
+
+**Example:**
+
+```bash
+_write_module_index docs/api-reference/proxy proxy lib/proxy/
+```
+
+### `_write_api_index`
+
+Write top-level API reference index
+
+**Arguments:**
+
+- `  $1 - API reference output directory`
+- `  $2 - Source lib directory`
+
+**Returns:**
+
+-   0 - Success
+
+**Example:**
+
+```bash
+_write_api_index docs/api-reference lib/
+```
+
+
+
+# build
+
+> **Module:** `docs` | **File:** `lib/docs/build.sh`
+
+lib/docs/build.sh
+Sphinx Documentation - Build
+Builds HTML documentation and generates llms.txt for AI agents
+
+---
+
+### `build_sphinx_docs`
+
+Build Sphinx documentation for a project Generates API reference from lib/*.sh (bash projects), then builds HTML site
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+- `  $2 - clean build flag (--clean, optional)`
+
+**Returns:**
+
+-   0 - Success
+-   1 - Sphinx not installed, not initialized, or build failed
+
+**Example:**
+
+```bash
+build_sphinx_docs /path/to/project --clean
+```
+
+
+
+# init
+
+> **Module:** `docs` | **File:** `lib/docs/init.sh`
+
+lib/docs/init.sh
+Sphinx Documentation - Project Initialization
+Initializes Sphinx in docs/sphinx/ for any project.
+Does not overwrite existing conf.py (idempotent guard).
+
+---
+
+### `_update_project_gitignore`
+
+Update project .gitignore to exclude docs/sphinx/_build/
+
+**Arguments:**
+
+- `  $1 - project path`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_update_project_gitignore /path/to/project
+```
+
+### `_setup_docs_git_hook`
+
+Install git pre-commit hook for auto Sphinx rebuild Rebuilds docs if source files changed, then stages html/ + llms.txt
+
+**Arguments:**
+
+- `  $1 - project path`
+
+**Returns:**
+
+-   0 - always
+
+### `_update_project_claude_md`
+
+Add documentation section to project CLAUDE.md
+
+**Arguments:**
+
+- `  $1 - project path`
+
+**Returns:**
+
+-   0 - always
+
+### `_generate_conf_py`
+
+Generate conf.py for the project
+
+**Arguments:**
+
+- `  $1 - output path (docs/sphinx/conf.py)`
+- `  $2 - project name`
+- `  $3 - project type (bash|python|node|generic)`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_generate_conf_py /path/to/docs/sphinx/conf.py myproject bash
+```
+
+### `_generate_index_md`
+
+Generate index.md for the project, referencing existing docs/*.md
+
+**Arguments:**
+
+- `  $1 - output path (docs/sphinx/index.md)`
+- `  $2 - project name`
+- `  $3 - project path`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_generate_index_md /path/to/docs/sphinx/index.md myproject /path/to/project
+```
+
+### `init_project_docs`
+
+Initialize Sphinx documentation in docs/sphinx/ for any project
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - Success or already initialized
+-   1 - Failed to create directory or generate files
+
+**Example:**
+
+```bash
+init_project_docs /path/to/project
+```
+
+
+
+# install
+
+> **Module:** `docs` | **File:** `lib/docs/install.sh`
+
+lib/docs/install.sh
+Sphinx Documentation - Python venv Installation
+Installs Python virtual environment with Sphinx and related packages
+in .nvm-isolated/.python-docs/ directory
+
+---
+
+### `install_sphinx_docs`
+
+Install Sphinx documentation environment Creates Python venv and installs sphinx, myst-parser, furo, and plugins
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 - Success
+-   1 - python3 not found or pip install failed
+
+**Example:**
+
+```bash
+install_sphinx_docs
+```
+
+
+
+# resolve
+
+> **Module:** `docs` | **File:** `lib/docs/resolve.sh`
+
+lib/docs/resolve.sh
+Sphinx Documentation - Path Resolution
+Per-project helper functions: resolve paths, detect project type.
+All functions accept $1=project_path (default: pwd).
+Pattern: analogous to lib/context/init.sh
+
+---
+
+### `get_docs_project_dir`
+
+Get absolute project directory
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints absolute path
+
+**Example:**
+
+```bash
+get_docs_project_dir /path/to/project
+```
+
+### `get_docs_project_name`
+
+Get project name from git remote or directory basename
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints project name
+
+**Example:**
+
+```bash
+get_docs_project_name /path/to/project
+```
+
+### `get_docs_venv_dir`
+
+Get global Sphinx venv directory (shared across all projects)
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 - prints venv path
+
+**Example:**
+
+```bash
+get_docs_venv_dir
+```
+
+### `get_docs_sphinx_dir`
+
+Get project Sphinx source directory (docs/sphinx/)
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints sphinx dir path
+
+**Example:**
+
+```bash
+get_docs_sphinx_dir /path/to/project
+```
+
+### `get_docs_build_dir`
+
+Get Sphinx HTML build output directory
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints build dir path
+
+**Example:**
+
+```bash
+get_docs_build_dir /path/to/project
+```
+
+### `get_docs_api_ref_dir`
+
+Get API reference directory inside sphinx source
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints api-reference dir path
+
+**Example:**
+
+```bash
+get_docs_api_ref_dir /path/to/project
+```
+
+### `detect_project_type`
+
+Detect project type based on files present
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints one of: bash|python|node|generic
+
+**Example:**
+
+```bash
+detect_project_type /path/to/project
+```
+
+### `get_docs_src_for_api_ref`
+
+Get source directory for API reference generation (bash projects only)
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - prints lib/ path for bash projects, empty string otherwise
+
+**Example:**
+
+```bash
+get_docs_src_for_api_ref /path/to/project
+```
+
+
+
+# serve
+
+> **Module:** `docs` | **File:** `lib/docs/serve.sh`
+
+lib/docs/serve.sh
+Sphinx Documentation - Live Preview Server
+Serves built documentation on localhost
+
+---
+
+### `serve_sphinx_docs`
+
+Serve Sphinx documentation with live preview Builds if needed, then starts HTTP server
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+- `  $2 - port number (default: 8000)`
+
+**Returns:**
+
+-   0 - Server started (or stopped by user)
+-   1 - Build failed or python3 not available
+
+**Example:**
+
+```bash
+serve_sphinx_docs /path/to/project 8080
+```
+
+
+
+# status
+
+> **Module:** `docs` | **File:** `lib/docs/status.sh`
+
+lib/docs/status.sh
+Sphinx Documentation - Status Check
+Checks installation status of Sphinx documentation environment
+
+---
+
+### `check_docs_status`
+
+Check Sphinx documentation environment status for a project Verifies python3, venv, sphinx installation and build output
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - Sphinx fully operational
+-   1 - Not installed or partially installed
+
+**Example:**
+
+```bash
+check_docs_status /path/to/project
+```
+
+
+
+# Module: gh
+
+> Source: `lib/gh/`
+
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+
+
+
+# install
+
+> **Module:** `gh` | **File:** `lib/gh/install.sh`
+
+GitHub CLI installation module
+Provides function for installing gh CLI into isolated environment
+
+---
+
+### `install_isolated_gh`
+
+Install gh CLI to isolated environment Downloads and installs gh CLI binary from GitHub releases
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `gh` | **File:** `lib/gh/status.sh`
+
+GitHub CLI status module
+Provides function for checking gh CLI installation status
+
+---
+
+### `check_gh_status`
+
+Check GitHub CLI installation status Shows installed version, location, and authentication status
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: install
+
+> Source: `lib/install/`
+
+
+
+# Module: launcher
+
+> Source: `lib/launcher/`
+
+- [launch](launch.md) — 1 functions
+
+
+
+# launch
+
+> **Module:** `launcher` | **File:** `lib/launcher/launch.sh`
+
+Launcher module
+Provides function for launching Claude Code with router and binary detection
+
+---
+
+### `launch_claude`
+
+Launch Claude Code Detects and launches Claude Code binary (native or via router)
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment`
+- `  $@ - Additional arguments passed to Claude Code`
+
+**Returns:**
+
+-   Does not return (uses exec)
+
+
+
+# Module: lockfile
+
+> Source: `lib/lockfile/`
+
+- [install](install.md) — 1 functions
+- [save](save.md) — 1 functions
+
+
+
+# install
+
+> **Module:** `lockfile` | **File:** `lib/lockfile/install.sh`
+
+Lockfile Install Module
+Description: Install all components from lockfile for exact version reproduction
+
+---
+
+### `install_from_lockfile`
+
+Install isolated environment from lockfile Installs: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins, Sandbox dependencies
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  install_from_lockfile || return 1
+```
+
+
+
+# save
+
+> **Module:** `lockfile` | **File:** `lib/lockfile/save.sh`
+
+Lockfile Save Module
+Description: Save current installation state to lockfile for reproducibility
+
+---
+
+### `save_isolated_lockfile`
+
+Save isolated environment versions to lockfile Captures: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins, Sandbox, StatusLine, Oh-My-Posh
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  save_isolated_lockfile || return 1
+```
+
+
+
+# Module: loop
+
+> Source: `lib/loop/`
+
+- [executor](executor.md) — 4 functions
+- [git](git.md) — 1 functions
+- [parallel](parallel.md) — 3 functions
+- [parser](parser.md) — 2 functions
+- [retry](retry.md) — 1 functions
+- [state](state.md) — 2 functions
+- [validator](validator.md) — 1 functions
+- [worktree](worktree.md) — 4 functions
+
+
+
+# executor
+
+> **Module:** `loop` | **File:** `lib/loop/executor.sh`
+
+lib/loop/executor.sh
+Loop Mode - Sequential Execution Orchestrator
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains sequential task execution logic with retry support
+
+---
+
+### `invoke_claude_iteration`
+
+Invoke Claude Code for one iteration Executes Claude with task prompt and logs output
+
+**Arguments:**
+
+- `  $1 - Task ID (e.g., "task_0")`
+- `  $2 - Iteration number`
+
+**Returns:**
+
+-   Exit code from Claude Code execution
+
+### `verify_completion_promise`
+
+Verify completion promise is met Executes validation command and checks output
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Promise met (task successful)
+-   1 - Promise not met (retry needed)
+
+### `execute_single_iteration`
+
+Execute single iteration (no retry logic) Wrapper around invoke_claude_iteration with state tracking
+
+**Arguments:**
+
+- `  $1 - Task ID`
+- `  $2 - Iteration number (default: 1)`
+
+**Returns:**
+
+-   0 - Iteration executed (does not verify promise)
+-   1 - Execution failed
+
+### `execute_sequential_mode`
+
+Execute tasks in sequential mode Main orchestrator for loop mode sequential execution
+
+**Arguments:**
+
+- `  $1 - Path to task file (.md)`
+
+**Returns:**
+
+-   0 - All tasks completed successfully
+-   1 - All tasks failed
+-   2 - Partial success (some tasks failed)
+
+
+
+# git
+
+> **Module:** `loop` | **File:** `lib/loop/git.sh`
+
+lib/loop/git.sh
+Loop Mode - Git Integration
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains git commit and push operations after task completion
+
+---
+
+### `git_commit_task_changes`
+
+Git commit task changes Commits changes after successful task execution with optional auto-push
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Changes committed successfully or no git config
+-   1 - Commit or push failed
+
+
+
+# parallel
+
+> **Module:** `loop` | **File:** `lib/loop/parallel.sh`
+
+lib/loop/parallel.sh
+Loop Mode - Parallel Execution Orchestrator
+Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
+Contains parallel task execution logic with git worktree isolation
+
+---
+
+### `execute_task_with_retry`
+
+Execute single task with retry logic Helper wrapper for both sequential and parallel execution
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Task completed
+-   1 - Task failed after retries
+
+### `execute_parallel_group`
+
+Execute parallel group of tasks Executes tasks in parallel with worktree isolation
+
+**Arguments:**
+
+- `  $1 - Space-separated task IDs (e.g., "task_0 task_1 task_2")`
+- `  $2 - Max parallel agents (default: 5)`
+
+**Returns:**
+
+-   0 - All tasks in group attempted (check COMPLETED_TASKS for success)
+
+### `execute_parallel_mode`
+
+Execute tasks in parallel mode Main orchestrator for parallel execution with group support
+
+**Arguments:**
+
+- `  $1 - Path to task file (.md)`
+- `  $2 - Max parallel agents (default: 5)`
+
+**Returns:**
+
+-   0 - All tasks completed successfully
+-   1 - All tasks failed
+-   2 - Partial success (some tasks failed)
+
+
+
+# parser
+
+> **Module:** `loop` | **File:** `lib/loop/parser.sh`
+
+lib/loop/parser.sh
+Loop Mode - Task Loading and Parsing
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains Markdown task parser functions
+
+---
+
+### `load_markdown_task`
+
+Load a single task from Markdown file Parses task metadata from structured Markdown format
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+- `  $2 - Task index (default: 0 for single task)`
+
+**Returns:**
+
+-   0 - Success
+-   1 - File not found or parse error
+
+### `load_all_tasks`
+
+Load all tasks from Markdown file Supports multiple "# Task:" sections in one file
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+
+**Returns:**
+
+-   0 - Success (at least one task loaded)
+-   1 - No tasks found or error
+
+
+
+# retry
+
+> **Module:** `loop` | **File:** `lib/loop/retry.sh`
+
+lib/loop/retry.sh
+Loop Mode - Retry Logic with Exponential Backoff
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains exponential backoff retry mechanism
+
+---
+
+### `retry_task_with_backoff`
+
+Retry task with exponential backoff Implements exponential backoff: 2s, 4s, 8s, 16s, 32s (capped at 60s)
+
+**Arguments:**
+
+- `  $1 - Task ID`
+- `  $2 - Current iteration number (default: 1)`
+
+**Returns:**
+
+-   0 - Task succeeded within max iterations
+-   1 - Max iterations reached without success
+
+
+
+# state
+
+> **Module:** `loop` | **File:** `lib/loop/state.sh`
+
+lib/loop/state.sh
+Loop Mode - State Persistence
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains loop state save/load functions for crash recovery
+
+---
+
+### `save_loop_state`
+
+Save loop state to JSON file Creates checkpoint file for recovery after interruption
+
+**Arguments:**
+
+- `  None (reads global variables)`
+
+**Returns:**
+
+-   0 - State saved successfully
+
+### `load_loop_state`
+
+Load loop state from file Restores execution state after crash or interruption
+
+**Arguments:**
+
+- `  None (sets global variables)`
+
+**Returns:**
+
+-   0 - State loaded successfully
+-   1 - No state file found or jq unavailable
+
+
+
+# validator
+
+> **Module:** `loop` | **File:** `lib/loop/validator.sh`
+
+lib/loop/validator.sh
+Loop Mode - Task File Validation
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains task file format validation
+
+---
+
+### `validate_task_file_format`
+
+Validate task file format Checks for required Markdown structure and sections
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+
+**Returns:**
+
+-   0 - Valid format
+-   1 - Invalid format or user rejected
+- Required sections:
+-   - "# Task:" header
+-   - "## Description" section
+-   - "## Completion Promise" section
+-   - "## Validation Command" section
+- Interactive:
+-   Prompts user to continue if missing optional sections
+
+
+
+# worktree
+
+> **Module:** `loop` | **File:** `lib/loop/worktree.sh`
+
+lib/loop/worktree.sh
+Loop Mode - Git Worktree Management + AI Merge Conflict Resolution
+Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
+⚠️ HIGH RISK: Contains AI-powered merge conflict resolution
+IMPORTANT SAFETY NOTES:
+- resolve_merge_conflicts_ai() uses AI to modify code - requires careful validation
+- Always backup before merge (use git stash)
+- Validate AI output for conflict markers
+- Recommend --parallel-dry-run for testing
+- Recommend --parallel-require-approval for production
+
+---
+
+### `create_task_worktree`
+
+Create git worktree for task isolation Creates isolated worktree with unique branch for parallel execution
+
+**Arguments:**
+
+- `  $1 - Task ID (e.g., "task_0")`
+
+**Returns:**
+
+-   0 - Worktree created successfully
+-   1 - Creation failed
+
+### `cleanup_worktree`
+
+Cleanup git worktree after task completion Attempts graceful removal, falls back to force, then manual cleanup
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Worktree removed successfully (always succeeds)
+
+### `merge_worktree_changes`
+
+Merge worktree changes back to main branch Attempts merge with patience strategy, invokes AI if conflicts detected
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Merge successful
+-   1 - Merge failed (conflicts unresolved)
+
+### `resolve_merge_conflicts_ai`
+
+Resolve merge conflicts using AI (⚠️ HIGHEST RISK FUNCTION) Uses Claude to intelligently resolve git merge conflicts
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Conflicts resolved and committed
+-   1 - Resolution failed (markers present or AI error)
+
+
+
+# Module: lsp
+
+> Source: `lib/lsp/`
+
+- [install](install.md) — 1 functions
+- [repair](repair.md) — 1 functions
+- [status](status.md) — 1 functions
+
+
+
+# install
+
+> **Module:** `lsp` | **File:** `lib/lsp/install.sh`
+
+LSP installation module
+Provides function for installing LSP servers and Claude Code plugins
+
+---
+
+### `install_isolated_lsp_servers`
+
+Install LSP servers and plugins in isolated environment Installs LSP server binaries via npm and enables Claude Code plugins
+
+**Arguments:**
+
+- `  $@ - Language servers to install (typescript, python, go, rust)`
+- `       Default: typescript python`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# repair
+
+> **Module:** `lsp` | **File:** `lib/lsp/repair.sh`
+
+LSP repair module
+Provides function for repairing plugin paths after project relocation
+
+---
+
+### `repair_plugin_paths`
+
+Repair plugin paths after git clone or project move Fixes paths in known_marketplaces.json and installed_plugins.json
+
+**Arguments:**
+
+- `  $1 - quiet_mode (optional): "quiet" to suppress output`
+
+**Returns:**
+
+-   0 - success
+
+
+
+# status
+
+> **Module:** `lsp` | **File:** `lib/lsp/status.sh`
+
+LSP status module
+Provides function for checking LSP server and plugin status
+
+---
+
+### `check_lsp_status`
+
+Check LSP server and plugin status Shows installation status, versions, and lockfile tracking
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: nvm
+
+> Source: `lib/nvm/`
+
+- [claude](claude.md) — 2 functions
+- [cleanup](cleanup.md) — 1 functions
+- [detect](detect.md) — 3 functions
+- [install](install.md) — 3 functions
+- [repair](repair.md) — 3 functions
+- [setup](setup.md) — 1 functions
+
+
+
+# claude
+
+> **Module:** `nvm` | **File:** `lib/nvm/claude.sh`
+
+Claude Code Management Module
+Description: Install, update, and cleanup Claude Code
+
+---
+
+### `install_isolated_claude`
+
+Install Claude Code in isolated environment
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+- Note: Now uses install_npm_package_with_lockfile() for consistency
+
+### `cleanup_old_claude_installations`
+
+Cleanup old Claude Code installations Removes temporary .claude-code-* folders left by npm Side effects:   - Deletes .claude-code-* directories in node_modules/@anthropic-ai/
+
+
+
+# cleanup
+
+> **Module:** `nvm` | **File:** `lib/nvm/cleanup.sh`
+
+NVM Cleanup Module
+Description: Cleanup isolated NVM environment
+
+---
+
+### `cleanup_isolated_nvm`
+
+Cleanup isolated NVM environment Removes entire isolated NVM directory but preserves lockfile
+
+**Returns:**
+
+-   0 - success
+- Side effects:
+-   - Deletes ISOLATED_NVM_DIR
+-   - Preserves ISOLATED_LOCKFILE
+
+
+
+# detect
+
+> **Module:** `nvm` | **File:** `lib/nvm/detect.sh`
+
+NVM Detection Module
+Description: Detect NVM installation and locate Claude Code binary
+
+---
+
+### `detect_nvm`
+
+Detect if NVM is available
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment check`
+
+**Returns:**
+
+-   0 - NVM is available
+-   1 - NVM not found
+- Priority order:
+-   1. Isolated environment (.nvm-isolated/)
+-   2. System NVM ($NVM_DIR/nvm.sh)
+-   3. npm/node in PATH from NVM
+
+### `get_nvm_claude_path`
+
+Get Claude Code path from NVM environment
+
+**Returns:**
+
+-   Claude Code binary path on stdout
+-   Exit code: 0 on success, 1 if not found
+- Search order:
+-   1. Standard 'claude' binary in NVM bin/
+-   2. Temporary '.claude-*' binaries (sorted by mtime, newest first)
+-   3. cli.js in standard claude-code/ folder
+-   4. cli.js in temporary .claude-code-* folders
+
+### `get_cli_version`
+
+Get Claude Code CLI version
+
+**Arguments:**
+
+- `  $1 - CLI path (e.g., "/path/to/claude" or "node /path/to/cli.js")`
+
+**Returns:**
+
+-   Version string on stdout (e.g., "2.1.7")
+-   Exit code: 0 on success, 1 if version not found
+
+
+
+# install
+
+> **Module:** `nvm` | **File:** `lib/nvm/install.sh`
+
+NVM Installation Module
+Description: Install NVM, Node.js, and npm packages with lockfile integration
+
+---
+
+### `install_isolated_nvm`
+
+Install NVM to isolated directory
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+- Side effects:
+-   - Creates ISOLATED_NVM_DIR
+-   - Downloads and installs NVM v0.39.7
+-   - Uses proxy if configured
+
+### `install_isolated_nodejs`
+
+Install Node.js in isolated NVM
+
+**Arguments:**
+
+- `  $1 - Node.js version (default: 18)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+### `install_npm_package_with_lockfile`
+
+Install npm package with automatic lockfile update This function eliminates 6+ duplications across iclaude.sh:   - install_isolated_claude()   - install_isolated_router()   - install_isolated_lsp_servers() (multiple packages)   - install_isolated_gh()   - etc.
+
+**Arguments:**
+
+- `  $1 - npm package name (e.g., "@anthropic-ai/claude-code")`
+- `  $2 - lockfile field name (e.g., "claudeCodeVersion")`
+- `  $3 - optional version specifier (e.g., "2.1.7" or "latest", default: latest)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+- Side effects:
+-   - Installs package globally via npm install -g
+-   - Updates lockfile with installed version
+
+**Example:**
+
+```bash
+  install_npm_package_with_lockfile "@anthropic-ai/claude-code" "claudeCodeVersion"
+  install_npm_package_with_lockfile "@musistudio/claude-code-router" "routerVersion"
+  install_npm_package_with_lockfile "pyright" "lspServers.pyright" "1.1.347"
+```
+
+
+
+# repair
+
+> **Module:** `nvm` | **File:** `lib/nvm/repair.sh`
+
+NVM Repair Module
+Description: Repair symlinks and permissions after git clone or repository moves
+
+---
+
+### `repair_isolated_environment`
+
+Repair isolated environment Fixes broken symlinks and permissions after git clone
+
+**Returns:**
+
+-   0 - success (all repairs successful)
+-   1 - errors found that couldn't be fixed
+- Side effects:
+-   - Recreates npm/npx/corepack symlinks
+-   - Recreates Claude Code symlink
+-   - Fixes file permissions
+
+### `create_npm_symlinks`
+
+Create npm/npx/corepack symlinks
+
+**Arguments:**
+
+- `  $1 - Node.js version directory (e.g., /path/to/.nvm-isolated/versions/node/v18.20.8)`
+
+**Returns:**
+
+-   0 - success
+-   1 - errors found
+
+### `create_claude_symlink`
+
+Create Claude Code symlink
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# setup
+
+> **Module:** `nvm` | **File:** `lib/nvm/setup.sh`
+
+NVM Setup Module
+Description: Setup isolated NVM environment and configure PATH
+
+---
+
+### `setup_isolated_nvm`
+
+Setup isolated NVM environment Side effects:   - Exports NVM_DIR, NPM_CONFIG_PREFIX, ISOLATED_CONFIG_DIR   - Prepends isolated paths to PATH   - Exports CLAUDE_CODE_ENABLE_TASKS   - Loads additional Claude Code config from credentials   - Auto-repairs plugin paths (if repair function exists)
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: oauth
+
+> Source: `lib/oauth/`
+
+- [token](token.md) — 4 functions
+
+
+
+# token
+
+> **Module:** `oauth` | **File:** `lib/oauth/token.sh`
+
+OAuth Token Module
+Description: OAuth token validation, expiration checking, and automatic refresh
+
+---
+
+### `check_token_expiration`
+
+Check token expiration across all credentials files Checks system and isolated credentials for expiring/expired tokens
+
+**Returns:**
+
+-   0 - All tokens valid
+-   1 - Token expired
+-   2 - Token expiring soon (< 1 hour)
+
+**Example:**
+
+```bash
+  check_token_expiration || echo "Token issues detected"
+```
+
+### `check_oauth_token`
+
+Check OAuth token and refresh if needed Automatically refreshes tokens expiring within TOKEN_REFRESH_THRESHOLD (7 days default)
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "false" (default) or "true" to use system config`
+
+**Returns:**
+
+-   0 - Token valid or refreshed successfully
+-   1 - Token expired and refresh failed
+
+**Example:**
+
+```bash
+  check_oauth_token || echo "Token refresh failed"
+```
+
+### `refresh_oauth_token`
+
+Refresh OAuth token using setup-token Uses 'claude setup-token' to generate a long-lived token (~1 year)
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "false" (default) or "true" to use system config`
+
+**Returns:**
+
+-   0 - Token refreshed successfully
+-   1 - Failed to refresh token
+
+**Example:**
+
+```bash
+  refresh_oauth_token || echo "Token refresh failed"
+```
+
+### `validate_jq_installed`
+
+Validate that jq is installed Required for parsing JSON credentials file
+
+**Returns:**
+
+-   0 - jq is installed
+-   1 - jq is not installed
+
+**Example:**
+
+```bash
+  validate_jq_installed || echo "jq not found"
+```
+
+
+
+# Module: ohmyposh
+
+> Source: `lib/ohmyposh/`
+
+- [detect](detect.md) — 3 functions
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+
+
+
+# detect
+
+> **Module:** `ohmyposh` | **File:** `lib/ohmyposh/detect.sh`
+
+Oh-My-Posh detection module
+Provides functions for detecting Oh-My-Posh platform and installation
+
+---
+
+### `detect_ohmyposh_platform`
+
+Detect platform for Oh My Posh installation Returns platform string and status code
+
+**Returns:**
+
+-   0 - platform supported (linux-amd64, linux-arm64, darwin-amd64, darwin-arm64)
+-   1 - platform not supported
+- Output: platform name or "unsupported"
+
+### `get_ohmyposh_path`
+
+Get path to oh-my-posh binary
+
+**Returns:**
+
+-   oh-my-posh binary path or empty string
+
+### `detect_ohmyposh`
+
+Detect if Oh My Posh is installed
+
+**Returns:**
+
+-   0 - Oh My Posh available
+-   1 - Oh My Posh not available
+
+
+
+# install
+
+> **Module:** `ohmyposh` | **File:** `lib/ohmyposh/install.sh`
+
+Oh-My-Posh installation module
+Provides function for installing Oh-My-Posh in isolated environment
+
+---
+
+### `install_isolated_ohmyposh`
+
+Install Oh My Posh in isolated environment (pre-bundled or auto-downloaded) Uses pre-bundled platform-specific binary from git repository. If binary is missing, automatically downloads the latest version from GitHub.
+
+**Arguments:**
+
+- `  [--insecure] - disable TLS verification for download (corporate proxy)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `ohmyposh` | **File:** `lib/ohmyposh/status.sh`
+
+Oh-My-Posh status module
+Provides function for checking Oh-My-Posh status and configuration
+
+---
+
+### `check_ohmyposh_status`
+
+Check Oh My Posh status and configuration Shows installation, version, platform
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: proxy
+
+> Source: `lib/proxy/`
+
+- [configure](configure.md) — 4 functions
+- [credentials](credentials.md) — 4 functions
+- [git](git.md) — 2 functions
+- [validate](validate.md) — 4 functions
+
+
+
+# configure
+
+> **Module:** `proxy` | **File:** `lib/proxy/configure.sh`
+
+Proxy Configuration Module
+Description: Configure proxy environment variables and test connectivity
+
+---
+
+### `configure_proxy_from_url`
+
+Configure proxy from URL
+
+**Arguments:**
+
+- `  $1 - Proxy URL`
+- `  $2 - NO_PROXY value (optional)`
+- `Side effects:`
+- `  - Exports HTTPS_PROXY, HTTP_PROXY, NO_PROXY`
+- `  - Exports NODE_EXTRA_CA_CERTS or NODE_TLS_REJECT_UNAUTHORIZED`
+- `  - May save credentials (if new URL)`
+- `  - Configures git to use NO_PROXY`
+
+### `configure_git_no_proxy`
+
+Configure git to use NO_PROXY environment variable Note: We don't modify git config globally anymore (can break other tools) Git automatically respects NO_PROXY environment variable
+
+### `display_proxy_info`
+
+Display proxy configuration
+
+**Arguments:**
+
+- `  $1 - Show password (true/false, default: false)`
+
+### `test_proxy`
+
+Test proxy connectivity
+
+**Returns:**
+
+-   0 - Proxy connection successful
+-   1 - Proxy connection failed
+- Note: Uses curl with proxy to test connection to google.com
+
+
+
+# credentials
+
+> **Module:** `proxy` | **File:** `lib/proxy/credentials.sh`
+
+Proxy Credentials Module
+Description: Save, load, and manage proxy credentials
+
+---
+
+### `save_credentials`
+
+Save proxy credentials to file
+
+**Arguments:**
+
+- `  $1 - Proxy URL`
+- `  $2 - NO_PROXY value (optional, default: localhost,127.0.0.1,...)`
+
+**Returns:**
+
+-   Final proxy URL on stdout (after possible domain-to-IP conversion)
+-   Exit code: 0 on success
+- Side effects:
+-   - Creates CREDENTIALS_FILE with chmod 600
+-   - May prompt user for domain-to-IP conversion (for HTTP proxies)
+
+### `load_credentials`
+
+Load credentials from file
+
+**Returns:**
+
+-   "URL|NO_PROXY" on stdout (pipe-separated)
+-   Exit code: 0 on success, 1 if file missing or invalid
+- Side effects:
+-   - Exports PROXY_CA, PROXY_INSECURE
+-   - Exports Claude Code configuration variables (DEBUG_STATUSLINE, etc.)
+
+### `clear_credentials`
+
+Clear saved credentials Side effects:   - Deletes CREDENTIALS_FILE
+
+### `prompt_proxy_url`
+
+Prompt user for proxy URL (interactive)
+
+**Returns:**
+
+-   "URL|NO_PROXY" on stdout (pipe-separated)
+-   Exit code: 0 on success, 1 on failure
+- Side effects:
+-   - Prompts user for input if no saved credentials
+-   - Validates URL format
+
+
+
+# git
+
+> **Module:** `proxy` | **File:** `lib/proxy/git.sh`
+
+Git Proxy Management Module
+Description: Backup and restore git proxy settings
+
+---
+
+### `save_git_proxy_settings`
+
+Save current git proxy settings to backup file Side effects:   - Creates GIT_BACKUP_FILE with chmod 600   - Saves current http.proxy and https.proxy from git config
+
+### `restore_git_proxy`
+
+Restore git proxy settings from backup Side effects:   - Restores git config --global http.proxy and https.proxy   - Removes GIT_BACKUP_FILE after restore
+
+
+
+# validate
+
+> **Module:** `proxy` | **File:** `lib/proxy/validate.sh`
+
+Proxy Validation Module
+Description: Validate proxy URLs, resolve domains to IPs, parse proxy components
+
+---
+
+### `validate_proxy_url`
+
+Validate proxy URL format
+
+**Arguments:**
+
+- `  $1 - Proxy URL (e.g., "https://user:pass@192.168.1.100:8118")`
+
+**Returns:**
+
+-   0 - Valid URL with IP address
+-   1 - Invalid format
+-   2 - Valid but contains domain (warning)
+
+**Example:**
+
+```bash
+  validate_proxy_url "$proxy_url"
+  case $? in
+    0) echo "Valid IP" ;;
+    1) echo "Invalid format" ;;
+    2) echo "Domain detected" ;;
+  esac
+```
+
+### `is_ip_address`
+
+Check if host is IP address (IPv4)
+
+**Arguments:**
+
+- `  $1 - Host string`
+
+**Returns:**
+
+-   0 - Valid IPv4 address
+-   1 - Not an IP address
+
+### `resolve_domain_to_ip`
+
+Resolve domain to IP address using fallback chain
+
+**Arguments:**
+
+- `  $1 - Domain name (e.g., "proxy.example.com")`
+
+**Returns:**
+
+-   IP address on stdout
+-   Exit code: 0 on success, 1 on failure
+- Fallback order:
+-   1. getent (most reliable)
+-   2. host
+-   3. dig
+-   4. nslookup
+
+### `parse_proxy_url`
+
+Parse proxy URL and extract components
+
+**Arguments:**
+
+- `  $1 - Proxy URL`
+
+**Returns:**
+
+-   Key=value pairs on stdout (protocol, username, password, host, port)
+
+**Example:**
+
+```bash
+  eval $(parse_proxy_url "https://user:pass@proxy.com:8118")
+  echo "$protocol"  # https
+  echo "$username"  # user
+  echo "$password"  # pass
+  echo "$host"      # proxy.com
+  echo "$port"      # 8118
+```
+
+
+
+# Module: router
+
+> Source: `lib/router/`
+
+- [detect](detect.md) — 2 functions
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+
+
+
+# detect
+
+> **Module:** `router` | **File:** `lib/router/detect.sh`
+
+Router detection module
+Provides functions for detecting Claude Code Router installation
+
+---
+
+### `detect_router`
+
+Detect if Claude Code Router is available Checks if router.json exists and ccr binary is installed
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment`
+
+**Returns:**
+
+-   0 - Router available (config + binary)
+-   1 - Router not available
+
+### `get_router_path`
+
+Get path to ccr binary
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment`
+
+**Returns:**
+
+-   ccr binary path or empty string
+
+
+
+# install
+
+> **Module:** `router` | **File:** `lib/router/install.sh`
+
+Router installation module
+Provides function for installing Claude Code Router
+
+---
+
+### `install_isolated_router`
+
+Install Claude Code Router to isolated environment Installs @musistudio/claude-code-router npm package Creates router.json from template if missing
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `router` | **File:** `lib/router/status.sh`
+
+Router status module
+Provides function for checking Claude Code Router status
+
+---
+
+### `check_router_status`
+
+Check Claude Code Router status Shows installation status, version, config location, providers, and activation status
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: sandbox
+
+> Source: `lib/sandbox/`
+
+- [detect](detect.md) — 1 functions
+- [install](install.md) — 2 functions
+- [status](status.md) — 2 functions
+
+
+
+# detect
+
+> **Module:** `sandbox` | **File:** `lib/sandbox/detect.sh`
+
+Sandbox detection module
+Provides function for detecting sandbox platform support
+
+---
+
+### `detect_sandbox_platform`
+
+Detect platform for sandboxing support
+
+**Returns:**
+
+-   0 - platform supported (macos, linux, wsl2)
+-   1 - platform not supported (wsl1, windows, unknown)
+- Output: platform name (macos|linux|wsl2|wsl1|windows|unsupported)
+
+
+
+# install
+
+> **Module:** `sandbox` | **File:** `lib/sandbox/install.sh`
+
+Sandbox installation module
+Provides functions for checking and installing sandbox dependencies
+
+---
+
+### `check_sandbox_dependencies`
+
+Check sandbox system dependencies
+
+**Returns:**
+
+-   0 - all dependencies installed
+-   1 - missing dependencies (outputs list to stdout)
+- Output: space-separated list of missing dependencies
+
+### `install_sandbox_dependencies`
+
+Install sandbox system dependencies
+
+**Returns:**
+
+-   0 - success or already installed
+-   1 - installation error (recoverable)
+-   2 - platform not supported (non-recoverable)
+
+
+
+# status
+
+> **Module:** `sandbox` | **File:** `lib/sandbox/status.sh`
+
+Sandbox status module
+Provides functions for checking sandbox runtime version and status
+
+---
+
+### `get_sandbox_runtime_version`
+
+Get sandbox-runtime version
+
+**Returns:**
+
+-   Version string or "not installed"
+
+### `check_sandbox_status`
+
+Check sandbox status and configuration Shows platform support, dependencies, and configuration info
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: statusline
+
+> Source: `lib/statusline/`
+
+- [detect](detect.md) — 1 functions
+- [install](install.md) — 2 functions
+- [status](status.md) — 1 functions
+
+
+
+# detect
+
+> **Module:** `statusline` | **File:** `lib/statusline/detect.sh`
+
+Statusline detection module
+Provides function for detecting statusline script installation
+
+---
+
+### `detect_statusline`
+
+Detect if statusline script is installed and executable
+
+**Returns:**
+
+-   0 - statusline script exists and is executable
+-   1 - statusline script not found or not executable
+
+
+
+# install
+
+> **Module:** `statusline` | **File:** `lib/statusline/install.sh`
+
+Statusline installation module
+Provides functions for installing and configuring statusline script
+
+---
+
+### `configure_statusline_in_settings`
+
+Configure statusLine in settings.json Updates Claude Code settings to enable custom status line script
+
+**Arguments:**
+
+- `  $1 - absolute path to statusline script`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+### `install_statusline_script`
+
+Install statusline script for Claude Code Creates claude-statusline.sh and configures settings.json
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `statusline` | **File:** `lib/statusline/status.sh`
+
+Statusline status module
+Provides function for checking statusline status and configuration
+
+---
+
+### `check_statusline_status`
+
+Check statusline status and configuration Shows script installation, settings config, data sources, and capabilities
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: update
+
+> Source: `lib/update/`
+
+- [cleanup](cleanup.md) — 2 functions
+- [isolated](isolated.md) — 1 functions
+- [update](update.md) — 1 functions
+
+
+
+# cleanup
+
+> **Module:** `update` | **File:** `lib/update/cleanup.sh`
+
+Update cleanup module
+Provides functions for cleaning up old Claude installations and recreating symlinks
+
+---
+
+### `cleanup_old_claude_installations`
+
+Cleanup old Claude Code installations Removes temporary .claude-code-* folders and broken symlinks
+
+**Returns:**
+
+-   0 - success
+
+### `recreate_claude_symlinks`
+
+Recreate Claude symlinks after update (NVM only) Finds the newest Claude installation and creates standard symlink
+
+**Returns:**
+
+-   0 - success
+-   1 - error (cli.js not found)
+
+
+
+# isolated
+
+> **Module:** `update` | **File:** `lib/update/isolated.sh`
+
+Update module for isolated environment
+Provides function for updating Claude Code in isolated NVM environment
+
+---
+
+### `update_isolated_claude`
+
+Update Claude Code in isolated environment Updates Claude Code via npm and refreshes lockfile
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# update
+
+> **Module:** `update` | **File:** `lib/update/update.sh`
+
+Update module for system and NVM installations
+Provides function for updating Claude Code in any environment
+
+---
+
+### `update_claude_code`
+
+Update Claude Code Universal update function for system and NVM installations
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
