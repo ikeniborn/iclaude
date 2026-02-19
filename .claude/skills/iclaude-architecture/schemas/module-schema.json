@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "iclaude Module Schema",
+  "description": "JSON schema for organizing iclaude.sh modules and their relationships",
+  "type": "object",
+  "properties": {
+    "module": {
+      "type": "string",
+      "description": "Module name (e.g., 'ProxyManagement', 'IsolatedEnvironment')"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Module version following semantic versioning"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Component name within this module"
+          },
+          "functions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Function name"
+                },
+                "line": {
+                  "type": "integer",
+                  "description": "Starting line number in iclaude.sh"
+                },
+                "returnValues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "description": "Exit code"
+                      },
+                      "meaning": {
+                        "type": "string",
+                        "description": "What this exit code means"
+                      }
+                    },
+                    "required": ["code", "meaning"]
+                  },
+                  "description": "Function return values and their meanings"
+                },
+                "sideEffects": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Side effects (files created/modified, environment variables set)"
+                },
+                "exampleUsage": {
+                  "type": "string",
+                  "description": "Example bash code showing how to use this function"
+                }
+              },
+              "required": ["name", "line"]
+            },
+            "description": "Functions in this component"
+          }
+        },
+        "required": ["name", "functions"]
+      },
+      "description": "Components within this module"
+    },
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Source module/component"
+          },
+          "to": {
+            "type": "string",
+            "description": "Target module/component"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["function_call", "file_read", "file_write", "env_var", "pipe"],
+            "description": "Type of interface/interaction"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the interface"
+          }
+        },
+        "required": ["from", "to", "type"]
+      },
+      "description": "Interfaces between modules/components"
+    },
+    "testCoverage": {
+      "type": "object",
+      "properties": {
+        "unitTests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of unit tests for this module"
+        },
+        "integrationTests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of integration tests involving this module"
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Test coverage percentage"
+        }
+      },
+      "description": "Test coverage for this module"
+    },
+    "changelog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "description": "Version number"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Release date (ISO 8601)"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of changes in this version"
+          }
+        },
+        "required": ["version", "date", "changes"]
+      },
+      "description": "Module changelog"
+    }
+  },
+  "required": ["module", "version", "components"]
+}
