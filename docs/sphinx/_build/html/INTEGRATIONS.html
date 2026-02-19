@@ -1,0 +1,1651 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Интеграции iclaude: AI-эффективность и возможности - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MIGRATION.html">Migration to Native Installer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="STATUSLINE.html">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture/README.html">Loop Mode Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="PLANNING.html">Planning Mode Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/memory.html">memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/operations.html">operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/executor.html">executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parallel.html">parallel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parser.html">parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/retry.html">retry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/state.html">state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/validator.html">validator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/worktree.html">worktree</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/INTEGRATIONS.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="iclaude-ai">
+<h1>Интеграции iclaude: AI-эффективность и возможности<a class="headerlink" href="#iclaude-ai" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p>Обзор интеграций с точки зрения того, <strong>что они дают пользователю Claude Code как AI-инструмента</strong> —
+какие возможности открывают, насколько повышают качество работы с ИИ, где есть ограничения.</p>
+<p>Дата: 2026-02-19 | Версия: 4.0</p>
+</div></blockquote>
+<hr class="docutils" />
+<section id="id1">
+<h2>Содержание<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ai-%D0%B2%D0%BE%D0%B7%D0%BC%D0%BE%D0%B6%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%BF%D0%BE-%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D1%8F%D0%BC"><span class="xref myst">AI-возможности по интеграциям</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BA%D0%B0%D1%80%D1%82%D0%B0-%D0%B2%D0%B7%D0%B0%D0%B8%D0%BC%D0%BE%D0%B4%D0%B5%D0%B9%D1%81%D1%82%D0%B2%D0%B8%D0%B9"><span class="xref myst">Карта взаимодействий</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B4%D0%B5%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9-%D0%BE%D0%B1%D0%B7%D0%BE%D1%80-%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D0%B9"><span class="xref myst">Детальный обзор интеграций</span></a></p></li>
+<li><p><a class="reference internal" href="#scoring-%D1%82%D0%B0%D0%B1%D0%BB%D0%B8%D1%86%D0%B0"><span class="xref myst">Scoring таблица</span></a></p></li>
+<li><p><a class="reference internal" href="#%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD%D0%B4%D1%83%D0%B5%D0%BC%D1%8B%D0%B5-%D0%B4%D0%BE%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D0%B8"><span class="xref myst">Рекомендуемые дополнительные интеграции</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D0%B8-%D0%BF%D0%B5%D1%80%D0%B5%D0%B3%D1%80%D1%83%D0%B6%D0%B0%D1%8E%D1%89%D0%B8%D0%B5-%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82"><span class="xref myst">Интеграции перегружающие проект</span></a></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="ai">
+<h2>AI-возможности по интеграциям<a class="headerlink" href="#ai" title="Link to this heading">¶</a></h2>
+<p>Ключевой вопрос для каждой интеграции: <strong>что именно она добавляет к возможностям Claude Code как AI-агента?</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Интеграция</p></th>
+<th class="head"><p>AI-возможность</p></th>
+<th class="head"><p>Без интеграции</p></th>
+<th class="head"><p>С интеграцией</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Chrome</strong></p></td>
+<td><p>Агент видит и управляет браузером</p></td>
+<td><p>Работа только с файлами/кодом</p></td>
+<td><p>Полноценная web-автоматизация: навигация, клики, скрейпинг, запись GIF</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Router</strong></p></td>
+<td><p>Выбор LLM-провайдера</p></td>
+<td><p>Только Anthropic Claude</p></td>
+<td><p>DeepSeek/Gemini/Ollama/GPT-4 — по задаче или стоимости</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>OAuth</strong></p></td>
+<td><p>Непрерывная сессия</p></td>
+<td><p>Токен истекает, сессия обрывается</p></td>
+<td><p>Автоматическое продление — сессии работают ~1 год без вмешательства</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>LSP</strong></p></td>
+<td><p>Code intelligence в контексте</p></td>
+<td><p>Синтаксическое дерево без семантики</p></td>
+<td><p>Hover, go-to-definition, типы — ИИ видит больше о структуре кода</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Loop Mode</strong></p></td>
+<td><p>Многошаговое выполнение задач</p></td>
+<td><p>Один запрос — один ответ</p></td>
+<td><p>Итеративный агент: задача → проверка → retry → коммит</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Sandbox</strong></p></td>
+<td><p>Безопасное выполнение кода</p></td>
+<td><p>Код выполняется в окружении пользователя</p></td>
+<td><p>Claude Code запускает код в изолированном namespace — без риска побочных эффектов</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Status Line</strong></p></td>
+<td><p>Видимость контекста и стоимости</p></td>
+<td><p>Расход токенов непрозрачен</p></td>
+<td><p>Реальное время: сколько контекста осталось, кэш, стоимость сессии</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Context Mgmt</strong></p></td>
+<td><p>Персистентная память между сессиями</p></td>
+<td><p>ИИ забывает всё после закрытия</p></td>
+<td><p>MEMORY.md загружается в system prompt — сохраняются паттерны, решения, конвенции</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Router (routing)</strong></p></td>
+<td><p>Интеллектуальный выбор модели</p></td>
+<td><p>Одна модель на все задачи</p></td>
+<td><p>Автоматически: Opus для большого контекста, DeepSeek для рутины</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Oh-My-Posh</strong></p></td>
+<td><p>Контекст окружения в prompt</p></td>
+<td><p>Стандартный prompt</p></td>
+<td><p>Информация о git-ветке, окружении, модели — дополнительный контекст для ИИ</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="id2">
+<h3>Критически важные для AI-работы<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-агент с памятью
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Без Proxy</strong>: Claude Code не работает в корпоративных сетях</p></li>
+<li><p><strong>Без OAuth auto-refresh</strong>: сессия обрывается через сутки</p></li>
+<li><p><strong>Без Chrome</strong>: агент слепой к браузеру</p></li>
+<li><p><strong>Без Sandbox</strong>: опасно запускать код от агента</p></li>
+<li><p><strong>Без Context</strong>: агент не помнит ничего между сессиями</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h2>Общая статистика<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Метрика</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Всего интеграций</p></td>
+<td><p><strong>13</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Всего модулей</p></td>
+<td><p><strong>64</strong> bash-файлов</p></td>
+</tr>
+<tr class="row-even"><td><p>Всего строк кода</p></td>
+<td><p><strong>~10,276</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Всего функций</p></td>
+<td><p><strong>193+</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>CLI флагов</p></td>
+<td><p><strong>71+</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Архитектура</p></td>
+<td><p>Полностью модульная (v4.0)</p></td>
+</tr>
+<tr class="row-even"><td><p>Внешних зависимостей</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jq</span></code>, <code class="docutils literal notranslate"><span class="pre">curl</span></code>, <code class="docutils literal notranslate"><span class="pre">git</span></code>, <code class="docutils literal notranslate"><span class="pre">node</span></code>, <code class="docutils literal notranslate"><span class="pre">npm</span></code>, Python 3</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h2>Архитектура интеграций<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>iclaude содержит <strong>13 внешних интеграций</strong>, реализованных как независимые bash-модули в <code class="docutils literal notranslate"><span class="pre">lib/</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>lib/
+├── chrome/       # Интеграция с браузером Chrome
+├── router/       # Claude Code Router (альтернативные LLM)
+├── oauth/        # OAuth токены Anthropic
+├── lsp/          # Language Server Protocol
+├── loop/         # Loop Mode с retry логикой
+├── statusline/   # Строка состояния Claude Code
+├── ohmyposh/     # Oh-My-Posh промпт
+├── sandbox/      # Определение sandbox-платформы
+├── gh/           # GitHub CLI
+├── context/      # Управление контекстом
+├── proxy/        # HTTP/HTTPS прокси
+├── docs/         # Sphinx документация
+└── nvm/          # NVM / Node.js окружение
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h2>Карта взаимодействий<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<section id="id6">
+<h3>Граф зависимостей при запуске<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TB
+    Main[&quot;iclaude.sh\n(entry point)&quot;]
+
+    subgraph CLI[&quot;CLI Layer&quot;]
+        Parse[&quot;command/parse.sh\nАргументы&quot;]
+        Dispatch[&quot;command/dispatch.sh\nМаршрутизация&quot;]
+    end
+
+    subgraph Core[&quot;Core Layer&quot;]
+        NVM[&quot;nvm/detect.sh\nNVM + Node.js&quot;]
+        Proxy[&quot;proxy/configure.sh\nПрокси&quot;]
+        OAuth[&quot;oauth/token.sh\nОAuth токен&quot;]
+        Config[&quot;config/isolated.sh\nИзоляция&quot;]
+    end
+
+    subgraph Integrations[&quot;Интеграции&quot;]
+        Chrome[&quot;chrome/detection.sh\nChrome browser&quot;]
+        Router[&quot;router/detect.sh\nCCR Router&quot;]
+        LSP[&quot;lsp/install.sh\nLSP серверы&quot;]
+        Loop[&quot;loop/executor.sh\nLoop Mode&quot;]
+        Status[&quot;statusline/status.sh\nСтрока состояния&quot;]
+        OhMyPosh[&quot;ohmyposh/install.sh\noh-my-posh&quot;]
+        Sandbox[&quot;sandbox/detect.sh\nSandbox&quot;]
+        GH[&quot;gh/install.sh\nGitHub CLI&quot;]
+        Context[&quot;context/operations.sh\nКонтекст&quot;]
+    end
+
+    subgraph External[&quot;Внешние системы&quot;]
+        AnthropicAPI[&quot;Anthropic API\nOAuth + Claude&quot;]
+        ChromeExt[&quot;Chrome Extension\nv1.0.36+&quot;]
+        OpenRouter[&quot;OpenRouter / DeepSeek\n/ Ollama / Gemini&quot;]
+        GitHubAPI[&quot;GitHub API\ngh CLI&quot;]
+        NPM[&quot;npm Registry\nLSP серверы&quot;]
+    end
+
+    Main --&gt; Parse --&gt; Dispatch
+    Dispatch --&gt; NVM
+    NVM --&gt; Proxy --&gt; OAuth
+    OAuth --&gt; Chrome
+    Chrome --&gt; Router
+    Router --&gt; Launch[&quot;launcher/launch.sh\nЗапуск Claude&quot;]
+
+    Chrome -.-&gt;|&quot;Chrome running?&quot;| ChromeExt
+    Router -.-&gt;|&quot;--router flag&quot;| OpenRouter
+    OAuth -.-&gt;|&quot;setup-token&quot;| AnthropicAPI
+    LSP -.-&gt;|&quot;npm install&quot;| NPM
+    GH -.-&gt;|&quot;curl download&quot;| GitHubAPI
+
+    Launch --&gt; Loop
+    Launch --&gt; Status
+    Launch --&gt; LSP
+    Launch --&gt; OhMyPosh
+    Launch --&gt; Sandbox
+    Launch --&gt; GH
+    Launch --&gt; Context
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h3>Последовательность запуска<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>sequenceDiagram
+    participant User
+    participant iclaude as iclaude.sh
+    participant NVM as nvm/detect
+    participant Proxy as proxy/configure
+    participant OAuth as oauth/token
+    participant Chrome as chrome/detection
+    participant Router as router/detect
+    participant Claude as Claude Code
+
+    User-&gt;&gt;iclaude: ./iclaude.sh [--router] [--no-chrome]
+    iclaude-&gt;&gt;NVM: Найти NVM + Node.js
+    NVM--&gt;&gt;iclaude: PATH настроен
+    iclaude-&gt;&gt;Proxy: Настроить прокси
+    Proxy--&gt;&gt;iclaude: HTTPS_PROXY установлен
+    iclaude-&gt;&gt;OAuth: Проверить токен
+    alt Токен истекает &lt; 7 дней
+        OAuth-&gt;&gt;Claude: claude setup-token
+        Claude--&gt;&gt;OAuth: Новый токен (~1 год)
+    end
+    OAuth--&gt;&gt;iclaude: Токен валиден
+    iclaude-&gt;&gt;Chrome: Проверить Chrome + расширение
+    alt Chrome не запущен
+        Chrome--&gt;&gt;iclaude: Предупреждение
+    end
+    iclaude-&gt;&gt;Router: Проверить CCR (если --router)
+    alt --router флаг
+        Router--&gt;&gt;iclaude: Использовать ccr
+    else нет флага
+        iclaude--&gt;&gt;iclaude: Использовать claude напрямую
+    end
+    iclaude-&gt;&gt;Claude: Запуск Claude Code
+</pre></div>
+</div>
+</section>
+<section id="loop-mode">
+<h3>Loop Mode<a class="headerlink" href="#loop-mode" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>flowchart TD
+    Start[&quot;./iclaude.sh --loop task.md&quot;]
+    Parse[&quot;loop/parser.sh\nload_all_tasks()&quot;]
+    Task[&quot;Задача N&quot;]
+    Invoke[&quot;loop/executor.sh\ninvoke_claude_iteration()&quot;]
+    Verify[&quot;loop/executor.sh\nverify_completion_promise()&quot;]
+    Success{&quot;Успех?&quot;}
+    MaxIter{&quot;Max\nитераций?&quot;}
+    Retry[&quot;loop/retry.sh\nexponential backoff\n2s → 4s → 8s → 60s&quot;]
+    Git[&quot;loop/git.sh\ngit commit + push&quot;]
+    Next[&quot;Следующая задача&quot;]
+    Done[&quot;Итог&quot;]
+
+    Start --&gt; Parse --&gt; Task --&gt; Invoke --&gt; Verify --&gt; Success
+    Success --&gt;|Да| Git --&gt; Next --&gt; Done
+    Success --&gt;|Нет| MaxIter
+    MaxIter --&gt;|Нет| Retry --&gt; Invoke
+    MaxIter --&gt;|Да| Next
+</pre></div>
+</div>
+</section>
+<section id="lsp-plugin">
+<h3>LSP и Plugin система<a class="headerlink" href="#lsp-plugin" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>flowchart LR
+    Install[&quot;--install-lsp\n[languages]&quot;]
+    Server[&quot;npm install -g\n@vtsls/language-server\npyright&quot;]
+    Plugin[&quot;claude plugin list&quot;]
+    Check{&quot;Установлен?&quot;}
+    Enable{&quot;Включён?&quot;}
+    InstPlugin[&quot;claude plugin install&quot;]
+    EnablePlugin[&quot;claude plugin enable&quot;]
+    Lock[&quot;save_isolated_lockfile()&quot;]
+
+    Install --&gt; Server --&gt; Plugin --&gt; Check
+    Check --&gt;|Нет| InstPlugin --&gt; Lock
+    Check --&gt;|Да| Enable
+    Enable --&gt;|Нет| EnablePlugin --&gt; Lock
+    Enable --&gt;|Да| Lock
+</pre></div>
+</div>
+</section>
+<section id="id8">
+<h3>Управление контекстом<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>flowchart TD
+    Context[&quot;context/operations.sh&quot;]
+    Export[&quot;context_cmd_export()\ntar.gz архив&quot;]
+    Import[&quot;context_cmd_import()\nРаспаковка&quot;]
+    Sync[&quot;context_cmd_sync()\nrsync worktrees&quot;]
+    Clean[&quot;context_cmd_clean()\nОчистка sessions&quot;]
+    Backup[&quot;context_cmd_backup()\nTimestamped backup&quot;]
+    Status[&quot;context_cmd_status()\nСтатус&quot;]
+    Memory[&quot;context/memory.sh\nMEMORY.md&quot;]
+
+    Context --&gt; Export
+    Context --&gt; Import
+    Context --&gt; Sync
+    Context --&gt; Clean
+    Context --&gt; Backup
+    Context --&gt; Status
+    Context --&gt; Memory
+
+    Memory --&gt;|&quot;200 строк limit&quot;| SysPrompt[&quot;System Prompt\nиерархия&quot;]
+    Sync --&gt;|rsync| Worktrees[&quot;Git Worktrees&quot;]
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id9">
+<h2>Детальный обзор интеграций<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<section id="chrome-browser-integration">
+<h3>1. Chrome Browser Integration<a class="headerlink" href="#chrome-browser-integration" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/chrome/detection.sh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>1 (74 строки)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p>По умолчанию ВКЛ, <code class="docutils literal notranslate"><span class="pre">--no-chrome</span></code> для отключения</p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p>Google Chrome/Chromium, расширение Claude in Chrome v1.0.36+</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Функции:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">is_chrome_running()</span></code> — проверка процесса Chrome в <code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">aux</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_claude_chrome_extension_installed()</span></code> — сканирование <code class="docutils literal notranslate"><span class="pre">~/.config/google-chrome/*/Extensions/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warn_chrome_integration()</span></code> — предупреждение если что-то недоступно</p></li>
+</ul>
+<p><strong>Возможности при работе:</strong> навигация по страницам, клики, ввод текста, чтение консоли, запись GIF.</p>
+</section>
+<hr class="docutils" />
+<section id="claude-code-router-llm">
+<h3>2. Claude Code Router (Альтернативные LLM)<a class="headerlink" href="#claude-code-router-llm" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/router/</span></code> (3 файла)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3 (detect.sh, install.sh, status.sh)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--router</span></code> (opt-in), <code class="docutils literal notranslate"><span class="pre">--install-router</span></code>, <code class="docutils literal notranslate"><span class="pre">--check-router</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&#64;musistudio/claude-code-router</span></code> (npm), <code class="docutils literal notranslate"><span class="pre">router.json</span></code> конфиг</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Поддерживаемые провайдеры:</strong> OpenRouter, DeepSeek, OpenAI, Ollama, Gemini, Volcengine, SiliconFlow</p>
+<p><strong>Маппинг моделей:</strong> Router перехватывает вызовы к Claude API-именам (например <code class="docutils literal notranslate"><span class="pre">claude-sonnet-4-5</span></code>) и перенаправляет к реальному провайдеру. Пример: <code class="docutils literal notranslate"><span class="pre">claude-sonnet-4-5</span></code> → DeepSeek <code class="docutils literal notranslate"><span class="pre">deepseek-chat</span></code>.</p>
+<p><strong>Правила маршрутизации</strong> из <code class="docutils literal notranslate"><span class="pre">router.json</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">context_length</span> <span class="pre">&gt;</span> <span class="pre">60000</span></code> → Opus (через OpenRouter)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">thinking_required</span></code> → Sonnet 3.5 (через OpenRouter)</p></li>
+<li><p>По умолчанию → <code class="docutils literal notranslate"><span class="pre">claude-sonnet-4-5</span></code> (mapped to DeepSeek)</p></li>
+</ul>
+<p><strong>По умолчанию:</strong> нативный Claude (без Router).</p>
+</section>
+<hr class="docutils" />
+<section id="oauth-token-management">
+<h3>3. OAuth Token Management<a class="headerlink" href="#oauth-token-management" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/oauth/token.sh</span></code> (261 строка)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p>Автоматически при запуске, <code class="docutils literal notranslate"><span class="pre">--refresh-token</span></code> для ручного</p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jq</span></code>, Claude Code CLI, браузер для OAuth</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Логика:</strong> проверяет <code class="docutils literal notranslate"><span class="pre">expiresAt</span></code> в <code class="docutils literal notranslate"><span class="pre">.credentials.json</span></code>, обновляет если &lt; 7 дней до истечения через <code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">setup-token</span></code> (~1 год токены).</p>
+</section>
+<hr class="docutils" />
+<section id="language-server-protocol-lsp">
+<h3>4. Language Server Protocol (LSP)<a class="headerlink" href="#language-server-protocol-lsp" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/lsp/</span></code> (3 файла)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3 (install.sh, status.sh, repair.sh)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--install-lsp</span> <span class="pre">[langs]</span></code>, <code class="docutils literal notranslate"><span class="pre">--check-lsp</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p>npm, Claude Code CLI (<code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">plugin</span></code>), Go/Rust toolchain</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Поддерживаемые языки:</strong></p>
+<ul class="simple">
+<li><p>✅ TypeScript и Python — полная автоматизация (npm install + claude plugin)</p></li>
+<li><p>⚠️ Go и Rust — только вывод инструкций для ручной установки</p></li>
+<li><p>❌ C#, Java, Kotlin, Lua, PHP, C/C++, Swift — в коде не реализованы (упомянуты в CLAUDE.md, но отсутствуют в <code class="docutils literal notranslate"><span class="pre">lib/lsp/install.sh</span></code>)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="loop-mode-retry-logic">
+<h3>5. Loop Mode (Retry Logic)<a class="headerlink" href="#loop-mode-retry-logic" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/loop/</span></code> (8 файлов)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>8 (parser, executor, retry, validator, git, parallel, state, worktree)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--loop</span> <span class="pre">task.md</span></code> (seq), <code class="docutils literal notranslate"><span class="pre">--loop-parallel</span> <span class="pre">task.md</span> <span class="pre">--max-parallel</span> <span class="pre">N</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p>Claude Code CLI, git, git worktrees</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная (sequential + parallel)</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Backoff:</strong> 2s → 4s → 8s → 16s → 32s → 60s (cap). <strong>Git:</strong> автокоммит с <code class="docutils literal notranslate"><span class="pre">Co-Authored-By:</span> <span class="pre">Claude</span></code>. <strong>Parallel:</strong> изолированные git worktrees для каждой группы задач (8 Phase groups).</p>
+</section>
+<hr class="docutils" />
+<section id="status-line">
+<h3>6. Status Line<a class="headerlink" href="#status-line" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/statusline/</span></code> (detect.sh, install.sh, status.sh)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3 + скрипт <code class="docutils literal notranslate"><span class="pre">claude-statusline.sh</span></code> (генерируется при установке)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--install-statusline</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jq</span></code>, session data, oh-my-posh (опционально)</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Формат:</strong> <code class="docutils literal notranslate"><span class="pre">112,762</span> <span class="pre">total</span> <span class="pre">|</span> <span class="pre">50,000</span> <span class="pre">active</span> <span class="pre">(25%)</span> <span class="pre">[cache]79K</span> <span class="pre">Sonnet</span> <span class="pre">4.5</span> <span class="pre">$1.06</span> <span class="pre">[proxy]</span> <span class="pre">[router]deepseek</span> <span class="pre">[master]</span></code></p>
+<p><strong>Оптимизация:</strong> append-only режим (19x быстрее полной генерации).</p>
+</section>
+<hr class="docutils" />
+<section id="oh-my-posh">
+<h3>7. Oh-My-Posh<a class="headerlink" href="#oh-my-posh" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/ohmyposh/</span></code> (3 файла)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3 (detect.sh, install.sh + файл темы)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--install-ohmyposh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">curl</span></code>, <code class="docutils literal notranslate"><span class="pre">jq</span></code>, <code class="docutils literal notranslate"><span class="pre">tar</span></code>, GitHub Releases API</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Платформы:</strong> linux-amd64, linux-arm64, darwin-amd64, darwin-arm64.</p>
+</section>
+<hr class="docutils" />
+<section id="sandbox-claude-code-native-sandbox">
+<h3>8. Sandbox (Claude Code native sandbox)<a class="headerlink" href="#sandbox-claude-code-native-sandbox" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/sandbox/</span></code> (3 файла: detect.sh, install.sh, status.sh)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--sandbox-install</span></code>, <code class="docutils literal notranslate"><span class="pre">--check-sandbox</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p>bubblewrap + socat (Linux/WSL2), <code class="docutils literal notranslate"><span class="pre">&#64;anthropic-ai/sandbox-runtime</span></code> (npm, <code class="docutils literal notranslate"><span class="pre">srt</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Назначение:</strong> установка зависимостей для нативного <code class="docutils literal notranslate"><span class="pre">--sandbox</span></code> флага Claude Code. Позволяет Claude Code выполнять код в изолированном окружении (bubblewrap + seccomp фильтры).</p>
+<p><strong>Компоненты по платформам:</strong></p>
+<ul class="simple">
+<li><p>macOS: встроенный <strong>Seatbelt</strong> (зависимостей не нужно)</p></li>
+<li><p>Linux / WSL2: <strong>bubblewrap</strong> (<code class="docutils literal notranslate"><span class="pre">bwrap</span></code>) + <strong>socat</strong> + <strong>&#64;anthropic-ai/sandbox-runtime</strong></p></li>
+<li><p>WSL1 / Windows: не поддерживается</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="github-cli-gh">
+<h3>9. GitHub CLI (gh)<a class="headerlink" href="#github-cli-gh" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/gh/</span></code> (install.sh 106 строк + status.sh)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--install-gh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">curl</span></code>, <code class="docutils literal notranslate"><span class="pre">tar</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная (версия hardcoded v2.45.0, только Linux)</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Особенности:</strong></p>
+<ul class="simple">
+<li><p>Версия жёстко прописана (<code class="docutils literal notranslate"><span class="pre">v2.45.0</span></code>), не обновляется автоматически</p></li>
+<li><p>⚠️ <strong>Только Linux</strong>: URL загрузки hardcodes <code class="docutils literal notranslate"><span class="pre">linux_${arch}</span></code>. macOS не поддерживается installer’ом</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="context-management">
+<h3>10. Context Management<a class="headerlink" href="#context-management" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/context/</span></code> (3 файла, ~940 строк)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>3 (init.sh, memory.sh, operations.sh)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--context-export/import/sync/clean/backup/status</span></code>, <code class="docutils literal notranslate"><span class="pre">--context-memory-*</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rsync</span></code>, <code class="docutils literal notranslate"><span class="pre">tar</span></code>, <code class="docutils literal notranslate"><span class="pre">grep</span></code>, <code class="docutils literal notranslate"><span class="pre">find</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Операции:</strong> export, import, sync (worktrees), clean, backup, status, memory management.</p>
+</section>
+<hr class="docutils" />
+<section id="proxy-management">
+<h3>11. Proxy Management<a class="headerlink" href="#proxy-management" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/proxy/</span></code> (4 файла)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>4 (validate.sh, configure.sh, credentials.sh, git.sh)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--proxy</span> <span class="pre">URL</span></code>, <code class="docutils literal notranslate"><span class="pre">--no-proxy</span></code>, <code class="docutils literal notranslate"><span class="pre">--test</span></code>, <code class="docutils literal notranslate"><span class="pre">--proxy-ca</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">curl</span></code>, <code class="docutils literal notranslate"><span class="pre">openssl</span></code> (опционально)</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Протоколы:</strong> HTTPS (рекомендован), HTTP. SOCKS5 — <strong>не поддерживается</strong> (undici).</p>
+</section>
+<hr class="docutils" />
+<section id="sphinx">
+<h3>12. Sphinx Документация<a class="headerlink" href="#sphinx" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/docs/</span></code> (7 файлов)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>7 (init, build, serve, install, bash-parser, resolve, status)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--install-docs</span></code>, <code class="docutils literal notranslate"><span class="pre">--build-docs</span></code>, <code class="docutils literal notranslate"><span class="pre">--serve-docs</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p>Python 3, <code class="docutils literal notranslate"><span class="pre">sphinx&gt;=8.0</span></code>, <code class="docutils literal notranslate"><span class="pre">furo</span></code>, <code class="docutils literal notranslate"><span class="pre">myst-parser</span></code>, <code class="docutils literal notranslate"><span class="pre">sphinxcontrib-mermaid</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Особенность:</strong> генерирует <code class="docutils literal notranslate"><span class="pre">docs/llms.txt</span></code> и <code class="docutils literal notranslate"><span class="pre">docs/llms-full.txt</span></code> для AI-агентов.</p>
+</section>
+<hr class="docutils" />
+<section id="nvm-node-js">
+<h3>13. NVM / Node.js (базовая инфраструктура)<a class="headerlink" href="#nvm-node-js" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Модуль</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lib/nvm/</span></code> (6 файлов)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Файлов</p></td>
+<td><p>6 (detect, claude, install, setup, cleanup, repair)</p></td>
+</tr>
+<tr class="row-even"><td><p>Флаги</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--isolated-install</span></code>, <code class="docutils literal notranslate"><span class="pre">--repair-isolated</span></code>, <code class="docutils literal notranslate"><span class="pre">--cleanup-isolated</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Зависимости</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">curl</span></code>, <code class="docutils literal notranslate"><span class="pre">bash</span></code>, интернет</p></td>
+</tr>
+<tr class="row-even"><td><p>Статус</p></td>
+<td><p><strong>Полная</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="scoring">
+<h2>Scoring таблица<a class="headerlink" href="#scoring" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>Оценка с точки зрения <strong>ценности для AI-работы</strong> с Claude Code.
+Шкала: 1 (низко) → 5 (высоко). Итог = среднее четырёх критериев.</p>
+</div></blockquote>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Интеграция</p></th>
+<th class="head text-center"><p>AI-ценность</p></th>
+<th class="head text-center"><p>Зрелость</p></th>
+<th class="head text-center"><p>Надёжность</p></th>
+<th class="head text-center"><p>Обслуживаемость</p></th>
+<th class="head text-center"><p><strong>Итог</strong></p></th>
+<th class="head text-center"><p><strong>Приоритет</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Proxy Management</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p><strong>5.0</strong></p></td>
+<td class="text-center"><p>🔴 Критичный</p></td>
+</tr>
+<tr class="row-odd"><td><p>NVM / Node.js</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p><strong>4.8</strong></p></td>
+<td class="text-center"><p>🔴 Критичный</p></td>
+</tr>
+<tr class="row-even"><td><p>OAuth Token</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p><strong>4.8</strong></p></td>
+<td class="text-center"><p>🔴 Критичный</p></td>
+</tr>
+<tr class="row-odd"><td><p>Chrome Integration</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p><strong>4.5</strong></p></td>
+<td class="text-center"><p>🔴 Критичный</p></td>
+</tr>
+<tr class="row-even"><td><p>Sandbox (Claude)</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p><strong>4.3</strong></p></td>
+<td class="text-center"><p>🟠 Высокий</p></td>
+</tr>
+<tr class="row-odd"><td><p>Context Management</p></td>
+<td class="text-center"><p>5</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>4.0</strong></p></td>
+<td class="text-center"><p>🟠 Высокий</p></td>
+</tr>
+<tr class="row-even"><td><p>Loop Mode</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>3.8</strong></p></td>
+<td class="text-center"><p>🟠 Высокий</p></td>
+</tr>
+<tr class="row-odd"><td><p>LSP Servers</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>3.8</strong></p></td>
+<td class="text-center"><p>🟠 Высокий</p></td>
+</tr>
+<tr class="row-even"><td><p>Status Line</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p><strong>3.8</strong></p></td>
+<td class="text-center"><p>🟠 Высокий</p></td>
+</tr>
+<tr class="row-odd"><td><p>Router (alt LLM)</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>3.5</strong></p></td>
+<td class="text-center"><p>🟡 Средний</p></td>
+</tr>
+<tr class="row-even"><td><p>GitHub CLI</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>4</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>3.3</strong></p></td>
+<td class="text-center"><p>🟡 Средний</p></td>
+</tr>
+<tr class="row-odd"><td><p>Sphinx Docs</p></td>
+<td class="text-center"><p>2</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>2.8</strong></p></td>
+<td class="text-center"><p>🟡 Средний</p></td>
+</tr>
+<tr class="row-even"><td><p>Oh-My-Posh</p></td>
+<td class="text-center"><p>2</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p>3</p></td>
+<td class="text-center"><p><strong>2.8</strong></p></td>
+<td class="text-center"><p>🟢 Низкий</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="id10">
+<h3>Легенда критериев<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Критерий</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>AI-ценность</strong></p></td>
+<td><p>Насколько расширяет возможности Claude Code как AI-агента (1=нет, 5=критично для работы)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Зрелость</strong></p></td>
+<td><p>Полнота реализации (1=заглушка, 5=production-ready)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Надёжность</strong></p></td>
+<td><p>Обработка ошибок и graceful degradation (1=нет, 5=отличная)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Обслуживаемость</strong></p></td>
+<td><p>Лёгкость поддержки и обновления (1=сложно, 5=легко)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id11">
+<h2>Рекомендуемые дополнительные интеграции<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<section id="id12">
+<h3>Высокий приоритет<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Интеграция</p></th>
+<th class="head text-center"><p>Ценность</p></th>
+<th class="head text-center"><p>Сложность</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>MCP Server Management</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>3/5</p></td>
+<td><p>Автоустановка/обновление MCP серверов в <code class="docutils literal notranslate"><span class="pre">mcp.json</span></code>. Аналогично LSP плагинам</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Docker Integration</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>3/5</p></td>
+<td><p>Изолированный запуск Claude Code в контейнере. Полная изоляция файловой системы</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Auto-update Lockfile</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>2/5</p></td>
+<td><p>Автопроверка новых версий компонентов и обновление lockfile при изменениях</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Pre-commit Hooks</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>2/5</p></td>
+<td><p>Интеграция <code class="docutils literal notranslate"><span class="pre">husky</span></code>/<code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> для автоматического code review при коммите</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id13">
+<h3>Средний приоритет<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Интеграция</p></th>
+<th class="head text-center"><p>Ценность</p></th>
+<th class="head text-center"><p>Сложность</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Direnv</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>1/5</p></td>
+<td><p>Автоматическая загрузка env vars из <code class="docutils literal notranslate"><span class="pre">.envrc</span></code> при входе в директорию</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>tmux/Screen</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>2/5</p></td>
+<td><p>Persistent sessions, множество окон, attach/detach</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Metrics Dashboard</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>3/5</p></td>
+<td><p>Визуализация использования токенов, стоимости, популярных команд через InfluxDB/Grafana</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Slack/Telegram Notify</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>2/5</p></td>
+<td><p>Уведомления о завершении Loop Mode задач</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Cloud Backup</strong></p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>3/5</p></td>
+<td><p>Автоматическое резервное копирование <code class="docutils literal notranslate"><span class="pre">.claude-isolated/</span></code> в S3/GCS</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id14">
+<h3>Низкий приоритет / Экспериментальные<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Интеграция</p></th>
+<th class="head text-center"><p>Ценность</p></th>
+<th class="head text-center"><p>Сложность</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Jupyter Integration</strong></p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>4/5</p></td>
+<td><p>Запуск Claude в контексте Jupyter Notebook</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>VS Code Extension</strong></p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>5/5</p></td>
+<td><p>GUI для управления iclaude из VS Code</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Web UI Dashboard</strong></p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>4/5</p></td>
+<td><p>Веб-интерфейс для мониторинга и управления</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>AI Model Benchmarks</strong></p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>3/5</p></td>
+<td><p>Сравнительное тестирование провайдеров из Router</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id15">
+<h2>Интеграции перегружающие проект<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>Предупреждения о сложности, которые стоит учитывать при развитии проекта.</p>
+</div></blockquote>
+<section id="id16">
+<h3>Проблемы текущих интеграций<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<section id="github-cli">
+<h4>⚠️ GitHub CLI — жёсткая версия<a class="headerlink" href="#github-cli" title="Link to this heading">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Проблема</span><span class="p">:</span> <span class="n">gh</span> <span class="n">v2</span><span class="mf">.45.0</span> <span class="n">hardcoded</span> <span class="n">в</span> <span class="n">lib</span><span class="o">/</span><span class="n">gh</span><span class="o">/</span><span class="n">install</span><span class="o">.</span><span class="n">sh</span>
+<span class="n">Риск</span><span class="p">:</span>     <span class="n">Устаревание</span><span class="p">,</span> <span class="n">несовместимость</span> <span class="n">с</span> <span class="n">новыми</span> <span class="n">API</span>
+<span class="n">Рекомендация</span><span class="p">:</span> <span class="n">Использовать</span> <span class="n">GitHub</span> <span class="n">Releases</span> <span class="n">API</span> <span class="p">(</span><span class="n">как</span> <span class="n">oh</span><span class="o">-</span><span class="n">my</span><span class="o">-</span><span class="n">posh</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="oh-my-posh-status-line">
+<h4>⚠️ Oh-My-Posh — дублирование функции Status Line<a class="headerlink" href="#oh-my-posh-status-line" title="Link to this heading">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Проблема</span><span class="p">:</span> <span class="n">Две</span> <span class="n">системы</span> <span class="n">для</span> <span class="n">кастомизации</span> <span class="n">промпта</span><span class="o">/</span><span class="n">строки</span> <span class="n">состояния</span>
+          <span class="o">-</span> <span class="n">claude</span><span class="o">-</span><span class="n">statusline</span><span class="o">.</span><span class="n">sh</span> <span class="p">(</span><span class="n">специфичный</span> <span class="n">для</span> <span class="n">Claude</span> <span class="n">Code</span><span class="p">)</span>
+          <span class="o">-</span> <span class="n">oh</span><span class="o">-</span><span class="n">my</span><span class="o">-</span><span class="n">posh</span> <span class="p">(</span><span class="n">general</span><span class="o">-</span><span class="n">purpose</span> <span class="n">промпт</span><span class="p">)</span>
+<span class="n">Риск</span><span class="p">:</span>     <span class="n">Конфликт</span> <span class="n">конфигураций</span><span class="p">,</span> <span class="n">путаница</span> <span class="n">пользователей</span>
+<span class="n">Рекомендация</span><span class="p">:</span> <span class="n">Определить</span> <span class="n">чёткую</span> <span class="n">границу</span><span class="p">:</span> <span class="n">oh</span><span class="o">-</span><span class="n">my</span><span class="o">-</span><span class="n">posh</span> <span class="n">для</span> <span class="n">терминала</span><span class="p">,</span>
+              <span class="n">statusline</span> <span class="n">для</span> <span class="n">Claude</span> <span class="n">Code</span> <span class="n">UI</span>
+</pre></div>
+</div>
+</section>
+<section id="sphinx-llms-txt-bash">
+<h4>⚠️ Sphinx + llms.txt — избыточность для bash-проекта<a class="headerlink" href="#sphinx-llms-txt-bash" title="Link to this heading">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Проблема: 7 файлов в lib/docs/ для генерации документации bash-скрипта
+          Sphinx — Python-ориентированный инструмент
+Риск:     Высокая сложность поддержки (bash-parser.sh парсит bash для Sphinx)
+Рекомендация: Рассмотреть замену на mdBook или mkdocs
+              (меньше зависимостей, нативный Markdown)
+</pre></div>
+</div>
+</section>
+<section id="context-management-claude-skills">
+<h4>⚠️ Context Management — пересечение с Claude Skills<a class="headerlink" href="#context-management-claude-skills" title="Link to this heading">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Проблема</span><span class="p">:</span> <span class="n">lib</span><span class="o">/</span><span class="n">context</span><span class="o">/</span> <span class="n">реализует</span> <span class="n">управление</span> <span class="n">памятью</span> <span class="n">и</span> <span class="n">worktree</span><span class="o">-</span><span class="n">sync</span><span class="p">,</span>
+          <span class="n">частично</span> <span class="n">дублируя</span> <span class="n">функциональность</span> <span class="n">context</span><span class="o">-</span><span class="n">management</span> <span class="n">skill</span>
+<span class="n">Риск</span><span class="p">:</span>     <span class="n">Два</span> <span class="n">разных</span> <span class="n">способа</span> <span class="n">делать</span> <span class="n">одно</span> <span class="n">и</span> <span class="n">то</span> <span class="n">же</span>
+<span class="n">Рекомендация</span><span class="p">:</span> <span class="n">Объединить</span> <span class="n">в</span> <span class="n">единый</span> <span class="n">интерфейс</span> <span class="n">или</span> <span class="n">чётко</span> <span class="n">документировать</span>
+              <span class="n">разграничение</span><span class="p">:</span> <span class="n">skill</span> <span class="p">(</span><span class="n">пользователь</span><span class="p">)</span> <span class="n">vs</span> <span class="n">lib</span> <span class="p">(</span><span class="n">автоматически</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id17">
+<h3>Общие рекомендации по балансу<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Рекомендация</p></th>
+<th class="head"><p>Обоснование</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Не добавлять Docker без чёткого use-case</p></td>
+<td><p>Увеличивает зависимости на 500MB+</p></td>
+</tr>
+<tr class="row-odd"><td><p>Не добавлять веб-интерфейс</p></td>
+<td><p>Противоречит CLI-природе проекта</p></td>
+</tr>
+<tr class="row-even"><td><p>Не дублировать LSP логику</p></td>
+<td><p>Claude Code имеет собственный plugin API</p></td>
+</tr>
+<tr class="row-odd"><td><p>Параллельный Loop Mode — только через worktrees</p></td>
+<td><p>Иначе race conditions с git</p></td>
+</tr>
+<tr class="row-even"><td><p>MCP серверы — следующий логичный шаг</p></td>
+<td><p>Нативная интеграция с Claude Code</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id18">
+<h2>Итоговая карта зрелости<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>quadrantChart
+    title Ценность vs Зрелость интеграций
+    x-axis Низкая зрелость --&gt; Высокая зрелость
+    y-axis Низкая ценность --&gt; Высокая ценность
+    quadrant-1 Поддерживать
+    quadrant-2 Развивать
+    quadrant-3 Пересмотреть
+    quadrant-4 Наблюдать
+
+    Proxy: [0.95, 0.95]
+    OAuth: [0.90, 0.95]
+    NVM: [0.95, 0.90]
+    Chrome: [0.85, 0.85]
+    LSP: [0.75, 0.75]
+    StatusLine: [0.80, 0.75]
+    Context: [0.75, 0.80]
+    LoopMode: [0.80, 0.80]
+    Sandbox: [0.80, 0.75]
+    Router: [0.80, 0.65]
+    GitHub_CLI: [0.65, 0.55]
+    Sphinx: [0.65, 0.55]
+    OhMyPosh: [0.60, 0.40]
+    MCP_servers: [0.05, 0.90]
+    DockerIntegration: [0.05, 0.75]
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><em>Документ сгенерирован на основе анализа 64 bash-файлов в 22 директориях <code class="docutils literal notranslate"><span class="pre">lib/</span></code>. Версия архитектуры: 4.0 (полностью модульная).</em></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Интеграции iclaude: AI-эффективность и возможности</a><ul>
+<li><a class="reference internal" href="#id1">Содержание</a></li>
+<li><a class="reference internal" href="#ai">AI-возможности по интеграциям</a><ul>
+<li><a class="reference internal" href="#id2">Критически важные для AI-работы</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id3">Общая статистика</a></li>
+<li><a class="reference internal" href="#id4">Архитектура интеграций</a></li>
+<li><a class="reference internal" href="#id5">Карта взаимодействий</a><ul>
+<li><a class="reference internal" href="#id6">Граф зависимостей при запуске</a></li>
+<li><a class="reference internal" href="#id7">Последовательность запуска</a></li>
+<li><a class="reference internal" href="#loop-mode">Loop Mode</a></li>
+<li><a class="reference internal" href="#lsp-plugin">LSP и Plugin система</a></li>
+<li><a class="reference internal" href="#id8">Управление контекстом</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id9">Детальный обзор интеграций</a><ul>
+<li><a class="reference internal" href="#chrome-browser-integration">1. Chrome Browser Integration</a></li>
+<li><a class="reference internal" href="#claude-code-router-llm">2. Claude Code Router (Альтернативные LLM)</a></li>
+<li><a class="reference internal" href="#oauth-token-management">3. OAuth Token Management</a></li>
+<li><a class="reference internal" href="#language-server-protocol-lsp">4. Language Server Protocol (LSP)</a></li>
+<li><a class="reference internal" href="#loop-mode-retry-logic">5. Loop Mode (Retry Logic)</a></li>
+<li><a class="reference internal" href="#status-line">6. Status Line</a></li>
+<li><a class="reference internal" href="#oh-my-posh">7. Oh-My-Posh</a></li>
+<li><a class="reference internal" href="#sandbox-claude-code-native-sandbox">8. Sandbox (Claude Code native sandbox)</a></li>
+<li><a class="reference internal" href="#github-cli-gh">9. GitHub CLI (gh)</a></li>
+<li><a class="reference internal" href="#context-management">10. Context Management</a></li>
+<li><a class="reference internal" href="#proxy-management">11. Proxy Management</a></li>
+<li><a class="reference internal" href="#sphinx">12. Sphinx Документация</a></li>
+<li><a class="reference internal" href="#nvm-node-js">13. NVM / Node.js (базовая инфраструктура)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#scoring">Scoring таблица</a><ul>
+<li><a class="reference internal" href="#id10">Легенда критериев</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id11">Рекомендуемые дополнительные интеграции</a><ul>
+<li><a class="reference internal" href="#id12">Высокий приоритет</a></li>
+<li><a class="reference internal" href="#id13">Средний приоритет</a></li>
+<li><a class="reference internal" href="#id14">Низкий приоритет / Экспериментальные</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id15">Интеграции перегружающие проект</a><ul>
+<li><a class="reference internal" href="#id16">Проблемы текущих интеграций</a><ul>
+<li><a class="reference internal" href="#github-cli">⚠️ GitHub CLI — жёсткая версия</a></li>
+<li><a class="reference internal" href="#oh-my-posh-status-line">⚠️ Oh-My-Posh — дублирование функции Status Line</a></li>
+<li><a class="reference internal" href="#sphinx-llms-txt-bash">⚠️ Sphinx + llms.txt — избыточность для bash-проекта</a></li>
+<li><a class="reference internal" href="#context-management-claude-skills">⚠️ Context Management — пересечение с Claude Skills</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id17">Общие рекомендации по балансу</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id18">Итоговая карта зрелости</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=fa37347f"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>

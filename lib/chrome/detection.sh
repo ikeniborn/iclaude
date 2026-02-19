@@ -2,7 +2,13 @@
 # lib/chrome/detection.sh
 # Chrome browser and extension detection utilities
 
+#######################################
 # Check if Chrome browser is running
+# Returns:
+#   0 - Chrome is running
+#   1 - Chrome is not running
+# Example: is_chrome_running && echo "Chrome is up"
+#######################################
 if ! declare -F is_chrome_running &>/dev/null; then
 is_chrome_running() {
     if ps aux | grep -E "(/opt/google/chrome/chrome|/usr/bin/chromium)" | grep -v "grep\|crashpad" > /dev/null 2>&1; then
@@ -13,7 +19,14 @@ is_chrome_running() {
 }
 fi
 
+#######################################
 # Check if Claude in Chrome extension is installed
+# Searches Google Chrome and Chromium profile directories for the extension manifest
+# Returns:
+#   0 - Extension is installed
+#   1 - Extension not found
+# Example: is_claude_chrome_extension_installed && echo "Extension found"
+#######################################
 if ! declare -F is_claude_chrome_extension_installed &>/dev/null; then
 is_claude_chrome_extension_installed() {
     local chrome_dir="$HOME/.config/google-chrome"
@@ -40,7 +53,14 @@ is_claude_chrome_extension_installed() {
 }
 fi
 
+#######################################
 # Warn user if Chrome integration won't work
+# Checks if Chrome is running and extension is installed, prints guidance if not
+# Returns:
+#   0 - Chrome and extension are ready
+#   1 - Chrome not running or extension not installed
+# Example: warn_chrome_integration || exit 1
+#######################################
 if ! declare -F warn_chrome_integration &>/dev/null; then
 warn_chrome_integration() {
     local chrome_running=false

@@ -54,7 +54,7 @@ generate_api_reference() {
             _parse_bash_module "$sh_file" "$file_name" "$module_name" > "$out_file"
 
             local file_funcs
-            file_funcs=$(grep -c "^### \`" "$out_file" 2>/dev/null || true)
+            file_funcs=$(grep -c "^## \`" "$out_file" 2>/dev/null || true)
             func_count=$((func_count + file_funcs))
             module_file_count=$((module_file_count + 1))
         done
@@ -197,7 +197,7 @@ _format_function_doc() {
     shift
     local comment_lines=("$@")
 
-    echo "### \`$func_name\`"
+    echo "## \`$func_name\`"
     echo ""
 
     local description=""
@@ -300,23 +300,33 @@ _write_module_index() {
     local src_dir="$3"
 
     local index_file="$out_dir/index.md"
+    local toc_files=()
+
+    # Collect file names and build visible list
+    local list_output=""
+    for sh_file in "$src_dir"*.sh; do
+        [[ -f "$sh_file" ]] || continue
+        local file_name
+        file_name=$(basename "$sh_file" .sh)
+        toc_files+=("$file_name")
+        local func_count
+        func_count=$(grep -c "^## \`" "$out_dir/$file_name.md" 2>/dev/null || true)
+        list_output+="- [$file_name]($file_name.md) — $func_count functions"$'\n'
+    done
+
     {
         echo "# Module: $module_name"
         echo ""
         echo "> Source: \`lib/$module_name/\`"
         echo ""
+        echo "$list_output"
 
-        # List all .sh files in this module
-        for sh_file in "$src_dir"*.sh; do
-            [[ -f "$sh_file" ]] || continue
-            local file_name
-            file_name=$(basename "$sh_file" .sh)
-            local func_count
-            func_count=$(grep -c "^### \`" "$out_dir/$file_name.md" 2>/dev/null || true)
-            echo "- [$file_name]($file_name.md) — $func_count functions"
-        done
-
-        echo ""
+        # Hidden toctree so Sphinx includes all files (avoids "not in toctree" warnings)
+        if [[ ${#toc_files[@]} -gt 0 ]]; then
+            printf '%s\n' '```{toctree}' ':hidden:' ''
+            printf '%s\n' "${toc_files[@]}"
+            printf '%s\n' '```' ''
+        fi
     } > "$index_file"
 }
 fi

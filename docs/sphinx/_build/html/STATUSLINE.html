@@ -1,0 +1,1842 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Use Cases" href="USE_CASES.html"><link rel="prev" title="Настройка прокси" href="PROXY.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Claude Statusline Documentation - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MIGRATION.html">Migration to Native Installer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture/README.html">Loop Mode Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="PLANNING.html">Planning Mode Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/memory.html">memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/operations.html">operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/executor.html">executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parallel.html">parallel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parser.html">parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/retry.html">retry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/state.html">state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/validator.html">validator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/worktree.html">worktree</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/STATUSLINE.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="claude-statusline-documentation">
+<h1>Claude Statusline Documentation<a class="headerlink" href="#claude-statusline-documentation" title="Link to this heading">¶</a></h1>
+<p>Complete documentation for <code class="docutils literal notranslate"><span class="pre">claude-statusline.sh</span></code> - custom status line script for Claude Code.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<section id="purpose">
+<h3>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h3>
+<p>Provide real-time session statistics in Claude Code status bar, displaying context usage, cost, cache metrics, and session metadata.</p>
+</section>
+<section id="data-source">
+<h3>Data Source<a class="headerlink" href="#data-source" title="Link to this heading">¶</a></h3>
+<p>Receives JSON session data via STDIN from Claude Code. The script parses this data and formats it for display in the status bar.</p>
+</section>
+<section id="required-version">
+<h3>Required Version<a class="headerlink" href="#required-version" title="Link to this heading">¶</a></h3>
+<p>Claude Code v2.1+ (uses nested <code class="docutils literal notranslate"><span class="pre">context_window</span></code> object)</p>
+</section>
+<section id="script-location">
+<h3>Script Location<a class="headerlink" href="#script-location" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh</span></code></p>
+</section>
+</section>
+<section id="multi-provider-support-new">
+<h2>✨ Multi-Provider Support (NEW)<a class="headerlink" href="#multi-provider-support-new" title="Link to this heading">¶</a></h2>
+<p><strong>Version:</strong> 4.1+ (February 2026)</p>
+<p>Status line now automatically detects and supports multiple LLM providers:</p>
+<section id="supported-providers">
+<h3>Supported Providers<a class="headerlink" href="#supported-providers" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Provider</p></th>
+<th class="head"><p>Icon</p></th>
+<th class="head"><p>Cost Calculation</p></th>
+<th class="head"><p>Cache Support</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Anthropic</strong> (Claude)</p></td>
+<td><p>None</p></td>
+<td><p>Pre-calculated</p></td>
+<td><p>✅ Yes</p></td>
+<td><p>Native provider, 100% backward compatible</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>OpenAI</strong></p></td>
+<td><p>🤖</p></td>
+<td><p>Calculated</p></td>
+<td><p>❌ No</p></td>
+<td><p>gpt-4, gpt-3.5-turbo, o1 models</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>DeepSeek</strong></p></td>
+<td><p>🤖</p></td>
+<td><p>Calculated</p></td>
+<td><p>❌ No</p></td>
+<td><p>deepseek-chat, deepseek-coder, deepseek-r1</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>OpenRouter</strong></p></td>
+<td><p>🤖</p></td>
+<td><p>Calculated</p></td>
+<td><p>❌ No</p></td>
+<td><p>Various models via OpenRouter API</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Ollama</strong></p></td>
+<td><p>🦙</p></td>
+<td><p>Zero (local)</p></td>
+<td><p>❌ No</p></td>
+<td><p>Local models (llama, mistral, qwen, etc.)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Gemini</strong></p></td>
+<td><p>✨</p></td>
+<td><p>Calculated</p></td>
+<td><p>❌ No</p></td>
+<td><p>Google Gemini API (2.5 Pro, 2.0 Flash)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Unknown</strong></p></td>
+<td><p>❓</p></td>
+<td><p>Zero</p></td>
+<td><p>❌ No</p></td>
+<td><p>Generic fallback for unrecognized providers</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="provider-detection">
+<h3>Provider Detection<a class="headerlink" href="#provider-detection" title="Link to this heading">¶</a></h3>
+<p>Automatic detection based on JSON structure:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Anthropic Claude format</span>
+<span class="o">{</span><span class="w"> </span><span class="s2">&quot;context_window&quot;</span>:<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">&quot;total_input_tokens&quot;</span>:<span class="w"> </span>...<span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">}</span>
+
+<span class="c1"># OpenAI-compatible format (OpenAI, DeepSeek, OpenRouter)</span>
+<span class="o">{</span><span class="w"> </span><span class="s2">&quot;usage&quot;</span>:<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">&quot;prompt_tokens&quot;</span>:<span class="w"> </span>...,<span class="w"> </span><span class="s2">&quot;completion_tokens&quot;</span>:<span class="w"> </span>...<span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">}</span>
+
+<span class="c1"># Ollama format (OpenAI-compatible + local model names)</span>
+<span class="o">{</span><span class="w"> </span><span class="s2">&quot;usage&quot;</span>:<span class="w"> </span><span class="o">{</span><span class="w"> </span>...<span class="w"> </span><span class="o">}</span>,<span class="w"> </span><span class="s2">&quot;model&quot;</span>:<span class="w"> </span><span class="s2">&quot;llama3.1:70b-instruct&quot;</span><span class="w"> </span><span class="o">}</span>
+
+<span class="c1"># Google Gemini format</span>
+<span class="o">{</span><span class="w"> </span><span class="s2">&quot;usageMetadata&quot;</span>:<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">&quot;promptTokenCount&quot;</span>:<span class="w"> </span>...<span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="cost-calculation">
+<h3>Cost Calculation<a class="headerlink" href="#cost-calculation" title="Link to this heading">¶</a></h3>
+<p><strong>Pre-calculated (Anthropic):</strong></p>
+<ul class="simple">
+<li><p>Native Claude API provides <code class="docutils literal notranslate"><span class="pre">total_cost_usd</span></code></p></li>
+<li><p>No calculation needed</p></li>
+</ul>
+<p><strong>Calculated (Others):</strong></p>
+<ul class="simple">
+<li><p>Pricing database with 30+ models</p></li>
+<li><p>Formula: <code class="docutils literal notranslate"><span class="pre">(input_tokens</span> <span class="pre">/</span> <span class="pre">1M)</span> <span class="pre">×</span> <span class="pre">input_price</span> <span class="pre">+</span> <span class="pre">(output_tokens</span> <span class="pre">/</span> <span class="pre">1M)</span> <span class="pre">×</span> <span class="pre">output_price</span></code></p></li>
+<li><p>Updated: February 2026</p></li>
+</ul>
+<p><strong>Zero cost (Ollama):</strong></p>
+<ul class="simple">
+<li><p>Local models are free</p></li>
+<li><p>Always shows <code class="docutils literal notranslate"><span class="pre">$0.00</span></code></p></li>
+</ul>
+</section>
+<section id="provider-icons">
+<h3>Provider Icons<a class="headerlink" href="#provider-icons" title="Link to this heading">¶</a></h3>
+<p>Icons appear after cost, before Router icon:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Σ 2K | DeepSeek | $0.00 🤖 | 🔀 provider | ...
+</pre></div>
+</div>
+<p><strong>Icon meanings:</strong></p>
+<ul class="simple">
+<li><p>🤖 = OpenAI-compatible (OpenAI, DeepSeek, OpenRouter)</p></li>
+<li><p>🦙 = Ollama (local models)</p></li>
+<li><p>✨ = Google Gemini</p></li>
+<li><p>❓ = Unknown provider (generic fallback)</p></li>
+<li><p>No icon = Native Anthropic Claude</p></li>
+</ul>
+</section>
+<section id="architecture">
+<h3>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h3>
+<p><strong>Adapter System:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Session JSON → Provider Detection → Adapter → Unified Format → Display
+                      ↓
+            anthropic | openai | ollama | gemini | generic
+</pre></div>
+</div>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/scripts/lib/</span></code></p>
+<p><strong>Files:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">provider-adapter.sh</span></code> - Factory &amp; detection logic</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pricing-lookup.sh</span></code> - Cost calculation (30+ models)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters/anthropic.sh</span></code> - Claude API adapter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters/openai.sh</span></code> - OpenAI/DeepSeek/OpenRouter adapter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters/ollama.sh</span></code> - Local models adapter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters/gemini.sh</span></code> - Google Gemini adapter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters/generic.sh</span></code> - Fallback adapter</p></li>
+</ul>
+</section>
+<section id="usage-examples">
+<h3>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading">¶</a></h3>
+<p><strong>With Claude Code Router:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure Router with DeepSeek</span>
+./iclaude.sh<span class="w"> </span>--router
+
+<span class="c1"># Status line automatically detects and shows:</span>
+<span class="c1"># Σ 1.5K | DeepSeek Chat | $0.0004 🤖 | ...</span>
+</pre></div>
+</div>
+<p><strong>With Ollama (local):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Status line shows zero cost:</span>
+<span class="c1"># Σ 850 | Llama3.1 (local) | $0.00 🦙 | ...</span>
+</pre></div>
+</div>
+<p><strong>With native Claude (unchanged):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># No provider icon, works exactly as before:</span>
+<span class="c1"># Σ 50K | 25K active (12%) | 📦 10K | Sonnet 4.5 | $1.05 | ...</span>
+</pre></div>
+</div>
+</section>
+<section id="backward-compatibility">
+<h3>Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Link to this heading">¶</a></h3>
+<p><strong>100% compatible</strong> with existing setups:</p>
+<ul class="simple">
+<li><p>✅ Native Claude users see no changes</p></li>
+<li><p>✅ Falls back to legacy parsing if adapters unavailable</p></li>
+<li><p>✅ No breaking changes to output format</p></li>
+<li><p>✅ Graceful degradation for unknown providers</p></li>
+</ul>
+</section>
+<section id="troubleshooting">
+<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h3>
+<p><strong>Provider not detected:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable debug mode</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DEBUG_STATUSLINE</span><span class="o">=</span><span class="m">1</span>
+cat<span class="w"> </span>session.json<span class="w"> </span><span class="p">|</span><span class="w"> </span>claude-statusline.sh
+
+<span class="c1"># Check detection</span>
+<span class="c1"># Output: &quot;[DEBUG] Detected provider: openai&quot;</span>
+</pre></div>
+</div>
+<p><strong>Wrong cost:</strong></p>
+<ul class="simple">
+<li><p>Check model name: <code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">session.json</span> <span class="pre">|</span> <span class="pre">jq</span> <span class="pre">'.model'</span></code></p></li>
+<li><p>Update pricing in <code class="docutils literal notranslate"><span class="pre">lib/pricing-lookup.sh</span></code> if model missing</p></li>
+<li><p>Pricing updated Feb 2026, may need refresh for new models</p></li>
+</ul>
+<p><strong>No provider icon:</strong></p>
+<ul class="simple">
+<li><p>Anthropic/Claude: No icon by design (native provider)</p></li>
+<li><p>Unknown format: Shows ❓ icon (generic fallback)</p></li>
+<li><p>Debug with <code class="docutils literal notranslate"><span class="pre">DEBUG_STATUSLINE=1</span></code></p></li>
+</ul>
+</section>
+<section id="adding-new-providers">
+<h3>Adding New Providers<a class="headerlink" href="#adding-new-providers" title="Link to this heading">¶</a></h3>
+<p>See <code class="docutils literal notranslate"><span class="pre">lib/README.md</span></code> for complete guide on adding new provider adapters.</p>
+</section>
+</section>
+<section id="streaming-mode-support-new-week-2">
+<h2>🔄 Streaming Mode Support (NEW - Week 2)<a class="headerlink" href="#streaming-mode-support-new-week-2" title="Link to this heading">¶</a></h2>
+<p><strong>Status:</strong> Production-ready ✅</p>
+<p>Real-time token accumulation and display during streaming requests.</p>
+<section id="id1">
+<h3>Overview<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>Streaming mode automatically detects SSE (Server-Sent Events) chunks and accumulates tokens in real-time:</p>
+<p><strong>Streaming Flow:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Request Start → message_start (input tokens)
+             → content_block_delta (text chunks)
+             → message_delta (output tokens)
+             → message_stop (completion)
+                      ↓
+             Real-time statusline updates
+</pre></div>
+</div>
+</section>
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>Automatic Detection</strong> - Streaming vs non-streaming auto-detected
+✅ <strong>Real-time Updates</strong> - Tokens accumulate as chunks arrive
+✅ <strong>Session-based State</strong> - Isolated state per streaming session
+✅ <strong>Provider Support</strong> - Anthropic, OpenAI, Ollama, Gemini
+✅ <strong>🔄 Indicator</strong> - Visual feedback during streaming
+✅ <strong>Backward Compatible</strong> - Non-streaming requests unchanged</p>
+</section>
+<section id="display-examples">
+<h3>Display Examples<a class="headerlink" href="#display-examples" title="Link to this heading">¶</a></h3>
+<p><strong>During Streaming:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1,000 | 127 generating... 🔄 | Sonnet 4.5 | $0.00
+</pre></div>
+</div>
+<p><strong>After Completion:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1,000 | 2,000 | Sonnet 4.5 | $1.05
+</pre></div>
+</div>
+<p><strong>With Provider Icon:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>50K | GPT-4o | $0.10 🤖🔄 | master
+</pre></div>
+</div>
+</section>
+<section id="streaming-indicator">
+<h3>Streaming Indicator (🔄)<a class="headerlink" href="#streaming-indicator" title="Link to this heading">¶</a></h3>
+<p><strong>When shown:</strong></p>
+<ul class="simple">
+<li><p>During active streaming (chunks being received)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STREAMING_ACTIVE=1</span></code> flag set</p></li>
+</ul>
+<p><strong>When hidden:</strong></p>
+<ul class="simple">
+<li><p>After stream completion</p></li>
+<li><p>Non-streaming requests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STREAMING_ACTIVE=0</span></code> or unset</p></li>
+</ul>
+<p><strong>Position:</strong></p>
+<ul class="simple">
+<li><p>After provider icon (🤖🦙✨)</p></li>
+<li><p>Before router icon</p></li>
+<li><p>Part of cost display section</p></li>
+</ul>
+</section>
+<section id="supported-chunk-formats">
+<h3>Supported Chunk Formats<a class="headerlink" href="#supported-chunk-formats" title="Link to this heading">¶</a></h3>
+<section id="anthropic-claude">
+<h4>Anthropic (Claude)<a class="headerlink" href="#anthropic-claude" title="Link to this heading">¶</a></h4>
+<p><strong>message_start</strong> - Initial chunk with input tokens:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;message_start&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;msg_abc123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-sonnet-4.5&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;usage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cache_read_input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>message_delta</strong> - Output token updates:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;message_delta&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;usage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;output_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>message_stop</strong> - Stream completion:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;message_stop&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="openai-gpt-4-deepseek">
+<h4>OpenAI (GPT-4, DeepSeek)<a class="headerlink" href="#openai-gpt-4-deepseek" title="Link to this heading">¶</a></h4>
+<p><strong>Delta chunks:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chatcmpl-123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;choices&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">&quot;delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Final chunk:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chatcmpl-123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;choices&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">&quot;delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">&quot;finish_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stop&quot;</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="ollama-local-models">
+<h4>Ollama (Local Models)<a class="headerlink" href="#ollama-local-models" title="Link to this heading">¶</a></h4>
+<p><strong>Streaming chunks:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;llama3.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;done&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Final chunk:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;llama3.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;done&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prompt_eval_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;eval_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="state-management">
+<h3>State Management<a class="headerlink" href="#state-management" title="Link to this heading">¶</a></h3>
+<p><strong>State Location:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$CLAUDE_DIR/streaming-state/$SESSION_ID.state
+</pre></div>
+</div>
+<p><strong>State Format:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;msg_abc123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anthropic&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-sonnet-4.5&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;streaming&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">127</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cache_read_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cache_creation_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;chunks_received&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;last_update&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1707854321</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;completed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Automatic Cleanup:</strong></p>
+<ul class="simple">
+<li><p>States older than 1 hour removed automatically</p></li>
+<li><p>Manual cleanup: <code class="docutils literal notranslate"><span class="pre">cleanup_old_states</span></code> (in <code class="docutils literal notranslate"><span class="pre">lib/streaming-state.sh</span></code>)</p></li>
+</ul>
+</section>
+<section id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h3>
+<p><strong>Measured Overhead:</strong></p>
+<ul class="simple">
+<li><p>Chunk detection: &lt;2ms</p></li>
+<li><p>State update: &lt;10ms (file I/O)</p></li>
+<li><p>Chunk parsing: &lt;3ms</p></li>
+<li><p><strong>Total per chunk:</strong> &lt;15ms</p></li>
+</ul>
+<p><strong>Impact:</strong> Imperceptible in real-world usage ✅</p>
+</section>
+<section id="token-accuracy">
+<h3>Token Accuracy<a class="headerlink" href="#token-accuracy" title="Link to this heading">¶</a></h3>
+<p><strong>Anthropic:</strong></p>
+<ul class="simple">
+<li><p>✅ Accurate per-chunk token counts</p></li>
+<li><p>✅ Cache tokens tracked</p></li>
+<li><p>✅ Real-time accumulation</p></li>
+</ul>
+<p><strong>OpenAI/DeepSeek:</strong></p>
+<ul class="simple">
+<li><p>⚠️ No per-chunk token counts (API limitation)</p></li>
+<li><p>✅ Final chunk provides accurate totals</p></li>
+<li><p>💡 Shows “generating…” during streaming</p></li>
+</ul>
+<p><strong>Ollama:</strong></p>
+<ul class="simple">
+<li><p>⚠️ Tokens only in final chunk (done=true)</p></li>
+<li><p>✅ Accurate final counts</p></li>
+<li><p>💡 Shows chunk progress during streaming</p></li>
+</ul>
+<p><strong>Gemini:</strong></p>
+<ul class="simple">
+<li><p>⚠️ Limited per-chunk metadata</p></li>
+<li><p>✅ Completion detection works</p></li>
+<li><p>💡 Similar to OpenAI behavior</p></li>
+</ul>
+</section>
+<section id="cost-during-streaming">
+<h3>Cost During Streaming<a class="headerlink" href="#cost-during-streaming" title="Link to this heading">¶</a></h3>
+<p><strong>Behavior:</strong></p>
+<ul class="simple">
+<li><p>Cost shows $0.00 during streaming</p></li>
+<li><p>Updated after completion</p></li>
+<li><p>Prevents inaccurate estimates</p></li>
+</ul>
+<p><strong>Rationale:</strong></p>
+<ul class="simple">
+<li><p>Complete token counts required for accurate cost</p></li>
+<li><p>Some providers don’t provide per-chunk counts</p></li>
+<li><p>Final cost displayed after stream completes</p></li>
+</ul>
+</section>
+<section id="debug-mode">
+<h3>Debug Mode<a class="headerlink" href="#debug-mode" title="Link to this heading">¶</a></h3>
+<p><strong>Enable:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">DEBUG_STATUSLINE</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p><strong>Output Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">chunk</span> <span class="n">detected</span>
+<span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">provider</span><span class="p">:</span> <span class="n">anthropic</span>
+<span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">state</span> <span class="n">initialized</span><span class="p">:</span> <span class="n">msg_123</span>
+<span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">state</span> <span class="n">updated</span><span class="p">:</span> <span class="n">msg_123</span> <span class="p">(</span><span class="n">chunks</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">state</span> <span class="n">updated</span><span class="p">:</span> <span class="n">msg_123</span> <span class="p">(</span><span class="n">chunks</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="mi">50</span><span class="p">)</span>
+<span class="p">[</span><span class="n">DEBUG</span><span class="p">]</span> <span class="n">Streaming</span> <span class="n">state</span> <span class="n">finalized</span><span class="p">:</span> <span class="n">msg_123</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3>Usage Examples<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p><strong>Example 1: Anthropic Streaming Session</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">SESSION_ID</span><span class="o">=</span><span class="s2">&quot;msg_abc123&quot;</span>
+
+<span class="c1"># Chunk 1: message_start (input tokens)</span>
+<span class="c1"># Statusline: 1,000 | 0 | Sonnet 4.5 | $0.00 🔄</span>
+
+<span class="c1"># Chunk 2: content_block_delta (text generation)</span>
+<span class="c1"># Statusline: 1,000 | 0 generating... 🔄 | Sonnet 4.5</span>
+
+<span class="c1"># Chunk 3: message_delta (output tokens)</span>
+<span class="c1"># Statusline: 1,000 | 50 🔄 | Sonnet 4.5 | $0.00</span>
+
+<span class="c1"># Chunk 4: message_stop (completion)</span>
+<span class="c1"># Statusline: 1,000 | 50 | Sonnet 4.5 | $0.05</span>
+</pre></div>
+</div>
+<p><strong>Example 2: OpenAI Streaming</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">SESSION_ID</span><span class="o">=</span><span class="s2">&quot;chatcmpl-xyz&quot;</span>
+
+<span class="c1"># Multiple delta chunks</span>
+<span class="c1"># Statusline: Generating... 🔄</span>
+
+<span class="c1"># Final chunk (finish_reason=&quot;stop&quot;)</span>
+<span class="c1"># Statusline: 1,000 | 500 | GPT-4o | $0.10 🤖</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3>Backward Compatibility<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p><strong>Guaranteed:</strong></p>
+<ul class="simple">
+<li><p>✅ Non-streaming requests work identically</p></li>
+<li><p>✅ No performance impact on complete responses</p></li>
+<li><p>✅ Existing tests still pass (27 from Week 1)</p></li>
+<li><p>✅ Legacy parsing path preserved</p></li>
+</ul>
+<p><strong>Graceful Degradation:</strong></p>
+<ul class="simple">
+<li><p>If streaming modules unavailable → fallback to non-streaming</p></li>
+<li><p>If state file unavailable → best-effort display</p></li>
+<li><p>If chunks malformed → show partial data</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Troubleshooting<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p><strong>Problem: 🔄 not showing</strong></p>
+<ul class="simple">
+<li><p>Check: <code class="docutils literal notranslate"><span class="pre">echo</span> <span class="pre">$STREAMING_ACTIVE</span></code> (should be “1”)</p></li>
+<li><p>Solution: Ensure <code class="docutils literal notranslate"><span class="pre">parse_with_adapter()</span></code> called with session_id</p></li>
+</ul>
+<p><strong>Problem: Tokens not accumulating</strong></p>
+<ul class="simple">
+<li><p>Check: State file exists in <code class="docutils literal notranslate"><span class="pre">streaming-state/</span></code> directory</p></li>
+<li><p>Solution: Verify session_id passed correctly</p></li>
+</ul>
+<p><strong>Problem: Old states accumulating</strong></p>
+<ul class="simple">
+<li><p>Check: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-lh</span> <span class="pre">$CLAUDE_DIR/streaming-state/</span></code></p></li>
+<li><p>Solution: Run <code class="docutils literal notranslate"><span class="pre">cleanup_old_states()</span></code> manually</p></li>
+</ul>
+<p><strong>Comprehensive Guide:</strong></p>
+<ul class="simple">
+<li><p>See: <code class="docutils literal notranslate"><span class="pre">docs/streaming-troubleshooting-guide.md</span></code></p></li>
+</ul>
+</section>
+<section id="migration-guide">
+<h3>Migration Guide<a class="headerlink" href="#migration-guide" title="Link to this heading">¶</a></h3>
+<p><strong>For custom statusline users:</strong></p>
+<ul class="simple">
+<li><p>See: <code class="docutils literal notranslate"><span class="pre">docs/streaming-migration-guide.md</span></code></p></li>
+<li><p>3 migration scenarios (Minimal/Basic/Full)</p></li>
+<li><p>Step-by-step instructions</p></li>
+<li><p>Testing procedures</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Architecture<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p><strong>Components:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lib/streaming-detector.sh</span></code> - Chunk detection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lib/streaming-state.sh</span></code> - State management</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lib/streaming-parser.sh</span></code> - Chunk parsing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lib/provider-adapter.sh</span></code> - Integration (updated)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">claude-statusline.sh</span></code> - Display (updated)</p></li>
+</ul>
+<p><strong>Flow:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Chunk → Detector → Parser → State Manager → Display
+   ↓        ↓         ↓           ↓            ↓
+ Type?  Provider?  Tokens?   Accumulate?   Show 🔄
+</pre></div>
+</div>
+<p><strong>Details:</strong></p>
+<ul class="simple">
+<li><p>See: <code class="docutils literal notranslate"><span class="pre">lib/README.md</span></code> (Section 4: Streaming Support)</p></li>
+<li><p>See: <code class="docutils literal notranslate"><span class="pre">docs/week2-streaming-mode-summary.md</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="display-format">
+<h2>Display Format<a class="headerlink" href="#display-format" title="Link to this heading">¶</a></h2>
+<section id="example-output">
+<h3>Example Output<a class="headerlink" href="#example-output" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1.06 [proxy] [router]provider [session]  branch
+</pre></div>
+</div>
+</section>
+<section id="format-notes">
+<h3>Format Notes<a class="headerlink" href="#format-notes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Always shows dual context</strong>: cumulative (billing) and active (NEW tokens only, excluding cache)</p></li>
+<li><p><strong>After /clear</strong>: Shows <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">active</span> <span class="pre">(0%)</span></code> for ~10-40 seconds until Claude Code sends first API response</p></li>
+<li><p><strong>After /compact</strong>: Shows only NEW tokens (input + output), excluding cache. For example, if used_percentage=77% (155K total), cache=154K, active context shows 1K (0.5%). Cache portion shown separately in <code class="docutils literal notranslate"><span class="pre">[cache]</span> <span class="pre">154K</span></code>. This clearly distinguishes fresh conversation from cached context.</p></li>
+</ul>
+</section>
+</section>
+<section id="components">
+<h2>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h2>
+<p>Detailed breakdown of status line components (left to right):</p>
+<section id="context-usage">
+<h3>1. Context Usage<a class="headerlink" href="#context-usage" title="Link to this heading">¶</a></h3>
+<p>Shows two token metrics:</p>
+<ul class="simple">
+<li><p><strong>Cumulative tokens</strong> (<code class="docutils literal notranslate"><span class="pre">total_input</span> <span class="pre">+</span> <span class="pre">total_output</span></code>): Total tokens used in session for billing</p></li>
+<li><p><strong>Active context</strong> (<code class="docutils literal notranslate"><span class="pre">(used_percentage</span> <span class="pre">×</span> <span class="pre">context_window_size)</span> <span class="pre">-</span> <span class="pre">cache</span></code>): NEW tokens only (input + output)</p></li>
+</ul>
+<p><strong>Behavior:</strong></p>
+<ul class="simple">
+<li><p>Active context resets to ~0 after <code class="docutils literal notranslate"><span class="pre">/clear</span></code> (only system prompt remains)</p></li>
+<li><p>Active context stays LOW after <code class="docutils literal notranslate"><span class="pre">/compact</span></code> (~1K) while cache is HIGH (~150K)</p></li>
+<li><p>Cumulative tokens continue to grow (billing tracking)</p></li>
+<li><p>Color coded based on active context:</p>
+<ul>
+<li><p>Green: &lt;50%</p></li>
+<li><p>Yellow: 50-75%</p></li>
+<li><p>Red: &gt;75%</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="cache-tokens">
+<h3>2. Cache Tokens<a class="headerlink" href="#cache-tokens" title="Link to this heading">¶</a></h3>
+<p>Format: <code class="docutils literal notranslate"><span class="pre">[cache]79K</span></code></p>
+<p><strong>Calculation:</strong> <code class="docutils literal notranslate"><span class="pre">cache_read</span> <span class="pre">+</span> <span class="pre">cache_creation</span></code></p>
+<p><strong>Features:</strong></p>
+<ul class="simple">
+<li><p>Format: K for thousands, M for millions</p></li>
+<li><p>Only shown when cache &gt; 0</p></li>
+<li><p>Cache tokens are shown SEPARATELY from active context</p></li>
+<li><p>Active context shows only NEW tokens (input + output), excluding cache</p></li>
+<li><p>After <code class="docutils literal notranslate"><span class="pre">/compact</span></code>, active context is LOW (~0.3%) while cache is HIGH (~150K) - this clearly distinguishes new vs reused context</p></li>
+</ul>
+</section>
+<section id="model-name">
+<h3>3. Model Name<a class="headerlink" href="#model-name" title="Link to this heading">¶</a></h3>
+<p>Displays <code class="docutils literal notranslate"><span class="pre">display_name</span></code> from session data (e.g., “Sonnet 4.5”)</p>
+</section>
+<section id="cost">
+<h3>4. Cost<a class="headerlink" href="#cost" title="Link to this heading">¶</a></h3>
+<p>Displays <code class="docutils literal notranslate"><span class="pre">total_cost_usd</span></code> in USD (e.g., “$1.06”)</p>
+</section>
+<section id="proxy-indicator">
+<h3>5. Proxy Indicator<a class="headerlink" href="#proxy-indicator" title="Link to this heading">¶</a></h3>
+<p>Shows <code class="docutils literal notranslate"><span class="pre">[proxy]</span></code> icon if proxy configured via iclaude.sh</p>
+</section>
+<section id="router-indicator">
+<h3>6. Router Indicator<a class="headerlink" href="#router-indicator" title="Link to this heading">¶</a></h3>
+<p>Shows <code class="docutils literal notranslate"><span class="pre">[router]provider</span></code> if Claude Code Router is active (e.g., <code class="docutils literal notranslate"><span class="pre">[router]deepseek</span></code>)</p>
+</section>
+<section id="session-link">
+<h3>7. Session Link<a class="headerlink" href="#session-link" title="Link to this heading">¶</a></h3>
+<p>Format: <code class="docutils literal notranslate"><span class="pre">[session]</span></code> - clickable hyperlink (OSC 8)</p>
+<p><strong>Features:</strong></p>
+<ul class="simple">
+<li><p>Click to open human-readable conversation in your editor</p></li>
+<li><p><strong>Session-specific files</strong>: Each session has unique readable file (no conflicts)</p></li>
+<li><p><strong>Append-only optimization</strong>: Only processes new messages (19x faster)</p></li>
+<li><p><strong>Smart regeneration</strong>: Full rebuild only when needed (/compact, first run, JSONL truncated)</p></li>
+<li><p><strong>Performance</strong>: 94ms append vs 1.87s full regen (200 lines)</p></li>
+<li><p>Readable file saved to: <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/.claude-sessions/readable-{session-id}.txt</span></code></p></li>
+<li><p>Metadata tracking: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt.meta</span></code> (processed lines count)</p></li>
+<li><p><strong>Compact detection</strong>: Shows <code class="docutils literal notranslate"><span class="pre">━━━</span> <span class="pre">[cache]</span> <span class="pre">Context</span> <span class="pre">Compact</span> <span class="pre">━━━</span></code> marker after /compact</p></li>
+<li><p>Format: [user] USER / [assistant] ASSISTANT prefixes with word wrap (80 chars)</p></li>
+<li><p>Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal</p></li>
+<li><p>Falls back to plain text in terminals without hyperlink support</p></li>
+</ul>
+</section>
+<section id="git-info">
+<h3>8. Git Info<a class="headerlink" href="#git-info" title="Link to this heading">¶</a></h3>
+<p>Branch name + uncommitted changes count (e.g., “master” or “feature-branch +3”)</p>
+</section>
+</section>
+<section id="id6">
+<h2>Features<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<section id="key-capabilities">
+<h3>Key Capabilities<a class="headerlink" href="#key-capabilities" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Dual context tracking</strong>: Shows both cumulative (billing) and active (next message) token counts</p></li>
+<li><p><strong>Automatic /clear detection</strong>: Active context resets when user runs <code class="docutils literal notranslate"><span class="pre">/clear</span></code>, cumulative continues</p></li>
+<li><p><strong>Cache visibility</strong>: Shows prompt cache usage separately to understand reuse vs fresh tokens</p></li>
+<li><p><strong>Null-safe</strong>: Handles temporary <code class="docutils literal notranslate"><span class="pre">null</span></code> values after <code class="docutils literal notranslate"><span class="pre">/clear</span></code> (shows <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">active</span> <span class="pre">(0%)</span></code> until data arrives)</p></li>
+<li><p><strong>Debug logging</strong>: Set <code class="docutils literal notranslate"><span class="pre">DEBUG_STATUSLINE=1</span></code> to log session data to <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-debug.log</span></code></p></li>
+<li><p><strong>Session-specific readable files</strong>: Each session gets unique file (no conflicts between parallel sessions)</p></li>
+<li><p><strong>Append-only optimization</strong>: Incremental updates instead of full regeneration (19x faster)</p></li>
+<li><p><strong>Compact detection</strong>: Automatically rebuilds readable file after <code class="docutils literal notranslate"><span class="pre">/compact</span></code> with summary marker</p></li>
+<li><p><strong>Adaptive display</strong>: Three display modes based on terminal width to prevent line wrapping</p></li>
+</ul>
+</section>
+<section id="adaptive-display-modes">
+<h3>Adaptive Display Modes<a class="headerlink" href="#adaptive-display-modes" title="Link to this heading">¶</a></h3>
+<p>The status line automatically adapts to terminal width to prevent line wrapping and maintain readability.</p>
+<section id="display-modes">
+<h4>Display Modes<a class="headerlink" href="#display-modes" title="Link to this heading">¶</a></h4>
+<p><strong>Full Mode (≥130 columns)</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💳 113K | 📊 51K (26%) | 📦 79K | 🔒 45K | Sonnet 4.5 | $1.06 🌐 | 🔀 claude-sonnet-4-5 | 📄 | 🔱 test ●2
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>All components visible without abbreviations</p></li>
+<li><p>Shows buffer (🔒), full model name, full router provider</p></li>
+<li><p>Optimal for wide terminals (≥130 cols)</p></li>
+</ul>
+<p><strong>Compact Mode (110-129 columns)</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💳 113K | 📊 51K (26%) | 📦 79K | S4.5 | $1.06 🌐 | 🔀 sonnet-4-5 | 📄 | 🔱 test ●2
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Smart abbreviations to save space</p></li>
+<li><p>Model abbreviated: “Sonnet 4.5” → “S4.5”</p></li>
+<li><p>Router abbreviated: “claude-sonnet-4-5” → “sonnet-4-5”</p></li>
+<li><p>Buffer hidden (not critical)</p></li>
+<li><p>Saves ~24 characters compared to full mode</p></li>
+</ul>
+<p><strong>Minimal Mode (&lt;110 columns)</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💳 113K | 📊 51K (26%) | S4.5 | $1.06
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Only critical metrics: tokens, model, cost</p></li>
+<li><p>Hides cache, proxy, router, session link, git info</p></li>
+<li><p>Guaranteed to fit in narrow terminals</p></li>
+<li><p>Saves ~84 characters compared to full mode</p></li>
+</ul>
+</section>
+<section id="configuration">
+<h4>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h4>
+<p><strong>Disable adaptive mode</strong> (always use full mode):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">STATUSLINE_ADAPTIVE</span><span class="o">=</span><span class="m">0</span>
+./iclaude.sh
+</pre></div>
+</div>
+<p><strong>Debug terminal width detection</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check detected width</span>
+tput<span class="w"> </span>cols
+
+<span class="c1"># Test with specific width</span>
+<span class="nv">COLUMNS</span><span class="o">=</span><span class="m">120</span><span class="w"> </span>./iclaude.sh
+</pre></div>
+</div>
+</section>
+<section id="implementation-details">
+<h4>Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Width detection</strong>: Uses <code class="docutils literal notranslate"><span class="pre">tput</span> <span class="pre">cols</span></code> (fallback to <code class="docutils literal notranslate"><span class="pre">stty</span> <span class="pre">size</span></code>, then 80 cols)</p></li>
+<li><p><strong>Overhead</strong>: ~5ms per status line update (negligible)</p></li>
+<li><p><strong>Fallback</strong>: If detection fails, defaults to 80 cols (compact mode)</p></li>
+<li><p><strong>Zero configuration</strong>: Adapts automatically based on terminal</p></li>
+</ul>
+</section>
+<section id="system-message-handling">
+<h4>System Message Handling<a class="headerlink" href="#system-message-handling" title="Link to this heading">¶</a></h4>
+<p>Claude Code asynchronously inserts system messages (e.g., “Claude Code has switched from npm to native installer…”) into stdout during session startup. This can interrupt status line output and cause line wrapping.</p>
+<p><strong>Solution</strong>: Silent wait, then show after first message (default)</p>
+<ul class="simple">
+<li><p><strong>Detection</strong>: Uses session start time tracker <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-start-time-${SESSION_ID}</span></code></p></li>
+<li><p><strong>Phase 1 (0-30 seconds)</strong>: No output (silent wait)</p></li>
+<li><p><strong>Phase 2 (30s+, first call)</strong>: Mark ready, still no output</p></li>
+<li><p><strong>Phase 3 (30s+, after first message)</strong>: Normal full status line appears</p></li>
+</ul>
+<p><strong>Three-phase approach:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0s:    Session start → no output
+15s:   User message → no output (age &lt; 30s)
+30s:   Wait complete → still no output
+35s:   User message → creates ready marker, no output
+40s:   User message → STATUS LINE APPEARS ✅
+</pre></div>
+</div>
+<p><strong>Why this approach?</strong></p>
+<ul class="simple">
+<li><p>Eliminates ALL race conditions (no output = no races)</p></li>
+<li><p>Waits for both: 30s timeout AND user activity</p></li>
+<li><p>Guarantees clean output after system messages cleared</p></li>
+<li><p>Only shows when actually useful (user is interacting)</p></li>
+</ul>
+<p><strong>Why skip instead of wait?</strong></p>
+<ul class="simple">
+<li><p>System messages are inserted asynchronously by Claude Code main process</p></li>
+<li><p>Race condition: Message can appear DURING script printf execution</p></li>
+<li><p>No bash-level solution can prevent async stdout insertion</p></li>
+<li><p>Skipping eliminates race condition entirely</p></li>
+</ul>
+<p><strong>Alternative mode</strong> (stability detection - experimental):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">STATUSLINE_SKIP_STARTUP</span><span class="o">=</span><span class="m">0</span><span class="w">  </span><span class="c1"># Enable wait mode</span>
+./iclaude.sh
+</pre></div>
+</div>
+<p>Wait mode behavior:</p>
+<ul class="simple">
+<li><p>Minimum delay: 8 seconds</p></li>
+<li><p>Monitors transcript file for changes</p></li>
+<li><p>Stable period: 3 seconds of no changes</p></li>
+<li><p>Maximum timeout: 20 seconds</p></li>
+<li><p>Debug: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">DEBUG_STATUSLINE=1</span></code></p></li>
+</ul>
+<p><strong>Why 30 seconds?</strong></p>
+<ul class="simple">
+<li><p>System messages can appear at session start AND after first user message</p></li>
+<li><p>30 seconds covers both startup + first message interaction</p></li>
+<li><p>After 30s, session is stable and no more system messages expected</p></li>
+</ul>
+<p><strong>How stability detection works:</strong></p>
+<ul class="simple">
+<li><p>Monitors session transcript file: <code class="docutils literal notranslate"><span class="pre">.claude-isolated/projects/[project]/${SESSION_ID}.jsonl</span></code></p></li>
+<li><p>Checks file modification time every second</p></li>
+<li><p>If file unchanged for 2 consecutive seconds → system messages cleared</p></li>
+<li><p>Guarantees status line appears after all async output completed</p></li>
+</ul>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>✅ Reliable detection of message completion</p></li>
+<li><p>✅ Adapts to system speed (fast exit on quick systems)</p></li>
+<li><p>✅ Timeout protection (never hangs indefinitely)</p></li>
+<li><p>✅ Zero false positives (actually waits for stability)</p></li>
+</ul>
+<p><strong>Alternative approaches tested</strong> (did not work consistently):</p>
+<ul class="simple">
+<li><p>Fixed delays (2s-15s): Either too short (races) or too long (slow)</p></li>
+<li><p>Skip first run completely: Status line missing until user types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">printf</span></code> with flush: Cannot control async stdout from Claude Code</p></li>
+<li><p>Stderr redirection: Status line not visible</p></li>
+<li><p>Process monitoring: Cannot detect stdout vs stderr activity</p></li>
+</ul>
+</section>
+</section>
+<section id="token-parsing-claude-code-v2-1">
+<h3>Token Parsing (Claude Code v2.1+)<a class="headerlink" href="#token-parsing-claude-code-v2-1" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Input:<span class="w">  </span>.context_window.total_input_tokens
+Output:<span class="w"> </span>.context_window.total_output_tokens
+Cache:<span class="w">  </span>.context_window.current_usage.cache_read_input_tokens<span class="w"> </span>+<span class="w"> </span>cache_creation_input_tokens
+Cost:<span class="w">   </span>.cost.total_cost_usd
+Model:<span class="w">  </span>.model.display_name
+
+<span class="c1"># How Claude Code calculates used_percentage:</span>
+<span class="c1"># used_percentage = (cache_read + input + output) / context_window_size × 100</span>
+
+<span class="c1"># How statusline calculates active tokens (NEW logic - subtracts cache):</span>
+<span class="c1"># TOTAL_CONTEXT = used_percentage × context_window_size  (includes cache!)</span>
+<span class="c1"># ACTIVE_TOKENS = TOTAL_CONTEXT - CACHE  (excludes cache, shows only NEW tokens)</span>
+
+<span class="c1"># Example after /compact:</span>
+<span class="c1">#   cache_read: 154576, input: 0, output: 652</span>
+<span class="c1">#   used_percentage = (154576 + 0 + 652) / 200000 × 100 = 77.6%</span>
+<span class="c1">#   TOTAL_CONTEXT = 77.6% × 200000 = 155228 tokens</span>
+<span class="c1">#   CACHE = 154576 tokens</span>
+<span class="c1">#   ACTIVE_TOKENS = 155228 - 154576 = 652 tokens ← Only NEW conversation!</span>
+<span class="c1">#   Display: [stats] 652 (0.3%) | [cache] 154K</span>
+<span class="c1"># This clearly separates fresh conversation (652) from cached context (154K)</span>
+</pre></div>
+</div>
+</section>
+<section id="session-link-optimizations-phase-2-1">
+<h3>Session Link Optimizations (Phase 2.1)<a class="headerlink" href="#session-link-optimizations-phase-2-1" title="Link to this heading">¶</a></h3>
+<p>The readable session generation uses three key optimizations for performance:</p>
+<section id="session-specific-filenames">
+<h4>1. Session-Specific Filenames<a class="headerlink" href="#session-specific-filenames" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Each session gets unique file: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt</span></code></p></li>
+<li><p>Prevents conflicts when running multiple parallel Claude sessions</p></li>
+<li><p>Example: <code class="docutils literal notranslate"><span class="pre">readable-abc123.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">readable-def456.txt</span></code></p></li>
+</ul>
+</section>
+<section id="append-only-updates">
+<h4>2. Append-Only Updates<a class="headerlink" href="#append-only-updates" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Tracks processed lines in metadata file: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt.meta</span></code></p></li>
+<li><p>Only processes NEW messages since last update (incremental)</p></li>
+<li><p>Performance: 94ms (append) vs 1.87s (full regen) for 200-line session</p></li>
+<li><p><strong>19x faster</strong> for incremental updates</p></li>
+</ul>
+</section>
+<section id="smart-regeneration-triggers">
+<h4>3. Smart Regeneration Triggers<a class="headerlink" href="#smart-regeneration-triggers" title="Link to this heading">¶</a></h4>
+<p>Full rebuild occurs only when necessary:</p>
+<ul class="simple">
+<li><p>First run (readable file doesn’t exist)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/compact</span></code> detected (context compression happened)</p></li>
+<li><p>JSONL truncated (current lines &lt; processed lines)</p></li>
+<li><p>Append-only used for normal message additions</p></li>
+</ul>
+</section>
+</section>
+<section id="compact-detection">
+<h3>Compact Detection<a class="headerlink" href="#compact-detection" title="Link to this heading">¶</a></h3>
+<p>When <code class="docutils literal notranslate"><span class="pre">/compact</span></code> is used, the readable file shows a special marker:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>━━━ [cache] Context Compact ━━━
+{Summary of compressed context}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[user] USER:
+{First message after compact}
+</pre></div>
+</div>
+</section>
+<section id="file-structure">
+<h3>File Structure<a class="headerlink" href="#file-structure" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">claude</span><span class="o">-</span><span class="n">sessions</span><span class="o">/</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">txt</span>       <span class="c1"># Session abc123 conversation</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata: processed lines count</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">txt</span>       <span class="c1"># Session def456 conversation</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id7">
+<h2>Configuration<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<section id="setup-instructions">
+<h3>Setup Instructions<a class="headerlink" href="#setup-instructions" title="Link to this heading">¶</a></h3>
+<p>Enable statusline in Claude Code settings:</p>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/settings.json</span></code> (isolated mode) or <code class="docutils literal notranslate"><span class="pre">~/.claude/settings.json</span></code> (system mode)</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;statusLine&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/absolute/path/to/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id8">
+<h3>Debug Mode<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>Add to <code class="docutils literal notranslate"><span class="pre">.claude_proxy_credentials</span></code> or export in shell:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">DEBUG_STATUSLINE</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p>This logs session data to <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-debug.log</span></code> for troubleshooting.</p>
+</section>
+<section id="automatic-configuration">
+<h3>Automatic Configuration<a class="headerlink" href="#automatic-configuration" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">iclaude.sh</span></code> script automatically:</p>
+<ul class="simple">
+<li><p>Exports <code class="docutils literal notranslate"><span class="pre">DEBUG_STATUSLINE</span></code> from <code class="docutils literal notranslate"><span class="pre">.claude_proxy_credentials</span></code> (if set)</p></li>
+<li><p>Configures statusline path when using isolated environment</p></li>
+</ul>
+</section>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
+<section id="required">
+<h3>Required<a class="headerlink" href="#required" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>jq</strong>: JSON parsing (included in isolated environment)</p>
+<ul>
+<li><p>Install: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">jq</span></code> (Debian/Ubuntu) or <code class="docutils literal notranslate"><span class="pre">brew</span> <span class="pre">install</span> <span class="pre">jq</span></code> (macOS)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="optional">
+<h3>Optional<a class="headerlink" href="#optional" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>git</strong>: Branch and status info</p></li>
+<li><p><strong>oh-my-posh</strong>: Enhanced git rendering with icons and colors</p>
+<ul>
+<li><p>Without oh-my-posh: Shows plain branch name</p></li>
+<li><p>With oh-my-posh: Shows styled branch with status indicators</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading">¶</a></h2>
+<p>The script handles various error conditions gracefully:</p>
+<section id="missing-jq">
+<h3>Missing jq<a class="headerlink" href="#missing-jq" title="Link to this heading">¶</a></h3>
+<p>Shows warning message instead of breaking UI:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Status</span> <span class="n">line</span><span class="p">:</span> <span class="n">jq</span> <span class="ow">not</span> <span class="n">found</span> <span class="o">-</span> <span class="n">install</span> <span class="n">jq</span> <span class="k">for</span> <span class="n">session</span> <span class="n">stats</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="invalid-or-missing-data">
+<h3>Invalid or Missing Data<a class="headerlink" href="#invalid-or-missing-data" title="Link to this heading">¶</a></h3>
+<p>Shows placeholder until data arrives:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Status</span> <span class="n">line</span><span class="p">:</span> <span class="n">awaiting</span> <span class="n">session</span> <span class="n">data</span><span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="git-timeout">
+<h3>Git Timeout<a class="headerlink" href="#git-timeout" title="Link to this heading">¶</a></h3>
+<p>2-second timeout prevents hanging on slow repositories. Falls back to “unknown” if git operations take too long.</p>
+</section>
+<section id="null-values-after-clear">
+<h3>Null Values After /clear<a class="headerlink" href="#null-values-after-clear" title="Link to this heading">¶</a></h3>
+<p>Handles temporary <code class="docutils literal notranslate"><span class="pre">null</span></code> values in session data by showing <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">active</span> <span class="pre">(0%)</span></code> until Claude Code sends first API response.</p>
+</section>
+</section>
+<section id="helper-scripts">
+<h2>Helper Scripts<a class="headerlink" href="#helper-scripts" title="Link to this heading">¶</a></h2>
+<section id="claude-show-cache-sh">
+<h3>claude-show-cache.sh<a class="headerlink" href="#claude-show-cache-sh" title="Link to this heading">¶</a></h3>
+<p>View session context and cached summary directly from command line.</p>
+<section id="id9">
+<h4>Usage Examples<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># View cached summary (after /compact)</span>
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh<span class="w"> </span>--cache
+
+<span class="c1"># View last 5 messages (default)</span>
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh
+
+<span class="c1"># View last N messages</span>
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh<span class="w"> </span>--last<span class="w"> </span><span class="m">10</span>
+
+<span class="c1"># View full conversation</span>
+.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh<span class="w"> </span>--full
+</pre></div>
+</div>
+</section>
+<section id="id10">
+<h4>Features<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Shows current session ID and file location</p></li>
+<li><p>Displays cached summary from /compact (if available)</p></li>
+<li><p>Shows recent messages with role indicators ([user] USER, [assistant] ASSISTANT)</p></li>
+<li><p>Truncates long messages by default (use –full to see complete text)</p></li>
+<li><p>Provides clickable file:// link for opening in editor</p></li>
+</ul>
+</section>
+</section>
+<section id="viewing-readable-sessions">
+<h3>Viewing Readable Sessions<a class="headerlink" href="#viewing-readable-sessions" title="Link to this heading">¶</a></h3>
+<p>Auto-generated readable files can be accessed directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all readable sessions</span>
+ls<span class="w"> </span>-lh<span class="w"> </span>.claude-sessions/
+
+<span class="c1"># View specific session</span>
+cat<span class="w"> </span>.claude-sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.txt
+
+<span class="c1"># View most recent session (statusline generates them automatically)</span>
+ls<span class="w"> </span>-t<span class="w"> </span>.claude-sessions/readable-*.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>cat
+
+<span class="c1"># Check metadata (processed lines)</span>
+cat<span class="w"> </span>.claude-sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.txt.meta
+
+<span class="c1"># Cleanup old sessions (older than 7 days)</span>
+find<span class="w"> </span>.claude-sessions/<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;readable-*.txt*&quot;</span><span class="w"> </span>-mtime<span class="w"> </span>+7<span class="w"> </span>-delete
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id11">
+<h2>Troubleshooting<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<section id="status-line-not-showing">
+<h3>Status line not showing<a class="headerlink" href="#status-line-not-showing" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> No status line visible in Claude Code UI</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">settings.json</span></code> has correct <code class="docutils literal notranslate"><span class="pre">statusLine</span></code> configuration</p></li>
+<li><p>Verify script path is absolute (not relative)</p></li>
+<li><p>Ensure script is executable: <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">+x</span> <span class="pre">claude-statusline.sh</span></code></p></li>
+<li><p>Check Claude Code version (requires v2.1+)</p></li>
+</ol>
+</section>
+<section id="incorrect-token-counts">
+<h3>Incorrect token counts<a class="headerlink" href="#incorrect-token-counts" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> Active context doesn’t match expected values</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Enable debug mode (<code class="docutils literal notranslate"><span class="pre">DEBUG_STATUSLINE=1</span></code>)</p></li>
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-debug.log</span></code> for raw session data</p></li>
+<li><p>Verify Claude Code v2.1+ (older versions use different JSON structure)</p></li>
+<li><p>After <code class="docutils literal notranslate"><span class="pre">/clear</span></code>: Wait 10-40 seconds for first API response</p></li>
+</ol>
+</section>
+<section id="session-link-not-clickable">
+<h3>Session link not clickable<a class="headerlink" href="#session-link-not-clickable" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> [session] icon shows but not clickable</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check terminal emulator supports OSC 8 hyperlinks:</p>
+<ul class="simple">
+<li><p>Supported: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal</p></li>
+<li><p>Not supported: Basic xterm, older terminals</p></li>
+</ul>
+</li>
+<li><p>Verify readable file exists: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">.claude-sessions/readable-*.txt</span></code></p></li>
+<li><p>Check file permissions: <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">644</span> <span class="pre">.claude-sessions/readable-*.txt</span></code></p></li>
+</ol>
+</section>
+<section id="high-memory-usage">
+<h3>High memory usage<a class="headerlink" href="#high-memory-usage" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> Statusline script consuming excessive memory</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check for very large session files (&gt;10MB)</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">/clear</span></code> periodically to reset context</p></li>
+<li><p>Disable append-only optimization if causing issues (regenerate always)</p></li>
+<li><p>Cleanup old sessions: <code class="docutils literal notranslate"><span class="pre">find</span> <span class="pre">.claude-sessions/</span> <span class="pre">-name</span> <span class="pre">&quot;readable-*.txt*&quot;</span> <span class="pre">-mtime</span> <span class="pre">+7</span> <span class="pre">-delete</span></code></p></li>
+</ol>
+</section>
+<section id="git-info-missing">
+<h3>Git info missing<a class="headerlink" href="#git-info-missing" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> No branch name or status shown</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Ensure <code class="docutils literal notranslate"><span class="pre">git</span></code> installed: <code class="docutils literal notranslate"><span class="pre">which</span> <span class="pre">git</span></code></p></li>
+<li><p>Check current directory is git repository: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">status</span></code></p></li>
+<li><p>Verify git timeout not triggering (2-second limit)</p></li>
+<li><p>For slow repos: Consider disabling git info in script</p></li>
+</ol>
+</section>
+<section id="cache-metrics-incorrect-after-compact">
+<h3>Cache metrics incorrect after /compact<a class="headerlink" href="#cache-metrics-incorrect-after-compact" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> Cache tokens don’t match expected values</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Verify using Claude Code v2.1+ (older versions don’t report cache correctly)</p></li>
+<li><p>Enable debug mode and check raw <code class="docutils literal notranslate"><span class="pre">cache_read_input_tokens</span></code> + <code class="docutils literal notranslate"><span class="pre">cache_creation_input_tokens</span></code></p></li>
+<li><p>Remember: Active context = TOTAL - CACHE (shows only NEW tokens)</p></li>
+<li><p>After <code class="docutils literal notranslate"><span class="pre">/compact</span></code>: Active context should be LOW (~0.3%), cache HIGH (~150K)</p></li>
+</ol>
+</section>
+<section id="debug-log-not-created">
+<h3>Debug log not created<a class="headerlink" href="#debug-log-not-created" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms:</strong> <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-debug.log</span></code> not appearing</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">DEBUG_STATUSLINE=1</span></code> exported before launching Claude Code</p></li>
+<li><p>Verify <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> directory writable: <code class="docutils literal notranslate"><span class="pre">touch</span> <span class="pre">/tmp/test</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">/tmp/test</span></code></p></li>
+<li><p>Check script has permission to write: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-l</span> <span class="pre">/tmp/claude-statusline-debug.log</span></code></p></li>
+<li><p>Try running script manually with test data: <code class="docutils literal notranslate"><span class="pre">echo</span> <span class="pre">'{&quot;context_window&quot;:{}}'</span> <span class="pre">|</span> <span class="pre">./claude-statusline.sh</span></code></p></li>
+</ol>
+</section>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading">¶</a></h2>
+<section id="append-only-optimization">
+<h3>Append-Only Optimization<a class="headerlink" href="#append-only-optimization" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Initial load</strong>: ~1.87s for 200-line session (full parse)</p></li>
+<li><p><strong>Incremental update</strong>: ~94ms for new messages (19x faster)</p></li>
+<li><p><strong>Optimal for</strong>: Long-running sessions with frequent updates</p></li>
+<li><p><strong>Trigger full rebuild</strong>: Only when necessary (/compact, first run, truncation)</p></li>
+</ul>
+</section>
+<section id="memory-footprint">
+<h3>Memory Footprint<a class="headerlink" href="#memory-footprint" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Minimal overhead</strong>: Processes only new messages incrementally</p></li>
+<li><p><strong>Metadata tracking</strong>: Tiny <code class="docutils literal notranslate"><span class="pre">.meta</span></code> files (~10 bytes)</p></li>
+<li><p><strong>No caching</strong>: Session data parsed on-demand from STDIN</p></li>
+</ul>
+</section>
+<section id="terminal-rendering">
+<h3>Terminal Rendering<a class="headerlink" href="#terminal-rendering" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>OSC 8 hyperlinks</strong>: Minimal overhead in modern terminals</p></li>
+<li><p><strong>Fallback mode</strong>: Plain text if hyperlinks unsupported</p></li>
+<li><p><strong>Color codes</strong>: ANSI escape sequences for context usage colors</p></li>
+</ul>
+</section>
+</section>
+<section id="advanced-usage">
+<h2>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Link to this heading">¶</a></h2>
+<section id="custom-status-line-format">
+<h3>Custom Status Line Format<a class="headerlink" href="#custom-status-line-format" title="Link to this heading">¶</a></h3>
+<p>Edit <code class="docutils literal notranslate"><span class="pre">claude-statusline.sh</span></code> to modify display format. Key sections:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Line 120-180: Token calculation logic</span>
+<span class="c1"># Line 200-250: Output formatting</span>
+<span class="c1"># Line 300-350: Git info rendering</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-with-oh-my-posh">
+<h3>Integration with oh-my-posh<a class="headerlink" href="#integration-with-oh-my-posh" title="Link to this heading">¶</a></h3>
+<p>For enhanced git rendering with custom themes:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install oh-my-posh</span>
+curl<span class="w"> </span>-s<span class="w"> </span>https://ohmyposh.dev/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s
+
+<span class="c1"># Configure theme</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">POSH_THEME</span><span class="o">=</span><span class="s2">&quot;/path/to/theme.json&quot;</span>
+
+<span class="c1"># Statusline will auto-detect and use oh-my-posh</span>
+</pre></div>
+</div>
+</section>
+<section id="session-data-export">
+<h3>Session Data Export<a class="headerlink" href="#session-data-export" title="Link to this heading">¶</a></h3>
+<p>Extract session data programmatically:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get current session ID</span>
+<span class="nv">SESSION_ID</span><span class="o">=</span><span class="k">$(</span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.id&#39;</span><span class="w"> </span>&lt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CLAUDE_DIR</span><span class="s2">/session-env/</span><span class="k">$(</span>ls<span class="w"> </span>-t<span class="w"> </span><span class="nv">$CLAUDE_DIR</span>/session-env/<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="k">)</span><span class="s2">&quot;</span><span class="k">)</span>
+
+<span class="c1"># Read raw session JSONL</span>
+cat<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CLAUDE_DIR</span><span class="s2">/session-env/</span><span class="nv">$SESSION_ID</span><span class="s2">.jsonl&quot;</span>
+
+<span class="c1"># Parse with jq</span>
+cat<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CLAUDE_DIR</span><span class="s2">/session-env/</span><span class="nv">$SESSION_ID</span><span class="s2">.jsonl&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-s<span class="w"> </span><span class="s1">&#39;.&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="parallel-session-management">
+<h3>Parallel Session Management<a class="headerlink" href="#parallel-session-management" title="Link to this heading">¶</a></h3>
+<p>When running multiple Claude Code sessions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Each session creates unique readable file</span>
+ls<span class="w"> </span>.claude-sessions/readable-*.txt
+
+<span class="c1"># Monitor all sessions</span>
+watch<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="s1">&#39;tail -1 .claude-sessions/readable-*.txt&#39;</span>
+
+<span class="c1"># Find session by content</span>
+grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;search term&quot;</span><span class="w"> </span>.claude-sessions/readable-*.txt
+</pre></div>
+</div>
+</section>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Main Documentation</strong>: <code class="docutils literal notranslate"><span class="pre">README.md</span></code> - iclaude.sh usage and installation</p></li>
+<li><p><strong>Developer Guide</strong>: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/CLAUDE.md</span></code> - Architecture and internals</p></li>
+<li><p><strong>Skills System</strong>: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/skills/</span></code> - Claude Code skills integration</p></li>
+<li><p><strong>Proxy Configuration</strong>: <code class="docutils literal notranslate"><span class="pre">README.md</span></code> section on proxy setup</p></li>
+<li><p><strong>Router Integration</strong>: <code class="docutils literal notranslate"><span class="pre">README.md</span></code> section on Claude Code Router</p></li>
+</ul>
+</section>
+<section id="changelog">
+<h2>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h2>
+<section id="phase-2-2-current">
+<h3>Phase 2.2 (Current)<a class="headerlink" href="#phase-2-2-current" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Added adaptive display modes (full/compact/minimal)</p></li>
+<li><p>Automatic terminal width detection</p></li>
+<li><p>Smart abbreviations for narrow terminals</p></li>
+<li><p>Prevents line wrapping on all terminal sizes</p></li>
+<li><p>Configurable via STATUSLINE_ADAPTIVE environment variable</p></li>
+</ul>
+</section>
+<section id="phase-2-1">
+<h3>Phase 2.1<a class="headerlink" href="#phase-2-1" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Added append-only optimization (19x faster)</p></li>
+<li><p>Session-specific readable files (no conflicts)</p></li>
+<li><p>Smart regeneration triggers</p></li>
+<li><p>Compact detection with summary marker</p></li>
+</ul>
+</section>
+<section id="phase-2-0">
+<h3>Phase 2.0<a class="headerlink" href="#phase-2-0" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Added clickable session links (OSC 8)</p></li>
+<li><p>Readable session file generation</p></li>
+<li><p>Metadata tracking for processed lines</p></li>
+</ul>
+</section>
+<section id="phase-1-0">
+<h3>Phase 1.0<a class="headerlink" href="#phase-1-0" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Initial release with context tracking</p></li>
+<li><p>Cache visibility</p></li>
+<li><p>Cost and model display</p></li>
+<li><p>Git integration</p></li>
+</ul>
+</section>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<p>Part of the iclaude project. See main repository LICENSE.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="USE_CASES.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Use Cases</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="PROXY.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Настройка прокси</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Claude Statusline Documentation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#purpose">Purpose</a></li>
+<li><a class="reference internal" href="#data-source">Data Source</a></li>
+<li><a class="reference internal" href="#required-version">Required Version</a></li>
+<li><a class="reference internal" href="#script-location">Script Location</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#multi-provider-support-new">✨ Multi-Provider Support (NEW)</a><ul>
+<li><a class="reference internal" href="#supported-providers">Supported Providers</a></li>
+<li><a class="reference internal" href="#provider-detection">Provider Detection</a></li>
+<li><a class="reference internal" href="#cost-calculation">Cost Calculation</a></li>
+<li><a class="reference internal" href="#provider-icons">Provider Icons</a></li>
+<li><a class="reference internal" href="#architecture">Architecture</a></li>
+<li><a class="reference internal" href="#usage-examples">Usage Examples</a></li>
+<li><a class="reference internal" href="#backward-compatibility">Backward Compatibility</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li><a class="reference internal" href="#adding-new-providers">Adding New Providers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#streaming-mode-support-new-week-2">🔄 Streaming Mode Support (NEW - Week 2)</a><ul>
+<li><a class="reference internal" href="#id1">Overview</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#display-examples">Display Examples</a></li>
+<li><a class="reference internal" href="#streaming-indicator">Streaming Indicator (🔄)</a></li>
+<li><a class="reference internal" href="#supported-chunk-formats">Supported Chunk Formats</a><ul>
+<li><a class="reference internal" href="#anthropic-claude">Anthropic (Claude)</a></li>
+<li><a class="reference internal" href="#openai-gpt-4-deepseek">OpenAI (GPT-4, DeepSeek)</a></li>
+<li><a class="reference internal" href="#ollama-local-models">Ollama (Local Models)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#state-management">State Management</a></li>
+<li><a class="reference internal" href="#performance">Performance</a></li>
+<li><a class="reference internal" href="#token-accuracy">Token Accuracy</a></li>
+<li><a class="reference internal" href="#cost-during-streaming">Cost During Streaming</a></li>
+<li><a class="reference internal" href="#debug-mode">Debug Mode</a></li>
+<li><a class="reference internal" href="#id2">Usage Examples</a></li>
+<li><a class="reference internal" href="#id3">Backward Compatibility</a></li>
+<li><a class="reference internal" href="#id4">Troubleshooting</a></li>
+<li><a class="reference internal" href="#migration-guide">Migration Guide</a></li>
+<li><a class="reference internal" href="#id5">Architecture</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#display-format">Display Format</a><ul>
+<li><a class="reference internal" href="#example-output">Example Output</a></li>
+<li><a class="reference internal" href="#format-notes">Format Notes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#components">Components</a><ul>
+<li><a class="reference internal" href="#context-usage">1. Context Usage</a></li>
+<li><a class="reference internal" href="#cache-tokens">2. Cache Tokens</a></li>
+<li><a class="reference internal" href="#model-name">3. Model Name</a></li>
+<li><a class="reference internal" href="#cost">4. Cost</a></li>
+<li><a class="reference internal" href="#proxy-indicator">5. Proxy Indicator</a></li>
+<li><a class="reference internal" href="#router-indicator">6. Router Indicator</a></li>
+<li><a class="reference internal" href="#session-link">7. Session Link</a></li>
+<li><a class="reference internal" href="#git-info">8. Git Info</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6">Features</a><ul>
+<li><a class="reference internal" href="#key-capabilities">Key Capabilities</a></li>
+<li><a class="reference internal" href="#adaptive-display-modes">Adaptive Display Modes</a><ul>
+<li><a class="reference internal" href="#display-modes">Display Modes</a></li>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#implementation-details">Implementation Details</a></li>
+<li><a class="reference internal" href="#system-message-handling">System Message Handling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#token-parsing-claude-code-v2-1">Token Parsing (Claude Code v2.1+)</a></li>
+<li><a class="reference internal" href="#session-link-optimizations-phase-2-1">Session Link Optimizations (Phase 2.1)</a><ul>
+<li><a class="reference internal" href="#session-specific-filenames">1. Session-Specific Filenames</a></li>
+<li><a class="reference internal" href="#append-only-updates">2. Append-Only Updates</a></li>
+<li><a class="reference internal" href="#smart-regeneration-triggers">3. Smart Regeneration Triggers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compact-detection">Compact Detection</a></li>
+<li><a class="reference internal" href="#file-structure">File Structure</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">Configuration</a><ul>
+<li><a class="reference internal" href="#setup-instructions">Setup Instructions</a></li>
+<li><a class="reference internal" href="#id8">Debug Mode</a></li>
+<li><a class="reference internal" href="#automatic-configuration">Automatic Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a><ul>
+<li><a class="reference internal" href="#required">Required</a></li>
+<li><a class="reference internal" href="#optional">Optional</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#error-handling">Error Handling</a><ul>
+<li><a class="reference internal" href="#missing-jq">Missing jq</a></li>
+<li><a class="reference internal" href="#invalid-or-missing-data">Invalid or Missing Data</a></li>
+<li><a class="reference internal" href="#git-timeout">Git Timeout</a></li>
+<li><a class="reference internal" href="#null-values-after-clear">Null Values After /clear</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#helper-scripts">Helper Scripts</a><ul>
+<li><a class="reference internal" href="#claude-show-cache-sh">claude-show-cache.sh</a><ul>
+<li><a class="reference internal" href="#id9">Usage Examples</a></li>
+<li><a class="reference internal" href="#id10">Features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#viewing-readable-sessions">Viewing Readable Sessions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id11">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#status-line-not-showing">Status line not showing</a></li>
+<li><a class="reference internal" href="#incorrect-token-counts">Incorrect token counts</a></li>
+<li><a class="reference internal" href="#session-link-not-clickable">Session link not clickable</a></li>
+<li><a class="reference internal" href="#high-memory-usage">High memory usage</a></li>
+<li><a class="reference internal" href="#git-info-missing">Git info missing</a></li>
+<li><a class="reference internal" href="#cache-metrics-incorrect-after-compact">Cache metrics incorrect after /compact</a></li>
+<li><a class="reference internal" href="#debug-log-not-created">Debug log not created</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-considerations">Performance Considerations</a><ul>
+<li><a class="reference internal" href="#append-only-optimization">Append-Only Optimization</a></li>
+<li><a class="reference internal" href="#memory-footprint">Memory Footprint</a></li>
+<li><a class="reference internal" href="#terminal-rendering">Terminal Rendering</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
+<li><a class="reference internal" href="#custom-status-line-format">Custom Status Line Format</a></li>
+<li><a class="reference internal" href="#integration-with-oh-my-posh">Integration with oh-my-posh</a></li>
+<li><a class="reference internal" href="#session-data-export">Session Data Export</a></li>
+<li><a class="reference internal" href="#parallel-session-management">Parallel Session Management</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
+<li><a class="reference internal" href="#changelog">Changelog</a><ul>
+<li><a class="reference internal" href="#phase-2-2-current">Phase 2.2 (Current)</a></li>
+<li><a class="reference internal" href="#phase-2-1">Phase 2.1</a></li>
+<li><a class="reference internal" href="#phase-2-0">Phase 2.0</a></li>
+<li><a class="reference internal" href="#phase-1-0">Phase 1.0</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=fa37347f"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>

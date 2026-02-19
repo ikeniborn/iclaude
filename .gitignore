@@ -115,3 +115,6 @@ docs/sphinx/_build/.doctrees/
 
 # Python venv for Sphinx (generated, not committed)
 .nvm-isolated/.python-docs/
+
+# Claude Code Agent Workspace
+.claude/workspace/
