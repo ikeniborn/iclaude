@@ -28,8 +28,6 @@
 
 | Компонент | LOC | Сложность | Главная проблема |
 |-----------|-----|-----------|-----------------|
-| **lib/loop/** | 1,432 | 🔴 ВЫСОКАЯ | AI merge conflicts, Markdown parser, git worktree |
-| **lib/context/** | 850 | 🟡 СРЕДНЯЯ | rsync/tar operations, worktree sync |
 | **lib/nvm/** | 756 | 🟡 СРЕДНЯЯ | Dynamic PATH manipulation, binary detection |
 | **lib/proxy/** | 698 | 🟡 СРЕДНЯЯ | DNS fallback chain, URL parsing |
 | **lib/lockfile/** | 484 | 🟢 НИЗКАЯ | JSON read/write → serde_json |
@@ -139,25 +137,7 @@ symlink(&target, &link_path)?;
 
 **Вывод:** `PermissionsExt` из stdlib достаточно для chmod — `nix` crate не обязателен. `nix` нужен только для расширенных Unix операций (chown, extended attrs).
 
-**4. Loop Mode — AI Merge Conflict Resolution (lib/loop/worktree.sh)**
-
-```bash
-# bash: вызов claude для разрешения конфликтов
-"$claude_cmd" --print --no-chrome "$merge_prompt"
-```
-
-```rust
-// Rust: прямой spawn (не exec, так как нужен output)
-let output = Command::new(&claude_bin)
-    .args(["--print", "--no-chrome"])
-    .arg(&merge_prompt)
-    .output()?;
-let resolved = String::from_utf8_lossy(&output.stdout);
-```
-
-**Вывод:** Claude вызывается как обычный внешний процесс — реализуемо без изменений.
-
-**5. Markdown task parsing (lib/loop/parser.sh)**
+**4. Markdown parsing (pulldown-cmark)**
 
 ```rust
 // pulldown-cmark для структурного парсинга

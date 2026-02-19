@@ -96,7 +96,7 @@ Approval gates после каждого агента — можно остан�
 
 **Пример 1 — простая задача:**
 ```
-/agent-orchestrator Добавить флаг --list-sessions в iclaude.sh
+/agent-orchestrator Добавить поддержку нового LSP языка
 ```
 → Researcher: находит `lib/command/args.sh`, complexity=minimal
 → Planner: 2 фазы, 4 шага
@@ -131,8 +131,6 @@ Approval gates после каждого агента — можно остан�
 
 ### Техническое
 - **[CLAUDE.md](./CLAUDE.md)** - архитектура проекта
-- **[lib/loop/README.md](./lib/loop/README.md)** - Ralph-Loop документация
-- **[lib/context/README.md](./lib/context/README.md)** - Context Management
 
 ---
 
@@ -159,7 +157,6 @@ Approval gates после каждого агента — можно остан�
 
 # Дополнительно
 ./iclaude.sh --install-statusline      # Установить Status Line
-./iclaude.sh --install-gh              # Установить GitHub CLI
 ./iclaude.sh --sandbox-install         # Установить sandboxing (Linux/WSL2)
 
 # Oh My Posh (опционально, для красивого status line)
@@ -284,7 +281,7 @@ export DEEPSEEK_API_KEY="your-key"
 
 **Опциональные:**
 - `git` - для git-workflow skill
-- `gh` - для pr-automation skill (`./iclaude.sh --install-gh`)
+- `gh` - для pr-automation skill (установить через `gh` пакетный менеджер)
 - `bubblewrap`, `socat` - для sandboxing на Linux/WSL2 (`./iclaude.sh --sandbox-install`)
 
 ---

@@ -107,18 +107,6 @@
 | `--restore-git-proxy` | Восстановить git proxy из backup |
 | `--refresh-token` | Обновить OAuth токен (~1 year lifetime) |
 
-### 🧠 Auto Memory
-
-Управление памятью Claude Code (MEMORY.md).
-
-| Команда | Описание |
-|---------|----------|
-| `--context-memory-organize [PATH]` | Разбить MEMORY.md на топик-файлы |
-| `--context-memory-init` | Создать MEMORY.md |
-| `--context-memory-validate` | Проверить 200 строк лимит |
-| `--context-memory-add "text"` | Добавить запись |
-| `--context-memory-status` | Статус Auto Memory |
-
 ### 🔒 Sandbox Integration
 
 OS-level изоляция файловой системы и сети для безопасного выполнения.
@@ -159,17 +147,6 @@ OS-level изоляция файловой системы и сети для б�
 - Хотите снизить потребление контекста
 
 <sub>⚠️ **Важно:** Chrome интеграция увеличивает потребление контекста даже если не используется</sub>
-
-### 🐙 GitHub CLI
-
-Интеграция с GitHub CLI для автоматизации PR workflow.
-
-| Команда | Описание |
-|---------|----------|
-| `--install-gh` | Установка gh CLI в изолированное окружение |
-| `--check-gh` | Статус gh CLI и авторизации |
-
-<sub>✨ **Используется скиллом:** pr-automation для создания PR и мониторинга CI/CD</sub>
 
 ---
 

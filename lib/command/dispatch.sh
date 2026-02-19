@@ -15,12 +15,10 @@
 #   0 - Command executed successfully
 #   1 - Command failed
 # Globals:
-#   Reads: USE_LOOP_MODE, LOOP_TASK_FILE, LOOP_MODE_TYPE, etc.
 # Design:
 #   This function is a placeholder for future full extraction.
 #   Phase 14 focuses on modularization structure, Phase 15+ will extract logic.
 # Dispatch Logic (to be extracted):
-#   - Check loop mode → execute_sequential_mode() / execute_parallel_mode()
 #   - Check OAuth token expiration
 #   - Add CLI flags (--dangerously-skip-permissions, --chrome)
 #   - Launch Claude Code

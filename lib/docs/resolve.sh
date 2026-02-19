@@ -4,7 +4,7 @@
 #
 # Per-project helper functions: resolve paths, detect project type.
 # All functions accept $1=project_path (default: pwd).
-# Pattern: analogous to lib/context/init.sh
+# Pattern: path helper module (analogous to other lib/*/init.sh files)
 
 #######################################
 # Get absolute project directory

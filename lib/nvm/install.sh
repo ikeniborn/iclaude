@@ -138,7 +138,6 @@ install_isolated_nodejs() {
 #   - install_isolated_claude()
 #   - install_isolated_router()
 #   - install_isolated_lsp_servers() (multiple packages)
-#   - install_isolated_gh()
 #   - etc.
 #
 # Arguments:

@@ -679,18 +679,6 @@ A: Yes. Node.js, LSP servers, and Router versions remain in lockfile. Claude Cod
 | `--restore-git-proxy` | Восстановить git proxy из backup |
 | `--refresh-token` | Обновить OAuth токен (~1 year lifetime) |
 
-### 🧠 Auto Memory
-
-Управление памятью Claude Code (MEMORY.md).
-
-| Команда | Описание |
-|---------|----------|
-| `--context-memory-organize [PATH]` | Разбить MEMORY.md на топик-файлы |
-| `--context-memory-init` | Создать MEMORY.md |
-| `--context-memory-validate` | Проверить 200 строк лимит |
-| `--context-memory-add "text"` | Добавить запись |
-| `--context-memory-status` | Статус Auto Memory |
-
 ### 🔒 Sandbox Integration
 
 OS-level изоляция файловой системы и сети для безопасного выполнения.
@@ -731,17 +719,6 @@ OS-level изоляция файловой системы и сети для б�
 - Хотите снизить потребление контекста
 
 <sub>⚠️ **Важно:** Chrome интеграция увеличивает потребление контекста даже если не используется</sub>
-
-### 🐙 GitHub CLI
-
-Интеграция с GitHub CLI для автоматизации PR workflow.
-
-| Команда | Описание |
-|---------|----------|
-| `--install-gh` | Установка gh CLI в изолированное окружение |
-| `--check-gh` | Статус gh CLI и авторизации |
-
-<sub>✨ **Используется скиллом:** pr-automation для создания PR и мониторинга CI/CD</sub>
 
 ---
 
@@ -3177,8 +3154,7 @@ sudo ./iclaude.sh --create-symlink
 Автоматизация PR workflow с мониторингом CI/CD и автоисправлением ошибок:
 
 ```bash
-# Установить gh CLI (один раз)
-./iclaude.sh --install-gh
+# Установить gh CLI (один раз, через пакетный менеджер)
 gh auth login
 
 # Создать PR через Claude
@@ -4564,1471 +4540,6 @@ less docs/features/context-monitoring.md
 **Последнее обновление**: 2026-02-10
 
 
-# Loop Mode Architecture Documentation
-
-**Version:** 1.0.0
-**Date:** 2026-01-25
-**Status:** Production Ready
-
----
-
-## Overview
-
-This directory contains comprehensive architecture documentation for the **Loop Mode** feature in iclaude.sh - a bash-based iterative task execution system with parallel support.
-
-## Documentation Structure
-
-### Core Documentation
-
-- **[loop-mode-overview.yaml](loop-mode-overview.yaml)** - Complete architecture specification
-  - Metadata and project info
-  - Component catalog (11 components)
-  - Dependency graph (nodes + edges)
-  - Data flow descriptions
-  - Quality attributes
-  - Deployment configuration
-  - Migration guide from ralph-loop
-  - Development timeline (5 weeks)
-
-### Diagrams (Mermaid)
-
-- **[diagrams/dependency-graph.md](diagrams/dependency-graph.md)** - Component dependency visualization
-- **[diagrams/sequential-flow.md](diagrams/sequential-flow.md)** - Sequential execution flow
-- **[diagrams/parallel-flow.md](diagrams/parallel-flow.md)** - Parallel execution with worktrees
-
-### Source Documentation
-
-All original implementation documentation is consolidated into `loop-mode-overview.yaml`:
-- WEEK1-IMPLEMENTATION-SUMMARY.md → Components (task-parser, sequential-executor, etc.)
-- WEEK2-IMPLEMENTATION-SUMMARY.md → Parallel execution architecture
-- WEEK4-SUMMARY.md → Template migration details
-- WEEK5-TESTING-PLAN.md → Testing section
-- WEEK5-IMPLEMENTATION-SUMMARY.md → Final metrics
-- MIGRATION-GUIDE.md → Migration section
-- IMPLEMENTATION-STATUS.md → Development timeline
-- PROJECT-COMPLETION-REPORT.md → Overall project metrics
-
----
-
-## Quick Navigation
-
-### By Component
-
-**Input Processing:**
-- [Task Parser](#task-parser) - Markdown task definition parser
-- [Argument Parser](#argument-parser) - CLI flag parser
-
-**Execution:**
-- [Sequential Executor](#sequential-executor) - Sequential task execution with retry
-- [Parallel Executor](#parallel-executor) - Parallel execution with worktrees
-
-**AI Integration:**
-- [Claude Invoker](#claude-invoker) - Claude Code CLI invocation
-- [AI Conflict Resolver](#ai-conflict-resolver) - Automatic merge conflict resolution
-
-**Infrastructure:**
-- [Worktree Manager](#worktree-manager) - Git worktree lifecycle
-- [Git Integrator](#git-integrator) - Auto-commit and push
-- [State Manager](#state-manager) - State persistence for recovery
-
-**Validation:**
-- [Completion Verifier](#completion-verifier) - Task success verification
-
-### By Use Case
-
-**Sequential Execution:**
-```bash
-./iclaude.sh --loop task.md
-```
-See: [diagrams/sequential-flow.md](diagrams/sequential-flow.md)
-
-**Parallel Execution:**
-```bash
-./iclaude.sh --loop-parallel tasks.md
-```
-See: [diagrams/parallel-flow.md](diagrams/parallel-flow.md)
-
----
-
-## Component Dependency Graph
-
-```mermaid
-graph TD
-    ArgParser["Argument Parser"]
-    TaskParser["Task Parser"]
-    SeqExec["Sequential Executor"]
-    ParExec["Parallel Executor"]
-    WorktreeM["Worktree Manager"]
-    AIResolver["AI Conflict Resolver"]
-    ClaudeInv["Claude Invoker"]
-    CompVerify["Completion Verifier"]
-    GitInt["Git Integrator"]
-    StateM["State Manager"]
-
-    ArgParser -->|routes to| SeqExec
-    ArgParser -->|routes to| ParExec
-    SeqExec -->|loads| TaskParser
-    SeqExec -->|executes| ClaudeInv
-    SeqExec -->|verifies| CompVerify
-    SeqExec -->|commits| GitInt
-    SeqExec -->|saves| StateM
-    ParExec -->|loads| TaskParser
-    ParExec -->|creates| WorktreeM
-    ParExec -->|executes| ClaudeInv
-    ParExec -->|saves| StateM
-    WorktreeM -->|resolves| AIResolver
-    AIResolver -->|invokes| ClaudeInv
-
-    classDef inputLayer fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
-    classDef executionLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef aiLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef infraLayer fill:#e1ffe1,stroke:#388e3c,stroke-width:2px
-    classDef validationLayer fill:#ffe1e1,stroke:#d32f2f,stroke-width:2px
-
-    class ArgParser,TaskParser inputLayer
-    class SeqExec,ParExec executionLayer
-    class ClaudeInv,AIResolver aiLayer
-    class WorktreeM,GitInt,StateM infraLayer
-    class CompVerify validationLayer
-```
-
----
-
-## Key Architectural Decisions
-
-### 1. Bash Implementation
-
-**Decision:** Implement loop mode as embedded bash functions in iclaude.sh
-
-**Rationale:**
-- No external dependencies (ralph-loop plugin deprecated)
-- Leverages existing iclaude.sh infrastructure (proxy, OAuth, NVM detection)
-- Native integration with shell environment
-
-**Trade-offs:**
-- Bash complexity increases
-- Harder to unit test than TypeScript/Python
-- Limited to Unix-like systems
-
-### 2. Git Worktrees for Isolation
-
-**Decision:** Use git worktrees for parallel task isolation
-
-**Rationale:**
-- True file system isolation (no conflicts between parallel tasks)
-- Native git feature (no custom file copying)
-- Supports independent branches per task
-
-**Trade-offs:**
-- Requires git 2.5+ (worktree feature)
-- Additional disk space (one copy per worktree)
-- Cleanup complexity if process killed
-
-### 3. Markdown Task Format
-
-**Decision:** Use Markdown files for task definitions instead of CLI arguments
-
-**Rationale:**
-- Git-friendly (version control, diffs, reviews)
-- Human-readable and editable
-- Supports multi-task definitions
-- No shell escaping issues
-
-**Trade-offs:**
-- Extra file required (vs inline args)
-- Parsing complexity (sed/grep)
-- Users must learn format
-
-### 4. AI-Assisted Conflict Resolution
-
-**Decision:** Invoke Claude Code to automatically resolve merge conflicts
-
-**Rationale:**
-- Reduces manual intervention in parallel workflows
-- Leverages Claude's code understanding
-- Prevents workflow blocking
-
-**Trade-offs:**
-- Requires Claude Code available
-- AI may not always resolve correctly
-- Additional API cost per conflict
-
----
-
-## Project Metrics
-
-**Code:**
-- Total lines added: +2515
-- Total lines removed: -443
-- Net change: +2072 lines
-- iclaude.sh: 4953 → 6127 lines (+23.7%)
-
-**Functions:**
-- Week 1: 9 functions (sequential execution)
-- Week 2: 7 functions (parallel execution)
-- Total: 16 new functions
-
-**Documentation:**
-- 8 documentation files
-- 2689 lines of documentation
-- 3 Mermaid diagrams
-
-**Git:**
-- 8 commits with meaningful messages
-- All with Co-Authored-By: Claude Sonnet 4.5
-
-**Testing:**
-- 10 test cases defined (7 critical + 3 optional)
-- Status: Pending manual execution
-
----
-
-## Migration from Ralph-Loop
-
-### Before (ralph-loop plugin)
-```bash
-# Inside Claude Code session
-/ralph-loop "Fix TypeScript errors" \
-  --context "File: app.ts, Line: 45" \
-  --completion-promise "All checks pass" \
-  --max-iterations 5
-```
-
-### After (bash loop mode)
-```bash
-# Create task.md
-cat > task.md <<'EOF'
-# Task: Fix TypeScript Errors
-
-## Description
-Fix TS2322 type mismatch in app.ts:45
-
-## Completion Promise
-npm run type-check
-
-## Validation Command
-npm run type-check
-
-## Max Iterations
-5
-
-## Git Config
-Branch: fix/typescript-errors
-Commit message: fix: resolve TS2322 type mismatch
-Auto-push: true
-EOF
-
-# Execute (external to Claude session)
-./iclaude.sh --loop task.md
-```
-
-### Migration Benefits
-
-- ✅ Parallel execution (ralph-loop had none)
-- ✅ State persistence (ralph-loop had none)
-- ✅ AI conflict resolution (ralph-loop had none)
-- ✅ Git-friendly task definitions
-- ✅ No plugin installation required
-
-See: [Full Migration Guide](../MIGRATION-GUIDE.md)
-
----
-
-## Testing
-
-**Test Plan:** [../WEEK5-TESTING-PLAN.md](../WEEK5-TESTING-PLAN.md)
-
-**Critical Tests:**
-1. Simple sequential task (1 iteration success)
-2. Max iterations reached (failure handling)
-3. Parallel execution without conflicts
-4. Parallel execution with AI conflict resolution
-5. Git integration (commit + push)
-6. Regex completion promise
-7. Exponential backoff timing
-
-**Status:** Ready for manual execution
-
----
-
-## Future Enhancements (v2.0)
-
-- Automated test suite (bats-core integration)
-- Task dependencies (DAG-based execution)
-- Custom retry strategies
-- Webhooks for completion notifications
-- Dashboard UI for monitoring
-- Direct PR creation from loop mode
-
----
-
-## References
-
-### Code
-- iclaude.sh lines 2180-2850 (loop mode implementation)
-- iclaude.sh lines 5092-5150 (argument parsing)
-
-### Examples
-- examples/test-loop-simple.md
-- examples/test-loop-retry.md
-- examples/test-loop-parallel.md
-
-### Documentation
-- MIGRATION-GUIDE.md
-- CLAUDE.md (Loop Mode Commands section)
-
----
-
-**Maintained by:** Claude Sonnet 4.5
-**Last Updated:** 2026-01-25
-**Status:** Production Ready
-
-
-# Архитектурные диаграммы iclaude
-
-Данный документ содержит визуализации ключевых процессов и зависимостей в проекте iclaude.
-
-## Содержание
-
-1. [Граф зависимостей компонентов](#граф-зависимостей-компонентов)
-2. [Поток настройки прокси](#поток-настройки-прокси)
-3. [Поток изолированной установки](#поток-изолированной-установки)
-4. [Поток обновления OAuth токена](#поток-обновления-oauth-токена)
-5. [Поток запуска через Router](#поток-запуска-через-router)
-
----
-
-## Граф зависимостей компонентов
-
-Показывает структуру модулей и их взаимосвязи в iclaude.sh.
-
-**Легенда:**
-- 🔵 CLI Layer — точка входа и обработка команд
-- 🟠 Core Layer — основная бизнес-логика
-- 🟢 Installation Layer — установка и обновление
-- 🔴 Infrastructure Layer — низкоуровневые операции
-- ⚪ External — внешние зависимости
-
-```mermaid
-graph TD
-    %% CLI Layer
-    CLI[cli-main<br/>Main Entry Point]
-    USAGE[cli-usage<br/>Usage Display]
-
-    %% Core Layer - Proxy Management
-    PROXY[proxy-management<br/>Proxy Management]
-    VALIDATE[validate-proxy-url<br/>URL Validator]
-    RESOLVE[resolve-domain<br/>Domain Resolution]
-    PARSE[parse-proxy-url<br/>URL Parser]
-    CONFIG_PROXY[configure-proxy<br/>Environment Configurator]
-    TEST_PROXY[test-proxy<br/>Connection Tester]
-
-    %% Core Layer - Environment Management
-    ISOLATED[isolated-environment<br/>Environment Manager]
-    SETUP_NVM[setup-isolated-nvm<br/>NVM Setup]
-    REPAIR[repair-isolated-env<br/>Environment Repair]
-    CHECK_STATUS[check-isolated-status<br/>Status Checker]
-
-    %% Core Layer - Version Management
-    VERSION_MGT[version-management<br/>Version Manager]
-    SAVE_LOCK[save-lockfile<br/>Lockfile Saver]
-    INSTALL_LOCK[install-from-lockfile<br/>Lockfile Installer]
-
-    %% Core Layer - Configuration Management
-    CONFIG_MGT[config-management<br/>Config Manager]
-    SETUP_CONFIG[setup-isolated-config<br/>Config Setup]
-    EXPORT_IMPORT[export-import-config<br/>Config Migration]
-
-    %% Core Layer - OAuth Token Management
-    OAUTH[oauth-token-management<br/>Token Manager]
-    CHECK_TOKEN[check-oauth-token<br/>Token Checker]
-    REFRESH_TOKEN[refresh-oauth-token<br/>Token Refresher]
-    CHECK_EXP[check-token-expiration<br/>Expiration Checker]
-
-    %% Core Layer - Router Management
-    ROUTER[router-management<br/>Router Manager]
-    DETECT_ROUTER[detect-router<br/>Router Detector]
-    GET_ROUTER[get-router-path<br/>Router Path Finder]
-    CHECK_ROUTER[check-router-status<br/>Router Status]
-
-    %% Installation Layer
-    NVM_INST[nvm-installer<br/>NVM Installer]
-    NODE_INST[nodejs-installer<br/>Node.js Installer]
-    CLAUDE_INST[claude-installer<br/>Claude Installer]
-    ROUTER_INST[router-installer<br/>Router Installer]
-    UPDATER[claude-updater<br/>Claude Updater]
-    CLEANUP[cleanup-old-installations<br/>Installation Cleaner]
-    SYMLINK[symlink-manager<br/>Symlink Manager]
-    NVM_DETECT[nvm-detector<br/>NVM Detector]
-    CLAUDE_PATH[claude-path-finder<br/>Claude Path Finder]
-    VERSION_DETECT[version-detector<br/>Version Detector]
-
-    %% Infrastructure Layer
-    CRED_STORE[credential-storage<br/>Credential Storage]
-    GIT_PROXY[git-proxy-config<br/>Git Proxy Config]
-    FILE_OPS[file-operations<br/>File Operations]
-    JQ_VALID[jq-validator<br/>JQ Validator]
-    DEP_CHECK[dependency-checker<br/>Dependency Checker]
-    OUTPUT[output-formatters<br/>Output Formatters]
-
-    %% External Dependencies
-    CLAUDE_CLI[claude-cli<br/>Claude Code CLI]
-    ROUTER_CLI[router-cli<br/>Router CLI]
-    NVM_BIN[nvm-binary<br/>NVM Binary]
-    GIT_BIN[git-binary<br/>Git Binary]
-    CURL_BIN[curl-binary<br/>Curl Binary]
-    JQ_BIN[jq-binary<br/>JQ Binary]
-
-    %% Dependencies - CLI Layer
-    CLI -->|routes to| PROXY
-    CLI -->|routes to| ISOLATED
-    CLI -->|routes to| VERSION_MGT
-    CLI -.->|optional| OAUTH
-    CLI -.->|optional| ROUTER
-
-    %% Dependencies - Proxy Management
-    PROXY --> VALIDATE
-    PROXY -.-> RESOLVE
-    PROXY --> CRED_STORE
-    PROXY -.-> GIT_PROXY
-    VALIDATE --> PARSE
-    CONFIG_PROXY --> PARSE
-    TEST_PROXY --> CONFIG_PROXY
-    TEST_PROXY --> CURL_BIN
-
-    %% Dependencies - Environment Management
-    ISOLATED --> NVM_INST
-    ISOLATED --> NODE_INST
-    ISOLATED --> CLAUDE_INST
-    ISOLATED --> VERSION_MGT
-    ISOLATED --> SETUP_NVM
-    ISOLATED --> REPAIR
-
-    %% Dependencies - Version Management
-    VERSION_MGT --> SAVE_LOCK
-    VERSION_MGT --> INSTALL_LOCK
-    SAVE_LOCK --> VERSION_DETECT
-    INSTALL_LOCK --> NVM_INST
-    INSTALL_LOCK --> NODE_INST
-    INSTALL_LOCK --> CLAUDE_INST
-    INSTALL_LOCK -.-> ROUTER_INST
-
-    %% Dependencies - OAuth Management
-    OAUTH --> CHECK_TOKEN
-    CHECK_TOKEN --> CHECK_EXP
-    CHECK_TOKEN -.-> REFRESH_TOKEN
-    REFRESH_TOKEN --> CLAUDE_CLI
-    OAUTH --> CRED_STORE
-    OAUTH --> JQ_VALID
-
-    %% Dependencies - Router Management
-    ROUTER --> DETECT_ROUTER
-    ROUTER --> GET_ROUTER
-    ROUTER -.-> ROUTER_INST
-    DETECT_ROUTER --> GET_ROUTER
-    CHECK_ROUTER --> JQ_VALID
-
-    %% Dependencies - Installation Layer
-    CLAUDE_INST --> NODE_INST
-    CLAUDE_INST --> SYMLINK
-    ROUTER_INST --> NODE_INST
-    ROUTER_INST --> SYMLINK
-    NODE_INST --> NVM_INST
-    UPDATER --> CLEANUP
-    UPDATER --> SYMLINK
-    UPDATER --> SAVE_LOCK
-    CLAUDE_PATH --> NVM_DETECT
-    VERSION_DETECT --> CLAUDE_PATH
-
-    %% Dependencies - Infrastructure
-    GIT_PROXY --> GIT_BIN
-    CONFIG_MGT --> FILE_OPS
-
-    %% Layer Styling
-    classDef cliLayer fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef coreLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef installLayer fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef infraLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef externalLayer fill:#f0f0f0,stroke:#616161,stroke-width:2px
-
-    class CLI,USAGE cliLayer
-    class PROXY,VALIDATE,RESOLVE,PARSE,CONFIG_PROXY,TEST_PROXY,ISOLATED,SETUP_NVM,REPAIR,CHECK_STATUS,VERSION_MGT,SAVE_LOCK,INSTALL_LOCK,CONFIG_MGT,SETUP_CONFIG,EXPORT_IMPORT,OAUTH,CHECK_TOKEN,REFRESH_TOKEN,CHECK_EXP,ROUTER,DETECT_ROUTER,GET_ROUTER,CHECK_ROUTER coreLayer
-    class NVM_INST,NODE_INST,CLAUDE_INST,ROUTER_INST,UPDATER,CLEANUP,SYMLINK,NVM_DETECT,CLAUDE_PATH,VERSION_DETECT installLayer
-    class CRED_STORE,GIT_PROXY,FILE_OPS,JQ_VALID,DEP_CHECK,OUTPUT infraLayer
-    class CLAUDE_CLI,ROUTER_CLI,NVM_BIN,GIT_BIN,CURL_BIN,JQ_BIN externalLayer
-```
-
----
-
-## Поток настройки прокси
-
-Описывает процесс конфигурации HTTP/HTTPS прокси от ввода URL до запуска Claude Code.
-
-**Ключевые этапы:**
-1. Валидация формата URL
-2. Обработка протокола (HTTP vs HTTPS)
-3. Сохранение учётных данных
-4. Тестирование соединения
-5. Запуск Claude Code
-
-```mermaid
-graph LR
-    %% Proxy Configuration Flow
-    USER[User] -->|1. Provides proxy URL| CLI[CLI Main]
-    CLI -->|2. Validate format| VALIDATE[Validate Proxy URL]
-    VALIDATE -->|3. Check protocol| PROTOCOL{Protocol?}
-
-    PROTOCOL -->|HTTP| RESOLVE[Resolve Domain<br/>to IP]
-    PROTOCOL -->|HTTPS| PARSE[Parse Proxy URL]
-    RESOLVE -->|4. Convert domain| PARSE
-
-    PARSE -->|5. Extract credentials| CRED[Credential Storage]
-    CRED -->|6. Save credentials<br/>chmod 600| FILE[.claude_proxy_credentials]
-
-    FILE -->|7. Load credentials| CONFIG[Configure Proxy]
-    CONFIG -->|8. Set environment<br/>variables| ENV[HTTPS_PROXY<br/>HTTP_PROXY<br/>NO_PROXY]
-
-    ENV -->|9. Test connectivity| TEST[Test Proxy]
-    TEST -->|10. HTTP request| HTTP_TEST[http://www.google.com]
-    TEST -->|11. HTTPS request| HTTPS_TEST[https://www.anthropic.com]
-
-    HTTP_TEST -->|12. Success| LAUNCH[Launch Claude]
-    HTTPS_TEST -->|12. Success| LAUNCH
-
-    LAUNCH -->|13. Start with proxy| CLAUDE[Claude Code CLI]
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-
-    class USER userClass
-    class CLI,VALIDATE,RESOLVE,PARSE,CONFIG,TEST processClass
-    class CRED,FILE,ENV storageClass
-    class HTTP_TEST,HTTPS_TEST,CLAUDE externalClass
-```
-
----
-
-## Поток изолированной установки
-
-Показывает процесс установки изолированного окружения с NVM, Node.js и Claude Code.
-
-**Создаваемые артефакты:**
-- `.nvm-isolated/` — директория окружения
-- `versions/node/v18.x.x/` — Node.js
-- `npm-global/bin/claude` — симлинк на CLI
-- `.nvm-isolated-lockfile.json` — файл версий
-
-```mermaid
-graph TD
-    %% Isolated Installation Flow
-    USER[User] -->|1. Execute --isolated-install| CLI[CLI Main]
-    CLI -->|2. Create directory| DIR[.nvm-isolated/]
-
-    DIR -->|3. Download NVM| NVM_DOWNLOAD[Download NVM<br/>install.sh]
-    NVM_DOWNLOAD -->|4. Install NVM| NVM_INST[NVM Installer]
-
-    NVM_INST -->|5. Set NVM_DIR| NVM_ENV[NVM Environment]
-    NVM_ENV -->|6. Install Node.js| NODE_INST[Node.js Installer]
-
-    NODE_INST -->|7. nvm install 18.20.8| NODE_BIN[Node.js v18.20.8<br/>in .nvm-isolated/]
-
-    NODE_BIN -->|8. npm install -g| CLAUDE_INST[Claude Code Installer]
-    CLAUDE_INST -->|9. Install @anthropic-ai/claude-code| CLAUDE_PKG[Claude Code Package]
-
-    CLAUDE_PKG -->|10. Create symlink| SYMLINK[Symlink Manager]
-    SYMLINK -->|11. Link claude binary| CLAUDE_BIN[.nvm-isolated/npm-global/bin/claude]
-
-    CLAUDE_BIN -->|12. Detect versions| VERSION_DETECT[Version Detector]
-    VERSION_DETECT -->|13. Get Node version| NODE_VER[node --version]
-    VERSION_DETECT -->|14. Get Claude version| CLAUDE_VER[claude --version]
-
-    NODE_VER -->|15. Save to lockfile| LOCKFILE[Lockfile Saver]
-    CLAUDE_VER -->|15. Save to lockfile| LOCKFILE
-
-    LOCKFILE -->|16. Write JSON| LOCK_FILE[.nvm-isolated-lockfile.json]
-    LOCK_FILE -->|17. Success message| USER
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef binaryClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-
-    class USER userClass
-    class CLI,NVM_INST,NODE_INST,CLAUDE_INST,SYMLINK,VERSION_DETECT,LOCKFILE processClass
-    class DIR,NVM_ENV,LOCK_FILE storageClass
-    class NVM_DOWNLOAD,NODE_BIN,CLAUDE_PKG,CLAUDE_BIN,NODE_VER,CLAUDE_VER binaryClass
-```
-
----
-
-## Поток обновления OAuth токена
-
-Описывает автоматическую проверку и обновление OAuth токена при запуске.
-
-**Важные моменты:**
-- Токен проверяется при каждом запуске
-- Автоматическое обновление за 7 дней до истечения
-- Новый токен действителен ~1 год
-- При ошибке credentials не удаляются
-
-```mermaid
-graph TD
-    %% OAuth Token Refresh Flow
-    USER[User] -->|1. Launch Claude| CLI[CLI Main]
-    CLI -->|2. Check token| CHECK[Check OAuth Token]
-
-    CHECK -->|3. Read credentials| CRED_FILE[.credentials.json]
-    CRED_FILE -->|4. Extract expiresAt| TOKEN_DATA{Token Data}
-
-    TOKEN_DATA -->|5. Parse timestamp| EXP_CHECK[Check Token Expiration]
-    EXP_CHECK -->|6. Current time + threshold| CALC[Calculate<br/>expires_in < 7 days?]
-
-    CALC -->|NO: Token valid| LAUNCH[Launch Claude]
-    CALC -->|YES: Expiring soon| REFRESH[Refresh OAuth Token]
-
-    REFRESH -->|7. Execute command| SETUP_TOKEN[claude setup-token]
-    SETUP_TOKEN -->|8. Open browser| BROWSER[Browser Authentication]
-
-    BROWSER -->|9. User authorizes| ANTHROPIC[Anthropic OAuth Server]
-    ANTHROPIC -->|10. Return new tokens| NEW_TOKEN[New Access Token<br/>New Refresh Token<br/>New expiresAt]
-
-    NEW_TOKEN -->|11. Update credentials| UPDATE[Update Credential Storage]
-    UPDATE -->|12. Write JSON| CRED_FILE
-
-    CRED_FILE -->|13. Credentials saved| SUCCESS[Success Message]
-    SUCCESS -->|14. Continue launch| LAUNCH
-
-    LAUNCH -->|15. Start with valid token| CLAUDE[Claude Code CLI]
-
-    %% Error handling
-    SETUP_TOKEN -.->|Error: Failed| ERROR[Display Warning]
-    ERROR -.->|Preserve credentials| CRED_FILE
-    ERROR -.->|User action required| USER_ACTION[User runs /login manually]
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-
-    class USER userClass
-    class CLI,CHECK,EXP_CHECK,REFRESH,UPDATE processClass
-    class CRED_FILE,TOKEN_DATA,SUCCESS storageClass
-    class SETUP_TOKEN,BROWSER,ANTHROPIC,NEW_TOKEN,LAUNCH,CLAUDE externalClass
-    class ERROR,USER_ACTION errorClass
-```
-
----
-
-## Поток запуска через Router
-
-Показывает процесс запуска Claude Code через Router для использования альтернативных LLM-провайдеров.
-
-**Поддерживаемые провайдеры:**
-- DeepSeek
-- OpenRouter
-- Ollama (локальный)
-- Google Gemini
-- Anthropic (через прокси)
-
-```mermaid
-graph LR
-    %% Router Launch Flow
-    USER[User] -->|1. Launch with --router flag| CLI[CLI Main]
-    CLI -->|2. Check router availability| DETECT[Detect Router]
-
-    DETECT -->|3. Check config exists| CONFIG_CHECK{router.json<br/>exists?}
-    DETECT -->|4. Check binary exists| BIN_CHECK{ccr binary<br/>exists?}
-
-    CONFIG_CHECK -->|NO| ERROR[Error: Router not installed]
-    BIN_CHECK -->|NO| ERROR
-
-    CONFIG_CHECK -->|YES| COPY[Copy Config]
-    BIN_CHECK -->|YES| COPY
-
-    COPY -->|5. Copy router.json| DEST[~/.claude-code-router/config.json]
-    DEST -->|6. Read config| ROUTER_CONFIG[Router Configuration<br/>providers, models, API keys]
-
-    ROUTER_CONFIG -->|7. Load proxy settings| PROXY[Configure Proxy<br/>Environment Variables]
-    PROXY -->|8. Set HTTPS_PROXY| ENV[Environment<br/>HTTPS_PROXY<br/>HTTP_PROXY]
-
-    ENV -->|9. Launch router| ROUTER_CLI[ccr code]
-    ROUTER_CLI -->|10. Start router service| ROUTER_SERVICE[Claude Code Router Service]
-
-    ROUTER_SERVICE -->|11. Intercept API calls| INTERCEPT[API Call Interceptor]
-    INTERCEPT -->|12. Route to provider| PROVIDER{Configured<br/>Provider}
-
-    PROVIDER -->|DeepSeek| DEEPSEEK[DeepSeek API]
-    PROVIDER -->|OpenRouter| OPENROUTER[OpenRouter API]
-    PROVIDER -->|Ollama| OLLAMA[Ollama Local]
-    PROVIDER -->|Gemini| GEMINI[Google Gemini API]
-    PROVIDER -->|Claude| ANTHROPIC[Anthropic API<br/>via proxy]
-
-    DEEPSEEK -->|Response| RESPONSE[Format Response]
-    OPENROUTER -->|Response| RESPONSE
-    OLLAMA -->|Response| RESPONSE
-    GEMINI -->|Response| RESPONSE
-    ANTHROPIC -->|Response| RESPONSE
-
-    RESPONSE -->|13. Return to client| CLAUDE[Claude Code CLI]
-    CLAUDE -->|14. Display to user| USER
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef providerClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-
-    class USER userClass
-    class CLI,DETECT,COPY,PROXY,INTERCEPT,RESPONSE processClass
-    class DEST,ROUTER_CONFIG,ENV storageClass
-    class ROUTER_CLI,ROUTER_SERVICE,DEEPSEEK,OPENROUTER,OLLAMA,GEMINI,ANTHROPIC,CLAUDE providerClass
-    class ERROR errorClass
-```
-
----
-
-## Исходные файлы
-
-Оригинальные Mermaid диаграммы находятся в этой же директории:
-
-| Файл | Описание |
-|------|----------|
-| `dependency-graph.mmd` | Граф зависимостей компонентов |
-| `data-flow-proxy-configuration.mmd` | Поток настройки прокси |
-| `data-flow-isolated-installation.mmd` | Поток изолированной установки |
-| `data-flow-oauth-token-refresh.mmd` | Поток обновления OAuth токена |
-| `data-flow-router-launch.mmd` | Поток запуска через Router |
-
-## Просмотр диаграмм
-
-Для просмотра диаграмм используйте:
-- GitHub (автоматический рендеринг Mermaid в .md файлах)
-- VS Code с расширением Mermaid Preview
-- [Mermaid Live Editor](https://mermaid.live/)
-- Obsidian или другие Markdown редакторы с поддержкой Mermaid
-
-
-# Поток изолированной установки
-
-Показывает процесс установки изолированного окружения с NVM, Node.js и Claude Code.
-
-## Создаваемые артефакты
-
-| Путь | Описание |
-|------|----------|
-| `.nvm-isolated/` | Корневая директория окружения |
-| `.nvm-isolated/nvm.sh` | Скрипт NVM |
-| `.nvm-isolated/versions/node/v18.x.x/` | Установка Node.js |
-| `.nvm-isolated/npm-global/bin/claude` | Симлинк на CLI |
-| `.nvm-isolated/.claude-isolated/` | Изолированная конфигурация |
-| `.nvm-isolated-lockfile.json` | Файл версий |
-
-## Диаграмма
-
-```mermaid
-graph TD
-    %% Isolated Installation Flow
-    USER[User] -->|1. Execute --isolated-install| CLI[CLI Main]
-    CLI -->|2. Create directory| DIR[.nvm-isolated/]
-
-    DIR -->|3. Download NVM| NVM_DOWNLOAD[Download NVM<br/>install.sh]
-    NVM_DOWNLOAD -->|4. Install NVM| NVM_INST[NVM Installer]
-
-    NVM_INST -->|5. Set NVM_DIR| NVM_ENV[NVM Environment]
-    NVM_ENV -->|6. Install Node.js| NODE_INST[Node.js Installer]
-
-    NODE_INST -->|7. nvm install 18.20.8| NODE_BIN[Node.js v18.20.8<br/>in .nvm-isolated/]
-
-    NODE_BIN -->|8. npm install -g| CLAUDE_INST[Claude Code Installer]
-    CLAUDE_INST -->|9. Install @anthropic-ai/claude-code| CLAUDE_PKG[Claude Code Package]
-
-    CLAUDE_PKG -->|10. Create symlink| SYMLINK[Symlink Manager]
-    SYMLINK -->|11. Link claude binary| CLAUDE_BIN[.nvm-isolated/npm-global/bin/claude]
-
-    CLAUDE_BIN -->|12. Detect versions| VERSION_DETECT[Version Detector]
-    VERSION_DETECT -->|13. Get Node version| NODE_VER[node --version]
-    VERSION_DETECT -->|14. Get Claude version| CLAUDE_VER[claude --version]
-
-    NODE_VER -->|15. Save to lockfile| LOCKFILE[Lockfile Saver]
-    CLAUDE_VER -->|15. Save to lockfile| LOCKFILE
-
-    LOCKFILE -->|16. Write JSON| LOCK_FILE[.nvm-isolated-lockfile.json]
-    LOCK_FILE -->|17. Success message| USER
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef binaryClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-
-    class USER userClass
-    class CLI,NVM_INST,NODE_INST,CLAUDE_INST,SYMLINK,VERSION_DETECT,LOCKFILE processClass
-    class DIR,NVM_ENV,LOCK_FILE storageClass
-    class NVM_DOWNLOAD,NODE_BIN,CLAUDE_PKG,CLAUDE_BIN,NODE_VER,CLAUDE_VER binaryClass
-```
-
-## Этапы установки
-
-### 1. Создание директории
-```bash
-mkdir -p .nvm-isolated
-```
-
-### 2-4. Установка NVM
-- Скачивание `install.sh` с GitHub
-- Установка в `.nvm-isolated/`
-- Конфигурация `NVM_DIR`
-
-### 5-7. Установка Node.js
-```bash
-nvm install 18.20.8
-```
-
-### 8-9. Установка Claude Code
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-### 10-11. Создание симлинков
-```bash
-ln -s ../../versions/node/v18.x.x/lib/node_modules/@anthropic-ai/claude-code/cli.js \
-      .nvm-isolated/npm-global/bin/claude
-```
-
-### 12-16. Сохранение версий
-Lockfile записывается в формате JSON:
-```json
-{
-  "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.7",
-  "installedAt": "2026-01-14T10:39:51Z",
-  "nvmVersion": "0.39.7"
-}
-```
-
-## Восстановление после git clone
-
-После клонирования репозитория симлинки могут быть сломаны. Для восстановления:
-
-```bash
-./iclaude.sh --repair-isolated
-```
-
-Это пересоздаст все необходимые симлинки.
-
-
-# Поток обновления OAuth токена
-
-Описывает автоматическую проверку и обновление OAuth токена при запуске.
-
-## Ключевые особенности
-
-- Токен проверяется при **каждом** запуске
-- Автоматическое обновление за **7 дней** до истечения (настраивается)
-- Новый токен действителен **~1 год**
-- При ошибке credentials **не удаляются** (сохраняется refreshToken)
-
-## Диаграмма
-
-```mermaid
-graph TD
-    %% OAuth Token Refresh Flow
-    USER[User] -->|1. Launch Claude| CLI[CLI Main]
-    CLI -->|2. Check token| CHECK[Check OAuth Token]
-
-    CHECK -->|3. Read credentials| CRED_FILE[.credentials.json]
-    CRED_FILE -->|4. Extract expiresAt| TOKEN_DATA{Token Data}
-
-    TOKEN_DATA -->|5. Parse timestamp| EXP_CHECK[Check Token Expiration]
-    EXP_CHECK -->|6. Current time + threshold| CALC[Calculate<br/>expires_in < 7 days?]
-
-    CALC -->|NO: Token valid| LAUNCH[Launch Claude]
-    CALC -->|YES: Expiring soon| REFRESH[Refresh OAuth Token]
-
-    REFRESH -->|7. Execute command| SETUP_TOKEN[claude setup-token]
-    SETUP_TOKEN -->|8. Open browser| BROWSER[Browser Authentication]
-
-    BROWSER -->|9. User authorizes| ANTHROPIC[Anthropic OAuth Server]
-    ANTHROPIC -->|10. Return new tokens| NEW_TOKEN[New Access Token<br/>New Refresh Token<br/>New expiresAt]
-
-    NEW_TOKEN -->|11. Update credentials| UPDATE[Update Credential Storage]
-    UPDATE -->|12. Write JSON| CRED_FILE
-
-    CRED_FILE -->|13. Credentials saved| SUCCESS[Success Message]
-    SUCCESS -->|14. Continue launch| LAUNCH
-
-    LAUNCH -->|15. Start with valid token| CLAUDE[Claude Code CLI]
-
-    %% Error handling
-    SETUP_TOKEN -.->|Error: Failed| ERROR[Display Warning]
-    ERROR -.->|Preserve credentials| CRED_FILE
-    ERROR -.->|User action required| USER_ACTION[User runs /login manually]
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-
-    class USER userClass
-    class CLI,CHECK,EXP_CHECK,REFRESH,UPDATE processClass
-    class CRED_FILE,TOKEN_DATA,SUCCESS storageClass
-    class SETUP_TOKEN,BROWSER,ANTHROPIC,NEW_TOKEN,LAUNCH,CLAUDE externalClass
-    class ERROR,USER_ACTION errorClass
-```
-
-## Структура токена
-
-Файл `.credentials.json`:
-```json
-{
-  "claudeAiOauth": {
-    "accessToken": "sk-ant-oat01-...",
-    "refreshToken": "sk-ant-ort01-...",
-    "expiresAt": 1766460813792,
-    "scopes": ["user:inference", "user:profile", "user:sessions:claude_code"],
-    "subscriptionType": "max"
-  }
-}
-```
-
-## Алгоритм проверки
-
-```
-current_time = now()
-expires_at = credentials.claudeAiOauth.expiresAt
-threshold = 7 * 24 * 60 * 60 * 1000  # 7 дней в миллисекундах
-
-if (expires_at - current_time) < threshold:
-    refresh_token()
-else:
-    launch_claude()
-```
-
-## Обработка ошибок
-
-При неудачном обновлении токена:
-
-1. **Credentials сохраняются** — refreshToken остаётся в файле
-2. **Выводится предупреждение** — пользователь информируется о проблеме
-3. **Claude Code может продолжить работу** — используя внутренний механизм refresh
-
-### Ручное обновление
-
-Если автоматическое обновление не сработало:
-
-```bash
-# Ручной refresh через iclaude
-./iclaude.sh --refresh-token
-
-# Или внутри Claude Code
-/login
-```
-
-## Конфигурация
-
-Порог обновления настраивается константой в `iclaude.sh`:
-
-```bash
-TOKEN_REFRESH_THRESHOLD=604800  # 7 дней в секундах
-```
-
-## Ограничения
-
-- `setup-token` требует **интерактивной** браузерной аутентификации
-- Не подходит для полностью headless/CI окружений
-- Требуется доступ к GUI для открытия браузера
-
-
-# Поток настройки прокси
-
-Описывает процесс конфигурации HTTP/HTTPS прокси от ввода URL до запуска Claude Code.
-
-## Ключевые этапы
-
-1. **Валидация** — проверка формата URL
-2. **Обработка протокола** — HTTP (с конвертацией домена) или HTTPS (домен сохраняется)
-3. **Сохранение** — учётные данные в `.claude_proxy_credentials` (chmod 600)
-4. **Конфигурация** — установка переменных окружения
-5. **Тестирование** — проверка соединения
-6. **Запуск** — старт Claude Code с настроенным прокси
-
-## Диаграмма
-
-```mermaid
-graph LR
-    %% Proxy Configuration Flow
-    USER[User] -->|1. Provides proxy URL| CLI[CLI Main]
-    CLI -->|2. Validate format| VALIDATE[Validate Proxy URL]
-    VALIDATE -->|3. Check protocol| PROTOCOL{Protocol?}
-
-    PROTOCOL -->|HTTP| RESOLVE[Resolve Domain<br/>to IP]
-    PROTOCOL -->|HTTPS| PARSE[Parse Proxy URL]
-    RESOLVE -->|4. Convert domain| PARSE
-
-    PARSE -->|5. Extract credentials| CRED[Credential Storage]
-    CRED -->|6. Save credentials<br/>chmod 600| FILE[.claude_proxy_credentials]
-
-    FILE -->|7. Load credentials| CONFIG[Configure Proxy]
-    CONFIG -->|8. Set environment<br/>variables| ENV[HTTPS_PROXY<br/>HTTP_PROXY<br/>NO_PROXY]
-
-    ENV -->|9. Test connectivity| TEST[Test Proxy]
-    TEST -->|10. HTTP request| HTTP_TEST[http://www.google.com]
-    TEST -->|11. HTTPS request| HTTPS_TEST[https://www.anthropic.com]
-
-    HTTP_TEST -->|12. Success| LAUNCH[Launch Claude]
-    HTTPS_TEST -->|12. Success| LAUNCH
-
-    LAUNCH -->|13. Start with proxy| CLAUDE[Claude Code CLI]
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
-
-    class USER userClass
-    class CLI,VALIDATE,RESOLVE,PARSE,CONFIG,TEST processClass
-    class CRED,FILE,ENV storageClass
-    class HTTP_TEST,HTTPS_TEST,CLAUDE externalClass
-```
-
-## Особенности обработки протоколов
-
-### HTTPS (рекомендуется)
-- Доменное имя **сохраняется** без изменений
-- Необходимо для OAuth token refresh
-- TLS SNI и Host header работают корректно
-
-### HTTP (не рекомендуется)
-- Предлагается конвертация домена в IP
-- Может вызвать проблемы с аутентификацией
-- Используйте только если HTTPS недоступен
-
-## Переменные окружения
-
-После настройки устанавливаются:
-
-```bash
-HTTPS_PROXY="https://user:pass@proxy:port"
-HTTP_PROXY="https://user:pass@proxy:port"
-NO_PROXY="localhost,127.0.0.1,github.com,..."
-```
-
-## Тестовые запросы
-
-Скрипт проверяет соединение двумя запросами:
-- `http://www.google.com` — проверка HTTP через прокси
-- `https://www.anthropic.com` — проверка HTTPS через прокси
-
-Оба запроса должны вернуть успешный статус для продолжения.
-
-
-# Поток запуска через Router
-
-Показывает процесс запуска Claude Code через Router для использования альтернативных LLM-провайдеров.
-
-## Поддерживаемые провайдеры
-
-| Провайдер | Описание |
-|-----------|----------|
-| DeepSeek | DeepSeek API |
-| OpenRouter | Агрегатор моделей |
-| Ollama | Локальные модели |
-| Gemini | Google Gemini API |
-| Anthropic | Нативный Claude (через прокси) |
-| Volcengine | ByteDance Cloud |
-| SiliconFlow | SiliconFlow API |
-
-## Диаграмма
-
-```mermaid
-graph LR
-    %% Router Launch Flow
-    USER[User] -->|1. Launch with --router flag| CLI[CLI Main]
-    CLI -->|2. Check router availability| DETECT[Detect Router]
-
-    DETECT -->|3. Check config exists| CONFIG_CHECK{router.json<br/>exists?}
-    DETECT -->|4. Check binary exists| BIN_CHECK{ccr binary<br/>exists?}
-
-    CONFIG_CHECK -->|NO| ERROR[Error: Router not installed]
-    BIN_CHECK -->|NO| ERROR
-
-    CONFIG_CHECK -->|YES| COPY[Copy Config]
-    BIN_CHECK -->|YES| COPY
-
-    COPY -->|5. Copy router.json| DEST[~/.claude-code-router/config.json]
-    DEST -->|6. Read config| ROUTER_CONFIG[Router Configuration<br/>providers, models, API keys]
-
-    ROUTER_CONFIG -->|7. Load proxy settings| PROXY[Configure Proxy<br/>Environment Variables]
-    PROXY -->|8. Set HTTPS_PROXY| ENV[Environment<br/>HTTPS_PROXY<br/>HTTP_PROXY]
-
-    ENV -->|9. Launch router| ROUTER_CLI[ccr code]
-    ROUTER_CLI -->|10. Start router service| ROUTER_SERVICE[Claude Code Router Service]
-
-    ROUTER_SERVICE -->|11. Intercept API calls| INTERCEPT[API Call Interceptor]
-    INTERCEPT -->|12. Route to provider| PROVIDER{Configured<br/>Provider}
-
-    PROVIDER -->|DeepSeek| DEEPSEEK[DeepSeek API]
-    PROVIDER -->|OpenRouter| OPENROUTER[OpenRouter API]
-    PROVIDER -->|Ollama| OLLAMA[Ollama Local]
-    PROVIDER -->|Gemini| GEMINI[Google Gemini API]
-    PROVIDER -->|Claude| ANTHROPIC[Anthropic API<br/>via proxy]
-
-    DEEPSEEK -->|Response| RESPONSE[Format Response]
-    OPENROUTER -->|Response| RESPONSE
-    OLLAMA -->|Response| RESPONSE
-    GEMINI -->|Response| RESPONSE
-    ANTHROPIC -->|Response| RESPONSE
-
-    RESPONSE -->|13. Return to client| CLAUDE[Claude Code CLI]
-    CLAUDE -->|14. Display to user| USER
-
-    %% Styling
-    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef providerClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-
-    class USER userClass
-    class CLI,DETECT,COPY,PROXY,INTERCEPT,RESPONSE processClass
-    class DEST,ROUTER_CONFIG,ENV storageClass
-    class ROUTER_CLI,ROUTER_SERVICE,DEEPSEEK,OPENROUTER,OLLAMA,GEMINI,ANTHROPIC,CLAUDE providerClass
-    class ERROR errorClass
-```
-
-## Активация Router
-
-Router активируется **только** с флагом `--router`:
-
-```bash
-# Запуск через Router
-./iclaude.sh --router
-
-# Запуск нативного Claude (по умолчанию)
-./iclaude.sh
-```
-
-## Конфигурационные файлы
-
-| Файл | Описание | В Git? |
-|------|----------|--------|
-| `router.json.example` | Шаблон со всеми провайдерами | Да |
-| `router.json` | Конфигурация с `${VAR}` плейсхолдерами | Да |
-| `~/.claude-code-router/config.json` | Runtime конфигурация | Нет |
-
-## Подстановка переменных окружения
-
-В `router.json` можно использовать плейсхолдеры:
-
-```json
-{
-  "providers": {
-    "deepseek": {
-      "apiKey": "${DEEPSEEK_API_KEY}"
-    }
-  }
-}
-```
-
-При запуске `${DEEPSEEK_API_KEY}` заменяется на значение из окружения.
-
-## Совместимость с прокси
-
-Router автоматически наследует переменные прокси:
-- `HTTPS_PROXY`
-- `HTTP_PROXY`
-
-Специальная настройка не требуется.
-
-## Установка Router
-
-```bash
-# Установка в изолированное окружение
-./iclaude.sh --install-router
-
-# Проверка статуса
-./iclaude.sh --check-router
-```
-
-## Проверка статуса
-
-Команда `--check-router` показывает:
-- Статус установки
-- Версию Router
-- Путь к конфигурации
-- Список настроенных провайдеров
-- Модель по умолчанию
-
-## Поток данных
-
-1. Пользователь запускает `./iclaude.sh --router`
-2. Скрипт проверяет наличие `router.json` и бинарника `ccr`
-3. Копирует конфигурацию в `~/.claude-code-router/config.json`
-4. Запускает `ccr code` вместо `claude`
-5. Router перехватывает API вызовы
-6. Маршрутизирует к настроенному провайдеру
-7. Форматирует ответ и возвращает Claude Code CLI
-
-
-# Loop Mode Component Dependency Graph
-
-**Generated:** 2026-01-25
-**Version:** 1.0.0
-
-This diagram visualizes the dependencies between loop mode components in iclaude.sh.
-
-## Component Dependency Graph
-
-```mermaid
-graph TD
-    %% Components
-    ArgParser["Argument Parser<br/>iclaude.sh:5092-5150"]
-    TaskParser["Task Parser<br/>iclaude.sh:2180-2350"]
-    SeqExec["Sequential Executor<br/>iclaude.sh:2500-2650"]
-    ParExec["Parallel Executor<br/>iclaude.sh:2650-2850"]
-    WorktreeM["Worktree Manager<br/>iclaude.sh:2350-2500"]
-    AIResolver["AI Conflict Resolver<br/>iclaude.sh:2400-2480"]
-    ClaudeInv["Claude Invoker<br/>iclaude.sh:2280-2350"]
-    CompVerify["Completion Verifier<br/>iclaude.sh:2220-2280"]
-    GitInt["Git Integrator<br/>iclaude.sh:2480-2550"]
-    StateM["State Manager<br/>iclaude.sh:2550-2650"]
-
-    %% Dependencies
-    ArgParser -->|routes to| SeqExec
-    ArgParser -->|routes to| ParExec
-    SeqExec -->|loads| TaskParser
-    SeqExec -->|executes| ClaudeInv
-    SeqExec -->|verifies| CompVerify
-    SeqExec -->|commits| GitInt
-    SeqExec -->|saves| StateM
-    ParExec -->|loads| TaskParser
-    ParExec -->|creates| WorktreeM
-    ParExec -->|executes| ClaudeInv
-    ParExec -->|saves| StateM
-    WorktreeM -->|resolves| AIResolver
-    AIResolver -->|invokes| ClaudeInv
-
-    %% Styling
-    classDef inputLayer fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
-    classDef executionLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    classDef aiLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef infraLayer fill:#e1ffe1,stroke:#388e3c,stroke-width:2px
-    classDef validationLayer fill:#ffe1e1,stroke:#d32f2f,stroke-width:2px
-
-    class ArgParser,TaskParser inputLayer
-    class SeqExec,ParExec executionLayer
-    class ClaudeInv,AIResolver aiLayer
-    class WorktreeM,GitInt,StateM infraLayer
-    class CompVerify validationLayer
-```
-
-
-# Parallel Execution Flow
-
-**Generated:** 2026-01-25
-
-This diagram shows the parallel task execution flow with git worktree isolation.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant ArgParser as Argument Parser
-    participant TaskParser as Task Parser
-    participant ParExec as Parallel Executor
-    participant WorktreeM as Worktree Manager
-    participant ClaudeInv as Claude Invoker
-    participant AIResolver as AI Conflict Resolver
-
-    User->>ArgParser: ./iclaude.sh --loop-parallel tasks.md
-    ArgParser->>TaskParser: load_all_tasks(tasks.md)
-    TaskParser-->>ParExec: TASKS[] array grouped by PARALLEL_GROUP
-    
-    Note over ParExec: Group 1: 2 parallel tasks
-    
-    ParExec->>WorktreeM: create_task_worktree(task-1)
-    WorktreeM->>WorktreeM: git worktree add .git/worktrees/loop-task-1
-    WorktreeM-->>ParExec: worktree_path_1
-    
-    ParExec->>WorktreeM: create_task_worktree(task-2)
-    WorktreeM->>WorktreeM: git worktree add .git/worktrees/loop-task-2
-    WorktreeM-->>ParExec: worktree_path_2
-    
-    par Task 1 (background)
-        ParExec->>ClaudeInv: Execute in worktree_1
-        ClaudeInv->>External: Claude Code (task-1)
-        External-->>ClaudeInv: Changes in worktree_1
-    and Task 2 (background)
-        ParExec->>ClaudeInv: Execute in worktree_2
-        ClaudeInv->>External: Claude Code (task-2)
-        External-->>ClaudeInv: Changes in worktree_2
-    end
-    
-    ParExec->>ParExec: wait for all background jobs
-    
-    ParExec->>WorktreeM: merge_worktree_changes(worktree_1)
-    WorktreeM->>WorktreeM: git merge changes from worktree_1
-    
-    alt No Conflicts
-        WorktreeM-->>ParExec: Merge success
-    else Conflicts Detected
-        WorktreeM->>AIResolver: resolve_merge_conflicts_ai()
-        AIResolver->>AIResolver: Read conflicted files
-        AIResolver->>AIResolver: Build resolution prompt
-        AIResolver->>ClaudeInv: Invoke Claude for resolution
-        ClaudeInv->>External: Claude Code (conflict resolution)
-        External-->>AIResolver: Resolved files
-        AIResolver->>AIResolver: Verify no conflict markers
-        AIResolver->>WorktreeM: Stage resolved files
-        WorktreeM-->>ParExec: Conflict resolved
-    end
-    
-    ParExec->>WorktreeM: merge_worktree_changes(worktree_2)
-    WorktreeM->>WorktreeM: git merge changes from worktree_2
-    WorktreeM-->>ParExec: Merge success
-    
-    ParExec->>WorktreeM: cleanup_worktree(task-1)
-    WorktreeM->>WorktreeM: git worktree remove .git/worktrees/loop-task-1
-    
-    ParExec->>WorktreeM: cleanup_worktree(task-2)
-    WorktreeM->>WorktreeM: git worktree remove .git/worktrees/loop-task-2
-    
-    Note over ParExec: Group 0: Sequential tasks
-    ParExec->>ParExec: Execute sequential tasks
-    
-    ParExec-->>User: ✅ All tasks completed
-```
-
-## Parallel Execution Phases
-
-1. **Task Loading:** Parse multiple "# Task:" sections from Markdown
-2. **Grouping:** Group tasks by PARALLEL_GROUP field (0 = sequential, 1+ = parallel)
-3. **Worktree Creation:** Create isolated git worktrees for each parallel task
-4. **Background Execution:** Spawn Claude Code in background (max 5 parallel)
-5. **Synchronization:** Wait for all background jobs to complete
-6. **Merging:** Merge changes from worktrees back to main working tree
-7. **Conflict Resolution:** AI-assisted resolution if merge conflicts detected
-8. **Cleanup:** Remove temporary worktrees after successful merge
-9. **Sequential Tasks:** Execute Group 0 tasks sequentially after parallel group
-10. **Exit:** Return 0 (success), 2 (partial), or 4 (unresolved conflicts)
-
-## Worktree Structure
-
-```
-project/
-├── .git/
-│   └── worktrees/
-│       ├── loop-task-1-1738012345/
-│       │   ├── HEAD
-│       │   └── gitdir
-│       └── loop-task-2-1738012346/
-│           ├── HEAD
-│           └── gitdir
-├── (main working tree)
-└── task-1/ (worktree 1)
-    └── task-2/ (worktree 2)
-```
-
-## AI Conflict Resolution
-
-When merge conflicts occur:
-1. Detect conflicts: `git diff --name-only --diff-filter=U`
-2. Read conflicted file with markers
-3. Build prompt: "Resolve git conflict in {file}..."
-4. Invoke Claude Code to generate resolved content
-5. Verify no markers remain: `! grep -E "^<<<<<<<|^=======|^>>>>>>>" file`
-6. Stage resolved file: `git add file`
-7. Complete merge: `git commit --no-edit`
-
-
-# Sequential Execution Flow
-
-**Generated:** 2026-01-25
-
-This diagram shows the sequential task execution flow from user invocation to completion.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant ArgParser as Argument Parser
-    participant TaskParser as Task Parser
-    participant SeqExec as Sequential Executor
-    participant ClaudeInv as Claude Invoker
-    participant CompVerify as Completion Verifier
-    participant GitInt as Git Integrator
-    participant StateM as State Manager
-
-    User->>ArgParser: ./iclaude.sh --loop task.md
-    ArgParser->>TaskParser: load_markdown_task(task.md)
-    TaskParser-->>SeqExec: TASK metadata
-    
-    loop Iterations (max 5)
-        SeqExec->>ClaudeInv: invoke_claude_iteration(task, iteration)
-        ClaudeInv->>ClaudeInv: Build prompt with context
-        ClaudeInv->>External: Execute Claude Code CLI
-        External-->>ClaudeInv: Exit code + logs
-        ClaudeInv-->>SeqExec: Iteration result
-        
-        SeqExec->>CompVerify: verify_completion_promise()
-        CompVerify->>CompVerify: Run validation command
-        CompVerify->>CompVerify: Match regex pattern
-        
-        alt Promise Met
-            CompVerify-->>SeqExec: Success (0)
-            SeqExec->>GitInt: git_commit_task_changes()
-            GitInt->>GitInt: Create branch
-            GitInt->>GitInt: Stage changes
-            GitInt->>GitInt: Commit with Co-Authored-By
-            GitInt->>GitInt: Optional auto-push
-            GitInt-->>SeqExec: Commit SHA
-            SeqExec->>StateM: save_loop_state()
-            StateM-->>User: ✅ Task completed
-        else Promise Not Met
-            CompVerify-->>SeqExec: Failure (1)
-            SeqExec->>SeqExec: Exponential backoff (2s→4s→8s)
-            Note over SeqExec: Wait before retry
-        end
-    end
-    
-    alt Max Iterations Reached
-        SeqExec-->>User: ❌ Exit code 1 (max iterations)
-    end
-```
-
-## Flow Steps
-
-1. **User Invocation:** `./iclaude.sh --loop task.md`
-2. **Argument Parsing:** Detect `--loop` flag, extract task file path
-3. **Task Loading:** Parse Markdown to extract task metadata
-4. **Iteration Loop:** Execute up to max iterations (default 5)
-   - Invoke Claude Code for task execution
-   - Verify completion promise via validation command
-   - On success: commit changes and exit
-   - On failure: wait (exponential backoff) and retry
-5. **Git Integration:** Create branch, commit with Co-Authored-By, optional push
-6. **State Persistence:** Save loop state for recovery
-7. **Exit:** Return 0 (success) or 1 (max iterations reached)
-
-## Exponential Backoff
-
-| Iteration | Delay Before Retry |
-|-----------|-------------------|
-| 1 → 2 | 2 seconds |
-| 2 → 3 | 4 seconds |
-| 3 → 4 | 8 seconds |
-| 4 → 5 | 16 seconds |
-| 5 → Max | 32 seconds (capped at 60s) |
-
-
 # Status Line Architecture Documentation
 
 **Version:** 2.0.0 (Phase 2)
@@ -6776,6 +5287,901 @@ jq empty .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json
 **Status**: Production Ready (Phase 2 Complete)
 
 
+# Поток изолированной установки
+
+Показывает процесс установки изолированного окружения с NVM, Node.js и Claude Code.
+
+## Создаваемые артефакты
+
+| Путь | Описание |
+|------|----------|
+| `.nvm-isolated/` | Корневая директория окружения |
+| `.nvm-isolated/nvm.sh` | Скрипт NVM |
+| `.nvm-isolated/versions/node/v18.x.x/` | Установка Node.js |
+| `.nvm-isolated/npm-global/bin/claude` | Симлинк на CLI |
+| `.nvm-isolated/.claude-isolated/` | Изолированная конфигурация |
+| `.nvm-isolated-lockfile.json` | Файл версий |
+
+## Диаграмма
+
+```mermaid
+graph TD
+    %% Isolated Installation Flow
+    USER[User] -->|1. Execute --isolated-install| CLI[CLI Main]
+    CLI -->|2. Create directory| DIR[.nvm-isolated/]
+
+    DIR -->|3. Download NVM| NVM_DOWNLOAD[Download NVM<br/>install.sh]
+    NVM_DOWNLOAD -->|4. Install NVM| NVM_INST[NVM Installer]
+
+    NVM_INST -->|5. Set NVM_DIR| NVM_ENV[NVM Environment]
+    NVM_ENV -->|6. Install Node.js| NODE_INST[Node.js Installer]
+
+    NODE_INST -->|7. nvm install 18.20.8| NODE_BIN[Node.js v18.20.8<br/>in .nvm-isolated/]
+
+    NODE_BIN -->|8. npm install -g| CLAUDE_INST[Claude Code Installer]
+    CLAUDE_INST -->|9. Install @anthropic-ai/claude-code| CLAUDE_PKG[Claude Code Package]
+
+    CLAUDE_PKG -->|10. Create symlink| SYMLINK[Symlink Manager]
+    SYMLINK -->|11. Link claude binary| CLAUDE_BIN[.nvm-isolated/npm-global/bin/claude]
+
+    CLAUDE_BIN -->|12. Detect versions| VERSION_DETECT[Version Detector]
+    VERSION_DETECT -->|13. Get Node version| NODE_VER[node --version]
+    VERSION_DETECT -->|14. Get Claude version| CLAUDE_VER[claude --version]
+
+    NODE_VER -->|15. Save to lockfile| LOCKFILE[Lockfile Saver]
+    CLAUDE_VER -->|15. Save to lockfile| LOCKFILE
+
+    LOCKFILE -->|16. Write JSON| LOCK_FILE[.nvm-isolated-lockfile.json]
+    LOCK_FILE -->|17. Success message| USER
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef binaryClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+
+    class USER userClass
+    class CLI,NVM_INST,NODE_INST,CLAUDE_INST,SYMLINK,VERSION_DETECT,LOCKFILE processClass
+    class DIR,NVM_ENV,LOCK_FILE storageClass
+    class NVM_DOWNLOAD,NODE_BIN,CLAUDE_PKG,CLAUDE_BIN,NODE_VER,CLAUDE_VER binaryClass
+```
+
+## Этапы установки
+
+### 1. Создание директории
+```bash
+mkdir -p .nvm-isolated
+```
+
+### 2-4. Установка NVM
+- Скачивание `install.sh` с GitHub
+- Установка в `.nvm-isolated/`
+- Конфигурация `NVM_DIR`
+
+### 5-7. Установка Node.js
+```bash
+nvm install 18.20.8
+```
+
+### 8-9. Установка Claude Code
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 10-11. Создание симлинков
+```bash
+ln -s ../../versions/node/v18.x.x/lib/node_modules/@anthropic-ai/claude-code/cli.js \
+      .nvm-isolated/npm-global/bin/claude
+```
+
+### 12-16. Сохранение версий
+Lockfile записывается в формате JSON:
+```json
+{
+  "nodeVersion": "18.20.8",
+  "claudeCodeVersion": "2.1.7",
+  "installedAt": "2026-01-14T10:39:51Z",
+  "nvmVersion": "0.39.7"
+}
+```
+
+## Восстановление после git clone
+
+После клонирования репозитория симлинки могут быть сломаны. Для восстановления:
+
+```bash
+./iclaude.sh --repair-isolated
+```
+
+Это пересоздаст все необходимые симлинки.
+
+
+# Поток обновления OAuth токена
+
+Описывает автоматическую проверку и обновление OAuth токена при запуске.
+
+## Ключевые особенности
+
+- Токен проверяется при **каждом** запуске
+- Автоматическое обновление за **7 дней** до истечения (настраивается)
+- Новый токен действителен **~1 год**
+- При ошибке credentials **не удаляются** (сохраняется refreshToken)
+
+## Диаграмма
+
+```mermaid
+graph TD
+    %% OAuth Token Refresh Flow
+    USER[User] -->|1. Launch Claude| CLI[CLI Main]
+    CLI -->|2. Check token| CHECK[Check OAuth Token]
+
+    CHECK -->|3. Read credentials| CRED_FILE[.credentials.json]
+    CRED_FILE -->|4. Extract expiresAt| TOKEN_DATA{Token Data}
+
+    TOKEN_DATA -->|5. Parse timestamp| EXP_CHECK[Check Token Expiration]
+    EXP_CHECK -->|6. Current time + threshold| CALC[Calculate<br/>expires_in < 7 days?]
+
+    CALC -->|NO: Token valid| LAUNCH[Launch Claude]
+    CALC -->|YES: Expiring soon| REFRESH[Refresh OAuth Token]
+
+    REFRESH -->|7. Execute command| SETUP_TOKEN[claude setup-token]
+    SETUP_TOKEN -->|8. Open browser| BROWSER[Browser Authentication]
+
+    BROWSER -->|9. User authorizes| ANTHROPIC[Anthropic OAuth Server]
+    ANTHROPIC -->|10. Return new tokens| NEW_TOKEN[New Access Token<br/>New Refresh Token<br/>New expiresAt]
+
+    NEW_TOKEN -->|11. Update credentials| UPDATE[Update Credential Storage]
+    UPDATE -->|12. Write JSON| CRED_FILE
+
+    CRED_FILE -->|13. Credentials saved| SUCCESS[Success Message]
+    SUCCESS -->|14. Continue launch| LAUNCH
+
+    LAUNCH -->|15. Start with valid token| CLAUDE[Claude Code CLI]
+
+    %% Error handling
+    SETUP_TOKEN -.->|Error: Failed| ERROR[Display Warning]
+    ERROR -.->|Preserve credentials| CRED_FILE
+    ERROR -.->|User action required| USER_ACTION[User runs /login manually]
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+
+    class USER userClass
+    class CLI,CHECK,EXP_CHECK,REFRESH,UPDATE processClass
+    class CRED_FILE,TOKEN_DATA,SUCCESS storageClass
+    class SETUP_TOKEN,BROWSER,ANTHROPIC,NEW_TOKEN,LAUNCH,CLAUDE externalClass
+    class ERROR,USER_ACTION errorClass
+```
+
+## Структура токена
+
+Файл `.credentials.json`:
+```json
+{
+  "claudeAiOauth": {
+    "accessToken": "sk-ant-oat01-...",
+    "refreshToken": "sk-ant-ort01-...",
+    "expiresAt": 1766460813792,
+    "scopes": ["user:inference", "user:profile", "user:sessions:claude_code"],
+    "subscriptionType": "max"
+  }
+}
+```
+
+## Алгоритм проверки
+
+```
+current_time = now()
+expires_at = credentials.claudeAiOauth.expiresAt
+threshold = 7 * 24 * 60 * 60 * 1000  # 7 дней в миллисекундах
+
+if (expires_at - current_time) < threshold:
+    refresh_token()
+else:
+    launch_claude()
+```
+
+## Обработка ошибок
+
+При неудачном обновлении токена:
+
+1. **Credentials сохраняются** — refreshToken остаётся в файле
+2. **Выводится предупреждение** — пользователь информируется о проблеме
+3. **Claude Code может продолжить работу** — используя внутренний механизм refresh
+
+### Ручное обновление
+
+Если автоматическое обновление не сработало:
+
+```bash
+# Ручной refresh через iclaude
+./iclaude.sh --refresh-token
+
+# Или внутри Claude Code
+/login
+```
+
+## Конфигурация
+
+Порог обновления настраивается константой в `iclaude.sh`:
+
+```bash
+TOKEN_REFRESH_THRESHOLD=604800  # 7 дней в секундах
+```
+
+## Ограничения
+
+- `setup-token` требует **интерактивной** браузерной аутентификации
+- Не подходит для полностью headless/CI окружений
+- Требуется доступ к GUI для открытия браузера
+
+
+# Поток настройки прокси
+
+Описывает процесс конфигурации HTTP/HTTPS прокси от ввода URL до запуска Claude Code.
+
+## Ключевые этапы
+
+1. **Валидация** — проверка формата URL
+2. **Обработка протокола** — HTTP (с конвертацией домена) или HTTPS (домен сохраняется)
+3. **Сохранение** — учётные данные в `.claude_proxy_credentials` (chmod 600)
+4. **Конфигурация** — установка переменных окружения
+5. **Тестирование** — проверка соединения
+6. **Запуск** — старт Claude Code с настроенным прокси
+
+## Диаграмма
+
+```mermaid
+graph LR
+    %% Proxy Configuration Flow
+    USER[User] -->|1. Provides proxy URL| CLI[CLI Main]
+    CLI -->|2. Validate format| VALIDATE[Validate Proxy URL]
+    VALIDATE -->|3. Check protocol| PROTOCOL{Protocol?}
+
+    PROTOCOL -->|HTTP| RESOLVE[Resolve Domain<br/>to IP]
+    PROTOCOL -->|HTTPS| PARSE[Parse Proxy URL]
+    RESOLVE -->|4. Convert domain| PARSE
+
+    PARSE -->|5. Extract credentials| CRED[Credential Storage]
+    CRED -->|6. Save credentials<br/>chmod 600| FILE[.claude_proxy_credentials]
+
+    FILE -->|7. Load credentials| CONFIG[Configure Proxy]
+    CONFIG -->|8. Set environment<br/>variables| ENV[HTTPS_PROXY<br/>HTTP_PROXY<br/>NO_PROXY]
+
+    ENV -->|9. Test connectivity| TEST[Test Proxy]
+    TEST -->|10. HTTP request| HTTP_TEST[http://www.google.com]
+    TEST -->|11. HTTPS request| HTTPS_TEST[https://www.anthropic.com]
+
+    HTTP_TEST -->|12. Success| LAUNCH[Launch Claude]
+    HTTPS_TEST -->|12. Success| LAUNCH
+
+    LAUNCH -->|13. Start with proxy| CLAUDE[Claude Code CLI]
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+
+    class USER userClass
+    class CLI,VALIDATE,RESOLVE,PARSE,CONFIG,TEST processClass
+    class CRED,FILE,ENV storageClass
+    class HTTP_TEST,HTTPS_TEST,CLAUDE externalClass
+```
+
+## Особенности обработки протоколов
+
+### HTTPS (рекомендуется)
+- Доменное имя **сохраняется** без изменений
+- Необходимо для OAuth token refresh
+- TLS SNI и Host header работают корректно
+
+### HTTP (не рекомендуется)
+- Предлагается конвертация домена в IP
+- Может вызвать проблемы с аутентификацией
+- Используйте только если HTTPS недоступен
+
+## Переменные окружения
+
+После настройки устанавливаются:
+
+```bash
+HTTPS_PROXY="https://user:pass@proxy:port"
+HTTP_PROXY="https://user:pass@proxy:port"
+NO_PROXY="localhost,127.0.0.1,github.com,..."
+```
+
+## Тестовые запросы
+
+Скрипт проверяет соединение двумя запросами:
+- `http://www.google.com` — проверка HTTP через прокси
+- `https://www.anthropic.com` — проверка HTTPS через прокси
+
+Оба запроса должны вернуть успешный статус для продолжения.
+
+
+# Поток запуска через Router
+
+Показывает процесс запуска Claude Code через Router для использования альтернативных LLM-провайдеров.
+
+## Поддерживаемые провайдеры
+
+| Провайдер | Описание |
+|-----------|----------|
+| DeepSeek | DeepSeek API |
+| OpenRouter | Агрегатор моделей |
+| Ollama | Локальные модели |
+| Gemini | Google Gemini API |
+| Anthropic | Нативный Claude (через прокси) |
+| Volcengine | ByteDance Cloud |
+| SiliconFlow | SiliconFlow API |
+
+## Диаграмма
+
+```mermaid
+graph LR
+    %% Router Launch Flow
+    USER[User] -->|1. Launch with --router flag| CLI[CLI Main]
+    CLI -->|2. Check router availability| DETECT[Detect Router]
+
+    DETECT -->|3. Check config exists| CONFIG_CHECK{router.json<br/>exists?}
+    DETECT -->|4. Check binary exists| BIN_CHECK{ccr binary<br/>exists?}
+
+    CONFIG_CHECK -->|NO| ERROR[Error: Router not installed]
+    BIN_CHECK -->|NO| ERROR
+
+    CONFIG_CHECK -->|YES| COPY[Copy Config]
+    BIN_CHECK -->|YES| COPY
+
+    COPY -->|5. Copy router.json| DEST[~/.claude-code-router/config.json]
+    DEST -->|6. Read config| ROUTER_CONFIG[Router Configuration<br/>providers, models, API keys]
+
+    ROUTER_CONFIG -->|7. Load proxy settings| PROXY[Configure Proxy<br/>Environment Variables]
+    PROXY -->|8. Set HTTPS_PROXY| ENV[Environment<br/>HTTPS_PROXY<br/>HTTP_PROXY]
+
+    ENV -->|9. Launch router| ROUTER_CLI[ccr code]
+    ROUTER_CLI -->|10. Start router service| ROUTER_SERVICE[Claude Code Router Service]
+
+    ROUTER_SERVICE -->|11. Intercept API calls| INTERCEPT[API Call Interceptor]
+    INTERCEPT -->|12. Route to provider| PROVIDER{Configured<br/>Provider}
+
+    PROVIDER -->|DeepSeek| DEEPSEEK[DeepSeek API]
+    PROVIDER -->|OpenRouter| OPENROUTER[OpenRouter API]
+    PROVIDER -->|Ollama| OLLAMA[Ollama Local]
+    PROVIDER -->|Gemini| GEMINI[Google Gemini API]
+    PROVIDER -->|Claude| ANTHROPIC[Anthropic API<br/>via proxy]
+
+    DEEPSEEK -->|Response| RESPONSE[Format Response]
+    OPENROUTER -->|Response| RESPONSE
+    OLLAMA -->|Response| RESPONSE
+    GEMINI -->|Response| RESPONSE
+    ANTHROPIC -->|Response| RESPONSE
+
+    RESPONSE -->|13. Return to client| CLAUDE[Claude Code CLI]
+    CLAUDE -->|14. Display to user| USER
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef providerClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+
+    class USER userClass
+    class CLI,DETECT,COPY,PROXY,INTERCEPT,RESPONSE processClass
+    class DEST,ROUTER_CONFIG,ENV storageClass
+    class ROUTER_CLI,ROUTER_SERVICE,DEEPSEEK,OPENROUTER,OLLAMA,GEMINI,ANTHROPIC,CLAUDE providerClass
+    class ERROR errorClass
+```
+
+## Активация Router
+
+Router активируется **только** с флагом `--router`:
+
+```bash
+# Запуск через Router
+./iclaude.sh --router
+
+# Запуск нативного Claude (по умолчанию)
+./iclaude.sh
+```
+
+## Конфигурационные файлы
+
+| Файл | Описание | В Git? |
+|------|----------|--------|
+| `router.json.example` | Шаблон со всеми провайдерами | Да |
+| `router.json` | Конфигурация с `${VAR}` плейсхолдерами | Да |
+| `~/.claude-code-router/config.json` | Runtime конфигурация | Нет |
+
+## Подстановка переменных окружения
+
+В `router.json` можно использовать плейсхолдеры:
+
+```json
+{
+  "providers": {
+    "deepseek": {
+      "apiKey": "${DEEPSEEK_API_KEY}"
+    }
+  }
+}
+```
+
+При запуске `${DEEPSEEK_API_KEY}` заменяется на значение из окружения.
+
+## Совместимость с прокси
+
+Router автоматически наследует переменные прокси:
+- `HTTPS_PROXY`
+- `HTTP_PROXY`
+
+Специальная настройка не требуется.
+
+## Установка Router
+
+```bash
+# Установка в изолированное окружение
+./iclaude.sh --install-router
+
+# Проверка статуса
+./iclaude.sh --check-router
+```
+
+## Проверка статуса
+
+Команда `--check-router` показывает:
+- Статус установки
+- Версию Router
+- Путь к конфигурации
+- Список настроенных провайдеров
+- Модель по умолчанию
+
+## Поток данных
+
+1. Пользователь запускает `./iclaude.sh --router`
+2. Скрипт проверяет наличие `router.json` и бинарника `ccr`
+3. Копирует конфигурацию в `~/.claude-code-router/config.json`
+4. Запускает `ccr code` вместо `claude`
+5. Router перехватывает API вызовы
+6. Маршрутизирует к настроенному провайдеру
+7. Форматирует ответ и возвращает Claude Code CLI
+
+
+# Архитектурные диаграммы iclaude
+
+Данный документ содержит визуализации ключевых процессов и зависимостей в проекте iclaude.
+
+## Содержание
+
+1. [Граф зависимостей компонентов](#граф-зависимостей-компонентов)
+2. [Поток настройки прокси](#поток-настройки-прокси)
+3. [Поток изолированной установки](#поток-изолированной-установки)
+4. [Поток обновления OAuth токена](#поток-обновления-oauth-токена)
+5. [Поток запуска через Router](#поток-запуска-через-router)
+
+---
+
+## Граф зависимостей компонентов
+
+Показывает структуру модулей и их взаимосвязи в iclaude.sh.
+
+**Легенда:**
+- 🔵 CLI Layer — точка входа и обработка команд
+- 🟠 Core Layer — основная бизнес-логика
+- 🟢 Installation Layer — установка и обновление
+- 🔴 Infrastructure Layer — низкоуровневые операции
+- ⚪ External — внешние зависимости
+
+```mermaid
+graph TD
+    %% CLI Layer
+    CLI[cli-main<br/>Main Entry Point]
+    USAGE[cli-usage<br/>Usage Display]
+
+    %% Core Layer - Proxy Management
+    PROXY[proxy-management<br/>Proxy Management]
+    VALIDATE[validate-proxy-url<br/>URL Validator]
+    RESOLVE[resolve-domain<br/>Domain Resolution]
+    PARSE[parse-proxy-url<br/>URL Parser]
+    CONFIG_PROXY[configure-proxy<br/>Environment Configurator]
+    TEST_PROXY[test-proxy<br/>Connection Tester]
+
+    %% Core Layer - Environment Management
+    ISOLATED[isolated-environment<br/>Environment Manager]
+    SETUP_NVM[setup-isolated-nvm<br/>NVM Setup]
+    REPAIR[repair-isolated-env<br/>Environment Repair]
+    CHECK_STATUS[check-isolated-status<br/>Status Checker]
+
+    %% Core Layer - Version Management
+    VERSION_MGT[version-management<br/>Version Manager]
+    SAVE_LOCK[save-lockfile<br/>Lockfile Saver]
+    INSTALL_LOCK[install-from-lockfile<br/>Lockfile Installer]
+
+    %% Core Layer - Configuration Management
+    CONFIG_MGT[config-management<br/>Config Manager]
+    SETUP_CONFIG[setup-isolated-config<br/>Config Setup]
+    EXPORT_IMPORT[export-import-config<br/>Config Migration]
+
+    %% Core Layer - OAuth Token Management
+    OAUTH[oauth-token-management<br/>Token Manager]
+    CHECK_TOKEN[check-oauth-token<br/>Token Checker]
+    REFRESH_TOKEN[refresh-oauth-token<br/>Token Refresher]
+    CHECK_EXP[check-token-expiration<br/>Expiration Checker]
+
+    %% Core Layer - Router Management
+    ROUTER[router-management<br/>Router Manager]
+    DETECT_ROUTER[detect-router<br/>Router Detector]
+    GET_ROUTER[get-router-path<br/>Router Path Finder]
+    CHECK_ROUTER[check-router-status<br/>Router Status]
+
+    %% Installation Layer
+    NVM_INST[nvm-installer<br/>NVM Installer]
+    NODE_INST[nodejs-installer<br/>Node.js Installer]
+    CLAUDE_INST[claude-installer<br/>Claude Installer]
+    ROUTER_INST[router-installer<br/>Router Installer]
+    UPDATER[claude-updater<br/>Claude Updater]
+    CLEANUP[cleanup-old-installations<br/>Installation Cleaner]
+    SYMLINK[symlink-manager<br/>Symlink Manager]
+    NVM_DETECT[nvm-detector<br/>NVM Detector]
+    CLAUDE_PATH[claude-path-finder<br/>Claude Path Finder]
+    VERSION_DETECT[version-detector<br/>Version Detector]
+
+    %% Infrastructure Layer
+    CRED_STORE[credential-storage<br/>Credential Storage]
+    GIT_PROXY[git-proxy-config<br/>Git Proxy Config]
+    FILE_OPS[file-operations<br/>File Operations]
+    JQ_VALID[jq-validator<br/>JQ Validator]
+    DEP_CHECK[dependency-checker<br/>Dependency Checker]
+    OUTPUT[output-formatters<br/>Output Formatters]
+
+    %% External Dependencies
+    CLAUDE_CLI[claude-cli<br/>Claude Code CLI]
+    ROUTER_CLI[router-cli<br/>Router CLI]
+    NVM_BIN[nvm-binary<br/>NVM Binary]
+    GIT_BIN[git-binary<br/>Git Binary]
+    CURL_BIN[curl-binary<br/>Curl Binary]
+    JQ_BIN[jq-binary<br/>JQ Binary]
+
+    %% Dependencies - CLI Layer
+    CLI -->|routes to| PROXY
+    CLI -->|routes to| ISOLATED
+    CLI -->|routes to| VERSION_MGT
+    CLI -.->|optional| OAUTH
+    CLI -.->|optional| ROUTER
+
+    %% Dependencies - Proxy Management
+    PROXY --> VALIDATE
+    PROXY -.-> RESOLVE
+    PROXY --> CRED_STORE
+    PROXY -.-> GIT_PROXY
+    VALIDATE --> PARSE
+    CONFIG_PROXY --> PARSE
+    TEST_PROXY --> CONFIG_PROXY
+    TEST_PROXY --> CURL_BIN
+
+    %% Dependencies - Environment Management
+    ISOLATED --> NVM_INST
+    ISOLATED --> NODE_INST
+    ISOLATED --> CLAUDE_INST
+    ISOLATED --> VERSION_MGT
+    ISOLATED --> SETUP_NVM
+    ISOLATED --> REPAIR
+
+    %% Dependencies - Version Management
+    VERSION_MGT --> SAVE_LOCK
+    VERSION_MGT --> INSTALL_LOCK
+    SAVE_LOCK --> VERSION_DETECT
+    INSTALL_LOCK --> NVM_INST
+    INSTALL_LOCK --> NODE_INST
+    INSTALL_LOCK --> CLAUDE_INST
+    INSTALL_LOCK -.-> ROUTER_INST
+
+    %% Dependencies - OAuth Management
+    OAUTH --> CHECK_TOKEN
+    CHECK_TOKEN --> CHECK_EXP
+    CHECK_TOKEN -.-> REFRESH_TOKEN
+    REFRESH_TOKEN --> CLAUDE_CLI
+    OAUTH --> CRED_STORE
+    OAUTH --> JQ_VALID
+
+    %% Dependencies - Router Management
+    ROUTER --> DETECT_ROUTER
+    ROUTER --> GET_ROUTER
+    ROUTER -.-> ROUTER_INST
+    DETECT_ROUTER --> GET_ROUTER
+    CHECK_ROUTER --> JQ_VALID
+
+    %% Dependencies - Installation Layer
+    CLAUDE_INST --> NODE_INST
+    CLAUDE_INST --> SYMLINK
+    ROUTER_INST --> NODE_INST
+    ROUTER_INST --> SYMLINK
+    NODE_INST --> NVM_INST
+    UPDATER --> CLEANUP
+    UPDATER --> SYMLINK
+    UPDATER --> SAVE_LOCK
+    CLAUDE_PATH --> NVM_DETECT
+    VERSION_DETECT --> CLAUDE_PATH
+
+    %% Dependencies - Infrastructure
+    GIT_PROXY --> GIT_BIN
+    CONFIG_MGT --> FILE_OPS
+
+    %% Layer Styling
+    classDef cliLayer fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef coreLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef installLayer fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef infraLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef externalLayer fill:#f0f0f0,stroke:#616161,stroke-width:2px
+
+    class CLI,USAGE cliLayer
+    class PROXY,VALIDATE,RESOLVE,PARSE,CONFIG_PROXY,TEST_PROXY,ISOLATED,SETUP_NVM,REPAIR,CHECK_STATUS,VERSION_MGT,SAVE_LOCK,INSTALL_LOCK,CONFIG_MGT,SETUP_CONFIG,EXPORT_IMPORT,OAUTH,CHECK_TOKEN,REFRESH_TOKEN,CHECK_EXP,ROUTER,DETECT_ROUTER,GET_ROUTER,CHECK_ROUTER coreLayer
+    class NVM_INST,NODE_INST,CLAUDE_INST,ROUTER_INST,UPDATER,CLEANUP,SYMLINK,NVM_DETECT,CLAUDE_PATH,VERSION_DETECT installLayer
+    class CRED_STORE,GIT_PROXY,FILE_OPS,JQ_VALID,DEP_CHECK,OUTPUT infraLayer
+    class CLAUDE_CLI,ROUTER_CLI,NVM_BIN,GIT_BIN,CURL_BIN,JQ_BIN externalLayer
+```
+
+---
+
+## Поток настройки прокси
+
+Описывает процесс конфигурации HTTP/HTTPS прокси от ввода URL до запуска Claude Code.
+
+**Ключевые этапы:**
+1. Валидация формата URL
+2. Обработка протокола (HTTP vs HTTPS)
+3. Сохранение учётных данных
+4. Тестирование соединения
+5. Запуск Claude Code
+
+```mermaid
+graph LR
+    %% Proxy Configuration Flow
+    USER[User] -->|1. Provides proxy URL| CLI[CLI Main]
+    CLI -->|2. Validate format| VALIDATE[Validate Proxy URL]
+    VALIDATE -->|3. Check protocol| PROTOCOL{Protocol?}
+
+    PROTOCOL -->|HTTP| RESOLVE[Resolve Domain<br/>to IP]
+    PROTOCOL -->|HTTPS| PARSE[Parse Proxy URL]
+    RESOLVE -->|4. Convert domain| PARSE
+
+    PARSE -->|5. Extract credentials| CRED[Credential Storage]
+    CRED -->|6. Save credentials<br/>chmod 600| FILE[.claude_proxy_credentials]
+
+    FILE -->|7. Load credentials| CONFIG[Configure Proxy]
+    CONFIG -->|8. Set environment<br/>variables| ENV[HTTPS_PROXY<br/>HTTP_PROXY<br/>NO_PROXY]
+
+    ENV -->|9. Test connectivity| TEST[Test Proxy]
+    TEST -->|10. HTTP request| HTTP_TEST[http://www.google.com]
+    TEST -->|11. HTTPS request| HTTPS_TEST[https://www.anthropic.com]
+
+    HTTP_TEST -->|12. Success| LAUNCH[Launch Claude]
+    HTTPS_TEST -->|12. Success| LAUNCH
+
+    LAUNCH -->|13. Start with proxy| CLAUDE[Claude Code CLI]
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+
+    class USER userClass
+    class CLI,VALIDATE,RESOLVE,PARSE,CONFIG,TEST processClass
+    class CRED,FILE,ENV storageClass
+    class HTTP_TEST,HTTPS_TEST,CLAUDE externalClass
+```
+
+---
+
+## Поток изолированной установки
+
+Показывает процесс установки изолированного окружения с NVM, Node.js и Claude Code.
+
+**Создаваемые артефакты:**
+- `.nvm-isolated/` — директория окружения
+- `versions/node/v18.x.x/` — Node.js
+- `npm-global/bin/claude` — симлинк на CLI
+- `.nvm-isolated-lockfile.json` — файл версий
+
+```mermaid
+graph TD
+    %% Isolated Installation Flow
+    USER[User] -->|1. Execute --isolated-install| CLI[CLI Main]
+    CLI -->|2. Create directory| DIR[.nvm-isolated/]
+
+    DIR -->|3. Download NVM| NVM_DOWNLOAD[Download NVM<br/>install.sh]
+    NVM_DOWNLOAD -->|4. Install NVM| NVM_INST[NVM Installer]
+
+    NVM_INST -->|5. Set NVM_DIR| NVM_ENV[NVM Environment]
+    NVM_ENV -->|6. Install Node.js| NODE_INST[Node.js Installer]
+
+    NODE_INST -->|7. nvm install 18.20.8| NODE_BIN[Node.js v18.20.8<br/>in .nvm-isolated/]
+
+    NODE_BIN -->|8. npm install -g| CLAUDE_INST[Claude Code Installer]
+    CLAUDE_INST -->|9. Install @anthropic-ai/claude-code| CLAUDE_PKG[Claude Code Package]
+
+    CLAUDE_PKG -->|10. Create symlink| SYMLINK[Symlink Manager]
+    SYMLINK -->|11. Link claude binary| CLAUDE_BIN[.nvm-isolated/npm-global/bin/claude]
+
+    CLAUDE_BIN -->|12. Detect versions| VERSION_DETECT[Version Detector]
+    VERSION_DETECT -->|13. Get Node version| NODE_VER[node --version]
+    VERSION_DETECT -->|14. Get Claude version| CLAUDE_VER[claude --version]
+
+    NODE_VER -->|15. Save to lockfile| LOCKFILE[Lockfile Saver]
+    CLAUDE_VER -->|15. Save to lockfile| LOCKFILE
+
+    LOCKFILE -->|16. Write JSON| LOCK_FILE[.nvm-isolated-lockfile.json]
+    LOCK_FILE -->|17. Success message| USER
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef binaryClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+
+    class USER userClass
+    class CLI,NVM_INST,NODE_INST,CLAUDE_INST,SYMLINK,VERSION_DETECT,LOCKFILE processClass
+    class DIR,NVM_ENV,LOCK_FILE storageClass
+    class NVM_DOWNLOAD,NODE_BIN,CLAUDE_PKG,CLAUDE_BIN,NODE_VER,CLAUDE_VER binaryClass
+```
+
+---
+
+## Поток обновления OAuth токена
+
+Описывает автоматическую проверку и обновление OAuth токена при запуске.
+
+**Важные моменты:**
+- Токен проверяется при каждом запуске
+- Автоматическое обновление за 7 дней до истечения
+- Новый токен действителен ~1 год
+- При ошибке credentials не удаляются
+
+```mermaid
+graph TD
+    %% OAuth Token Refresh Flow
+    USER[User] -->|1. Launch Claude| CLI[CLI Main]
+    CLI -->|2. Check token| CHECK[Check OAuth Token]
+
+    CHECK -->|3. Read credentials| CRED_FILE[.credentials.json]
+    CRED_FILE -->|4. Extract expiresAt| TOKEN_DATA{Token Data}
+
+    TOKEN_DATA -->|5. Parse timestamp| EXP_CHECK[Check Token Expiration]
+    EXP_CHECK -->|6. Current time + threshold| CALC[Calculate<br/>expires_in < 7 days?]
+
+    CALC -->|NO: Token valid| LAUNCH[Launch Claude]
+    CALC -->|YES: Expiring soon| REFRESH[Refresh OAuth Token]
+
+    REFRESH -->|7. Execute command| SETUP_TOKEN[claude setup-token]
+    SETUP_TOKEN -->|8. Open browser| BROWSER[Browser Authentication]
+
+    BROWSER -->|9. User authorizes| ANTHROPIC[Anthropic OAuth Server]
+    ANTHROPIC -->|10. Return new tokens| NEW_TOKEN[New Access Token<br/>New Refresh Token<br/>New expiresAt]
+
+    NEW_TOKEN -->|11. Update credentials| UPDATE[Update Credential Storage]
+    UPDATE -->|12. Write JSON| CRED_FILE
+
+    CRED_FILE -->|13. Credentials saved| SUCCESS[Success Message]
+    SUCCESS -->|14. Continue launch| LAUNCH
+
+    LAUNCH -->|15. Start with valid token| CLAUDE[Claude Code CLI]
+
+    %% Error handling
+    SETUP_TOKEN -.->|Error: Failed| ERROR[Display Warning]
+    ERROR -.->|Preserve credentials| CRED_FILE
+    ERROR -.->|User action required| USER_ACTION[User runs /login manually]
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef externalClass fill:#f0f0f0,stroke:#616161,stroke-width:2px
+    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+
+    class USER userClass
+    class CLI,CHECK,EXP_CHECK,REFRESH,UPDATE processClass
+    class CRED_FILE,TOKEN_DATA,SUCCESS storageClass
+    class SETUP_TOKEN,BROWSER,ANTHROPIC,NEW_TOKEN,LAUNCH,CLAUDE externalClass
+    class ERROR,USER_ACTION errorClass
+```
+
+---
+
+## Поток запуска через Router
+
+Показывает процесс запуска Claude Code через Router для использования альтернативных LLM-провайдеров.
+
+**Поддерживаемые провайдеры:**
+- DeepSeek
+- OpenRouter
+- Ollama (локальный)
+- Google Gemini
+- Anthropic (через прокси)
+
+```mermaid
+graph LR
+    %% Router Launch Flow
+    USER[User] -->|1. Launch with --router flag| CLI[CLI Main]
+    CLI -->|2. Check router availability| DETECT[Detect Router]
+
+    DETECT -->|3. Check config exists| CONFIG_CHECK{router.json<br/>exists?}
+    DETECT -->|4. Check binary exists| BIN_CHECK{ccr binary<br/>exists?}
+
+    CONFIG_CHECK -->|NO| ERROR[Error: Router not installed]
+    BIN_CHECK -->|NO| ERROR
+
+    CONFIG_CHECK -->|YES| COPY[Copy Config]
+    BIN_CHECK -->|YES| COPY
+
+    COPY -->|5. Copy router.json| DEST[~/.claude-code-router/config.json]
+    DEST -->|6. Read config| ROUTER_CONFIG[Router Configuration<br/>providers, models, API keys]
+
+    ROUTER_CONFIG -->|7. Load proxy settings| PROXY[Configure Proxy<br/>Environment Variables]
+    PROXY -->|8. Set HTTPS_PROXY| ENV[Environment<br/>HTTPS_PROXY<br/>HTTP_PROXY]
+
+    ENV -->|9. Launch router| ROUTER_CLI[ccr code]
+    ROUTER_CLI -->|10. Start router service| ROUTER_SERVICE[Claude Code Router Service]
+
+    ROUTER_SERVICE -->|11. Intercept API calls| INTERCEPT[API Call Interceptor]
+    INTERCEPT -->|12. Route to provider| PROVIDER{Configured<br/>Provider}
+
+    PROVIDER -->|DeepSeek| DEEPSEEK[DeepSeek API]
+    PROVIDER -->|OpenRouter| OPENROUTER[OpenRouter API]
+    PROVIDER -->|Ollama| OLLAMA[Ollama Local]
+    PROVIDER -->|Gemini| GEMINI[Google Gemini API]
+    PROVIDER -->|Claude| ANTHROPIC[Anthropic API<br/>via proxy]
+
+    DEEPSEEK -->|Response| RESPONSE[Format Response]
+    OPENROUTER -->|Response| RESPONSE
+    OLLAMA -->|Response| RESPONSE
+    GEMINI -->|Response| RESPONSE
+    ANTHROPIC -->|Response| RESPONSE
+
+    RESPONSE -->|13. Return to client| CLAUDE[Claude Code CLI]
+    CLAUDE -->|14. Display to user| USER
+
+    %% Styling
+    classDef userClass fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef storageClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef providerClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+
+    class USER userClass
+    class CLI,DETECT,COPY,PROXY,INTERCEPT,RESPONSE processClass
+    class DEST,ROUTER_CONFIG,ENV storageClass
+    class ROUTER_CLI,ROUTER_SERVICE,DEEPSEEK,OPENROUTER,OLLAMA,GEMINI,ANTHROPIC,CLAUDE providerClass
+    class ERROR errorClass
+```
+
+---
+
+## Исходные файлы
+
+Оригинальные Mermaid диаграммы находятся в этой же директории:
+
+| Файл | Описание |
+|------|----------|
+| `data-flow-proxy-configuration.mmd` | Поток настройки прокси |
+| `data-flow-isolated-installation.mmd` | Поток изолированной установки |
+| `data-flow-oauth-token-refresh.mmd` | Поток обновления OAuth токена |
+| `data-flow-router-launch.mmd` | Поток запуска через Router |
+
+## Просмотр диаграмм
+
+Для просмотра диаграмм используйте:
+- GitHub (автоматический рендеринг Mermaid в .md файлах)
+- VS Code с расширением Mermaid Preview
+- [Mermaid Live Editor](https://mermaid.live/)
+- Obsidian или другие Markdown редакторы с поддержкой Mermaid
+
+
 # Planning Mode Configuration
 
 Полное руководство по настройке режима планирования в Claude Code.
@@ -7203,12 +6609,6 @@ Successfully modularized **iclaude.sh** from monolithic 8,195-line bash script i
 - sandbox/install.sh - install_sandbox_dependencies()
 - sandbox/status.sh - check_sandbox_status()
 
-### Phase 9.2: GH CLI (Week 7) ✅
-**Modules:** 2 | **Functions:** 2 | **Lines:** ~170
-
-- gh/install.sh - install_isolated_gh()
-- gh/status.sh - check_gh_status()
-
 ### Phase 9.5: Update Management (Week 8) ✅
 **Modules:** 3 | **Functions:** 4 | **Lines:** ~571
 
@@ -7223,40 +6623,6 @@ Successfully modularized **iclaude.sh** from monolithic 8,195-line bash script i
 
 ---
 
-## Optional Phases (Remain in Legacy)
-
-### Phase 9.3: Loop Mode ⏸️ OPTIONAL
-**Functions:** 11 | **Lines:** ~400
-
-Loop mode provides task automation with retry logic. Due to complexity and optional nature, remains in iclaude-legacy.sh.
-
-**Key Functions:**
-- load_markdown_task() - Parse task from markdown
-- validate_task_file_format() - Validate task structure
-- execute_sequential_mode() - Sequential task execution
-- execute_parallel_mode() - Parallel execution with worktrees
-- retry_task_with_backoff() - Exponential backoff retry
-- git_commit_task_changes() - Auto-commit on success
-
-**Usage:** `./iclaude.sh --loop task.md`
-
-### Phase 9.4: Context Management ⏸️ OPTIONAL
-**Functions:** 21 | **Lines:** ~600
-
-Context management provides project context export/import/sync. Due to complexity and optional nature, remains in iclaude-legacy.sh.
-
-**Key Functions:**
-- context_cmd_export() - Export project context
-- context_cmd_import() - Import project context
-- context_cmd_sync() - Sync worktree contexts
-- context_cmd_clean() - Clean old contexts
-- context_cmd_backup() - Backup contexts
-- context_memory_init() - Initialize memory system
-
-**Usage:** `./iclaude.sh --context-export /backup`
-
----
-
 ## Final Metrics
 
 ### Code Distribution
@@ -7267,11 +6633,9 @@ Total Lines: 8,195
 Modularized (Phases 0-9.6):  5,889 lines (71.9%)  ✅
   └─ 41 modules, 82 functions
 
-Legacy (Optional + main()):  2,306 lines (28.1%)  ⏸️
-  └─ Loop Mode (~400 lines)
-  └─ Context (~600 lines)
+Legacy (main() + helpers):  2,306 lines (28.1%)  ⏸️
   └─ main() function (~500 lines)
-  └─ Helper functions (~806 lines)
+  └─ Helper functions (~1,806 lines)
 ```
 
 ### Version History
@@ -7290,8 +6654,7 @@ Legacy (Optional + main()):  2,306 lines (28.1%)  ⏸️
 | 2.8 | Phase 8.2 | 29 | 53 | 52.8% |
 | 2.9 | Phase 8.3 | 32 | 58 | 55.0% |
 | **3.0** | **Phase 9.1** | **35** | **63** | **60.9%** 🎉 |
-| 3.1 | Phase 9.2 | 37 | 65 | 63.0% |
-| 3.2 | Phase 9.5 | 40 | 69 | 69.9% |
+| 3.1 | Phase 9.5 | 38 | 67 | 67.7% |
 | **3.3** | **Phase 9.6** | **41** | **82** | **71.9%** 🎉 **FINAL** |
 
 ---
@@ -7363,13 +6726,10 @@ iclaude.sh (entry point v3.3)
  ├─ sandbox/detect.sh               # Phase 9.1
  ├─ sandbox/install.sh
  ├─ sandbox/status.sh
- ├─ gh/install.sh                   # Phase 9.2
- ├─ gh/status.sh
  ├─ update/isolated.sh              # Phase 9.5
  ├─ update/cleanup.sh
  ├─ update/update.sh
- ├─ launcher/launch.sh              # Phase 9.6
- └─ iclaude-legacy.sh               # Loop/Context/main()
+ └─ launcher/launch.sh              # Phase 9.6
 ```
 
 ---
@@ -7428,32 +6788,11 @@ declare -F function_name  # Shows: lib/module/file.sh (not legacy)
 ## Future Enhancements
 
 ### Potential Improvements
-1. **Complete Loop/Context extraction** (if needed)
-2. **Lazy loading:** Load modules on-demand
-3. **Plugin system:** Third-party modules
-4. **Unit tests:** Per-module test suites
-5. **Documentation:** Auto-generated API docs
-6. **CI/CD:** Automated testing pipeline
-
-### Migration Path (if needed)
-```bash
-# Phase 9.3: Loop Mode (optional)
-lib/loop/parser.sh
-lib/loop/executor.sh
-lib/loop/retry.sh
-lib/loop/git.sh
-lib/loop/mode.sh
-
-# Phase 9.4: Context (optional)
-lib/context/init.sh
-lib/context/export.sh
-lib/context/import.sh
-lib/context/sync.sh
-lib/context/clean.sh
-lib/context/backup.sh
-lib/context/status.sh
-lib/context/memory.sh
-```
+1. **Lazy loading:** Load modules on-demand
+2. **Plugin system:** Third-party modules
+3. **Unit tests:** Per-module test suites
+4. **Documentation:** Auto-generated API docs
+5. **CI/CD:** Automated testing pipeline
 
 ---
 
@@ -7492,8 +6831,6 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 - ✅ **82 functions** extracted (~72% of code)
 - ✅ **Zero breaking changes** maintained
 - ✅ **All critical functionality** modularized
-
-**Optional components** (Loop Mode, Context Management) remain in legacy for future extraction if needed.
 
 **Result:** Modern, maintainable codebase ready for future development! 🚀
 
@@ -7628,85 +6965,6 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 
 **Сложность:** 🟡 Средняя
 
-### 9.2: GH CLI Module (2 функции, ~100 строк)
-
-**Приоритет:** ⭐⭐ MEDIUM
-
-**Модули:**
-- `lib/gh/install.sh` - GH CLI installation
-- `lib/gh/status.sh` - GH CLI status
-
-**Функции:**
-1. `install_isolated_gh()` - Установка gh CLI в isolated environment
-2. `check_gh_status()` - Статус gh CLI (версия, auth)
-
-**Сложность:** 🟢 Низкая
-
-### 9.3: Loop Mode Module (11 функций, ~400 строк)
-
-**Приоритет:** ⭐ LOW (экспериментальная фича)
-
-**Модули:**
-- `lib/loop/parser.sh` - Task file parsing (Markdown → structured data)
-- `lib/loop/execution.sh` - Task execution with retry logic
-- `lib/loop/state.sh` - State management (save/load)
-
-**Функции:**
-1. `load_markdown_task()` - Парсинг task.md (Description, Completion Promise, etc.)
-2. `validate_task_file_format()` - Валидация формата task file
-3. `load_all_tasks()` - Загрузка всех задач из task file
-4. `invoke_claude_iteration()` - Вызов Claude Code с задачей
-5. `verify_completion_promise()` - Проверка completion promise (validation command)
-6. `retry_task_with_backoff()` - Retry логика с exponential backoff (2s, 4s, 8s, ...)
-7. `execute_single_iteration()` - Выполнение одной итерации
-8. `git_commit_task_changes()` - Git commit после успешной задачи
-9. `save_loop_state()` - Сохранение состояния (iteration count, last result)
-10. `load_loop_state()` - Загрузка состояния
-11. `execute_task_with_retry()` - Полный цикл с retry и git commit
-
-**Сложность:** 🔴 Высокая
-
-### 9.4: Context Module (21 функция, ~600 строк)
-
-**Приоритет:** ⭐ LOW (экспериментальная фича)
-
-**Модули:**
-- `lib/context/directories.sh` - Context directory management
-- `lib/context/worktree.sh` - Git worktree operations (для параллельных задач)
-- `lib/context/commands.sh` - Context commands (export/import/sync/clean/backup)
-- `lib/context/memory.sh` - Context memory operations (init/validate/organize/add)
-
-**Функции для worktree (5):**
-1. `create_task_worktree()` - Создание git worktree для параллельной задачи
-2. `cleanup_worktree()` - Очистка worktree после завершения
-3. `merge_worktree_changes()` - Merge изменений из worktree в main
-4. `is_context_worktree()` - Проверка является ли текущая директория worktree
-5. `get_context_main_worktree()` - Поиск main worktree
-
-**Функции для directories (5):**
-6. `init_context_directories()` - Инициализация context директорий
-7. `get_context_project_name()` - Получение имени проекта
-8. `get_context_project_hash()` - Hash проекта для идентификации
-9. `get_context_project_memory_dir()` - Project-specific memory directory
-10. `get_context_shared_memory_dir()` - Shared memory directory
-
-**Функции для commands (6):**
-11. `context_cmd_export()` - Экспорт контекста в tar.gz
-12. `context_cmd_import()` - Импорт контекста из tar.gz
-13. `context_cmd_sync()` - Синхронизация контекста между worktrees
-14. `context_cmd_clean()` - Очистка старого контекста
-15. `context_cmd_backup()` - Backup контекста
-16. `context_cmd_status()` - Статус контекста (размер, файлы, worktrees)
-
-**Функции для memory (5):**
-17. `context_memory_init()` - Инициализация memory system
-18. `context_memory_validate()` - Валидация memory структуры
-19. `context_memory_organize()` - Организация memory (архивация старых данных)
-20. `context_memory_add()` - Добавление entry в memory
-21. `context_memory_status()` - Статус memory (размер, количество entries)
-
-**Сложность:** 🔴 Высокая
-
 ### 9.5: Update Module (4 функции, ~200 строк)
 
 **Приоритет:** ⭐⭐⭐ HIGH
@@ -7759,9 +7017,6 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 | **Phase 8.2: Statusline** | 3 | 4 | ~150 | ⭐ LOW | 🟢 Низкая |
 | **Phase 8.3: Oh-My-Posh** | 3 | 5 | ~180 | ⭐ LOW | 🟢 Низкая |
 | **Phase 9.1: Sandbox** | 3 | 5 | ~200 | ⭐⭐ MEDIUM | 🟡 Средняя |
-| **Phase 9.2: GH CLI** | 2 | 2 | ~100 | ⭐⭐ MEDIUM | 🟢 Низкая |
-| **Phase 9.3: Loop Mode** | 3 | 11 | ~400 | ⭐ LOW | 🔴 Высокая |
-| **Phase 9.4: Context** | 4 | 21 | ~600 | ⭐ LOW | 🔴 Высокая |
 | **Phase 9.5: Update** | 2 | 4 | ~200 | ⭐⭐⭐ HIGH | 🟡 Средняя |
 | **Phase 9.6: Launcher** | 2 | 3 | ~400 | ⭐⭐⭐ HIGH | 🟡 Средняя |
 | **TOTAL** | **28** | **62** | **~2,580** | | |
@@ -7778,11 +7033,8 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 3. Phase 8.2: Statusline
 4. Phase 8.3: Oh-My-Posh
 5. Phase 9.1: Sandbox
-6. Phase 9.2: GH CLI
-7. Phase 9.5: Update
-8. Phase 9.6: Launcher ← **Финальная фаза**
-9. Phase 9.3: Loop Mode (опционально)
-10. Phase 9.4: Context (опционально)
+6. Phase 9.5: Update
+7. Phase 9.6: Launcher ← **Финальная фаза**
 
 ### Вариант 2: По приоритету (быстрее к цели)
 1. Phase 7: Router ⭐⭐⭐
@@ -7790,10 +7042,8 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 3. Phase 9.6: Launcher ⭐⭐⭐ ← **Финальная фаза**
 4. Phase 8.1: LSP ⭐⭐
 5. Phase 9.1: Sandbox ⭐⭐
-6. Phase 9.2: GH CLI ⭐⭐
-7. Phase 8.2: Statusline ⭐
-8. Phase 8.3: Oh-My-Posh ⭐
-9. Phase 9.3-9.4: Loop/Context (опционально)
+6. Phase 8.2: Statusline ⭐
+7. Phase 8.3: Oh-My-Posh ⭐
 
 ---
 
@@ -7851,14 +7101,11 @@ Auto-generated from bash module comments in `lib/`.
 | [chrome](chrome/index.md) | — |
 | [command](command/index.md) | — |
 | [config](config/index.md) | Config Export Module |
-| [context](context/index.md) | — |
 | [core](core/index.md) | Core Initialization Module |
 | [docs](docs/index.md) | — |
-| [gh](gh/index.md) | GitHub CLI installation module |
 | [install](install/index.md) | — |
 | [launcher](launcher/index.md) | Launcher module |
 | [lockfile](lockfile/index.md) | Lockfile Install Module |
-| [loop](loop/index.md) | — |
 | [lsp](lsp/index.md) | LSP installation module |
 | [nvm](nvm/index.md) | Claude Code Management Module |
 | [oauth](oauth/index.md) | OAuth Token Module |
@@ -7875,14 +7122,11 @@ Auto-generated from bash module comments in `lib/`.
 chrome/index
 command/index
 config/index
-context/index
 core/index
 docs/index
-gh/index
 install/index
 launcher/index
 lockfile/index
-loop/index
 lsp/index
 nvm/index
 oauth/index
@@ -8227,319 +7471,6 @@ Display native installer information Shows information about Anthropic's recomme
 
 
 
-# Module: context
-
-> Source: `lib/context/`
-
-- [init](init.md) — 7 functions
-- [memory](memory.md) — 5 functions
-- [operations](operations.md) — 7 functions
-
-```{toctree}
-:hidden:
-
-init
-memory
-operations
-```
-
-
-
-# init
-
-> **Module:** `context` | **File:** `lib/context/init.sh`
-
-lib/context/init.sh
-Context Management - Initialization & Path Helpers
-Part of Phase 10: Context Management extraction from iclaude-legacy.sh
-Contains 7 path helper functions (trivial, low risk)
-
----
-
-## `init_context_directories`
-
-Initialize context directories Creates directory structure for context exports/backups
-
-**Arguments:**
-
-- `  None`
-
-**Returns:**
-
--   0 on success
-
-## `get_context_project_name`
-
-Get project name from path
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   Project basename
-
-## `get_context_project_hash`
-
-Get project hash (Claude Code format) Converts path to hash by replacing slashes
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   Hashed project path
-
-## `get_context_project_memory_dir`
-
-Get project memory directory
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   Path to .claude/memory
-
-## `get_context_shared_memory_dir`
-
-Get shared memory directory For worktree synchronization
-
-**Arguments:**
-
-- `  $1 - Project path`
-
-**Returns:**
-
--   Path to shared memory directory
-
-## `is_context_worktree`
-
-Check if current directory is a git worktree
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 if worktree, 1 otherwise
-
-## `get_context_main_worktree`
-
-Get main worktree path If current path is a worktree, returns main repo path
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   Main worktree path or input path
-
-
-
-# memory
-
-> **Module:** `context` | **File:** `lib/context/memory.sh`
-
-lib/context/memory.sh
-Context Management - Auto Memory Functions
-Part of Phase 10: Context Management extraction from iclaude-legacy.sh
-Contains 5 MEMORY.md management functions (init/validate/organize/add/status)
-Based on Anthropic best practices: https://code.claude.com/docs/en/memory
-
----
-
-## `context_memory_init`
-
-Initialize MEMORY.md with best practices template Creates structured MEMORY.md following Anthropic guidelines
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Initialization status and best practices tips
-
-## `context_memory_validate`
-
-Validate MEMORY.md against best practices Checks size, structure, and language clarity
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success, 1 if MEMORY.md not found
-- Outputs:
--   Validation report with recommendations
-
-## `context_memory_organize`
-
-Organize MEMORY.md - suggest topic files Analyzes content and recommends split into topic files
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success, 1 if MEMORY.md not found
-- Outputs:
--   Topic file suggestions and reorganization steps
-
-## `context_memory_add`
-
-Add entry to MEMORY.md Appends new entry with auto-validation
-
-**Arguments:**
-
-- `  $1 - Entry text (required)`
-- `  $2 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success, 1 if entry missing or MEMORY.md not found
-- Outputs:
--   Confirmation and auto-validation warning if >200 lines
-
-## `context_memory_status`
-
-Auto Memory status Shows MEMORY.md size, usage, topic files, commands
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Detailed MEMORY.md status
-
-
-
-# operations
-
-> **Module:** `context` | **File:** `lib/context/operations.sh`
-
-lib/context/operations.sh
-Context Management - CRUD Operations
-Part of Phase 10: Context Management extraction from iclaude-legacy.sh
-Contains 6 context operation functions (export/import/sync/clean/backup/status)
-
----
-
-## `context_cmd_export`
-
-Export context to archive Creates tar.gz with memory + filtered history
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success, 1 on failure
-- Outputs:
--   Archive path and instructions
-
-## `context_cmd_import`
-
-Import context from archive Extracts memory + history to current project
-
-**Arguments:**
-
-- `  $1 - Archive file path`
-- `  $2 - Target project path (default: pwd)`
-
-**Returns:**
-
--   0 on success, 1 on failure
-- Outputs:
--   Import progress and confirmation
-
-## `context_cmd_sync`
-
-Sync context between main repo and worktrees Bidirectional sync via shared directory
-
-**Arguments:**
-
-- `  $1 - Direction: "pull" or "push" (default: pull)`
-- `  $2 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Sync progress
-
-## `context_cmd_clean`
-
-Clean old context data Removes old sessions and trims history
-
-**Arguments:**
-
-- `  $1 - Days threshold (default: CONTEXT_CLEANUP_DAYS)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Cleanup progress
-
-## `context_cmd_backup`
-
-Backup context data Creates timestamped backup of history + projects
-
-**Arguments:**
-
-- `  $1 - Backup mode: "manual", "daily", "weekly" (default: manual)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Backup location and size
-
-## `context_cmd_status`
-
-Show context status Displays memory, history, sessions, worktree info
-
-**Arguments:**
-
-- `  $1 - Project path (default: pwd)`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Detailed context status
-
-## `list_sessions_cmd`
-
-list_sessions_cmd Lists all active Claude Code sessions with metadata
-
-**Arguments:**
-
-- `  none`
-
-**Returns:**
-
--   0 on success
-- Outputs:
--   Table of sessions with date, slug, branch, project
-
-
-
 # Module: core
 
 > Source: `lib/core/`
@@ -8783,7 +7714,7 @@ Validate that a directory exists
 
 - [bash-parser](bash-parser.md) — 6 functions
 - [build](build.md) — 1 functions
-- [init](init.md) — 6 functions
+- [init](init.md) — 5 functions
 - [install](install.md) — 1 functions
 - [resolve](resolve.md) — 8 functions
 - [serve](serve.md) — 1 functions
@@ -9005,18 +7936,6 @@ Install git pre-commit hook for auto Sphinx rebuild Rebuilds docs if source file
 
 -   0 - always
 
-## `_update_project_claude_md`
-
-Add documentation section to project CLAUDE.md
-
-**Arguments:**
-
-- `  $1 - project path`
-
-**Returns:**
-
--   0 - always
-
 ## `_generate_conf_py`
 
 Generate conf.py for the project
@@ -9118,7 +8037,7 @@ lib/docs/resolve.sh
 Sphinx Documentation - Path Resolution
 Per-project helper functions: resolve paths, detect project type.
 All functions accept $1=project_path (default: pwd).
-Pattern: analogous to lib/context/init.sh
+Pattern: path helper module (analogous to other lib/*/init.sh files)
 
 ---
 
@@ -9331,61 +8250,6 @@ check_docs_status /path/to/project
 
 
 
-# Module: gh
-
-> Source: `lib/gh/`
-
-- [install](install.md) — 1 functions
-- [status](status.md) — 1 functions
-
-```{toctree}
-:hidden:
-
-install
-status
-```
-
-
-
-# install
-
-> **Module:** `gh` | **File:** `lib/gh/install.sh`
-
-GitHub CLI installation module
-Provides function for installing gh CLI into isolated environment
-
----
-
-## `install_isolated_gh`
-
-Install gh CLI to isolated environment Downloads and installs gh CLI binary from GitHub releases
-
-**Returns:**
-
--   0 - success
--   1 - error
-
-
-
-# status
-
-> **Module:** `gh` | **File:** `lib/gh/status.sh`
-
-GitHub CLI status module
-Provides function for checking gh CLI installation status
-
----
-
-## `check_gh_status`
-
-Check GitHub CLI installation status Shows installed version, location, and authentication status
-
-**Returns:**
-
--   0 - success
-
-
-
 # Module: install
 
 > Source: `lib/install/`
@@ -9495,389 +8359,6 @@ Save isolated environment versions to lockfile Captures: Node.js, Claude Code, R
 ```bash
   save_isolated_lockfile || return 1
 ```
-
-
-
-# Module: loop
-
-> Source: `lib/loop/`
-
-- [executor](executor.md) — 4 functions
-- [git](git.md) — 1 functions
-- [parallel](parallel.md) — 3 functions
-- [parser](parser.md) — 2 functions
-- [retry](retry.md) — 1 functions
-- [state](state.md) — 2 functions
-- [validator](validator.md) — 1 functions
-- [worktree](worktree.md) — 4 functions
-
-```{toctree}
-:hidden:
-
-executor
-git
-parallel
-parser
-retry
-state
-validator
-worktree
-```
-
-
-
-# executor
-
-> **Module:** `loop` | **File:** `lib/loop/executor.sh`
-
-lib/loop/executor.sh
-Loop Mode - Sequential Execution Orchestrator
-Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
-Contains sequential task execution logic with retry support
-
----
-
-## `invoke_claude_iteration`
-
-Invoke Claude Code for one iteration Executes Claude with task prompt and logs output
-
-**Arguments:**
-
-- `  $1 - Task ID (e.g., "task_0")`
-- `  $2 - Iteration number`
-
-**Returns:**
-
--   Exit code from Claude Code execution
-
-## `verify_completion_promise`
-
-Verify completion promise is met Executes validation command and checks output
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Promise met (task successful)
--   1 - Promise not met (retry needed)
-
-## `execute_single_iteration`
-
-Execute single iteration (no retry logic) Wrapper around invoke_claude_iteration with state tracking
-
-**Arguments:**
-
-- `  $1 - Task ID`
-- `  $2 - Iteration number (default: 1)`
-
-**Returns:**
-
--   0 - Iteration executed (does not verify promise)
--   1 - Execution failed
-
-## `execute_sequential_mode`
-
-Execute tasks in sequential mode Main orchestrator for loop mode sequential execution
-
-**Arguments:**
-
-- `  $1 - Path to task file (.md)`
-
-**Returns:**
-
--   0 - All tasks completed successfully
--   1 - All tasks failed
--   2 - Partial success (some tasks failed)
-
-
-
-# git
-
-> **Module:** `loop` | **File:** `lib/loop/git.sh`
-
-lib/loop/git.sh
-Loop Mode - Git Integration
-Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
-Contains git commit and push operations after task completion
-
----
-
-## `git_commit_task_changes`
-
-Git commit task changes Commits changes after successful task execution with optional auto-push
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Changes committed successfully or no git config
--   1 - Commit or push failed
-
-
-
-# parallel
-
-> **Module:** `loop` | **File:** `lib/loop/parallel.sh`
-
-lib/loop/parallel.sh
-Loop Mode - Parallel Execution Orchestrator
-Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
-Contains parallel task execution logic with git worktree isolation
-
----
-
-## `execute_task_with_retry`
-
-Execute single task with retry logic Helper wrapper for both sequential and parallel execution
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Task completed
--   1 - Task failed after retries
-
-## `execute_parallel_group`
-
-Execute parallel group of tasks Executes tasks in parallel with worktree isolation
-
-**Arguments:**
-
-- `  $1 - Space-separated task IDs (e.g., "task_0 task_1 task_2")`
-- `  $2 - Max parallel agents (default: 5)`
-
-**Returns:**
-
--   0 - All tasks in group attempted (check COMPLETED_TASKS for success)
-
-## `execute_parallel_mode`
-
-Execute tasks in parallel mode Main orchestrator for parallel execution with group support
-
-**Arguments:**
-
-- `  $1 - Path to task file (.md)`
-- `  $2 - Max parallel agents (default: 5)`
-
-**Returns:**
-
--   0 - All tasks completed successfully
--   1 - All tasks failed
--   2 - Partial success (some tasks failed)
-
-
-
-# parser
-
-> **Module:** `loop` | **File:** `lib/loop/parser.sh`
-
-lib/loop/parser.sh
-Loop Mode - Task Loading and Parsing
-Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
-Contains Markdown task parser functions
-
----
-
-## `load_markdown_task`
-
-Load a single task from Markdown file Parses task metadata from structured Markdown format
-
-**Arguments:**
-
-- `  $1 - Path to .md file`
-- `  $2 - Task index (default: 0 for single task)`
-
-**Returns:**
-
--   0 - Success
--   1 - File not found or parse error
-
-## `load_all_tasks`
-
-Load all tasks from Markdown file Supports multiple "# Task:" sections in one file
-
-**Arguments:**
-
-- `  $1 - Path to .md file`
-
-**Returns:**
-
--   0 - Success (at least one task loaded)
--   1 - No tasks found or error
-
-
-
-# retry
-
-> **Module:** `loop` | **File:** `lib/loop/retry.sh`
-
-lib/loop/retry.sh
-Loop Mode - Retry Logic with Exponential Backoff
-Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
-Contains exponential backoff retry mechanism
-
----
-
-## `retry_task_with_backoff`
-
-Retry task with exponential backoff Implements exponential backoff: 2s, 4s, 8s, 16s, 32s (capped at 60s)
-
-**Arguments:**
-
-- `  $1 - Task ID`
-- `  $2 - Current iteration number (default: 1)`
-
-**Returns:**
-
--   0 - Task succeeded within max iterations
--   1 - Max iterations reached without success
-
-
-
-# state
-
-> **Module:** `loop` | **File:** `lib/loop/state.sh`
-
-lib/loop/state.sh
-Loop Mode - State Persistence
-Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
-Contains loop state save/load functions for crash recovery
-
----
-
-## `save_loop_state`
-
-Save loop state to JSON file Creates checkpoint file for recovery after interruption
-
-**Arguments:**
-
-- `  None (reads global variables)`
-
-**Returns:**
-
--   0 - State saved successfully
-
-## `load_loop_state`
-
-Load loop state from file Restores execution state after crash or interruption
-
-**Arguments:**
-
-- `  None (sets global variables)`
-
-**Returns:**
-
--   0 - State loaded successfully
--   1 - No state file found or jq unavailable
-
-
-
-# validator
-
-> **Module:** `loop` | **File:** `lib/loop/validator.sh`
-
-lib/loop/validator.sh
-Loop Mode - Task File Validation
-Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
-Contains task file format validation
-
----
-
-## `validate_task_file_format`
-
-Validate task file format Checks for required Markdown structure and sections
-
-**Arguments:**
-
-- `  $1 - Path to .md file`
-
-**Returns:**
-
--   0 - Valid format
--   1 - Invalid format or user rejected
-- Required sections:
--   - "# Task:" header
--   - "## Description" section
--   - "## Completion Promise" section
--   - "## Validation Command" section
-- Interactive:
--   Prompts user to continue if missing optional sections
-
-
-
-# worktree
-
-> **Module:** `loop` | **File:** `lib/loop/worktree.sh`
-
-lib/loop/worktree.sh
-Loop Mode - Git Worktree Management + AI Merge Conflict Resolution
-Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
-⚠️ HIGH RISK: Contains AI-powered merge conflict resolution
-IMPORTANT SAFETY NOTES:
-- resolve_merge_conflicts_ai() uses AI to modify code - requires careful validation
-- Always backup before merge (use git stash)
-- Validate AI output for conflict markers
-- Recommend --parallel-dry-run for testing
-- Recommend --parallel-require-approval for production
-
----
-
-## `create_task_worktree`
-
-Create git worktree for task isolation Creates isolated worktree with unique branch for parallel execution
-
-**Arguments:**
-
-- `  $1 - Task ID (e.g., "task_0")`
-
-**Returns:**
-
--   0 - Worktree created successfully
--   1 - Creation failed
-
-## `cleanup_worktree`
-
-Cleanup git worktree after task completion Attempts graceful removal, falls back to force, then manual cleanup
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Worktree removed successfully (always succeeds)
-
-## `merge_worktree_changes`
-
-Merge worktree changes back to main branch Attempts merge with patience strategy, invokes AI if conflicts detected
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Merge successful
--   1 - Merge failed (conflicts unresolved)
-
-## `resolve_merge_conflicts_ai`
-
-Resolve merge conflicts using AI (⚠️ HIGHEST RISK FUNCTION) Uses Claude to intelligently resolve git merge conflicts
-
-**Arguments:**
-
-- `  $1 - Task ID`
-
-**Returns:**
-
--   0 - Conflicts resolved and committed
--   1 - Resolution failed (markers present or AI error)
 
 
 
@@ -10129,7 +8610,7 @@ Install Node.js in isolated NVM
 
 ## `install_npm_package_with_lockfile`
 
-Install npm package with automatic lockfile update This function eliminates 6+ duplications across iclaude.sh:   - install_isolated_claude()   - install_isolated_router()   - install_isolated_lsp_servers() (multiple packages)   - install_isolated_gh()   - etc.
+Install npm package with automatic lockfile update This function eliminates 6+ duplications across iclaude.sh:   - install_isolated_claude()   - install_isolated_router()   - install_isolated_lsp_servers() (multiple packages)   - etc.
 
 **Arguments:**
 
@@ -11045,24 +9526,21 @@ Update Claude Code Universal update function for system and NVM installations
 | **Router** | Выбор LLM-провайдера | Только Anthropic Claude | DeepSeek/Gemini/Ollama/GPT-4 — по задаче или стоимости |
 | **OAuth** | Непрерывная сессия | Токен истекает, сессия обрывается | Автоматическое продление — сессии работают ~1 год без вмешательства |
 | **LSP** | Code intelligence в контексте | Синтаксическое дерево без семантики | Hover, go-to-definition, типы — ИИ видит больше о структуре кода |
-| **Loop Mode** | Многошаговое выполнение задач | Один запрос — один ответ | Итеративный агент: задача → проверка → retry → коммит |
 | **Sandbox** | Безопасное выполнение кода | Код выполняется в окружении пользователя | Claude Code запускает код в изолированном namespace — без риска побочных эффектов |
 | **Status Line** | Видимость контекста и стоимости | Расход токенов непрозрачен | Реальное время: сколько контекста осталось, кэш, стоимость сессии |
-| **Context Mgmt** | Персистентная память между сессиями | ИИ забывает всё после закрытия | MEMORY.md загружается в system prompt — сохраняются паттерны, решения, конвенции |
 | **Router (routing)** | Интеллектуальный выбор модели | Одна модель на все задачи | Автоматически: Opus для большого контекста, DeepSeek для рутины |
 | **Oh-My-Posh** | Контекст окружения в prompt | Стандартный prompt | Информация о git-ветке, окружении, модели — дополнительный контекст для ИИ |
 
 ### Критически важные для AI-работы
 
 ```
-Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-агент с памятью
+Proxy → OAuth → Chrome → Sandbox = полноценный AI-агент
 ```
 
 - **Без Proxy**: Claude Code не работает в корпоративных сетях
 - **Без OAuth auto-refresh**: сессия обрывается через сутки
 - **Без Chrome**: агент слепой к браузеру
 - **Без Sandbox**: опасно запускать код от агента
-- **Без Context**: агент не помнит ничего между сессиями
 
 ---
 
@@ -11070,7 +9548,7 @@ Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-�
 
 | Метрика | Значение |
 |---------|----------|
-| Всего интеграций | **13** |
+| Всего интеграций | **10** |
 | Всего модулей | **64** bash-файлов |
 | Всего строк кода | **~10,276** |
 | Всего функций | **193+** |
@@ -11082,7 +9560,7 @@ Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-�
 
 ## Архитектура интеграций
 
-iclaude содержит **13 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
+iclaude содержит **10 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
 
 ```
 lib/
@@ -11090,12 +9568,9 @@ lib/
 ├── router/       # Claude Code Router (альтернативные LLM)
 ├── oauth/        # OAuth токены Anthropic
 ├── lsp/          # Language Server Protocol
-├── loop/         # Loop Mode с retry логикой
 ├── statusline/   # Строка состояния Claude Code
 ├── ohmyposh/     # Oh-My-Posh промпт
 ├── sandbox/      # Определение sandbox-платформы
-├── gh/           # GitHub CLI
-├── context/      # Управление контекстом
 ├── proxy/        # HTTP/HTTPS прокси
 ├── docs/         # Sphinx документация
 └── nvm/          # NVM / Node.js окружение
@@ -11127,19 +9602,15 @@ graph TB
         Chrome["chrome/detection.sh\nChrome browser"]
         Router["router/detect.sh\nCCR Router"]
         LSP["lsp/install.sh\nLSP серверы"]
-        Loop["loop/executor.sh\nLoop Mode"]
         Status["statusline/status.sh\nСтрока состояния"]
         OhMyPosh["ohmyposh/install.sh\noh-my-posh"]
         Sandbox["sandbox/detect.sh\nSandbox"]
-        GH["gh/install.sh\nGitHub CLI"]
-        Context["context/operations.sh\nКонтекст"]
     end
 
     subgraph External["Внешние системы"]
         AnthropicAPI["Anthropic API\nOAuth + Claude"]
         ChromeExt["Chrome Extension\nv1.0.36+"]
         OpenRouter["OpenRouter / DeepSeek\n/ Ollama / Gemini"]
-        GitHubAPI["GitHub API\ngh CLI"]
         NPM["npm Registry\nLSP серверы"]
     end
 
@@ -11154,15 +9625,11 @@ graph TB
     Router -.->|"--router flag"| OpenRouter
     OAuth -.->|"setup-token"| AnthropicAPI
     LSP -.->|"npm install"| NPM
-    GH -.->|"curl download"| GitHubAPI
 
-    Launch --> Loop
     Launch --> Status
     Launch --> LSP
     Launch --> OhMyPosh
     Launch --> Sandbox
-    Launch --> GH
-    Launch --> Context
 ```
 
 ### Последовательность запуска
@@ -11202,29 +9669,6 @@ sequenceDiagram
     iclaude->>Claude: Запуск Claude Code
 ```
 
-### Loop Mode
-
-```mermaid
-flowchart TD
-    Start["./iclaude.sh --loop task.md"]
-    Parse["loop/parser.sh\nload_all_tasks()"]
-    Task["Задача N"]
-    Invoke["loop/executor.sh\ninvoke_claude_iteration()"]
-    Verify["loop/executor.sh\nverify_completion_promise()"]
-    Success{"Успех?"}
-    MaxIter{"Max\nитераций?"}
-    Retry["loop/retry.sh\nexponential backoff\n2s → 4s → 8s → 60s"]
-    Git["loop/git.sh\ngit commit + push"]
-    Next["Следующая задача"]
-    Done["Итог"]
-
-    Start --> Parse --> Task --> Invoke --> Verify --> Success
-    Success -->|Да| Git --> Next --> Done
-    Success -->|Нет| MaxIter
-    MaxIter -->|Нет| Retry --> Invoke
-    MaxIter -->|Да| Next
-```
-
 ### LSP и Plugin система
 
 ```mermaid
@@ -11243,31 +9687,6 @@ flowchart LR
     Check -->|Да| Enable
     Enable -->|Нет| EnablePlugin --> Lock
     Enable -->|Да| Lock
-```
-
-### Управление контекстом
-
-```mermaid
-flowchart TD
-    Context["context/operations.sh"]
-    Export["context_cmd_export()\ntar.gz архив"]
-    Import["context_cmd_import()\nРаспаковка"]
-    Sync["context_cmd_sync()\nrsync worktrees"]
-    Clean["context_cmd_clean()\nОчистка sessions"]
-    Backup["context_cmd_backup()\nTimestamped backup"]
-    Status["context_cmd_status()\nСтатус"]
-    Memory["context/memory.sh\nMEMORY.md"]
-
-    Context --> Export
-    Context --> Import
-    Context --> Sync
-    Context --> Clean
-    Context --> Backup
-    Context --> Status
-    Context --> Memory
-
-    Memory -->|"200 строк limit"| SysPrompt["System Prompt\nиерархия"]
-    Sync -->|rsync| Worktrees["Git Worktrees"]
 ```
 
 ---
@@ -11347,21 +9766,7 @@ flowchart TD
 
 ---
 
-### 5. Loop Mode (Retry Logic)
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/loop/` (8 файлов) |
-| Файлов | 8 (parser, executor, retry, validator, git, parallel, state, worktree) |
-| Флаги | `--loop task.md` (seq), `--loop-parallel task.md --max-parallel N` |
-| Зависимости | Claude Code CLI, git, git worktrees |
-| Статус | **Полная (sequential + parallel)** |
-
-**Backoff:** 2s → 4s → 8s → 16s → 32s → 60s (cap). **Git:** автокоммит с `Co-Authored-By: Claude`. **Parallel:** изолированные git worktrees для каждой группы задач (8 Phase groups).
-
----
-
-### 6. Status Line
+### 5. Status Line
 
 | Параметр | Значение |
 |----------|----------|
@@ -11377,7 +9782,7 @@ flowchart TD
 
 ---
 
-### 7. Oh-My-Posh
+### 6. Oh-My-Posh
 
 | Параметр | Значение |
 |----------|----------|
@@ -11391,7 +9796,7 @@ flowchart TD
 
 ---
 
-### 8. Sandbox (Claude Code native sandbox)
+### 7. Sandbox (Claude Code native sandbox)
 
 | Параметр | Значение |
 |----------|----------|
@@ -11410,37 +9815,7 @@ flowchart TD
 
 ---
 
-### 9. GitHub CLI (gh)
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/gh/` (install.sh 106 строк + status.sh) |
-| Файлов | 2 |
-| Флаги | `--install-gh` |
-| Зависимости | `curl`, `tar` |
-| Статус | **Полная (версия hardcoded v2.45.0, только Linux)** |
-
-**Особенности:**
-- Версия жёстко прописана (`v2.45.0`), не обновляется автоматически
-- ⚠️ **Только Linux**: URL загрузки hardcodes `linux_${arch}`. macOS не поддерживается installer'ом
-
----
-
-### 10. Context Management
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/context/` (3 файла, ~940 строк) |
-| Файлов | 3 (init.sh, memory.sh, operations.sh) |
-| Флаги | `--context-export/import/sync/clean/backup/status`, `--context-memory-*` |
-| Зависимости | `rsync`, `tar`, `grep`, `find` |
-| Статус | **Полная** |
-
-**Операции:** export, import, sync (worktrees), clean, backup, status, memory management.
-
----
-
-### 11. Proxy Management
+### 8. Proxy Management
 
 | Параметр | Значение |
 |----------|----------|
@@ -11454,7 +9829,7 @@ flowchart TD
 
 ---
 
-### 12. Sphinx Документация
+### 9. Sphinx Документация
 
 | Параметр | Значение |
 |----------|----------|
@@ -11468,7 +9843,7 @@ flowchart TD
 
 ---
 
-### 13. NVM / Node.js (базовая инфраструктура)
+### 10. NVM / Node.js (базовая инфраструктура)
 
 | Параметр | Значение |
 |----------|----------|
@@ -11492,12 +9867,9 @@ flowchart TD
 | OAuth Token | 5 | 5 | 5 | 4 | **4.8** | 🔴 Критичный |
 | Chrome Integration | 5 | 5 | 4 | 4 | **4.5** | 🔴 Критичный |
 | Sandbox (Claude) | 5 | 4 | 4 | 4 | **4.3** | 🟠 Высокий |
-| Context Management | 5 | 4 | 4 | 3 | **4.0** | 🟠 Высокий |
-| Loop Mode | 4 | 4 | 4 | 3 | **3.8** | 🟠 Высокий |
 | LSP Servers | 4 | 4 | 4 | 3 | **3.8** | 🟠 Высокий |
 | Status Line | 3 | 4 | 4 | 4 | **3.8** | 🟠 Высокий |
 | Router (alt LLM) | 3 | 4 | 4 | 3 | **3.5** | 🟡 Средний |
-| GitHub CLI | 3 | 3 | 4 | 3 | **3.3** | 🟡 Средний |
 | Sphinx Docs | 2 | 3 | 3 | 3 | **2.8** | 🟡 Средний |
 | Oh-My-Posh | 2 | 3 | 3 | 3 | **2.8** | 🟢 Низкий |
 
@@ -11530,7 +9902,7 @@ flowchart TD
 | **Direnv** | ⭐⭐⭐ | 1/5 | Автоматическая загрузка env vars из `.envrc` при входе в директорию |
 | **tmux/Screen** | ⭐⭐⭐ | 2/5 | Persistent sessions, множество окон, attach/detach |
 | **Metrics Dashboard** | ⭐⭐⭐ | 3/5 | Визуализация использования токенов, стоимости, популярных команд через InfluxDB/Grafana |
-| **Slack/Telegram Notify** | ⭐⭐⭐ | 2/5 | Уведомления о завершении Loop Mode задач |
+| **Slack/Telegram Notify** | ⭐⭐⭐ | 2/5 | Уведомления о завершении задач |
 | **Cloud Backup** | ⭐⭐⭐ | 3/5 | Автоматическое резервное копирование `.claude-isolated/` в S3/GCS |
 
 ### Низкий приоритет / Экспериментальные
@@ -11549,14 +9921,6 @@ flowchart TD
 > Предупреждения о сложности, которые стоит учитывать при развитии проекта.
 
 ### Проблемы текущих интеграций
-
-#### ⚠️ GitHub CLI — жёсткая версия
-
-```
-Проблема: gh v2.45.0 hardcoded в lib/gh/install.sh
-Риск:     Устаревание, несовместимость с новыми API
-Рекомендация: Использовать GitHub Releases API (как oh-my-posh)
-```
 
 #### ⚠️ Oh-My-Posh — дублирование функции Status Line
 
@@ -11579,16 +9943,6 @@ flowchart TD
               (меньше зависимостей, нативный Markdown)
 ```
 
-#### ⚠️ Context Management — пересечение с Claude Skills
-
-```
-Проблема: lib/context/ реализует управление памятью и worktree-sync,
-          частично дублируя функциональность context-management skill
-Риск:     Два разных способа делать одно и то же
-Рекомендация: Объединить в единый интерфейс или чётко документировать
-              разграничение: skill (пользователь) vs lib (автоматически)
-```
-
 ### Общие рекомендации по балансу
 
 | Рекомендация | Обоснование |
@@ -11596,7 +9950,6 @@ flowchart TD
 | Не добавлять Docker без чёткого use-case | Увеличивает зависимости на 500MB+ |
 | Не добавлять веб-интерфейс | Противоречит CLI-природе проекта |
 | Не дублировать LSP логику | Claude Code имеет собственный plugin API |
-| Параллельный Loop Mode — только через worktrees | Иначе race conditions с git |
 | MCP серверы — следующий логичный шаг | Нативная интеграция с Claude Code |
 
 ---
@@ -11619,11 +9972,8 @@ quadrantChart
     Chrome: [0.85, 0.85]
     LSP: [0.75, 0.75]
     StatusLine: [0.80, 0.75]
-    Context: [0.75, 0.80]
-    LoopMode: [0.80, 0.80]
     Sandbox: [0.80, 0.75]
     Router: [0.80, 0.65]
-    GitHub_CLI: [0.65, 0.55]
     Sphinx: [0.65, 0.55]
     OhMyPosh: [0.60, 0.40]
     MCP_servers: [0.05, 0.90]
@@ -14604,6 +12954,575 @@ Update Claude Code Universal update function for system and NVM installations
 
 
 
+# Loop Mode Architecture Documentation
+
+**Version:** 1.0.0
+**Date:** 2026-01-25
+**Status:** Production Ready
+
+---
+
+## Overview
+
+This directory contains comprehensive architecture documentation for the **Loop Mode** feature in iclaude.sh - a bash-based iterative task execution system with parallel support.
+
+## Documentation Structure
+
+### Core Documentation
+
+- **[loop-mode-overview.yaml](loop-mode-overview.yaml)** - Complete architecture specification
+  - Metadata and project info
+  - Component catalog (11 components)
+  - Dependency graph (nodes + edges)
+  - Data flow descriptions
+  - Quality attributes
+  - Deployment configuration
+  - Migration guide from ralph-loop
+  - Development timeline (5 weeks)
+
+### Diagrams (Mermaid)
+
+- **[diagrams/dependency-graph.md](diagrams/dependency-graph.md)** - Component dependency visualization
+- **[diagrams/sequential-flow.md](diagrams/sequential-flow.md)** - Sequential execution flow
+- **[diagrams/parallel-flow.md](diagrams/parallel-flow.md)** - Parallel execution with worktrees
+
+### Source Documentation
+
+All original implementation documentation is consolidated into `loop-mode-overview.yaml`:
+- WEEK1-IMPLEMENTATION-SUMMARY.md → Components (task-parser, sequential-executor, etc.)
+- WEEK2-IMPLEMENTATION-SUMMARY.md → Parallel execution architecture
+- WEEK4-SUMMARY.md → Template migration details
+- WEEK5-TESTING-PLAN.md → Testing section
+- WEEK5-IMPLEMENTATION-SUMMARY.md → Final metrics
+- MIGRATION-GUIDE.md → Migration section
+- IMPLEMENTATION-STATUS.md → Development timeline
+- PROJECT-COMPLETION-REPORT.md → Overall project metrics
+
+---
+
+## Quick Navigation
+
+### By Component
+
+**Input Processing:**
+- [Task Parser](#task-parser) - Markdown task definition parser
+- [Argument Parser](#argument-parser) - CLI flag parser
+
+**Execution:**
+- [Sequential Executor](#sequential-executor) - Sequential task execution with retry
+- [Parallel Executor](#parallel-executor) - Parallel execution with worktrees
+
+**AI Integration:**
+- [Claude Invoker](#claude-invoker) - Claude Code CLI invocation
+- [AI Conflict Resolver](#ai-conflict-resolver) - Automatic merge conflict resolution
+
+**Infrastructure:**
+- [Worktree Manager](#worktree-manager) - Git worktree lifecycle
+- [Git Integrator](#git-integrator) - Auto-commit and push
+- [State Manager](#state-manager) - State persistence for recovery
+
+**Validation:**
+- [Completion Verifier](#completion-verifier) - Task success verification
+
+### By Use Case
+
+**Sequential Execution:**
+```bash
+./iclaude.sh --loop task.md
+```
+See: [diagrams/sequential-flow.md](diagrams/sequential-flow.md)
+
+**Parallel Execution:**
+```bash
+./iclaude.sh --loop-parallel tasks.md
+```
+See: [diagrams/parallel-flow.md](diagrams/parallel-flow.md)
+
+---
+
+## Component Dependency Graph
+
+```mermaid
+graph TD
+    ArgParser["Argument Parser"]
+    TaskParser["Task Parser"]
+    SeqExec["Sequential Executor"]
+    ParExec["Parallel Executor"]
+    WorktreeM["Worktree Manager"]
+    AIResolver["AI Conflict Resolver"]
+    ClaudeInv["Claude Invoker"]
+    CompVerify["Completion Verifier"]
+    GitInt["Git Integrator"]
+    StateM["State Manager"]
+
+    ArgParser -->|routes to| SeqExec
+    ArgParser -->|routes to| ParExec
+    SeqExec -->|loads| TaskParser
+    SeqExec -->|executes| ClaudeInv
+    SeqExec -->|verifies| CompVerify
+    SeqExec -->|commits| GitInt
+    SeqExec -->|saves| StateM
+    ParExec -->|loads| TaskParser
+    ParExec -->|creates| WorktreeM
+    ParExec -->|executes| ClaudeInv
+    ParExec -->|saves| StateM
+    WorktreeM -->|resolves| AIResolver
+    AIResolver -->|invokes| ClaudeInv
+
+    classDef inputLayer fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    classDef executionLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef aiLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef infraLayer fill:#e1ffe1,stroke:#388e3c,stroke-width:2px
+    classDef validationLayer fill:#ffe1e1,stroke:#d32f2f,stroke-width:2px
+
+    class ArgParser,TaskParser inputLayer
+    class SeqExec,ParExec executionLayer
+    class ClaudeInv,AIResolver aiLayer
+    class WorktreeM,GitInt,StateM infraLayer
+    class CompVerify validationLayer
+```
+
+---
+
+## Key Architectural Decisions
+
+### 1. Bash Implementation
+
+**Decision:** Implement loop mode as embedded bash functions in iclaude.sh
+
+**Rationale:**
+- No external dependencies (ralph-loop plugin deprecated)
+- Leverages existing iclaude.sh infrastructure (proxy, OAuth, NVM detection)
+- Native integration with shell environment
+
+**Trade-offs:**
+- Bash complexity increases
+- Harder to unit test than TypeScript/Python
+- Limited to Unix-like systems
+
+### 2. Git Worktrees for Isolation
+
+**Decision:** Use git worktrees for parallel task isolation
+
+**Rationale:**
+- True file system isolation (no conflicts between parallel tasks)
+- Native git feature (no custom file copying)
+- Supports independent branches per task
+
+**Trade-offs:**
+- Requires git 2.5+ (worktree feature)
+- Additional disk space (one copy per worktree)
+- Cleanup complexity if process killed
+
+### 3. Markdown Task Format
+
+**Decision:** Use Markdown files for task definitions instead of CLI arguments
+
+**Rationale:**
+- Git-friendly (version control, diffs, reviews)
+- Human-readable and editable
+- Supports multi-task definitions
+- No shell escaping issues
+
+**Trade-offs:**
+- Extra file required (vs inline args)
+- Parsing complexity (sed/grep)
+- Users must learn format
+
+### 4. AI-Assisted Conflict Resolution
+
+**Decision:** Invoke Claude Code to automatically resolve merge conflicts
+
+**Rationale:**
+- Reduces manual intervention in parallel workflows
+- Leverages Claude's code understanding
+- Prevents workflow blocking
+
+**Trade-offs:**
+- Requires Claude Code available
+- AI may not always resolve correctly
+- Additional API cost per conflict
+
+---
+
+## Project Metrics
+
+**Code:**
+- Total lines added: +2515
+- Total lines removed: -443
+- Net change: +2072 lines
+- iclaude.sh: 4953 → 6127 lines (+23.7%)
+
+**Functions:**
+- Week 1: 9 functions (sequential execution)
+- Week 2: 7 functions (parallel execution)
+- Total: 16 new functions
+
+**Documentation:**
+- 8 documentation files
+- 2689 lines of documentation
+- 3 Mermaid diagrams
+
+**Git:**
+- 8 commits with meaningful messages
+- All with Co-Authored-By: Claude Sonnet 4.5
+
+**Testing:**
+- 10 test cases defined (7 critical + 3 optional)
+- Status: Pending manual execution
+
+---
+
+## Migration from Ralph-Loop
+
+### Before (ralph-loop plugin)
+```bash
+# Inside Claude Code session
+/ralph-loop "Fix TypeScript errors" \
+  --context "File: app.ts, Line: 45" \
+  --completion-promise "All checks pass" \
+  --max-iterations 5
+```
+
+### After (bash loop mode)
+```bash
+# Create task.md
+cat > task.md <<'EOF'
+# Task: Fix TypeScript Errors
+
+## Description
+Fix TS2322 type mismatch in app.ts:45
+
+## Completion Promise
+npm run type-check
+
+## Validation Command
+npm run type-check
+
+## Max Iterations
+5
+
+## Git Config
+Branch: fix/typescript-errors
+Commit message: fix: resolve TS2322 type mismatch
+Auto-push: true
+EOF
+
+# Execute (external to Claude session)
+./iclaude.sh --loop task.md
+```
+
+### Migration Benefits
+
+- ✅ Parallel execution (ralph-loop had none)
+- ✅ State persistence (ralph-loop had none)
+- ✅ AI conflict resolution (ralph-loop had none)
+- ✅ Git-friendly task definitions
+- ✅ No plugin installation required
+
+See: [Full Migration Guide](../MIGRATION-GUIDE.md)
+
+---
+
+## Testing
+
+**Test Plan:** [../WEEK5-TESTING-PLAN.md](../WEEK5-TESTING-PLAN.md)
+
+**Critical Tests:**
+1. Simple sequential task (1 iteration success)
+2. Max iterations reached (failure handling)
+3. Parallel execution without conflicts
+4. Parallel execution with AI conflict resolution
+5. Git integration (commit + push)
+6. Regex completion promise
+7. Exponential backoff timing
+
+**Status:** Ready for manual execution
+
+---
+
+## Future Enhancements (v2.0)
+
+- Automated test suite (bats-core integration)
+- Task dependencies (DAG-based execution)
+- Custom retry strategies
+- Webhooks for completion notifications
+- Dashboard UI for monitoring
+- Direct PR creation from loop mode
+
+---
+
+## References
+
+### Code
+- iclaude.sh lines 2180-2850 (loop mode implementation)
+- iclaude.sh lines 5092-5150 (argument parsing)
+
+### Examples
+- examples/test-loop-simple.md
+- examples/test-loop-retry.md
+- examples/test-loop-parallel.md
+
+### Documentation
+- MIGRATION-GUIDE.md
+- CLAUDE.md (Loop Mode Commands section)
+
+---
+
+**Maintained by:** Claude Sonnet 4.5
+**Last Updated:** 2026-01-25
+**Status:** Production Ready
+
+
+# Loop Mode Component Dependency Graph
+
+**Generated:** 2026-01-25
+**Version:** 1.0.0
+
+This diagram visualizes the dependencies between loop mode components in iclaude.sh.
+
+## Component Dependency Graph
+
+```mermaid
+graph TD
+    %% Components
+    ArgParser["Argument Parser<br/>iclaude.sh:5092-5150"]
+    TaskParser["Task Parser<br/>iclaude.sh:2180-2350"]
+    SeqExec["Sequential Executor<br/>iclaude.sh:2500-2650"]
+    ParExec["Parallel Executor<br/>iclaude.sh:2650-2850"]
+    WorktreeM["Worktree Manager<br/>iclaude.sh:2350-2500"]
+    AIResolver["AI Conflict Resolver<br/>iclaude.sh:2400-2480"]
+    ClaudeInv["Claude Invoker<br/>iclaude.sh:2280-2350"]
+    CompVerify["Completion Verifier<br/>iclaude.sh:2220-2280"]
+    GitInt["Git Integrator<br/>iclaude.sh:2480-2550"]
+    StateM["State Manager<br/>iclaude.sh:2550-2650"]
+
+    %% Dependencies
+    ArgParser -->|routes to| SeqExec
+    ArgParser -->|routes to| ParExec
+    SeqExec -->|loads| TaskParser
+    SeqExec -->|executes| ClaudeInv
+    SeqExec -->|verifies| CompVerify
+    SeqExec -->|commits| GitInt
+    SeqExec -->|saves| StateM
+    ParExec -->|loads| TaskParser
+    ParExec -->|creates| WorktreeM
+    ParExec -->|executes| ClaudeInv
+    ParExec -->|saves| StateM
+    WorktreeM -->|resolves| AIResolver
+    AIResolver -->|invokes| ClaudeInv
+
+    %% Styling
+    classDef inputLayer fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    classDef executionLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef aiLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef infraLayer fill:#e1ffe1,stroke:#388e3c,stroke-width:2px
+    classDef validationLayer fill:#ffe1e1,stroke:#d32f2f,stroke-width:2px
+
+    class ArgParser,TaskParser inputLayer
+    class SeqExec,ParExec executionLayer
+    class ClaudeInv,AIResolver aiLayer
+    class WorktreeM,GitInt,StateM infraLayer
+    class CompVerify validationLayer
+```
+
+
+# Parallel Execution Flow
+
+**Generated:** 2026-01-25
+
+This diagram shows the parallel task execution flow with git worktree isolation.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ArgParser as Argument Parser
+    participant TaskParser as Task Parser
+    participant ParExec as Parallel Executor
+    participant WorktreeM as Worktree Manager
+    participant ClaudeInv as Claude Invoker
+    participant AIResolver as AI Conflict Resolver
+
+    User->>ArgParser: ./iclaude.sh --loop-parallel tasks.md
+    ArgParser->>TaskParser: load_all_tasks(tasks.md)
+    TaskParser-->>ParExec: TASKS[] array grouped by PARALLEL_GROUP
+    
+    Note over ParExec: Group 1: 2 parallel tasks
+    
+    ParExec->>WorktreeM: create_task_worktree(task-1)
+    WorktreeM->>WorktreeM: git worktree add .git/worktrees/loop-task-1
+    WorktreeM-->>ParExec: worktree_path_1
+    
+    ParExec->>WorktreeM: create_task_worktree(task-2)
+    WorktreeM->>WorktreeM: git worktree add .git/worktrees/loop-task-2
+    WorktreeM-->>ParExec: worktree_path_2
+    
+    par Task 1 (background)
+        ParExec->>ClaudeInv: Execute in worktree_1
+        ClaudeInv->>External: Claude Code (task-1)
+        External-->>ClaudeInv: Changes in worktree_1
+    and Task 2 (background)
+        ParExec->>ClaudeInv: Execute in worktree_2
+        ClaudeInv->>External: Claude Code (task-2)
+        External-->>ClaudeInv: Changes in worktree_2
+    end
+    
+    ParExec->>ParExec: wait for all background jobs
+    
+    ParExec->>WorktreeM: merge_worktree_changes(worktree_1)
+    WorktreeM->>WorktreeM: git merge changes from worktree_1
+    
+    alt No Conflicts
+        WorktreeM-->>ParExec: Merge success
+    else Conflicts Detected
+        WorktreeM->>AIResolver: resolve_merge_conflicts_ai()
+        AIResolver->>AIResolver: Read conflicted files
+        AIResolver->>AIResolver: Build resolution prompt
+        AIResolver->>ClaudeInv: Invoke Claude for resolution
+        ClaudeInv->>External: Claude Code (conflict resolution)
+        External-->>AIResolver: Resolved files
+        AIResolver->>AIResolver: Verify no conflict markers
+        AIResolver->>WorktreeM: Stage resolved files
+        WorktreeM-->>ParExec: Conflict resolved
+    end
+    
+    ParExec->>WorktreeM: merge_worktree_changes(worktree_2)
+    WorktreeM->>WorktreeM: git merge changes from worktree_2
+    WorktreeM-->>ParExec: Merge success
+    
+    ParExec->>WorktreeM: cleanup_worktree(task-1)
+    WorktreeM->>WorktreeM: git worktree remove .git/worktrees/loop-task-1
+    
+    ParExec->>WorktreeM: cleanup_worktree(task-2)
+    WorktreeM->>WorktreeM: git worktree remove .git/worktrees/loop-task-2
+    
+    Note over ParExec: Group 0: Sequential tasks
+    ParExec->>ParExec: Execute sequential tasks
+    
+    ParExec-->>User: ✅ All tasks completed
+```
+
+## Parallel Execution Phases
+
+1. **Task Loading:** Parse multiple "# Task:" sections from Markdown
+2. **Grouping:** Group tasks by PARALLEL_GROUP field (0 = sequential, 1+ = parallel)
+3. **Worktree Creation:** Create isolated git worktrees for each parallel task
+4. **Background Execution:** Spawn Claude Code in background (max 5 parallel)
+5. **Synchronization:** Wait for all background jobs to complete
+6. **Merging:** Merge changes from worktrees back to main working tree
+7. **Conflict Resolution:** AI-assisted resolution if merge conflicts detected
+8. **Cleanup:** Remove temporary worktrees after successful merge
+9. **Sequential Tasks:** Execute Group 0 tasks sequentially after parallel group
+10. **Exit:** Return 0 (success), 2 (partial), or 4 (unresolved conflicts)
+
+## Worktree Structure
+
+```
+project/
+├── .git/
+│   └── worktrees/
+│       ├── loop-task-1-1738012345/
+│       │   ├── HEAD
+│       │   └── gitdir
+│       └── loop-task-2-1738012346/
+│           ├── HEAD
+│           └── gitdir
+├── (main working tree)
+└── task-1/ (worktree 1)
+    └── task-2/ (worktree 2)
+```
+
+## AI Conflict Resolution
+
+When merge conflicts occur:
+1. Detect conflicts: `git diff --name-only --diff-filter=U`
+2. Read conflicted file with markers
+3. Build prompt: "Resolve git conflict in {file}..."
+4. Invoke Claude Code to generate resolved content
+5. Verify no markers remain: `! grep -E "^<<<<<<<|^=======|^>>>>>>>" file`
+6. Stage resolved file: `git add file`
+7. Complete merge: `git commit --no-edit`
+
+
+# Sequential Execution Flow
+
+**Generated:** 2026-01-25
+
+This diagram shows the sequential task execution flow from user invocation to completion.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ArgParser as Argument Parser
+    participant TaskParser as Task Parser
+    participant SeqExec as Sequential Executor
+    participant ClaudeInv as Claude Invoker
+    participant CompVerify as Completion Verifier
+    participant GitInt as Git Integrator
+    participant StateM as State Manager
+
+    User->>ArgParser: ./iclaude.sh --loop task.md
+    ArgParser->>TaskParser: load_markdown_task(task.md)
+    TaskParser-->>SeqExec: TASK metadata
+    
+    loop Iterations (max 5)
+        SeqExec->>ClaudeInv: invoke_claude_iteration(task, iteration)
+        ClaudeInv->>ClaudeInv: Build prompt with context
+        ClaudeInv->>External: Execute Claude Code CLI
+        External-->>ClaudeInv: Exit code + logs
+        ClaudeInv-->>SeqExec: Iteration result
+        
+        SeqExec->>CompVerify: verify_completion_promise()
+        CompVerify->>CompVerify: Run validation command
+        CompVerify->>CompVerify: Match regex pattern
+        
+        alt Promise Met
+            CompVerify-->>SeqExec: Success (0)
+            SeqExec->>GitInt: git_commit_task_changes()
+            GitInt->>GitInt: Create branch
+            GitInt->>GitInt: Stage changes
+            GitInt->>GitInt: Commit with Co-Authored-By
+            GitInt->>GitInt: Optional auto-push
+            GitInt-->>SeqExec: Commit SHA
+            SeqExec->>StateM: save_loop_state()
+            StateM-->>User: ✅ Task completed
+        else Promise Not Met
+            CompVerify-->>SeqExec: Failure (1)
+            SeqExec->>SeqExec: Exponential backoff (2s→4s→8s)
+            Note over SeqExec: Wait before retry
+        end
+    end
+    
+    alt Max Iterations Reached
+        SeqExec-->>User: ❌ Exit code 1 (max iterations)
+    end
+```
+
+## Flow Steps
+
+1. **User Invocation:** `./iclaude.sh --loop task.md`
+2. **Argument Parsing:** Detect `--loop` flag, extract task file path
+3. **Task Loading:** Parse Markdown to extract task metadata
+4. **Iteration Loop:** Execute up to max iterations (default 5)
+   - Invoke Claude Code for task execution
+   - Verify completion promise via validation command
+   - On success: commit changes and exit
+   - On failure: wait (exponential backoff) and retry
+5. **Git Integration:** Create branch, commit with Co-Authored-By, optional push
+6. **State Persistence:** Save loop state for recovery
+7. **Exit:** Return 0 (success) or 1 (max iterations reached)
+
+## Exponential Backoff
+
+| Iteration | Delay Before Retry |
+|-----------|-------------------|
+| 1 → 2 | 2 seconds |
+| 2 → 3 | 4 seconds |
+| 3 → 4 | 8 seconds |
+| 4 → 5 | 16 seconds |
+| 5 → Max | 32 seconds (capped at 60s) |
+
+
 ---
 title: iclaude Documentation
 ---
@@ -14674,4 +13593,755 @@ api-reference/index
 **For AI agents:** This documentation generates `llms.txt` and `llms-full.txt` at build time.
 Use them for efficient navigation: `docs/sphinx/_build/html/llms.txt`
 :::
+
+
+# Module: context
+
+> Source: `lib/context/`
+
+- [init](init.md) — 7 functions
+- [memory](memory.md) — 5 functions
+- [operations](operations.md) — 7 functions
+
+```{toctree}
+:hidden:
+
+init
+memory
+operations
+```
+
+
+
+# init
+
+> **Module:** `context` | **File:** `lib/context/init.sh`
+
+lib/context/init.sh
+Context Management - Initialization & Path Helpers
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 7 path helper functions (trivial, low risk)
+
+---
+
+## `init_context_directories`
+
+Initialize context directories Creates directory structure for context exports/backups
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 on success
+
+## `get_context_project_name`
+
+Get project name from path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Project basename
+
+## `get_context_project_hash`
+
+Get project hash (Claude Code format) Converts path to hash by replacing slashes
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Hashed project path
+
+## `get_context_project_memory_dir`
+
+Get project memory directory
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Path to .claude/memory
+
+## `get_context_shared_memory_dir`
+
+Get shared memory directory For worktree synchronization
+
+**Arguments:**
+
+- `  $1 - Project path`
+
+**Returns:**
+
+-   Path to shared memory directory
+
+## `is_context_worktree`
+
+Check if current directory is a git worktree
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 if worktree, 1 otherwise
+
+## `get_context_main_worktree`
+
+Get main worktree path If current path is a worktree, returns main repo path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Main worktree path or input path
+
+
+
+# memory
+
+> **Module:** `context` | **File:** `lib/context/memory.sh`
+
+lib/context/memory.sh
+Context Management - Auto Memory Functions
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 5 MEMORY.md management functions (init/validate/organize/add/status)
+Based on Anthropic best practices: https://code.claude.com/docs/en/memory
+
+---
+
+## `context_memory_init`
+
+Initialize MEMORY.md with best practices template Creates structured MEMORY.md following Anthropic guidelines
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Initialization status and best practices tips
+
+## `context_memory_validate`
+
+Validate MEMORY.md against best practices Checks size, structure, and language clarity
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if MEMORY.md not found
+- Outputs:
+-   Validation report with recommendations
+
+## `context_memory_organize`
+
+Organize MEMORY.md - suggest topic files Analyzes content and recommends split into topic files
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if MEMORY.md not found
+- Outputs:
+-   Topic file suggestions and reorganization steps
+
+## `context_memory_add`
+
+Add entry to MEMORY.md Appends new entry with auto-validation
+
+**Arguments:**
+
+- `  $1 - Entry text (required)`
+- `  $2 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 if entry missing or MEMORY.md not found
+- Outputs:
+-   Confirmation and auto-validation warning if >200 lines
+
+## `context_memory_status`
+
+Auto Memory status Shows MEMORY.md size, usage, topic files, commands
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Detailed MEMORY.md status
+
+
+
+# operations
+
+> **Module:** `context` | **File:** `lib/context/operations.sh`
+
+lib/context/operations.sh
+Context Management - CRUD Operations
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 6 context operation functions (export/import/sync/clean/backup/status)
+
+---
+
+## `context_cmd_export`
+
+Export context to archive Creates tar.gz with memory + filtered history
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 on failure
+- Outputs:
+-   Archive path and instructions
+
+## `context_cmd_import`
+
+Import context from archive Extracts memory + history to current project
+
+**Arguments:**
+
+- `  $1 - Archive file path`
+- `  $2 - Target project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success, 1 on failure
+- Outputs:
+-   Import progress and confirmation
+
+## `context_cmd_sync`
+
+Sync context between main repo and worktrees Bidirectional sync via shared directory
+
+**Arguments:**
+
+- `  $1 - Direction: "pull" or "push" (default: pull)`
+- `  $2 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Sync progress
+
+## `context_cmd_clean`
+
+Clean old context data Removes old sessions and trims history
+
+**Arguments:**
+
+- `  $1 - Days threshold (default: CONTEXT_CLEANUP_DAYS)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Cleanup progress
+
+## `context_cmd_backup`
+
+Backup context data Creates timestamped backup of history + projects
+
+**Arguments:**
+
+- `  $1 - Backup mode: "manual", "daily", "weekly" (default: manual)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Backup location and size
+
+## `context_cmd_status`
+
+Show context status Displays memory, history, sessions, worktree info
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Detailed context status
+
+## `list_sessions_cmd`
+
+list_sessions_cmd Lists all active Claude Code sessions with metadata
+
+**Arguments:**
+
+- `  none`
+
+**Returns:**
+
+-   0 on success
+- Outputs:
+-   Table of sessions with date, slug, branch, project
+
+
+
+# Module: gh
+
+> Source: `lib/gh/`
+
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+
+```{toctree}
+:hidden:
+
+install
+status
+```
+
+
+
+# install
+
+> **Module:** `gh` | **File:** `lib/gh/install.sh`
+
+GitHub CLI installation module
+Provides function for installing gh CLI into isolated environment
+
+---
+
+## `install_isolated_gh`
+
+Install gh CLI to isolated environment Downloads and installs gh CLI binary from GitHub releases
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `gh` | **File:** `lib/gh/status.sh`
+
+GitHub CLI status module
+Provides function for checking gh CLI installation status
+
+---
+
+## `check_gh_status`
+
+Check GitHub CLI installation status Shows installed version, location, and authentication status
+
+**Returns:**
+
+-   0 - success
+
+
+
+# executor
+
+> **Module:** `loop` | **File:** `lib/loop/executor.sh`
+
+lib/loop/executor.sh
+Loop Mode - Sequential Execution Orchestrator
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains sequential task execution logic with retry support
+
+---
+
+## `invoke_claude_iteration`
+
+Invoke Claude Code for one iteration Executes Claude with task prompt and logs output
+
+**Arguments:**
+
+- `  $1 - Task ID (e.g., "task_0")`
+- `  $2 - Iteration number`
+
+**Returns:**
+
+-   Exit code from Claude Code execution
+
+## `verify_completion_promise`
+
+Verify completion promise is met Executes validation command and checks output
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Promise met (task successful)
+-   1 - Promise not met (retry needed)
+
+## `execute_single_iteration`
+
+Execute single iteration (no retry logic) Wrapper around invoke_claude_iteration with state tracking
+
+**Arguments:**
+
+- `  $1 - Task ID`
+- `  $2 - Iteration number (default: 1)`
+
+**Returns:**
+
+-   0 - Iteration executed (does not verify promise)
+-   1 - Execution failed
+
+## `execute_sequential_mode`
+
+Execute tasks in sequential mode Main orchestrator for loop mode sequential execution
+
+**Arguments:**
+
+- `  $1 - Path to task file (.md)`
+
+**Returns:**
+
+-   0 - All tasks completed successfully
+-   1 - All tasks failed
+-   2 - Partial success (some tasks failed)
+
+
+
+# git
+
+> **Module:** `loop` | **File:** `lib/loop/git.sh`
+
+lib/loop/git.sh
+Loop Mode - Git Integration
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains git commit and push operations after task completion
+
+---
+
+## `git_commit_task_changes`
+
+Git commit task changes Commits changes after successful task execution with optional auto-push
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Changes committed successfully or no git config
+-   1 - Commit or push failed
+
+
+
+# Module: loop
+
+> Source: `lib/loop/`
+
+- [executor](executor.md) — 4 functions
+- [git](git.md) — 1 functions
+- [parallel](parallel.md) — 3 functions
+- [parser](parser.md) — 2 functions
+- [retry](retry.md) — 1 functions
+- [state](state.md) — 2 functions
+- [validator](validator.md) — 1 functions
+- [worktree](worktree.md) — 4 functions
+
+```{toctree}
+:hidden:
+
+executor
+git
+parallel
+parser
+retry
+state
+validator
+worktree
+```
+
+
+
+# parallel
+
+> **Module:** `loop` | **File:** `lib/loop/parallel.sh`
+
+lib/loop/parallel.sh
+Loop Mode - Parallel Execution Orchestrator
+Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
+Contains parallel task execution logic with git worktree isolation
+
+---
+
+## `execute_task_with_retry`
+
+Execute single task with retry logic Helper wrapper for both sequential and parallel execution
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Task completed
+-   1 - Task failed after retries
+
+## `execute_parallel_group`
+
+Execute parallel group of tasks Executes tasks in parallel with worktree isolation
+
+**Arguments:**
+
+- `  $1 - Space-separated task IDs (e.g., "task_0 task_1 task_2")`
+- `  $2 - Max parallel agents (default: 5)`
+
+**Returns:**
+
+-   0 - All tasks in group attempted (check COMPLETED_TASKS for success)
+
+## `execute_parallel_mode`
+
+Execute tasks in parallel mode Main orchestrator for parallel execution with group support
+
+**Arguments:**
+
+- `  $1 - Path to task file (.md)`
+- `  $2 - Max parallel agents (default: 5)`
+
+**Returns:**
+
+-   0 - All tasks completed successfully
+-   1 - All tasks failed
+-   2 - Partial success (some tasks failed)
+
+
+
+# parser
+
+> **Module:** `loop` | **File:** `lib/loop/parser.sh`
+
+lib/loop/parser.sh
+Loop Mode - Task Loading and Parsing
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains Markdown task parser functions
+
+---
+
+## `load_markdown_task`
+
+Load a single task from Markdown file Parses task metadata from structured Markdown format
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+- `  $2 - Task index (default: 0 for single task)`
+
+**Returns:**
+
+-   0 - Success
+-   1 - File not found or parse error
+
+## `load_all_tasks`
+
+Load all tasks from Markdown file Supports multiple "# Task:" sections in one file
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+
+**Returns:**
+
+-   0 - Success (at least one task loaded)
+-   1 - No tasks found or error
+
+
+
+# retry
+
+> **Module:** `loop` | **File:** `lib/loop/retry.sh`
+
+lib/loop/retry.sh
+Loop Mode - Retry Logic with Exponential Backoff
+Part of Phase 12: Loop Mode extraction from iclaude-legacy.sh
+Contains exponential backoff retry mechanism
+
+---
+
+## `retry_task_with_backoff`
+
+Retry task with exponential backoff Implements exponential backoff: 2s, 4s, 8s, 16s, 32s (capped at 60s)
+
+**Arguments:**
+
+- `  $1 - Task ID`
+- `  $2 - Current iteration number (default: 1)`
+
+**Returns:**
+
+-   0 - Task succeeded within max iterations
+-   1 - Max iterations reached without success
+
+
+
+# state
+
+> **Module:** `loop` | **File:** `lib/loop/state.sh`
+
+lib/loop/state.sh
+Loop Mode - State Persistence
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains loop state save/load functions for crash recovery
+
+---
+
+## `save_loop_state`
+
+Save loop state to JSON file Creates checkpoint file for recovery after interruption
+
+**Arguments:**
+
+- `  None (reads global variables)`
+
+**Returns:**
+
+-   0 - State saved successfully
+
+## `load_loop_state`
+
+Load loop state from file Restores execution state after crash or interruption
+
+**Arguments:**
+
+- `  None (sets global variables)`
+
+**Returns:**
+
+-   0 - State loaded successfully
+-   1 - No state file found or jq unavailable
+
+
+
+# validator
+
+> **Module:** `loop` | **File:** `lib/loop/validator.sh`
+
+lib/loop/validator.sh
+Loop Mode - Task File Validation
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains task file format validation
+
+---
+
+## `validate_task_file_format`
+
+Validate task file format Checks for required Markdown structure and sections
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+
+**Returns:**
+
+-   0 - Valid format
+-   1 - Invalid format or user rejected
+- Required sections:
+-   - "# Task:" header
+-   - "## Description" section
+-   - "## Completion Promise" section
+-   - "## Validation Command" section
+- Interactive:
+-   Prompts user to continue if missing optional sections
+
+
+
+# worktree
+
+> **Module:** `loop` | **File:** `lib/loop/worktree.sh`
+
+lib/loop/worktree.sh
+Loop Mode - Git Worktree Management + AI Merge Conflict Resolution
+Part of Phase 13: Loop Mode extraction from iclaude-legacy.sh
+⚠️ HIGH RISK: Contains AI-powered merge conflict resolution
+IMPORTANT SAFETY NOTES:
+- resolve_merge_conflicts_ai() uses AI to modify code - requires careful validation
+- Always backup before merge (use git stash)
+- Validate AI output for conflict markers
+- Recommend --parallel-dry-run for testing
+- Recommend --parallel-require-approval for production
+
+---
+
+## `create_task_worktree`
+
+Create git worktree for task isolation Creates isolated worktree with unique branch for parallel execution
+
+**Arguments:**
+
+- `  $1 - Task ID (e.g., "task_0")`
+
+**Returns:**
+
+-   0 - Worktree created successfully
+-   1 - Creation failed
+
+## `cleanup_worktree`
+
+Cleanup git worktree after task completion Attempts graceful removal, falls back to force, then manual cleanup
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Worktree removed successfully (always succeeds)
+
+## `merge_worktree_changes`
+
+Merge worktree changes back to main branch Attempts merge with patience strategy, invokes AI if conflicts detected
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Merge successful
+-   1 - Merge failed (conflicts unresolved)
+
+## `resolve_merge_conflicts_ai`
+
+Resolve merge conflicts using AI (⚠️ HIGHEST RISK FUNCTION) Uses Claude to intelligently resolve git merge conflicts
+
+**Arguments:**
+
+- `  $1 - Task ID`
+
+**Returns:**
+
+-   0 - Conflicts resolved and committed
+-   1 - Resolution failed (markers present or AI error)
+
 

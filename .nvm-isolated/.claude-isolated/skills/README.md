@@ -476,11 +476,6 @@ See [lsp-integration/SKILL.md](./lsp-integration/SKILL.md) for full list of 11+ 
 - **Context7 MCP:** Load official library documentation (FastAPI, React, pandas, etc.)
 - Installation: See [External Dependencies Guide](./_shared/external-dependencies.md#context7-mcp-plugin)
 
-### External Loop Tools
-- **Bash Loop Mode:** External tool for iterative task execution (NOT a skill)
-- **Usage:** `./iclaude.sh --loop task.md` (sequential) or `./iclaude.sh --loop-parallel task.md` (parallel)
-- **Documentation:** See [Loop Mode Documentation](../../CLAUDE.md#loop-mode-commands) and [Migration Guide](../../MIGRATION-GUIDE.md)
-
 ---
 
 ## Skill File Structure

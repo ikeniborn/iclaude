@@ -88,13 +88,6 @@ save_isolated_lockfile() {
 		sandbox_installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 	fi
 
-	# Detect gh CLI version
-	local gh_version="not installed"
-	local gh_bin="$ISOLATED_NVM_DIR/npm-global/bin/gh"
-	if [[ -x "$gh_bin" ]]; then
-		gh_version=$("$gh_bin" --version 2>/dev/null | head -1 | awk '{print $3}')
-	fi
-
 	# Detect LSP servers
 	# Clear bash command cache to find newly installed binaries
 	hash -r 2>/dev/null || true
@@ -205,7 +198,6 @@ save_isolated_lockfile() {
 		--arg nodeVer "$node_version" \
 		--arg claudeVer "$claude_version" \
 		--arg routerVer "$router_version" \
-		--arg ghVer "$gh_version" \
 		--argjson lspServers "$lsp_servers_json" \
 		--argjson lspPlugins "$lsp_plugins_json" \
 		--arg sandboxAvail "$sandbox_available" \
@@ -224,7 +216,6 @@ save_isolated_lockfile() {
 			nodeVersion: $nodeVer,
 			claudeCodeVersion: $claudeVer,
 			routerVersion: $routerVer,
-			ghCliVersion: $ghVer,
 			lspServers: $lspServers,
 			lspPlugins: $lspPlugins,
 			sandboxAvailable: ($sandboxAvail == "true"),

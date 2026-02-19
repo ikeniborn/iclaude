@@ -8,7 +8,7 @@
 1. **Per-project**: Sphinx работает в любом проекте (не только iclaude)
 2. **Изолированная поддиректория**: Sphinx размещается в `docs/sphinx/`
    (не захламляет корневой `docs/` существующими конфигами)
-3. **Паттерн**: аналогично `lib/context/` — все функции принимают
+3. **Паттерн**: все функции принимают
    `$1=project_path` (default: `$(pwd)`)
 
 ---
@@ -60,7 +60,7 @@ lib/docs/
 
 ---
 
-## 1. lib/docs/resolve.sh (новый — аналог lib/context/init.sh)
+## 1. lib/docs/resolve.sh (новый — path helper модуль)
 
 Все 7 helper-функций с `$1=project_path (default: pwd)`:
 

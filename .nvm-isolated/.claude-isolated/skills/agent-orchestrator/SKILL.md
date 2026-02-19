@@ -441,7 +441,7 @@ ${PROJECT_ROOT}/
 **Выход:**
 ```
 ✅ COMPLETED: feat(cli): add --list-sessions flag + feat(context): implement --list-sessions functionality
-Files changed: lib/command/args.sh, lib/command/help.sh, lib/context/sessions.sh, iclaude.sh
+Files changed: lib/command/args.sh, lib/command/help.sh, iclaude.sh
 Commits: abc1234, def5678
 Execution Review: 95/100 [PASS]
 ```

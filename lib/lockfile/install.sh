@@ -89,21 +89,6 @@ install_from_lockfile() {
 		fi
 	fi
 
-	# Install gh CLI if version specified in lockfile
-	local gh_version=$(grep -oP '"ghCliVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
-
-	if [[ "$gh_version" != "not installed" ]] && [[ "$gh_version" != "unknown" ]]; then
-		echo ""
-		print_info "Installing gh CLI version: $gh_version (from lockfile)"
-		echo ""
-
-		# Вызвать существующую функцию установки
-		install_isolated_gh || {
-			print_warning "Failed to install gh CLI from lockfile (non-critical)"
-			echo ""
-		}
-	fi
-
 	# Install LSP servers and plugins from lockfile
 	# Check jq dependency
 	if ! command -v jq &>/dev/null; then

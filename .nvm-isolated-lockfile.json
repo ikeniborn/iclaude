@@ -2,7 +2,6 @@
   "nodeVersion": "18.20.8",
   "claudeCodeVersion": "2.1.47",
   "routerVersion": "unknown",
-  "ghCliVersion": "2.45.0",
   "lspServers": {
     "pyright": "1.1.408",
     "vtsls": "0.3.0",
