@@ -14,7 +14,7 @@ install_nodejs() {
     echo ""
 
     # Use NodeSource setup script for latest LTS
-    if curl -fsSL https://deb.nodesource.com/setup_18.x | bash -; then
+    if curl -fsSL https://deb.nodesource.com/setup_20.x | bash -; then
         if apt-get install -y nodejs; then
             print_success "Node.js and npm installed successfully"
             echo ""
@@ -157,7 +157,7 @@ check_update() {
     echo ""
 
     # Compare versions
-    if [[ "$current_version" == *"$latest_version"* ]]; then
+    if [[ "$current_version" == "$latest_version" ]]; then
         print_success "You are running the latest version"
     else
         print_warning "An update is available: $latest_version"

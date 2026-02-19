@@ -100,7 +100,7 @@ save_credentials() {
     # Save URL, PROXY_INSECURE, PROXY_CA, and NO_PROXY
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
-PROXY_INSECURE=${PROXY_INSECURE:-true}
+PROXY_INSECURE=${PROXY_INSECURE:-false}
 PROXY_CA=${PROXY_CA:-}
 NO_PROXY=$no_proxy
 EOF

@@ -59,8 +59,10 @@ This is iteration $iteration. Focus on meeting the completion promise.
 	# Execute Claude Code with prompt
 	# Inherit all environment variables (proxy, OAuth, etc.)
 	echo "$prompt" | "$claude_bin" 2>&1 | tee "$log_file"
-
-	local exit_code="${PIPESTATUS[0]}"
+	# Capture claude_bin exit code (index 1 in the 3-stage pipe echo|claude|tee)
+	# Must be read immediately — PIPESTATUS is reset after every new command
+	local pipe_status=("${PIPESTATUS[@]}")
+	local exit_code="${pipe_status[1]}"
 
 	if [[ $exit_code -eq 0 ]]; then
 		print_success "Claude Code iteration $iteration completed"
@@ -102,11 +104,10 @@ verify_completion_promise() {
 	echo "  Expected: $promise"
 	echo ""
 
-	# Execute validation command
+	# Execute validation command via bash -c to avoid eval
 	local output
-	local exit_code
-	output=$(eval "$validation_cmd" 2>&1) || exit_code=$?
-	exit_code=${exit_code:-0}
+	local exit_code=0
+	output=$(bash -c "$validation_cmd" 2>&1) || exit_code=$?
 
 	echo "  Output:"
 	echo "$output" | sed 's/^/    /'

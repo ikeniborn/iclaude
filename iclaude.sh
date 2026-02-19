@@ -511,20 +511,6 @@ fi
                 install_statusline_script
                 exit $?
                 ;;
-            --install-posh|--install-ohmyposh)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-posh"
-                    echo ""
-                    echo "Oh My Posh is only available in isolated environment"
-                    exit 1
-                fi
-                install_isolated_ohmyposh ${posh_insecure:+--insecure}
-                exit $?
-                ;;
-            --check-posh|--check-ohmyposh)
-                check_ohmyposh_status
-                exit 0
-                ;;
             --sandbox-install)
                 if [[ "$use_system" == true ]]; then
                     print_error "--system cannot be used with --sandbox-install"
@@ -733,9 +719,8 @@ fi
         proxy_no_proxy=$(echo "$proxy_credentials" | cut -d'|' -f2)
     else
         # Validate provided URL (allow domains for now)
-        local validation_result
-        validate_proxy_url "$proxy_url"
-        validation_result=$?
+        validation_result=0
+        validate_proxy_url "$proxy_url" || validation_result=$?
 
         if [[ $validation_result -eq 1 ]]; then
             print_error "Invalid proxy URL: $proxy_url"

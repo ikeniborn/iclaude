@@ -196,6 +196,10 @@ save_isolated_lockfile() {
 		fi
 	fi
 
+	# Detect NVM version dynamically
+	local nvm_version
+	nvm_version=$(nvm --version 2>/dev/null || echo "unknown")
+
 	# Create lockfile using jq for safe JSON generation
 	jq -n \
 		--arg nodeVer "$node_version" \
@@ -215,6 +219,7 @@ save_isolated_lockfile() {
 		--arg ompPlat "$omp_platform" \
 		--arg ompInstAt "$omp_installed_at" \
 		--arg instAt "$installed_at" \
+		--arg nvmVer "$nvm_version" \
 		'{
 			nodeVersion: $nodeVer,
 			claudeCodeVersion: $claudeVer,
