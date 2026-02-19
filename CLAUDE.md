@@ -494,16 +494,3 @@ TypeScript, Python, Go, Rust, C#, Java, Kotlin, Lua, PHP, C/C++, Swift
 5. **Proxy Trust:** Only use trusted proxy servers (MitM risk with `undici` ProxyAgent)
 6. **TLS Verification:** `undici` does not verify target server certificates when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
 
-
-## Documentation
-
-Project documentation for AI agents (pre-built, no Sphinx needed):
-
-- `docs/llms.txt` — structure and navigation index (read first for orientation)
-- `docs/llms-full.txt` — full documentation content for LLM context
-- `docs/sphinx/_build/html/` — HTML site (committed to git)
-
-**Usage in agents/skills:** Read `docs/llms.txt` only when working on iclaude
-internals (changes to `lib/`, `docs/`, `CLAUDE.md`, `iclaude.sh`). Do not load
-automatically for every request — it costs tokens. Use `docs/llms-full.txt`
-only when deep architectural context is explicitly needed.

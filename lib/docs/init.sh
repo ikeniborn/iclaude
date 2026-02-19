@@ -103,50 +103,6 @@ HOOK
     print_info "Installed pre-commit hook: auto-rebuild Sphinx on doc changes"
 }
 
-#######################################
-# Add documentation section to project CLAUDE.md
-# Arguments:
-#   $1 - project path
-# Returns:
-#   0 - always
-#######################################
-_update_project_claude_md() {
-    local project_path="$1"
-    local claude_md="${project_path}/CLAUDE.md"
-    local marker="docs/llms.txt"
-
-    # Skip if already has llms.txt reference
-    if [[ -f "$claude_md" ]] && grep -qF "$marker" "$claude_md"; then
-        return 0
-    fi
-
-    local section
-    section=$(cat <<'EOF'
-
-## Documentation
-
-Project documentation for AI agents (pre-built, no Sphinx needed):
-
-- `docs/llms.txt` — structure and navigation index (read first for orientation)
-- `docs/llms-full.txt` — full documentation content for LLM context
-- `docs/sphinx/_build/html/` — HTML site (committed to git)
-
-**Usage in agents/skills:** Read `docs/llms.txt` only when working on project
-internals (changes to `lib/`, `docs/`, `CLAUDE.md`, main entry point). Do not
-load automatically for every request — it costs tokens. Use `docs/llms-full.txt`
-only when deep architectural context is explicitly needed.
-EOF
-)
-
-    if [[ -f "$claude_md" ]]; then
-        echo "" >> "$claude_md"
-        echo "$section" >> "$claude_md"
-    else
-        echo "# Project Documentation" > "$claude_md"
-        echo "$section" >> "$claude_md"
-    fi
-    print_info "Added docs section to CLAUDE.md"
-}
 
 #######################################
 # Generate conf.py for the project
@@ -365,9 +321,6 @@ init_project_docs() {
 
     # Install pre-commit hook for auto Sphinx rebuild
     _setup_docs_git_hook "$project_path"
-
-    # Update CLAUDE.md with docs reference for AI agents
-    _update_project_claude_md "$project_path"
 
     echo ""
     print_success "Sphinx initialized: $sphinx_dir"
