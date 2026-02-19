@@ -189,6 +189,17 @@ if [[ -d "$LIB_DIR/command" ]]; then
 fi
 
 #######################################
+# Load Docs modules (Phase 16: Sphinx integration)
+#######################################
+if [[ -d "$LIB_DIR/docs" ]]; then
+    source "${LIB_DIR}/docs/bash-parser.sh"
+    source "${LIB_DIR}/docs/install.sh"
+    source "${LIB_DIR}/docs/build.sh"
+    source "${LIB_DIR}/docs/serve.sh"
+    source "${LIB_DIR}/docs/status.sh"
+fi
+
+#######################################
 # Load Chrome Integration modules
 #######################################
 if [[ -d "$LIB_DIR/chrome" ]]; then
@@ -622,6 +633,22 @@ fi
             --shared-config)
                 use_shared_config=true
                 shift
+                ;;
+            --install-docs)
+                install_sphinx_docs
+                exit $?
+                ;;
+            --build-docs)
+                build_sphinx_docs "${2:-}"
+                exit $?
+                ;;
+            --serve-docs)
+                serve_sphinx_docs "${2:-8000}"
+                exit $?
+                ;;
+            --check-docs)
+                check_docs_status
+                exit 0
                 ;;
             --check-config)
                 check_config_status
