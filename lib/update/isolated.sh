@@ -16,7 +16,7 @@ update_isolated_claude() {
 	print_info "Updating Claude Code in isolated environment..."
 	echo ""
 
-	# Source NVM
+	# Verify NVM is installed
 	if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
 		print_error "NVM not found in isolated environment"
 		echo ""
@@ -24,9 +24,11 @@ update_isolated_claude() {
 		return 1
 	fi
 
-	source "$NVM_DIR/nvm.sh"
-
 	# Ensure Node.js is available
+	# Note: PATH is already configured by setup_isolated_nvm above.
+	# Do NOT source nvm.sh here — it triggers nvm_auto which calls
+	# `nvm use <current>` and can fail with set -e when NVM_DIR or
+	# alias/default is not configured (e.g. in CI environments).
 	if ! command -v npm &>/dev/null; then
 		print_error "Node.js not found in isolated environment"
 		echo ""

@@ -69,7 +69,7 @@ export interface AgentInput {
   /**
    * Permission mode for spawned teammate (e.g., "plan" to require plan approval).
    */
-  mode?: "acceptEdits" | "bypassPermissions" | "default" | "delegate" | "dontAsk" | "plan";
+  mode?: "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
 }
 export interface BashInput {
   /**
