@@ -198,5 +198,8 @@ install_from_lockfile() {
 	print_success "Installation from lockfile complete"
 	echo ""
 
+	# Mark lockfile as applied by updating stored hash
+	[[ $(type -t update_lockfile_hash) == function ]] && update_lockfile_hash
+
 	return 0
 }
