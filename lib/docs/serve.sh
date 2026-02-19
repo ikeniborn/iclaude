@@ -2,35 +2,39 @@
 # lib/docs/serve.sh
 # Sphinx Documentation - Live Preview Server
 #
-# Serves built documentation on localhost:8000
+# Serves built documentation on localhost
 
 #######################################
 # Serve Sphinx documentation with live preview
-# Builds if needed, then starts HTTP server on localhost:8000
+# Builds if needed, then starts HTTP server
 # Arguments:
-#   $1 - port number (default: 8000)
+#   $1 - project path (default: pwd)
+#   $2 - port number (default: 8000)
 # Returns:
 #   0 - Server started (or stopped by user)
 #   1 - Build failed or python3 not available
-# Example: serve_sphinx_docs 8080
+# Example: serve_sphinx_docs /path/to/project 8080
 #######################################
 if ! declare -F serve_sphinx_docs &>/dev/null; then
 serve_sphinx_docs() {
-    local port="${1:-8000}"
-    local docs_dir="${SCRIPT_DIR}/docs"
-    local build_dir="${docs_dir}/_build/html"
+    local project_path
+    project_path=$(get_docs_project_dir "${1:-$(pwd)}")
+    local port="${2:-8000}"
+    local build_dir
+    build_dir=$(get_docs_build_dir "$project_path")
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  Sphinx Documentation Server"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
+    print_info "Project: $project_path"
 
     # Build if not yet built
     if [[ ! -f "$build_dir/index.html" ]]; then
         print_info "Documentation not built yet. Building..."
         echo ""
-        if ! build_sphinx_docs; then
+        if ! build_sphinx_docs "$project_path"; then
             return 1
         fi
     fi

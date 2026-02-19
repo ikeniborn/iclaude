@@ -12,46 +12,46 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 :maxdepth: 1
 :caption: Getting Started
 
-README
-INSTALLATION
-MIGRATION
+../README
+../INSTALLATION
+../MIGRATION
 ```
 
 ```{toctree}
 :maxdepth: 1
 :caption: Configuration
 
-CONFIGURATION
-CONFIG_HIERARCHY
-CLAUDE_CONFIG
-QUICK_CONFIG
-PROXY
+../CONFIGURATION
+../CONFIG_HIERARCHY
+../CLAUDE_CONFIG
+../QUICK_CONFIG
+../PROXY
 ```
 
 ```{toctree}
 :maxdepth: 1
 :caption: Features
 
-STATUSLINE
-USE_CASES
-features/context-monitoring
+../STATUSLINE
+../USE_CASES
+../features/context-monitoring
 ```
 
 ```{toctree}
 :maxdepth: 1
 :caption: Architecture
 
-architecture/README
-architecture/statusline-architecture
+../architecture/README
+../architecture/statusline-architecture
 ```
 
 ```{toctree}
 :maxdepth: 1
 :caption: Development
 
-PLANNING
-MODULARIZATION-COMPLETE
-REMAINING_WORK
+../PLANNING
+../MODULARIZATION-COMPLETE
+../REMAINING_WORK
 ```
 
 ```{toctree}
@@ -66,5 +66,5 @@ api-reference/index
 
 :::{note}
 **For AI agents:** This documentation generates `llms.txt` and `llms-full.txt` at build time.
-Use them for efficient navigation: `docs/_build/html/llms.txt`
+Use them for efficient navigation: `docs/sphinx/_build/html/llms.txt`
 :::

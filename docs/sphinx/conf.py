@@ -36,12 +36,12 @@ source_suffix = {
     ".md": "markdown",
 }
 
-# Exclude patterns
+# Exclude patterns (relative to docs/sphinx/)
 exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
-    "plans/README.md",  # Plans index not included in main TOC
+    "../plans/README.md",  # Plans index not included in main TOC
 ]
 
 # -- HTML output ---------------------------------------------------------------
@@ -63,8 +63,8 @@ html_theme_options = {
     },
 }
 
-# Static files
-html_static_path = ["_static"]
+# Static files (relative to docs/sphinx/)
+html_static_path = ["_static", "../_static"]
 
 # -- sphinx-llms-txt -----------------------------------------------------------
 # AI-first documentation: generates llms.txt and llms-full.txt
