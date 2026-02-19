@@ -414,7 +414,6 @@ graph LR
 
 | Файл | Описание |
 |------|----------|
-| `dependency-graph.mmd` | Граф зависимостей компонентов |
 | `data-flow-proxy-configuration.mmd` | Поток настройки прокси |
 | `data-flow-isolated-installation.mmd` | Поток изолированной установки |
 | `data-flow-oauth-token-refresh.mmd` | Поток обновления OAuth токена |

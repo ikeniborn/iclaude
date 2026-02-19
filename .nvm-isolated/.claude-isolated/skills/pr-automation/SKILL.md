@@ -20,19 +20,12 @@ context: fork
   - ESLint/Prettier (no-console, no-unused-vars)
   - Vitest тесты (assertion failures, mock issues)
   - Build errors (module not found, syntax errors)
-- ✅ **External loop tool** для итеративных фиксов (./iclaude.sh --loop)
 - ✅ **Conventional Commits** для всех автокоммитов
 - ✅ **Ready-for-review** после успешного прохождения всех проверок
 
 ## Предварительные требования
 
-### 1. gh CLI в изолированном окружении
-
-```bash
-cd /home/ikeniborn/Documents/Project/claude
-./iclaude.sh --install-gh
-./iclaude.sh --check-gh
-```
+### 1. gh CLI
 
 **Авторизация:**
 ```bash
@@ -222,26 +215,7 @@ gh run view $run_id --log-failed > /tmp/ci_logs.txt
 grep -E "error TS[0-9]+" /tmp/ci_logs.txt
 ```
 
-3. **Исправление ошибок** (manual или через external loop tool):
-   - Option A: Manual fix в Claude Code
-   - Option B: External loop tool (./iclaude.sh --loop task.md)
-     ```bash
-     # Create task definition
-     cat > fix-ts-error.md <<'EOF'
-     # Task: Fix TypeScript error TS2322
-     ## Description
-     Fix TS2322 in transactionForm.ts:45
-     ## Completion Promise
-     gh pr checks 312
-     ## Validation Command
-     gh pr checks 312 | grep -E "✓|success" | wc -l
-     ## Max Iterations
-     5
-     EOF
-
-     # Run loop (external to Claude session)
-     ./iclaude.sh --loop fix-ts-error.md
-     ```
+3. **Исправление ошибок** (manual fix в Claude Code):
    - Применяет fix из `rules/error-fixing-strategies.md`
    - Коммитит (формат из `@shared:GIT-CONVENTIONS.md#conventional-commits`)
    - Пушит в branch
@@ -1176,7 +1150,6 @@ pr-automation/
 - git 2.0+
 
 **External Tools:**
-- Loop mode (./iclaude.sh --loop) для iterative error fixing
 - git-workflow (для commit formatting)
 
 **Skills:**
@@ -1189,7 +1162,6 @@ pr-automation/
 - Git conventions: `@shared:GIT-CONVENTIONS.md`
 - TOON format: `@shared:TOON-REFERENCE.md`
 - Task structure: `@shared:TASK-STRUCTURE.md`
-- [Loop Mode Documentation](../../CLAUDE.md#loop-mode-commands)
 - [GitHub CLI](https://cli.github.com/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [GitHub Actions](https://docs.github.com/en/actions)
@@ -1202,13 +1174,6 @@ pr-automation/
 **License:** MIT
 
 ## Changelog
-
-### v1.3.0 (2026-01-25)
-
-- **BREAKING**: Удален ralph-loop plugin (deprecated)
-- Замена: Bash loop mode через ./iclaude.sh --loop task.md
-- External tool для итеративных фиксов (не auto-invocation)
-- Обновлены examples для manual loop invocation
 
 ### v1.2.0 (2026-01-25)
 

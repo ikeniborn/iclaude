@@ -179,7 +179,6 @@ NOTE: Execution mode НЕ имеет RETRY (execution failures = human escalatio
 TOON:retry_guidance:v1
 dimension|issue|severity|fix
 risk_depth|R2 mitigation generic|medium|Add code-level steps
-file_coverage|lib/context/sessions.sh missing|high|Add with relevance:high
 component_identification|missing function names|medium|Add function signatures
 ...
 

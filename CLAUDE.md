@@ -199,23 +199,6 @@ Custom status line script showing real-time metrics. See **[docs/STATUSLINE.md](
 - **Format:** `112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1.06 [proxy] [router]provider [session] branch`
 - **Features:** Dual context tracking, cache visibility, session links, append-only optimization
 
-### Loop Mode
-
-Execute tasks with retry logic (experimental):
-```bash
-# Sequential execution
-./iclaude.sh --loop task.md
-
-# Parallel execution (Week 2 - not yet implemented)
-./iclaude.sh --loop-parallel task.md --max-parallel 3
-```
-
-**Features:**
-- Exponential backoff (2s, 4s, 8s, 16s, 32s, max 60s)
-- Completion promise verification
-- Git integration (auto-commit + push)
-- Markdown task definition format
-
 ## Code Architecture
 
 ### Main Components
@@ -311,13 +294,10 @@ lib/
 ├── lockfile/      # Version locking and reproducibility
 ├── update/        # Update management and cleanup
 ├── launcher/      # Claude Code launch orchestration
-├── loop/          # Loop mode execution (8 modules)
-├── context/       # Context management system
 ├── statusline/    # Status line integration
 ├── chrome/        # Chrome integration detection
 ├── ohmyposh/      # oh-my-posh integration
-├── sandbox/       # Sandbox environment detection
-└── gh/            # GitHub CLI integration
+└── sandbox/       # Sandbox environment detection
 ```
 
 **Module loading:** All modules are sourced in `iclaude.sh` entry point. Each module is self-contained and reusable.

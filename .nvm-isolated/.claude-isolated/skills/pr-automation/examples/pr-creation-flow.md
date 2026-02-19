@@ -197,56 +197,14 @@ transactionFilter.ts(45,12): error TS2322: Type 'string' is not assignable to ty
 }
 ```
 
-**Option A: Manual fix in Claude Code**
-
 Fix the error directly by editing transactionFilter.ts:45
 
-**Option B: External loop tool (bash loop)**
-
-Create task definition:
-```markdown
-# Task: Fix TypeScript Error TS2322
-
-## Description
-Fix type mismatch in transactionFilter.ts:45
-Type 'string' is not assignable to type 'number'
-
-## Completion Promise
-gh pr checks 312
-
-## Validation Command
-gh pr checks 312 | grep -E "✓|success" | wc -l
-
-## Max Iterations
-5
-
-## Git Config
-Branch: fix/ts2322-transaction-filter
-Commit message: fix: resolve TS2322 type mismatch
-Auto-push: true
-```
-
-Run loop:
-```bash
-./iclaude.sh --loop fix-ts2322.md
-```
-
-**Loop actions:**
-
-1. Read `transactionFilter.ts` lines 35-55
-2. Analyze error:
-```typescript
-// Line 45 (before fix)
-const minAmount: number = formData.get('minAmount');
-```
-
-3. Apply fix:
 ```typescript
 // Line 45 (after fix)
 const minAmount: number = parseInt(formData.get('minAmount'), 10);
 ```
 
-4. Commit:
+Commit:
 ```bash
 git add frontend/web/static/js/budget/transactionFilter.ts
 git commit -m "fix(frontend): resolve TS2322 type mismatch in transactionFilter.ts
@@ -256,32 +214,6 @@ number type annotation.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 git push origin feature/transaction-filters
-```
-
-5. Wait for checks (30s + 2m)
-6. Verify completion promise:
-```bash
-gh pr checks 312 | grep -E "✓|success" | wc -l
-# Output: 4 ✅ (all checks pass)
-```
-
-**Ralph-loop completes ✅**
-
-**Output:**
-```json
-{
-  "iteration": 1,
-  "fixedErrors": [
-    {
-      "errorType": "typescript",
-      "file": "transactionFilter.ts",
-      "line": 45,
-      "fix": "Added parseInt() conversion",
-      "commitHash": "jkl012m"
-    }
-  ],
-  "promiseVerified": true
-}
 ```
 
 ---

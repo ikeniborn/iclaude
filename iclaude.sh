@@ -133,14 +133,6 @@ if [[ -d "$LIB_DIR/sandbox" ]]; then
 fi
 
 #######################################
-# Load GH CLI modules (Phase 9.2)
-#######################################
-if [[ -d "$LIB_DIR/gh" ]]; then
-    source "${LIB_DIR}/gh/install.sh"
-    source "${LIB_DIR}/gh/status.sh"
-fi
-
-#######################################
 # Load Update modules (Phase 9.5)
 #######################################
 if [[ -d "$LIB_DIR/update" ]]; then
@@ -154,29 +146,6 @@ fi
 #######################################
 if [[ -d "$LIB_DIR/launcher" ]]; then
     source "${LIB_DIR}/launcher/launch.sh"
-fi
-
-#######################################
-# Load Context Management modules (Phase 10)
-#######################################
-if [[ -d "$LIB_DIR/context" ]]; then
-    source "${LIB_DIR}/context/init.sh"
-    source "${LIB_DIR}/context/operations.sh"
-    source "${LIB_DIR}/context/memory.sh"
-fi
-
-#######################################
-# Load Loop Mode modules (Phase 11-13)
-#######################################
-if [[ -d "$LIB_DIR/loop" ]]; then
-    source "${LIB_DIR}/loop/validator.sh"
-    source "${LIB_DIR}/loop/parser.sh"
-    source "${LIB_DIR}/loop/state.sh"
-    source "${LIB_DIR}/loop/retry.sh"
-    source "${LIB_DIR}/loop/git.sh"
-    source "${LIB_DIR}/loop/executor.sh"
-    source "${LIB_DIR}/loop/worktree.sh"
-    source "${LIB_DIR}/loop/parallel.sh"
 fi
 
 #######################################
@@ -227,11 +196,7 @@ fi
     claude_args=()
     USE_ROUTER_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
-    USE_LOOP_MODE=false
     posh_insecure=false
-    LOOP_TASK_FILE=""
-    LOOP_MAX_PARALLEL=5
-    LOOP_MODE_TYPE="sequential"  # sequential | parallel
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -411,20 +376,6 @@ fi
                 check_router_status
                 exit 0
                 ;;
-            --install-gh)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-gh"
-                    echo ""
-                    echo "gh CLI is only available in isolated environment"
-                    exit 1
-                fi
-                install_isolated_gh
-                exit $?
-                ;;
-            --check-gh)
-                check_gh_status
-                exit 0
-                ;;
             --install-lsp)
                 if [[ "$use_system" == true ]]; then
                     print_error "--system cannot be used with --install-lsp"
@@ -445,60 +396,6 @@ fi
             --check-lsp)
                 check_lsp_status
                 exit 0
-                ;;
-            --context-export)
-                context_cmd_export "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --context-import)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--context-import requires archive file"
-                    echo "Usage: ./iclaude.sh --context-import ARCHIVE [PATH]"
-                    exit 1
-                fi
-                context_cmd_import "$2" "${3:-$(pwd)}"
-                exit $?
-                ;;
-            --context-sync)
-                context_cmd_sync "${2:-pull}" "${3:-$(pwd)}"
-                exit $?
-                ;;
-            --context-clean)
-                context_cmd_clean "${2:-30}"
-                exit $?
-                ;;
-            --context-backup)
-                context_cmd_backup "${2:-manual}"
-                exit $?
-                ;;
-            --context-status)
-                context_cmd_status "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --context-memory-init)
-                context_memory_init "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --context-memory-validate)
-                context_memory_validate "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --context-memory-organize)
-                context_memory_organize "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --context-memory-add)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--context-memory-add requires entry text"
-                    echo "Usage: ./iclaude.sh --context-memory-add \"Entry text\" [PATH]"
-                    exit 1
-                fi
-                context_memory_add "$2" "${3:-$(pwd)}"
-                exit $?
-                ;;
-            --context-memory-status)
-                context_memory_status "${2:-$(pwd)}"
-                exit $?
                 ;;
             --install-statusline)
                 if [[ "$use_system" == true ]]; then
@@ -583,37 +480,6 @@ fi
                 use_system=true
                 shift
                 ;;
-            --loop)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--loop requires a Markdown file argument"
-                    echo "Usage: ./iclaude.sh --loop task.md"
-                    exit 1
-                fi
-                USE_LOOP_MODE=true
-                LOOP_TASK_FILE="$2"
-                LOOP_MODE_TYPE="sequential"
-                shift 2
-                ;;
-            --loop-parallel)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--loop-parallel requires a Markdown file argument"
-                    echo "Usage: ./iclaude.sh --loop-parallel task.md"
-                    exit 1
-                fi
-                USE_LOOP_MODE=true
-                LOOP_TASK_FILE="$2"
-                LOOP_MODE_TYPE="parallel"
-                shift 2
-                ;;
-            --max-parallel)
-                if [[ -z "${2:-}" ]]; then
-                    print_error "--max-parallel requires a number argument"
-                    echo "Usage: ./iclaude.sh --max-parallel 5"
-                    exit 1
-                fi
-                LOOP_MAX_PARALLEL="$2"
-                shift 2
-                ;;
             --isolated-config)
                 use_isolated_config=true
                 shift
@@ -652,10 +518,6 @@ fi
                 ;;
             --check-config)
                 check_config_status
-                exit 0
-                ;;
-            --list-sessions)
-                list_sessions_cmd
                 exit 0
                 ;;
             --refresh-token)
@@ -842,32 +704,6 @@ fi
             print_info "Launching without browser automation..."
             echo ""
         fi
-    fi
-
-    # Check if loop mode is enabled
-    if [[ "$USE_LOOP_MODE" == true ]]; then
-        if [[ ! -f "$LOOP_TASK_FILE" ]]; then
-            print_error "Task file not found: $LOOP_TASK_FILE"
-            echo ""
-            echo "Tip: If the file path contains spaces, enclose it in quotes:"
-            echo "  ./iclaude.sh --loop \"/path/with spaces/task.md\""
-            exit 1
-        fi
-
-        case "$LOOP_MODE_TYPE" in
-            sequential)
-                execute_sequential_mode "$LOOP_TASK_FILE"
-                exit $?
-                ;;
-            parallel)
-                execute_parallel_mode "$LOOP_TASK_FILE" "$LOOP_MAX_PARALLEL"
-                exit $?
-                ;;
-            *)
-                print_error "Unknown loop mode: $LOOP_MODE_TYPE"
-                exit 1
-                ;;
-        esac
     fi
 
     # Launch Claude Code
