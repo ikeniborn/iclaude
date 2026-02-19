@@ -44,6 +44,20 @@ serve_sphinx_docs() {
         return 1
     fi
 
+    # Find free port if requested port is busy
+    local try_port="$port"
+    while ! python3 -c "import socket; s=socket.socket(); s.bind(('', ${try_port})); s.close()" 2>/dev/null; do
+        try_port=$((try_port + 1))
+        if [[ $try_port -gt $((port + 20)) ]]; then
+            print_error "No free port found in range ${port}-$((port + 20))"
+            return 1
+        fi
+    done
+    if [[ "$try_port" != "$port" ]]; then
+        print_info "Port $port busy, using port $try_port"
+    fi
+    port="$try_port"
+
     print_success "Documentation available at: http://localhost:$port"
     echo ""
     echo "  Press Ctrl+C to stop"

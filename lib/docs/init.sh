@@ -16,22 +16,134 @@
 _update_project_gitignore() {
     local project_path="$1"
     local gitignore="${project_path}/.gitignore"
-    local entry="docs/sphinx/_build/"
+    # Only exclude .doctrees (pickle files), keep _build/html/ in git
+    local entry="docs/sphinx/_build/.doctrees/"
+    local old_entry="docs/sphinx/_build/"
 
     if [[ -f "$gitignore" ]]; then
+        # Migrate old broad exclusion to specific .doctrees/ exclusion
+        if grep -qF "$old_entry" "$gitignore" && ! grep -qF "$entry" "$gitignore"; then
+            sed -i "s|${old_entry}|${entry}|g" "$gitignore"
+            print_info "Updated .gitignore: _build/ → _build/.doctrees/ (html stays in git)"
+            return 0
+        fi
         if grep -qF "$entry" "$gitignore"; then
             return 0
         fi
         echo "" >> "$gitignore"
-        echo "# Sphinx build output" >> "$gitignore"
+        echo "# Sphinx intermediate build files (html/ is committed)" >> "$gitignore"
         echo "$entry" >> "$gitignore"
     else
         {
-            echo "# Sphinx build output"
+            echo "# Sphinx intermediate build files (html/ is committed)"
             echo "$entry"
         } > "$gitignore"
     fi
     print_info "Added $entry to .gitignore"
+}
+
+#######################################
+# Install git pre-commit hook for auto Sphinx rebuild
+# Rebuilds docs if source files changed, then stages html/ + llms.txt
+# Arguments:
+#   $1 - project path
+# Returns:
+#   0 - always
+#######################################
+_setup_docs_git_hook() {
+    local project_path="$1"
+    local hooks_dir="${project_path}/.git/hooks"
+    local hook_file="${hooks_dir}/pre-commit"
+    local marker="# iclaude-docs-hook"
+
+    [[ ! -d "$hooks_dir" ]] && return 0
+
+    # Already installed
+    if [[ -f "$hook_file" ]] && grep -qF "$marker" "$hook_file"; then
+        return 0
+    fi
+
+    local hook_content
+    hook_content=$(cat <<'HOOK'
+# iclaude-docs-hook: auto-rebuild Sphinx if docs sources changed
+_iclaude_docs_rebuild() {
+    local changed
+    changed=$(git diff --cached --name-only 2>/dev/null)
+    # Trigger if any sphinx source or docs markdown/yaml changed
+    if echo "$changed" | grep -qE \
+        '^docs/sphinx/(conf\.py|[^_].+\.md)$|^docs/.*\.(md|rst|yaml)$'; then
+        if command -v iclaude &>/dev/null; then
+            echo "[docs] Sources changed — rebuilding Sphinx..."
+            if iclaude --build-docs "$(pwd)" 2>&1; then
+                git add docs/sphinx/_build/html/ docs/llms.txt docs/llms-full.txt \
+                    2>/dev/null || true
+                echo "[docs] Built and staged."
+            else
+                echo "[docs] Build failed — commit aborted." >&2
+                return 1
+            fi
+        fi
+    fi
+}
+_iclaude_docs_rebuild || exit 1
+HOOK
+)
+
+    if [[ -f "$hook_file" ]]; then
+        # Append to existing hook
+        echo "" >> "$hook_file"
+        echo "$hook_content" >> "$hook_file"
+    else
+        {
+            echo "#!/usr/bin/env bash"
+            echo "$hook_content"
+        } > "$hook_file"
+        chmod +x "$hook_file"
+    fi
+    print_info "Installed pre-commit hook: auto-rebuild Sphinx on doc changes"
+}
+
+#######################################
+# Add documentation section to project CLAUDE.md
+# Arguments:
+#   $1 - project path
+# Returns:
+#   0 - always
+#######################################
+_update_project_claude_md() {
+    local project_path="$1"
+    local claude_md="${project_path}/CLAUDE.md"
+    local marker="docs/llms.txt"
+
+    # Skip if already has llms.txt reference
+    if [[ -f "$claude_md" ]] && grep -qF "$marker" "$claude_md"; then
+        return 0
+    fi
+
+    local section
+    section=$(cat <<'EOF'
+
+## Documentation
+
+Project documentation for AI agents (pre-built, no Sphinx needed):
+
+- `docs/llms.txt` — structure and navigation index (read first for orientation)
+- `docs/llms-full.txt` — full documentation content for LLM context
+- `docs/sphinx/_build/html/` — HTML site (committed to git)
+
+**Usage in agents/skills:** Read `docs/llms.txt` at task start to understand
+project structure. Use `docs/llms-full.txt` for deep context when needed.
+EOF
+)
+
+    if [[ -f "$claude_md" ]]; then
+        echo "" >> "$claude_md"
+        echo "$section" >> "$claude_md"
+    else
+        echo "# Project Documentation" > "$claude_md"
+        echo "$section" >> "$claude_md"
+    fi
+    print_info "Added docs section to CLAUDE.md"
 }
 
 #######################################
@@ -162,7 +274,7 @@ title: ${project_name} Documentation
 
 # ${project_name}
 
-```{toctree}
+\`\`\`{toctree}
 :maxdepth: 1
 :caption: Documentation
 EOF
@@ -215,15 +327,6 @@ init_project_docs() {
     echo ""
     print_info "Project: $project_path"
 
-    # Guard: don't overwrite existing conf.py
-    if [[ -f "${sphinx_dir}/conf.py" ]]; then
-        print_warning "docs/sphinx/conf.py already exists. Use --build-docs to rebuild."
-        echo ""
-        echo "  Sphinx dir: $sphinx_dir"
-        echo "  To force reinit: remove $sphinx_dir/conf.py first"
-        return 0
-    fi
-
     # Create sphinx directory
     if ! mkdir -p "$sphinx_dir"; then
         print_error "Failed to create directory: $sphinx_dir"
@@ -238,16 +341,31 @@ init_project_docs() {
     print_info "Project name:  $project_name"
     print_info "Project type:  $project_type"
 
-    # Generate conf.py
-    print_info "Generating conf.py..."
-    _generate_conf_py "${sphinx_dir}/conf.py" "$project_name" "$project_type"
+    # Generate conf.py (guard: don't overwrite if exists)
+    if [[ -f "${sphinx_dir}/conf.py" ]]; then
+        print_info "conf.py already exists, skipping."
+    else
+        print_info "Generating conf.py..."
+        _generate_conf_py "${sphinx_dir}/conf.py" "$project_name" "$project_type"
+    fi
 
-    # Generate index.md
-    print_info "Generating index.md..."
-    _generate_index_md "${sphinx_dir}/index.md" "$project_name" "$project_path"
+    # Generate index.md (always regenerate if missing or empty)
+    local index_path="${sphinx_dir}/index.md"
+    if [[ ! -f "$index_path" ]] || [[ ! -s "$index_path" ]]; then
+        print_info "Generating index.md..."
+        _generate_index_md "$index_path" "$project_name" "$project_path"
+    else
+        print_info "index.md already exists, skipping."
+    fi
 
     # Update .gitignore
     _update_project_gitignore "$project_path"
+
+    # Install pre-commit hook for auto Sphinx rebuild
+    _setup_docs_git_hook "$project_path"
+
+    # Update CLAUDE.md with docs reference for AI agents
+    _update_project_claude_md "$project_path"
 
     echo ""
     print_success "Sphinx initialized: $sphinx_dir"

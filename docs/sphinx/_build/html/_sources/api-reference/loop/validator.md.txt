@@ -1,0 +1,31 @@
+# validator
+
+> **Module:** `loop` | **File:** `lib/loop/validator.sh`
+
+lib/loop/validator.sh
+Loop Mode - Task File Validation
+Part of Phase 11: Loop Mode extraction from iclaude-legacy.sh
+Contains task file format validation
+
+---
+
+### `validate_task_file_format`
+
+Validate task file format Checks for required Markdown structure and sections
+
+**Arguments:**
+
+- `  $1 - Path to .md file`
+
+**Returns:**
+
+-   0 - Valid format
+-   1 - Invalid format or user rejected
+- Required sections:
+-   - "# Task:" header
+-   - "## Description" section
+-   - "## Completion Promise" section
+-   - "## Validation Command" section
+- Interactive:
+-   Prompts user to continue if missing optional sections
+
