@@ -35,7 +35,7 @@ Install Node.js in isolated NVM
 
 ## `install_npm_package_with_lockfile`
 
-Install npm package with automatic lockfile update This function eliminates 6+ duplications across iclaude.sh:   - install_isolated_claude()   - install_isolated_router()   - install_isolated_lsp_servers() (multiple packages)   - install_isolated_gh()   - etc.
+Install npm package with automatic lockfile update This function eliminates 6+ duplications across iclaude.sh:   - install_isolated_claude()   - install_isolated_router()   - install_isolated_lsp_servers() (multiple packages)   - etc.
 
 **Arguments:**
 

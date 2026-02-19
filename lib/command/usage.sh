@@ -56,8 +56,6 @@ OPTIONS:
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
   --no-chrome                       Disable Chrome integration (enabled by default)
-  --install-gh                      Install gh CLI in isolated environment
-  --check-gh                        Check gh CLI status and authentication
   --install-lsp [LANGUAGES]         Install LSP servers+plugins (typescript, python, go, rust)
                                     Default: typescript and python
                                     Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
@@ -67,22 +65,6 @@ OPTIONS:
   --check-sandbox                   (Alias for --sandbox-check)
   --no-test                         Skip proxy connectivity test
 
-Context Management:
-  --context-export [PATH]           Export project context (memory + history) to archive
-  --context-import ARCHIVE [PATH]   Import context from archive to project
-  --context-sync [pull|push] [PATH] Sync memory between main repo and worktrees
-  --context-clean [DAYS]            Clean old sessions and trim history (default: 30 days)
-  --context-backup [MODE]           Backup all context data (manual/daily/weekly)
-  --context-status [PATH]           Show context status for project
-  --list-sessions                   List all active Claude Code sessions
-
-Auto Memory (Best Practices):
-  --context-memory-init [PATH]      Initialize MEMORY.md with best practices template
-  --context-memory-validate [PATH]  Validate MEMORY.md (200 lines, structure, specificity)
-  --context-memory-organize [PATH]  Analyze and suggest topic files
-  --context-memory-add TEXT [PATH]  Add entry to MEMORY.md
-  --context-memory-status [PATH]    Show Auto Memory status
-
 Oh My Posh Commands:
   --install-posh, --install-ohmyposh    Install Oh My Posh binary in isolated environment
   --check-posh, --check-ohmyposh        Show Oh My Posh installation status
@@ -90,10 +72,6 @@ Oh My Posh Commands:
   --no-save                         Disable permission checks (enables --dangerously-skip-permissions)
   --save                            [DEPRECATED] Safe mode is now default, use --no-save for unsafe mode
   --system                          Force system installation (skip isolated environment)
-  --loop FILE.md                    Execute task loop from Markdown definition (sequential mode)
-                                    (use quotes if path contains spaces)
-  --loop-parallel FILE.md           Execute tasks in parallel (with git worktrees, Week 2)
-  --max-parallel N                  Max parallel agents (default: 5, use with --loop-parallel)
 
 EXAMPLES:
   # Install globally (run once)
@@ -207,39 +185,6 @@ ROUTER INTEGRATION:
 
   # Launch via Claude Code Router
   ./iclaude.sh --router
-
-LOOP MODE (Iterative Task Execution):
-  # Execute task sequentially with retry logic
-  ./iclaude.sh --loop task.md
-
-  # If file path contains spaces, use quotes
-  ./iclaude.sh --loop "/path/with spaces/task.md"
-
-  # Execute tasks in parallel (Week 2 - not yet implemented)
-  ./iclaude.sh --loop-parallel task.md
-
-  # Limit parallel agents to 3
-  ./iclaude.sh --loop-parallel task.md --max-parallel 3
-
-  Task file format (Markdown):
-    # Task: Fix TypeScript errors
-
-    ## Description
-    Fix all TypeScript compilation errors in src/
-
-    ## Completion Promise
-    npm run type-check
-
-    ## Validation Command
-    npm run type-check
-
-    ## Max Iterations
-    5
-
-    ## Git Config
-    Branch: fix/typescript-errors
-    Commit message: fix: resolve TypeScript errors
-    Auto-push: true
 
 SANDBOX INTEGRATION:
   # Check sandbox availability and requirements

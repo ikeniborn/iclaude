@@ -7,14 +7,11 @@ Auto-generated from bash module comments in `lib/`.
 | [chrome](chrome/index.md) | — |
 | [command](command/index.md) | — |
 | [config](config/index.md) | Config Export Module |
-| [context](context/index.md) | — |
 | [core](core/index.md) | Core Initialization Module |
 | [docs](docs/index.md) | — |
-| [gh](gh/index.md) | GitHub CLI installation module |
 | [install](install/index.md) | — |
 | [launcher](launcher/index.md) | Launcher module |
 | [lockfile](lockfile/index.md) | Lockfile Install Module |
-| [loop](loop/index.md) | — |
 | [lsp](lsp/index.md) | LSP installation module |
 | [nvm](nvm/index.md) | Claude Code Management Module |
 | [oauth](oauth/index.md) | OAuth Token Module |
@@ -31,14 +28,11 @@ Auto-generated from bash module comments in `lib/`.
 chrome/index
 command/index
 config/index
-context/index
 core/index
 docs/index
-gh/index
 install/index
 launcher/index
 lockfile/index
-loop/index
 lsp/index
 nvm/index
 oauth/index

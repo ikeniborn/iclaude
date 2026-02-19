@@ -82,31 +82,6 @@ lib/
 │   ├── install.sh             # install_sandbox_dependencies()
 │   └── status.sh              # check_sandbox_status()
 │
-├── gh/                        # 🔜 Phase 5 - GitHub CLI (PLANNED)
-│   ├── detect.sh              # detect_gh_cli()
-│   ├── install.sh             # install_isolated_gh()
-│   └── status.sh              # check_gh_status()
-│
-├── loop/                      # ✅ Phase 11-13 - Loop/Task mode (COMPLETE)
-│   ├── parser.sh              # load_markdown_task(), load_all_tasks()
-│   ├── validator.sh           # validate_task_file_format()
-│   ├── state.sh               # save_loop_state(), load_loop_state()
-│   ├── executor.sh            # execute_sequential_mode(), invoke_claude_iteration()
-│   ├── retry.sh               # retry_task_with_backoff()
-│   ├── git.sh                 # git_commit_task_changes()
-│   ├── worktree.sh            # create_task_worktree(), resolve_merge_conflicts_ai()
-│   └── parallel.sh            # execute_parallel_mode(), execute_parallel_group()
-│
-├── context/                   # 🔜 Phase 7 - Context management (PLANNED)
-│   ├── init.sh                # init_context_directories()
-│   ├── export.sh              # context_cmd_export()
-│   ├── import.sh              # context_cmd_import()
-│   ├── sync.sh                # context_cmd_sync()
-│   ├── clean.sh               # context_cmd_clean()
-│   ├── backup.sh              # context_cmd_backup()
-│   ├── status.sh              # context_cmd_status()
-│   └── memory.sh              # context_memory_*()
-│
 ├── update/                    # 🔜 Phase 8 - Update management (PLANNED)
 │   ├── check.sh               # check_claude_version()
 │   ├── update.sh              # update_isolated_claude()
@@ -205,73 +180,6 @@ lib/
 ✅ **Reusable components** - Each module testable independently
 
 ---
-
-## Phase 10-13: Recent Completion (Context + Loop Mode)
-
-### Phase 10: Context Management (COMPLETE ✅)
-
-**Created Modules:**
-- **lib/context/init.sh** (165 lines) - 7 path helper functions
-- **lib/context/operations.sh** (422 lines) - 6 CRUD operations (export/import/sync/clean/backup/status)
-- **lib/context/memory.sh** (237 lines) - 5 MEMORY.md management functions
-
-**Benefits:**
-- ✅ 18 functions extracted
-- ✅ ~824 lines modularized
-- ✅ MEMORY.md best practices (200-line limit enforcement)
-- ✅ Worktree-aware context management
-
-### Phase 11: Loop Mode - Task Loading (COMPLETE ✅)
-
-**Created Modules:**
-- **lib/loop/parser.sh** (158 lines) - Markdown task parser
-- **lib/loop/validator.sh** (65 lines) - Task format validation
-- **lib/loop/state.sh** (48 lines) - JSON state persistence
-
-**Benefits:**
-- ✅ 5 functions extracted
-- ✅ ~271 lines modularized
-- ✅ Crash recovery with state files
-- ✅ Structured task definition format
-
-### Phase 12: Loop Mode - Sequential Execution (COMPLETE ✅)
-
-**Created Modules:**
-- **lib/loop/executor.sh** (276 lines) - Core sequential execution
-- **lib/loop/retry.sh** (71 lines) - Exponential backoff logic
-- **lib/loop/git.sh** (102 lines) - Git commit/push automation
-
-**Benefits:**
-- ✅ 6 functions extracted
-- ✅ ~449 lines modularized
-- ✅ Automatic retry with exponential backoff (2s → 60s cap)
-- ✅ Co-Authored-By git integration
-
-### Phase 13: Loop Mode - Parallel Execution (COMPLETE ✅)
-
-**Created Modules:**
-- **lib/loop/worktree.sh** (240 lines) - ⚠️ HIGH RISK: AI-powered merge conflict resolution
-- **lib/loop/parallel.sh** (287 lines) - Parallel task orchestration
-
-**Benefits:**
-- ✅ 7 functions extracted
-- ✅ ~527 lines modularized
-- ✅ Git worktree isolation for parallel tasks
-- ✅ **AI merge conflict resolution** with safety checks
-- ✅ Max parallel agent limiting
-- ✅ Background job management with PID tracking
-
-**Safety Features (resolve_merge_conflicts_ai):**
-- ✅ CRITICAL SAFETY CHECK: Validates conflict markers removed
-- ✅ Prompt engineering for intelligent conflict resolution
-- ✅ Automatic fallback to manual resolution on failure
-- ✅ Extensive documentation with HIGH RISK warnings
-
-**Phase 10-13 Summary:**
-- **36 functions** extracted
-- **~2,071 lines** modularized
-- **Progress: 82.2% → 98.4%** (+16.2%)
-- **100% backward compatibility** maintained
 
 ### Phase 14: Command Handling (COMPLETE ✅)
 

@@ -92,8 +92,7 @@ sudo ./iclaude.sh --create-symlink
 Автоматизация PR workflow с мониторингом CI/CD и автоисправлением ошибок:
 
 ```bash
-# Установить gh CLI (один раз)
-./iclaude.sh --install-gh
+# Установить gh CLI (один раз, через пакетный менеджер)
 gh auth login
 
 # Создать PR через Claude

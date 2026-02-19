@@ -114,85 +114,6 @@
 
 **Сложность:** 🟡 Средняя
 
-### 9.2: GH CLI Module (2 функции, ~100 строк)
-
-**Приоритет:** ⭐⭐ MEDIUM
-
-**Модули:**
-- `lib/gh/install.sh` - GH CLI installation
-- `lib/gh/status.sh` - GH CLI status
-
-**Функции:**
-1. `install_isolated_gh()` - Установка gh CLI в isolated environment
-2. `check_gh_status()` - Статус gh CLI (версия, auth)
-
-**Сложность:** 🟢 Низкая
-
-### 9.3: Loop Mode Module (11 функций, ~400 строк)
-
-**Приоритет:** ⭐ LOW (экспериментальная фича)
-
-**Модули:**
-- `lib/loop/parser.sh` - Task file parsing (Markdown → structured data)
-- `lib/loop/execution.sh` - Task execution with retry logic
-- `lib/loop/state.sh` - State management (save/load)
-
-**Функции:**
-1. `load_markdown_task()` - Парсинг task.md (Description, Completion Promise, etc.)
-2. `validate_task_file_format()` - Валидация формата task file
-3. `load_all_tasks()` - Загрузка всех задач из task file
-4. `invoke_claude_iteration()` - Вызов Claude Code с задачей
-5. `verify_completion_promise()` - Проверка completion promise (validation command)
-6. `retry_task_with_backoff()` - Retry логика с exponential backoff (2s, 4s, 8s, ...)
-7. `execute_single_iteration()` - Выполнение одной итерации
-8. `git_commit_task_changes()` - Git commit после успешной задачи
-9. `save_loop_state()` - Сохранение состояния (iteration count, last result)
-10. `load_loop_state()` - Загрузка состояния
-11. `execute_task_with_retry()` - Полный цикл с retry и git commit
-
-**Сложность:** 🔴 Высокая
-
-### 9.4: Context Module (21 функция, ~600 строк)
-
-**Приоритет:** ⭐ LOW (экспериментальная фича)
-
-**Модули:**
-- `lib/context/directories.sh` - Context directory management
-- `lib/context/worktree.sh` - Git worktree operations (для параллельных задач)
-- `lib/context/commands.sh` - Context commands (export/import/sync/clean/backup)
-- `lib/context/memory.sh` - Context memory operations (init/validate/organize/add)
-
-**Функции для worktree (5):**
-1. `create_task_worktree()` - Создание git worktree для параллельной задачи
-2. `cleanup_worktree()` - Очистка worktree после завершения
-3. `merge_worktree_changes()` - Merge изменений из worktree в main
-4. `is_context_worktree()` - Проверка является ли текущая директория worktree
-5. `get_context_main_worktree()` - Поиск main worktree
-
-**Функции для directories (5):**
-6. `init_context_directories()` - Инициализация context директорий
-7. `get_context_project_name()` - Получение имени проекта
-8. `get_context_project_hash()` - Hash проекта для идентификации
-9. `get_context_project_memory_dir()` - Project-specific memory directory
-10. `get_context_shared_memory_dir()` - Shared memory directory
-
-**Функции для commands (6):**
-11. `context_cmd_export()` - Экспорт контекста в tar.gz
-12. `context_cmd_import()` - Импорт контекста из tar.gz
-13. `context_cmd_sync()` - Синхронизация контекста между worktrees
-14. `context_cmd_clean()` - Очистка старого контекста
-15. `context_cmd_backup()` - Backup контекста
-16. `context_cmd_status()` - Статус контекста (размер, файлы, worktrees)
-
-**Функции для memory (5):**
-17. `context_memory_init()` - Инициализация memory system
-18. `context_memory_validate()` - Валидация memory структуры
-19. `context_memory_organize()` - Организация memory (архивация старых данных)
-20. `context_memory_add()` - Добавление entry в memory
-21. `context_memory_status()` - Статус memory (размер, количество entries)
-
-**Сложность:** 🔴 Высокая
-
 ### 9.5: Update Module (4 функции, ~200 строк)
 
 **Приоритет:** ⭐⭐⭐ HIGH
@@ -245,9 +166,6 @@
 | **Phase 8.2: Statusline** | 3 | 4 | ~150 | ⭐ LOW | 🟢 Низкая |
 | **Phase 8.3: Oh-My-Posh** | 3 | 5 | ~180 | ⭐ LOW | 🟢 Низкая |
 | **Phase 9.1: Sandbox** | 3 | 5 | ~200 | ⭐⭐ MEDIUM | 🟡 Средняя |
-| **Phase 9.2: GH CLI** | 2 | 2 | ~100 | ⭐⭐ MEDIUM | 🟢 Низкая |
-| **Phase 9.3: Loop Mode** | 3 | 11 | ~400 | ⭐ LOW | 🔴 Высокая |
-| **Phase 9.4: Context** | 4 | 21 | ~600 | ⭐ LOW | 🔴 Высокая |
 | **Phase 9.5: Update** | 2 | 4 | ~200 | ⭐⭐⭐ HIGH | 🟡 Средняя |
 | **Phase 9.6: Launcher** | 2 | 3 | ~400 | ⭐⭐⭐ HIGH | 🟡 Средняя |
 | **TOTAL** | **28** | **62** | **~2,580** | | |
@@ -264,11 +182,8 @@
 3. Phase 8.2: Statusline
 4. Phase 8.3: Oh-My-Posh
 5. Phase 9.1: Sandbox
-6. Phase 9.2: GH CLI
-7. Phase 9.5: Update
-8. Phase 9.6: Launcher ← **Финальная фаза**
-9. Phase 9.3: Loop Mode (опционально)
-10. Phase 9.4: Context (опционально)
+6. Phase 9.5: Update
+7. Phase 9.6: Launcher ← **Финальная фаза**
 
 ### Вариант 2: По приоритету (быстрее к цели)
 1. Phase 7: Router ⭐⭐⭐
@@ -276,10 +191,8 @@
 3. Phase 9.6: Launcher ⭐⭐⭐ ← **Финальная фаза**
 4. Phase 8.1: LSP ⭐⭐
 5. Phase 9.1: Sandbox ⭐⭐
-6. Phase 9.2: GH CLI ⭐⭐
-7. Phase 8.2: Statusline ⭐
-8. Phase 8.3: Oh-My-Posh ⭐
-9. Phase 9.3-9.4: Loop/Context (опционально)
+6. Phase 8.2: Statusline ⭐
+7. Phase 8.3: Oh-My-Posh ⭐
 
 ---
 

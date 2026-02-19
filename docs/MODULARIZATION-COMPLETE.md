@@ -97,12 +97,6 @@ Successfully modularized **iclaude.sh** from monolithic 8,195-line bash script i
 - sandbox/install.sh - install_sandbox_dependencies()
 - sandbox/status.sh - check_sandbox_status()
 
-### Phase 9.2: GH CLI (Week 7) ✅
-**Modules:** 2 | **Functions:** 2 | **Lines:** ~170
-
-- gh/install.sh - install_isolated_gh()
-- gh/status.sh - check_gh_status()
-
 ### Phase 9.5: Update Management (Week 8) ✅
 **Modules:** 3 | **Functions:** 4 | **Lines:** ~571
 
@@ -117,40 +111,6 @@ Successfully modularized **iclaude.sh** from monolithic 8,195-line bash script i
 
 ---
 
-## Optional Phases (Remain in Legacy)
-
-### Phase 9.3: Loop Mode ⏸️ OPTIONAL
-**Functions:** 11 | **Lines:** ~400
-
-Loop mode provides task automation with retry logic. Due to complexity and optional nature, remains in iclaude-legacy.sh.
-
-**Key Functions:**
-- load_markdown_task() - Parse task from markdown
-- validate_task_file_format() - Validate task structure
-- execute_sequential_mode() - Sequential task execution
-- execute_parallel_mode() - Parallel execution with worktrees
-- retry_task_with_backoff() - Exponential backoff retry
-- git_commit_task_changes() - Auto-commit on success
-
-**Usage:** `./iclaude.sh --loop task.md`
-
-### Phase 9.4: Context Management ⏸️ OPTIONAL
-**Functions:** 21 | **Lines:** ~600
-
-Context management provides project context export/import/sync. Due to complexity and optional nature, remains in iclaude-legacy.sh.
-
-**Key Functions:**
-- context_cmd_export() - Export project context
-- context_cmd_import() - Import project context
-- context_cmd_sync() - Sync worktree contexts
-- context_cmd_clean() - Clean old contexts
-- context_cmd_backup() - Backup contexts
-- context_memory_init() - Initialize memory system
-
-**Usage:** `./iclaude.sh --context-export /backup`
-
----
-
 ## Final Metrics
 
 ### Code Distribution
@@ -161,11 +121,9 @@ Total Lines: 8,195
 Modularized (Phases 0-9.6):  5,889 lines (71.9%)  ✅
   └─ 41 modules, 82 functions
 
-Legacy (Optional + main()):  2,306 lines (28.1%)  ⏸️
-  └─ Loop Mode (~400 lines)
-  └─ Context (~600 lines)
+Legacy (main() + helpers):  2,306 lines (28.1%)  ⏸️
   └─ main() function (~500 lines)
-  └─ Helper functions (~806 lines)
+  └─ Helper functions (~1,806 lines)
 ```
 
 ### Version History
@@ -184,8 +142,7 @@ Legacy (Optional + main()):  2,306 lines (28.1%)  ⏸️
 | 2.8 | Phase 8.2 | 29 | 53 | 52.8% |
 | 2.9 | Phase 8.3 | 32 | 58 | 55.0% |
 | **3.0** | **Phase 9.1** | **35** | **63** | **60.9%** 🎉 |
-| 3.1 | Phase 9.2 | 37 | 65 | 63.0% |
-| 3.2 | Phase 9.5 | 40 | 69 | 69.9% |
+| 3.1 | Phase 9.5 | 38 | 67 | 67.7% |
 | **3.3** | **Phase 9.6** | **41** | **82** | **71.9%** 🎉 **FINAL** |
 
 ---
@@ -257,13 +214,10 @@ iclaude.sh (entry point v3.3)
  ├─ sandbox/detect.sh               # Phase 9.1
  ├─ sandbox/install.sh
  ├─ sandbox/status.sh
- ├─ gh/install.sh                   # Phase 9.2
- ├─ gh/status.sh
  ├─ update/isolated.sh              # Phase 9.5
  ├─ update/cleanup.sh
  ├─ update/update.sh
- ├─ launcher/launch.sh              # Phase 9.6
- └─ iclaude-legacy.sh               # Loop/Context/main()
+ └─ launcher/launch.sh              # Phase 9.6
 ```
 
 ---
@@ -322,32 +276,11 @@ declare -F function_name  # Shows: lib/module/file.sh (not legacy)
 ## Future Enhancements
 
 ### Potential Improvements
-1. **Complete Loop/Context extraction** (if needed)
-2. **Lazy loading:** Load modules on-demand
-3. **Plugin system:** Third-party modules
-4. **Unit tests:** Per-module test suites
-5. **Documentation:** Auto-generated API docs
-6. **CI/CD:** Automated testing pipeline
-
-### Migration Path (if needed)
-```bash
-# Phase 9.3: Loop Mode (optional)
-lib/loop/parser.sh
-lib/loop/executor.sh
-lib/loop/retry.sh
-lib/loop/git.sh
-lib/loop/mode.sh
-
-# Phase 9.4: Context (optional)
-lib/context/init.sh
-lib/context/export.sh
-lib/context/import.sh
-lib/context/sync.sh
-lib/context/clean.sh
-lib/context/backup.sh
-lib/context/status.sh
-lib/context/memory.sh
-```
+1. **Lazy loading:** Load modules on-demand
+2. **Plugin system:** Third-party modules
+3. **Unit tests:** Per-module test suites
+4. **Documentation:** Auto-generated API docs
+5. **CI/CD:** Automated testing pipeline
 
 ---
 
@@ -386,8 +319,6 @@ Successfully transformed iclaude.sh from 8,195-line monolithic script into clean
 - ✅ **82 functions** extracted (~72% of code)
 - ✅ **Zero breaking changes** maintained
 - ✅ **All critical functionality** modularized
-
-**Optional components** (Loop Mode, Context Management) remain in legacy for future extraction if needed.
 
 **Result:** Modern, maintainable codebase ready for future development! 🚀
 

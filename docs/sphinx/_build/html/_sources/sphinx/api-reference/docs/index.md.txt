@@ -4,7 +4,7 @@
 
 - [bash-parser](bash-parser.md) — 6 functions
 - [build](build.md) — 1 functions
-- [init](init.md) — 6 functions
+- [init](init.md) — 5 functions
 - [install](install.md) — 1 functions
 - [resolve](resolve.md) — 8 functions
 - [serve](serve.md) — 1 functions

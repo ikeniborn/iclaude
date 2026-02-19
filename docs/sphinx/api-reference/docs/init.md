@@ -39,18 +39,6 @@ Install git pre-commit hook for auto Sphinx rebuild Rebuilds docs if source file
 
 -   0 - always
 
-## `_update_project_claude_md`
-
-Add documentation section to project CLAUDE.md
-
-**Arguments:**
-
-- `  $1 - project path`
-
-**Returns:**
-
--   0 - always
-
 ## `_generate_conf_py`
 
 Generate conf.py for the project
