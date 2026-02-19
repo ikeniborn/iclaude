@@ -7,22 +7,22 @@
 
 #######################################
 # Global variables for task management
-# IMPORTANT: These must be declared in main scope BEFORE loading this module!
+# Declared here so the module is self-contained when sourced.
+# Re-declaration is a no-op for already-declared associative arrays.
 #######################################
-# Expected globals (declared in iclaude-legacy.sh or main script):
-# declare -A TASK_NAME
-# declare -A TASK_DESCRIPTION
-# declare -A TASK_COMPLETION_PROMISE
-# declare -A TASK_VALIDATION_COMMAND
-# declare -A TASK_MAX_ITERATIONS
-# declare -A TASK_GIT_BRANCH
-# declare -A TASK_GIT_COMMIT_MSG
-# declare -A TASK_GIT_AUTO_PUSH
-# declare -A TASK_PARALLEL_GROUP
-# declare -a TASKS
-# declare -a COMPLETED_TASKS
-# CURRENT_TASK=""
-# CURRENT_ITERATION=0
+declare -A TASK_NAME
+declare -A TASK_DESCRIPTION
+declare -A TASK_COMPLETION_PROMISE
+declare -A TASK_VALIDATION_COMMAND
+declare -A TASK_MAX_ITERATIONS
+declare -A TASK_GIT_BRANCH
+declare -A TASK_GIT_COMMIT_MSG
+declare -A TASK_GIT_AUTO_PUSH
+declare -A TASK_PARALLEL_GROUP
+declare -a TASKS
+declare -a COMPLETED_TASKS
+CURRENT_TASK=""
+CURRENT_ITERATION=0
 
 #######################################
 # Load a single task from Markdown file
