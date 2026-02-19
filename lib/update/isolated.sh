@@ -48,11 +48,39 @@ update_isolated_claude() {
 		return 1
 	fi
 
-	# Update Claude Code
-	print_info "Running: npm update -g @anthropic-ai/claude-code"
+	# Pre-update cleanup: remove existing claude symlink and temp installations
+	# This prevents ENOTEMPTY and EEXIST errors during npm install
+	local npm_prefix_dir="$ISOLATED_NVM_DIR/npm-global"
+	local bin_dir="$npm_prefix_dir/bin"
+	local lib_dir="$npm_prefix_dir/lib/node_modules/@anthropic-ai"
+
+	print_info "Pre-update cleanup..."
+
+	# Remove existing claude symlink (to avoid EEXIST)
+	rm -f "$bin_dir/claude" "$bin_dir/.claude-"* 2>/dev/null
+
+	# Remove ALL temporary .claude-code-* folders (to avoid ENOTEMPTY)
+	if [[ -d "$lib_dir" ]]; then
+		local temp_folders
+		temp_folders=$(find "$lib_dir" -maxdepth 1 -type d -name ".claude-code-*" 2>/dev/null)
+		if [[ -n "$temp_folders" ]]; then
+			echo "$temp_folders" | while read -r folder; do
+				[[ -z "$folder" ]] && continue
+				rm -rf "$folder" 2>/dev/null
+				print_info "Removed temp installation: $(basename "$folder")"
+			done
+		fi
+	fi
+
 	echo ""
 
-	if npm update -g @anthropic-ai/claude-code; then
+	# Update Claude Code
+	# Use npm install -g @latest instead of npm update -g to ensure latest version is installed.
+	# npm update -g does not work reliably with npm 10 (Node v20) for global packages.
+	print_info "Running: npm install -g @anthropic-ai/claude-code@latest"
+	echo ""
+
+	if npm install -g @anthropic-ai/claude-code@latest; then
 		# Clear bash command hash cache
 		hash -r 2>/dev/null || true
 
