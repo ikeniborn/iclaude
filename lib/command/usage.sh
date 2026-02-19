@@ -41,7 +41,7 @@ OPTIONS:
   --check-update                    Check for available updates without installing
   --isolated-install                Install NVM + Node.js + Claude in isolated environment
   --isolated-update                 Update Claude Code in isolated environment (NO sudo)
-  --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup)
+  --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup, auto-detected on launch)
   --check-isolated                  Show status of isolated environment
   --cleanup-isolated                Remove isolated environment (keeps lockfile)
   --repair-isolated                 Repair symlinks and permissions after git clone
