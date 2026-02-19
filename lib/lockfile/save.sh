@@ -259,5 +259,138 @@ save_isolated_lockfile() {
 	print_info "Commit this file to git for reproducibility"
 	echo ""
 
+	# Update hash after saving lockfile to keep hash in sync
+	update_lockfile_hash
+
+	return 0
+}
+
+#######################################
+# Compute SHA-256 hash of the lockfile
+# Portable: sha256sum (Linux) → shasum -a 256 (macOS) → md5sum (fallback)
+# Returns:
+#   Hash string on stdout
+#   Exit code: 0 on success, 1 if lockfile missing
+# Example:
+#   current_hash=$(compute_lockfile_hash) || return 1
+#######################################
+compute_lockfile_hash() {
+	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
+		return 1
+	fi
+
+	local hash=""
+	if command -v sha256sum &>/dev/null; then
+		hash=$(sha256sum "$ISOLATED_LOCKFILE" | awk '{print $1}')
+	elif command -v shasum &>/dev/null; then
+		hash=$(shasum -a 256 "$ISOLATED_LOCKFILE" | awk '{print $1}')
+	else
+		hash=$(md5sum "$ISOLATED_LOCKFILE" 2>/dev/null | awk '{print $1}' || echo "")
+	fi
+
+	echo "$hash"
+}
+
+#######################################
+# Write current lockfile hash to LOCKFILE_HASH_FILE
+# Called after install_from_lockfile() and save_isolated_lockfile()
+# Returns:
+#   0 - hash written successfully
+#   1 - failed (lockfile missing or hash empty)
+# Example:
+#   update_lockfile_hash || print_warning "Could not update lockfile hash"
+#######################################
+update_lockfile_hash() {
+	local hash
+	hash=$(compute_lockfile_hash)
+
+	if [[ -z "$hash" ]]; then
+		return 1
+	fi
+
+	# Ensure parent directory exists
+	local hash_dir
+	hash_dir=$(dirname "$LOCKFILE_HASH_FILE")
+	if [[ ! -d "$hash_dir" ]]; then
+		mkdir -p "$hash_dir" 2>/dev/null || return 1
+	fi
+
+	echo "$hash" > "$LOCKFILE_HASH_FILE"
+	return 0
+}
+
+#######################################
+# Check if lockfile has changed since last applied hash
+# Compares current lockfile hash with stored hash in LOCKFILE_HASH_FILE
+# If changed: warns user and offers to run --install-from-lockfile
+# If no stored hash: silently initialises hash file (first run)
+# If not interactive (CI/CD): prints warning only, does not prompt
+# Returns:
+#   0 - no change detected or user declined update or first-run init
+#   0 - even when changed (non-blocking: launch continues regardless)
+# Example:
+#   check_lockfile_changes
+#######################################
+check_lockfile_changes() {
+	# Skip if lockfile does not exist (no isolated environment)
+	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
+		return 0
+	fi
+
+	local current_hash
+	current_hash=$(compute_lockfile_hash)
+
+	if [[ -z "$current_hash" ]]; then
+		return 0
+	fi
+
+	# First run: hash file does not exist — initialise silently
+	if [[ ! -f "$LOCKFILE_HASH_FILE" ]]; then
+		update_lockfile_hash
+		return 0
+	fi
+
+	local stored_hash
+	stored_hash=$(cat "$LOCKFILE_HASH_FILE" 2>/dev/null || echo "")
+
+	# No change
+	if [[ "$current_hash" == "$stored_hash" ]]; then
+		return 0
+	fi
+
+	# Lockfile changed — warn user
+	echo ""
+	print_warning "Lockfile has changed since last environment update"
+	print_info "File: $ISOLATED_LOCKFILE"
+	echo ""
+	echo "  The .nvm-isolated-lockfile.json was updated (e.g. by git pull)."
+	echo "  Your isolated environment may be out of sync."
+	echo ""
+
+	# Non-interactive mode: warn only, do not block
+	if [[ ! -t 0 ]]; then
+		print_info "Non-interactive mode: skipping prompt. Run './iclaude.sh --install-from-lockfile' to update."
+		echo ""
+		return 0
+	fi
+
+	read -p "  Run --install-from-lockfile now to update environment? [y/N]: " run_install
+	echo ""
+
+	if [[ "$run_install" =~ ^[Yy]$ ]]; then
+		print_info "Running: install_from_lockfile..."
+		echo ""
+		if install_from_lockfile; then
+			update_lockfile_hash
+			print_success "Environment updated from lockfile"
+		else
+			print_warning "install_from_lockfile failed — check errors above"
+		fi
+		echo ""
+	else
+		print_info "Skipped. Run './iclaude.sh --install-from-lockfile' manually when ready."
+		echo ""
+	fi
+
 	return 0
 }
