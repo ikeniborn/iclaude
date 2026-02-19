@@ -23,5 +23,14 @@
   "ohMyPoshPlatform": "linux-amd64",
   "ohMyPoshInstalledAt": "2026-02-19T10:02:09Z",
   "installedAt": "2026-02-19T10:02:09Z",
-  "nvmVersion": "0.39.7"
+  "nvmVersion": "0.39.7",
+  "sphinxDocs": {
+    "enabled": false,
+    "sphinxVersion": "",
+    "mystParserVersion": "",
+    "theme": "furo",
+    "llmsTxtEnabled": false,
+    "venvPath": ".nvm-isolated/.python-docs",
+    "installedAt": ""
+  }
 }
