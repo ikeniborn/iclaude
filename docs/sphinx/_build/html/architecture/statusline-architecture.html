@@ -1,0 +1,1371 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Planning Mode Configuration" href="../PLANNING.html"><link rel="prev" title="Loop Mode Architecture Documentation" href="README.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Status Line Architecture Documentation - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../INSTALLATION.html">Установка iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MIGRATION.html">Migration to Native Installer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../STATUSLINE.html">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Loop Mode Architecture Documentation</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Status Line Architecture Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../PLANNING.html">Planning Mode Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/memory.html">memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/operations.html">operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/gh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/gh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/executor.html">executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/parallel.html">parallel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/parser.html">parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/retry.html">retry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/state.html">state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/validator.html">validator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/worktree.html">worktree</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/architecture/statusline-architecture.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="status-line-architecture-documentation">
+<h1>Status Line Architecture Documentation<a class="headerlink" href="#status-line-architecture-documentation" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 2.0.0 (Phase 2)
+<strong>Date:</strong> 2026-02-12
+<strong>Status:</strong> Production Ready
+<strong>Component:</strong> <code class="docutils literal notranslate"><span class="pre">claude-statusline.sh</span></code></p>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>Status Line - это встроенный компонент real-time мониторинга для Claude Code, интегрированный в iclaude.sh. Отображает comprehensive информацию о session (токены, стоимость, кэш, proxy, router, git) прямо в UI.</p>
+<section id="key-features">
+<h3>Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Dual Context Tracking</strong> - отслеживание billing и active context</p></li>
+<li><p><strong>Real-time Updates</strong> - обновление при каждом API ответе</p></li>
+<li><p><strong>Cost Monitoring</strong> - отображение стоимости сессии в USD</p></li>
+<li><p><strong>Cache Visibility</strong> - показывает prompt cache usage для оптимизации</p></li>
+<li><p><strong>Clickable Session Link</strong> - OSC 8 hyperlink для просмотра readable conversation</p></li>
+<li><p><strong>Git Integration</strong> - показывает branch, uncommitted changes, upstream status</p></li>
+<li><p><strong>Proxy/Router Detection</strong> - индикация активных proxy и router</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
+<section id="component-diagram">
+<h3>Component Diagram<a class="headerlink" href="#component-diagram" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────────────┐
+│                    Claude Code                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              API Response Handler                    │   │
+│  │  - Tracks tokens (input/output/cache)                │   │
+│  │  - Calculates cost                                   │   │
+│  │  - Maintains session state                           │   │
+│  └─────────────────┬────────────────────────────────────┘   │
+│                    │ JSON via STDIN                         │
+│                    ▼                                         │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │           statusLine.command                         │   │
+│  │       (claude-statusline.sh)                         │   │
+│  │                                                       │   │
+│  │  ┌────────────────────────────────────────────────┐  │   │
+│  │  │ 1. Parse Session Data (jq)                    │  │   │
+│  │  │    - Extract tokens, cost, model              │  │   │
+│  │  │    - Calculate percentages                    │  │   │
+│  │  └────────────────────────────────────────────────┘  │   │
+│  │  ┌────────────────────────────────────────────────┐  │   │
+│  │  │ 2. Detect Environment                         │  │   │
+│  │  │    - Check proxy credentials                  │  │   │
+│  │  │    - Detect router config                     │  │   │
+│  │  │    - Query git status (with timeout)          │  │   │
+│  │  └────────────────────────────────────────────────┘  │   │
+│  │  ┌────────────────────────────────────────────────┐  │   │
+│  │  │ 3. Generate Readable Session (mtime cache)    │  │   │
+│  │  │    - Check if JSONL changed                   │  │   │
+│  │  │    - Parse conversation with role prefixes    │  │   │
+│  │  │    - Save to tmp/claude-session-readable.txt  │  │   │
+│  │  └────────────────────────────────────────────────┘  │   │
+│  │  ┌────────────────────────────────────────────────┐  │   │
+│  │  │ 4. Format Output                              │  │   │
+│  │  │    - Apply color coding (green/yellow/red)    │  │   │
+│  │  │    - Build OSC 8 hyperlink for session       │  │   │
+│  │  │    - Render final ANSI string                 │  │   │
+│  │  └────────────────────────────────────────────────┘  │   │
+│  │                                                       │   │
+│  │  Output: &quot;💳 112K | 📊 50K (25%) | 📦 79K | ...&quot;     │   │
+│  └─────────────────┬────────────────────────────────────┘   │
+│                    │ ANSI formatted string                  │
+│                    ▼                                         │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │           Claude Code UI                             │   │
+│  │      (displays at bottom of screen)                  │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="session-link-flow-phase-2">
+<h3>Session Link Flow (Phase 2)<a class="headerlink" href="#session-link-flow-phase-2" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>User Action: Click on 📄
+       │
+       ▼
+┌────────────────────────────────┐
+│  Terminal (OSC 8 handler)      │
+│  - Receives file:// URL         │
+│  - Opens in $EDITOR             │
+└────────┬───────────────────────┘
+         │ Read file
+         ▼
+┌────────────────────────────────┐
+│  tmp/claude-session-readable.txt│
+│  (if exists and up-to-date)    │
+└────────┬───────────────────────┘
+         │ OR (if stale/missing)
+         ▼
+┌────────────────────────────────┐
+│  generate_readable_session()   │
+│                                │
+│  1. Check mtime:               │
+│     readable -nt jsonl?        │
+│     - Yes → return (cached)    │
+│     - No → continue            │
+│                                │
+│  2. Parse JSONL:               │
+│     cat session.jsonl |        │
+│     while read line; do        │
+│       role=$(jq .message.role) │
+│       content=$(jq .content[]) │
+│       ...                       │
+│     done                        │
+│                                │
+│  3. Format output:             │
+│     👤 USER:                    │
+│     {text with word wrap}      │
+│     🤖 ASSISTANT:               │
+│     {text with word wrap}      │
+│                                │
+│  4. Write to tmp/              │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  Editor opens readable file    │
+│  - User sees formatted conv    │
+│  - Role prefixes visible       │
+│  - Word wrapped at 80 chars    │
+└────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-flow">
+<h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading">¶</a></h2>
+<section id="input-stdin-from-claude-code">
+<h3>Input (STDIN from Claude Code)<a class="headerlink" href="#input-stdin-from-claude-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;context_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total_input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total_output_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;used_percentage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">30.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;context_window_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_usage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cache_read_input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cache_creation_input_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total_cost_usd&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.23</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;display_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sonnet 4.5&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-sonnet-4-5-20250929&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cwd&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/home/user/project&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transcript_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/path/to/.claude-isolated/session-env/abc123.jsonl&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="processing-pipeline">
+<h3>Processing Pipeline<a class="headerlink" href="#processing-pipeline" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Token Extraction</strong> (jq)</p>
+<ul class="simple">
+<li><p>Cumulative: <code class="docutils literal notranslate"><span class="pre">total_input</span> <span class="pre">+</span> <span class="pre">total_output</span></code></p></li>
+<li><p>Active: <code class="docutils literal notranslate"><span class="pre">used_percentage</span> <span class="pre">×</span> <span class="pre">context_window_size</span></code></p></li>
+<li><p>Cache: <code class="docutils literal notranslate"><span class="pre">cache_read</span> <span class="pre">+</span> <span class="pre">cache_creation</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Percentage Calculation</strong> (awk)</p>
+<ul class="simple">
+<li><p>API percent: <code class="docutils literal notranslate"><span class="pre">(cumulative</span> <span class="pre">*</span> <span class="pre">100)</span> <span class="pre">/</span> <span class="pre">context_limit</span></code></p></li>
+<li><p>Active percent: <code class="docutils literal notranslate"><span class="pre">used_percentage</span></code> (from session data)</p></li>
+</ul>
+</li>
+<li><p><strong>Color Coding</strong> (bash)</p>
+<ul class="simple">
+<li><p>Green: <code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">50%</span></code></p></li>
+<li><p>Yellow: <code class="docutils literal notranslate"><span class="pre">50-75%</span></code></p></li>
+<li><p>Red: <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">75%</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Token Formatting</strong> (function)</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">1K</span></code>: Show raw number</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">1K</span></code>: Format as “12K”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">1M</span></code>: Format as “1.2M”</p></li>
+</ul>
+</li>
+<li><p><strong>Environment Detection</strong></p>
+<ul class="simple">
+<li><p>Proxy: Check <code class="docutils literal notranslate"><span class="pre">HTTPS_PROXY</span></code> env var + <code class="docutils literal notranslate"><span class="pre">.claude_proxy_credentials</span></code></p></li>
+<li><p>Router: Check <code class="docutils literal notranslate"><span class="pre">router.json</span></code> + <code class="docutils literal notranslate"><span class="pre">ccr</span></code> binary</p></li>
+<li><p>Git: Run <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">status</span></code> with 2-second timeout</p></li>
+</ul>
+</li>
+<li><p><strong>Session Link Generation</strong> (Phase 2)</p>
+<ul class="simple">
+<li><p>Extract <code class="docutils literal notranslate"><span class="pre">transcript_path</span></code> and <code class="docutils literal notranslate"><span class="pre">cwd</span></code> from session data</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">generate_readable_session(jsonl,</span> <span class="pre">output)</span></code></p></li>
+<li><p>Build OSC 8 hyperlink: <code class="docutils literal notranslate"><span class="pre">\e]8;;file://{output}\e\\📄\e]8;;\e\\</span></code></p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="output-stdout-to-claude-code">
+<h3>Output (STDOUT to Claude Code)<a class="headerlink" href="#output-stdout-to-claude-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💳 112K | 📊 50K (25%) | 📦 79K | Sonnet 4.5 | $1.06 | 🌐 | 🔀provider | 📄 | 🔱 main ●2 ↑1
+</pre></div>
+</div>
+<p><strong>Components breakdown</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">💳</span> <span class="pre">112K</span></code> - Cumulative tokens (billing)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">📊</span> <span class="pre">50K</span> <span class="pre">(25%)</span></code> - Active context with percentage (color-coded)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">📦</span> <span class="pre">79K</span></code> - Cache tokens</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Sonnet</span> <span class="pre">4.5</span></code> - Model name</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$1.06</span></code> - Total cost</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">🌐</span></code> - Proxy active indicator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">🔀provider</span></code> - Router provider name</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">📄</span></code> - Clickable session link (OSC 8)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">🔱</span> <span class="pre">main</span> <span class="pre">●2</span> <span class="pre">↑1</span></code> - Git: branch, 2 uncommitted changes, 1 commit ahead</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="cache-and-billing">
+<h2>Cache and Billing<a class="headerlink" href="#cache-and-billing" title="Link to this heading">¶</a></h2>
+<section id="how-anthropic-prompt-caching-works">
+<h3>How Anthropic Prompt Caching Works<a class="headerlink" href="#how-anthropic-prompt-caching-works" title="Link to this heading">¶</a></h3>
+<p>Claude Code uses <strong>Prompt Caching</strong> to significantly reduce costs for long conversations.</p>
+<p><strong>Workflow:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Cache Creation</strong> (during <code class="docutils literal notranslate"><span class="pre">/compact</span></code>):</p>
+<ul class="simple">
+<li><p>Claude Code compresses conversation into summary</p></li>
+<li><p>Summary stored in prompt cache (server-side)</p></li>
+<li><p>Billed as regular input tokens: $3.00 / 1M</p></li>
+</ul>
+</li>
+<li><p><strong>Cache Reuse</strong> (subsequent requests):</p>
+<ul class="simple">
+<li><p>Cached summary automatically read from server</p></li>
+<li><p>Billed at reduced rate: $0.30 / 1M (<strong>90% discount!</strong>)</p></li>
+<li><p>New user messages added as regular input</p></li>
+</ul>
+</li>
+<li><p><strong>Cache Expiration</strong>:</p>
+<ul class="simple">
+<li><p>5-minute TTL (Time To Live)</p></li>
+<li><p>Cache cleared if session idle &gt; 5 minutes</p></li>
+<li><p>Next request creates new cache</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="pricing-model-sonnet-4-5">
+<h3>Pricing Model (Sonnet 4.5)<a class="headerlink" href="#pricing-model-sonnet-4-5" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Token Type</p></th>
+<th class="head"><p>Price per 1M</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Regular Input</p></td>
+<td><p>$3.00</p></td>
+<td><p>User messages, system prompts</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cache Write</p></td>
+<td><p>$3.00</p></td>
+<td><p>Creating cached summary (same as input)</p></td>
+</tr>
+<tr class="row-even"><td><p>Cache Read</p></td>
+<td><p>$0.30</p></td>
+<td><p>Reusing cached summary (<strong>90% cheaper!</strong>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Output</p></td>
+<td><p>$15.00</p></td>
+<td><p>Claude’s responses</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="example-cost-calculation">
+<h3>Example Cost Calculation<a class="headerlink" href="#example-cost-calculation" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario</strong>: 150 message conversation with <code class="docutils literal notranslate"><span class="pre">/compact</span></code> at 100 messages</p>
+<p><strong>Before <code class="docutils literal notranslate"><span class="pre">/compact</span></code></strong> (Request #100):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Input: 100K tokens × $3.00/1M = $0.30
+Output: 2K tokens × $15.00/1M = $0.03
+Total: $0.33
+</pre></div>
+</div>
+<p><strong>After <code class="docutils literal notranslate"><span class="pre">/compact</span></code></strong> (Request #101 - cache creation):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Input: 100K tokens × $3.00/1M = $0.30
+Cache creation: 98K × $3.00/1M = $0.29
+Output: 2K × $15.00/1M = $0.03
+Total: $0.62 (one-time cache creation cost)
+</pre></div>
+</div>
+<p><strong>Subsequent requests</strong> (#102-150, using cache):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Cache read: 98K × $0.30/1M = $0.03 (90% discount!)
+New input: 500 tokens × $3.00/1M = $0.0015
+Output: 1K × $15.00/1M = $0.015
+Total per request: ~$0.05
+
+50 requests × $0.05 = $2.50
+</pre></div>
+</div>
+<p><strong>Savings</strong>:</p>
+<ul class="simple">
+<li><p><strong>Without cache</strong>: 50 × $0.33 = $16.50</p></li>
+<li><p><strong>With cache</strong>: $0.62 (creation) + $2.50 (50 reads) = $3.12</p></li>
+<li><p><strong>Savings</strong>: $13.38 (<strong>81% cost reduction!</strong>)</p></li>
+</ul>
+</section>
+<section id="status-line-display">
+<h3>Status Line Display<a class="headerlink" href="#status-line-display" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💳 250K | 📊 100K (50%) | 📦 98K | Sonnet 4.5 | $2.45
+</pre></div>
+</div>
+<p><strong>What each component means:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">💳</span> <span class="pre">250K</span></code> - <strong>Cumulative tokens billed</strong></p>
+<ul>
+<li><p>Includes ALL tokens: regular input, cache read, output</p></li>
+<li><p>Cache read counted at $0.30/1M (not $3.00/1M)</p></li>
+<li><p>Running total for entire session</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">📊</span> <span class="pre">100K</span> <span class="pre">(50%)</span></code> - <strong>Active context</strong></p>
+<ul>
+<li><p>Current conversation window: cache + new messages</p></li>
+<li><p>Used for auto-compact trigger (95% of effective 155K)</p></li>
+<li><p>Includes cache as part of context</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">📦</span> <span class="pre">98K</span></code> - <strong>Cache portion</strong></p>
+<ul>
+<li><p>How much of active context is cached</p></li>
+<li><p>Shown separately for cost visibility</p></li>
+<li><p>Reused across multiple requests at 90% discount</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$2.45</span></code> - <strong>Total session cost</strong></p>
+<ul>
+<li><p>Actual billed amount (cache at reduced rate)</p></li>
+<li><p>Savings: ~$2.64 vs without cache</p></li>
+<li><p>Cost tracking for budget awareness</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="key-points">
+<h3>Key Points<a class="headerlink" href="#key-points" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>Cache DOES participate in billing</strong></p>
+<ul class="simple">
+<li><p>Counted in <code class="docutils literal notranslate"><span class="pre">total_input_tokens</span></code></p></li>
+<li><p>But charged at 90% discount ($0.30 vs $3.00)</p></li>
+</ul>
+<p>✅ <strong>Cache IS PART OF active context</strong></p>
+<ul class="simple">
+<li><p>Affects auto-compact trigger (context window limit)</p></li>
+<li><p>Shows in <code class="docutils literal notranslate"><span class="pre">used_percentage</span></code></p></li>
+</ul>
+<p>✅ <strong>Cache read saves 90% on input costs</strong></p>
+<ul class="simple">
+<li><p>Multiple reads multiply savings</p></li>
+<li><p>10 requests: $0.30 vs $3.00 (10x cheaper)</p></li>
+</ul>
+<p>✅ <strong>Cache benefits long conversations</strong></p>
+<ul class="simple">
+<li><p>Break-even at ~3-4 requests after cache creation</p></li>
+<li><p>Maximum savings at 50+ requests</p></li>
+</ul>
+<p>⚠️ <strong>Cache has limitations</strong></p>
+<ul class="simple">
+<li><p>5-minute TTL (expires if idle)</p></li>
+<li><p>Server-side storage (not in status line data)</p></li>
+<li><p>Automatic management by Claude Code</p></li>
+</ul>
+</section>
+<section id="implementation-in-statusline">
+<h3>Implementation in Statusline<a class="headerlink" href="#implementation-in-statusline" title="Link to this heading">¶</a></h3>
+<p><strong>Cache detection</strong> (<code class="docutils literal notranslate"><span class="pre">claude-statusline.sh:98-115</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parse cache tokens from session data</span>
+<span class="nv">CACHE_READ</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.current_usage.cache_read_input_tokens // 0&#39;</span><span class="k">)</span>
+<span class="nv">CACHE_CREATION</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.current_usage.cache_creation_input_tokens // 0&#39;</span><span class="k">)</span>
+<span class="nv">TOTAL_CACHE</span><span class="o">=</span><span class="k">$((</span><span class="nv">CACHE_READ</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">CACHE_CREATION</span><span class="k">))</span>
+
+<span class="c1"># Format cache display (show only if &gt;0)</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$TOTAL_CACHE</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$TOTAL_CACHE</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">1000000</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nv">CACHE_FMT</span><span class="o">=</span><span class="k">$(</span>awk<span class="w"> </span><span class="s2">&quot;BEGIN {printf \&quot;%.1fM\&quot;, (</span><span class="nv">$TOTAL_CACHE</span><span class="s2"> / 1000000.0)}&quot;</span><span class="k">)</span>
+<span class="w">    </span><span class="k">elif</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$TOTAL_CACHE</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nv">CACHE_FMT</span><span class="o">=</span><span class="k">$(</span>awk<span class="w"> </span><span class="s2">&quot;BEGIN {printf \&quot;%.0fK\&quot;, (</span><span class="nv">$TOTAL_CACHE</span><span class="s2"> / 1000.0)}&quot;</span><span class="k">)</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="w">    </span><span class="nv">CACHE_DISPLAY</span><span class="o">=</span><span class="s2">&quot; | 📦 </span><span class="si">${</span><span class="nv">CACHE_FMT</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+<p><strong>Important</strong>: <code class="docutils literal notranslate"><span class="pre">current_usage.cache_*</span></code> shows cache for <strong>CURRENT API request only</strong>, not cumulative cache across all requests in session.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="key-components">
+<h2>Key Components<a class="headerlink" href="#key-components" title="Link to this heading">¶</a></h2>
+<section id="json-parser-jq">
+<h3>1. JSON Parser (jq)<a class="headerlink" href="#json-parser-jq" title="Link to this heading">¶</a></h3>
+<p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/npm-global/bin/jq</span></code>
+<strong>Version</strong>: 1.7.1 (2.3MB static binary)
+<strong>Purpose</strong>: Parse session data JSON from Claude Code</p>
+<p><strong>Key Extractions</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">TOTAL_INPUT</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.total_input_tokens // 0&#39;</span><span class="k">)</span>
+<span class="nv">TOTAL_OUTPUT</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.total_output_tokens // 0&#39;</span><span class="k">)</span>
+<span class="nv">USED_PERCENTAGE</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.used_percentage // 0&#39;</span><span class="k">)</span>
+<span class="nv">CACHE_READ</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.context_window.current_usage.cache_read_input_tokens // 0&#39;</span><span class="k">)</span>
+<span class="nv">COST</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.cost.total_cost_usd // 0&#39;</span><span class="k">)</span>
+<span class="nv">MODEL</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SESSION_DATA</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.model.display_name // &quot;Sonnet 4.5&quot;&#39;</span><span class="k">)</span>
+</pre></div>
+</div>
+</section>
+<section id="token-formatter">
+<h3>2. Token Formatter<a class="headerlink" href="#token-formatter" title="Link to this heading">¶</a></h3>
+<p><strong>Function</strong>: <code class="docutils literal notranslate"><span class="pre">format_tokens()</span></code>
+<strong>Lines</strong>: 223-232</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>format_tokens<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">local</span><span class="w"> </span><span class="nv">tokens</span><span class="o">=</span><span class="nv">$1</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$tokens</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">1000000</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span>awk<span class="w"> </span><span class="s2">&quot;BEGIN {printf \&quot;%.0fM\&quot;, (</span><span class="nv">$tokens</span><span class="s2"> / 1000000.0)}&quot;</span>
+<span class="w">    </span><span class="k">elif</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$tokens</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span>awk<span class="w"> </span><span class="s2">&quot;BEGIN {printf \&quot;%.0fK\&quot;, (</span><span class="nv">$tokens</span><span class="s2"> / 1000.0)}&quot;</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$tokens</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="proxy-detector">
+<h3>3. Proxy Detector<a class="headerlink" href="#proxy-detector" title="Link to this heading">¶</a></h3>
+<p><strong>Lines</strong>: 119-142</p>
+<p><strong>Detection Chain</strong>:</p>
+<ol class="arabic simple">
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">HTTPS_PROXY</span></code> / <code class="docutils literal notranslate"><span class="pre">HTTP_PROXY</span></code> environment variables</p></li>
+<li><p>Fallback: Search for <code class="docutils literal notranslate"><span class="pre">.claude_proxy_credentials</span></code> in:</p>
+<ul class="simple">
+<li><p>Isolated config: <code class="docutils literal notranslate"><span class="pre">$CLAUDE_CONFIG_DIR/../../</span></code></p></li>
+<li><p>Home directory: <code class="docutils literal notranslate"><span class="pre">$HOME/</span></code></p></li>
+<li><p>Current directory: <code class="docutils literal notranslate"><span class="pre">$(pwd)/</span></code></p></li>
+</ul>
+</li>
+<li><p>Verify file contains <code class="docutils literal notranslate"><span class="pre">PROXY_URL=</span></code></p></li>
+</ol>
+</section>
+<section id="router-detector">
+<h3>4. Router Detector<a class="headerlink" href="#router-detector" title="Link to this heading">¶</a></h3>
+<p><strong>Lines</strong>: 144-149</p>
+<p><strong>Detection Logic</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CLAUDE_CONFIG_DIR</span><span class="s2">/router.json&quot;</span><span class="w"> </span><span class="o">]]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>ccr<span class="w"> </span><span class="p">&amp;</span>&gt;/dev/null<span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nv">PROVIDER</span><span class="o">=</span><span class="k">$(</span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.routing.default // &quot;unknown&quot;&#39;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CLAUDE_CONFIG_DIR</span><span class="s2">/router.json&quot;</span><span class="k">)</span>
+<span class="w">    </span><span class="nv">ROUTER_ICON</span><span class="o">=</span><span class="s2">&quot; | 🔀 </span><span class="nv">$PROVIDER</span><span class="s2">&quot;</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+</section>
+<section id="git-integration">
+<h3>5. Git Integration<a class="headerlink" href="#git-integration" title="Link to this heading">¶</a></h3>
+<p><strong>Lines</strong>: 163-204</p>
+<p><strong>Features</strong>:</p>
+<ul class="simple">
+<li><p>Branch name detection</p></li>
+<li><p>Uncommitted changes count</p></li>
+<li><p>Commits ahead of upstream</p></li>
+<li><p>2-second timeout (prevents hanging)</p></li>
+<li><p>Oh My Posh theme support (optional)</p></li>
+</ul>
+<p><strong>Oh My Posh Integration</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>oh-my-posh<span class="w"> </span><span class="p">&amp;</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$theme_config</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nv">GIT_INFO</span><span class="o">=</span><span class="k">$(</span>timeout<span class="w"> </span><span class="nv">$GIT_TIMEOUT</span><span class="w"> </span>oh-my-posh<span class="w"> </span>print<span class="w"> </span>primary<span class="w"> </span>--config<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$theme_config</span><span class="s2">&quot;</span><span class="k">)</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+</section>
+<section id="readable-session-generator-phase-2">
+<h3>6. Readable Session Generator (Phase 2) 🆕<a class="headerlink" href="#readable-session-generator-phase-2" title="Link to this heading">¶</a></h3>
+<p><strong>Function</strong>: <code class="docutils literal notranslate"><span class="pre">generate_readable_session()</span></code>
+<strong>Lines</strong>: 151-190 (approx)</p>
+<p><strong>mtime Caching Logic</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if readable file exists and is newer than JSONL</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$output_file</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$output_file</span><span class="s2">&quot;</span><span class="w"> </span>-nt<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$jsonl_file</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># Cached, skip regeneration</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+<p><strong>Parsing Logic</strong>:</p>
+<ul class="simple">
+<li><p>Extract <code class="docutils literal notranslate"><span class="pre">message.role</span></code> (user/assistant)</p></li>
+<li><p>Extract <code class="docutils literal notranslate"><span class="pre">content[].type</span></code> (text/thinking/tool_use/tool_result)</p></li>
+<li><p>Filter: Only text and thinking (skip tool_*)</p></li>
+<li><p>Format: Add role prefixes (👤 USER / 🤖 ASSISTANT)</p></li>
+<li><p>Word wrap: <code class="docutils literal notranslate"><span class="pre">fold</span> <span class="pre">-w</span> <span class="pre">80</span> <span class="pre">-s</span></code></p></li>
+</ul>
+<p><strong>Output Format</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>📄 Session: {session-id}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 USER:
+{user message with word wrap}
+
+🤖 ASSISTANT:
+{assistant response}
+
+🤖 ASSISTANT [thinking]:
+{internal reasoning}
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<section id="settings-json">
+<h3>settings.json<a class="headerlink" href="#settings-json" title="Link to this heading">¶</a></h3>
+<p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/settings.json</span></code></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;statusLine&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/absolute/path/to/claude-statusline.sh&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;padding&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="debug-mode">
+<h3>Debug Mode<a class="headerlink" href="#debug-mode" title="Link to this heading">¶</a></h3>
+<p><strong>Enable</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add to .claude_proxy_credentials</span>
+<span class="nv">DEBUG_STATUSLINE</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p><strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">/tmp/claude-statusline-debug.log</span></code></p>
+<p><strong>Logged Data</strong>:</p>
+<ul class="simple">
+<li><p>Full session JSON</p></li>
+<li><p>Detected field names</p></li>
+<li><p>Parsed token values</p></li>
+<li><p>Timestamp of each update</p></li>
+</ul>
+</section>
+<section id="oh-my-posh-theme">
+<h3>Oh My Posh Theme<a class="headerlink" href="#oh-my-posh-theme" title="Link to this heading">¶</a></h3>
+<p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json</span></code></p>
+<p><strong>Example</strong> (Git segment only):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;blocks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;segments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;git&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;style&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;template&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{{ .HEAD }} {{ if .Working.Changed }}●{{ .Working.Changed }}{{ end }}&quot;</span>
+<span class="w">    </span><span class="p">}]</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
+<section id="required">
+<h3>Required<a class="headerlink" href="#required" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>jq 1.7.1</strong> - JSON parsing</p>
+<ul>
+<li><p>Location: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/npm-global/bin/jq</span></code></p></li>
+<li><p>Binary size: 2.3MB</p></li>
+<li><p>Platform: Linux x86_64</p></li>
+<li><p>Included in isolated environment (Phase 2)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="optional">
+<h3>Optional<a class="headerlink" href="#optional" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>git</strong> - Branch/status info</p></li>
+<li><p><strong>oh-my-posh</strong> - Enhanced git rendering</p></li>
+<li><p><strong>timeout</strong> (coreutils) - Git command timeout</p></li>
+</ul>
+</section>
+<section id="claude-code-version">
+<h3>Claude Code Version<a class="headerlink" href="#claude-code-version" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Minimum</strong>: Claude Code v2.1+</p></li>
+<li><p><strong>Reason</strong>: Uses nested <code class="docutils literal notranslate"><span class="pre">context_window</span></code> object</p></li>
+<li><p><strong>Breaking change</strong>: v2.0 had flat token structure</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h2>
+<section id="execution-time">
+<h3>Execution Time<a class="headerlink" href="#execution-time" title="Link to this heading">¶</a></h3>
+<p><strong>Typical</strong>: 50-100ms per update</p>
+<ul class="simple">
+<li><p>JSON parsing (jq): 20-30ms</p></li>
+<li><p>Git status (cached): 10-20ms</p></li>
+<li><p>Format output: 5-10ms</p></li>
+<li><p>Readable generation (cached): 0ms (skip)</p></li>
+<li><p>Readable generation (uncached): 50-200ms (depends on session size)</p></li>
+</ul>
+</section>
+<section id="memory-usage">
+<h3>Memory Usage<a class="headerlink" href="#memory-usage" title="Link to this heading">¶</a></h3>
+<p><strong>Typical</strong>: 2-5MB</p>
+<ul class="simple">
+<li><p>jq process: 1-2MB</p></li>
+<li><p>bash process: 1-3MB</p></li>
+<li><p>Session data: &lt; 1MB</p></li>
+</ul>
+</section>
+<section id="update-frequency">
+<h3>Update Frequency<a class="headerlink" href="#update-frequency" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Trigger</strong>: After each Claude Code API response</p></li>
+<li><p><strong>Typical rate</strong>: 1-5 updates per minute (during active coding)</p></li>
+<li><p><strong>Impact</strong>: Negligible (&lt;0.5% CPU on modern systems)</p></li>
+</ul>
+</section>
+<section id="mtime-cache-performance-phase-2">
+<h3>mtime Cache Performance (Phase 2)<a class="headerlink" href="#mtime-cache-performance-phase-2" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario</strong>: 1000-line conversation (500KB JSONL)</p>
+<ul class="simple">
+<li><p><strong>First generation</strong>: 150ms (parse + format + write)</p></li>
+<li><p><strong>Subsequent updates</strong>: 0ms (mtime check returns immediately)</p></li>
+<li><p><strong>Regeneration trigger</strong>: Only when JSONL mtime &gt; readable mtime</p></li>
+</ul>
+<p><strong>Benchmark</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test cache hit</span>
+$<span class="w"> </span><span class="nb">time</span><span class="w"> </span>generate_readable_session<span class="w"> </span>session.jsonl<span class="w"> </span>tmp/readable.txt
+real<span class="w">    </span>0m0.001s<span class="w">  </span><span class="c1"># Cache hit - instant return</span>
+
+<span class="c1"># Force regeneration (touch JSONL)</span>
+$<span class="w"> </span>touch<span class="w"> </span>session.jsonl
+$<span class="w"> </span><span class="nb">time</span><span class="w"> </span>generate_readable_session<span class="w"> </span>session.jsonl<span class="w"> </span>tmp/readable.txt
+real<span class="w">    </span>0m0.142s<span class="w">  </span><span class="c1"># Full regeneration</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="status-line">
+<h3>Status line не отображается<a class="headerlink" href="#status-line" title="Link to this heading">¶</a></h3>
+<p><strong>Check 1</strong>: Verify settings.json</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>.nvm-isolated/.claude-isolated/settings.json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.statusLine&#39;</span>
+</pre></div>
+</div>
+<p><strong>Check 2</strong>: Test script manually</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;{&quot;context_window&quot;:{&quot;total_input_tokens&quot;:1000,&quot;total_output_tokens&quot;:500,&quot;used_percentage&quot;:10,&quot;context_window_size&quot;:200000},&quot;cost&quot;:{&quot;total_cost_usd&quot;:0.5},&quot;model&quot;:{&quot;display_name&quot;:&quot;Test&quot;}}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>bash<span class="w"> </span>.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
+</pre></div>
+</div>
+<p><strong>Check 3</strong>: Verify jq</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.nvm-isolated/npm-global/bin/jq<span class="w"> </span>--version
+</pre></div>
+</div>
+</section>
+<section id="session-link">
+<h3>Session link не кликабельный<a class="headerlink" href="#session-link" title="Link to this heading">¶</a></h3>
+<p><strong>Причины</strong>:</p>
+<ul class="simple">
+<li><p>Терминал не поддерживает OSC 8 hyperlinks</p></li>
+<li><p>Работает в: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal</p></li>
+<li><p>Не работает в: старых терминалах, tmux (без специальной конфигурации)</p></li>
+</ul>
+<p><strong>Test</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test OSC 8 in terminal</span>
+<span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;\e]8;;http://example.com\e\\Link\e]8;;\e\\&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="readable">
+<h3>Readable файл не генерируется<a class="headerlink" href="#readable" title="Link to this heading">¶</a></h3>
+<p><strong>Check 1</strong>: Verify jq available</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>jq<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;jq not found&quot;</span>
+</pre></div>
+</div>
+<p><strong>Check 2</strong>: Check tmp/ directory</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>-la<span class="w"> </span>tmp/
+<span class="c1"># Should be writable</span>
+</pre></div>
+</div>
+<p><strong>Check 3</strong>: Enable debug mode</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">DEBUG_STATUSLINE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>./iclaude.sh
+tail<span class="w"> </span>-f<span class="w"> </span>/tmp/claude-statusline-debug.log
+</pre></div>
+</div>
+</section>
+<section id="clear">
+<h3>Неправильные токены после /clear<a class="headerlink" href="#clear" title="Link to this heading">¶</a></h3>
+<p><strong>Expected behavior</strong>:</p>
+<ul class="simple">
+<li><p><strong>Cumulative tokens</strong> (💳) continue to grow (billing)</p></li>
+<li><p><strong>Active context</strong> (📊) resets to ~0-5% (only system prompt)</p></li>
+</ul>
+<p>This is <strong>not a bug</strong> - dual tracking is intentional.</p>
+</section>
+<section id="git-info">
+<h3>Git info не отображается<a class="headerlink" href="#git-info" title="Link to this heading">¶</a></h3>
+<p><strong>Check 1</strong>: Git repository?</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>rev-parse<span class="w"> </span>--is-inside-work-tree
+</pre></div>
+</div>
+<p><strong>Check 2</strong>: Timeout issue?</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Increase timeout in claude-statusline.sh:165</span>
+<span class="nv">GIT_TIMEOUT</span><span class="o">=</span><span class="m">5</span><span class="w">  </span><span class="c1"># Instead of 2</span>
+</pre></div>
+</div>
+<p><strong>Check 3</strong>: Oh My Posh theme valid?</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>jq<span class="w"> </span>empty<span class="w"> </span>.nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="version-history">
+<h2>Version History<a class="headerlink" href="#version-history" title="Link to this heading">¶</a></h2>
+<section id="phase-1-2026-01-10">
+<h3>Phase 1 (2026-01-10)<a class="headerlink" href="#phase-1-2026-01-10" title="Link to this heading">¶</a></h3>
+<p><strong>Initial Implementation</strong>:</p>
+<ul class="simple">
+<li><p>Dual context tracking (cumulative + active)</p></li>
+<li><p>Cost monitoring</p></li>
+<li><p>Cache visibility</p></li>
+<li><p>Proxy/router detection</p></li>
+<li><p>Git integration</p></li>
+<li><p>Color coding</p></li>
+</ul>
+<p><strong>Commits</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat(statusline):</span> <span class="pre">add</span> <span class="pre">dual</span> <span class="pre">context</span> <span class="pre">tracking</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feat(statusline):</span> <span class="pre">integrate</span> <span class="pre">Oh</span> <span class="pre">My</span> <span class="pre">Posh</span> <span class="pre">for</span> <span class="pre">git</span></code></p></li>
+</ul>
+</section>
+<section id="phase-2-2026-02-12">
+<h3>Phase 2 (2026-02-12) 🆕<a class="headerlink" href="#phase-2-2026-02-12" title="Link to this heading">¶</a></h3>
+<p><strong>Session Link Improvements</strong>:</p>
+<ul class="simple">
+<li><p>Icon-only display (📄 without “context” text)</p></li>
+<li><p>Readable session generation with role prefixes</p></li>
+<li><p>mtime caching for performance</p></li>
+<li><p>jq binary included in isolated environment</p></li>
+<li><p>Comprehensive documentation</p></li>
+</ul>
+<p><strong>Technical Changes</strong>:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">generate_readable_session()</span></code> function</p></li>
+<li><p>Modified SESSION_LINK OSC 8 target (JSONL → readable)</p></li>
+<li><p>Installed jq 1.7.1 in <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/npm-global/bin/</span></code></p></li>
+<li><p>Updated lockfile with jqVersion</p></li>
+</ul>
+<p><strong>Commits</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat(statusline):</span> <span class="pre">improve</span> <span class="pre">session</span> <span class="pre">link</span> <span class="pre">with</span> <span class="pre">readable</span> <span class="pre">format</span> <span class="pre">and</span> <span class="pre">icon-only</span> <span class="pre">display</span></code></p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="future-enhancements-v3-0">
+<h2>Future Enhancements (v3.0)<a class="headerlink" href="#future-enhancements-v3-0" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Real-time streaming</strong>: Show tokens incrementing during response</p></li>
+<li><p><strong>Cost estimates</strong>: Predict cost before sending large prompts</p></li>
+<li><p><strong>Token breakdown</strong>: Separate input/output/cache in UI</p></li>
+<li><p><strong>Custom themes</strong>: User-defined statusline formats</p></li>
+<li><p><strong>Notification thresholds</strong>: Alert at X% context usage</p></li>
+<li><p><strong>Session history</strong>: Quick access to previous conversations</p></li>
+<li><p><strong>Multi-session view</strong>: Monitor multiple Claude instances</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<section id="code">
+<h3>Code<a class="headerlink" href="#code" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh</span></code> (275 lines)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh</span></code> (helper)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/CLAUDE.md</span></code> (full documentation)</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/features/context-monitoring.md</span></code> - Variant H (Built-in Status)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.nvm-isolated-lockfile.json</span></code> - Version tracking</p></li>
+</ul>
+</section>
+<section id="external">
+<h3>External<a class="headerlink" href="#external" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://code.claude.com/docs/en/status-line">Claude Code Status Line Docs</a></p></li>
+<li><p><a class="reference external" href="https://ohmyposh.dev/docs/themes">Oh My Posh Themes</a></p></li>
+<li><p><a class="reference external" href="https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda">OSC 8 Hyperlinks</a></p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Author</strong>: iclaude.sh project
+<strong>Maintainer</strong>: Claude Sonnet 4.5
+<strong>Last Updated</strong>: 2026-02-12
+<strong>Status</strong>: Production Ready (Phase 2 Complete)</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../PLANNING.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Planning Mode Configuration</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="README.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Loop Mode Architecture Documentation</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Status Line Architecture Documentation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#key-features">Key Features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#component-diagram">Component Diagram</a></li>
+<li><a class="reference internal" href="#session-link-flow-phase-2">Session Link Flow (Phase 2)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-flow">Data Flow</a><ul>
+<li><a class="reference internal" href="#input-stdin-from-claude-code">Input (STDIN from Claude Code)</a></li>
+<li><a class="reference internal" href="#processing-pipeline">Processing Pipeline</a></li>
+<li><a class="reference internal" href="#output-stdout-to-claude-code">Output (STDOUT to Claude Code)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cache-and-billing">Cache and Billing</a><ul>
+<li><a class="reference internal" href="#how-anthropic-prompt-caching-works">How Anthropic Prompt Caching Works</a></li>
+<li><a class="reference internal" href="#pricing-model-sonnet-4-5">Pricing Model (Sonnet 4.5)</a></li>
+<li><a class="reference internal" href="#example-cost-calculation">Example Cost Calculation</a></li>
+<li><a class="reference internal" href="#status-line-display">Status Line Display</a></li>
+<li><a class="reference internal" href="#key-points">Key Points</a></li>
+<li><a class="reference internal" href="#implementation-in-statusline">Implementation in Statusline</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#key-components">Key Components</a><ul>
+<li><a class="reference internal" href="#json-parser-jq">1. JSON Parser (jq)</a></li>
+<li><a class="reference internal" href="#token-formatter">2. Token Formatter</a></li>
+<li><a class="reference internal" href="#proxy-detector">3. Proxy Detector</a></li>
+<li><a class="reference internal" href="#router-detector">4. Router Detector</a></li>
+<li><a class="reference internal" href="#git-integration">5. Git Integration</a></li>
+<li><a class="reference internal" href="#readable-session-generator-phase-2">6. Readable Session Generator (Phase 2) 🆕</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li><a class="reference internal" href="#settings-json">settings.json</a></li>
+<li><a class="reference internal" href="#debug-mode">Debug Mode</a></li>
+<li><a class="reference internal" href="#oh-my-posh-theme">Oh My Posh Theme</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a><ul>
+<li><a class="reference internal" href="#required">Required</a></li>
+<li><a class="reference internal" href="#optional">Optional</a></li>
+<li><a class="reference internal" href="#claude-code-version">Claude Code Version</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance">Performance</a><ul>
+<li><a class="reference internal" href="#execution-time">Execution Time</a></li>
+<li><a class="reference internal" href="#memory-usage">Memory Usage</a></li>
+<li><a class="reference internal" href="#update-frequency">Update Frequency</a></li>
+<li><a class="reference internal" href="#mtime-cache-performance-phase-2">mtime Cache Performance (Phase 2)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#status-line">Status line не отображается</a></li>
+<li><a class="reference internal" href="#session-link">Session link не кликабельный</a></li>
+<li><a class="reference internal" href="#readable">Readable файл не генерируется</a></li>
+<li><a class="reference internal" href="#clear">Неправильные токены после /clear</a></li>
+<li><a class="reference internal" href="#git-info">Git info не отображается</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#version-history">Version History</a><ul>
+<li><a class="reference internal" href="#phase-1-2026-01-10">Phase 1 (2026-01-10)</a></li>
+<li><a class="reference internal" href="#phase-2-2026-02-12">Phase 2 (2026-02-12) 🆕</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-enhancements-v3-0">Future Enhancements (v3.0)</a></li>
+<li><a class="reference internal" href="#references">References</a><ul>
+<li><a class="reference internal" href="#code">Code</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#external">External</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=fa37347f"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>

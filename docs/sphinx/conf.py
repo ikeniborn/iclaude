@@ -6,6 +6,10 @@ project = "iclaude"
 author = "iclaude contributors"
 release = "4.0"
 
+# Root document (relative to source root docs/)
+# This makes docs/ the source root so toctree paths like ../README resolve correctly
+root_doc = "sphinx/index"
+
 # -- General configuration -----------------------------------------------------
 extensions = [
     "myst_parser",
@@ -36,12 +40,13 @@ source_suffix = {
     ".md": "markdown",
 }
 
-# Exclude patterns (relative to docs/sphinx/)
+# Exclude patterns (relative to source root docs/)
 exclude_patterns = [
-    "_build",
+    "sphinx/_build",      # Sphinx build output inside source root
     "Thumbs.db",
     ".DS_Store",
-    "../plans/README.md",  # Plans index not included in main TOC
+    "plans/README.md",    # Plans index not included in main TOC
+    "plans/**",           # All plan files
 ]
 
 # -- HTML output ---------------------------------------------------------------
@@ -64,7 +69,7 @@ html_theme_options = {
 }
 
 # Static files (relative to docs/sphinx/)
-html_static_path = ["_static", "../_static"]
+html_static_path = ["../_static"]
 
 # -- sphinx-llms-txt -----------------------------------------------------------
 # AI-first documentation: generates llms.txt and llms-full.txt

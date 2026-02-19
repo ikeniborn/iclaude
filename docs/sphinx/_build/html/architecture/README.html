@@ -1,0 +1,863 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Status Line Architecture Documentation" href="statusline-architecture.html"><link rel="prev" title="Context Window Monitoring для iclaude.sh" href="../features/context-monitoring.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Loop Mode Architecture Documentation - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../INSTALLATION.html">Установка iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MIGRATION.html">Migration to Native Installer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../STATUSLINE.html">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Loop Mode Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="statusline-architecture.html">Status Line Architecture Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../PLANNING.html">Planning Mode Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/memory.html">memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/context/operations.html">operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/gh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/gh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/executor.html">executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/parallel.html">parallel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/parser.html">parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/retry.html">retry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/state.html">state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/validator.html">validator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/loop/worktree.html">worktree</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/architecture/README.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="loop-mode-architecture-documentation">
+<h1>Loop Mode Architecture Documentation<a class="headerlink" href="#loop-mode-architecture-documentation" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 1.0.0
+<strong>Date:</strong> 2026-01-25
+<strong>Status:</strong> Production Ready</p>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This directory contains comprehensive architecture documentation for the <strong>Loop Mode</strong> feature in iclaude.sh - a bash-based iterative task execution system with parallel support.</p>
+</section>
+<section id="documentation-structure">
+<h2>Documentation Structure<a class="headerlink" href="#documentation-structure" title="Link to this heading">¶</a></h2>
+<section id="core-documentation">
+<h3>Core Documentation<a class="headerlink" href="#core-documentation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="#loop-mode-overview.yaml"><span class="xref myst">loop-mode-overview.yaml</span></a></strong> - Complete architecture specification</p>
+<ul>
+<li><p>Metadata and project info</p></li>
+<li><p>Component catalog (11 components)</p></li>
+<li><p>Dependency graph (nodes + edges)</p></li>
+<li><p>Data flow descriptions</p></li>
+<li><p>Quality attributes</p></li>
+<li><p>Deployment configuration</p></li>
+<li><p>Migration guide from ralph-loop</p></li>
+<li><p>Development timeline (5 weeks)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="diagrams-mermaid">
+<h3>Diagrams (Mermaid)<a class="headerlink" href="#diagrams-mermaid" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="diagrams/dependency-graph.html"><span class="std std-doc">diagrams/dependency-graph.md</span></a></strong> - Component dependency visualization</p></li>
+<li><p><strong><a class="reference internal" href="diagrams/sequential-flow.html"><span class="std std-doc">diagrams/sequential-flow.md</span></a></strong> - Sequential execution flow</p></li>
+<li><p><strong><a class="reference internal" href="diagrams/parallel-flow.html"><span class="std std-doc">diagrams/parallel-flow.md</span></a></strong> - Parallel execution with worktrees</p></li>
+</ul>
+</section>
+<section id="source-documentation">
+<h3>Source Documentation<a class="headerlink" href="#source-documentation" title="Link to this heading">¶</a></h3>
+<p>All original implementation documentation is consolidated into <code class="docutils literal notranslate"><span class="pre">loop-mode-overview.yaml</span></code>:</p>
+<ul class="simple">
+<li><p>WEEK1-IMPLEMENTATION-SUMMARY.md → Components (task-parser, sequential-executor, etc.)</p></li>
+<li><p>WEEK2-IMPLEMENTATION-SUMMARY.md → Parallel execution architecture</p></li>
+<li><p>WEEK4-SUMMARY.md → Template migration details</p></li>
+<li><p>WEEK5-TESTING-PLAN.md → Testing section</p></li>
+<li><p>WEEK5-IMPLEMENTATION-SUMMARY.md → Final metrics</p></li>
+<li><p>MIGRATION-GUIDE.md → Migration section</p></li>
+<li><p>IMPLEMENTATION-STATUS.md → Development timeline</p></li>
+<li><p>PROJECT-COMPLETION-REPORT.md → Overall project metrics</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="quick-navigation">
+<h2>Quick Navigation<a class="headerlink" href="#quick-navigation" title="Link to this heading">¶</a></h2>
+<section id="by-component">
+<h3>By Component<a class="headerlink" href="#by-component" title="Link to this heading">¶</a></h3>
+<p><strong>Input Processing:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#task-parser"><span class="xref myst">Task Parser</span></a> - Markdown task definition parser</p></li>
+<li><p><a class="reference internal" href="#argument-parser"><span class="xref myst">Argument Parser</span></a> - CLI flag parser</p></li>
+</ul>
+<p><strong>Execution:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#sequential-executor"><span class="xref myst">Sequential Executor</span></a> - Sequential task execution with retry</p></li>
+<li><p><a class="reference internal" href="#parallel-executor"><span class="xref myst">Parallel Executor</span></a> - Parallel execution with worktrees</p></li>
+</ul>
+<p><strong>AI Integration:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#claude-invoker"><span class="xref myst">Claude Invoker</span></a> - Claude Code CLI invocation</p></li>
+<li><p><a class="reference internal" href="#ai-conflict-resolver"><span class="xref myst">AI Conflict Resolver</span></a> - Automatic merge conflict resolution</p></li>
+</ul>
+<p><strong>Infrastructure:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#worktree-manager"><span class="xref myst">Worktree Manager</span></a> - Git worktree lifecycle</p></li>
+<li><p><a class="reference internal" href="#git-integrator"><span class="xref myst">Git Integrator</span></a> - Auto-commit and push</p></li>
+<li><p><a class="reference internal" href="#state-manager"><span class="xref myst">State Manager</span></a> - State persistence for recovery</p></li>
+</ul>
+<p><strong>Validation:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#completion-verifier"><span class="xref myst">Completion Verifier</span></a> - Task success verification</p></li>
+</ul>
+</section>
+<section id="by-use-case">
+<h3>By Use Case<a class="headerlink" href="#by-use-case" title="Link to this heading">¶</a></h3>
+<p><strong>Sequential Execution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./iclaude.sh<span class="w"> </span>--loop<span class="w"> </span>task.md
+</pre></div>
+</div>
+<p>See: <a class="reference internal" href="diagrams/sequential-flow.html"><span class="std std-doc">diagrams/sequential-flow.md</span></a></p>
+<p><strong>Parallel Execution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./iclaude.sh<span class="w"> </span>--loop-parallel<span class="w"> </span>tasks.md
+</pre></div>
+</div>
+<p>See: <a class="reference internal" href="diagrams/parallel-flow.html"><span class="std std-doc">diagrams/parallel-flow.md</span></a></p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="component-dependency-graph">
+<h2>Component Dependency Graph<a class="headerlink" href="#component-dependency-graph" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    ArgParser[&quot;Argument Parser&quot;]
+    TaskParser[&quot;Task Parser&quot;]
+    SeqExec[&quot;Sequential Executor&quot;]
+    ParExec[&quot;Parallel Executor&quot;]
+    WorktreeM[&quot;Worktree Manager&quot;]
+    AIResolver[&quot;AI Conflict Resolver&quot;]
+    ClaudeInv[&quot;Claude Invoker&quot;]
+    CompVerify[&quot;Completion Verifier&quot;]
+    GitInt[&quot;Git Integrator&quot;]
+    StateM[&quot;State Manager&quot;]
+
+    ArgParser --&gt;|routes to| SeqExec
+    ArgParser --&gt;|routes to| ParExec
+    SeqExec --&gt;|loads| TaskParser
+    SeqExec --&gt;|executes| ClaudeInv
+    SeqExec --&gt;|verifies| CompVerify
+    SeqExec --&gt;|commits| GitInt
+    SeqExec --&gt;|saves| StateM
+    ParExec --&gt;|loads| TaskParser
+    ParExec --&gt;|creates| WorktreeM
+    ParExec --&gt;|executes| ClaudeInv
+    ParExec --&gt;|saves| StateM
+    WorktreeM --&gt;|resolves| AIResolver
+    AIResolver --&gt;|invokes| ClaudeInv
+
+    classDef inputLayer fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    classDef executionLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
+    classDef aiLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef infraLayer fill:#e1ffe1,stroke:#388e3c,stroke-width:2px
+    classDef validationLayer fill:#ffe1e1,stroke:#d32f2f,stroke-width:2px
+
+    class ArgParser,TaskParser inputLayer
+    class SeqExec,ParExec executionLayer
+    class ClaudeInv,AIResolver aiLayer
+    class WorktreeM,GitInt,StateM infraLayer
+    class CompVerify validationLayer
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="key-architectural-decisions">
+<h2>Key Architectural Decisions<a class="headerlink" href="#key-architectural-decisions" title="Link to this heading">¶</a></h2>
+<section id="bash-implementation">
+<h3>1. Bash Implementation<a class="headerlink" href="#bash-implementation" title="Link to this heading">¶</a></h3>
+<p><strong>Decision:</strong> Implement loop mode as embedded bash functions in iclaude.sh</p>
+<p><strong>Rationale:</strong></p>
+<ul class="simple">
+<li><p>No external dependencies (ralph-loop plugin deprecated)</p></li>
+<li><p>Leverages existing iclaude.sh infrastructure (proxy, OAuth, NVM detection)</p></li>
+<li><p>Native integration with shell environment</p></li>
+</ul>
+<p><strong>Trade-offs:</strong></p>
+<ul class="simple">
+<li><p>Bash complexity increases</p></li>
+<li><p>Harder to unit test than TypeScript/Python</p></li>
+<li><p>Limited to Unix-like systems</p></li>
+</ul>
+</section>
+<section id="git-worktrees-for-isolation">
+<h3>2. Git Worktrees for Isolation<a class="headerlink" href="#git-worktrees-for-isolation" title="Link to this heading">¶</a></h3>
+<p><strong>Decision:</strong> Use git worktrees for parallel task isolation</p>
+<p><strong>Rationale:</strong></p>
+<ul class="simple">
+<li><p>True file system isolation (no conflicts between parallel tasks)</p></li>
+<li><p>Native git feature (no custom file copying)</p></li>
+<li><p>Supports independent branches per task</p></li>
+</ul>
+<p><strong>Trade-offs:</strong></p>
+<ul class="simple">
+<li><p>Requires git 2.5+ (worktree feature)</p></li>
+<li><p>Additional disk space (one copy per worktree)</p></li>
+<li><p>Cleanup complexity if process killed</p></li>
+</ul>
+</section>
+<section id="markdown-task-format">
+<h3>3. Markdown Task Format<a class="headerlink" href="#markdown-task-format" title="Link to this heading">¶</a></h3>
+<p><strong>Decision:</strong> Use Markdown files for task definitions instead of CLI arguments</p>
+<p><strong>Rationale:</strong></p>
+<ul class="simple">
+<li><p>Git-friendly (version control, diffs, reviews)</p></li>
+<li><p>Human-readable and editable</p></li>
+<li><p>Supports multi-task definitions</p></li>
+<li><p>No shell escaping issues</p></li>
+</ul>
+<p><strong>Trade-offs:</strong></p>
+<ul class="simple">
+<li><p>Extra file required (vs inline args)</p></li>
+<li><p>Parsing complexity (sed/grep)</p></li>
+<li><p>Users must learn format</p></li>
+</ul>
+</section>
+<section id="ai-assisted-conflict-resolution">
+<h3>4. AI-Assisted Conflict Resolution<a class="headerlink" href="#ai-assisted-conflict-resolution" title="Link to this heading">¶</a></h3>
+<p><strong>Decision:</strong> Invoke Claude Code to automatically resolve merge conflicts</p>
+<p><strong>Rationale:</strong></p>
+<ul class="simple">
+<li><p>Reduces manual intervention in parallel workflows</p></li>
+<li><p>Leverages Claude’s code understanding</p></li>
+<li><p>Prevents workflow blocking</p></li>
+</ul>
+<p><strong>Trade-offs:</strong></p>
+<ul class="simple">
+<li><p>Requires Claude Code available</p></li>
+<li><p>AI may not always resolve correctly</p></li>
+<li><p>Additional API cost per conflict</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="project-metrics">
+<h2>Project Metrics<a class="headerlink" href="#project-metrics" title="Link to this heading">¶</a></h2>
+<p><strong>Code:</strong></p>
+<ul class="simple">
+<li><p>Total lines added: +2515</p></li>
+<li><p>Total lines removed: -443</p></li>
+<li><p>Net change: +2072 lines</p></li>
+<li><p>iclaude.sh: 4953 → 6127 lines (+23.7%)</p></li>
+</ul>
+<p><strong>Functions:</strong></p>
+<ul class="simple">
+<li><p>Week 1: 9 functions (sequential execution)</p></li>
+<li><p>Week 2: 7 functions (parallel execution)</p></li>
+<li><p>Total: 16 new functions</p></li>
+</ul>
+<p><strong>Documentation:</strong></p>
+<ul class="simple">
+<li><p>8 documentation files</p></li>
+<li><p>2689 lines of documentation</p></li>
+<li><p>3 Mermaid diagrams</p></li>
+</ul>
+<p><strong>Git:</strong></p>
+<ul class="simple">
+<li><p>8 commits with meaningful messages</p></li>
+<li><p>All with Co-Authored-By: Claude Sonnet 4.5</p></li>
+</ul>
+<p><strong>Testing:</strong></p>
+<ul class="simple">
+<li><p>10 test cases defined (7 critical + 3 optional)</p></li>
+<li><p>Status: Pending manual execution</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="migration-from-ralph-loop">
+<h2>Migration from Ralph-Loop<a class="headerlink" href="#migration-from-ralph-loop" title="Link to this heading">¶</a></h2>
+<section id="before-ralph-loop-plugin">
+<h3>Before (ralph-loop plugin)<a class="headerlink" href="#before-ralph-loop-plugin" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inside Claude Code session</span>
+/ralph-loop<span class="w"> </span><span class="s2">&quot;Fix TypeScript errors&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--context<span class="w"> </span><span class="s2">&quot;File: app.ts, Line: 45&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--completion-promise<span class="w"> </span><span class="s2">&quot;All checks pass&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--max-iterations<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+</section>
+<section id="after-bash-loop-mode">
+<h3>After (bash loop mode)<a class="headerlink" href="#after-bash-loop-mode" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create task.md</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>task.md<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s"># Task: Fix TypeScript Errors</span>
+
+<span class="s">## Description</span>
+<span class="s">Fix TS2322 type mismatch in app.ts:45</span>
+
+<span class="s">## Completion Promise</span>
+<span class="s">npm run type-check</span>
+
+<span class="s">## Validation Command</span>
+<span class="s">npm run type-check</span>
+
+<span class="s">## Max Iterations</span>
+<span class="s">5</span>
+
+<span class="s">## Git Config</span>
+<span class="s">Branch: fix/typescript-errors</span>
+<span class="s">Commit message: fix: resolve TS2322 type mismatch</span>
+<span class="s">Auto-push: true</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Execute (external to Claude session)</span>
+./iclaude.sh<span class="w"> </span>--loop<span class="w"> </span>task.md
+</pre></div>
+</div>
+</section>
+<section id="migration-benefits">
+<h3>Migration Benefits<a class="headerlink" href="#migration-benefits" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>✅ Parallel execution (ralph-loop had none)</p></li>
+<li><p>✅ State persistence (ralph-loop had none)</p></li>
+<li><p>✅ AI conflict resolution (ralph-loop had none)</p></li>
+<li><p>✅ Git-friendly task definitions</p></li>
+<li><p>✅ No plugin installation required</p></li>
+</ul>
+<p>See: <a class="reference internal" href="#../MIGRATION-GUIDE.md"><span class="xref myst">Full Migration Guide</span></a></p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
+<p><strong>Test Plan:</strong> <a class="reference internal" href="#../WEEK5-TESTING-PLAN.md"><span class="xref myst">../WEEK5-TESTING-PLAN.md</span></a></p>
+<p><strong>Critical Tests:</strong></p>
+<ol class="arabic simple">
+<li><p>Simple sequential task (1 iteration success)</p></li>
+<li><p>Max iterations reached (failure handling)</p></li>
+<li><p>Parallel execution without conflicts</p></li>
+<li><p>Parallel execution with AI conflict resolution</p></li>
+<li><p>Git integration (commit + push)</p></li>
+<li><p>Regex completion promise</p></li>
+<li><p>Exponential backoff timing</p></li>
+</ol>
+<p><strong>Status:</strong> Ready for manual execution</p>
+</section>
+<hr class="docutils" />
+<section id="future-enhancements-v2-0">
+<h2>Future Enhancements (v2.0)<a class="headerlink" href="#future-enhancements-v2-0" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Automated test suite (bats-core integration)</p></li>
+<li><p>Task dependencies (DAG-based execution)</p></li>
+<li><p>Custom retry strategies</p></li>
+<li><p>Webhooks for completion notifications</p></li>
+<li><p>Dashboard UI for monitoring</p></li>
+<li><p>Direct PR creation from loop mode</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<section id="code">
+<h3>Code<a class="headerlink" href="#code" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>iclaude.sh lines 2180-2850 (loop mode implementation)</p></li>
+<li><p>iclaude.sh lines 5092-5150 (argument parsing)</p></li>
+</ul>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>examples/test-loop-simple.md</p></li>
+<li><p>examples/test-loop-retry.md</p></li>
+<li><p>examples/test-loop-parallel.md</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>MIGRATION-GUIDE.md</p></li>
+<li><p>CLAUDE.md (Loop Mode Commands section)</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Maintained by:</strong> Claude Sonnet 4.5
+<strong>Last Updated:</strong> 2026-01-25
+<strong>Status:</strong> Production Ready</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="statusline-architecture.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Status Line Architecture Documentation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../features/context-monitoring.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Context Window Monitoring для iclaude.sh</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Loop Mode Architecture Documentation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#documentation-structure">Documentation Structure</a><ul>
+<li><a class="reference internal" href="#core-documentation">Core Documentation</a></li>
+<li><a class="reference internal" href="#diagrams-mermaid">Diagrams (Mermaid)</a></li>
+<li><a class="reference internal" href="#source-documentation">Source Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quick-navigation">Quick Navigation</a><ul>
+<li><a class="reference internal" href="#by-component">By Component</a></li>
+<li><a class="reference internal" href="#by-use-case">By Use Case</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#component-dependency-graph">Component Dependency Graph</a></li>
+<li><a class="reference internal" href="#key-architectural-decisions">Key Architectural Decisions</a><ul>
+<li><a class="reference internal" href="#bash-implementation">1. Bash Implementation</a></li>
+<li><a class="reference internal" href="#git-worktrees-for-isolation">2. Git Worktrees for Isolation</a></li>
+<li><a class="reference internal" href="#markdown-task-format">3. Markdown Task Format</a></li>
+<li><a class="reference internal" href="#ai-assisted-conflict-resolution">4. AI-Assisted Conflict Resolution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#project-metrics">Project Metrics</a></li>
+<li><a class="reference internal" href="#migration-from-ralph-loop">Migration from Ralph-Loop</a><ul>
+<li><a class="reference internal" href="#before-ralph-loop-plugin">Before (ralph-loop plugin)</a></li>
+<li><a class="reference internal" href="#after-bash-loop-mode">After (bash loop mode)</a></li>
+<li><a class="reference internal" href="#migration-benefits">Migration Benefits</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+<li><a class="reference internal" href="#future-enhancements-v2-0">Future Enhancements (v2.0)</a></li>
+<li><a class="reference internal" href="#references">References</a><ul>
+<li><a class="reference internal" href="#code">Code</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=fa37347f"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>
