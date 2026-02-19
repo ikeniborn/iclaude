@@ -28,24 +28,21 @@
 | **Router** | Выбор LLM-провайдера | Только Anthropic Claude | DeepSeek/Gemini/Ollama/GPT-4 — по задаче или стоимости |
 | **OAuth** | Непрерывная сессия | Токен истекает, сессия обрывается | Автоматическое продление — сессии работают ~1 год без вмешательства |
 | **LSP** | Code intelligence в контексте | Синтаксическое дерево без семантики | Hover, go-to-definition, типы — ИИ видит больше о структуре кода |
-| **Loop Mode** | Многошаговое выполнение задач | Один запрос — один ответ | Итеративный агент: задача → проверка → retry → коммит |
 | **Sandbox** | Безопасное выполнение кода | Код выполняется в окружении пользователя | Claude Code запускает код в изолированном namespace — без риска побочных эффектов |
 | **Status Line** | Видимость контекста и стоимости | Расход токенов непрозрачен | Реальное время: сколько контекста осталось, кэш, стоимость сессии |
-| **Context Mgmt** | Персистентная память между сессиями | ИИ забывает всё после закрытия | MEMORY.md загружается в system prompt — сохраняются паттерны, решения, конвенции |
 | **Router (routing)** | Интеллектуальный выбор модели | Одна модель на все задачи | Автоматически: Opus для большого контекста, DeepSeek для рутины |
 | **Oh-My-Posh** | Контекст окружения в prompt | Стандартный prompt | Информация о git-ветке, окружении, модели — дополнительный контекст для ИИ |
 
 ### Критически важные для AI-работы
 
 ```
-Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-агент с памятью
+Proxy → OAuth → Chrome → Sandbox = полноценный AI-агент
 ```
 
 - **Без Proxy**: Claude Code не работает в корпоративных сетях
 - **Без OAuth auto-refresh**: сессия обрывается через сутки
 - **Без Chrome**: агент слепой к браузеру
 - **Без Sandbox**: опасно запускать код от агента
-- **Без Context**: агент не помнит ничего между сессиями
 
 ---
 
@@ -53,7 +50,7 @@ Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-�
 
 | Метрика | Значение |
 |---------|----------|
-| Всего интеграций | **13** |
+| Всего интеграций | **10** |
 | Всего модулей | **64** bash-файлов |
 | Всего строк кода | **~10,276** |
 | Всего функций | **193+** |
@@ -65,7 +62,7 @@ Proxy → OAuth → Chrome → Sandbox → Context = полноценный AI-�
 
 ## Архитектура интеграций
 
-iclaude содержит **13 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
+iclaude содержит **10 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
 
 ```
 lib/
@@ -73,12 +70,9 @@ lib/
 ├── router/       # Claude Code Router (альтернативные LLM)
 ├── oauth/        # OAuth токены Anthropic
 ├── lsp/          # Language Server Protocol
-├── loop/         # Loop Mode с retry логикой
 ├── statusline/   # Строка состояния Claude Code
 ├── ohmyposh/     # Oh-My-Posh промпт
 ├── sandbox/      # Определение sandbox-платформы
-├── gh/           # GitHub CLI
-├── context/      # Управление контекстом
 ├── proxy/        # HTTP/HTTPS прокси
 ├── docs/         # Sphinx документация
 └── nvm/          # NVM / Node.js окружение
@@ -110,19 +104,15 @@ graph TB
         Chrome["chrome/detection.sh\nChrome browser"]
         Router["router/detect.sh\nCCR Router"]
         LSP["lsp/install.sh\nLSP серверы"]
-        Loop["loop/executor.sh\nLoop Mode"]
         Status["statusline/status.sh\nСтрока состояния"]
         OhMyPosh["ohmyposh/install.sh\noh-my-posh"]
         Sandbox["sandbox/detect.sh\nSandbox"]
-        GH["gh/install.sh\nGitHub CLI"]
-        Context["context/operations.sh\nКонтекст"]
     end
 
     subgraph External["Внешние системы"]
         AnthropicAPI["Anthropic API\nOAuth + Claude"]
         ChromeExt["Chrome Extension\nv1.0.36+"]
         OpenRouter["OpenRouter / DeepSeek\n/ Ollama / Gemini"]
-        GitHubAPI["GitHub API\ngh CLI"]
         NPM["npm Registry\nLSP серверы"]
     end
 
@@ -137,15 +127,11 @@ graph TB
     Router -.->|"--router flag"| OpenRouter
     OAuth -.->|"setup-token"| AnthropicAPI
     LSP -.->|"npm install"| NPM
-    GH -.->|"curl download"| GitHubAPI
 
-    Launch --> Loop
     Launch --> Status
     Launch --> LSP
     Launch --> OhMyPosh
     Launch --> Sandbox
-    Launch --> GH
-    Launch --> Context
 ```
 
 ### Последовательность запуска
@@ -185,29 +171,6 @@ sequenceDiagram
     iclaude->>Claude: Запуск Claude Code
 ```
 
-### Loop Mode
-
-```mermaid
-flowchart TD
-    Start["./iclaude.sh --loop task.md"]
-    Parse["loop/parser.sh\nload_all_tasks()"]
-    Task["Задача N"]
-    Invoke["loop/executor.sh\ninvoke_claude_iteration()"]
-    Verify["loop/executor.sh\nverify_completion_promise()"]
-    Success{"Успех?"}
-    MaxIter{"Max\nитераций?"}
-    Retry["loop/retry.sh\nexponential backoff\n2s → 4s → 8s → 60s"]
-    Git["loop/git.sh\ngit commit + push"]
-    Next["Следующая задача"]
-    Done["Итог"]
-
-    Start --> Parse --> Task --> Invoke --> Verify --> Success
-    Success -->|Да| Git --> Next --> Done
-    Success -->|Нет| MaxIter
-    MaxIter -->|Нет| Retry --> Invoke
-    MaxIter -->|Да| Next
-```
-
 ### LSP и Plugin система
 
 ```mermaid
@@ -226,31 +189,6 @@ flowchart LR
     Check -->|Да| Enable
     Enable -->|Нет| EnablePlugin --> Lock
     Enable -->|Да| Lock
-```
-
-### Управление контекстом
-
-```mermaid
-flowchart TD
-    Context["context/operations.sh"]
-    Export["context_cmd_export()\ntar.gz архив"]
-    Import["context_cmd_import()\nРаспаковка"]
-    Sync["context_cmd_sync()\nrsync worktrees"]
-    Clean["context_cmd_clean()\nОчистка sessions"]
-    Backup["context_cmd_backup()\nTimestamped backup"]
-    Status["context_cmd_status()\nСтатус"]
-    Memory["context/memory.sh\nMEMORY.md"]
-
-    Context --> Export
-    Context --> Import
-    Context --> Sync
-    Context --> Clean
-    Context --> Backup
-    Context --> Status
-    Context --> Memory
-
-    Memory -->|"200 строк limit"| SysPrompt["System Prompt\nиерархия"]
-    Sync -->|rsync| Worktrees["Git Worktrees"]
 ```
 
 ---
@@ -330,21 +268,7 @@ flowchart TD
 
 ---
 
-### 5. Loop Mode (Retry Logic)
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/loop/` (8 файлов) |
-| Файлов | 8 (parser, executor, retry, validator, git, parallel, state, worktree) |
-| Флаги | `--loop task.md` (seq), `--loop-parallel task.md --max-parallel N` |
-| Зависимости | Claude Code CLI, git, git worktrees |
-| Статус | **Полная (sequential + parallel)** |
-
-**Backoff:** 2s → 4s → 8s → 16s → 32s → 60s (cap). **Git:** автокоммит с `Co-Authored-By: Claude`. **Parallel:** изолированные git worktrees для каждой группы задач (8 Phase groups).
-
----
-
-### 6. Status Line
+### 5. Status Line
 
 | Параметр | Значение |
 |----------|----------|
@@ -360,7 +284,7 @@ flowchart TD
 
 ---
 
-### 7. Oh-My-Posh
+### 6. Oh-My-Posh
 
 | Параметр | Значение |
 |----------|----------|
@@ -374,7 +298,7 @@ flowchart TD
 
 ---
 
-### 8. Sandbox (Claude Code native sandbox)
+### 7. Sandbox (Claude Code native sandbox)
 
 | Параметр | Значение |
 |----------|----------|
@@ -393,37 +317,7 @@ flowchart TD
 
 ---
 
-### 9. GitHub CLI (gh)
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/gh/` (install.sh 106 строк + status.sh) |
-| Файлов | 2 |
-| Флаги | `--install-gh` |
-| Зависимости | `curl`, `tar` |
-| Статус | **Полная (версия hardcoded v2.45.0, только Linux)** |
-
-**Особенности:**
-- Версия жёстко прописана (`v2.45.0`), не обновляется автоматически
-- ⚠️ **Только Linux**: URL загрузки hardcodes `linux_${arch}`. macOS не поддерживается installer'ом
-
----
-
-### 10. Context Management
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/context/` (3 файла, ~940 строк) |
-| Файлов | 3 (init.sh, memory.sh, operations.sh) |
-| Флаги | `--context-export/import/sync/clean/backup/status`, `--context-memory-*` |
-| Зависимости | `rsync`, `tar`, `grep`, `find` |
-| Статус | **Полная** |
-
-**Операции:** export, import, sync (worktrees), clean, backup, status, memory management.
-
----
-
-### 11. Proxy Management
+### 8. Proxy Management
 
 | Параметр | Значение |
 |----------|----------|
@@ -437,7 +331,7 @@ flowchart TD
 
 ---
 
-### 12. Sphinx Документация
+### 9. Sphinx Документация
 
 | Параметр | Значение |
 |----------|----------|
@@ -451,7 +345,7 @@ flowchart TD
 
 ---
 
-### 13. NVM / Node.js (базовая инфраструктура)
+### 10. NVM / Node.js (базовая инфраструктура)
 
 | Параметр | Значение |
 |----------|----------|
@@ -475,12 +369,9 @@ flowchart TD
 | OAuth Token | 5 | 5 | 5 | 4 | **4.8** | 🔴 Критичный |
 | Chrome Integration | 5 | 5 | 4 | 4 | **4.5** | 🔴 Критичный |
 | Sandbox (Claude) | 5 | 4 | 4 | 4 | **4.3** | 🟠 Высокий |
-| Context Management | 5 | 4 | 4 | 3 | **4.0** | 🟠 Высокий |
-| Loop Mode | 4 | 4 | 4 | 3 | **3.8** | 🟠 Высокий |
 | LSP Servers | 4 | 4 | 4 | 3 | **3.8** | 🟠 Высокий |
 | Status Line | 3 | 4 | 4 | 4 | **3.8** | 🟠 Высокий |
 | Router (alt LLM) | 3 | 4 | 4 | 3 | **3.5** | 🟡 Средний |
-| GitHub CLI | 3 | 3 | 4 | 3 | **3.3** | 🟡 Средний |
 | Sphinx Docs | 2 | 3 | 3 | 3 | **2.8** | 🟡 Средний |
 | Oh-My-Posh | 2 | 3 | 3 | 3 | **2.8** | 🟢 Низкий |
 
@@ -513,7 +404,7 @@ flowchart TD
 | **Direnv** | ⭐⭐⭐ | 1/5 | Автоматическая загрузка env vars из `.envrc` при входе в директорию |
 | **tmux/Screen** | ⭐⭐⭐ | 2/5 | Persistent sessions, множество окон, attach/detach |
 | **Metrics Dashboard** | ⭐⭐⭐ | 3/5 | Визуализация использования токенов, стоимости, популярных команд через InfluxDB/Grafana |
-| **Slack/Telegram Notify** | ⭐⭐⭐ | 2/5 | Уведомления о завершении Loop Mode задач |
+| **Slack/Telegram Notify** | ⭐⭐⭐ | 2/5 | Уведомления о завершении задач |
 | **Cloud Backup** | ⭐⭐⭐ | 3/5 | Автоматическое резервное копирование `.claude-isolated/` в S3/GCS |
 
 ### Низкий приоритет / Экспериментальные
@@ -532,14 +423,6 @@ flowchart TD
 > Предупреждения о сложности, которые стоит учитывать при развитии проекта.
 
 ### Проблемы текущих интеграций
-
-#### ⚠️ GitHub CLI — жёсткая версия
-
-```
-Проблема: gh v2.45.0 hardcoded в lib/gh/install.sh
-Риск:     Устаревание, несовместимость с новыми API
-Рекомендация: Использовать GitHub Releases API (как oh-my-posh)
-```
 
 #### ⚠️ Oh-My-Posh — дублирование функции Status Line
 
@@ -562,16 +445,6 @@ flowchart TD
               (меньше зависимостей, нативный Markdown)
 ```
 
-#### ⚠️ Context Management — пересечение с Claude Skills
-
-```
-Проблема: lib/context/ реализует управление памятью и worktree-sync,
-          частично дублируя функциональность context-management skill
-Риск:     Два разных способа делать одно и то же
-Рекомендация: Объединить в единый интерфейс или чётко документировать
-              разграничение: skill (пользователь) vs lib (автоматически)
-```
-
 ### Общие рекомендации по балансу
 
 | Рекомендация | Обоснование |
@@ -579,7 +452,6 @@ flowchart TD
 | Не добавлять Docker без чёткого use-case | Увеличивает зависимости на 500MB+ |
 | Не добавлять веб-интерфейс | Противоречит CLI-природе проекта |
 | Не дублировать LSP логику | Claude Code имеет собственный plugin API |
-| Параллельный Loop Mode — только через worktrees | Иначе race conditions с git |
 | MCP серверы — следующий логичный шаг | Нативная интеграция с Claude Code |
 
 ---
@@ -602,11 +474,8 @@ quadrantChart
     Chrome: [0.85, 0.85]
     LSP: [0.75, 0.75]
     StatusLine: [0.80, 0.75]
-    Context: [0.75, 0.80]
-    LoopMode: [0.80, 0.80]
     Sandbox: [0.80, 0.75]
     Router: [0.80, 0.65]
-    GitHub_CLI: [0.65, 0.55]
     Sphinx: [0.65, 0.55]
     OhMyPosh: [0.60, 0.40]
     MCP_servers: [0.05, 0.90]
