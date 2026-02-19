@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "iclaude Component Specification",
+  "description": "JSON schema for documenting iclaude.sh functional components",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Component name (e.g., 'Proxy Management', 'Isolated Environment')"
+    },
+    "location": {
+      "type": "string",
+      "pattern": "^iclaude\\.sh:\\d+-\\d+$",
+      "description": "Line number range in iclaude.sh (format: 'iclaude.sh:start-end')"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "High-level description of what this component does"
+    },
+    "keyFeatures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of key features or capabilities provided by this component"
+    },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Main bash functions that implement this component"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Other components or external tools this component depends on"
+    },
+    "environmentVariables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Environment variable name"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What this variable configures"
+          },
+          "example": {
+            "type": "string",
+            "description": "Example value"
+          }
+        },
+        "required": ["name", "purpose"]
+      },
+      "description": "Environment variables configured or used by this component"
+    },
+    "filesPaths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File or directory path"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What this file/directory is used for"
+          },
+          "inGit": {
+            "type": "boolean",
+            "description": "Whether this file is tracked in git"
+          }
+        },
+        "required": ["path", "purpose"]
+      },
+      "description": "Files and directories used by this component"
+    }
+  },
+  "required": ["name", "location", "purpose", "keyFeatures", "functions"]
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "iclaude Command Output",
+  "description": "Standard output format for iclaude.sh command execution results",
+  "type": "object",
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "The iclaude.sh command that was executed",
+      "examples": ["./iclaude.sh --check-isolated", "./iclaude.sh --test"]
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "Exit code of the command (0 = success, non-zero = error)"
+    },
+    "stdout": {
+      "type": "string",
+      "description": "Standard output from the command"
+    },
+    "stderr": {
+      "type": "string",
+      "description": "Standard error output from the command"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of command execution"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Command execution duration in seconds"
+    },
+    "environment": {
+      "type": "object",
+      "description": "Relevant environment variables at execution time",
+      "properties": {
+        "NVM_DIR": {"type": "string"},
+        "CLAUDE_DIR": {"type": "string"},
+        "HTTPS_PROXY": {"type": "string"},
+        "HTTP_PROXY": {"type": "string"}
+      }
+    }
+  },
+  "required": ["command", "exitCode", "timestamp"]
+}
