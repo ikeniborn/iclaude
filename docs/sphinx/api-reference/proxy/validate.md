@@ -1,0 +1,88 @@
+# validate
+
+> **Module:** `proxy` | **File:** `lib/proxy/validate.sh`
+
+Proxy Validation Module
+Description: Validate proxy URLs, resolve domains to IPs, parse proxy components
+
+---
+
+### `validate_proxy_url`
+
+Validate proxy URL format
+
+**Arguments:**
+
+- `  $1 - Proxy URL (e.g., "https://user:pass@192.168.1.100:8118")`
+
+**Returns:**
+
+-   0 - Valid URL with IP address
+-   1 - Invalid format
+-   2 - Valid but contains domain (warning)
+
+**Example:**
+
+```bash
+  validate_proxy_url "$proxy_url"
+  case $? in
+    0) echo "Valid IP" ;;
+    1) echo "Invalid format" ;;
+    2) echo "Domain detected" ;;
+  esac
+```
+
+### `is_ip_address`
+
+Check if host is IP address (IPv4)
+
+**Arguments:**
+
+- `  $1 - Host string`
+
+**Returns:**
+
+-   0 - Valid IPv4 address
+-   1 - Not an IP address
+
+### `resolve_domain_to_ip`
+
+Resolve domain to IP address using fallback chain
+
+**Arguments:**
+
+- `  $1 - Domain name (e.g., "proxy.example.com")`
+
+**Returns:**
+
+-   IP address on stdout
+-   Exit code: 0 on success, 1 on failure
+- Fallback order:
+-   1. getent (most reliable)
+-   2. host
+-   3. dig
+-   4. nslookup
+
+### `parse_proxy_url`
+
+Parse proxy URL and extract components
+
+**Arguments:**
+
+- `  $1 - Proxy URL`
+
+**Returns:**
+
+-   Key=value pairs on stdout (protocol, username, password, host, port)
+
+**Example:**
+
+```bash
+  eval $(parse_proxy_url "https://user:pass@proxy.com:8118")
+  echo "$protocol"  # https
+  echo "$username"  # user
+  echo "$password"  # pass
+  echo "$host"      # proxy.com
+  echo "$port"      # 8118
+```
+

@@ -1,0 +1,18 @@
+# isolated
+
+> **Module:** `update` | **File:** `lib/update/isolated.sh`
+
+Update module for isolated environment
+Provides function for updating Claude Code in isolated NVM environment
+
+---
+
+### `update_isolated_claude`
+
+Update Claude Code in isolated environment Updates Claude Code via npm and refreshes lockfile
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
