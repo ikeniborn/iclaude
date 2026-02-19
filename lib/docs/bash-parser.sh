@@ -54,7 +54,7 @@ generate_api_reference() {
             _parse_bash_module "$sh_file" "$file_name" "$module_name" > "$out_file"
 
             local file_funcs
-            file_funcs=$(grep -c "^### \`" "$out_file" 2>/dev/null || echo "0")
+            file_funcs=$(grep -c "^### \`" "$out_file" 2>/dev/null || true)
             func_count=$((func_count + file_funcs))
             module_file_count=$((module_file_count + 1))
         done
@@ -312,7 +312,7 @@ _write_module_index() {
             local file_name
             file_name=$(basename "$sh_file" .sh)
             local func_count
-            func_count=$(grep -c "^### \`" "$out_dir/$file_name.md" 2>/dev/null || echo "0")
+            func_count=$(grep -c "^### \`" "$out_dir/$file_name.md" 2>/dev/null || true)
             echo "- [$file_name]($file_name.md) — $func_count functions"
         done
 
@@ -362,9 +362,7 @@ _write_api_index() {
         done
 
         echo ""
-        echo "```{toctree}"
-        echo ":hidden:"
-        echo ""
+        printf '%s\n' '```{toctree}' ':hidden:' ''
         for module_dir in "$src_dir"/*/; do
             [[ -d "$module_dir" ]] || continue
             local module_name
@@ -372,7 +370,7 @@ _write_api_index() {
             [[ "$module_name" == "README.md" ]] && continue
             echo "$module_name/index"
         done
-        echo "```"
+        printf '%s\n' '```'
     } > "$index_file"
 }
 fi

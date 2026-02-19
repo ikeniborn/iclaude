@@ -111,6 +111,7 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Sphinx documentation build output (generated, not committed)
 docs/_build/
+docs/sphinx/_build/
 
 # Python venv for Sphinx (generated, not committed)
 .nvm-isolated/.python-docs/

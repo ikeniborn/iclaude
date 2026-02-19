@@ -17,7 +17,8 @@
 #######################################
 if ! declare -F install_sphinx_docs &>/dev/null; then
 install_sphinx_docs() {
-    local venv_dir="${ISOLATED_NVM_DIR:-.nvm-isolated}/.python-docs"
+    local venv_dir
+    venv_dir=$(get_docs_venv_dir)
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
