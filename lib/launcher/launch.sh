@@ -64,6 +64,9 @@ launch_claude() {
         fi
         echo ""
 
+        # Signal to statusline that router is active (suppresses RL display)
+        export ICLAUDE_ROUTER_ACTIVE=1
+
         # Launch via ccr code
         exec "$ccr_cmd" code "$@"
     fi

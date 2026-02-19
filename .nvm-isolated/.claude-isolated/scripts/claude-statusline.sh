@@ -57,6 +57,13 @@ if [[ -f "$SCRIPT_DIR/lib/provider-adapter.sh" ]]; then
     PROVIDER_ADAPTER_AVAILABLE=1
 fi
 
+# Source rate limit module (if available)
+RATE_LIMIT_AVAILABLE=0
+if [[ -f "$SCRIPT_DIR/lib/rate-limit.sh" ]]; then
+    source "$SCRIPT_DIR/lib/rate-limit.sh"
+    RATE_LIMIT_AVAILABLE=1
+fi
+
 # Parse session data using adapter system (if available) or legacy parsing
 if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]]; then
     # Use adapter system for multi-provider support
@@ -185,11 +192,26 @@ else
     done
 fi
 
-# Router detection (check config file + ccr binary)
+# Router detection — show only when actively routing (ICLAUDE_ROUTER_ACTIVE=1)
+# Set by iclaude.sh when launched with --router flag
 ROUTER_ICON=""
-if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]] && command -v ccr &>/dev/null; then
-    PROVIDER=$(jq -r '.routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
+if [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]]; then
+    PROVIDER=$(jq -r '.Router.default // .routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
     ROUTER_ICON=" | 🔀 $PROVIDER"
+fi
+
+# Rate limit display (Anthropic-only, no router)
+# Fetches async via background curl, reads from 60s TTL cache
+# ICLAUDE_ROUTER_ACTIVE=1 is exported by iclaude.sh when --router is used
+RL_DISPLAY=""
+if [[ "$RATE_LIMIT_AVAILABLE" == "1" ]] && \
+   [[ "${PROVIDER_TYPE:-}" == "anthropic" ]] && \
+   [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" != "1" ]]; then
+    trigger_rate_limit_fetch "$CLAUDE_CONFIG_DIR"
+    RL_RAW=$(get_rate_limit_display)
+    if [[ -n "$RL_RAW" ]]; then
+        RL_DISPLAY=" | ${RL_RAW}"
+    fi
 fi
 
 # Provider icon display (when using adapter system)
@@ -824,20 +846,21 @@ ACTIVE_TOKENS_FMT=$(echo "$ACTIVE_TOKENS_FMT" | tr -d '\n\r')
 CACHE_FMT=$(echo "${CACHE_FMT:-}" | tr -d '\n\r')
 MODEL=$(echo "$MODEL" | tr -d '\n\r')
 COST=$(echo "$COST" | tr -d '\n\r')
+RL_DISPLAY=$(printf '%s' "${RL_DISPLAY:-}" | tr -d '\n\r')
 
 case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
         # Compact mode: MINIMAL components for 60-149 cols terminals
         # Remove: router, proxy, session link, git info
-        # Keep: tokens, cache, model, cost
+        # Keep: tokens, cache, model, cost, rate limit
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}"
         ;;
 
     minimal)
