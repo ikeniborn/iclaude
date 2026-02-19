@@ -598,6 +598,9 @@ fi
         # Check OAuth token expiration
         check_token_expiration
 
+        # Check if lockfile has changed since last environment update
+        check_lockfile_changes
+
         # Add --dangerously-skip-permissions only when --no-save is used
         if [[ "$skip_permissions" == true ]]; then
             claude_args+=("--dangerously-skip-permissions")
@@ -687,6 +690,9 @@ fi
 
     # Check OAuth token expiration
     check_token_expiration
+
+    # Check if lockfile has changed since last environment update
+    check_lockfile_changes
 
     # Add --dangerously-skip-permissions only when --no-save is used
     if [[ "$skip_permissions" == true ]]; then
