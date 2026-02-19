@@ -43,6 +43,7 @@ init_environment() {
     GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
     ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
     ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
+    LOCKFILE_HASH_FILE="${SCRIPT_DIR}/.nvm-isolated/.claude-isolated/.last-lockfile-hash"
     USE_ISOLATED_BY_DEFAULT=true  # Use isolated environment by default
 
     # Token refresh threshold in seconds (7 days = 604800)
@@ -55,6 +56,7 @@ init_environment() {
     export GIT_BACKUP_FILE
     export ISOLATED_NVM_DIR
     export ISOLATED_LOCKFILE
+    export LOCKFILE_HASH_FILE
     export USE_ISOLATED_BY_DEFAULT
     export TOKEN_REFRESH_THRESHOLD
 
