@@ -1,0 +1,36 @@
+# detect
+
+> **Module:** `ohmyposh` | **File:** `lib/ohmyposh/detect.sh`
+
+Oh-My-Posh detection module
+Provides functions for detecting Oh-My-Posh platform and installation
+
+---
+
+### `detect_ohmyposh_platform`
+
+Detect platform for Oh My Posh installation Returns platform string and status code
+
+**Returns:**
+
+-   0 - platform supported (linux-amd64, linux-arm64, darwin-amd64, darwin-arm64)
+-   1 - platform not supported
+- Output: platform name or "unsupported"
+
+### `get_ohmyposh_path`
+
+Get path to oh-my-posh binary
+
+**Returns:**
+
+-   oh-my-posh binary path or empty string
+
+### `detect_ohmyposh`
+
+Detect if Oh My Posh is installed
+
+**Returns:**
+
+-   0 - Oh My Posh available
+-   1 - Oh My Posh not available
+

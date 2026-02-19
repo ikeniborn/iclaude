@@ -1,0 +1,47 @@
+# export
+
+> **Module:** `config` | **File:** `lib/config/export.sh`
+
+Config Export Module
+Description: Export and import Claude Code configuration for backup/restore
+
+---
+
+### `export_config`
+
+Export config directory to backup location
+
+**Arguments:**
+
+- `  $1 - destination directory (required)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  export_config /path/to/backup || return 1
+```
+
+### `import_config`
+
+Import config directory from backup location
+
+**Arguments:**
+
+- `  $1 - source directory (required)`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+**Example:**
+
+```bash
+  import_config /path/to/backup || return 1
+```
+

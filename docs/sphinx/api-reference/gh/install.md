@@ -1,0 +1,18 @@
+# install
+
+> **Module:** `gh` | **File:** `lib/gh/install.sh`
+
+GitHub CLI installation module
+Provides function for installing gh CLI into isolated environment
+
+---
+
+### `install_isolated_gh`
+
+Install gh CLI to isolated environment Downloads and installs gh CLI binary from GitHub releases
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+

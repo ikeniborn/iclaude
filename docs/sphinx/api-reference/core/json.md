@@ -1,0 +1,71 @@
+# json
+
+> **Module:** `core` | **File:** `lib/core/json.sh`
+
+JSON Utilities Module
+Description: Helpers for reading/writing JSON files, especially lockfile
+
+---
+
+### `get_lockfile_field`
+
+Read a field from the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "nodeVersion" or ".lspServers.pyright")`
+
+**Returns:**
+
+-   Field value on stdout, or "unknown" if not found
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  node_version=$(get_lockfile_field "nodeVersion") || return 1
+  is_sandbox=$(get_lockfile_field "sandboxAvailable") || return 1
+  pyright_ver=$(get_lockfile_field "lspServers.pyright") || return 1
+```
+
+### `set_lockfile_field`
+
+Write a field to the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "nodeVersion" or ".lspServers.pyright")`
+- `  $2 - Value to write`
+
+**Returns:**
+
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  set_lockfile_field "claudeCodeVersion" "2.1.44" || return 1
+  set_lockfile_field "sandboxAvailable" "true" || return 1
+  set_lockfile_field "$lockfile_field" "$new_version" 2>/dev/null || true
+```
+
+### `get_lockfile_object`
+
+Read a nested object field from the lockfile using jq
+
+**Arguments:**
+
+- `  $1 - Field path (e.g., "lspServers" to get entire object)`
+
+**Returns:**
+
+-   JSON object on stdout, or {} if not found
+-   Exit code: 0 on success, 1 on error
+
+**Example:**
+
+```bash
+  lsp_servers=$(get_lockfile_object "lspServers") || return 1
+  deps=$(get_lockfile_object "sandboxDependencies") || return 1
+```
+

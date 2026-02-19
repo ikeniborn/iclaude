@@ -101,13 +101,17 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/npm-global/bin/oh-my-posh
 
 # Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
-.claude/
-# Claude Code plans (optional - can be committed)
-# docs/plans/*.md
-
-# Claude Code Agent Workspace
-.claude/workspace/
-
-# Ignore all files in .claude/ except memory/
+# Claude Code Agent Workspace - ignore most content, keep skills/ and memory/
+.claude/*
 !.claude/memory
+!.claude/memory/**
+!.claude/skills
+!.claude/skills/**
 .claude/sessions
+
+# Sphinx documentation build output (generated, not committed)
+docs/_build/
+docs/sphinx/_build/
+
+# Python venv for Sphinx (generated, not committed)
+.nvm-isolated/.python-docs/

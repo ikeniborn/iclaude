@@ -1,0 +1,30 @@
+# install
+
+> **Module:** `docs` | **File:** `lib/docs/install.sh`
+
+lib/docs/install.sh
+Sphinx Documentation - Python venv Installation
+Installs Python virtual environment with Sphinx and related packages
+in .nvm-isolated/.python-docs/ directory
+
+---
+
+### `install_sphinx_docs`
+
+Install Sphinx documentation environment Creates Python venv and installs sphinx, myst-parser, furo, and plugins
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 - Success
+-   1 - python3 not found or pip install failed
+
+**Example:**
+
+```bash
+install_sphinx_docs
+```
+
