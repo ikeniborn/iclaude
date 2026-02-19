@@ -183,7 +183,7 @@ Approval gates после каждого агента — можно остан�
 ./iclaude.sh --init-docs               # текущий проект
 ./iclaude.sh --init-docs /path/to/proj # другой проект
 
-# Установить Python-зависимости (один раз глобально)
+# Установить Python-зависимости (один раз, в .nvm-isolated/.python-docs/)
 ./iclaude.sh --install-docs
 
 # Собрать документацию
