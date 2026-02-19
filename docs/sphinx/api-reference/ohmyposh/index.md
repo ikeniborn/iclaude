@@ -1,0 +1,8 @@
+# Module: ohmyposh
+
+> Source: `lib/ohmyposh/`
+
+- [detect](detect.md) — 3 functions
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+

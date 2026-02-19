@@ -1,0 +1,23 @@
+# usage
+
+> **Module:** `command` | **File:** `lib/command/usage.sh`
+
+lib/command/usage.sh
+Command Handling - Usage/Help Text
+Part of Phase 14: Command Handling extraction from iclaude-legacy.sh
+Contains help message displayed with --help flag
+
+---
+
+### `show_usage`
+
+Display comprehensive help message Shows all available CLI options, examples, and documentation
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 - Always succeeds
+

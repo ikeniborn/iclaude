@@ -1,0 +1,95 @@
+# init
+
+> **Module:** `context` | **File:** `lib/context/init.sh`
+
+lib/context/init.sh
+Context Management - Initialization & Path Helpers
+Part of Phase 10: Context Management extraction from iclaude-legacy.sh
+Contains 7 path helper functions (trivial, low risk)
+
+---
+
+### `init_context_directories`
+
+Initialize context directories Creates directory structure for context exports/backups
+
+**Arguments:**
+
+- `  None`
+
+**Returns:**
+
+-   0 on success
+
+### `get_context_project_name`
+
+Get project name from path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Project basename
+
+### `get_context_project_hash`
+
+Get project hash (Claude Code format) Converts path to hash by replacing slashes
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Hashed project path
+
+### `get_context_project_memory_dir`
+
+Get project memory directory
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Path to .claude/memory
+
+### `get_context_shared_memory_dir`
+
+Get shared memory directory For worktree synchronization
+
+**Arguments:**
+
+- `  $1 - Project path`
+
+**Returns:**
+
+-   Path to shared memory directory
+
+### `is_context_worktree`
+
+Check if current directory is a git worktree
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   0 if worktree, 1 otherwise
+
+### `get_context_main_worktree`
+
+Get main worktree path If current path is a worktree, returns main repo path
+
+**Arguments:**
+
+- `  $1 - Project path (default: pwd)`
+
+**Returns:**
+
+-   Main worktree path or input path
+

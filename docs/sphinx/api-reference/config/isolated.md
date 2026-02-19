@@ -1,0 +1,50 @@
+# isolated
+
+> **Module:** `config` | **File:** `lib/config/isolated.sh`
+
+Config Isolated Module
+Description: Isolated configuration setup for project-local Claude Code config
+
+---
+
+### `setup_isolated_config`
+
+Setup isolated configuration directory Creates .claude-isolated directory and exports CLAUDE_CONFIG_DIR
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  setup_isolated_config || return 1
+```
+
+### `disable_auto_updates`
+
+Disable Claude Code auto-updates Prevents Claude Code from automatically updating itself Updates are managed via CI/CD (GitHub Actions) instead
+
+**Arguments:**
+
+- `  $1 - config directory path (optional, defaults to CLAUDE_CONFIG_DIR)`
+
+**Returns:**
+
+-   0 - success
+-   1 - failure (jq not found or file error)
+
+### `load_claude_config`
+
+Load Claude Code configuration variables Loads CLAUDE_CODE_* environment variables from credentials file
+
+**Returns:**
+
+-   0 - success
+
+**Example:**
+
+```bash
+  load_claude_config || return 1
+```
+

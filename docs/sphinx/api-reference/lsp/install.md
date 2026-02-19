@@ -1,0 +1,23 @@
+# install
+
+> **Module:** `lsp` | **File:** `lib/lsp/install.sh`
+
+LSP installation module
+Provides function for installing LSP servers and Claude Code plugins
+
+---
+
+### `install_isolated_lsp_servers`
+
+Install LSP servers and plugins in isolated environment Installs LSP server binaries via npm and enables Claude Code plugins
+
+**Arguments:**
+
+- `  $@ - Language servers to install (typescript, python, go, rust)`
+- `       Default: typescript python`
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+

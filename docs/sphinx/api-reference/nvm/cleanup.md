@@ -1,0 +1,20 @@
+# cleanup
+
+> **Module:** `nvm` | **File:** `lib/nvm/cleanup.sh`
+
+NVM Cleanup Module
+Description: Cleanup isolated NVM environment
+
+---
+
+### `cleanup_isolated_nvm`
+
+Cleanup isolated NVM environment Removes entire isolated NVM directory but preserves lockfile
+
+**Returns:**
+
+-   0 - success
+- Side effects:
+-   - Deletes ISOLATED_NVM_DIR
+-   - Preserves ISOLATED_LOCKFILE
+
