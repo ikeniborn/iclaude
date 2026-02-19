@@ -131,8 +131,10 @@ Project documentation for AI agents (pre-built, no Sphinx needed):
 - `docs/llms-full.txt` — full documentation content for LLM context
 - `docs/sphinx/_build/html/` — HTML site (committed to git)
 
-**Usage in agents/skills:** Read `docs/llms.txt` at task start to understand
-project structure. Use `docs/llms-full.txt` for deep context when needed.
+**Usage in agents/skills:** Read `docs/llms.txt` only when working on project
+internals (changes to `lib/`, `docs/`, `CLAUDE.md`, main entry point). Do not
+load automatically for every request — it costs tokens. Use `docs/llms-full.txt`
+only when deep architectural context is explicitly needed.
 EOF
 )
 
