@@ -1,0 +1,88 @@
+# init
+
+> **Module:** `docs` | **File:** `lib/docs/init.sh`
+
+lib/docs/init.sh
+Sphinx Documentation - Project Initialization
+Initializes Sphinx in docs/sphinx/ for any project.
+Does not overwrite existing conf.py (idempotent guard).
+
+---
+
+### `_update_project_gitignore`
+
+Update project .gitignore to exclude docs/sphinx/_build/
+
+**Arguments:**
+
+- `  $1 - project path`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_update_project_gitignore /path/to/project
+```
+
+### `_generate_conf_py`
+
+Generate conf.py for the project
+
+**Arguments:**
+
+- `  $1 - output path (docs/sphinx/conf.py)`
+- `  $2 - project name`
+- `  $3 - project type (bash|python|node|generic)`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_generate_conf_py /path/to/docs/sphinx/conf.py myproject bash
+```
+
+### `_generate_index_md`
+
+Generate index.md for the project, referencing existing docs/*.md
+
+**Arguments:**
+
+- `  $1 - output path (docs/sphinx/index.md)`
+- `  $2 - project name`
+- `  $3 - project path`
+
+**Returns:**
+
+-   0 - always
+
+**Example:**
+
+```bash
+_generate_index_md /path/to/docs/sphinx/index.md myproject /path/to/project
+```
+
+### `init_project_docs`
+
+Initialize Sphinx documentation in docs/sphinx/ for any project
+
+**Arguments:**
+
+- `  $1 - project path (default: pwd)`
+
+**Returns:**
+
+-   0 - Success or already initialized
+-   1 - Failed to create directory or generate files
+
+**Example:**
+
+```bash
+init_project_docs /path/to/project
+```
+

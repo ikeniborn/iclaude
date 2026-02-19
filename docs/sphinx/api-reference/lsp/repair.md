@@ -1,0 +1,21 @@
+# repair
+
+> **Module:** `lsp` | **File:** `lib/lsp/repair.sh`
+
+LSP repair module
+Provides function for repairing plugin paths after project relocation
+
+---
+
+### `repair_plugin_paths`
+
+Repair plugin paths after git clone or project move Fixes paths in known_marketplaces.json and installed_plugins.json
+
+**Arguments:**
+
+- `  $1 - quiet_mode (optional): "quiet" to suppress output`
+
+**Returns:**
+
+-   0 - success
+

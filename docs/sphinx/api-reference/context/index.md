@@ -1,0 +1,8 @@
+# Module: context
+
+> Source: `lib/context/`
+
+- [init](init.md) — 7 functions
+- [memory](memory.md) — 5 functions
+- [operations](operations.md) — 7 functions
+

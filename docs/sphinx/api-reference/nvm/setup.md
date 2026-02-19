@@ -1,0 +1,17 @@
+# setup
+
+> **Module:** `nvm` | **File:** `lib/nvm/setup.sh`
+
+NVM Setup Module
+Description: Setup isolated NVM environment and configure PATH
+
+---
+
+### `setup_isolated_nvm`
+
+Setup isolated NVM environment Side effects:   - Exports NVM_DIR, NPM_CONFIG_PREFIX, ISOLATED_CONFIG_DIR   - Prepends isolated paths to PATH   - Exports CLAUDE_CODE_ENABLE_TASKS   - Loads additional Claude Code config from credentials   - Auto-repairs plugin paths (if repair function exists)
+
+**Returns:**
+
+-   0 - success
+
