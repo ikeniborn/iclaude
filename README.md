@@ -50,16 +50,6 @@ cd claude
 - **OS-level изоляция** - файловая система и сеть
 - **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap)
 
-### 🐙 GitHub Integration
-- **PR automation** - создание PR с автоматическим исправлением ошибок
-- **CI/CD мониторинг** - GitHub Actions checks
-- **gh CLI** - интеграция в изолированное окружение
-
-### 🧠 Auto Memory
-- **MEMORY.md** - persistent context в `.claude/memory/`
-- **Best practices** - первые 200 строк → system prompt
-- **Git versioning** - история изменений памяти
-
 ### 📄 Sphinx Documentation
 - **Per-project** - работает в любом проекте, не только iclaude
 - **docs/sphinx/** - изолированная поддиректория, не засоряет `docs/`
@@ -269,7 +259,6 @@ export DEEPSEEK_API_KEY="your-key"
 │       ├── themes/                     # Oh My Posh темы
 │       └── hooks/                      # Claude Code хуки (beforeCompact)
 ├── .claude/                            # Конфигурация Claude Code
-│   ├── memory/                         # Auto Memory (MEMORY.md)
 │   └── skills/                         # Навыки проекта
 ├── .nvm-isolated-lockfile.json         # Version lockfile
 └── docs/                               # Документация
@@ -305,7 +294,6 @@ export DEEPSEEK_API_KEY="your-key"
 - `.nvm-isolated/.claude-isolated/scripts/` - scripts
 - `.nvm-isolated/.claude-isolated/themes/` - Oh My Posh темы
 - `.nvm-isolated/.claude-isolated/hooks/` - Claude Code хуки
-- `.claude/memory/` - MEMORY.md (Auto Memory)
 
 ---
 
