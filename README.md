@@ -70,19 +70,20 @@ cd claude
 - **Context Awareness** - автоопределение стека
 - **LSP Integration** - автоустановка Language Servers
 - **PR Automation** - создание PR + CI/CD мониторинг
-- **Ralph-Loop** - итеративное выполнение с автокоррекцией
+- **Agent Orchestrator** - пайплайн Researcher → Critic → Planner → Executor
 
 ### 🤖 Agent System
 
-Трёхуровневый пайплайн специализированных суб-агентов:
+Четырёхуровневый пайплайн специализированных суб-агентов:
 
 ```
-Пользователь → Researcher → [Gate] → Planner → [Gate] → Executor → report.md
+Пользователь → Researcher → [Critic] → [Gate] → Planner → [Critic] → [Gate] → Executor → [Critic] → Report
 ```
 
 | Агент | Что делает | Файлы |
 |-------|-----------|-------|
 | **Researcher** | Исследует кодовую базу (2 параллельных Explore) | → `research.toon` |
+| **Critic** | Оценивает артефакт (PASS/WARN/RETRY/ABORT) | → `*-critique.toon` |
 | **Planner** | Создаёт пошаговый план на основе research | → `plan.toon` |
 | **Executor** | Вносит изменения в код, валидирует, коммитит | → `report.md` |
 
@@ -258,7 +259,7 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── router/                         # Claude Code Router
 │   ├── lsp/                            # LSP server management
 │   ├── lockfile/                       # Version locking
-│   └── ...                             # 20+ модулей
+│   └── ...                             # 16 модулей
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
 │   └── .claude-isolated/               # Конфигурация + skills
@@ -327,7 +328,6 @@ MIT License
 - [Claude Code Docs](https://code.claude.com/docs)
 - [Claude API Docs](https://docs.anthropic.com)
 - [Claude Code Router](https://github.com/zckly/claude-code-router)
-- [Ralph Technique](https://ghuntley.com/ralph/)
 
 ---
 
