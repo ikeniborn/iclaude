@@ -27,7 +27,8 @@ TOON (Token-Oriented Object Notation) используется для перед
     "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
     "hints": {
       "language_hint": null,
-      "skip_context7": false
+      "skip_context7": false,
+      "skip_local_docs": false
     }
   }
 }
@@ -38,6 +39,7 @@ TOON (Token-Oriented Object Notation) используется для перед
 - `focus_areas` — области исследования (все по умолчанию)
 - `language_hint` — подсказка языка проекта (null = автоопределение)
 - `skip_context7` — пропустить Context7 MCP (false = использовать если доступен)
+- `skip_local_docs` — пропустить загрузку локальной документации (false = загружать docs/llms.txt)
 
 ---
 
@@ -87,6 +89,20 @@ TOON (Token-Oriented Object Notation) используется для перед
       "context7_status": "NO_LIBRARIES_DETECTED",
       "docs_found": []
     },
+    "local_docs": {
+      "docs_status": "FOUND",
+      "relevant_sections": [
+        {
+          "component": "lib/proxy/",
+          "source": "docs/sphinx/api-reference/proxy/validate.md",
+          "key_insights": [
+            "validate_proxy_url() validates HTTP/HTTPS only",
+            "Returns 0 on success, 1 on failure",
+            "No SOCKS5 support by design"
+          ]
+        }
+      ]
+    },
     "recommendations": {
       "complexity_hint": "minimal",
       "key_insights": [
@@ -118,6 +134,15 @@ lib/launcher/launch.sh|low|Launch orchestration
 - `reason` — краткое объяснение (< 60 символов)
 
 **Threshold:** >= 5 файлов → TOON. < 5 файлов → JSON-массив объектов.
+
+**Пороги для других полей research.toon:**
+
+| Поле | Формат |
+|------|--------|
+| `relevant_files` | TOON если >= 5 файлов |
+| `reusable_components` | всегда JSON (обычно < 5 элементов) |
+| `local_docs.relevant_sections` | всегда JSON (массив обычно < 5 элементов) |
+| `external_docs.docs_found` | всегда JSON (обычно < 5 элементов) |
 
 ### complexity_hint значения
 
@@ -158,7 +183,8 @@ lib/launcher/launch.sh|low|Launch orchestration
     "files_to_change": "<<TOON:files_to_change>>",
     "research_references": {
       "reusable_components_used": ["parse_args() from lib/command/args.sh"],
-      "risks_mitigated": ["R1: Empty session-env/ → print message"]
+      "risks_mitigated": ["R1: Empty session-env/ → print message"],
+      "docs_consulted": ["API Reference: proxy/validate.md"]
     }
   }
 }

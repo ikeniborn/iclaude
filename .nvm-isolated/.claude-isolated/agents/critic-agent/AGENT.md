@@ -139,9 +139,16 @@ PREVIOUS_CRITIQUE: null|{WORKSPACE}/{mode}-critique.toon
 | `reusable_components` пустой или содержит только пути (нет имён функций) | -10 |
 | `affected_components` пустой | -8 |
 | `dependency_chain` пустой | -7 |
+| `docs/llms.txt` существует в проекте И `local_docs` отсутствует/пустой | -5 |
+
+**Docs consultation check (если проект имеет docs/):**
+- Если в workspace доступен путь `docs/llms.txt` (проверить через Read) И
+  `research_results.local_docs` отсутствует или `docs_status == "NOT_FOUND"` при наличии файла → -5 pts
+- Это штраф за игнорирование доступной документации (Researcher должен был её загрузить)
+- Если `local_docs.docs_status == "SKIPPED"` (hints.skip_local_docs == true) — штраф НЕ применяется
 
 **Начисление:**
-- 25 pts: reusable_components с именами функций, affected_components, dependency_chain заполнены
+- 25 pts: reusable_components с именами функций, affected_components, dependency_chain заполнены, local_docs консультированы (если доступны)
 - 18 pts: Компоненты есть, нет деталей функций
 - 10 pts: Частично заполнено
 - 5 pts: Только пути без функций

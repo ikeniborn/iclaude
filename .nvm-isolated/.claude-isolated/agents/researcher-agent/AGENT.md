@@ -43,6 +43,7 @@ Read({WORKSPACE}/input.toon)
 - `focus_areas` — области исследования
 - `hints.language_hint` — подсказка языка (null = автоопределение)
 - `hints.skip_context7` — пропустить Context7
+- `hints.skip_local_docs` — пропустить загрузку локальной документации (false = загружать)
 
 ### Шаг 2: Запустить параллельные суб-агенты
 
@@ -80,6 +81,33 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
 Верни: dependency_chain, affected_components, integration_points.
 Бюджет: максимум 15 вызовов инструментов.
 ```
+
+### Шаг 2b: Локальная документация проекта
+
+Если `hints.skip_local_docs != true`:
+
+1. Проверить наличие `docs/llms.txt`:
+   ```
+   Read(docs/llms.txt)
+   ```
+
+2. Если файл существует:
+   - Из `architecture_analysis.affected_components` взять первые 3 компонента
+   - Для каждого компонента найти соответствующую строку в llms.txt
+   - Прочитать найденный API Reference файл (из `docs/sphinx/api-reference/{component}/`)
+   - Извлечь: имена публичных функций, параметры, примеры использования, ограничения
+
+3. Записать в `local_docs`:
+   - `docs_status: "FOUND"` если найдено ≥1 релевантная секция
+   - `relevant_sections` — массив найденных секций с key_insights
+   - `docs_status: "NOT_FOUND"` если docs/llms.txt не существует
+   - `docs_status: "SKIPPED"` если hints.skip_local_docs == true
+
+**Правила:**
+- Максимум 5 Read вызовов для docs (не замедлять пайплайн)
+- Graceful skip если docs/ отсутствует → `docs_status: "NOT_FOUND"`
+- key_insights: максимум 3 пункта на компонент, конкретные факты (< 60 символов каждый)
+- Не читать llms-full.txt (слишком большой) — только llms.txt (индекс) + конкретные файлы
 
 ### Шаг 3: [Опционально] Context7 External Docs
 
@@ -142,6 +170,20 @@ mcp__context7__get_library_docs({library_id, topic})
       ]
     },
     "external_docs": { "context7_status": "PLUGIN_NOT_AVAILABLE" },
+    "local_docs": {
+      "docs_status": "FOUND",
+      "relevant_sections": [
+        {
+          "component": "lib/core/",
+          "source": "docs/sphinx/api-reference/core/index.md",
+          "key_insights": [
+            "get_lockfile_field() reads scalar via jq",
+            "Returns empty string on missing key",
+            "No side effects on parse failure"
+          ]
+        }
+      ]
+    },
     "recommendations": {
       "complexity_hint": "minimal",
       "key_insights": ["insight1", "insight2"]
@@ -175,6 +217,7 @@ lib/launcher/launch.sh|low|Launch orchestration
     "architecture_analysis": { ... },
     "risk_assessment": { ... },
     "external_docs": { ... },
+    "local_docs": { ... },
     "recommendations": { ... }
   }
 }
@@ -202,6 +245,7 @@ lib/launcher/launch.sh|low|Launch orchestration
 - Codebase sub-agent: max 20 инструментов
 - Architecture sub-agent: max 15 инструментов
 - Context7: max 3 вызова
+- Local docs: max 5 Read вызовов (llms.txt + конкретные файлы)
 - Суммарный бюджет sub-agents: max 15K токенов
 
 ### Параллельность
@@ -212,6 +256,8 @@ lib/launcher/launch.sh|low|Launch orchestration
 - Если Context7 недоступен → записать `context7_status: "PLUGIN_NOT_AVAILABLE"`, продолжить
 - Если файл не найден → не включать в relevant_files, не прерывать
 - Если sub-agent вернул пустой результат → записать что не найдено, продолжить
+- Если docs/llms.txt не существует → `local_docs.docs_status: "NOT_FOUND"`, продолжить
+- Если hints.skip_local_docs == true → `local_docs.docs_status: "SKIPPED"`, продолжить
 
 ## Сигнал завершения
 
@@ -257,7 +303,7 @@ Risks: {risk_count} ({severity_distribution})
 | `file_coverage` | Найти недостающие файлы через Glob/Grep, добавить в relevant_files |
 | `risk_depth` | Переписать mitigation с конкретными шагами кода (функция → изменение) |
 | `complexity_calibration` | Пересмотреть complexity_hint с обоснованием по файлам и рискам |
-| `component_identification` | Добавить имена функций в reusable_components (не только пути) |
+| `component_identification` | Добавить имена функций в reusable_components (не только пути); загрузить local_docs если docs/llms.txt доступен |
 
 **Парсинг гибридного critique файла:**
 ```
