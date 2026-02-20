@@ -91,7 +91,7 @@ cd claude
 /agent-orchestrator <описание задачи>
 ```
 
-**Артефакты** хранятся в `.iclaude/workspace/{session-id}/` (в `.gitignore`).
+**Артефакты** хранятся в `.claude/workspace/{session-id}/` (в `.gitignore`).
 Approval gates после каждого агента — можно остановиться на любом этапе.
 
 **Пример 1 — простая задача:**
@@ -124,7 +124,6 @@ Approval gates после каждого агента — можно остан�
 
 ### Специфичное
 - **[Прокси](./docs/PROXY.md)** - настройка HTTP/HTTPS/SOCKS5
-- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - решение проблем
 - **[Status Line](./docs/STATUSLINE.md)** - метрики в терминале
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
@@ -264,8 +263,13 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── versions/node/                  # Node.js + npm
 │   └── .claude-isolated/               # Конфигурация + skills
 │       ├── skills/                     # Claude Code Skills
+│       ├── agents/                     # Agent pipeline (Researcher, Planner, Executor, Critic)
 │       ├── scripts/                    # Status Line и др.
-│       └── memory/                     # Auto Memory (MEMORY.md)
+│       ├── themes/                     # Oh My Posh темы
+│       └── hooks/                      # Claude Code хуки (beforeCompact)
+├── .claude/                            # Конфигурация Claude Code
+│   ├── memory/                         # Auto Memory (MEMORY.md)
+│   └── skills/                         # Навыки проекта
 ├── .nvm-isolated-lockfile.json         # Version lockfile
 └── docs/                               # Документация
     └── sphinx/                         # Sphinx (HTML + llms.txt)
@@ -296,8 +300,11 @@ export DEEPSEEK_API_KEY="your-key"
 - `.nvm-isolated/` - изолированное окружение (опционально)
 - `.nvm-isolated-lockfile.json` - version lockfile
 - `.nvm-isolated/.claude-isolated/skills/` - skills
+- `.nvm-isolated/.claude-isolated/agents/` - agent pipeline
 - `.nvm-isolated/.claude-isolated/scripts/` - scripts
-- `.nvm-isolated/.claude-isolated/memory/` - MEMORY.md
+- `.nvm-isolated/.claude-isolated/themes/` - Oh My Posh темы
+- `.nvm-isolated/.claude-isolated/hooks/` - Claude Code хуки
+- `.claude/memory/` - MEMORY.md (Auto Memory)
 
 ---
 
