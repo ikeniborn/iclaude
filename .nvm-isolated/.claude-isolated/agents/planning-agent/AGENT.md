@@ -43,6 +43,23 @@ Read({WORKSPACE}/input.toon)     → task_description
 Read({WORKSPACE}/research.toon)  → research_results
 ```
 
+### Шаг 1b: Использовать local_docs (если доступны)
+
+Если `research_results.local_docs.docs_status == "FOUND"`:
+
+- Для каждой секции из `local_docs.relevant_sections`:
+  - Использовать `key_insights` при написании `description` и `action` шагов плана
+  - Ссылаться на задокументированные функции (из insights) в поле `action`
+  - Пример: `"action": "Extend validate_proxy_url() согласно docs/api-reference/proxy/validate.md"`
+
+- Добавить в `research_references`:
+  ```json
+  "docs_consulted": ["API Reference: proxy/validate.md", "API Reference: core/json.md"]
+  ```
+
+Если `local_docs.docs_status != "FOUND"`:
+- Продолжить без изменений (graceful degradation)
+
 ### Шаг 2: Определить число фаз из complexity_hint
 
 ```
@@ -140,7 +157,8 @@ files_to_change = пересечение с relevant_files
     "files_to_change": ["lib/core/json.sh"],
     "research_references": {
       "reusable_components_used": ["get_lockfile_field() — lib/core/json.sh"],
-      "risks_mitigated": ["R1: ..."]
+      "risks_mitigated": ["R1: ..."],
+      "docs_consulted": ["API Reference: core/index.md"]
     }
   }
 }
@@ -201,6 +219,7 @@ lib/command/args.sh|modify|1
 ### Обязательные ссылки на research
 - `research_references.reusable_components_used` — ВСЕГДА заполнять
 - `research_references.risks_mitigated` — ВСЕГДА заполнять
+- `research_references.docs_consulted` — заполнять если `local_docs.docs_status == "FOUND"`
 - Каждый файл в `files_to_change` должен быть из `research.relevant_files`
 
 ### Validation для каждой фазы

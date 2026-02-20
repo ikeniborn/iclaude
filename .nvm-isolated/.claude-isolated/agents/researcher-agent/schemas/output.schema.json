@@ -15,6 +15,7 @@
         "architecture_analysis",
         "risk_assessment",
         "external_docs",
+        "local_docs",
         "recommendations"
       ],
       "additionalProperties": false,
@@ -198,6 +199,41 @@
                   "key_insights": {
                     "type": "array",
                     "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "local_docs": {
+          "type": "object",
+          "required": ["docs_status"],
+          "description": "Локальная документация проекта (Sphinx/llms.txt)",
+          "properties": {
+            "docs_status": {
+              "type": "string",
+              "enum": ["FOUND", "NOT_FOUND", "SKIPPED"],
+              "description": "FOUND: docs/ есть и найдены релевантные секции. NOT_FOUND: docs/ отсутствует. SKIPPED: пропущено по hints."
+            },
+            "relevant_sections": {
+              "type": "array",
+              "description": "Релевантные секции документации для текущей задачи",
+              "items": {
+                "type": "object",
+                "required": ["component", "source", "key_insights"],
+                "properties": {
+                  "component": {
+                    "type": "string",
+                    "description": "Компонент из affected_components"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "Путь к файлу документации"
+                  },
+                  "key_insights": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Ключевые факты для Planner: функции, паттерны, ограничения"
                   }
                 }
               }
