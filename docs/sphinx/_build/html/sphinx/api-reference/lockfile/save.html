@@ -392,6 +392,45 @@ Description: Save current installation state to lockfile for reproducibility</p>
 </pre></div>
 </div>
 </section>
+<section id="compute-lockfile-hash">
+<h2><code class="docutils literal notranslate"><span class="pre">compute_lockfile_hash</span></code><a class="headerlink" href="#compute-lockfile-hash" title="Link to this heading">¶</a></h2>
+<p>Compute SHA-256 hash of the lockfile Portable: sha256sum (Linux) → shasum -a 256 (macOS) → md5sum (fallback)</p>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p>Hash string on stdout</p></li>
+<li><p>Exit code: 0 on success, 1 if lockfile missing</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nv">current_hash</span><span class="o">=</span><span class="k">$(</span>compute_lockfile_hash<span class="k">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+<section id="update-lockfile-hash">
+<h2><code class="docutils literal notranslate"><span class="pre">update_lockfile_hash</span></code><a class="headerlink" href="#update-lockfile-hash" title="Link to this heading">¶</a></h2>
+<p>Write current lockfile hash to LOCKFILE_HASH_FILE Called after install_from_lockfile() and save_isolated_lockfile()</p>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p>0 - hash written successfully</p></li>
+<li><p>1 - failed (lockfile missing or hash empty)</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">  </span>update_lockfile_hash<span class="w"> </span><span class="o">||</span><span class="w"> </span>print_warning<span class="w"> </span><span class="s2">&quot;Could not update lockfile hash&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="check-lockfile-changes">
+<h2><code class="docutils literal notranslate"><span class="pre">check_lockfile_changes</span></code><a class="headerlink" href="#check-lockfile-changes" title="Link to this heading">¶</a></h2>
+<p>Check if lockfile has changed since last applied hash Compares current lockfile hash with stored hash in LOCKFILE_HASH_FILE If changed: warns user and offers to run –install-from-lockfile If no stored hash: silently initialises hash file (first run) If not interactive (CI/CD): prints warning only, does not prompt</p>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p>0 - no change detected or user declined update or first-run init</p></li>
+<li><p>0 - even when changed (non-blocking: launch continues regardless)</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">  </span>check_lockfile_changes
+</pre></div>
+</div>
+</section>
 </section>
 
         </article>
@@ -451,6 +490,9 @@ Description: Save current installation state to lockfile for reproducibility</p>
             <ul>
 <li><a class="reference internal" href="#">save</a><ul>
 <li><a class="reference internal" href="#save-isolated-lockfile"><code class="docutils literal notranslate"><span class="pre">save_isolated_lockfile</span></code></a></li>
+<li><a class="reference internal" href="#compute-lockfile-hash"><code class="docutils literal notranslate"><span class="pre">compute_lockfile_hash</span></code></a></li>
+<li><a class="reference internal" href="#update-lockfile-hash"><code class="docutils literal notranslate"><span class="pre">update_lockfile_hash</span></code></a></li>
+<li><a class="reference internal" href="#check-lockfile-changes"><code class="docutils literal notranslate"><span class="pre">check_lockfile_changes</span></code></a></li>
 </ul>
 </li>
 </ul>
