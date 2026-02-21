@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "deep-research-request",
+  "title": "Deep Research Request",
+  "description": "Input schema for Deep Research Agent",
+  "type": "object",
+  "required": ["deep_research_input"],
+  "properties": {
+    "deep_research_input": {
+      "type": "object",
+      "required": ["query", "depth", "max_sources", "output_format", "caller"],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Research query or topic"
+        },
+        "depth": {
+          "type": "string",
+          "enum": ["shallow", "standard", "deep"],
+          "description": "Research depth level"
+        },
+        "max_sources": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 30,
+          "description": "Maximum number of sources to fetch"
+        },
+        "focus_areas": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Specific areas to focus research on"
+        },
+        "output_format": {
+          "type": "string",
+          "enum": ["summary", "detailed", "structured"],
+          "description": "Output format preference"
+        },
+        "caller": {
+          "type": "string",
+          "enum": ["researcher", "user", "orchestrator"],
+          "description": "Who is calling this agent (affects permission check)"
+        },
+        "hints": {
+          "type": "object",
+          "properties": {
+            "prefer_official_docs": {
+              "type": "boolean",
+              "default": true
+            },
+            "recency_filter": {
+              "type": ["string", "null"],
+              "description": "Date filter e.g. 'last 6 months'"
+            },
+            "language": {
+              "type": "string",
+              "default": "en"
+            },
+            "exclude_domains": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

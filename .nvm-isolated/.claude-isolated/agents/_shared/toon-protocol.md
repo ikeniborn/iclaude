@@ -87,7 +87,9 @@ TOON (Token-Oriented Object Notation) используется для перед
     },
     "external_docs": {
       "context7_status": "NO_LIBRARIES_DETECTED",
-      "docs_found": []
+      "deep_research_status": "NOT_TRIGGERED",
+      "docs_found": [],
+      "key_findings_summary": []
     },
     "local_docs": {
       "docs_status": "FOUND",
