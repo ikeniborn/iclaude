@@ -1,16 +1,11 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.47",
+  "claudeCodeVersion": "2.1.50",
   "routerVersion": "unknown",
   "lspServers": {
-    "pyright": "1.1.408",
-    "vtsls": "0.3.0",
-    "typescript-language-server": "0.3.0"
+    "pyright": "1.1.408"
   },
-  "lspPlugins": {
-    "pyright-lsp@claude-plugins-official": "1.0.0",
-    "typescript-lsp@claude-plugins-official": "1.0.0"
-  },
+  "lspPlugins": {},
   "sandboxAvailable": false,
   "sandboxPlatform": "linux",
   "sandboxDependencies": {},
@@ -18,18 +13,9 @@
   "sandboxInstalledAt": "",
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
-  "ohMyPoshVersion": "29.4.1",
-  "ohMyPoshPlatform": "linux-amd64",
-  "ohMyPoshInstalledAt": "2026-02-19T10:02:09Z",
-  "installedAt": "2026-02-19T10:02:09Z",
-  "nvmVersion": "0.39.7",
-  "sphinxDocs": {
-    "enabled": false,
-    "sphinxVersion": "",
-    "mystParserVersion": "",
-    "theme": "furo",
-    "llmsTxtEnabled": false,
-    "venvPath": ".nvm-isolated/.python-docs",
-    "installedAt": ""
-  }
+  "ohMyPoshVersion": "not installed",
+  "ohMyPoshPlatform": "unknown",
+  "ohMyPoshInstalledAt": "",
+  "installedAt": "2026-02-21T05:37:10Z",
+  "nvmVersion": "0.39.7"
 }

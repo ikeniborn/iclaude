@@ -23,11 +23,238 @@ export type ToolInputSchemas =
   | McpInput
   | NotebookEditInput
   | ReadMcpResourceInput
+  | SubscribeMcpResourceInput
+  | UnsubscribeMcpResourceInput
+  | SubscribePollingInput
+  | UnsubscribePollingInput
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
   | AskUserQuestionInput
-  | ConfigInput;
+  | ConfigInput
+  | EnterWorktreeInput
+  | ToolOutputSchemas;
+export type ToolOutputSchemas =
+  | AgentOutput
+  | BashOutput
+  | ExitPlanModeOutput
+  | FileEditOutput
+  | FileReadOutput
+  | FileWriteOutput
+  | GlobOutput
+  | GrepOutput
+  | TaskStopOutput
+  | ListMcpResourcesOutput
+  | McpOutput
+  | NotebookEditOutput
+  | ReadMcpResourceOutput
+  | SubscribeMcpResourceOutput
+  | UnsubscribeMcpResourceOutput
+  | SubscribePollingOutput
+  | UnsubscribePollingOutput
+  | TodoWriteOutput
+  | WebFetchOutput
+  | WebSearchOutput
+  | AskUserQuestionOutput
+  | ConfigOutput
+  | EnterWorktreeOutput;
+export type AgentOutput =
+  | {
+      agentId: string;
+      content: {
+        type: "text";
+        text: string;
+      }[];
+      totalToolUseCount: number;
+      totalDurationMs: number;
+      totalTokens: number;
+      usage: {
+        input_tokens: number;
+        output_tokens: number;
+        cache_creation_input_tokens: number | null;
+        cache_read_input_tokens: number | null;
+        server_tool_use: {
+          web_search_requests: number;
+          web_fetch_requests: number;
+        } | null;
+        service_tier: ("standard" | "priority" | "batch") | null;
+        cache_creation: {
+          ephemeral_1h_input_tokens: number;
+          ephemeral_5m_input_tokens: number;
+        } | null;
+      };
+      status: "completed";
+      prompt: string;
+    }
+  | {
+      status: "async_launched";
+      /**
+       * The ID of the async agent
+       */
+      agentId: string;
+      /**
+       * The description of the task
+       */
+      description: string;
+      /**
+       * The prompt for the agent
+       */
+      prompt: string;
+      /**
+       * Path to the output file for checking agent progress
+       */
+      outputFile: string;
+      /**
+       * Whether the calling agent has Read/Bash tools to check progress
+       */
+      canReadOutputFile?: boolean;
+    }
+  | {
+      status: "sub_agent_entered";
+      description: string;
+      message: string;
+    };
+export type FileReadOutput =
+  | {
+      type: "text";
+      file: {
+        /**
+         * The path to the file that was read
+         */
+        filePath: string;
+        /**
+         * The content of the file
+         */
+        content: string;
+        /**
+         * Number of lines in the returned content
+         */
+        numLines: number;
+        /**
+         * The starting line number
+         */
+        startLine: number;
+        /**
+         * Total number of lines in the file
+         */
+        totalLines: number;
+      };
+    }
+  | {
+      type: "image";
+      file: {
+        /**
+         * Base64-encoded image data
+         */
+        base64: string;
+        /**
+         * The MIME type of the image
+         */
+        type: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+        /**
+         * Original file size in bytes
+         */
+        originalSize: number;
+        /**
+         * Image dimension info for coordinate mapping
+         */
+        dimensions?: {
+          /**
+           * Original image width in pixels
+           */
+          originalWidth?: number;
+          /**
+           * Original image height in pixels
+           */
+          originalHeight?: number;
+          /**
+           * Displayed image width in pixels (after resizing)
+           */
+          displayWidth?: number;
+          /**
+           * Displayed image height in pixels (after resizing)
+           */
+          displayHeight?: number;
+        };
+      };
+    }
+  | {
+      type: "notebook";
+      file: {
+        /**
+         * The path to the notebook file
+         */
+        filePath: string;
+        /**
+         * Array of notebook cells
+         */
+        cells: unknown[];
+      };
+    }
+  | {
+      type: "pdf";
+      file: {
+        /**
+         * The path to the PDF file
+         */
+        filePath: string;
+        /**
+         * Base64-encoded PDF data
+         */
+        base64: string;
+        /**
+         * Original file size in bytes
+         */
+        originalSize: number;
+      };
+    }
+  | {
+      type: "parts";
+      file: {
+        /**
+         * The path to the PDF file
+         */
+        filePath: string;
+        /**
+         * Original file size in bytes
+         */
+        originalSize: number;
+        /**
+         * Number of pages extracted
+         */
+        count: number;
+        /**
+         * Directory containing extracted page images
+         */
+        outputDir: string;
+      };
+    };
+export type ListMcpResourcesOutput = {
+  /**
+   * Resource URI
+   */
+  uri: string;
+  /**
+   * Resource name
+   */
+  name: string;
+  /**
+   * MIME type of the resource
+   */
+  mimeType?: string;
+  /**
+   * Resource description
+   */
+  description?: string;
+  /**
+   * Server that provides this resource
+   */
+  server: string;
+}[];
+/**
+ * MCP tool execution result
+ */
+export type McpOutput = string;
 
 export interface AgentInput {
   /**
@@ -70,6 +297,10 @@ export interface AgentInput {
    * Permission mode for spawned teammate (e.g., "plan" to require plan approval).
    */
   mode?: "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
+  /**
+   * Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo.
+   */
+  isolation?: "worktree";
 }
 export interface BashInput {
   /**
@@ -131,22 +362,6 @@ export interface ExitPlanModeInput {
      */
     prompt: string;
   }[];
-  /**
-   * Whether to push the plan to a remote Claude.ai session
-   */
-  pushToRemote?: boolean;
-  /**
-   * The remote session ID if pushed to remote
-   */
-  remoteSessionId?: string;
-  /**
-   * The remote session URL if pushed to remote
-   */
-  remoteSessionUrl?: string;
-  /**
-   * The remote session title if pushed to remote
-   */
-  remoteSessionTitle?: string;
   [k: string]: unknown;
 }
 export interface FileEditInput {
@@ -313,6 +528,80 @@ export interface ReadMcpResourceInput {
    * The resource URI to read
    */
   uri: string;
+}
+export interface SubscribeMcpResourceInput {
+  /**
+   * The MCP server name
+   */
+  server: string;
+  /**
+   * The resource URI to subscribe to
+   */
+  uri: string;
+  /**
+   * Optional reason for subscribing (included in update notifications)
+   */
+  reason?: string;
+}
+export interface UnsubscribeMcpResourceInput {
+  /**
+   * The MCP server name
+   */
+  server?: string;
+  /**
+   * The resource URI to unsubscribe from
+   */
+  uri?: string;
+  /**
+   * The subscription ID to unsubscribe
+   */
+  subscriptionId?: string;
+}
+export interface SubscribePollingInput {
+  /**
+   * The type of subscription: "tool" to poll a tool, "resource" to poll a resource URI
+   */
+  type: "tool" | "resource";
+  /**
+   * The MCP server name
+   */
+  server: string;
+  /**
+   * The tool to call periodically (required when type is "tool")
+   */
+  toolName?: string;
+  /**
+   * Arguments to pass to the tool on each call
+   */
+  arguments?: {
+    [k: string]: unknown;
+  };
+  /**
+   * The resource URI to poll (required when type is "resource")
+   */
+  uri?: string;
+  /**
+   * Polling interval in milliseconds (minimum 1000ms, default 5000ms)
+   */
+  intervalMs: number;
+  /**
+   * Optional reason for subscribing (included in change notifications)
+   */
+  reason?: string;
+}
+export interface UnsubscribePollingInput {
+  /**
+   * The subscription ID to unsubscribe
+   */
+  subscriptionId?: string;
+  /**
+   * The MCP server name
+   */
+  server?: string;
+  /**
+   * The target to unsubscribe (tool name for tool subscriptions, URI for resource subscriptions)
+   */
+  target?: string;
 }
 export interface TodoWriteInput {
   /**
@@ -1559,4 +1848,520 @@ export interface ConfigInput {
    * The new value. Omit to get current value.
    */
   value?: string | boolean | number;
+}
+export interface EnterWorktreeInput {
+  /**
+   * Optional name for the worktree. A random name is generated if not provided.
+   */
+  name?: string;
+}
+export interface BashOutput {
+  /**
+   * The standard output of the command
+   */
+  stdout: string;
+  /**
+   * The standard error output of the command
+   */
+  stderr: string;
+  /**
+   * Path to raw output file for large MCP tool outputs
+   */
+  rawOutputPath?: string;
+  /**
+   * Whether the command was interrupted
+   */
+  interrupted: boolean;
+  /**
+   * Flag to indicate if stdout contains image data
+   */
+  isImage?: boolean;
+  /**
+   * ID of the background task if command is running in background
+   */
+  backgroundTaskId?: string;
+  /**
+   * True if the user manually backgrounded the command with Ctrl+B
+   */
+  backgroundedByUser?: boolean;
+  /**
+   * Flag to indicate if sandbox mode was overridden
+   */
+  dangerouslyDisableSandbox?: boolean;
+  /**
+   * Semantic interpretation for non-error exit codes with special meaning
+   */
+  returnCodeInterpretation?: string;
+  /**
+   * Whether the command is expected to produce no output on success
+   */
+  noOutputExpected?: boolean;
+  /**
+   * Structured content blocks
+   */
+  structuredContent?: unknown[];
+  /**
+   * Path to the persisted full output in tool-results dir (set when output is too large for inline)
+   */
+  persistedOutputPath?: string;
+  /**
+   * Total size of the output in bytes (set when output is too large for inline)
+   */
+  persistedOutputSize?: number;
+}
+export interface ExitPlanModeOutput {
+  /**
+   * The plan that was presented to the user
+   */
+  plan: string | null;
+  isAgent: boolean;
+  /**
+   * The file path where the plan was saved
+   */
+  filePath?: string;
+  /**
+   * Whether the Task tool is available in the current context
+   */
+  hasTaskTool?: boolean;
+  /**
+   * When true, the teammate has sent a plan approval request to the team leader
+   */
+  awaitingLeaderApproval?: boolean;
+  /**
+   * Unique identifier for the plan approval request
+   */
+  requestId?: string;
+}
+export interface FileEditOutput {
+  /**
+   * The file path that was edited
+   */
+  filePath: string;
+  /**
+   * The original string that was replaced
+   */
+  oldString: string;
+  /**
+   * The new string that replaced it
+   */
+  newString: string;
+  /**
+   * The original file contents before editing
+   */
+  originalFile: string;
+  /**
+   * Diff patch showing the changes
+   */
+  structuredPatch: {
+    oldStart: number;
+    oldLines: number;
+    newStart: number;
+    newLines: number;
+    lines: string[];
+  }[];
+  /**
+   * Whether the user modified the proposed changes
+   */
+  userModified: boolean;
+  /**
+   * Whether all occurrences were replaced
+   */
+  replaceAll: boolean;
+  gitDiff?: {
+    filename: string;
+    status: "modified" | "added";
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch: string;
+  };
+}
+export interface FileWriteOutput {
+  /**
+   * Whether a new file was created or an existing file was updated
+   */
+  type: "create" | "update";
+  /**
+   * The path to the file that was written
+   */
+  filePath: string;
+  /**
+   * The content that was written to the file
+   */
+  content: string;
+  /**
+   * Diff patch showing the changes
+   */
+  structuredPatch: {
+    oldStart: number;
+    oldLines: number;
+    newStart: number;
+    newLines: number;
+    lines: string[];
+  }[];
+  /**
+   * The original file content before the write (null for new files)
+   */
+  originalFile: string | null;
+  gitDiff?: {
+    filename: string;
+    status: "modified" | "added";
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch: string;
+  };
+}
+export interface GlobOutput {
+  /**
+   * Time taken to execute the search in milliseconds
+   */
+  durationMs: number;
+  /**
+   * Total number of files found
+   */
+  numFiles: number;
+  /**
+   * Array of file paths that match the pattern
+   */
+  filenames: string[];
+  /**
+   * Whether results were truncated (limited to 100 files)
+   */
+  truncated: boolean;
+}
+export interface GrepOutput {
+  mode?: "content" | "files_with_matches" | "count";
+  numFiles: number;
+  filenames: string[];
+  content?: string;
+  numLines?: number;
+  numMatches?: number;
+  appliedLimit?: number;
+  appliedOffset?: number;
+}
+export interface TaskStopOutput {
+  /**
+   * Status message about the operation
+   */
+  message: string;
+  /**
+   * The ID of the task that was stopped
+   */
+  task_id: string;
+  /**
+   * The type of the task that was stopped
+   */
+  task_type: string;
+  /**
+   * The command or description of the stopped task
+   */
+  command?: string;
+}
+export interface NotebookEditOutput {
+  /**
+   * The new source code that was written to the cell
+   */
+  new_source: string;
+  /**
+   * The ID of the cell that was edited
+   */
+  cell_id?: string;
+  /**
+   * The type of the cell
+   */
+  cell_type: "code" | "markdown";
+  /**
+   * The programming language of the notebook
+   */
+  language: string;
+  /**
+   * The edit mode that was used
+   */
+  edit_mode: string;
+  /**
+   * Error message if the operation failed
+   */
+  error?: string;
+  /**
+   * The path to the notebook file
+   */
+  notebook_path: string;
+  /**
+   * The original notebook content before modification
+   */
+  original_file: string;
+  /**
+   * The updated notebook content after modification
+   */
+  updated_file: string;
+}
+export interface ReadMcpResourceOutput {
+  contents: {
+    /**
+     * Resource URI
+     */
+    uri: string;
+    /**
+     * MIME type of the content
+     */
+    mimeType?: string;
+    /**
+     * Text content of the resource
+     */
+    text?: string;
+  }[];
+}
+export interface SubscribeMcpResourceOutput {
+  /**
+   * Whether the subscription was successful
+   */
+  subscribed: boolean;
+  /**
+   * Unique identifier for this subscription
+   */
+  subscriptionId: string;
+}
+export interface UnsubscribeMcpResourceOutput {
+  /**
+   * Whether the unsubscription was successful
+   */
+  unsubscribed: boolean;
+}
+export interface SubscribePollingOutput {
+  /**
+   * Whether the subscription was successful
+   */
+  subscribed: boolean;
+  /**
+   * Unique identifier for this subscription
+   */
+  subscriptionId: string;
+}
+export interface UnsubscribePollingOutput {
+  /**
+   * Whether the unsubscription was successful
+   */
+  unsubscribed: boolean;
+}
+export interface TodoWriteOutput {
+  /**
+   * The todo list before the update
+   */
+  oldTodos: {
+    content: string;
+    status: "pending" | "in_progress" | "completed";
+    activeForm: string;
+  }[];
+  /**
+   * The todo list after the update
+   */
+  newTodos: {
+    content: string;
+    status: "pending" | "in_progress" | "completed";
+    activeForm: string;
+  }[];
+}
+export interface WebFetchOutput {
+  /**
+   * Size of the fetched content in bytes
+   */
+  bytes: number;
+  /**
+   * HTTP response code
+   */
+  code: number;
+  /**
+   * HTTP response code text
+   */
+  codeText: string;
+  /**
+   * Processed result from applying the prompt to the content
+   */
+  result: string;
+  /**
+   * Time taken to fetch and process the content
+   */
+  durationMs: number;
+  /**
+   * The URL that was fetched
+   */
+  url: string;
+}
+export interface WebSearchOutput {
+  /**
+   * The search query that was executed
+   */
+  query: string;
+  /**
+   * Search results and/or text commentary from the model
+   */
+  results: (
+    | {
+        /**
+         * ID of the tool use
+         */
+        tool_use_id: string;
+        /**
+         * Array of search hits
+         */
+        content: {
+          /**
+           * The title of the search result
+           */
+          title: string;
+          /**
+           * The URL of the search result
+           */
+          url: string;
+        }[];
+      }
+    | string
+  )[];
+  /**
+   * Time taken to complete the search operation
+   */
+  durationSeconds: number;
+}
+export interface AskUserQuestionOutput {
+  /**
+   * The questions that were asked
+   */
+  questions: {
+    /**
+     * The complete question to ask the user. Should be clear, specific, and end with a question mark. Example: "Which library should we use for date formatting?" If multiSelect is true, phrase it accordingly, e.g. "Which features do you want to enable?"
+     */
+    question: string;
+    /**
+     * Very short label displayed as a chip/tag (max 12 chars). Examples: "Auth method", "Library", "Approach".
+     */
+    header: string;
+    /**
+     * The available choices for this question. Must have 2-4 options. Each option should be a distinct, mutually exclusive choice (unless multiSelect is enabled). There should be no 'Other' option, that will be provided automatically.
+     *
+     * @minItems 2
+     * @maxItems 4
+     */
+    options:
+      | [
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          }
+        ]
+      | [
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          }
+        ]
+      | [
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          },
+          {
+            /**
+             * The display text for this option that the user will see and select. Should be concise (1-5 words) and clearly describe the choice.
+             */
+            label: string;
+            /**
+             * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
+             */
+            description: string;
+          }
+        ];
+    /**
+     * Set to true to allow the user to select multiple options instead of just one. Use when choices are not mutually exclusive.
+     */
+    multiSelect: boolean;
+  }[];
+  /**
+   * The answers provided by the user (question text -> answer string; multi-select answers are comma-separated)
+   */
+  answers: {
+    [k: string]: string;
+  };
+}
+export interface ConfigOutput {
+  success: boolean;
+  operation?: "get" | "set";
+  setting?: string;
+  value?: unknown;
+  previousValue?: unknown;
+  newValue?: unknown;
+  error?: string;
+}
+export interface EnterWorktreeOutput {
+  worktreePath: string;
+  worktreeBranch?: string;
+  message: string;
 }
