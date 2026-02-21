@@ -96,3 +96,4 @@
 - [cleanup](/_sources/sphinx/api-reference/update/cleanup.md.txt)
 - [isolated](/_sources/sphinx/api-reference/update/isolated.md.txt)
 - [update](/_sources/sphinx/api-reference/update/update.md.txt)
+- [Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow](/_sources/CLAUDE_CODE_BACKEND.md.txt)
