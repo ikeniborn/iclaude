@@ -197,6 +197,7 @@ fi
     USE_ROUTER_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
     posh_insecure=false
+    model_value=""  # Model selection (empty = use Claude Code default)
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -459,6 +460,16 @@ fi
                 USE_CHROME=false
                 shift
                 ;;
+            --model)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--model requires a model name argument"
+                    echo "Usage: iclaude --model claude-opus-4-6"
+                    echo "Available models: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5"
+                    exit 1
+                fi
+                model_value="$2"
+                shift 2
+                ;;
             --no-test)
                 skip_test=true
                 shift
@@ -611,6 +622,13 @@ fi
             claude_args+=("--chrome")
         fi
 
+        # Add --model flag if specified
+        if [[ -n "$model_value" ]]; then
+            claude_args+=("--model" "$model_value")
+            export CLAUDE_CODE_MODEL="$model_value"
+            print_info "Using model: $model_value"
+        fi
+
         # Launch Claude Code without proxy
         launch_claude "$use_system" "${claude_args[@]}"
         exit 0
@@ -710,6 +728,13 @@ fi
             print_info "Launching without browser automation..."
             echo ""
         fi
+    fi
+
+    # Add --model flag if specified
+    if [[ -n "$model_value" ]]; then
+        claude_args+=("--model" "$model_value")
+        export CLAUDE_CODE_MODEL="$model_value"
+        print_info "Using model: $model_value"
     fi
 
     # Launch Claude Code

@@ -56,6 +56,8 @@ OPTIONS:
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
   --no-chrome                       Disable Chrome integration (enabled by default)
+  --model MODEL                     Select Claude model (e.g. claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5)
+                                    Saved to config and applied on every launch until changed
   --install-lsp [LANGUAGES]         Install LSP servers+plugins (typescript, python, go, rust)
                                     Default: typescript and python
                                     Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
@@ -115,6 +117,11 @@ EXAMPLES:
 
   # Pass arguments to Claude Code
   iclaude -- --model claude-3-opus
+
+  # Select and save model for all future launches
+  iclaude --model claude-opus-4-6
+  iclaude --model claude-sonnet-4-6
+  iclaude --model claude-haiku-3-5
 
   # Disable permission checks (unsafe mode, skip confirmations)
   iclaude --no-save
