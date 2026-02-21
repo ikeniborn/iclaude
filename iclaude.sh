@@ -606,6 +606,11 @@ fi
             restore_git_proxy
         fi
 
+        # Save model selection to config if specified
+        if [[ -n "$model_value" ]]; then
+            save_model_to_config "$model_value"
+        fi
+
         # Check OAuth token expiration
         check_token_expiration
 
@@ -662,6 +667,11 @@ fi
     # Configure proxy
     print_info "Configuring proxy..."
     configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
+
+    # Save model selection to config if specified
+    if [[ -n "$model_value" ]]; then
+        save_model_to_config "$model_value"
+    fi
 
     # Display configuration
     display_proxy_info "$show_password"
