@@ -15,9 +15,6 @@
 #   save_isolated_lockfile || return 1
 #######################################
 save_isolated_lockfile() {
-	# Diagnostic trap: print exact failing line/command when set -e triggers
-	trap 'echo "[save_isolated_lockfile ERR] line $LINENO: $BASH_COMMAND (exit $?)" >&2' ERR
-
 	setup_isolated_nvm
 
 	# Source NVM (|| true: nvm_auto can fail with set -e in CI when no .nvmrc / default alias)
@@ -112,13 +109,14 @@ save_isolated_lockfile() {
 			local version
 			case "$server_cmd" in
 				pyright)
-					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					# || true: grep exits 1 if no match; with pipefail this kills set -e
+					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || true)
 					;;
 				vtsls)
-					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+')
+					version=$("$server_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || true)
 					;;
 				typescript-language-server)
-					version=$("$server_bin" --version 2>/dev/null)
+					version=$("$server_bin" --version 2>/dev/null || true)
 					;;
 			esac
 
@@ -265,7 +263,6 @@ save_isolated_lockfile() {
 	# Update hash after saving lockfile to keep hash in sync
 	update_lockfile_hash
 
-	trap - ERR  # Remove diagnostic trap
 	return 0
 }
 
