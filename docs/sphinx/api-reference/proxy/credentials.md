@@ -24,6 +24,21 @@ Save proxy credentials to file
 -   - Creates CREDENTIALS_FILE with chmod 600
 -   - May prompt user for domain-to-IP conversion (for HTTP proxies)
 
+## `save_model_to_config`
+
+Save model selection to credentials file
+
+**Arguments:**
+
+- `  $1 - Model name (e.g. claude-opus-4-6)`
+
+**Returns:**
+
+-   Exit code: 0 on success
+- Side effects:
+-   - Updates CLAUDE_CODE_MODEL line in CREDENTIALS_FILE (update-or-append)
+-   - Creates CREDENTIALS_FILE with chmod 600 if it doesn't exist
+
 ## `load_credentials`
 
 Load credentials from file
