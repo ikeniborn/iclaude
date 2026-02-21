@@ -17,8 +17,8 @@
 save_isolated_lockfile() {
 	setup_isolated_nvm
 
-	# Source NVM
-	[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+	# Source NVM (|| true: nvm_auto can fail with set -e in CI when no .nvmrc / default alias)
+	{ [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"; } || true
 
 	# Get versions
 	local node_version=$(node --version 2>/dev/null | sed 's/v//')
