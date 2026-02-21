@@ -109,7 +109,7 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
 - key_insights: максимум 3 пункта на компонент, конкретные факты (< 60 символов каждый)
 - Не читать llms-full.txt (слишком большой) — только llms.txt (индекс) + конкретные файлы
 
-### Шаг 3: [Опционально] Context7 External Docs
+### Шаг 3: [Опционально] Context7 External Docs + Deep Research Fallback
 
 Если `hints.skip_context7 == false` И задача использует внешние библиотеки:
 
@@ -122,6 +122,76 @@ mcp__context7__get_library_docs({library_id, topic})
 - Максимум 3 вызова Context7
 - Graceful skip если Context7 недоступен (не прерывать пайплайн)
 - Статус записать в `external_docs.context7_status`
+
+### Шаг 3b: [Опционально] Deep Research Agent (fallback или расширение)
+
+Запустить Deep Research Agent если выполнено **хотя бы одно** из условий:
+- Context7 недоступен (`context7_status: "PLUGIN_NOT_AVAILABLE"`) И задача требует актуальных внешних данных
+- `focus_areas` в `input.toon` содержит `"web_research"`
+- Задача явно касается внешних API, библиотек или технологий требующих актуальной документации
+
+**Протокол запуска:**
+
+```
+# 1. Сформировать запрос для Deep Research
+deep_query = "{конкретный вопрос о внешней библиотеке/API/технологии из задачи}"
+
+# 2. Записать запрос
+Write({WORKSPACE}/deep-research-request.toon, {
+  "deep_research_input": {
+    "query": deep_query,
+    "depth": "standard",
+    "max_sources": 10,
+    "focus_areas": [{relevant_focus_areas}],
+    "output_format": "structured",
+    "caller": "researcher",
+    "hints": {
+      "prefer_official_docs": true,
+      "recency_filter": null,
+      "language": "en",
+      "exclude_domains": []
+    }
+  }
+})
+
+# 3. Прочитать AGENT.md Deep Research
+AGENTS_DIR = {путь к agents/ директории — см. Шаг 0}
+deep_research_md = Read("{AGENTS_DIR}/deep-research-agent/AGENT.md")
+
+# 4. Запустить субагент (без запроса разрешения — CALLER=researcher)
+Task(
+  subagent_type="general-purpose",
+  prompt=deep_research_md + """
+
+WORKSPACE: {WORKSPACE}
+QUERY: {deep_query}
+DEPTH: standard
+MAX_SOURCES: 10
+CALLER: researcher
+"""
+)
+
+# 5. Прочитать результаты
+Read({WORKSPACE}/deep-research-results.toon)
+```
+
+**Интеграция результатов в research.toon:**
+```json
+"external_docs": {
+  "context7_status": "PLUGIN_NOT_AVAILABLE",
+  "deep_research_status": "COMPLETED",
+  "docs_found": [
+    {"source": "...", "topic": "...", "key_insights": ["insight1"]}
+  ],
+  "key_findings_summary": ["Ключевой вывод из веб-исследования"]
+}
+```
+
+**Правила:**
+- CALLER всегда `"researcher"` (разрешение уже получено от пользователя оркестратором)
+- Максимум 1 вызов Deep Research Agent (не запускать несколько раз)
+- Graceful skip если Deep Research вернул ошибку → `deep_research_status: "FAILED"`, продолжить
+- Если `hints.skip_context7 == true` → Deep Research тоже пропустить
 
 ### Шаг 4: Определить complexity_hint
 
@@ -169,7 +239,14 @@ mcp__context7__get_library_docs({library_id, topic})
         { "id": "R1", "description": "...", "severity": "low", "mitigation": "..." }
       ]
     },
-    "external_docs": { "context7_status": "PLUGIN_NOT_AVAILABLE" },
+    "external_docs": {
+      "context7_status": "PLUGIN_NOT_AVAILABLE",
+      "deep_research_status": "COMPLETED",
+      "docs_found": [
+        { "source": "https://...", "topic": "...", "key_insights": ["insight1"] }
+      ],
+      "key_findings_summary": ["Ключевой вывод из веб-исследования"]
+    },
     "local_docs": {
       "docs_status": "FOUND",
       "relevant_sections": [

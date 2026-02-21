@@ -1,0 +1,122 @@
+TOON:sources:v1
+url|title|type|reliability|fetched|key_insights
+https://docs.anthropic.com/claude/docs/models-overview|Claude Models Overview|official_docs|high|true|claude-sonnet-4-6 is latest; model IDs use format claude-{family}-{version}
+https://docs.anthropic.com/claude/reference/messages|Messages API Reference|official_docs|high|true|model field required; max_tokens required; system prompt as separate param
+https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md|Python SDK Changelog|github|high|true|SDK 0.40+ required for claude-sonnet-4-6; async client stable
+https://www.anthropic.com/pricing|Anthropic Pricing|official_docs|medium|true|claude-sonnet-4-6: $3/$15 per MTok input/output; prompt caching reduces cost 90%
+https://docs.anthropic.com/claude/docs/prompt-caching|Prompt Caching Docs|official_docs|high|true|cache_control: {type: ephemeral}; 5 min TTL; minimum 1024 tokens
+https://github.com/anthropics/anthropic-sdk-python/blob/main/examples/|SDK Usage Examples|github|high|true|streaming with stream=True; tool use pattern in examples/
+https://openrouter.ai/anthropic/claude-sonnet-4-6|OpenRouter claude-sonnet-4-6|article|medium|true|Available via OpenRouter; same model string; $3.50/$10.50 per MTok
+https://community.anthropic.com/t/sonnet-4-6-migration|Community Migration Thread|article|low|false|N/A
+
+---JSON---
+{
+  "deep_research_results": {
+    "metadata": {
+      "query": "claude-sonnet-4-6 model API features prompt caching 2026 official documentation",
+      "depth": "standard",
+      "sources_found": 11,
+      "sources_fetched": 7,
+      "search_queries_used": 5,
+      "timestamp": "2026-02-21T14:00:00Z",
+      "duration_estimate": "~3 min"
+    },
+    "key_findings": [
+      {
+        "finding": "Официальный model ID: 'claude-sonnet-4-6'; формат claude-{family}-{version}",
+        "confidence": "high",
+        "sources": [
+          "https://docs.anthropic.com/claude/docs/models-overview",
+          "https://docs.anthropic.com/claude/reference/messages"
+        ],
+        "contested": false
+      },
+      {
+        "finding": "Prompt caching требует cache_control: {type: ephemeral} в блоке контента",
+        "confidence": "high",
+        "sources": ["https://docs.anthropic.com/claude/docs/prompt-caching"],
+        "contested": false
+      },
+      {
+        "finding": "Anthropic Python SDK версии 0.40+ обязателен для claude-sonnet-4-6",
+        "confidence": "high",
+        "sources": ["https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md"],
+        "contested": false
+      },
+      {
+        "finding": "Pricing через OpenRouter отличается от прямого API ($3.50 vs $3 per MTok)",
+        "confidence": "medium",
+        "sources": [
+          "https://www.anthropic.com/pricing",
+          "https://openrouter.ai/anthropic/claude-sonnet-4-6"
+        ],
+        "contested": true
+      }
+    ],
+    "detailed_findings": {
+      "model_id": {
+        "summary": "Корректный model ID и форматы для API вызовов",
+        "key_points": [
+          "claude-sonnet-4-6 — актуальный идентификатор (2026)",
+          "Также доступны: claude-opus-4-6, claude-haiku-4-5",
+          "model поле обязательно в каждом Messages API запросе"
+        ],
+        "sources": ["https://docs.anthropic.com/claude/docs/models-overview"],
+        "contested_points": []
+      },
+      "prompt_caching": {
+        "summary": "Prompt caching снижает стоимость до 90% при повторных запросах",
+        "key_points": [
+          "Добавить cache_control: {type: ephemeral} к system prompt или user message",
+          "TTL кэша: 5 минут",
+          "Минимальный размер блока для кэширования: 1024 токенов",
+          "Cache hit cost: $0.30 per MTok (вместо $3)"
+        ],
+        "sources": ["https://docs.anthropic.com/claude/docs/prompt-caching"],
+        "contested_points": []
+      },
+      "sdk_requirements": {
+        "summary": "Требования к версии SDK и основные изменения",
+        "key_points": [
+          "pip install anthropic>=0.40.0",
+          "Async client: AsyncAnthropic() — stable API",
+          "Streaming: client.messages.stream() context manager"
+        ],
+        "sources": ["https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md"],
+        "contested_points": []
+      }
+    },
+    "contradictions": [
+      {
+        "topic": "Pricing через OpenRouter vs прямой API",
+        "position_a": {
+          "claim": "claude-sonnet-4-6 стоит $3/$15 per MTok input/output",
+          "source": "https://www.anthropic.com/pricing"
+        },
+        "position_b": {
+          "claim": "Через OpenRouter: $3.50/$10.50 per MTok",
+          "source": "https://openrouter.ai/anthropic/claude-sonnet-4-6"
+        },
+        "resolution": "position_a_stronger"
+      }
+    ],
+    "gaps": [
+      "Rate limits для production использования не задокументированы публично",
+      "Нет данных о SLA и uptime гарантиях для API"
+    ],
+    "sources": "<<TOON:sources>>",
+    "recommendations": {
+      "for_caller": "researcher",
+      "action_items": [
+        "Использовать 'claude-sonnet-4-6' как model ID в конфигурации",
+        "Обновить anthropic SDK до >=0.40.0",
+        "Добавить prompt caching для system prompt (>1024 токенов) для снижения стоимости",
+        "Предпочесть прямой Anthropic API вместо OpenRouter для оптимальной цены"
+      ],
+      "further_research_needed": [
+        "Rate limits для production использования"
+      ],
+      "confidence_overall": "high"
+    }
+  }
+}
