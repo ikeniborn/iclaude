@@ -430,6 +430,15 @@ Description: Repair symlinks and permissions after git clone or repository moves
 <li><p>1 - error</p></li>
 </ul>
 </section>
+<section id="repair-settings-paths">
+<h2><code class="docutils literal notranslate"><span class="pre">repair_settings_paths</span></code><a class="headerlink" href="#repair-settings-paths" title="Link to this heading">¶</a></h2>
+<p>Repair absolute paths in settings.json Detects hardcoded .claude-isolated paths from another machine/installation and replaces them with the current ISOLATED_CONFIG_DIR path. Called automatically at every launch and during –repair-isolated.</p>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p>0 - success (paths correct or fixed)</p></li>
+<li><p>1 - could not repair</p></li>
+</ul>
+</section>
 </section>
 
         </article>
@@ -491,6 +500,7 @@ Description: Repair symlinks and permissions after git clone or repository moves
 <li><a class="reference internal" href="#repair-isolated-environment"><code class="docutils literal notranslate"><span class="pre">repair_isolated_environment</span></code></a></li>
 <li><a class="reference internal" href="#create-npm-symlinks"><code class="docutils literal notranslate"><span class="pre">create_npm_symlinks</span></code></a></li>
 <li><a class="reference internal" href="#create-claude-symlink"><code class="docutils literal notranslate"><span class="pre">create_claude_symlink</span></code></a></li>
+<li><a class="reference internal" href="#repair-settings-paths"><code class="docutils literal notranslate"><span class="pre">repair_settings_paths</span></code></a></li>
 </ul>
 </li>
 </ul>
