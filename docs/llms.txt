@@ -97,4 +97,4 @@
 - [isolated](/_sources/sphinx/api-reference/update/isolated.md.txt)
 - [update](/_sources/sphinx/api-reference/update/update.md.txt)
 - [Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow](/_sources/CLAUDE_CODE_BACKEND.md.txt)
-- [Claude Code Router: маршрутизация и внешние модели](/_sources/ROUTER.md.txt)
+- [Claude Code Router: конфигурация и маршрутизация](/_sources/ROUTER.md.txt)

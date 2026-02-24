@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Claude Code Router: маршрутизация и внешние модели - iclaude Documentation</title>
+        <title>Claude Code Router: конфигурация и маршрутизация - iclaude Documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -370,261 +370,53 @@
         </div>
         <article role="main" id="furo-main-content">
           <section id="claude-code-router">
-<h1>Claude Code Router: маршрутизация и внешние модели<a class="headerlink" href="#claude-code-router" title="Link to this heading">¶</a></h1>
+<h1>Claude Code Router: конфигурация и маршрутизация<a class="headerlink" href="#claude-code-router" title="Link to this heading">¶</a></h1>
 <blockquote>
-<div><p>Руководство по настройке Claude Code Router (CCR) для работы с альтернативными LLM-провайдерами.
-Особый фокус — маршрутизация sub-agents по слотам и подключение внешних моделей (Ollama, DeepSeek, OpenRouter).</p>
-<p>Дата: 2026-02-24 | Версия: 4.0</p>
+<div><p>Точная документация Claude Code Router (CCR v2.0.0) на основе анализа исходного кода.
+Охватывает все поддерживаемые параметры конфигурации, слоты маршрутизации и внешние модели.</p>
+<p>Дата: 2026-02-24 | CCR версия: 2.0.0 (&#64;musistudio/claude-code-router)</p>
 </div></blockquote>
 <hr class="docutils" />
 <section id="id1">
 <h2>Содержание<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="#%D0%B1%D1%8B%D1%81%D1%82%D1%80%D1%8B%D0%B9-%D1%81%D1%82%D0%B0%D1%80%D1%82"><span class="xref myst">Быстрый старт</span></a></p></li>
-<li><p><a class="reference internal" href="#%D0%BA%D0%B0%D0%BA-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0%D0%B5%D1%82-%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F"><span class="xref myst">Как работает маршрутизация</span></a></p></li>
-<li><p><a class="reference internal" href="#%D1%81%D0%BB%D0%BE%D1%82%D1%8B-router-%D0%B8-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B8-%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D0%BE%D0%B2"><span class="xref myst">Слоты Router и модели агентов</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BA%D0%B0%D0%BA-iclaude-%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D1%83%D0%B5%D1%82-router"><span class="xref myst">Как iclaude использует Router</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BF%D0%BE%D0%BB%D0%BD%D0%B0%D1%8F-%D1%81%D1%85%D0%B5%D0%BC%D0%B0-routerjson"><span class="xref myst">Полная схема router.json</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BF%D0%B0%D1%80%D0%B0%D0%BC%D0%B5%D1%82%D1%80%D1%8B-%D0%B2%D0%B5%D1%80%D1%85%D0%BD%D0%B5%D0%B3%D0%BE-%D1%83%D1%80%D0%BE%D0%B2%D0%BD%D1%8F"><span class="xref myst">Параметры верхнего уровня</span></a></p></li>
+<li><p><a class="reference internal" href="#providers--%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%B9%D0%B4%D0%B5%D1%80%D1%8B-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B5%D0%B9"><span class="xref myst">Providers — провайдеры моделей</span></a></p></li>
+<li><p><a class="reference internal" href="#transformer--%D1%82%D0%B8%D0%BF%D1%8B-%D1%82%D1%80%D0%B0%D0%BD%D1%81%D1%84%D0%BE%D1%80%D0%BC%D0%B5%D1%80%D0%BE%D0%B2"><span class="xref myst">Transformer — типы трансформеров</span></a></p></li>
+<li><p><a class="reference internal" href="#router--%D1%81%D0%BB%D0%BE%D1%82%D1%8B-%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8"><span class="xref myst">Router — слоты маршрутизации</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F-sub-agents"><span class="xref myst">Маршрутизация sub-agents</span></a></p></li>
 <li><p><a class="reference internal" href="#%D0%B2%D0%BD%D0%B5%D1%88%D0%BD%D0%B8%D0%B5-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B8-%D1%87%D0%B5%D1%80%D0%B5%D0%B7-ollama"><span class="xref myst">Внешние модели через Ollama</span></a></p></li>
-<li><p><a class="reference internal" href="#%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3%D1%83%D1%80%D0%B0%D1%86%D0%B8%D1%8F-routerjson"><span class="xref myst">Конфигурация router.json</span></a></p></li>
-<li><p><a class="reference internal" href="#%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%B9%D0%B4%D0%B5%D1%80%D1%8B"><span class="xref myst">Провайдеры</span></a></p></li>
-<li><p><a class="reference internal" href="#%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5-%D0%BE%D0%BA%D1%80%D1%83%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F"><span class="xref myst">Переменные окружения</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80%D1%8B-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3%D1%83%D1%80%D0%B0%D1%86%D0%B8%D0%B8"><span class="xref myst">Примеры конфигурации</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-router"><span class="xref myst">Custom Router</span></a></p></li>
 <li><p><a class="reference internal" href="#%D0%B4%D0%B8%D0%B0%D0%B3%D0%BD%D0%BE%D1%81%D1%82%D0%B8%D0%BA%D0%B0"><span class="xref myst">Диагностика</span></a></p></li>
 </ul>
 </section>
 <hr class="docutils" />
-<section id="id2">
-<h2>Быстрый старт<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Установить Router</span>
-./iclaude.sh<span class="w"> </span>--install-router
-
-<span class="c1"># Проверить статус</span>
-./iclaude.sh<span class="w"> </span>--check-router
-
-<span class="c1"># Запустить через Router</span>
-./iclaude.sh<span class="w"> </span>--router
+<section id="iclaude-router">
+<h2>Как iclaude использует Router<a class="headerlink" href="#iclaude-router" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">1.</span> <span class="o">./</span><span class="n">iclaude</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">router</span>
+<span class="mf">2.</span> <span class="n">launcher</span><span class="o">/</span><span class="n">launch</span><span class="o">.</span><span class="n">sh</span> <span class="n">читает</span><span class="p">:</span> <span class="o">.</span><span class="n">nvm</span><span class="o">-</span><span class="n">isolated</span><span class="o">/.</span><span class="n">claude</span><span class="o">-</span><span class="n">isolated</span><span class="o">/</span><span class="n">router</span><span class="o">.</span><span class="n">json</span>
+<span class="mf">3.</span> <span class="n">Копирует</span> <span class="n">в</span><span class="p">:</span> <span class="o">~/.</span><span class="n">claude</span><span class="o">-</span><span class="n">code</span><span class="o">-</span><span class="n">router</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">json</span>
+<span class="mf">4.</span> <span class="n">Запускает</span><span class="p">:</span> <span class="n">ccr</span> <span class="n">code</span> <span class="p">[</span><span class="n">args</span><span class="p">]</span>
+<span class="mf">5.</span> <span class="n">CCR</span> <span class="n">читает</span> <span class="n">конфиг</span> <span class="n">из</span> <span class="o">~/.</span><span class="n">claude</span><span class="o">-</span><span class="n">code</span><span class="o">-</span><span class="n">router</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">json</span>
+<span class="mf">6.</span> <span class="n">CCR</span> <span class="n">слушает</span> <span class="n">на</span> <span class="n">PORT</span> <span class="p">(</span><span class="mi">3456</span><span class="p">)</span> <span class="n">и</span> <span class="n">проксирует</span> <span class="n">запросы</span> <span class="n">Claude</span> <span class="n">Code</span>
 </pre></div>
 </div>
-<p><strong>По умолчанию Router отключён.</strong> Флаг <code class="docutils literal notranslate"><span class="pre">--router</span></code> — opt-in.</p>
-</section>
-<hr class="docutils" />
-<section id="id3">
-<h2>Как работает маршрутизация<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
-<p>CCR Router перехватывает HTTP-запросы от Claude Code к Anthropic API и перенаправляет их к настроенным провайдерам по правилам из <code class="docutils literal notranslate"><span class="pre">router.json</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Claude Code
-    │
-    ▼
-CCR Router (порт 3456)
-    │
-    ├── haiku-модель → Router.background → Ollama / DeepSeek
-    ├── web_search → Router.webSearch → провайдер с поиском
-    ├── thinking → Router.think → провайдер с reasoning
-    └── всё остальное → Router.default → DeepSeek / OpenRouter
-</pre></div>
-</div>
-<section id="id4">
-<h3>Правила маршрутизации (приоритет)<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Условие</p></th>
-<th class="head"><p>Слот</p></th>
-<th class="head"><p>Описание</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>model содержит <code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
-<td><p>Лёгкие фоновые задачи</p></td>
-</tr>
-<tr class="row-odd"><td><p>запрос использует <code class="docutils literal notranslate"><span class="pre">web_search</span></code> tools</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.webSearch</span></code></p></td>
-<td><p>Провайдер с веб-поиском</p></td>
-</tr>
-<tr class="row-even"><td><p>запрос содержит <code class="docutils literal notranslate"><span class="pre">thinking</span></code> блок</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.think</span></code></p></td>
-<td><p>Провайдер с extended thinking</p></td>
-</tr>
-<tr class="row-odd"><td><p>всё остальное</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
-<td><p>Основной провайдер</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="router">
-<h2>Слоты Router и модели агентов<a class="headerlink" href="#router" title="Link to this heading">¶</a></h2>
-<section id="agent-md">
-<h3>Фиксация модели в AGENT.md<a class="headerlink" href="#agent-md" title="Link to this heading">¶</a></h3>
-<p>Claude Code v2.1.51+ поддерживает поле <code class="docutils literal notranslate"><span class="pre">model</span></code> в YAML-фронтматтере агента.</p>
-<p><strong>Допустимые значения</strong> (только алиасы, полные ID молча игнорируются):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">haiku</span> <span class="o">|</span> <span class="n">sonnet</span> <span class="o">|</span> <span class="n">opus</span> <span class="o">|</span> <span class="n">best</span> <span class="o">|</span> <span class="n">sonnet</span><span class="p">[</span><span class="mi">1</span><span class="n">m</span><span class="p">]</span> <span class="o">|</span> <span class="n">opus</span><span class="p">[</span><span class="mi">1</span><span class="n">m</span><span class="p">]</span> <span class="o">|</span> <span class="n">opusplan</span> <span class="o">|</span> <span class="n">inherit</span>
-</pre></div>
-</div>
-<p><strong>Пример frontmatter:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">---</span>
-<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">researcher-agent</span>
-<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Агент-исследователь кодовой базы</span>
-<span class="nt">tools</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Glob, Grep, Read, Write, Task</span>
-<span class="nt">maxTurns</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
-<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span>
-<span class="nn">---</span>
-</pre></div>
-</div>
-</section>
-<section id="id5">
-<h3>Текущая конфигурация агентов пайплайна<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Агент</p></th>
-<th class="head"><p>Модель</p></th>
-<th class="head"><p>Слот CCR</p></th>
-<th class="head"><p>Обоснование</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
-<td><p>READ-ONLY поиск, maxTurns=60, нужна скорость</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">planning-agent</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
-<td><p>Структурированная трансляция по шаблону, maxTurns=25</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">critic-agent</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
-<td><p>Сложный scoring по рубрикам, требует точности</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">execution-agent</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
-<td><p>Редактирование кода, git, recovery protocol</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="ccr">
-<h3>Как CCR определяет слот агента<a class="headerlink" href="#ccr" title="Link to this heading">¶</a></h3>
-<p>CCR читает поле <code class="docutils literal notranslate"><span class="pre">model</span></code> из запроса. Когда агент объявлен с <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code>:</p>
-<ol class="arabic simple">
-<li><p>Claude Code резолвит алиас <code class="docutils literal notranslate"><span class="pre">haiku</span></code> → <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code></p></li>
-<li><p>CCR видит модель содержащую <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> AND <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code></p></li>
-<li><p>CCR выбирает <code class="docutils literal notranslate"><span class="pre">Router.background</span></code> провайдер</p></li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>agent (model: haiku)
-    │
-    └─→ Claude Code → &quot;claude-haiku-4-5-20251001&quot;
-                           │
-                           └─→ CCR → Router.background → провайдер
-</pre></div>
-</div>
-</section>
-<section id="id6">
-<h3>Приоритет выбора модели<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. CLAUDE_CODE_SUBAGENT_MODEL (env var)  ← глобальный override
-2. --model флаг при вызове Task()
-3. AGENT.md frontmatter.model            ← фиксация на уровне агента
-4. inherit                               ← наследует модель родителя
-</pre></div>
-</div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="ollama">
-<h2>Внешние модели через Ollama<a class="headerlink" href="#ollama" title="Link to this heading">¶</a></h2>
-<section id="id7">
-<h3>Подключение Ollama<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
-<p>Ollama предоставляет OpenAI-совместимый API на <code class="docutils literal notranslate"><span class="pre">http://localhost:11434/v1</span></code>.</p>
-<p><strong>Шаг 1: Запустить Ollama и загрузить модель</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Установить Ollama</span>
-curl<span class="w"> </span>-fsSL<span class="w"> </span>https://ollama.ai/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
-
-<span class="c1"># Загрузить модель для кода (рекомендуется для background-агентов)</span>
-ollama<span class="w"> </span>pull<span class="w"> </span>qwen2.5-coder:7b
-
-<span class="c1"># Или лёгкую универсальную модель</span>
-ollama<span class="w"> </span>pull<span class="w"> </span>llama3.1:8b
-
-<span class="c1"># Проверить</span>
-ollama<span class="w"> </span>list
-curl<span class="w"> </span>http://localhost:11434/v1/models
-</pre></div>
-</div>
-<p><strong>Шаг 2: Переключить <code class="docutils literal notranslate"><span class="pre">Router.background</span></code> на Ollama</strong></p>
-<p>В файле <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/router.json</span></code>:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Теперь <code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code> и <code class="docutils literal notranslate"><span class="pre">planning-agent</span></code> (с <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code>) будут работать через локальную Ollama.</p>
-</section>
-<section id="id8">
-<h3>Выбор модели Ollama<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Задача агента</p></th>
-<th class="head"><p>Рекомендуемая модель</p></th>
-<th class="head"><p>Размер</p></th>
-<th class="head"><p>VRAM</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>Поиск и индексация (researcher)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
-<td><p>4.7 GB</p></td>
-<td><p>6 GB</p></td>
-</tr>
-<tr class="row-odd"><td><p>Планирование по шаблону (planner)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
-<td><p>4.7 GB</p></td>
-<td><p>6 GB</p></td>
-</tr>
-<tr class="row-even"><td><p>Лёгкая альтернатива</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">llama3.1:8b</span></code></p></td>
-<td><p>4.9 GB</p></td>
-<td><p>6 GB</p></td>
-</tr>
-<tr class="row-odd"><td><p>Минимальные ресурсы</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:1.5b</span></code></p></td>
-<td><p>1.0 GB</p></td>
-<td><p>2 GB</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="ollama-proxy">
-<h3>Ollama через proxy<a class="headerlink" href="#ollama-proxy" title="Link to this heading">¶</a></h3>
-<p>Если iclaude работает с прокси, Ollama (localhost) нужно добавить в NO_PROXY:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Это уже настроено в iclaude.sh по умолчанию:</span>
-<span class="nv">NO_PROXY</span><span class="o">=</span><span class="s2">&quot;localhost,127.0.0.1,...&quot;</span>
-</pre></div>
-</div>
-<p>CCR Router работает через прокси для внешних провайдеров и напрямую для localhost.</p>
-</section>
+<p><strong>Важно:</strong> редактировать нужно <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/router.json</span></code> — iclaude автоматически копирует его в нужное место при каждом запуске с <code class="docutils literal notranslate"><span class="pre">--router</span></code>.</p>
 </section>
 <hr class="docutils" />
 <section id="router-json">
-<h2>Конфигурация router.json<a class="headerlink" href="#router-json" title="Link to this heading">¶</a></h2>
-<p>Файл: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/router.json</span></code></p>
-<section id="deepseek-ollama">
-<h3>Полный пример — DeepSeek + Ollama<a class="headerlink" href="#deepseek-ollama" title="Link to this heading">¶</a></h3>
+<h2>Полная схема router.json<a class="headerlink" href="#router-json" title="Link to this heading">¶</a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;PROXY_URL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://user:pass@proxy.example.com:8118&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;NON_INTERACTIVE_MODE&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
@@ -634,283 +426,756 @@ curl<span class="w"> </span>http://localhost:11434/v1/models
 <span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek&quot;</span><span class="p">]</span>
 <span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;llama3.1:8b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mistral:7b&quot;</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]</span>
-<span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">],</span>
 <span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;think&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContext&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContextThreshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;webSearch&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,perplexity/sonar&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,openai/gpt-4o&quot;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 </section>
-<section id="id9">
-<h3>Стратегии маршрутизации<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
-<section id="id10">
-<h4>Вариант 1: Всё через один провайдер (текущий по умолчанию)<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h4>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span>
-<span class="p">}</span>
+<hr class="docutils" />
+<section id="id2">
+<h2>Параметры верхнего уровня<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Все параметры подтверждены анализом исходного кода CCR (<code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>, строка 969):</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nx">Providers</span><span class="o">:</span><span class="nx">u</span><span class="p">,</span><span class="w"> </span><span class="nx">Router</span><span class="o">:</span><span class="nx">l</span><span class="p">,</span><span class="w"> </span><span class="nx">PORT</span><span class="o">:</span><span class="nx">c</span><span class="p">,</span><span class="w"> </span><span class="nx">HOST</span><span class="o">:</span><span class="nx">h</span><span class="p">,</span><span class="w"> </span><span class="nx">API_TIMEOUT_MS</span><span class="o">:</span><span class="nx">p</span><span class="p">,</span>
+<span class="w"> </span><span class="nx">PROXY_URL</span><span class="o">:</span><span class="nx">A</span><span class="p">,</span><span class="w"> </span><span class="nx">LOG</span><span class="o">:</span><span class="nx">d</span><span class="p">,</span><span class="w"> </span><span class="nx">LOG_LEVEL</span><span class="o">:</span><span class="nx">f</span><span class="p">,</span><span class="w"> </span><span class="nx">StatusLine</span><span class="o">:</span><span class="nx">g</span><span class="p">,</span><span class="w"> </span><span class="nx">NON_INTERACTIVE_MODE</span><span class="o">:</span><span class="nx">E</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="nx">D</span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">a</span>
 </pre></div>
 </div>
-<p>Оба слота используют DeepSeek. Агенты-исследователи и исполнители идут к одному провайдеру.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head text-center"><p>Обязательный</p></th>
+<th class="head text-center"><p>По умолчанию</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PORT</span></code></p></td>
+<td><p>number</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">3456</span></code></p></td>
+<td><p>Порт локального CCR-сервера</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">HOST</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code></p></td>
+<td><p>Хост локального CCR-сервера</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LOG</span></code></p></td>
+<td><p>boolean</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+<td><p>Включить логирование</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LOG_LEVEL</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">&quot;info&quot;</span></code></p></td>
+<td><p>Уровень лога: <code class="docutils literal notranslate"><span class="pre">debug</span></code>, <code class="docutils literal notranslate"><span class="pre">info</span></code>, <code class="docutils literal notranslate"><span class="pre">warn</span></code>, <code class="docutils literal notranslate"><span class="pre">error</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_TIMEOUT_MS</span></code></p></td>
+<td><p>number</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">30000</span></code></p></td>
+<td><p>Таймаут запросов к провайдерам в мс</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PROXY_URL</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p>—</p></td>
+<td><p>Прокси для запросов к внешним провайдерам</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NON_INTERACTIVE_MODE</span></code></p></td>
+<td><p>boolean</p></td>
+<td class="text-center"><p>нет</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+<td><p>Отключить интерактивный режим настройки</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Providers</span></code></p></td>
+<td><p>array</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td class="text-center"><p>—</p></td>
+<td><p>Список провайдеров моделей</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Router</span></code></p></td>
+<td><p>object</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td class="text-center"><p>—</p></td>
+<td><p>Правила маршрутизации по слотам</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="proxy-url">
+<h3>PROXY_URL<a class="headerlink" href="#proxy-url" title="Link to this heading">¶</a></h3>
+<p>Применяется ко всем запросам CCR к внешним провайдерам. Формат:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">user</span><span class="p">:</span><span class="k">pass</span><span class="nd">@proxy</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="mi">8118</span>
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">proxy</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="mi">8118</span>
+</pre></div>
+</div>
+<p><strong>Примечание:</strong> iclaude также устанавливает <code class="docutils literal notranslate"><span class="pre">HTTPS_PROXY</span></code> / <code class="docutils literal notranslate"><span class="pre">HTTP_PROXY</span></code> в окружении перед запуском CCR. Для localhost-провайдеров (Ollama) прокси не применяется, так как <code class="docutils literal notranslate"><span class="pre">localhost</span></code> в <code class="docutils literal notranslate"><span class="pre">NO_PROXY</span></code>.</p>
 </section>
-<section id="id11">
-<h4>Вариант 2: Разделение — локальные фоновые, удалённые основные<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h4>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
+<section id="api-timeout-ms">
+<h3>API_TIMEOUT_MS<a class="headerlink" href="#api-timeout-ms" title="Link to this heading">¶</a></h3>
+<p>Рекомендуемые значения:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code>, <code class="docutils literal notranslate"><span class="pre">planning-agent</span></code> (haiku) → Ollama (бесплатно, локально)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">critic-agent</span></code>, <code class="docutils literal notranslate"><span class="pre">execution-agent</span></code> (sonnet) → DeepSeek (качество)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">30000</span></code> (30 сек) — быстрые API (DeepSeek, OpenRouter)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">600000</span></code> (10 мин) — медленные эндпоинты, агрессивные таймауты корпоративного прокси</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1200000</span></code> (20 мин) — Ollama на CPU</p></li>
 </ul>
 </section>
-<section id="ollama-api">
-<h4>Вариант 3: Полный Ollama (без внешних API)<a class="headerlink" href="#ollama-api" title="Link to this heading">¶</a></h4>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:1.5b&quot;</span>
-<span class="p">}</span>
+</section>
+<hr class="docutils" />
+<section id="providers">
+<h2>Providers — провайдеры моделей<a class="headerlink" href="#providers" title="Link to this heading">¶</a></h2>
+<p>Каждый элемент массива <code class="docutils literal notranslate"><span class="pre">Providers</span></code> описывает один LLM-провайдер.</p>
+<section id="id3">
+<h3>Поля провайдера<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>Подтверждено из исходного кода CCR (строки 928–931):</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">t</span><span class="p">,</span><span class="w"> </span><span class="nx">api_base_url</span><span class="o">:</span><span class="w"> </span><span class="nx">r</span><span class="p">,</span><span class="w"> </span><span class="nx">api_key</span><span class="o">:</span><span class="w"> </span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">models</span><span class="o">:</span><span class="w"> </span><span class="nx">o</span><span class="p">}</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">a</span><span class="p">)</span><span class="w"> </span><span class="nx">i</span><span class="p">.</span><span class="nx">transformer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">a</span>
 </pre></div>
 </div>
-<p>Все агенты работают локально. Требует мощного GPU.</p>
-</section>
-<section id="openrouter">
-<h4>Вариант 4: OpenRouter как агрегатор<a class="headerlink" href="#openrouter" title="Link to this heading">¶</a></h4>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://openrouter.ai/api/v1/chat/completions&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${OPENROUTER_API_KEY}&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;google/gemini-flash-1.5&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;meta-llama/llama-3.1-70b-instruct&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;mistralai/mistral-7b-instruct&quot;</span>
-<span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,meta-llama/llama-3.1-70b-instruct&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,google/gemini-flash-1.5&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head text-center"><p>Обязательное</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td><p>Уникальный идентификатор провайдера (используется в Router)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">api_base_url</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td><p>URL API эндпоинта (валидируется через <code class="docutils literal notranslate"><span class="pre">new</span> <span class="pre">URL()</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">api_key</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td><p>API ключ. Поддерживает <code class="docutils literal notranslate"><span class="pre">${ENV_VAR}</span></code> placeholders</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">models</span></code></p></td>
+<td><p>string[]</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td><p>Список доступных моделей провайдера</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">transformer</span></code></p></td>
+<td><p>object</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Конфигурация трансформеров запроса/ответа</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">transformer.use</span></code></p></td>
+<td><p>array</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Список применяемых трансформеров (см. ниже)</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </section>
-</section>
-<section id="id12">
-<h3>Переменные в router.json<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
-<p>CCR поддерживает <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code> placeholders для секретов:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span>
-<span class="p">}</span>
+<section id="router">
+<h3>Синтаксис ссылки на провайдера в Router<a class="headerlink" href="#router" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;provider_name,model_name&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Экспортировать перед запуском</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">DEEPSEEK_API_KEY</span><span class="o">=</span><span class="s2">&quot;sk-...&quot;</span>
+<p>Пример: <code class="docutils literal notranslate"><span class="pre">&quot;deepseek,deepseek-chat&quot;</span></code> → провайдер <code class="docutils literal notranslate"><span class="pre">deepseek</span></code>, модель <code class="docutils literal notranslate"><span class="pre">deepseek-chat</span></code>.</p>
+</section>
+<section id="api-key">
+<h3>Переменные окружения в api_key<a class="headerlink" href="#api-key" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">DEEPSEEK_API_KEY</span><span class="o">=</span><span class="s2">&quot;sk-...&quot;</span>
 ./iclaude.sh<span class="w"> </span>--router
 </pre></div>
 </div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="id13">
-<h2>Провайдеры<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
-<section id="id14">
-<h3>Поддерживаемые провайдеры<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<section id="transformer">
+<h2>Transformer — типы трансформеров<a class="headerlink" href="#transformer" title="Link to this heading">¶</a></h2>
+<p>Трансформеры преобразуют запросы/ответы между форматами Anthropic API и форматом провайдера.</p>
+<section id="dist-cli-js-902">
+<h3>Полный список (подтверждён из <code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>, строка 902)<a class="headerlink" href="#dist-cli-js-902" title="Link to this heading">¶</a></h3>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">g8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;anthropic&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gemini&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;groq&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;maxtoken&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;tooluse&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gemini-cli&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;reasoning&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;sampling&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;enhancetool&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;cleancache&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vertex-gemini&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;chutes-glm&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;qwen-cli&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;rovo-cli&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Провайдер</p></th>
-<th class="head"><p>Transformer</p></th>
-<th class="head"><p>API Base URL</p></th>
-<th class="head"><p>Примечание</p></th>
+<tr class="row-odd"><th class="head"><p>Трансформер</p></th>
+<th class="head"><p>Назначение</p></th>
+<th class="head"><p>Когда использовать</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>DeepSeek</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">deepseek</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://api.deepseek.com/v1/chat/completions</span></code></p></td>
-<td><p>Дешёвый, хорошее качество</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">anthropic</span></code></p></td>
+<td><p>Адаптация под Anthropic-совместимый API</p></td>
+<td><p>Bedrock, Vertex Anthropic</p></td>
 </tr>
-<tr class="row-odd"><td><p>Ollama</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">http://localhost:11434/v1</span></code></p></td>
-<td><p>Локальный, бесплатный</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deepseek</span></code></p></td>
+<td><p>DeepSeek-специфичные заголовки и формат</p></td>
+<td><p>api.deepseek.com и совместимые</p></td>
 </tr>
-<tr class="row-even"><td><p>OpenRouter</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://openrouter.ai/api/v1/chat/completions</span></code></p></td>
-<td><p>Агрегатор 200+ моделей</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gemini</span></code></p></td>
+<td><p>Google Gemini API (иной формат запроса)</p></td>
+<td><p>generativelanguage.googleapis.com</p></td>
 </tr>
-<tr class="row-odd"><td><p>Gemini</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">gemini</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://generativelanguage.googleapis.com</span></code></p></td>
-<td><p>Google модели</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gemini-cli</span></code></p></td>
+<td><p>Gemini через CLI-инструмент</p></td>
+<td><p>Gemini CLI интеграция</p></td>
 </tr>
-<tr class="row-even"><td><p>OpenAI</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://api.openai.com/v1</span></code></p></td>
-<td><p>GPT-4o</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vertex-gemini</span></code></p></td>
+<td><p>Google Vertex AI с Gemini</p></td>
+<td><p>Vertex AI эндпоинты</p></td>
 </tr>
-<tr class="row-odd"><td><p>SiliconFlow</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://api.siliconflow.cn/v1</span></code></p></td>
-<td><p>Китайский агрегатор</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">openrouter</span></code></p></td>
+<td><p>OpenRouter маршрутизация + <code class="docutils literal notranslate"><span class="pre">provider.only</span></code></p></td>
+<td><p>openrouter.ai</p></td>
 </tr>
-<tr class="row-even"><td><p>Volcengine</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">https://ark.cn-beijing.volces.com/api/v3</span></code></p></td>
-<td><p>ByteDance</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">groq</span></code></p></td>
+<td><p>Groq-специфичная адаптация</p></td>
+<td><p>api.groq.com</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tooluse</span></code></p></td>
+<td><p>Совместимость tool use для сторонних API</p></td>
+<td><p>OpenAI-compatible эндпоинты (Ollama, и др.)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">reasoning</span></code></p></td>
+<td><p>Конвертация <code class="docutils literal notranslate"><span class="pre">reasoning_content</span></code> → <code class="docutils literal notranslate"><span class="pre">thinking</span></code></p></td>
+<td><p>Провайдеры с extended reasoning</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">maxtoken</span></code></p></td>
+<td><p>Ограничение <code class="docutils literal notranslate"><span class="pre">max_tokens</span></code></p></td>
+<td><p>Любой провайдер</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sampling</span></code></p></td>
+<td><p>Настройка параметров сэмплирования</p></td>
+<td><p>Кастомная настройка temperature/top_p</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">enhancetool</span></code></p></td>
+<td><p>Расширенная поддержка tool calls</p></td>
+<td><p>Улучшение совместимости инструментов</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cleancache</span></code></p></td>
+<td><p>Очистка кэша промптов</p></td>
+<td><p>Работа с кэшированием</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">chutes-glm</span></code></p></td>
+<td><p>Chutes GLM модели</p></td>
+<td><p>chutes.ai API</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">qwen-cli</span></code></p></td>
+<td><p>Qwen CLI интеграция</p></td>
+<td><p>Qwen через CLI</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rovo-cli</span></code></p></td>
+<td><p>Rovo CLI интеграция</p></td>
+<td><p>Rovo Dev CLI</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<blockquote>
+<div><p><strong>Важно:</strong> <code class="docutils literal notranslate"><span class="pre">&quot;openai&quot;</span></code> — <strong>не является</strong> валидным трансформером. Для OpenAI-совместимых API (Ollama, LM Studio, vLLM) используйте <code class="docutils literal notranslate"><span class="pre">&quot;tooluse&quot;</span></code>.</p>
+</div></blockquote>
 </section>
-<section id="transformer">
-<h3>Transformer типы<a class="headerlink" href="#transformer" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Transformer</p></th>
-<th class="head"><p>Назначение</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
-<td><p>Стандартный OpenAI-совместимый API</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deepseek</span></code></p></td>
-<td><p>DeepSeek-специфичные заголовки и форматирование</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gemini</span></code></p></td>
-<td><p>Google Gemini API (другой формат запроса)</p></td>
-</tr>
-</tbody>
-</table>
+<section id="transformer-use">
+<h3>Формат transformer.use<a class="headerlink" href="#transformer-use" title="Link to this heading">¶</a></h3>
+<p>Простой список:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>С параметрами (tuple-формат):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;maxtoken&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;max_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30000</span><span class="p">}],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;only&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;moonshotai/fp8&quot;</span><span class="p">]}}]</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Без трансформера (Ollama, стандартный OpenAI):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
 </div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="id15">
-<h2>Переменные окружения<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<section id="id4">
+<h2>Router — слоты маршрутизации<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Объект <code class="docutils literal notranslate"><span class="pre">Router</span></code> определяет какой провайдер/модель использовать для каждого типа запроса.</p>
+<section id="dist-cli-js-907912">
+<h3>Поддерживаемые слоты (подтверждено из <code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>, строки 907–912)<a class="headerlink" href="#dist-cli-js-907912" title="Link to this heading">¶</a></h3>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Default Model:`</span><span class="p">),</span><span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">Router</span><span class="p">.</span><span class="k">default</span><span class="p">)</span>
+<span class="nx">e</span><span class="p">.</span><span class="nx">Router</span><span class="p">.</span><span class="nx">background</span><span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Background Model:`</span><span class="p">,</span><span class="w">  </span><span class="nx">Router</span><span class="p">.</span><span class="nx">background</span><span class="p">)</span>
+<span class="nx">e</span><span class="p">.</span><span class="nx">Router</span><span class="p">.</span><span class="nx">think</span><span class="w">       </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Think Model:`</span><span class="p">,</span><span class="w">        </span><span class="nx">Router</span><span class="p">.</span><span class="nx">think</span><span class="p">)</span>
+<span class="nx">e</span><span class="p">.</span><span class="nx">Router</span><span class="p">.</span><span class="nx">longContext</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Long Context Model:`</span><span class="p">,</span><span class="w"> </span><span class="nx">Router</span><span class="p">.</span><span class="nx">longContext</span><span class="p">)</span>
+<span class="nx">e</span><span class="p">.</span><span class="nx">Router</span><span class="p">.</span><span class="nx">webSearch</span><span class="w">   </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Web Search Model:`</span><span class="p">,</span><span class="w">   </span><span class="nx">Router</span><span class="p">.</span><span class="nx">webSearch</span><span class="p">)</span>
+<span class="nx">e</span><span class="p">.</span><span class="nx">Router</span><span class="p">.</span><span class="nx">image</span><span class="w">       </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Image Model:`</span><span class="p">,</span><span class="w">        </span><span class="nx">Router</span><span class="p">.</span><span class="nx">image</span><span class="p">)</span>
+</pre></div>
+</div>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Переменная</p></th>
+<tr class="row-odd"><th class="head"><p>Слот</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head text-center"><p>Обязательный</p></th>
 <th class="head"><p>Описание</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CLAUDE_CODE_SUBAGENT_MODEL</span></code></p></td>
-<td><p>Глобальный override модели для всех субагентов</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p><strong>да</strong></p></td>
+<td><p>Fallback для всех запросов без специального слота</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_HAIKU_MODEL</span></code></p></td>
-<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">background</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Фоновые задачи (sub-agents с <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code>)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_SONNET_MODEL</span></code></p></td>
-<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">think</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Plan Mode и reasoning-heavy задачи</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_OPUS_MODEL</span></code></p></td>
-<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">opus</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">longContext</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Запросы превышающие <code class="docutils literal notranslate"><span class="pre">longContextThreshold</span></code> токенов</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">longContextThreshold</span></code></p></td>
+<td><p>number</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Порог токенов для longContext (по умолчанию: <code class="docutils literal notranslate"><span class="pre">60000</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">webSearch</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Запросы с web search инструментами</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">image</span></code></p></td>
+<td><p>string</p></td>
+<td class="text-center"><p>нет</p></td>
+<td><p>Запросы с изображениями / vision-задачи</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Пример — принудительно пустить всех субагентов через Ollama:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CLAUDE_CODE_SUBAGENT_MODEL</span><span class="o">=</span>haiku<span class="w"> </span>./iclaude.sh<span class="w"> </span>--router
+</section>
+<section id="id5">
+<h3>Условия выбора слота (порядок приоритетов)<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. longContext  → input_tokens &gt; longContextThreshold
+2. think        → Plan Mode / extended thinking запросы
+3. background   → sub-agents с model: haiku (содержит &quot;claude&quot; AND &quot;haiku&quot;)
+4. webSearch    → запросы с web_search инструментом
+5. image        → запросы с изображениями
+6. default      → все остальные запросы
 </pre></div>
 </div>
 </section>
+<section id="router-longcontextthreshold">
+<h3>Router.longContextThreshold<a class="headerlink" href="#router-longcontextthreshold" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;longContext&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;longContextThreshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Если <code class="docutils literal notranslate"><span class="pre">input_tokens</span></code> превышает порог — запрос идёт в <code class="docutils literal notranslate"><span class="pre">longContext</span></code> слот. Полезно для направления длинных контекстов на модель с большим контекстным окном.</p>
+</section>
+</section>
 <hr class="docutils" />
-<section id="id16">
-<h2>Диагностика<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
-<section id="id17">
-<h3>Проверить статус Router<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<section id="sub-agents">
+<h2>Маршрутизация sub-agents<a class="headerlink" href="#sub-agents" title="Link to this heading">¶</a></h2>
+<section id="model-haiku-background">
+<h3>Как model: haiku попадает в background слот<a class="headerlink" href="#model-haiku-background" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>В <code class="docutils literal notranslate"><span class="pre">AGENT.md</span></code> агента задан <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code></p></li>
+<li><p>Claude Code резолвит <code class="docutils literal notranslate"><span class="pre">haiku</span></code> → <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code></p></li>
+<li><p>CCR проверяет: строка содержит <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> <strong>И</strong> <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code></p></li>
+<li><p>CCR направляет в <code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>AGENT.md (model: haiku)
+    └─→ Claude Code резолвит → &quot;claude-haiku-4-5-20251001&quot;
+                                    └─→ CCR: contains &quot;haiku&quot;? → Router.background
+                                                                       └─→ Ollama / DeepSeek
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h3>Текущая конфигурация агентов пайплайна<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Агент</p></th>
+<th class="head"><p>model (AGENT.md)</p></th>
+<th class="head"><p>CCR слот</p></th>
+<th class="head"><p>Провайдер</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">background</span></code></p></td>
+<td><p>Ollama <code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">planning-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">background</span></code></p></td>
+<td><p>Ollama <code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">critic-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>DeepSeek <code class="docutils literal notranslate"><span class="pre">deepseek-chat</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">execution-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>DeepSeek <code class="docutils literal notranslate"><span class="pre">deepseek-chat</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="ccr-subagent-model-per-request-override">
+<h3>CCR-SUBAGENT-MODEL — per-request override<a class="headerlink" href="#ccr-subagent-model-per-request-override" title="Link to this heading">¶</a></h3>
+<p>Можно вставить тег в системный промпт агента для явного указания модели:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">CCR</span><span class="o">-</span><span class="n">SUBAGENT</span><span class="o">-</span><span class="n">MODEL</span><span class="o">&gt;</span><span class="n">openrouter</span><span class="p">,</span><span class="n">anthropic</span><span class="o">/</span><span class="n">claude</span><span class="o">-</span><span class="mf">3.5</span><span class="o">-</span><span class="n">sonnet</span><span class="o">&lt;/</span><span class="n">CCR</span><span class="o">-</span><span class="n">SUBAGENT</span><span class="o">-</span><span class="n">MODEL</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Это переопределяет слот маршрутизации для конкретного вызова.</p>
+</section>
+<section id="override-env-var">
+<h3>Глобальный override через env var<a class="headerlink" href="#override-env-var" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Все sub-agents будут использовать haiku → Router.background</span>
+<span class="nv">CLAUDE_CODE_SUBAGENT_MODEL</span><span class="o">=</span>haiku<span class="w"> </span>./iclaude.sh<span class="w"> </span>--router
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ollama">
+<h2>Внешние модели через Ollama<a class="headerlink" href="#ollama" title="Link to this heading">¶</a></h2>
+<section id="id7">
+<h3>Что нужно для работы<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Установить Ollama</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://ollama.ai/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+
+<span class="c1"># 2. Загрузить модель</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>qwen2.5-coder:7b
+
+<span class="c1"># 3. Убедиться что API работает</span>
+curl<span class="w"> </span>http://localhost:11434/v1/models
+</pre></div>
+</div>
+</section>
+<section id="id8">
+<h3>Конфигурация в router.json<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;llama3.1:8b&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">api_key:</span> <span class="pre">&quot;ollama&quot;</span></code> — Ollama не требует ключа, но поле обязательно</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transformer.use:</span> <span class="pre">[&quot;tooluse&quot;]</span></code> — обеспечивает совместимость tool calls через OpenAI-compatible API</p></li>
+<li><p><strong>Не использовать</strong> <code class="docutils literal notranslate"><span class="pre">&quot;openai&quot;</span></code> в <code class="docutils literal notranslate"><span class="pre">use</span></code> — такого трансформера не существует</p></li>
+</ul>
+</section>
+<section id="id9">
+<h3>Выбор модели Ollama для фоновых агентов<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Модель</p></th>
+<th class="head"><p>Размер</p></th>
+<th class="head"><p>VRAM</p></th>
+<th class="head"><p>Подходит для</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:1.5b</span></code></p></td>
+<td><p>1.0 GB</p></td>
+<td><p>2 GB</p></td>
+<td><p>Минимальные ресурсы, простые задачи</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
+<td><p>4.7 GB</p></td>
+<td><p>6 GB</p></td>
+<td><p>Хорошее качество, рекомендуется</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">llama3.1:8b</span></code></p></td>
+<td><p>4.9 GB</p></td>
+<td><p>6 GB</p></td>
+<td><p>Универсальная альтернатива</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:14b</span></code></p></td>
+<td><p>9.0 GB</p></td>
+<td><p>12 GB</p></td>
+<td><p>Высокое качество</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="background-ollama">
+<h3>Переключение background на Ollama<a class="headerlink" href="#background-ollama" title="Link to this heading">¶</a></h3>
+<p>В текущем <code class="docutils literal notranslate"><span class="pre">router.json</span></code> background уже направлен на Ollama. Чтобы вернуть на DeepSeek:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id10">
+<h2>Примеры конфигурации<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<section id="id11">
+<h3>Текущая конфигурация проекта<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;PROXY_URL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://...&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek-chat&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;llama3.1:8b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mistral:7b&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;think&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContext&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContextThreshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id12">
+<h3>Максимальная конфигурация — все слоты<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://api.deepseek.com/v1/chat/completions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek-chat&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;reasoning&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://openrouter.ai/api/v1/chat/completions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${OPENROUTER_API_KEY}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;perplexity/sonar&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;openai/gpt-4o&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;anthropic/claude-3.5-sonnet&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;only&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]}}]]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;think&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContext&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longContextThreshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;webSearch&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,perplexity/sonar&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,openai/gpt-4o&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="ollama-api">
+<h3>Полный Ollama (без внешних API)<a class="headerlink" href="#ollama-api" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:14b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:14b&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="custom-router">
+<h2>Custom Router<a class="headerlink" href="#custom-router" title="Link to this heading">¶</a></h2>
+<p>CCR поддерживает JavaScript-файл для кастомной логики маршрутизации.</p>
+<p><strong>Расположение:</strong> <code class="docutils literal notranslate"><span class="pre">~/.claude-code-router/custom-router.js</span></code></p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">router</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span><span class="w"> </span><span class="nx">config</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">messages</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">lastMessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">messages</span><span class="p">[</span><span class="nx">messages</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">]</span><span class="o">?</span><span class="p">.</span><span class="nx">content</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Направить код-задачи на специализированную модель</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">lastMessage</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">lastMessage</span><span class="p">.</span><span class="nx">includes</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Fallback → стандартная маршрутизация</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p><strong>Параметры функции:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">req</span></code> — входящий запрос от Claude Code (<code class="docutils literal notranslate"><span class="pre">req.body.messages</span></code> — массив сообщений)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config</span></code> — объект конфигурации из <code class="docutils literal notranslate"><span class="pre">config.json</span></code></p></li>
+</ul>
+<p><strong>Возвращаемое значение:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;provider,model&quot;</span></code> — явное указание провайдера/модели</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">null</span></code> — использовать стандартную маршрутизацию по слотам</p></li>
+</ul>
+<section id="id13">
+<h3>Динамическое переключение модели<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<p>Во время активной сессии Claude Code через CCR доступна команда:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">model</span> <span class="n">provider_name</span><span class="p">,</span><span class="n">model_name</span>
+</pre></div>
+</div>
+<p>Пример:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">model</span> <span class="n">deepseek</span><span class="p">,</span><span class="n">deepseek</span><span class="o">-</span><span class="n">chat</span>
+<span class="o">/</span><span class="n">model</span> <span class="n">ollama</span><span class="p">,</span><span class="n">qwen2</span><span class="mf">.5</span><span class="o">-</span><span class="n">coder</span><span class="p">:</span><span class="mi">7</span><span class="n">b</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id14">
+<h2>Диагностика<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<section id="id15">
+<h3>Проверить статус Router<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./iclaude.sh<span class="w"> </span>--check-router
 </pre></div>
 </div>
 </section>
+<section id="id16">
+<h3>Посмотреть текущую конфигурацию<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>.nvm-isolated/.claude-isolated/router.json<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
+</pre></div>
+</div>
+</section>
+<section id="ccr">
+<h3>Проверить что CCR слушает<a class="headerlink" href="#ccr" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:3456/
+</pre></div>
+</div>
+</section>
+<section id="debug">
+<h3>Включить debug-логи<a class="headerlink" href="#debug" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Логи покажут: входящий model ID, выбранный слот, провайдера, HTTP-статус ответа.</p>
+</section>
+<section id="id17">
+<h3>Типичные проблемы<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<section id="background">
+<h4>Агент не попадает в background слот<a class="headerlink" href="#background" title="Link to this heading">¶</a></h4>
+<p>Проверить что значение в <code class="docutils literal notranslate"><span class="pre">AGENT.md</span></code> — алиас, а не полный ID:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span><span class="w">           </span><span class="c1"># ✅ резолвится в claude-haiku-4-5-20251001</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-haiku-4-5-20251001</span><span class="w">  </span><span class="c1"># ❌ молча игнорируется Claude Code</span>
+</pre></div>
+</div>
+</section>
+<section id="transformer-not-found">
+<h4>Ошибка “transformer not found” или некорректные запросы<a class="headerlink" href="#transformer-not-found" title="Link to this heading">¶</a></h4>
+<p>Проверить что трансформер из валидного списка. Для OpenAI-compatible API (Ollama):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tooluse&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="err">#</span><span class="w"> </span><span class="err">✅</span>
+<span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">❌</span><span class="w"> </span><span class="s2">&quot;openai&quot;</span><span class="w"> </span><span class="err">не</span><span class="w"> </span><span class="err">существует</span>
+<span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">}</span><span class="w">            </span><span class="err">#</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="err">без</span><span class="w"> </span><span class="err">трансформации</span>
+</pre></div>
+</div>
+</section>
 <section id="id18">
-<h3>Проверить что Router отвечает<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:3456/health
-</pre></div>
-</div>
-</section>
-<section id="id19">
-<h3>Посмотреть логи маршрутизации<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
-<p>Включить debug-уровень в router.json:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Логи покажут:</p>
-<ul class="simple">
-<li><p>Входящий model ID от Claude Code</p></li>
-<li><p>Выбранный слот (default/background/webSearch/think)</p></li>
-<li><p>Выбранный провайдер и модель</p></li>
-<li><p>HTTP-статус ответа</p></li>
-</ul>
-</section>
-<section id="id20">
-<h3>Типичные проблемы<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
-<section id="id21">
-<h4>Агент не использует фиксированную модель<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h4>
-<p>Проверить что значение в <code class="docutils literal notranslate"><span class="pre">AGENT.md</span></code> — это алиас, а не полный ID:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span><span class="w">    </span><span class="c1"># ✅ правильно</span>
-<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-haiku-4-5-20251001</span><span class="w">   </span><span class="c1"># ❌ игнорируется молча</span>
-</pre></div>
-</div>
-</section>
-<section id="router-background">
-<h4>Router.background не срабатывает<a class="headerlink" href="#router-background" title="Link to this heading">¶</a></h4>
-<p>CCR определяет background-слот только если model содержит одновременно <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> И <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code>.
-Алиас <code class="docutils literal notranslate"><span class="pre">haiku</span></code> резолвится в <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code> — условие выполняется.</p>
-<p>Если используется кастомная Ollama-модель напрямую (<code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">qwen2.5-coder:7b</span></code>) — она не содержит <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> и <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code>, поэтому пойдёт в <code class="docutils literal notranslate"><span class="pre">Router.default</span></code>.</p>
-</section>
-<section id="id22">
-<h4>Ollama не отвечает<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Проверить что Ollama запущена</span>
-systemctl<span class="w"> </span>status<span class="w"> </span>ollama
-<span class="c1"># или</span>
-ollama<span class="w"> </span>serve<span class="w"> </span><span class="p">&amp;</span>
-
-<span class="c1"># Проверить доступность API</span>
+<h4>Ollama не отвечает<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>systemctl<span class="w"> </span>status<span class="w"> </span>ollama
 curl<span class="w"> </span>http://localhost:11434/v1/models
-
-<span class="c1"># Проверить что модель загружена</span>
 ollama<span class="w"> </span>list
 </pre></div>
 </div>
-</section>
-<section id="id23">
-<h4>Таймаут при работе с Ollama<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h4>
-<p>Увеличить <code class="docutils literal notranslate"><span class="pre">API_TIMEOUT_MS</span></code> в router.json:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200000</span>
-<span class="p">}</span>
+<p>Увеличить таймаут если Ollama на CPU:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200000</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Ollama на CPU работает значительно медленнее, особенно на больших контекстах.</p>
+</section>
+<section id="config-json">
+<h4>config.json не обновляется<a class="headerlink" href="#config-json" title="Link to this heading">¶</a></h4>
+<p>iclaude копирует <code class="docutils literal notranslate"><span class="pre">router.json</span></code> в <code class="docutils literal notranslate"><span class="pre">~/.claude-code-router/config.json</span></code> при каждом <code class="docutils literal notranslate"><span class="pre">--router</span></code> запуске. Если файл не обновляется — проверить путь:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>~/.claude-code-router/config.json
+</pre></div>
+</div>
 <hr class="docutils" />
-<p><em>Документ создан 2026-02-24. CCR версия: &#64;musistudio/claude-code-router.</em></p>
+<p><em>Документ основан на анализе исходного кода &#64;musistudio/claude-code-router v2.0.0 (<code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>).</em>
+<em>Все утверждения подтверждены реальными строками кода.</em></p>
 </section>
 </section>
 </section>
@@ -953,53 +1218,66 @@ ollama<span class="w"> </span>list
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Claude Code Router: маршрутизация и внешние модели</a><ul>
+<li><a class="reference internal" href="#">Claude Code Router: конфигурация и маршрутизация</a><ul>
 <li><a class="reference internal" href="#id1">Содержание</a></li>
-<li><a class="reference internal" href="#id2">Быстрый старт</a></li>
-<li><a class="reference internal" href="#id3">Как работает маршрутизация</a><ul>
-<li><a class="reference internal" href="#id4">Правила маршрутизации (приоритет)</a></li>
+<li><a class="reference internal" href="#iclaude-router">Как iclaude использует Router</a></li>
+<li><a class="reference internal" href="#router-json">Полная схема router.json</a></li>
+<li><a class="reference internal" href="#id2">Параметры верхнего уровня</a><ul>
+<li><a class="reference internal" href="#proxy-url">PROXY_URL</a></li>
+<li><a class="reference internal" href="#api-timeout-ms">API_TIMEOUT_MS</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#router">Слоты Router и модели агентов</a><ul>
-<li><a class="reference internal" href="#agent-md">Фиксация модели в AGENT.md</a></li>
-<li><a class="reference internal" href="#id5">Текущая конфигурация агентов пайплайна</a></li>
-<li><a class="reference internal" href="#ccr">Как CCR определяет слот агента</a></li>
-<li><a class="reference internal" href="#id6">Приоритет выбора модели</a></li>
+<li><a class="reference internal" href="#providers">Providers — провайдеры моделей</a><ul>
+<li><a class="reference internal" href="#id3">Поля провайдера</a></li>
+<li><a class="reference internal" href="#router">Синтаксис ссылки на провайдера в Router</a></li>
+<li><a class="reference internal" href="#api-key">Переменные окружения в api_key</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#transformer">Transformer — типы трансформеров</a><ul>
+<li><a class="reference internal" href="#dist-cli-js-902">Полный список (подтверждён из <code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>, строка 902)</a></li>
+<li><a class="reference internal" href="#transformer-use">Формат transformer.use</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id4">Router — слоты маршрутизации</a><ul>
+<li><a class="reference internal" href="#dist-cli-js-907912">Поддерживаемые слоты (подтверждено из <code class="docutils literal notranslate"><span class="pre">dist/cli.js</span></code>, строки 907–912)</a></li>
+<li><a class="reference internal" href="#id5">Условия выбора слота (порядок приоритетов)</a></li>
+<li><a class="reference internal" href="#router-longcontextthreshold">Router.longContextThreshold</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sub-agents">Маршрутизация sub-agents</a><ul>
+<li><a class="reference internal" href="#model-haiku-background">Как model: haiku попадает в background слот</a></li>
+<li><a class="reference internal" href="#id6">Текущая конфигурация агентов пайплайна</a></li>
+<li><a class="reference internal" href="#ccr-subagent-model-per-request-override">CCR-SUBAGENT-MODEL — per-request override</a></li>
+<li><a class="reference internal" href="#override-env-var">Глобальный override через env var</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#ollama">Внешние модели через Ollama</a><ul>
-<li><a class="reference internal" href="#id7">Подключение Ollama</a></li>
-<li><a class="reference internal" href="#id8">Выбор модели Ollama</a></li>
-<li><a class="reference internal" href="#ollama-proxy">Ollama через proxy</a></li>
+<li><a class="reference internal" href="#id7">Что нужно для работы</a></li>
+<li><a class="reference internal" href="#id8">Конфигурация в router.json</a></li>
+<li><a class="reference internal" href="#id9">Выбор модели Ollama для фоновых агентов</a></li>
+<li><a class="reference internal" href="#background-ollama">Переключение background на Ollama</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#router-json">Конфигурация router.json</a><ul>
-<li><a class="reference internal" href="#deepseek-ollama">Полный пример — DeepSeek + Ollama</a></li>
-<li><a class="reference internal" href="#id9">Стратегии маршрутизации</a><ul>
-<li><a class="reference internal" href="#id10">Вариант 1: Всё через один провайдер (текущий по умолчанию)</a></li>
-<li><a class="reference internal" href="#id11">Вариант 2: Разделение — локальные фоновые, удалённые основные</a></li>
-<li><a class="reference internal" href="#ollama-api">Вариант 3: Полный Ollama (без внешних API)</a></li>
-<li><a class="reference internal" href="#openrouter">Вариант 4: OpenRouter как агрегатор</a></li>
+<li><a class="reference internal" href="#id10">Примеры конфигурации</a><ul>
+<li><a class="reference internal" href="#id11">Текущая конфигурация проекта</a></li>
+<li><a class="reference internal" href="#id12">Максимальная конфигурация — все слоты</a></li>
+<li><a class="reference internal" href="#ollama-api">Полный Ollama (без внешних API)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id12">Переменные в router.json</a></li>
+<li><a class="reference internal" href="#custom-router">Custom Router</a><ul>
+<li><a class="reference internal" href="#id13">Динамическое переключение модели</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id13">Провайдеры</a><ul>
-<li><a class="reference internal" href="#id14">Поддерживаемые провайдеры</a></li>
-<li><a class="reference internal" href="#transformer">Transformer типы</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#id15">Переменные окружения</a></li>
-<li><a class="reference internal" href="#id16">Диагностика</a><ul>
-<li><a class="reference internal" href="#id17">Проверить статус Router</a></li>
-<li><a class="reference internal" href="#id18">Проверить что Router отвечает</a></li>
-<li><a class="reference internal" href="#id19">Посмотреть логи маршрутизации</a></li>
-<li><a class="reference internal" href="#id20">Типичные проблемы</a><ul>
-<li><a class="reference internal" href="#id21">Агент не использует фиксированную модель</a></li>
-<li><a class="reference internal" href="#router-background">Router.background не срабатывает</a></li>
-<li><a class="reference internal" href="#id22">Ollama не отвечает</a></li>
-<li><a class="reference internal" href="#id23">Таймаут при работе с Ollama</a></li>
+<li><a class="reference internal" href="#id14">Диагностика</a><ul>
+<li><a class="reference internal" href="#id15">Проверить статус Router</a></li>
+<li><a class="reference internal" href="#id16">Посмотреть текущую конфигурацию</a></li>
+<li><a class="reference internal" href="#ccr">Проверить что CCR слушает</a></li>
+<li><a class="reference internal" href="#debug">Включить debug-логи</a></li>
+<li><a class="reference internal" href="#id17">Типичные проблемы</a><ul>
+<li><a class="reference internal" href="#background">Агент не попадает в background слот</a></li>
+<li><a class="reference internal" href="#transformer-not-found">Ошибка “transformer not found” или некорректные запросы</a></li>
+<li><a class="reference internal" href="#id18">Ollama не отвечает</a></li>
+<li><a class="reference internal" href="#config-json">config.json не обновляется</a></li>
 </ul>
 </li>
 </ul>
