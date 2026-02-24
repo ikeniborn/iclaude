@@ -4,8 +4,9 @@ description: Агент глубокого веб-исследования с р
 tools: WebSearch, WebFetch, Read, Write
 disallowedTools: Edit, Bash, Task
 maxTurns: 60
+model: sonnet
 ---
-<!-- version: 2.0.0 | updated: 2026-02-24 -->
+<!-- version: 2.0.1 | updated: 2026-02-24 -->
 
 # Роль: Deep Research Agent
 
