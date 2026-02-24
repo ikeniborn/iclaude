@@ -41,28 +41,30 @@ context: fork
 
 ### Шаг 1: Инициализация Workspace
 
-```bash
-# Агенты находятся в изолированной среде iclaude, не в рабочем проекте.
-# SKILL_BASE_DIR — директория этого скилла (из заголовка "Base directory for this skill:")
-# Пример: /home/user/.nvm-isolated/.claude-isolated/skills/agent-orchestrator
-AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
-# Результат: /home/user/.nvm-isolated/.claude-isolated/agents
+Определи переменные (в уме, без tool call):
+- `SKILL_BASE_DIR` — из заголовка "Base directory for this skill:" текущего скилла
+- `AGENTS_DIR` = `${SKILL_BASE_DIR}/../../agents`
+- `PROJECT_ROOT` = текущий рабочий каталог сессии Claude Code (pwd)
+- `SESSION_ID` = дата+время в формате `YYYY-MM-DDTHHMM`
+- `WORKSPACE` = `${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}`
 
-# Определить project root
+Затем **вызови `Bash()` tool** со следующими командами:
+
+```bash
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
-
-# Создать структуру workspace
 mkdir -p "${WORKSPACE}"
-
-# Добавить .claude/workspace/ в .gitignore проекта (если нет)
 grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
-  echo -e "\n# Claude Code Agent Workspace\n.claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
-
+  printf '\n# Claude Code Agent Workspace\n.claude/workspace/\n' >> "${PROJECT_ROOT}/.gitignore"
+echo "WORKSPACE=${WORKSPACE}"
 ```
 
+Запомни вывод `WORKSPACE=...` — этот путь используется во всех следующих шагах.
+
 ### Шаг 2: Записать input.toon
+
+**Вызови `Write()` tool** для записи файла `{WORKSPACE}/input.toon` со следующим содержимым:
 
 ```json
 {
@@ -77,7 +79,7 @@ grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
 }
 ```
 
-Записать в `{WORKSPACE}/input.toon`.
+Подставь реальный путь: `Write("{WORKSPACE}/input.toon", ...)` — директория уже создана на шаге 1.
 
 ### Шаг 3: Запустить Researcher Agent
 
