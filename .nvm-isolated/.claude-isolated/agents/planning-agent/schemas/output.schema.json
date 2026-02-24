@@ -4,9 +4,18 @@
   "title": "Planning Agent Output",
   "description": "План выполнения задачи (plan.toon)",
   "type": "object",
-  "required": ["execution_plan"],
+  "required": ["schema_version", "research_schema_version", "execution_plan"],
   "additionalProperties": false,
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "2.1.0",
+      "description": "Версия схемы plan.toon"
+    },
+    "research_schema_version": {
+      "type": "string",
+      "description": "Версия schema_version из research.toon — для cross-reference validation. 'unknown' если research.toon не содержал schema_version."
+    },
     "execution_plan": {
       "type": "object",
       "required": ["metadata", "phases", "research_references"],

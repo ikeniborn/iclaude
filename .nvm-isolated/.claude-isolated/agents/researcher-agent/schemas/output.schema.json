@@ -4,9 +4,14 @@
   "title": "Researcher Agent Output",
   "description": "Результат исследования (research.toon)",
   "type": "object",
-  "required": ["research_results"],
+  "required": ["schema_version", "research_results"],
   "additionalProperties": false,
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "2.1.0",
+      "description": "Версия схемы research.toon"
+    },
     "research_results": {
       "type": "object",
       "required": [
