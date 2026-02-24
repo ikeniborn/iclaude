@@ -3,8 +3,10 @@ name: deep-research
 description: Агент глубокого веб-исследования с рекурсивным поиском, фетчингом и синтезом результатов. Используется напрямую или вызывается из Researcher Agent для сбора актуальных внешних данных.
 user-invocable: true
 context: fork
+# version: 1.0.0
+# tags: research, web-search, web-fetch, synthesis, external-docs, recursive
+# dependencies: agent-orchestrator | agents: agents/deep-research-agent/AGENT.md
 ---
-<!-- version: 1.0.0 | tags: research, web-search, web-fetch, synthesis, external-docs, recursive | dependencies: agent-orchestrator | agents: agents/deep-research-agent/AGENT.md -->
 
 # Deep Research Skill
 

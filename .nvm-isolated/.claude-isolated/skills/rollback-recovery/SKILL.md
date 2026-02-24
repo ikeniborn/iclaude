@@ -2,8 +2,10 @@
 name: rollback-recovery
 description: Механизм отката и восстановления при критических ошибках
 user-invocable: false
+# version: 1.2.0
+# tags: rollback, recovery, git, backup
+# dependencies: error-handling | files.templates: ./templates/*.json
 ---
-<!-- version: 1.2.0 | tags: rollback, recovery, git, backup | dependencies: error-handling | files.templates: ./templates/*.json -->
 
 # Rollback Recovery
 

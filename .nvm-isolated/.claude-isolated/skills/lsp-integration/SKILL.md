@@ -2,8 +2,11 @@
 name: lsp-integration
 description: Автоматическая установка и конфигурация LSP плагинов
 user-invocable: false
+# version: 1.1.0
+# tags: lsp, language-server, code-intelligence, plugins
+# dependencies: context-awareness
+# files: templates: ./templates/*.json, schemas: ./schemas/*.json
 ---
-<!-- version: 1.1.0 | tags: lsp, language-server, code-intelligence, plugins | dependencies: context-awareness | files: templates: ./templates/*.json, schemas: ./schemas/*.json -->
 
 # LSP Integration
 

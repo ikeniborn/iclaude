@@ -3,8 +3,11 @@ name: context7-integration
 description: Автоматическая загрузка документации библиотек через Context7 MCP плагин
 user-invocable: false
 context: fork
+# version: 1.1.0
+# tags: [context7, documentation, libraries, mcp, api-docs]
+# dependencies: [context-awareness]
+# files: {templates: ./templates/*.json, schemas: ./schemas/*.json, examples: ./examples/*.md, shared: ../_shared/library-priority.json}
 ---
-<!-- version: 1.1.0 | tags: [context7, documentation, libraries, mcp, api-docs] | dependencies: [context-awareness] | files: {templates: ./templates/*.json, schemas: ./schemas/*.json, examples: ./examples/*.md, shared: ../_shared/library-priority.json} -->
 
 # Context7 Integration
 

@@ -4,8 +4,11 @@ description: Создание планов задач с адаптивной JS
 user-invocable: false
 context: fork
 agent: Plan
+# version: 2.4.0
+# tags: planning, json-schema, structured-output, skill-generation, prd, toon
+# dependencies: thinking-framework, adaptive-workflow, skill-generator, prd-generator, toon-skill
+# files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md
 ---
-<!-- version: 2.4.0 | tags: planning, json-schema, structured-output, skill-generation, prd, toon | dependencies: thinking-framework, adaptive-workflow, skill-generator, prd-generator, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md -->
 
 # Structured Planning v2.4
 

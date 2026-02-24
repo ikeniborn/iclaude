@@ -2,8 +2,10 @@
 name: approval-gates
 description: Упрощённые approval gates для подтверждения плана
 user-invocable: false
+# version: 2.2.0
+# tags: approval, confirmation, user-interaction
+# dependencies: structured-planning, plan-validation | files.templates: ./templates/*.md
 ---
-<!-- version: 2.2.0 | tags: approval, confirmation, user-interaction | dependencies: structured-planning, plan-validation | files.templates: ./templates/*.md -->
 
 # Approval Gates v2.0
 

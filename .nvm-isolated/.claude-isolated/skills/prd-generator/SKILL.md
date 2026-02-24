@@ -3,8 +3,11 @@ name: prd-generator
 description: Автоматизированное создание Product Requirements Document (PRD) с интерактивными вопросами, AI-генерацией 14 разделов и 5 Mermaid диаграмм
 user-invocable: true
 context: fork
+# version: 1.3.0
+# tags: documentation, prd, product-management, mermaid, interactive, ai-generation, toon, sphinx
+# dependencies: thinking-framework, context-awareness, validation-framework, toon-skill, docs-builder | author: iclaude Skills Team
+# files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md
 ---
-<!-- version: 1.3.0 | tags: documentation, prd, product-management, mermaid, interactive, ai-generation, toon, sphinx | dependencies: thinking-framework, context-awareness, validation-framework, toon-skill, docs-builder | author: iclaude Skills Team | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
 # PRD Generator Skill
 

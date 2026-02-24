@@ -3,8 +3,10 @@ name: pr-automation
 description: Автоматизация создания PR с мониторингом CI/CD и автоматическим исправлением ошибок
 user-invocable: true
 context: fork
+# version: 1.3.0 | author: ikeniborn
+# tags: github, pr, ci/cd, automation, github-actions, typescript, eslint, toon, loop-mode
+# dependencies: git-workflow, code-review, toon-skill | triggers: создать pr, создать pull request, сделать pr, открыть pull request
 ---
-<!-- version: 1.3.0 | author: ikeniborn | tags: github, pr, ci/cd, automation, github-actions, typescript, eslint, toon, loop-mode | dependencies: git-workflow, code-review, toon-skill | triggers: создать pr, создать pull request, сделать pr, открыть pull request -->
 
 # PR Automation Skill
 

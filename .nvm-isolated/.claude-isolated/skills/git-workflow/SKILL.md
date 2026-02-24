@@ -2,8 +2,9 @@
 name: git-workflow
 description: Стандартизированный git workflow с Conventional Commits
 user-invocable: false
+# version: 2.2.0
+# tags: git, commit, branch, conventional-commits, toon
 ---
-<!-- version: 2.2.0 | tags: git, commit, branch, conventional-commits, toon -->
 
 # Git Workflow v2.2
 

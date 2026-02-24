@@ -3,8 +3,12 @@ name: agent-builder
 description: Интерактивное создание Claude Code sub-agents с корректным frontmatter, документацией роли, примерами IO и валидацией по официальной схеме
 user-invocable: true
 context: fork
+# version: 1.1.0 | updated: 2026-02-24
+# tags: agents, generator, scaffolding, claude-code, subagents, frontmatter
+# invocation: /agent-builder
+# dependencies: skill-generator, validation-framework
+# files: templates: ./templates/*.json, examples: ./examples/*.md, rules: ./rules/*.md
 ---
-<!-- version: 1.0.0 | tags: agents, generator, scaffolding, claude-code, subagents, frontmatter | invocation: /agent-builder | dependencies: skill-generator, validation-framework | files: templates: ./templates/*.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
 # Agent Builder
 
@@ -56,6 +60,36 @@ version, role, subagent_type, capabilities,
 input_file, output_file, input_schema, output_schema,
 parameters, input_files
 ```
+
+### Хранение метаданных версии и тегов
+
+Версия, теги и зависимости — нестандартные поля. Правила хранения:
+
+| Метод | Правило |
+|-------|---------|
+| ✅ `# comment` внутри `---...---` | YAML-парсер стрипает `#`-комментарии — **не попадают в контекст модели** |
+| ❌ `<!-- comment -->` после `---` | Тело файла передаётся в контекст as-is — **HTML-комментарии ВИДНЫ модели** |
+
+**Правильно:**
+```yaml
+---
+name: my-agent
+description: ...
+# version: 1.0.0 | updated: 2026-02-24
+# tags: search, analysis
+---
+```
+
+**Неправильно (загрязняет контекст):**
+```yaml
+---
+name: my-agent
+description: ...
+---
+<!-- version: 1.0.0 | tags: search, analysis -->
+```
+
+> **Источник:** Claude Code CLI исходный код — тело AGENT.md передаётся без обработки через `content:A` / `w=A.slice(Y[0].length)`. YAML-парсер (`Tz8(z)`) стрипает `#`-комментарии из frontmatter.
 
 > **Источник:** [Claude Code Sub-Agents Documentation](https://code.claude.com/docs/en/sub-agents)
 
@@ -508,7 +542,7 @@ Task(
 ├── input.toon          # Оркестратор → агенты
 ├── research.toon       # Researcher → Planner, Critic
 ├── plan.toon           # Planner → Executor, Critic
-├── report.md           # Executor → пользователь
+├── report.json         # Executor → пользователь (schema v2.1.0)
 └── {stage}-critique.toon  # Critic → предыдущий агент
 ```
 
@@ -524,7 +558,7 @@ Task(
 | **JSON** | Метаданные, конфиг, массивы < 5 элементов |
 | **TOON** | Массивы ≥ 5 элементов, табличные данные (30-60% экономии токенов) |
 | **Hybrid JSON+TOON** | Смешанный вывод: JSON-оболочка + TOON для больших массивов |
-| **Markdown** | Финальные отчёты для пользователя (report.md) |
+| **JSON** (typed) | Машиночитаемые отчёты агентов (report.json, schema v2.1.0) |
 
 **Hybrid пример:**
 ```
