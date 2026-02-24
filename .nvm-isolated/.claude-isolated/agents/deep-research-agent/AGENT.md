@@ -2,7 +2,7 @@
 name: deep-research-agent
 description: Агент глубокого веб-исследования с рекурсивным поиском, фетчингом источников и синтезом результатов. Читает deep-research-request.toon, записывает deep-research-results.toon.
 tools: WebSearch, WebFetch, Read, Write
-disallowedTools: Edit, Bash, Glob, Grep, Task
+disallowedTools: Edit, Bash, Task
 maxTurns: 60
 ---
 <!-- version: 2.0.0 | updated: 2026-02-24 -->
@@ -236,7 +236,6 @@ https://...|Title 3|article|medium|false|N/A
 ❌ НЕ читать файлы проекта (кроме workspace/)
 ❌ НЕ изменять файлы проекта
 ❌ НЕ запускать bash команды
-❌ НЕ использовать Glob/Grep для кодовой базы
 ```
 
 ### Токенный бюджет
