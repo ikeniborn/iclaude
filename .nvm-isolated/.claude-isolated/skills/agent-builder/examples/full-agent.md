@@ -93,7 +93,9 @@ Read({file_with_match})
 - Severity: critical | high | medium | low
 - Рекомендация по исправлению
 
-### Шаг 4: Сформировать JSON-отчёт
+### Шаг 4: Сформировать отчёт
+
+**Если `total_issues < 5`** — чистый JSON:
 
 ```json
 {
@@ -101,12 +103,7 @@ Read({file_with_match})
     "timestamp": "2026-02-24T12:00:00Z",
     "files_audited": 5,
     "total_issues": 3,
-    "severity_summary": {
-      "critical": 0,
-      "high": 1,
-      "medium": 2,
-      "low": 0
-    },
+    "severity_summary": { "critical": 0, "high": 1, "medium": 2, "low": 0 },
     "issues": [
       {
         "id": "SEC-001",
@@ -115,12 +112,33 @@ Read({file_with_match})
         "severity": "high",
         "category": "command_injection",
         "description": "Unsanitized variable in eval",
-        "code_snippet": "eval \"$USER_INPUT\"",
         "recommendation": "Validate and quote input: eval \"$(printf '%q' \"$USER_INPUT\")\""
       }
     ]
   }
 }
+```
+
+**Если `total_issues >= 5`** — Hybrid JSON+TOON (экономия 30-60% токенов, правила §12-13):
+
+```
+{
+  "audit_report": {
+    "timestamp": "2026-02-24T12:00:00Z",
+    "files_audited": 12,
+    "total_issues": 8,
+    "severity_summary": { "critical": 1, "high": 3, "medium": 3, "low": 1 },
+    "issues": "<<TOON:issues>>"
+  }
+}
+
+TOON:issues:v1
+id|file|line|severity|category|description|recommendation
+SEC-001|lib/proxy/validate.sh|42|high|command_injection|Unsanitized variable in eval|Quote input: eval "$(printf '%q' "$VAR")"
+SEC-002|lib/proxy/storage.sh|18|medium|hardcoded_secret|API key in source|Move to env variable
+SEC-003|lib/nvm/detect.sh|91|high|command_injection|Unquoted glob in for loop|Quote: for f in "$dir"/*.sh
+SEC-004|lib/update/cleanup.sh|55|critical|unsafe_permissions|chmod 777 on config dir|Use chmod 700
+SEC-005|iclaude.sh|203|medium|hardcoded_secret|Token prefix in source|Use env variable CLAUDE_TOKEN_PREFIX
 ```
 
 ## ПРАВИЛА (СТРОГИЕ)
