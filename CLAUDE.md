@@ -383,6 +383,39 @@ Claude Code сохраняет планы выполнения задач в р�
 
 См. [docs/plans/README.md](../../../docs/plans/README.md) для подробной информации.
 
+### Sandbox Limitations
+
+Claude Code sandbox (bubblewrap) **ОТКЛЮЧЁН ПО УМОЛЧАНИЮ** (`sandbox.enabled: false`) из-за upstream-бага.
+
+**Проблема: bind-mount артефакты в других проектах**
+
+При включённом sandbox (`sandbox.enabled: true`) bubblewrap создаёт 0-байтовые read-only заглушки в `.claude/` каталогах других проектов, которые были открыты в момент инициализации namespace:
+
+```
+.claude/settings.json       (0 bytes, chmod 444)
+.claude/settings.local.json (0 bytes, chmod 444)
+.claude/agents              (0 bytes, chmod 444) ← файл, не директория
+.claude/commands            (0 bytes, chmod 444) ← файл, не директория
+```
+
+Файлы остаются на диске после завершения sandbox-контейнера — автоматической очистки нет.
+
+**Причина:** bubblewrap использует технику `--ro-bind /dev/null <path>` для маскировки путей. Это поведение самого Claude Code, со стороны iclaude не исправляется.
+
+**Два независимых механизма изоляции:**
+- `CLAUDE_CONFIG_DIR` изоляция (всегда активна) — конфиг идёт в `.nvm-isolated/.claude-isolated/`
+- Bubblewrap sandbox (отключён) — OS-уровень, изолирует инструментальные вызовы
+
+**Очистка артефактов если sandbox был включён:**
+```bash
+find /path/to/project/.claude -maxdepth 1 -type f -empty -perm 444 \
+  -exec chmod 644 {} \; -delete
+```
+
+**Хук `block-secrets.py`** работает независимо от sandbox. При работе агентов в других проектах:
+- `.env`, `.env.local`, `.env.production` — блокируются (реальные секреты)
+- `.env.example`, `.env.sample`, `.env.template` — разрешены (шаблоны, `SAFE_SUFFIXES`)
+
 ### Chrome Integration
 
 Chrome integration is **ENABLED BY DEFAULT**.

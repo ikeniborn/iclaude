@@ -47,8 +47,10 @@ cd claude
 - **Oh My Posh** - кастомные темы
 
 ### 🔒 Sandboxing
-- **OS-level изоляция** - файловая система и сеть
-- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap)
+- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
+- **Установка зависимостей** - `./iclaude.sh --sandbox-install`
+- **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
+- **Подробности** - см. раздел "Sandbox Limitations" в [CLAUDE.md](./CLAUDE.md)
 
 ### 📄 Sphinx Documentation
 - **Per-project** - работает в любом проекте, не только iclaude
