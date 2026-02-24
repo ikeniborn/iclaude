@@ -15,6 +15,9 @@ launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
 
+    # Auto-repair stale settings.json paths (silent if no change needed)
+    repair_settings_paths
+
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 

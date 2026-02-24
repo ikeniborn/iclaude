@@ -69,7 +69,7 @@ mkdir -p "${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 # (json файл с задачей пользователя)
 
 # 4. Добавить .claude/workspace/ в .gitignore проекта (если ещё нет)
-grep -q "^.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
+grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
   echo ".claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 ```
 
