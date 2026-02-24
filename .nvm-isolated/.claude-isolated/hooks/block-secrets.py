@@ -20,6 +20,17 @@ EXCLUDE_DIRS = [
     '.claude/hooks',
 ]
 
+# Суффиксы-шаблоны: .env.example, .env.sample, .env.template, .env.dist
+# считаются безопасными (не содержат реальных секретов)
+SAFE_SUFFIXES = (
+    '.example',
+    '.sample',
+    '.template',
+    '.dist',
+    '.defaults',
+    '.placeholder',
+)
+
 # Паттерны чувствительных файлов и путей
 SENSITIVE_PATH_PATTERNS = [
     '.env',
@@ -55,8 +66,19 @@ def is_excluded(path: str) -> bool:
     return False
 
 
+def is_safe_template(path: str) -> bool:
+    """Возвращает True если файл — известный безопасный шаблон (.env.example и т.п.)."""
+    path_lower = path.lower()
+    # Получаем имя файла (последняя часть пути)
+    filename = path_lower.rsplit('/', 1)[-1]
+    return filename.endswith(SAFE_SUFFIXES)
+
+
 def is_sensitive_path(path: str) -> 'tuple[bool, str]':
     """Проверяет путь на совпадение с паттернами чувствительных файлов."""
+    # Шаблонные файлы (.env.example и т.п.) не блокируем
+    if is_safe_template(path):
+        return False, ''
     path_lower = path.lower()
     for pattern in SENSITIVE_PATH_PATTERNS:
         if pattern in path_lower:
