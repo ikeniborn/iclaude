@@ -359,20 +359,23 @@ tools: WebSearch, WebFetch, Read, Write
 
 ## Правила формирования Tools
 
-```
-# Принцип минимальных привилегий — указывай только необходимые
+Принцип минимальных привилегий — указывай только необходимые.
+`disallowedTools` надёжнее чем просто не указать инструмент:
 
-READ-ONLY агенты:      tools: Read, Glob, Grep
-Исследователи:         tools: Read, Glob, Grep, Task, WebSearch, WebFetch
-Планировщики:          tools: Read, Write
-Исполнители:           tools: Read, Write, Edit, Bash, Task
-Веб-агенты:            tools: WebSearch, WebFetch, Read, Write
-Критики/аудиторы:      tools: Read, Bash (только для системных команд)
+| Тип агента | tools | disallowedTools |
+|------------|-------|-----------------|
+| Read-only | `Read, Glob, Grep` | `Bash, Write, Edit, Task` |
+| Critic/Auditor | `Read, Glob, Grep` | `Bash, Write, Edit, Task` |
+| Researcher | `Read, Glob, Grep, Task, WebSearch, WebFetch` | `Bash, Write, Edit` |
+| Web researcher | `WebSearch, WebFetch, Read, Write` | `Bash, Edit, Task` |
+| Planner | `Read, Glob, Grep, Write` | `Bash, Edit, Task` |
+| Executor | `Read, Glob, Grep, Write, Edit, Bash, Task` | — |
 
-# Если агент НЕ должен что-то делать — используй disallowedTools
-# Это явный запрет, более надёжный чем отсутствие в tools
-disallowedTools: Bash, Write, Edit  # для строго read-only агента
-```
+> `Bash` даёт полный доступ к системе. Никогда не давай `Bash` агентам,
+> которые должны быть read-only. `Planner` получает `Glob, Grep` для исследования
+> кодовой базы, но не `Edit` — он пишет новые файлы, не изменяет существующие.
+
+Подробно: `./rules/agent-best-practices.md` §2
 
 ## Структура директории агента
 
@@ -493,6 +496,48 @@ Task(
   prompt="Investigate this codebase for authentication issues"
 )
 ```
+
+## Межагентная коммуникация и форматы вывода
+
+### Workspace Protocol
+
+Агенты передают данные ТОЛЬКО через файлы в workspace — никакого return value:
+
+```
+.claude/workspace/{YYYY-MM-DDTHHMM}/
+├── input.toon          # Оркестратор → агенты
+├── research.toon       # Researcher → Planner, Critic
+├── plan.toon           # Planner → Executor, Critic
+├── report.md           # Executor → пользователь
+└── {stage}-critique.toon  # Critic → предыдущий агент
+```
+
+**Правила агента:**
+- Читать входные данные: `Read({WORKSPACE}/input.toon)`
+- Писать результат: `Write({WORKSPACE}/output.toon)` — только после полного завершения
+- Не выводить структурированные данные в stdout (только сигнал завершения)
+
+### Выбор формата вывода
+
+| Формат | Когда использовать |
+|--------|--------------------|
+| **JSON** | Метаданные, конфиг, массивы < 5 элементов |
+| **TOON** | Массивы ≥ 5 элементов, табличные данные (30-60% экономии токенов) |
+| **Hybrid JSON+TOON** | Смешанный вывод: JSON-оболочка + TOON для больших массивов |
+| **Markdown** | Финальные отчёты для пользователя (report.md) |
+
+**Hybrid пример:**
+```
+{"metadata": {"status": "COMPLETE"}, "relevant_files": "<<TOON:relevant_files>>"}
+
+TOON:relevant_files:v1
+path|relevance|reason
+lib/command/args.sh|high|CLI argument parsing
+lib/context/sessions.sh|high|Session management
+...
+```
+
+Подробно: `./rules/agent-best-practices.md` §11-13
 
 ## Связанные ресурсы
 
