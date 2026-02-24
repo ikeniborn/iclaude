@@ -310,7 +310,8 @@ lib/
 .
 ├── iclaude.sh                          # Modular entry point (~200 lines)
 ├── lib/                                # Modular bash libraries (v4.0)
-├── .claude_proxy_credentials           # Proxy credentials (chmod 600, not in git)
+├── .claude_config.example              # Configuration template (in git, safe to share)
+├── .claude_config                      # Active config: proxy + API keys (chmod 600, not in git)
 ├── .nvm-isolated/                      # Isolated environment (~278MB)
 │   ├── nvm.sh                         # NVM installation
 │   ├── versions/node/v18.20.8/        # Node.js installation
@@ -331,7 +332,8 @@ lib/
 ```
 
 **Files NOT in git:**
-- `.claude_proxy_credentials` - Sensitive credentials
+- `.claude_config` - Active configuration with secrets (proxy credentials, API keys)
+- `.claude_proxy_credentials` - Legacy filename (автоматически мигрирует в `.claude_config`)
 - `.nvm-isolated/.cache/` - NPM cache
 - `.nvm-isolated/.npm/` - NPM temporary files
 - `.nvm-isolated/.claude-isolated/*` - Session data (except skills/, scripts/, CLAUDE.md)
@@ -500,10 +502,11 @@ TypeScript, Python, Go, Rust, C#, Java, Kotlin, Lua, PHP, C/C++, Swift
 
 ## Security Considerations
 
-1. **Credential Storage:** `.claude_proxy_credentials` uses chmod 600 (owner-only)
-2. **Git Exclusion:** Credentials never committed to git (see .gitignore)
+1. **Credential Storage:** `.claude_config` uses chmod 600 (owner-only); never committed to git
+2. **Configuration Template:** `.claude_config.example` — safe template in git; copy → `.claude_config` and fill in secrets
 3. **Password Display:** Hidden by default, use `--show-password` to debug
 4. **HTTPS Proxy:** Prefer `--proxy-ca` over `--proxy-insecure`
 5. **Proxy Trust:** Only use trusted proxy servers (MitM risk with `undici` ProxyAgent)
 6. **TLS Verification:** `undici` does not verify target server certificates when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
+7. **Router API Keys:** Store in `.claude_config` as `export DEEPSEEK_API_KEY=...`; referenced in `router.json` via `${VAR}` placeholders
 

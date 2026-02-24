@@ -70,15 +70,24 @@ check_router_status() {
 	# Parse config and show summary
 	print_info "Configuration summary:"
 
-	# Show provider names and default model
+	# Show provider names and router slots (CCR v2.0.0 schema)
 	if command -v jq &> /dev/null; then
-		local providers=$(jq -r '.providers | keys[]' "$router_config" 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+		local providers=$(jq -r '.Providers[].name' "$router_config" 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
 		if [[ -n "$providers" ]]; then
 			echo "  Providers: $providers"
 		fi
 
-		local default_model=$(jq -r '.routing.default // "not set"' "$router_config" 2>/dev/null)
+		local default_model=$(jq -r '.Router.default // "not set"' "$router_config" 2>/dev/null)
 		echo "  Default model: $default_model"
+
+		local background_model=$(jq -r '.Router.background // ""' "$router_config" 2>/dev/null)
+		[[ -n "$background_model" ]] && echo "  Background model: $background_model"
+
+		local think_model=$(jq -r '.Router.think // ""' "$router_config" 2>/dev/null)
+		[[ -n "$think_model" ]] && echo "  Think model: $think_model"
+
+		local long_model=$(jq -r '.Router.longContext // ""' "$router_config" 2>/dev/null)
+		[[ -n "$long_model" ]] && echo "  Long context model: $long_model"
 	else
 		echo "  (Install jq for detailed config summary)"
 	fi
