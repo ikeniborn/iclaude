@@ -73,7 +73,8 @@ echo "WORKSPACE=${WORKSPACE}"
     "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
     "hints": {
       "language_hint": null,
-      "skip_context7": false
+      "skip_context7": false,
+      "skip_local_docs": false
     }
   }
 }
@@ -85,7 +86,11 @@ echo "WORKSPACE=${WORKSPACE}"
 
 ```
 Прочитать: ${AGENTS_DIR}/researcher-agent/AGENT.md
-Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}\nTASK: {task_description}"
+Собрать prompt: AGENT.md + """
+WORKSPACE: {WORKSPACE}
+PROJECT_ROOT: {PROJECT_ROOT}
+TASK: {task_description}
+"""
 Запустить: Task(subagent_type="general-purpose", prompt=researcher_prompt)
 ```
 
@@ -126,6 +131,7 @@ loop:
   # Перезапустить Researcher с critique как контекстом
   researcher_prompt = researcher_md + """
   WORKSPACE: {WORKSPACE}
+  PROJECT_ROOT: {PROJECT_ROOT}
   TASK: {task_description}
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {WORKSPACE}/research-critique.toon
