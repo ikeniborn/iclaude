@@ -1,0 +1,1026 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Claude Code Router: маршрутизация и внешние модели - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="STATUSLINE.html">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INTEGRATIONS.html">Интеграции iclaude: AI-эффективность и возможности</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/ROUTER.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="claude-code-router">
+<h1>Claude Code Router: маршрутизация и внешние модели<a class="headerlink" href="#claude-code-router" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p>Руководство по настройке Claude Code Router (CCR) для работы с альтернативными LLM-провайдерами.
+Особый фокус — маршрутизация sub-agents по слотам и подключение внешних моделей (Ollama, DeepSeek, OpenRouter).</p>
+<p>Дата: 2026-02-24 | Версия: 4.0</p>
+</div></blockquote>
+<hr class="docutils" />
+<section id="id1">
+<h2>Содержание<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#%D0%B1%D1%8B%D1%81%D1%82%D1%80%D1%8B%D0%B9-%D1%81%D1%82%D0%B0%D1%80%D1%82"><span class="xref myst">Быстрый старт</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BA%D0%B0%D0%BA-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0%D0%B5%D1%82-%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F"><span class="xref myst">Как работает маршрутизация</span></a></p></li>
+<li><p><a class="reference internal" href="#%D1%81%D0%BB%D0%BE%D1%82%D1%8B-router-%D0%B8-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B8-%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D0%BE%D0%B2"><span class="xref myst">Слоты Router и модели агентов</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B2%D0%BD%D0%B5%D1%88%D0%BD%D0%B8%D0%B5-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B8-%D1%87%D0%B5%D1%80%D0%B5%D0%B7-ollama"><span class="xref myst">Внешние модели через Ollama</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3%D1%83%D1%80%D0%B0%D1%86%D0%B8%D1%8F-routerjson"><span class="xref myst">Конфигурация router.json</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%B9%D0%B4%D0%B5%D1%80%D1%8B"><span class="xref myst">Провайдеры</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5-%D0%BE%D0%BA%D1%80%D1%83%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F"><span class="xref myst">Переменные окружения</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B4%D0%B8%D0%B0%D0%B3%D0%BD%D0%BE%D1%81%D1%82%D0%B8%D0%BA%D0%B0"><span class="xref myst">Диагностика</span></a></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h2>Быстрый старт<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Установить Router</span>
+./iclaude.sh<span class="w"> </span>--install-router
+
+<span class="c1"># Проверить статус</span>
+./iclaude.sh<span class="w"> </span>--check-router
+
+<span class="c1"># Запустить через Router</span>
+./iclaude.sh<span class="w"> </span>--router
+</pre></div>
+</div>
+<p><strong>По умолчанию Router отключён.</strong> Флаг <code class="docutils literal notranslate"><span class="pre">--router</span></code> — opt-in.</p>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h2>Как работает маршрутизация<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>CCR Router перехватывает HTTP-запросы от Claude Code к Anthropic API и перенаправляет их к настроенным провайдерам по правилам из <code class="docutils literal notranslate"><span class="pre">router.json</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Claude Code
+    │
+    ▼
+CCR Router (порт 3456)
+    │
+    ├── haiku-модель → Router.background → Ollama / DeepSeek
+    ├── web_search → Router.webSearch → провайдер с поиском
+    ├── thinking → Router.think → провайдер с reasoning
+    └── всё остальное → Router.default → DeepSeek / OpenRouter
+</pre></div>
+</div>
+<section id="id4">
+<h3>Правила маршрутизации (приоритет)<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Условие</p></th>
+<th class="head"><p>Слот</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>model содержит <code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
+<td><p>Лёгкие фоновые задачи</p></td>
+</tr>
+<tr class="row-odd"><td><p>запрос использует <code class="docutils literal notranslate"><span class="pre">web_search</span></code> tools</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.webSearch</span></code></p></td>
+<td><p>Провайдер с веб-поиском</p></td>
+</tr>
+<tr class="row-even"><td><p>запрос содержит <code class="docutils literal notranslate"><span class="pre">thinking</span></code> блок</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.think</span></code></p></td>
+<td><p>Провайдер с extended thinking</p></td>
+</tr>
+<tr class="row-odd"><td><p>всё остальное</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
+<td><p>Основной провайдер</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="router">
+<h2>Слоты Router и модели агентов<a class="headerlink" href="#router" title="Link to this heading">¶</a></h2>
+<section id="agent-md">
+<h3>Фиксация модели в AGENT.md<a class="headerlink" href="#agent-md" title="Link to this heading">¶</a></h3>
+<p>Claude Code v2.1.51+ поддерживает поле <code class="docutils literal notranslate"><span class="pre">model</span></code> в YAML-фронтматтере агента.</p>
+<p><strong>Допустимые значения</strong> (только алиасы, полные ID молча игнорируются):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">haiku</span> <span class="o">|</span> <span class="n">sonnet</span> <span class="o">|</span> <span class="n">opus</span> <span class="o">|</span> <span class="n">best</span> <span class="o">|</span> <span class="n">sonnet</span><span class="p">[</span><span class="mi">1</span><span class="n">m</span><span class="p">]</span> <span class="o">|</span> <span class="n">opus</span><span class="p">[</span><span class="mi">1</span><span class="n">m</span><span class="p">]</span> <span class="o">|</span> <span class="n">opusplan</span> <span class="o">|</span> <span class="n">inherit</span>
+</pre></div>
+</div>
+<p><strong>Пример frontmatter:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">---</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">researcher-agent</span>
+<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Агент-исследователь кодовой базы</span>
+<span class="nt">tools</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Glob, Grep, Read, Write, Task</span>
+<span class="nt">maxTurns</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span>
+<span class="nn">---</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h3>Текущая конфигурация агентов пайплайна<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Агент</p></th>
+<th class="head"><p>Модель</p></th>
+<th class="head"><p>Слот CCR</p></th>
+<th class="head"><p>Обоснование</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
+<td><p>READ-ONLY поиск, maxTurns=60, нужна скорость</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">planning-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.background</span></code></p></td>
+<td><p>Структурированная трансляция по шаблону, maxTurns=25</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">critic-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
+<td><p>Сложный scoring по рубрикам, требует точности</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">execution-agent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Router.default</span></code></p></td>
+<td><p>Редактирование кода, git, recovery protocol</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="ccr">
+<h3>Как CCR определяет слот агента<a class="headerlink" href="#ccr" title="Link to this heading">¶</a></h3>
+<p>CCR читает поле <code class="docutils literal notranslate"><span class="pre">model</span></code> из запроса. Когда агент объявлен с <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Claude Code резолвит алиас <code class="docutils literal notranslate"><span class="pre">haiku</span></code> → <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code></p></li>
+<li><p>CCR видит модель содержащую <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> AND <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code></p></li>
+<li><p>CCR выбирает <code class="docutils literal notranslate"><span class="pre">Router.background</span></code> провайдер</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>agent (model: haiku)
+    │
+    └─→ Claude Code → &quot;claude-haiku-4-5-20251001&quot;
+                           │
+                           └─→ CCR → Router.background → провайдер
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h3>Приоритет выбора модели<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. CLAUDE_CODE_SUBAGENT_MODEL (env var)  ← глобальный override
+2. --model флаг при вызове Task()
+3. AGENT.md frontmatter.model            ← фиксация на уровне агента
+4. inherit                               ← наследует модель родителя
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ollama">
+<h2>Внешние модели через Ollama<a class="headerlink" href="#ollama" title="Link to this heading">¶</a></h2>
+<section id="id7">
+<h3>Подключение Ollama<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>Ollama предоставляет OpenAI-совместимый API на <code class="docutils literal notranslate"><span class="pre">http://localhost:11434/v1</span></code>.</p>
+<p><strong>Шаг 1: Запустить Ollama и загрузить модель</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Установить Ollama</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://ollama.ai/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+
+<span class="c1"># Загрузить модель для кода (рекомендуется для background-агентов)</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>qwen2.5-coder:7b
+
+<span class="c1"># Или лёгкую универсальную модель</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>llama3.1:8b
+
+<span class="c1"># Проверить</span>
+ollama<span class="w"> </span>list
+curl<span class="w"> </span>http://localhost:11434/v1/models
+</pre></div>
+</div>
+<p><strong>Шаг 2: Переключить <code class="docutils literal notranslate"><span class="pre">Router.background</span></code> на Ollama</strong></p>
+<p>В файле <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/router.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Теперь <code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code> и <code class="docutils literal notranslate"><span class="pre">planning-agent</span></code> (с <code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">haiku</span></code>) будут работать через локальную Ollama.</p>
+</section>
+<section id="id8">
+<h3>Выбор модели Ollama<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Задача агента</p></th>
+<th class="head"><p>Рекомендуемая модель</p></th>
+<th class="head"><p>Размер</p></th>
+<th class="head"><p>VRAM</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Поиск и индексация (researcher)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
+<td><p>4.7 GB</p></td>
+<td><p>6 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>Планирование по шаблону (planner)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:7b</span></code></p></td>
+<td><p>4.7 GB</p></td>
+<td><p>6 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>Лёгкая альтернатива</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">llama3.1:8b</span></code></p></td>
+<td><p>4.9 GB</p></td>
+<td><p>6 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>Минимальные ресурсы</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">qwen2.5-coder:1.5b</span></code></p></td>
+<td><p>1.0 GB</p></td>
+<td><p>2 GB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="ollama-proxy">
+<h3>Ollama через proxy<a class="headerlink" href="#ollama-proxy" title="Link to this heading">¶</a></h3>
+<p>Если iclaude работает с прокси, Ollama (localhost) нужно добавить в NO_PROXY:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Это уже настроено в iclaude.sh по умолчанию:</span>
+<span class="nv">NO_PROXY</span><span class="o">=</span><span class="s2">&quot;localhost,127.0.0.1,...&quot;</span>
+</pre></div>
+</div>
+<p>CCR Router работает через прокси для внешних провайдеров и напрямую для localhost.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="router-json">
+<h2>Конфигурация router.json<a class="headerlink" href="#router-json" title="Link to this heading">¶</a></h2>
+<p>Файл: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/router.json</span></code></p>
+<section id="deepseek-ollama">
+<h3>Полный пример — DeepSeek + Ollama<a class="headerlink" href="#deepseek-ollama" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://api.deepseek.com/v1/chat/completions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek-chat&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;deepseek&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;qwen2.5-coder:7b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;llama3.1:8b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mistral:7b&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h3>Стратегии маршрутизации<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<section id="id10">
+<h4>Вариант 1: Всё через один провайдер (текущий по умолчанию)<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Оба слота используют DeepSeek. Агенты-исследователи и исполнители идут к одному провайдеру.</p>
+</section>
+<section id="id11">
+<h4>Вариант 2: Разделение — локальные фоновые, удалённые основные<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">researcher-agent</span></code>, <code class="docutils literal notranslate"><span class="pre">planning-agent</span></code> (haiku) → Ollama (бесплатно, локально)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic-agent</span></code>, <code class="docutils literal notranslate"><span class="pre">execution-agent</span></code> (sonnet) → DeepSeek (качество)</p></li>
+</ul>
+</section>
+<section id="ollama-api">
+<h4>Вариант 3: Полный Ollama (без внешних API)<a class="headerlink" href="#ollama-api" title="Link to this heading">¶</a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:7b&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ollama,qwen2.5-coder:1.5b&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Все агенты работают локально. Требует мощного GPU.</p>
+</section>
+<section id="openrouter">
+<h4>Вариант 4: OpenRouter как агрегатор<a class="headerlink" href="#openrouter" title="Link to this heading">¶</a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_base_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://openrouter.ai/api/v1/chat/completions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${OPENROUTER_API_KEY}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;google/gemini-flash-1.5&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;meta-llama/llama-3.1-70b-instruct&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;mistralai/mistral-7b-instruct&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;transformer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;use&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,meta-llama/llama-3.1-70b-instruct&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;background&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openrouter,google/gemini-flash-1.5&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id12">
+<h3>Переменные в router.json<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>CCR поддерживает <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code> placeholders для секретов:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Экспортировать перед запуском</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DEEPSEEK_API_KEY</span><span class="o">=</span><span class="s2">&quot;sk-...&quot;</span>
+./iclaude.sh<span class="w"> </span>--router
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id13">
+<h2>Провайдеры<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<section id="id14">
+<h3>Поддерживаемые провайдеры<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Провайдер</p></th>
+<th class="head"><p>Transformer</p></th>
+<th class="head"><p>API Base URL</p></th>
+<th class="head"><p>Примечание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DeepSeek</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">deepseek</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://api.deepseek.com/v1/chat/completions</span></code></p></td>
+<td><p>Дешёвый, хорошее качество</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ollama</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">http://localhost:11434/v1</span></code></p></td>
+<td><p>Локальный, бесплатный</p></td>
+</tr>
+<tr class="row-even"><td><p>OpenRouter</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://openrouter.ai/api/v1/chat/completions</span></code></p></td>
+<td><p>Агрегатор 200+ моделей</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gemini</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gemini</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://generativelanguage.googleapis.com</span></code></p></td>
+<td><p>Google модели</p></td>
+</tr>
+<tr class="row-even"><td><p>OpenAI</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://api.openai.com/v1</span></code></p></td>
+<td><p>GPT-4o</p></td>
+</tr>
+<tr class="row-odd"><td><p>SiliconFlow</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://api.siliconflow.cn/v1</span></code></p></td>
+<td><p>Китайский агрегатор</p></td>
+</tr>
+<tr class="row-even"><td><p>Volcengine</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">https://ark.cn-beijing.volces.com/api/v3</span></code></p></td>
+<td><p>ByteDance</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="transformer">
+<h3>Transformer типы<a class="headerlink" href="#transformer" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Transformer</p></th>
+<th class="head"><p>Назначение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">openai</span></code></p></td>
+<td><p>Стандартный OpenAI-совместимый API</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deepseek</span></code></p></td>
+<td><p>DeepSeek-специфичные заголовки и форматирование</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gemini</span></code></p></td>
+<td><p>Google Gemini API (другой формат запроса)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id15">
+<h2>Переменные окружения<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Переменная</p></th>
+<th class="head"><p>Описание</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CLAUDE_CODE_SUBAGENT_MODEL</span></code></p></td>
+<td><p>Глобальный override модели для всех субагентов</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_HAIKU_MODEL</span></code></p></td>
+<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">haiku</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_SONNET_MODEL</span></code></p></td>
+<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">sonnet</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ANTHROPIC_DEFAULT_OPUS_MODEL</span></code></p></td>
+<td><p>Переопределяет что резолвится по алиасу <code class="docutils literal notranslate"><span class="pre">opus</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Пример — принудительно пустить всех субагентов через Ollama:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CLAUDE_CODE_SUBAGENT_MODEL</span><span class="o">=</span>haiku<span class="w"> </span>./iclaude.sh<span class="w"> </span>--router
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="id16">
+<h2>Диагностика<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<section id="id17">
+<h3>Проверить статус Router<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./iclaude.sh<span class="w"> </span>--check-router
+</pre></div>
+</div>
+</section>
+<section id="id18">
+<h3>Проверить что Router отвечает<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:3456/health
+</pre></div>
+</div>
+</section>
+<section id="id19">
+<h3>Посмотреть логи маршрутизации<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p>Включить debug-уровень в router.json:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;LOG&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Логи покажут:</p>
+<ul class="simple">
+<li><p>Входящий model ID от Claude Code</p></li>
+<li><p>Выбранный слот (default/background/webSearch/think)</p></li>
+<li><p>Выбранный провайдер и модель</p></li>
+<li><p>HTTP-статус ответа</p></li>
+</ul>
+</section>
+<section id="id20">
+<h3>Типичные проблемы<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<section id="id21">
+<h4>Агент не использует фиксированную модель<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h4>
+<p>Проверить что значение в <code class="docutils literal notranslate"><span class="pre">AGENT.md</span></code> — это алиас, а не полный ID:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span><span class="w">    </span><span class="c1"># ✅ правильно</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-haiku-4-5-20251001</span><span class="w">   </span><span class="c1"># ❌ игнорируется молча</span>
+</pre></div>
+</div>
+</section>
+<section id="router-background">
+<h4>Router.background не срабатывает<a class="headerlink" href="#router-background" title="Link to this heading">¶</a></h4>
+<p>CCR определяет background-слот только если model содержит одновременно <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> И <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code>.
+Алиас <code class="docutils literal notranslate"><span class="pre">haiku</span></code> резолвится в <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code> — условие выполняется.</p>
+<p>Если используется кастомная Ollama-модель напрямую (<code class="docutils literal notranslate"><span class="pre">model:</span> <span class="pre">qwen2.5-coder:7b</span></code>) — она не содержит <code class="docutils literal notranslate"><span class="pre">&quot;claude&quot;</span></code> и <code class="docutils literal notranslate"><span class="pre">&quot;haiku&quot;</span></code>, поэтому пойдёт в <code class="docutils literal notranslate"><span class="pre">Router.default</span></code>.</p>
+</section>
+<section id="id22">
+<h4>Ollama не отвечает<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Проверить что Ollama запущена</span>
+systemctl<span class="w"> </span>status<span class="w"> </span>ollama
+<span class="c1"># или</span>
+ollama<span class="w"> </span>serve<span class="w"> </span><span class="p">&amp;</span>
+
+<span class="c1"># Проверить доступность API</span>
+curl<span class="w"> </span>http://localhost:11434/v1/models
+
+<span class="c1"># Проверить что модель загружена</span>
+ollama<span class="w"> </span>list
+</pre></div>
+</div>
+</section>
+<section id="id23">
+<h4>Таймаут при работе с Ollama<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h4>
+<p>Увеличить <code class="docutils literal notranslate"><span class="pre">API_TIMEOUT_MS</span></code> в router.json:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;API_TIMEOUT_MS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200000</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ollama на CPU работает значительно медленнее, особенно на больших контекстах.</p>
+<hr class="docutils" />
+<p><em>Документ создан 2026-02-24. CCR версия: &#64;musistudio/claude-code-router.</em></p>
+</section>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Claude Code Router: маршрутизация и внешние модели</a><ul>
+<li><a class="reference internal" href="#id1">Содержание</a></li>
+<li><a class="reference internal" href="#id2">Быстрый старт</a></li>
+<li><a class="reference internal" href="#id3">Как работает маршрутизация</a><ul>
+<li><a class="reference internal" href="#id4">Правила маршрутизации (приоритет)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#router">Слоты Router и модели агентов</a><ul>
+<li><a class="reference internal" href="#agent-md">Фиксация модели в AGENT.md</a></li>
+<li><a class="reference internal" href="#id5">Текущая конфигурация агентов пайплайна</a></li>
+<li><a class="reference internal" href="#ccr">Как CCR определяет слот агента</a></li>
+<li><a class="reference internal" href="#id6">Приоритет выбора модели</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ollama">Внешние модели через Ollama</a><ul>
+<li><a class="reference internal" href="#id7">Подключение Ollama</a></li>
+<li><a class="reference internal" href="#id8">Выбор модели Ollama</a></li>
+<li><a class="reference internal" href="#ollama-proxy">Ollama через proxy</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#router-json">Конфигурация router.json</a><ul>
+<li><a class="reference internal" href="#deepseek-ollama">Полный пример — DeepSeek + Ollama</a></li>
+<li><a class="reference internal" href="#id9">Стратегии маршрутизации</a><ul>
+<li><a class="reference internal" href="#id10">Вариант 1: Всё через один провайдер (текущий по умолчанию)</a></li>
+<li><a class="reference internal" href="#id11">Вариант 2: Разделение — локальные фоновые, удалённые основные</a></li>
+<li><a class="reference internal" href="#ollama-api">Вариант 3: Полный Ollama (без внешних API)</a></li>
+<li><a class="reference internal" href="#openrouter">Вариант 4: OpenRouter как агрегатор</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">Переменные в router.json</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id13">Провайдеры</a><ul>
+<li><a class="reference internal" href="#id14">Поддерживаемые провайдеры</a></li>
+<li><a class="reference internal" href="#transformer">Transformer типы</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id15">Переменные окружения</a></li>
+<li><a class="reference internal" href="#id16">Диагностика</a><ul>
+<li><a class="reference internal" href="#id17">Проверить статус Router</a></li>
+<li><a class="reference internal" href="#id18">Проверить что Router отвечает</a></li>
+<li><a class="reference internal" href="#id19">Посмотреть логи маршрутизации</a></li>
+<li><a class="reference internal" href="#id20">Типичные проблемы</a><ul>
+<li><a class="reference internal" href="#id21">Агент не использует фиксированную модель</a></li>
+<li><a class="reference internal" href="#router-background">Router.background не срабатывает</a></li>
+<li><a class="reference internal" href="#id22">Ollama не отвечает</a></li>
+<li><a class="reference internal" href="#id23">Таймаут при работе с Ollama</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=fa37347f"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>
