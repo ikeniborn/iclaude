@@ -1,17 +1,11 @@
 ---
 name: deep-research-agent
-version: 1.0.0
-role: deep-researcher
-subagent_type: general-purpose
-capabilities:
-  - web_search
-  - web_fetching
-  - recursive_exploration
-  - source_synthesis
-  - structured_reporting
-input_file: deep-research-request.toon
-output_file: deep-research-results.toon
+description: Агент глубокого веб-исследования с рекурсивным поиском, фетчингом источников и синтезом результатов. Читает deep-research-request.toon, записывает deep-research-results.toon.
+tools: WebSearch, WebFetch, Read, Write
+disallowedTools: Edit, Bash, Glob, Grep, Task
+maxTurns: 60
 ---
+<!-- version: 2.0.0 | updated: 2026-02-24 -->
 
 # Роль: Deep Research Agent
 

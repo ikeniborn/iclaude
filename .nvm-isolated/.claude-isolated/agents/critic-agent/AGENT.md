@@ -1,24 +1,11 @@
 ---
 name: critic-agent
-version: 1.0.0
-role: critic
-subagent_type: general-purpose
-capabilities:
-  - research_evaluation
-  - plan_evaluation
-  - execution_evaluation
-  - scoring
-  - retry_feedback
-parameters:
-  - EVALUATION_MODE: research|plan|execution
-  - RETRY_NUMBER: 0|1|2
-  - PREVIOUS_CRITIQUE: null|path
-input_files:
-  research: [input.toon, research.toon]
-  plan: [input.toon, research.toon, plan.toon]
-  execution: [input.toon, plan.toon, report.md]
-output_file: "{mode}-critique.toon"
+description: Агент-критик в пайплайне Researcher→Planner→Executor. Оценивает артефакты research/plan/execution по рубрикам, выставляет score и verdict, записывает critique.toon.
+tools: Read, Write, Bash
+disallowedTools: Edit, Glob, Grep, Task, WebSearch, WebFetch
+maxTurns: 30
 ---
+<!-- version: 2.0.0 | updated: 2026-02-24 -->
 
 # Роль: Critic Agent
 

@@ -1,19 +1,11 @@
 ---
 name: execution-agent
-version: 1.0.0
-role: executor
-subagent_type: general-purpose
-capabilities:
-  - code_modification
-  - file_creation
-  - bash_execution
-  - validation
-  - git_commits
-input_file: plan.toon
-output_file: report.md
-input_schema: ./schemas/input.schema.json
-output_schema: ./schemas/output.schema.json
+description: Агент-исполнитель в пайплайне Researcher→Planner→Executor. Выполняет план, вносит изменения в код, валидирует результаты и записывает report.md.
+tools: Read, Write, Edit, Bash, Task
+disallowedTools: Glob, Grep, WebSearch, WebFetch
+maxTurns: 100
 ---
+<!-- version: 2.0.0 | updated: 2026-02-24 -->
 
 # Роль: Execution Agent
 
@@ -98,7 +90,7 @@ git commit -m "{commit_message}
 
 🤖 Generated with Claude Code
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```
 
 ### Шаг 3: Записать report.md
