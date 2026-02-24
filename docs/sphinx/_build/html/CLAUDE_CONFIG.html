@@ -216,12 +216,18 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="STATUSLINE.html">Claude Statusline Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INTEGRATIONS.html">Интеграции iclaude: AI-эффективность и возможности</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features/README.html">Features Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="architecture/README.html">Loop Mode Architecture Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development</span></p>
 <ul>
@@ -248,13 +254,7 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/init.html">init</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/memory.html">memory</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/operations.html">operations</a></li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
@@ -262,7 +262,7 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
@@ -272,39 +272,23 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/install.html">install</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/status.html">status</a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/executor.html">executor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/git.html">git</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parallel.html">parallel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parser.html">parser</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/retry.html">retry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/state.html">state</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/validator.html">validator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/worktree.html">worktree</a></li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
@@ -313,42 +297,42 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
