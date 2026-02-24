@@ -2,7 +2,7 @@
 name: planning-agent
 description: Агент-планировщик в пайплайне Researcher→Planner→Executor. Транслирует результаты исследования в пошаговый план выполнения, записывает plan.toon.
 tools: Read, Write
-disallowedTools: Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch
+disallowedTools: Edit, Bash, Glob, Grep, Task
 maxTurns: 25
 ---
 <!-- version: 2.0.0 | updated: 2026-02-24 -->

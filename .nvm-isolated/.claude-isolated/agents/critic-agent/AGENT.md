@@ -2,7 +2,7 @@
 name: critic-agent
 description: Агент-критик в пайплайне Researcher→Planner→Executor. Оценивает артефакты research/plan/execution по рубрикам, выставляет score и verdict, записывает critique.toon.
 tools: Read, Write, Bash
-disallowedTools: Edit, Glob, Grep, Task, WebSearch, WebFetch
+disallowedTools: Edit, Glob, Grep, Task
 maxTurns: 30
 ---
 <!-- version: 2.0.0 | updated: 2026-02-24 -->
