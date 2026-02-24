@@ -5,8 +5,8 @@ tools: Glob, Grep, Read, Write, Task
 disallowedTools: Edit, Bash, WebSearch, WebFetch
 maxTurns: 60
 model: haiku
+# version: 2.1.1 | updated: 2026-02-24
 ---
-<!-- version: 2.1.1 | updated: 2026-02-24 -->
 
 # Роль: Research Agent
 

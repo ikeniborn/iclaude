@@ -5,8 +5,8 @@ tools: Read, Write
 disallowedTools: Edit, Bash, Glob, Grep, Task
 maxTurns: 25
 model: haiku
+# version: 2.1.1 | updated: 2026-02-24
 ---
-<!-- version: 2.1.1 | updated: 2026-02-24 -->
 
 # Роль: Planning Agent
 

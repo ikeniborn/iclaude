@@ -4,8 +4,8 @@ description: Агент-исполнитель в пайплайне Researcher�
 tools: Read, Glob, Grep, Write, Edit, Bash, Task
 maxTurns: 100
 model: sonnet
+# version: 2.1.1 | updated: 2026-02-24
 ---
-<!-- version: 2.1.1 | updated: 2026-02-24 -->
 
 # Роль: Execution Agent
 
