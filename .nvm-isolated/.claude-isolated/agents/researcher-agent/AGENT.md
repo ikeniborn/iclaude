@@ -18,6 +18,7 @@ maxTurns: 60
 Ты получишь в начале этого prompt:
 ```
 WORKSPACE: /path/to/.claude/workspace/{session-id}
+PROJECT_ROOT: /absolute/path/to/project   ← корень проекта (для поиска docs/)
 TASK: {описание задачи пользователя}
 ```
 
@@ -80,22 +81,25 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
 Если `hints.skip_local_docs != true`:
 
 1. **Найти docs/llms.txt через Glob** (не Read — путь может не разрешиться):
+
+   Использовать `PROJECT_ROOT` из prompt для формирования пути:
+   ```
+   llms_files = Glob("{PROJECT_ROOT}/docs/llms.txt")
+   ```
+   Если `llms_files` пустой — попробовать без PROJECT_ROOT (fallback на CWD):
    ```
    llms_files = Glob("docs/llms.txt")
-   ```
-   Если `llms_files` пустой — попробовать расширенный поиск:
-   ```
-   llms_files = Glob("**/llms.txt")
    ```
    Взять первый результат как `llms_path`.
 
    **Структура документации проекта:**
    ```
-   docs/
-   ├── llms.txt          ← индекс для AI-агентов (читать первым)
-   ├── llms-full.txt     ← полный контент (не читать — слишком большой)
-   └── sphinx/           ← Sphinx HTML + исходники
-       └── api-reference/{component}/index.md
+   {PROJECT_ROOT}/
+   └── docs/
+       ├── llms.txt          ← индекс для AI-агентов (читать первым)
+       ├── llms-full.txt     ← полный контент (не читать — слишком большой)
+       └── sphinx/           ← Sphinx HTML + исходники
+           └── api-reference/{component}/index.md
    ```
 
 2. **Если `llms_path` найден** — прочитать индекс:
@@ -107,7 +111,7 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
    - Прочитать найденный API Reference файл по абсолютному пути
      (путь из Glob-результата, не из relative строки):
      ```
-     component_files = Glob("docs/sphinx/api-reference/{component}/**/*.md")
+     component_files = Glob("{PROJECT_ROOT}/docs/sphinx/api-reference/{component}/**/*.md")
      Read(component_files[0])
      ```
    - Извлечь: имена публичных функций, параметры, примеры использования, ограничения
