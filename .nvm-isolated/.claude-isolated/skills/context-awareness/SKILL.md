@@ -3,8 +3,11 @@ name: context-awareness
 description: Автоматическое определение контекста проекта
 user-invocable: false
 agent: Explore
+# version: 1.2.0
+# tags: context, detection, project, language, framework
+# dependencies: []
+# files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
 ---
-<!-- version: 1.2.0 | tags: context, detection, project, language, framework | dependencies: [] | files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json -->
 
 # Context Awareness
 

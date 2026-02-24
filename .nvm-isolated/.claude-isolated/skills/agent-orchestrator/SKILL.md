@@ -3,8 +3,11 @@ name: agent-orchestrator
 description: Оркестратор пайплайна Researcher → Planner → Executor
 user-invocable: true
 context: fork
+# version: 1.1.0
+# tags: agents, orchestration, pipeline, researcher, planner, executor
+# invocation: /agent-orchestrator
+# dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md
 ---
-<!-- version: 1.1.0 | tags: agents, orchestration, pipeline, researcher, planner, executor | invocation: /agent-orchestrator | dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md -->
 
 # Agent Orchestrator
 

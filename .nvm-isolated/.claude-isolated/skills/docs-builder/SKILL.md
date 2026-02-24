@@ -3,8 +3,10 @@ name: docs-builder
 description: Build and update Sphinx documentation site with llms.txt for AI agents. Integrates with architecture-documentation and prd-generator.
 user-invocable: true
 context: fork
+# version: 2.0.0
+# tags: documentation, sphinx, llms.txt, ai-agents, api-reference, bash-parser
+# dependencies: iclaude-architecture | author: iclaude Skills Team
 ---
-<!-- version: 2.0.0 | tags: documentation, sphinx, llms.txt, ai-agents, api-reference, bash-parser | dependencies: iclaude-architecture | author: iclaude Skills Team -->
 
 # docs-builder Skill
 

@@ -3,8 +3,11 @@ name: code-review
 description: Автоматический review кода перед commit
 user-invocable: true
 context: fork
+# version: 1.3.0
+# tags: review, quality, security, code-smells, toon
+# dependencies: toon-skill, lsp-integration
+# files: templates: ./templates/*.json, rules: ./rules/*.md
 ---
-<!-- version: 1.3.0 | tags: review, quality, security, code-smells, toon | dependencies: toon-skill, lsp-integration | files: templates: ./templates/*.json, rules: ./rules/*.md -->
 
 # Code Review
 

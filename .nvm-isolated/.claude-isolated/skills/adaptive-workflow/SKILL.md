@@ -2,8 +2,11 @@
 name: adaptive-workflow
 description: Автоматический выбор сложности workflow
 user-invocable: false
+# version: 2.2.0
+# tags: workflow, complexity, adaptation, optimization, task-decomposition
+# dependencies: context-awareness, task-decomposition, phase-execution
+# files: templates: ./templates/*.json
 ---
-<!-- version: 2.2.0 | tags: workflow, complexity, adaptation, optimization, task-decomposition | dependencies: context-awareness, task-decomposition, phase-execution | files: templates: ./templates/*.json -->
 
 # Adaptive Workflow
 

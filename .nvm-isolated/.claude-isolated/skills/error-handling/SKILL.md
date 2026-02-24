@@ -2,8 +2,11 @@
 name: error-handling
 description: Структурированная обработка ошибок workflow
 user-invocable: false
+# version: 2.2.0
+# tags: errors, recovery, retry, handling
+# dependencies: []
+# files: templates: ./templates/*.json
 ---
-<!-- version: 2.2.0 | tags: errors, recovery, retry, handling | dependencies: [] | files: templates: ./templates/*.json -->
 
 # Error Handling v2.2
 

@@ -3,8 +3,11 @@ name: validation-framework
 description: Адаптивная валидация execution results с partial validation support (PHASE 4)
 user-invocable: false
 context: fork
+# version: 1.0.0
+# tags: validation, execution, acceptance-criteria, testing, post-execution
+# dependencies: thinking-framework, error-handling, toon-skill
+# files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md
 ---
-<!-- version: 1.0.0 | tags: validation, execution, acceptance-criteria, testing, post-execution | dependencies: thinking-framework, error-handling, toon-skill | files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md -->
 
 # Validation Framework
 

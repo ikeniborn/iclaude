@@ -2,8 +2,10 @@
 name: toon-skill
 description: Централизованный API для конвертации JSON ↔ TOON и расчёта token savings
 user-invocable: false
+# version: 1.1.0 | category: utility
+# tags: toon, token-optimization, data-format, inter-skill-communication | author: Claude Code Team | created_at: 2026-01-23 | updated_at: 2026-01-25
+# dependencies: npm: @toon-format/toon ^1.0.0
 ---
-<!-- version: 1.1.0 | category: utility | tags: toon, token-optimization, data-format, inter-skill-communication | author: Claude Code Team | created_at: 2026-01-23 | updated_at: 2026-01-25 | dependencies: npm: @toon-format/toon ^1.0.0 -->
 
 # TOON Skill - Token-Oriented Object Notation Support
 

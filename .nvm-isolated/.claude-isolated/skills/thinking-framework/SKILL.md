@@ -2,8 +2,11 @@
 name: thinking-framework
 description: Структурированный reasoning через 3 универсальных шаблона
 user-invocable: false
+# version: 2.2.0
+# tags: thinking, reasoning, decision-making, analysis, risk-assessment
+# dependencies: []
+# files: { templates: ./templates/*.xml, examples: ./examples/*.md, shared: @shared:THINKING-PATTERNS.md }
 ---
-<!-- version: 2.2.0 | tags: thinking, reasoning, decision-making, analysis, risk-assessment | dependencies: [] | files: { templates: ./templates/*.xml, examples: ./examples/*.md, shared: @shared:THINKING-PATTERNS.md } -->
 
 # Thinking Framework v2.2
 
