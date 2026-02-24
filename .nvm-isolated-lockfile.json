@@ -6,11 +6,15 @@
     "pyright": "1.1.408"
   },
   "lspPlugins": {},
-  "sandboxAvailable": false,
+  "sandboxAvailable": true,
   "sandboxPlatform": "linux",
-  "sandboxDependencies": {},
-  "sandboxRuntimeVersion": "not installed",
-  "sandboxInstalledAt": "",
+  "sandboxDependencies": {
+    "bubblewrap": "0.8.0",
+    "socat": "1.7.4.1",
+    "sandbox-runtime": "1.0.0"
+  },
+  "sandboxRuntimeVersion": "1.0.0",
+  "sandboxInstalledAt": "2026-02-24T10:09:06Z",
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
