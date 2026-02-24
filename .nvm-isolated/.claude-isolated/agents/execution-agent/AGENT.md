@@ -2,7 +2,6 @@
 name: execution-agent
 description: Агент-исполнитель в пайплайне Researcher→Planner→Executor. Выполняет план, вносит изменения в код, валидирует результаты и записывает report.md.
 tools: Read, Glob, Grep, Write, Edit, Bash, Task
-disallowedTools: WebSearch, WebFetch
 maxTurns: 100
 ---
 <!-- version: 2.0.0 | updated: 2026-02-24 -->
