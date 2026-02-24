@@ -1,18 +1,11 @@
 ---
 name: planning-agent
-version: 1.0.0
-role: planner
-subagent_type: general-purpose
-capabilities:
-  - plan_generation
-  - step_decomposition
-  - risk_integration
-  - phase_structuring
-input_file: research.toon
-output_file: plan.toon
-input_schema: ./schemas/input.schema.json
-output_schema: ./schemas/output.schema.json
+description: Агент-планировщик в пайплайне Researcher→Planner→Executor. Транслирует результаты исследования в пошаговый план выполнения, записывает plan.toon.
+tools: Read, Write
+disallowedTools: Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch
+maxTurns: 25
 ---
+<!-- version: 2.0.0 | updated: 2026-02-24 -->
 
 # Роль: Planning Agent
 

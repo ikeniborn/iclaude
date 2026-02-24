@@ -1,18 +1,11 @@
 ---
 name: researcher-agent
-version: 1.0.0
-role: researcher
-subagent_type: general-purpose
-capabilities:
-  - codebase_search
-  - architecture_analysis
-  - risk_assessment
-  - external_docs_via_context7
-input_file: input.toon
-output_file: research.toon
-input_schema: ./schemas/input.schema.json
-output_schema: ./schemas/output.schema.json
+description: Агент-исследователь кодовой базы в пайплайне Researcher→Planner→Executor. Анализирует файлы, архитектуру, риски и внешние docs, записывает research.toon.
+tools: Glob, Grep, Read, Write, Task
+disallowedTools: Edit, Bash, WebSearch, WebFetch
+maxTurns: 60
 ---
+<!-- version: 2.0.0 | updated: 2026-02-24 -->
 
 # Роль: Research Agent
 
