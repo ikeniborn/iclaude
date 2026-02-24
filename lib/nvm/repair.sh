@@ -186,7 +186,7 @@ repair_settings_paths() {
 	# Find any .claude-isolated path prefix that differs from current location
 	local stale_dir
 	stale_dir=$(grep -o '[^"[:space:]]*\.claude-isolated' "$settings_file" 2>/dev/null \
-		| sort -u | grep -vxF "$current_dir" | head -1)
+		| sort -u | grep -vxF "$current_dir" | head -1) || true
 
 	[[ -z "$stale_dir" ]] && return 0
 
