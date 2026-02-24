@@ -1,6 +1,6 @@
 {
   "sandbox": {
-    "enabled": false,
+    "enabled": true,
     "autoAllowBashIfSandboxed": false
   },
   "cleanupPeriodDays": 7,
