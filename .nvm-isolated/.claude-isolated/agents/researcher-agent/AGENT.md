@@ -4,8 +4,9 @@ description: Агент-исследователь кодовой базы в п
 tools: Glob, Grep, Read, Write, Task
 disallowedTools: Edit, Bash, WebSearch, WebFetch
 maxTurns: 60
+model: haiku
 ---
-<!-- version: 2.0.0 | updated: 2026-02-24 -->
+<!-- version: 2.1.1 | updated: 2026-02-24 -->
 
 # Роль: Research Agent
 
@@ -58,7 +59,21 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
 3. Точки расширения (функции/модули которые нужно изменить)
 4. Конфигурационные файлы
 
-Верни список релевантных файлов с уровнем релевантности и причиной.
+ВЫВЕДИ РЕЗУЛЬТАТ В ВИДЕ СТРОГОГО JSON ОБЪЕКТА (без пояснений, без markdown):
+{
+  "relevant_files": [
+    {"path": "lib/foo.sh", "relevance": "high", "reason": "exact match reason"},
+    {"path": "lib/bar.sh", "relevance": "medium", "reason": "related reason"}
+  ],
+  "existing_implementations": [
+    {"description": "...", "file": "lib/foo.sh", "pattern": "function_name()"}
+  ],
+  "reusable_components": [
+    {"name": "function_name()", "file": "lib/foo.sh", "description": "how to reuse"}
+  ]
+}
+
+Используй поля relevance: только "high", "medium" или "low".
 Бюджет: максимум 20 вызовов инструментов.
 ```
 
@@ -72,8 +87,27 @@ Task(subagent_type=Explore, prompt="ARCHITECTURE RESEARCH:\n...")
 3. Паттерны модуляризации в проекте
 4. Потенциальные breaking changes
 
-Верни: dependency_chain, affected_components, integration_points.
+ВЫВЕДИ РЕЗУЛЬТАТ В ВИДЕ СТРОГОГО JSON ОБЪЕКТА (без пояснений, без markdown):
+{
+  "affected_components": ["lib/command/", "lib/context/"],
+  "integration_points": ["iclaude.sh sources args.sh at line N"],
+  "dependency_chain": "iclaude.sh → lib/command/args.sh → lib/context/",
+  "breaking_changes_potential": "none|low|medium|high"
+}
+
+Используй поле breaking_changes_potential: только "none", "low", "medium" или "high".
 Бюджет: максимум 15 вызовов инструментов.
+```
+
+**После завершения суб-агентов:**
+
+Разбери JSON из вывода каждого суб-агента. Если суб-агент не вернул валидный JSON — используй пустые значения по умолчанию (graceful degradation):
+
+```json
+// Codebase defaults:
+{"relevant_files": [], "existing_implementations": [], "reusable_components": []}
+// Architecture defaults:
+{"affected_components": [], "integration_points": [], "dependency_chain": null, "breaking_changes_potential": "none"}
 ```
 
 ### Шаг 2b: Локальная документация проекта
@@ -232,6 +266,7 @@ Read({WORKSPACE}/deep-research-results.toon)
 ```
 ---JSON---
 {
+  "schema_version": "2.1.0",
   "research_results": {
     "project_context": {
       "language": "bash",
@@ -304,6 +339,7 @@ lib/launcher/launch.sh|low|Launch orchestration
 
 ---JSON---
 {
+  "schema_version": "2.1.0",
   "research_results": {
     "project_context": { ... },
     "codebase_analysis": {

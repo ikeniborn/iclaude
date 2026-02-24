@@ -2,74 +2,200 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "execution-agent/output.schema.json",
   "title": "Execution Agent Output",
-  "description": "Отчёт о выполнении (report.md) — Markdown формат, не JSON",
+  "description": "Отчёт о выполнении (report.json) — машиночитаемый JSON формат",
   "type": "object",
-  "note": "report.md — Markdown документ для ревью пользователем. Не JSON схема.",
+  "required": ["schema_version", "session_id", "task_description", "status", "phases", "files_changed", "commits", "risks_encountered", "next_steps"],
+  "additionalProperties": false,
   "properties": {
-    "report_sections": {
-      "type": "object",
-      "description": "Обязательные секции report.md",
-      "properties": {
-        "header": {
-          "type": "string",
-          "description": "# Execution Report: {task_description}"
-        },
-        "metadata": {
-          "type": "object",
-          "properties": {
-            "session": { "type": "string" },
-            "status": {
-              "type": "string",
-              "enum": ["✅ COMPLETED", "❌ FAILED", "⚠️ PARTIAL"]
-            }
+    "schema_version": {
+      "type": "string",
+      "const": "2.1.0",
+      "description": "Версия схемы report.json"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{4}$",
+      "description": "Session ID в формате YYYY-MM-DDTHHMM (из пути WORKSPACE)"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "Описание задачи из plan.toon execution_plan.metadata.task_description"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["COMPLETED", "FAILED", "PARTIAL"],
+      "description": "COMPLETED: все фазы OK. FAILED: recovery исчерпан. PARTIAL: пользователь пропустил фазу."
+    },
+    "phases": {
+      "type": "array",
+      "description": "Результаты каждой фазы",
+      "items": {
+        "type": "object",
+        "required": ["phase_number", "phase_name", "status", "files", "validation_command", "validation_result"],
+        "additionalProperties": false,
+        "properties": {
+          "phase_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "phase_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["COMPLETED", "FAILED", "SKIPPED"]
+          },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Файлы изменённые в этой фазе"
+          },
+          "validation_command": {
+            "type": "string",
+            "description": "Команда валидации из plan.toon"
+          },
+          "validation_result": {
+            "type": "string",
+            "enum": ["OK", "FAILED", "SKIPPED"],
+            "description": "OK: прошла. FAILED: провалилась. SKIPPED: фаза пропущена."
+          },
+          "commit_hash": {
+            "type": ["string", "null"],
+            "description": "Короткий хэш коммита (7 символов) или null если коммит не делался"
+          },
+          "commit_message": {
+            "type": ["string", "null"],
+            "description": "Сообщение коммита или null"
           }
-        },
-        "summary": {
-          "type": "string",
-          "description": "Краткое описание что было сделано (1-3 предложения)"
-        },
-        "phase_results": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "phase_number": { "type": "integer" },
-              "phase_name": { "type": "string" },
-              "status": {
-                "type": "string",
-                "enum": ["✅ COMPLETED", "❌ FAILED", "⏭️ SKIPPED"]
-              },
-              "files": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "validation_result": { "type": "string" },
-              "commit_hash": { "type": ["string", "null"] }
-            }
+        }
+      }
+    },
+    "files_changed": {
+      "type": "array",
+      "description": "Сводный список всех изменённых файлов",
+      "items": {
+        "type": "object",
+        "required": ["file", "action", "phase", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["created", "modified", "deleted"]
+          },
+          "phase": { "type": "integer" },
+          "status": {
+            "type": "string",
+            "enum": ["COMPLETED", "FAILED", "SKIPPED"]
           }
-        },
-        "risks_encountered": {
-          "type": "array",
-          "description": "Риски которые проявились при выполнении",
-          "items": {
-            "type": "object",
-            "properties": {
-              "risk": { "type": "string" },
-              "severity": { "type": "string" },
-              "resolution": { "type": "string" }
-            }
+        }
+      }
+    },
+    "commits": {
+      "type": "array",
+      "description": "Список сделанных коммитов",
+      "items": {
+        "type": "object",
+        "required": ["hash", "message", "phase", "files"],
+        "additionalProperties": false,
+        "properties": {
+          "hash": { "type": "string", "description": "Короткий хэш (7 символов)" },
+          "message": { "type": "string", "description": "Полное сообщение коммита" },
+          "phase": { "type": "integer" },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" }
           }
-        },
-        "next_steps": {
-          "type": "array",
-          "description": "Что нужно сделать вручную после выполнения",
-          "items": { "type": "string" }
+        }
+      }
+    },
+    "risks_encountered": {
+      "type": "array",
+      "description": "Риски которые проявились при выполнении",
+      "items": {
+        "type": "object",
+        "required": ["risk_id", "description", "severity", "resolution"],
+        "additionalProperties": false,
+        "properties": {
+          "risk_id": {
+            "type": "string",
+            "description": "ID риска из research.toon (R1, R2, ...) или 'UNEXPECTED' для незапланированных"
+          },
+          "description": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "resolution": { "type": "string" }
+        }
+      }
+    },
+    "next_steps": {
+      "type": "array",
+      "description": "Действия которые нужно выполнить вручную после завершения",
+      "items": { "type": "string" }
+    },
+    "recovery_attempts": {
+      "type": "array",
+      "description": "Попытки автоматического восстановления при ошибках validation (пусто если ошибок не было)",
+      "items": {
+        "type": "object",
+        "required": ["phase_number", "step_number", "attempt", "error", "fix_applied", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "phase_number": { "type": "integer" },
+          "step_number": { "type": "integer" },
+          "attempt": { "type": "integer", "enum": [1, 2] },
+          "error": { "type": "string", "description": "Точная строка ошибки из validation" },
+          "fix_applied": { "type": "string", "description": "Описание применённого исправления" },
+          "result": { "type": "string", "enum": ["OK", "FAILED"] }
         }
       }
     }
   },
-  "markdown_template": {
-    "description": "Шаблон для report.md",
-    "template": "# Execution Report: {task_description}\n\n**Session:** {session_id}\n**Status:** {status}\n\n## Summary\n\n{summary_text}\n\n## Phase Results\n\n### Phase {N}: {phase_name}\n- **Status:** {phase_status}\n- **Files:** `{file1}`, `{file2}`\n- **Validation:** `{validation_command}` → {validation_result}\n- **Commit:** `{commit_message}` ({short_hash})\n\n## Risks Encountered\n\n| Risk | Severity | Resolution |\n|------|----------|------------|\n| {risk} | {severity} | {resolution} |\n\n## Next Steps\n\n- [ ] {next_step_1}\n- [ ] {next_step_2}"
-  }
+  "examples": [
+    {
+      "schema_version": "2.1.0",
+      "session_id": "2026-02-24T2104",
+      "task_description": "Добавить флаг --list-sessions в iclaude.sh",
+      "status": "COMPLETED",
+      "phases": [
+        {
+          "phase_number": 1,
+          "phase_name": "CLI + Help",
+          "status": "COMPLETED",
+          "files": ["lib/command/args.sh", "lib/command/help.sh"],
+          "validation_command": "bash -n iclaude.sh",
+          "validation_result": "OK",
+          "commit_hash": "abc1234",
+          "commit_message": "feat(cli): add --list-sessions flag"
+        }
+      ],
+      "files_changed": [
+        {"file": "lib/command/args.sh", "action": "modified", "phase": 1, "status": "COMPLETED"},
+        {"file": "lib/command/help.sh", "action": "modified", "phase": 1, "status": "COMPLETED"}
+      ],
+      "commits": [
+        {
+          "hash": "abc1234",
+          "message": "feat(cli): add --list-sessions flag",
+          "phase": 1,
+          "files": ["lib/command/args.sh", "lib/command/help.sh"]
+        }
+      ],
+      "risks_encountered": [
+        {
+          "risk_id": "R1",
+          "description": "session-env/ was empty during testing",
+          "severity": "low",
+          "resolution": "Implemented check: prints 'No active sessions' when empty"
+        }
+      ],
+      "next_steps": [
+        "Manual test: ./iclaude.sh --list-sessions",
+        "Manual test: ./iclaude.sh --help"
+      ],
+      "recovery_attempts": []
+    }
+  ]
 }

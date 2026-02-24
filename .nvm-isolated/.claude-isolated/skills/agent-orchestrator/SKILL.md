@@ -4,7 +4,7 @@ description: Оркестратор пайплайна Researcher → Planner �
 user-invocable: true
 context: fork
 ---
-<!-- version: 1.0.0 | tags: agents, orchestration, pipeline, researcher, planner, executor | invocation: /agent-orchestrator | dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md -->
+<!-- version: 1.1.0 | tags: agents, orchestration, pipeline, researcher, planner, executor | invocation: /agent-orchestrator | dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md -->
 
 # Agent Orchestrator
 
@@ -54,13 +54,44 @@ context: fork
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
+
+# AGENTS_DIR existence check — вычислить из SKILL_BASE_DIR
+# SKILL_BASE_DIR берётся из заголовка "Base directory for this skill:" в начале этого SKILL.md
+# Подставить реальное значение SKILL_BASE_DIR перед выполнением:
+AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
+AGENTS_DIR="$(realpath "${AGENTS_DIR}" 2>/dev/null || echo "${AGENTS_DIR}")"
+
+if [ ! -d "${AGENTS_DIR}" ]; then
+  echo "ERROR: AGENTS_DIR not found: ${AGENTS_DIR}"
+  echo "Проверь что SKILL_BASE_DIR указан корректно в заголовке скилла."
+  echo "Ожидается: {iclaude_root}/.nvm-isolated/.claude-isolated/agents/"
+  exit 1
+fi
+
+# Проверить наличие всех необходимых AGENT.md файлов
+MISSING_AGENTS=""
+for agent in researcher-agent planning-agent execution-agent critic-agent; do
+  if [ ! -f "${AGENTS_DIR}/${agent}/AGENT.md" ]; then
+    MISSING_AGENTS="${MISSING_AGENTS} ${agent}/AGENT.md"
+  fi
+done
+
+if [ -n "${MISSING_AGENTS}" ]; then
+  echo "ERROR: Missing agent files in ${AGENTS_DIR}:${MISSING_AGENTS}"
+  echo "Запусти ./iclaude.sh --repair-isolated для восстановления симлинков."
+  exit 1
+fi
+
 mkdir -p "${WORKSPACE}"
 grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
   printf '\n# Claude Code Agent Workspace\n.claude/workspace/\n' >> "${PROJECT_ROOT}/.gitignore"
+echo "AGENTS_DIR=${AGENTS_DIR}"
 echo "WORKSPACE=${WORKSPACE}"
 ```
 
-Запомни вывод `WORKSPACE=...` — этот путь используется во всех следующих шагах.
+Запомни вывод `WORKSPACE=...` и `AGENTS_DIR=...` — эти пути используются во всех следующих шагах.
+
+**Если скрипт завершился с exit 1:** Остановить выполнение, сообщить пользователю ошибку из stdout и инструкцию по исправлению. Не продолжать пайплайн с некорректными путями.
 
 ### Шаг 2: Записать input.toon
 
@@ -284,16 +315,29 @@ IF verdict == "ABORT":
 
 ### Шаг 8: Итоговый отчёт
 
-Показать содержимое `{WORKSPACE}/report.md`.
+Прочитать `{WORKSPACE}/report.json` и показать сводку.
 
 ```
 ════════════════════════════════════════════
 🎉 PIPELINE COMPLETE
 ════════════════════════════════════════════
 Session: {SESSION_ID}
-Report: {WORKSPACE}/report.md
+Report: {WORKSPACE}/report.json
 
-{содержимое report.md}
+Status: {report.json.status}
+Фаз выполнено: {completed_phases}/{total_phases}
+Коммитов: {commits.length}
+
+Файлы изменены:
+{для каждого в files_changed: "  [{action}] {file} (фаза {phase})"}
+
+Коммиты:
+{для каждого в commits: "  {hash} {message}"}
+
+{если status == "FAILED":
+  "Попытки восстановления:
+   {для каждого в recovery_attempts: '  Фаза {phase_number} шаг {step_number} попытка {attempt}: {result}'}"
+}
 
 Execution Review: {score}/100 [{verdict}]
 {if WARN: "⚠️  {critique.dimensions.* issues суммарно}"}
@@ -355,7 +399,7 @@ awk '/^---JSON---$/{found=1; next} found' {WORKSPACE}/{mode}-critique.toon \
 
 ```
 Очистить workspace? [yes/keep]
-(Рекомендуется: keep — report.md полезен как документация)
+(Рекомендуется: keep — report.json полезен как документация)
 ```
 
 При `yes`:
@@ -422,7 +466,7 @@ ${PROJECT_ROOT}/
     ├── research-critique.toon
     ├── plan.toon
     ├── plan-critique.toon
-    ├── report.md
+    ├── report.json
     └── execution-critique.toon
 ```
 
@@ -444,7 +488,7 @@ ${PROJECT_ROOT}/
 8. [Gate] Пользователь: "yes"
 9. Executor → изменяет 4 файла, 2 коммита
 10. Critic[execution]: score=95/100, verdict=PASS
-11. report.md записан: status=COMPLETED
+11. report.json записан: status=COMPLETED
 
 **Выход:**
 ```

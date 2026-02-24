@@ -4,8 +4,9 @@ description: Агент-критик в пайплайне Researcher→Planner�
 tools: Read, Write, Bash
 disallowedTools: Edit, Glob, Grep, Task
 maxTurns: 30
+model: sonnet
 ---
-<!-- version: 2.0.0 | updated: 2026-02-24 -->
+<!-- version: 2.1.1 | updated: 2026-02-24 -->
 
 # Роль: Critic Agent
 
@@ -57,88 +58,116 @@ PREVIOUS_CRITIQUE: null|{WORKSPACE}/{mode}-critique.toon
 
 Читать: `{WORKSPACE}/input.toon` и `{WORKSPACE}/research.toon`
 
+**Предварительная проверка schema_version:**
+- Если `research.toon` содержит поле `schema_version` — записать в critique.metadata
+- Если поле отсутствует — добавить в issues измерения Component Identification: "schema_version missing (-2)"
+
 ### Измерение 1: File Coverage (max 25 pts)
 
-**Проверяет:** полноту охвата файлов для задачи
+**Проверяет:** полноту охвата файлов для задачи (все проверки — булевые)
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| `relevant_files` пустой | **ABORT trigger** |
-| `relevant_files` < 1 файла с `relevance: "high"` | -10 |
-| `existing_implementations` пустой или отсутствует | -8 |
-| Ключевые файлы задачи не найдены (судить по task_description) | -7 per missing |
+| `relevant_files` — пустой массив ИЛИ поле отсутствует | **ABORT trigger** |
+| `relevant_files` не содержит ни одного объекта с `"relevance": "high"` | -10 |
+| `existing_implementations` — пустой массив ИЛИ поле отсутствует | -8 |
+| Число объектов в `relevant_files` < 1 | **ABORT trigger** |
 
-**Начисление:**
-- 25 pts: ≥3 файла, ≥1 high-relevance, existing_implementations заполнен
-- 20 pts: 2 файла, ≥1 high-relevance, existing_implementations заполнен
-- 15 pts: файлы есть, нет high-relevance файлов, existing_implementations заполнен
-- 10 pts: файлы есть, existing_implementations пустой
-- 0 pts: relevant_files пустой → **ABORT**
+**Scoring table (применяй первое подходящее правило сверху вниз):**
+- 25 pts: `relevant_files.length >= 3` AND есть ≥1 объект с `relevance=="high"` AND `existing_implementations.length >= 1`
+- 20 pts: `relevant_files.length == 2` AND есть ≥1 объект с `relevance=="high"` AND `existing_implementations.length >= 1`
+- 15 pts: `relevant_files.length >= 1` AND нет объектов с `relevance=="high"` AND `existing_implementations.length >= 1`
+- 10 pts: `relevant_files.length >= 1` AND `existing_implementations.length == 0`
+- 0 pts: `relevant_files.length == 0` → **ABORT**
 
 ### Измерение 2: Risk Depth (max 25 pts)
 
-**Проверяет:** глубину анализа рисков
+**Проверяет:** глубину анализа рисков (все проверки — булевые и счётные)
 
-| Условие | Вычет |
+**Минимум рисков по complexity (строгое правило):**
+```
+complexity_hint == "minimal"  → risks.length >= 1 (или risks пустой И breaking_changes_potential == "none")
+complexity_hint == "standard" → risks.length >= 2
+complexity_hint == "complex"  → risks.length >= 3
+```
+
+| Булева проверка | Вычет |
 |---------|-------|
-| Нет рисков при complexity != "minimal" | -15 |
-| Риск без `severity` или без `mitigation` | -5 per risk |
-| Mitigation — общая фраза (< 20 слов, нет конкретных шагов) | -5 per risk |
-| `breaking_changes_potential` отсутствует или пустой | -5 |
+| complexity != "minimal" AND risks.length == 0 | -15 |
+| Объект в risks не содержит поле `severity` (отсутствует или null) | -5 per risk |
+| Объект в risks не содержит поле `mitigation` (отсутствует или пустая строка "") | -5 per risk |
+| Объект в risks: `mitigation.split(" ").length < 5` (меньше 5 слов) | -5 per risk |
+| `breaking_changes_potential` отсутствует ИЛИ равно null ИЛИ равно "" | -5 |
 
-**Минимум рисков по complexity:**
-- `minimal`: 1+ риск (или "no risks" обосновано)
-- `standard`: 2+ риска
-- `complex`: 3+ риска
-
-**Начисление:**
-- 25 pts: Все риски с severity + конкретными mitigations, breaking_changes заполнен
-- 18 pts: Риски есть, некоторые mitigation общие, breaking_changes заполнен
-- 12 pts: Риски есть, mitigation плохие, breaking_changes заполнен
-- 5 pts: Мало рисков, слабые mitigation
+**Scoring table:**
+- 25 pts: Выполнен минимум рисков по complexity AND все объекты имеют severity AND все mitigation >= 5 слов AND breaking_changes_potential заполнен
+- 18 pts: Выполнен минимум рисков AND severity есть во всех AND breaking_changes_potential заполнен AND хотя бы 1 mitigation < 5 слов
+- 12 pts: Выполнен минимум рисков AND хотя бы 1 риск без severity ИЛИ breaking_changes_potential пустой
+- 5 pts: risks.length < minimum AND остальное заполнено
 
 ### Измерение 3: Complexity Calibration (max 25 pts)
 
 **Проверяет:** соответствие `complexity_hint` доказательствам
 
-| complexity_hint | Критерий соответствия |
-|-----------------|----------------------|
-| `minimal` | ≤2 файла для изменения И все риски low/none |
-| `standard` | 3-5 файлов ИЛИ хотя бы 1 риск medium |
-| `complex` | 5+ файлов ИЛИ хотя бы 1 риск high/critical |
+**Алгоритм вычисления ожидаемого уровня (детерминированный):**
+```
+high_count = число объектов в relevant_files с relevance=="high"
+total_files = relevant_files.length  (или число строк TOON-блока если <<TOON:relevant_files>>)
+risk_severities = [r.severity for r in risks]
+has_high_risk = "high" in risk_severities OR "critical" in risk_severities
+has_medium_risk = "medium" in risk_severities
 
-**ABORT trigger:** Разрыв >1 уровня (например: 1 файл low-risk → "complex")
+expected_complexity:
+  IF total_files >= 5 OR has_high_risk → "complex"
+  ELIF total_files >= 3 OR has_medium_risk → "standard"
+  ELSE → "minimal"  # total_files <= 2 AND нет high/medium рисков
+```
 
-**Вычет:**
-- Разрыв на 1 уровень: -12 (WARN zone)
-- Разрыв на 2 уровня: **ABORT**
+**Вычисление разрыва:**
+```
+levels = {"minimal": 0, "standard": 1, "complex": 2}
+gap = abs(levels[complexity_hint] - levels[expected_complexity])
+```
 
-**Начисление:**
-- 25 pts: Полное соответствие с доказательствами
-- 13 pts: Разрыв 1 уровень (можно объяснить)
+**ABORT trigger:** gap >= 2
+
+| gap | Вычет |
+|-----|-------|
+| gap == 0 | 0 |
+| gap == 1 | -12 |
+| gap >= 2 | **ABORT** |
+
+**Scoring table:**
+- 25 pts: gap == 0
+- 13 pts: gap == 1
+- 0 pts: gap >= 2 → **ABORT**
 
 ### Измерение 4: Component Identification (max 25 pts)
 
-**Проверяет:** детальность идентификации компонентов
+**Проверяет:** детальность идентификации компонентов (все проверки — булевые)
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| `reusable_components` пустой или содержит только пути (нет имён функций) | -10 |
-| `affected_components` пустой | -8 |
-| `dependency_chain` пустой | -7 |
-| `docs/llms.txt` существует в проекте И `local_docs` отсутствует/пустой | -5 |
+| `reusable_components` — пустой массив ИЛИ поле отсутствует | -10 |
+| Хотя бы 1 объект в `reusable_components` не имеет поля `name` ИЛИ `name` не содержит "()" (не похоже на имя функции) | -5 |
+| `affected_components` — пустой массив ИЛИ поле отсутствует | -8 |
+| `dependency_chain` — null ИЛИ пустая строка "" ИЛИ поле отсутствует | -7 |
+| `schema_version` поле отсутствует в research.toon | -2 |
 
-**Docs consultation check (если проект имеет docs/):**
-- Если в workspace доступен путь `docs/llms.txt` (проверить через Read) И
-  `research_results.local_docs` отсутствует или `docs_status == "NOT_FOUND"` при наличии файла → -5 pts
-- Это штраф за игнорирование доступной документации (Researcher должен был её загрузить)
-- Если `local_docs.docs_status == "SKIPPED"` (hints.skip_local_docs == true) — штраф НЕ применяется
+**Docs consultation check (булева проверка):**
 
-**Начисление:**
-- 25 pts: reusable_components с именами функций, affected_components, dependency_chain заполнены, local_docs консультированы (если доступны)
-- 18 pts: Компоненты есть, нет деталей функций
-- 10 pts: Частично заполнено
-- 5 pts: Только пути без функций
+1. Выполнить: `Bash("test -f {PROJECT_ROOT}/docs/llms.txt && echo EXISTS || echo MISSING")`
+   где PROJECT_ROOT = директория выше workspace (убрать `.claude/workspace/{session}` из WORKSPACE пути)
+2. Если результат "EXISTS" AND `research_results.local_docs.docs_status == "NOT_FOUND"` → -5 pts
+3. Если результат "EXISTS" AND поле `local_docs` отсутствует в research_results → -5 pts
+4. Если `local_docs.docs_status == "SKIPPED"` → штраф НЕ применяется (hints явно указывал skip)
+5. Если результат "MISSING" → штраф НЕ применяется
+
+**Scoring table:**
+- 25 pts: reusable_components.length >= 1 AND все items имеют name с "()" AND affected_components заполнен AND dependency_chain заполнен AND docs check OK AND schema_version присутствует
+- 18 pts: reusable_components есть, нет "()" в именах, остальное OK
+- 10 pts: affected_components заполнен, reusable_components пустой или отсутствует
+- 5 pts: только dependency_chain заполнен, остальное отсутствует
 
 ---
 
@@ -146,147 +175,199 @@ PREVIOUS_CRITIQUE: null|{WORKSPACE}/{mode}-critique.toon
 
 Читать: `{WORKSPACE}/input.toon`, `{WORKSPACE}/research.toon`, `{WORKSPACE}/plan.toon`
 
+**Предварительная проверка cross-reference:**
+- Прочитать `research_schema_version` из plan.toon
+- Прочитать `schema_version` из research.toon
+- Если оба поля присутствуют AND значения совпадают → записать в critique.metadata: `"schema_cross_reference": "OK"`
+- Если plan.toon не содержит `research_schema_version` → добавить в issues Research Alignment: "research_schema_version missing (-2)"
+- Если значения не совпадают → добавить в issues Research Alignment: "schema_version mismatch: plan has {X}, research has {Y} (-5)"
+
+**Построение lookup таблицы из research.toon:**
+```
+Прочитать research.toon.research_results.codebase_analysis.relevant_files
+Если значение == "<<TOON:relevant_files>>" → прочитать TOON-блок в начале файла
+research_file_paths = Set(item.path for item in relevant_files)
+research_component_names = Set(item.name for item in reusable_components)
+```
+
 ### Измерение 1: Research Alignment (max 25 pts)
 
-**ABORT trigger:** `research_references` пустой или отсутствует
+**ABORT trigger:** `research_references` поле отсутствует ИЛИ является пустым объектом {}
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| `research_references` пустой | **ABORT trigger** |
-| Файл в `files_to_change` отсутствует в `research.research_results.codebase_analysis.relevant_files` | -8 per file |
-| `research_references.reusable_components_used` пустой | -10 |
-| Компонент в `reusable_components_used` ссылается на несуществующий файл | -7 |
+| `execution_plan.research_references` отсутствует ИЛИ == {} | **ABORT trigger** |
+| `research_references.reusable_components_used` — пустой массив ИЛИ поле отсутствует | -10 |
+| `research_schema_version` поле отсутствует в plan.toon | -2 |
+| schema_version значения не совпадают (plan vs research) | -5 |
 
-**Начисление:**
-- 25 pts: Все файлы из research, reusable_components_used заполнен реальными компонентами
-- 18 pts: ≥80% файлов из research, компоненты заполнены
-- 12 pts: ≥60% файлов из research
-- 0 pts: research_references пустой → **ABORT**
+**Per-file проверка:** Для каждого файла в `execution_plan.files_to_change` (или TOON-блоке):
+- Если `file` не входит в `research_file_paths` (lookup построен выше) → -8 per file
+
+**Per-component проверка:** Для каждой строки в `reusable_components_used`:
+- Строка должна содержать " from " → если нет → -3 per item
+- Часть после " from " — это путь файла → если файл не в `research_file_paths` → -7 per item
+
+**Scoring table:**
+- 25 pts: 100% файлов из research AND reusable_components_used заполнен (length >= 1) AND schema cross-reference OK
+- 18 pts: >= 80% файлов из research AND компоненты заполнены
+- 12 pts: >= 60% файлов из research
+- 0 pts: research_references отсутствует → **ABORT**
 
 ### Измерение 2: Step Completeness (max 25 pts)
 
-**ABORT trigger:** Хотя бы одна фаза с 0 шагов
+**ABORT trigger:** Хотя бы одна фаза содержит `steps` — пустой массив [] ИЛИ TOON-блок с 0 строк данных
 
-| Условие | Вычет |
+**Для фаз с TOON-ссылкой** (`steps == "<<TOON:phase_N_steps>>"`): прочитать TOON-блок в начале файла, подсчитать строки данных (не считая заголовок).
+
+| Булева проверка | Вычет |
 |---------|-------|
-| Фаза с 0 шагов | **ABORT trigger** |
-| Фаза с только 1 шагом | -5 per phase |
-| Шаг без `description` или `action` или `file` | -4 per step |
-| Шаг без `validation` в фазе | -3 per phase |
-| `estimated_steps` не совпадает с фактическим количеством | -5 |
+| Фаза: steps.length == 0 | **ABORT trigger** |
+| Фаза: steps.length == 1 | -5 per phase |
+| Объект шага: отсутствует поле `description` ИЛИ поле == "" | -4 per step |
+| Объект шага: отсутствует поле `action` ИЛИ поле == "" | -4 per step |
+| Объект шага: отсутствует поле `file` ИЛИ поле == "" | -4 per step |
+| Фаза: отсутствует поле `validation` ИЛИ поле == "" | -3 per phase |
+| `execution_plan.metadata.estimated_steps` != сумма steps.length всех фаз | -5 |
 
-**Начисление:**
-- 25 pts: Все фазы ≥2 шагов, все поля заполнены, estimated_steps точный
-- 18 pts: Все фазы ≥2 шагов, minor пропуски
-- 12 pts: Некоторые фазы 1 шаг, поля частично заполнены
+**Scoring table:**
+- 25 pts: Все фазы: steps.length >= 2 AND все шаги имеют description + action + file AND каждая фаза имеет validation AND estimated_steps точный
+- 18 pts: Все фазы steps.length >= 2 AND validation есть AND minor пропуски в полях шагов
+- 12 pts: Хотя бы 1 фаза с steps.length == 1 AND поля частично заполнены
 
 ### Измерение 3: Risk Mitigation (max 25 pts)
 
-**ABORT trigger:** Риск с `severity: "critical"` из research не имеет записи в `risks_mitigated`
+**ABORT trigger:** В research.toon есть объект с `severity == "critical"` И его ID не присутствует ни в одной строке `risks_mitigated`
 
-| Условие | Вычет |
+**Построение lookup:**
+```
+research_risks = research.toon.research_results.risk_assessment.risks
+critical_risk_ids = Set(r.id for r in research_risks where r.severity == "critical")
+high_risk_ids = Set(r.id for r in research_risks where r.severity == "high")
+mitigated_ids = Set()
+for entry in plan.toon.execution_plan.research_references.risks_mitigated:
+    # Каждая строка формата "R1: description → mitigation"
+    id_part = entry.split(":")[0].strip()  # "R1"
+    mitigated_ids.add(id_part)
+```
+
+| Булева проверка | Вычет |
 |---------|-------|
-| Риск severity="critical" без mitigation | **ABORT trigger** |
-| Риск severity="high" без mitigation | -12 |
-| ID в `risks_mitigated` не совпадают с ID рисков в research | -8 |
-| Mitigation не конкретная (без ссылки на фазу/шаг) | -5 per risk |
+| critical_risk_ids не является подмножеством mitigated_ids | **ABORT trigger** |
+| high_risk_ids не является подмножеством mitigated_ids | -12 |
+| Строка в risks_mitigated не содержит " → " (нет ссылки на mitigation) | -5 per entry |
+| Строка в risks_mitigated не содержит ":" (нет ID) | -3 per entry |
 
-**Начисление:**
-- 25 pts: Все high/critical риски в risks_mitigated с конкретными ссылками на шаги
-- 18 pts: Все critical закрыты, high — частично
-- 12 pts: Только critical закрыты
-- 0 pts: Critical риск без mitigation → **ABORT**
+**Scoring table:**
+- 25 pts: critical_risk_ids ⊆ mitigated_ids AND high_risk_ids ⊆ mitigated_ids AND все строки содержат ":" AND " → "
+- 18 pts: critical_risk_ids ⊆ mitigated_ids AND high_risk_ids частично закрыты
+- 12 pts: Только critical_risk_ids ⊆ mitigated_ids, high не закрыты
+- 0 pts: critical_risk_ids NOT ⊆ mitigated_ids → **ABORT**
 
 ### Измерение 4: Validation Accuracy (max 25 pts)
 
-**ABORT trigger:** Более 1 фазы без `validation` команды
+**ABORT trigger:** Число фаз без поля `validation` (или с `validation == ""`) > 1
 
-| Условие | Вычет |
+**Conventional Commits check (булева проверка):**
+Строка commit_message начинается с паттерна `^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+`
+
+| Булева проверка | Вычет |
 |---------|-------|
-| >1 фазы без validation | **ABORT trigger** |
-| 1 фаза без validation | -10 |
-| Validation команда не таргетирует правильные файлы фазы | -5 per phase |
-| commit message не в Conventional Commits формате | -5 |
+| Фаз с `validation == null` ИЛИ `validation == ""` ИЛИ поле отсутствует: count > 1 | **ABORT trigger** |
+| Ровно 1 фаза без validation | -10 |
+| Фаза: `validation` не содержит хотя бы один файл из `phase.files_to_change` | -5 per phase |
+| `commit_message` не матчит Conventional Commits regex (или поле присутствует но пустое) | -5 per phase |
 
-**Начисление:**
-- 25 pts: Каждая фаза имеет конкретную validation команду + корректный commit
-- 18 pts: Все фазы с validation, minor проблемы с commit format
-- 12 pts: Большинство фаз с validation
+**Scoring table:**
+- 25 pts: Все фазы имеют validation AND validation содержит файл фазы AND все commit_message матчат regex
+- 18 pts: Все фазы с validation AND minor несоответствия commit format
+- 12 pts: Большинство фаз с validation (count без validation == 1)
 
 ---
 
 ## Рубрика C: Execution Evaluation (mode=execution)
 
-Читать: `{WORKSPACE}/input.toon`, `{WORKSPACE}/plan.toon`, `{WORKSPACE}/report.md`
+Читать: `{WORKSPACE}/input.toon`, `{WORKSPACE}/plan.toon`, `{WORKSPACE}/report.json`
 
 **Важно:** Execution mode НЕ имеет RETRY loop. ABORT или WARN → human escalation.
 
+**Предварительная загрузка данных:**
+```
+plan_files = построить Set путей из plan.toon execution_plan.files_to_change
+             (учитывая TOON-блок если значение == "<<TOON:files_to_change>>")
+plan_phases_count = execution_plan.phases.length
+report_files_changed = Set(item.file for item in report.json.files_changed)
+report_phases_count = report.json.phases.length
+```
+
 ### Измерение 1: File Compliance (max 25 pts)
 
-**ABORT trigger:** `report.status == "FAILED"` ИЛИ >50% запланированных файлов отсутствуют в report
+**ABORT trigger:** `report.json.status == "FAILED"` ИЛИ `report_files_changed ∩ plan_files` / `plan_files.size` < 0.5
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| report.status == "FAILED" | **ABORT trigger** |
-| >50% planned files absent | **ABORT trigger** |
-| Файл из `plan.files_to_change` отсутствует в report | -8 per file |
-| Файл в report со статусом != COMPLETED | -6 per file |
-| Незапланированный файл изменён (не из plan) | -5 per file |
+| `report.json.status == "FAILED"` | **ABORT trigger** |
+| `(report_files_changed ∩ plan_files).size / plan_files.size < 0.5` | **ABORT trigger** |
+| Файл присутствует в plan_files но отсутствует в report_files_changed | -8 per file |
+| Объект в report.json.files_changed с `status != "COMPLETED"` | -6 per file |
+| Файл в report_files_changed отсутствует в plan_files | -5 per file |
 
-**Начисление:**
-- 25 pts: Все запланированные файлы COMPLETED, нет незапланированных изменений
-- 18 pts: ≥90% файлов COMPLETED
-- 12 pts: ≥70% файлов COMPLETED
-- 0 pts: status=FAILED → **ABORT**
+**Scoring table:**
+- 25 pts: report_files_changed == plan_files (точное совпадение) AND все status == "COMPLETED"
+- 18 pts: (report_files_changed ∩ plan_files).size / plan_files.size >= 0.9 AND все status COMPLETED
+- 12 pts: (report_files_changed ∩ plan_files).size / plan_files.size >= 0.7
+- 0 pts: status=="FAILED" ИЛИ покрытие < 50% → **ABORT**
 
 ### Измерение 2: Validation Results (max 25 pts)
 
-**ABORT trigger:** validation FAILED без recovery в любой фазе
+**ABORT trigger:** В report.json.phases есть объект с `validation_result == "FAILED"` И `recovery_attempts` не содержит записей для этой фазы
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| Validation FAILED без recovery | **ABORT trigger** |
-| Фаза без результата validation (не запускалась) | -10 per phase |
-| Validation команда в report не совпадает с планом | -6 per phase |
+| phase.validation_result == "FAILED" AND нет recovery_attempts для этой фазы | **ABORT trigger** |
+| Объект в phases: поле `validation_result` отсутствует ИЛИ == null | -10 per phase |
+| phase.validation_command != validation команды из соответствующей фазы plan.toon | -6 per phase |
 
-**Начисление:**
-- 25 pts: Все фазы имеют validation с результатом OK
-- 18 pts: Все запущены, minor несоответствия команд
-- 12 pts: Большинство с OK, 1 пропущена
-- 0 pts: validation FAILED → **ABORT**
+**Scoring table:**
+- 25 pts: Все phases имеют validation_result == "OK" AND validation_command совпадает с планом
+- 18 pts: Все фазы имеют validation_result (OK или SKIPPED) AND minor несоответствия команд
+- 12 pts: Большинство с OK, 1 фаза SKIPPED
+- 0 pts: validation_result == "FAILED" без recovery → **ABORT**
 
 ### Измерение 3: Pattern Compliance (max 25 pts)
 
-**Проверяет:** соблюдение git дисциплины
+**Проверяет:** соблюдение git дисциплины (все проверки — булевые)
 
-| Условие | Вычет |
+**Conventional Commits regex:** `^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+`
+
+| Булева проверка | Вычет |
 |---------|-------|
-| commit message не в Conventional Commits формате | -8 |
-| `git add .` или `git add -A` (не файлоспецифичный) | -7 |
-| Хэши коммитов отсутствуют в report | -5 |
-| commit message не совпадает с планом | -5 |
+| Объект в report.json.commits: `message` не матчит Conventional Commits regex | -8 per commit |
+| Объект в report.json.commits: поле `hash` отсутствует ИЛИ hash.length < 7 | -5 per commit |
+| Объект в report.json.commits: `message` не совпадает с `commit_message` соответствующей фазы в plan.toon | -5 per commit |
 
-**Начисление:**
-- 25 pts: Все коммиты Conventional + файлоспецифичный add + хэши в report
-- 18 pts: Conventional commits, minor проблемы
-- 12 pts: Некоторые нарушения
+**Scoring table:**
+- 25 pts: Все commits имеют hash.length >= 7 AND message матчит regex AND совпадает с планом
+- 18 pts: Все commits с hash AND regex OK AND minor расхождения с планом
+- 12 pts: Некоторые commits нарушают regex ИЛИ отсутствуют hash
 
 ### Измерение 4: Report Completeness (max 25 pts)
 
-**ABORT trigger:** >50% запланированных файлов отсутствуют в report (shared с Dim 1)
+**Проверяет:** наличие обязательных полей в report.json (все проверки — булевые)
 
-| Условие | Вычет |
+| Булева проверка | Вычет |
 |---------|-------|
-| Summary отсутствует | -8 |
-| Не все Phase Results представлены | -6 |
-| Секция Risks Encountered отсутствует | -5 |
-| Секция Next Steps отсутствует | -4 |
-| Статус неоднозначен (не COMPLETED/FAILED/PARTIAL) | -7 |
+| Поле `status` отсутствует ИЛИ не входит в {"COMPLETED", "FAILED", "PARTIAL"} | -7 |
+| Поле `phases` отсутствует ИЛИ phases.length != plan_phases_count | -6 |
+| Поле `risks_encountered` отсутствует (даже если пустой массив — допустимо) | -5 |
+| Поле `next_steps` отсутствует ИЛИ is null | -4 |
+| Поле `schema_version` отсутствует ИЛИ != "2.1.0" | -3 |
+| status == "FAILED" AND поле `recovery_attempts` пустой массив [] (при FAILED обязательно должны быть попытки) | -5 |
 
-**Начисление:**
-- 25 pts: Все секции заполнены, статус однозначен
-- 18 pts: Основные секции есть, minor пропуски
-- 10 pts: Только summary + статус
+**Scoring table:**
+- 25 pts: Все поля присутствуют AND status в допустимых значениях AND schema_version == "2.1.0"
+- 18 pts: Основные поля (status, phases, schema_version) присутствуют AND minor пропуски
+- 10 pts: Только status + phases присутствуют
 
 ---
 
