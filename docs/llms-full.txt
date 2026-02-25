@@ -2535,18 +2535,18 @@ Shows `[router]provider` if Claude Code Router is active (e.g., `[router]deepsee
 
 ### 7. Session Link
 
-Format: `[session]` - clickable hyperlink (OSC 8)
+Format: `📄` - clickable hyperlink (OSC 8)
 
 **Features:**
-- Click to open human-readable conversation in your editor
+- Click to open human-readable conversation in your editor (TOON format)
 - **Session-specific files**: Each session has unique readable file (no conflicts)
 - **Append-only optimization**: Only processes new messages (19x faster)
 - **Smart regeneration**: Full rebuild only when needed (/compact, first run, JSONL truncated)
 - **Performance**: 94ms append vs 1.87s full regen (200 lines)
-- Readable file saved to: `<project>/.claude-sessions/readable-{session-id}.txt`
-- Metadata tracking: `.claude-sessions/readable-{session-id}.txt.meta` (processed lines count)
-- **Compact detection**: Shows `━━━ [cache] Context Compact ━━━` marker after /compact
-- Format: [user] USER / [assistant] ASSISTANT prefixes with word wrap (80 chars)
+- Readable file saved to: `<project>/.claude/sessions/readable-{session-id}.toon`
+- Metadata tracking: `.claude/sessions/readable-{session-id}.toon.meta` (processed lines count)
+- **Compact detection**: Detects `/compact` in last 5 JSONL lines and triggers full rebuild
+- **Broken JSONL recovery**: Falls back to Python3 parser when `jq` fails on malformed records
 - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
 - Falls back to plain text in terminals without hyperlink support
 
@@ -2720,30 +2720,46 @@ Model:  .model.display_name
 # This clearly separates fresh conversation (652) from cached context (154K)
 ```
 
-### Session Link Optimizations (Phase 2.1)
+### Session Link Optimizations (Phase 2.1+)
 
 The readable session generation uses three key optimizations for performance:
 
 #### 1. Session-Specific Filenames
 
-- Each session gets unique file: `.claude-sessions/readable-{session-id}.txt`
+- Each session gets unique file: `.claude/sessions/readable-{session-id}.toon`
 - Prevents conflicts when running multiple parallel Claude sessions
-- Example: `readable-abc123.txt`, `readable-def456.txt`
+- Example: `readable-abc123.toon`, `readable-def456.toon`
 
 #### 2. Append-Only Updates
 
-- Tracks processed lines in metadata file: `.claude-sessions/readable-{session-id}.txt.meta`
+- Tracks processed lines in metadata file: `.claude/sessions/readable-{session-id}.toon.meta`
 - Only processes NEW messages since last update (incremental)
 - Performance: 94ms (append) vs 1.87s (full regen) for 200-line session
 - **19x faster** for incremental updates
+- **Atomic writes**: full regeneration uses `.tmp.PID` + `mv` to prevent 0-byte artifacts
 
 #### 3. Smart Regeneration Triggers
 
 Full rebuild occurs only when necessary:
 - First run (readable file doesn't exist)
-- `/compact` detected (context compression happened)
+- `/compact` detected in last 5 JSONL lines (context compression happened)
 - JSONL truncated (current lines < processed lines)
 - Append-only used for normal message additions
+
+#### 4. Broken JSONL Recovery (Scenario B)
+
+Some JSONL files contain literal newlines inside JSON string values (e.g., multi-line tool outputs). `jq -s` exits with a parse error on these files, silently returning empty output.
+
+**Fallback strategy:**
+1. `jq -s` attempted first (fast path)
+2. On empty output → Python3 line-by-line parser activated
+3. Python reads each line independently; lines not starting with `{` are skipped (continuation lines from broken records)
+4. Each candidate line parsed with `json.loads()` — failures silently discarded
+5. Result: valid messages extracted even from corrupted JSONL
+
+**Why icon was missing in other projects** (two root causes):
+- **Transient**: New session JSONL contains only system metadata → `jq` returns `[]` → no messages → no icon. Self-corrects after first user message.
+- **Permanent**: JSONL has literal newlines in string values → `jq` parse error suppressed with `2>/dev/null` → `messages_json` empty → icon never appears. Fixed by Python3 fallback.
 
 ### Compact Detection
 
@@ -2761,11 +2777,11 @@ When `/compact` is used, the readable file shows a special marker:
 ### File Structure
 
 ```
-.claude-sessions/
-  readable-abc123.txt       # Session abc123 conversation
-  readable-abc123.txt.meta  # Metadata: processed lines count
-  readable-def456.txt       # Session def456 conversation
-  readable-def456.txt.meta  # Metadata
+.claude/sessions/
+  readable-abc123.toon       # Session abc123 conversation (TOON format)
+  readable-abc123.toon.meta  # Metadata: processed lines count
+  readable-def456.toon       # Session def456 conversation
+  readable-def456.toon.meta  # Metadata
 ```
 
 ## Configuration
@@ -2877,19 +2893,19 @@ Auto-generated readable files can be accessed directly:
 
 ```bash
 # List all readable sessions
-ls -lh .claude-sessions/
+ls -lh .claude/sessions/
 
-# View specific session
-cat .claude-sessions/readable-{session-id}.txt
+# View specific session (TOON format)
+toon --decode .claude/sessions/readable-{session-id}.toon
 
-# View most recent session (statusline generates them automatically)
-ls -t .claude-sessions/readable-*.txt | head -1 | xargs cat
+# View most recent session
+ls -t .claude/sessions/readable-*.toon | head -1 | xargs toon --decode
 
 # Check metadata (processed lines)
-cat .claude-sessions/readable-{session-id}.txt.meta
+cat .claude/sessions/readable-{session-id}.toon.meta
 
 # Cleanup old sessions (older than 7 days)
-find .claude-sessions/ -name "readable-*.txt*" -mtime +7 -delete
+find .claude/sessions/ -name "readable-*.toon*" -mtime +7 -delete
 ```
 
 ## Troubleshooting
@@ -2916,14 +2932,31 @@ find .claude-sessions/ -name "readable-*.txt*" -mtime +7 -delete
 
 ### Session link not clickable
 
-**Symptoms:** [session] icon shows but not clickable
+**Symptoms:** 📄 icon shows but not clickable
 
 **Solutions:**
 1. Check terminal emulator supports OSC 8 hyperlinks:
    - Supported: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
    - Not supported: Basic xterm, older terminals
-2. Verify readable file exists: `ls .claude-sessions/readable-*.txt`
-3. Check file permissions: `chmod 644 .claude-sessions/readable-*.txt`
+2. Verify readable file exists: `ls .claude/sessions/readable-*.toon`
+3. Check file permissions: `chmod 644 .claude/sessions/readable-*.toon`
+
+### Session icon 📄 not showing in other projects
+
+**Cause A — Transient (new session):** JSONL contains only system metadata → `jq` returns `[]` → file is 0 bytes → icon hidden. Self-corrects after first user message.
+
+**Cause B — Permanent (broken JSONL):** JSONL file has literal newlines inside JSON string values. `jq -s` exits with parse error (suppressed via `2>/dev/null`) → `messages_json` empty → icon never appears.
+
+**Fix for Cause B:** Python3 fallback now activates automatically when `jq` returns empty output. Requires `python3` installed (`which python3`).
+
+**Debug:**
+```bash
+# Check if jq parse error is the issue
+jq -s '.' ~/.claude/projects/YOUR_PROJECT/SESSION_ID.jsonl 2>&1 | head -5
+
+# If you see "parse error" → Cause B. Python3 fallback handles this automatically.
+# If empty output with no error → Cause A (transient, wait for first message).
+```
 
 ### High memory usage
 
@@ -3052,7 +3085,14 @@ grep -l "search term" .claude-sessions/readable-*.txt
 
 ## Changelog
 
-### Phase 2.2 (Current)
+### Phase 2.3 (Current — February 2026)
+- **Append-only caching for `generate_toon_session()`**: `.toon.meta` tracks processed line count; only new JSONL lines are encoded and appended on each statusline call
+- **Broken JSONL fallback (Scenario B)**: When `jq -s` fails on JSONL with literal newlines inside string values, Python3 line-by-line parser activates automatically; continuation lines (not starting with `{`) are skipped silently
+- **Atomic writes**: full regeneration writes to `.tmp.PID` temp file and `mv`s into place only on success — eliminates 0-byte TOON artifacts
+- **No-op fast path**: when `current_lines == processed_lines`, function returns immediately with no file I/O
+- Fixed: session icon 📄 not appearing in other projects (transient: new session; permanent: broken JSONL)
+
+### Phase 2.2
 - Added adaptive display modes (full/compact/minimal)
 - Automatic terminal width detection
 - Smart abbreviations for narrow terminals
@@ -3060,7 +3100,7 @@ grep -l "search term" .claude-sessions/readable-*.txt
 - Configurable via STATUSLINE_ADAPTIVE environment variable
 
 ### Phase 2.1
-- Added append-only optimization (19x faster)
+- Added append-only optimization (19x faster) for `generate_readable_session()`
 - Session-specific readable files (no conflicts)
 - Smart regeneration triggers
 - Compact detection with summary marker

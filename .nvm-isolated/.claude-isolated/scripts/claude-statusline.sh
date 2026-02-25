@@ -245,9 +245,18 @@ fi
 # Generate TOON-formatted session for token efficiency
 # Converts JSONL to compact TOON format (30-60% token savings)
 # TOON format: messages[N]{role,type,content}: user,text,"content" ...
+#
+# Features:
+#   - Append-only caching: .meta file tracks last_processed_line to avoid
+#     re-processing the entire JSONL on every status line update
+#   - Broken JSONL fallback: when jq -s fails (literal newlines inside JSON
+#     strings), falls back to python3 line-by-line parsing that skips
+#     continuation lines (lines not starting with '{')
+#   - Atomic writes: uses temp file + mv to prevent 0-byte output artifacts
 generate_toon_session() {
     local jsonl_file="$1"
     local output_file="$2"
+    local metadata_file="${output_file}.meta"
 
     # Check if TOON CLI available
     if ! command -v toon &>/dev/null; then
@@ -257,37 +266,195 @@ generate_toon_session() {
     # Create output directory
     mkdir -p "$(dirname "$output_file")" 2>/dev/null || return 1
 
-    # Parse JSONL and extract messages into JSON array
-    # Handle both content formats:
-    #   string: user plain text / command-messages (content is a raw string)
-    #   array:  structured messages with type+text blocks
-    local messages_json=$(jq -s '[.[] | select(.message != null) |
-        {
-            role: (.message.role // .userType // "unknown"),
-            type: (
-                if (.message.content | type) == "string" then "text"
-                else (.message.content[0].type // "unknown")
-                end
-            ),
-            content: (
-                if (.message.content | type) == "string" then
-                    .message.content
-                elif .message.content[0].type == "text" then
-                    .message.content[0].text
-                elif .message.content[0].type == "thinking" then
-                    .message.content[0].thinking
-                elif .message.content[0].type == "compact" then
-                    "📦 COMPACT: " + (.message.content[0].compact // "")
-                else
-                    ""
-                end
-            )
-        } | select(.content != null and .content != "")]' "$jsonl_file" 2>/dev/null)
+    # Get current line count in JSONL
+    local current_lines
+    current_lines=$(wc -l < "$jsonl_file" 2>/dev/null || echo 0)
 
-    # Convert to TOON format
-    echo "$messages_json" | toon --encode --stats 2>/dev/null > "$output_file"
+    # Check for /compact in recent messages (last 5 lines)
+    local has_compact=false
+    if [[ $current_lines -gt 0 ]]; then
+        local last_lines
+        last_lines=$(tail -5 "$jsonl_file" 2>/dev/null || echo "")
+        if echo "$last_lines" | jq -e '.message.content[]? | select(.type=="compact")' >/dev/null 2>&1; then
+            has_compact=true
+        fi
+    fi
 
-    # Check if conversion succeeded
+    # Read metadata (processed lines count and token count)
+    local processed_lines=0
+    if [[ -f "$metadata_file" ]]; then
+        processed_lines=$(cut -d: -f1 "$metadata_file" 2>/dev/null || echo 0)
+    fi
+
+    # Determine if full regeneration is needed:
+    #   1. Output file doesn't exist
+    #   2. /compact detected (context compressed, need fresh start)
+    #   3. JSONL was truncated (current < processed)
+    local need_full_regen=false
+    if [[ ! -f "$output_file" ]] || [[ "$has_compact" == "true" ]] || \
+       [[ $current_lines -lt $processed_lines ]]; then
+        need_full_regen=true
+    fi
+
+    # Parse a range of JSONL lines into a JSON array of message objects.
+    # Scenario A (normal): try jq -s for the fastest path.
+    # Scenario B (broken JSONL): jq exits non-zero when literal newlines exist
+    #   inside JSON string values — fall back to python3 line-by-line parser
+    #   that simply skips any line not starting with '{'.
+    _parse_jsonl_range() {
+        local file="$1"
+        local start_line="$2"   # 1-based; 0 or 1 means "from the beginning"
+        local messages_json=""
+
+        # Extract the relevant portion of the file
+        local jsonl_fragment
+        if [[ $start_line -le 1 ]]; then
+            jsonl_fragment="$file"
+        else
+            # Use process substitution to feed only new lines to parsers
+            jsonl_fragment=""  # signal to use tail
+        fi
+
+        # --- Attempt A: jq -s (fast, no fork overhead per line) ---
+        local jq_expr='[.[] | select(.message != null) |
+            {
+                role: (.message.role // .userType // "unknown"),
+                type: (
+                    if (.message.content | type) == "string" then "text"
+                    else (.message.content[0].type // "unknown")
+                    end
+                ),
+                content: (
+                    if (.message.content | type) == "string" then
+                        .message.content
+                    elif .message.content[0].type == "text" then
+                        .message.content[0].text
+                    elif .message.content[0].type == "thinking" then
+                        .message.content[0].thinking
+                    elif .message.content[0].type == "compact" then
+                        "📦 COMPACT: " + (.message.content[0].compact // "")
+                    else
+                        ""
+                    end
+                )
+            } | select(.content != null and .content != "")]'
+
+        if [[ $start_line -le 1 ]]; then
+            messages_json=$(jq -s "$jq_expr" "$file" 2>/dev/null)
+        else
+            messages_json=$(tail -n "+${start_line}" "$file" | jq -s "$jq_expr" 2>/dev/null)
+        fi
+
+        if [[ -n "$messages_json" ]] && [[ "$messages_json" != "[]" ]] || \
+           [[ -n "$messages_json" ]] && [[ "$messages_json" == "[]" ]]; then
+            # jq succeeded (even empty array is a valid result)
+            echo "$messages_json"
+            return 0
+        fi
+
+        # --- Attempt B: python3 line-by-line fallback ---
+        # Handles broken JSONL where literal newlines appear inside JSON string
+        # values (jq -s chokes because it sees extra top-level tokens).
+        # Strategy: only lines starting with '{' are valid record boundaries;
+        # continuation lines (starting mid-string) are silently skipped.
+        if ! command -v python3 &>/dev/null; then
+            echo "[]"
+            return 1
+        fi
+
+        local py_script='
+import sys, json
+
+records = []
+start = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+current = 0
+with open(sys.argv[2], "r", errors="replace") as f:
+    for line in f:
+        current += 1
+        if current < start:
+            continue
+        line = line.rstrip()
+        if not line or not line.startswith("{"):
+            continue
+        try:
+            records.append(json.loads(line))
+        except Exception:
+            pass
+
+messages = []
+for rec in records:
+    msg = rec.get("message")
+    if msg is None:
+        continue
+    role = msg.get("role") or rec.get("userType") or "unknown"
+    content = msg.get("content")
+    if content is None:
+        continue
+    if isinstance(content, str):
+        msg_type = "text"
+        text = content
+    elif isinstance(content, list) and len(content) > 0:
+        first = content[0]
+        msg_type = first.get("type", "unknown")
+        if msg_type == "text":
+            text = first.get("text", "")
+        elif msg_type == "thinking":
+            text = first.get("thinking", "")
+        elif msg_type == "compact":
+            text = "\U0001f4e6 COMPACT: " + str(first.get("compact", ""))
+        else:
+            text = ""
+    else:
+        continue
+    if text:
+        messages.append({"role": role, "type": msg_type, "content": text})
+
+print(json.dumps(messages, ensure_ascii=False))
+'
+        messages_json=$(python3 -c "$py_script" "$start_line" "$file" 2>/dev/null)
+        echo "${messages_json:-[]}"
+    }
+
+    # ---------- Full regeneration ----------
+    if [[ "$need_full_regen" == "true" ]]; then
+        local all_messages
+        all_messages=$(_parse_jsonl_range "$jsonl_file" 1)
+
+        # Atomic write: encode to temp file first, then mv
+        local tmp_file="${output_file}.tmp.$$"
+        echo "$all_messages" | toon --encode --stats 2>/dev/null > "$tmp_file"
+        if [[ -s "$tmp_file" ]]; then
+            mv "$tmp_file" "$output_file"
+            echo "$current_lines" > "$metadata_file"
+            return 0
+        else
+            rm -f "$tmp_file"
+            return 1
+        fi
+    fi
+
+    # ---------- Append-only optimization ----------
+    # Only process lines added since last run; append delta to existing file
+    if [[ $current_lines -gt $processed_lines ]]; then
+        local new_start=$((processed_lines + 1))
+        local delta_messages
+        delta_messages=$(_parse_jsonl_range "$jsonl_file" "$new_start")
+
+        if [[ -n "$delta_messages" ]] && [[ "$delta_messages" != "[]" ]]; then
+            # Encode delta; strip the TOON header line (first line) so we only
+            # get the data rows to append.  toon --stats header is on line 1.
+            local delta_toon
+            delta_toon=$(echo "$delta_messages" | toon --encode 2>/dev/null | tail -n +2)
+            if [[ -n "$delta_toon" ]]; then
+                printf '%s\n' "$delta_toon" >> "$output_file"
+            fi
+        fi
+
+        # Update processed-line count even if delta was empty (no new messages)
+        echo "$current_lines" > "$metadata_file"
+    fi
+
+    # Succeed if output file exists and is non-empty
     if [[ -s "$output_file" ]]; then
         return 0
     else
