@@ -359,7 +359,29 @@ check_lockfile_changes() {
 		return 0
 	fi
 
-	# Lockfile changed — warn user
+	# Hash changed — check if installed version already matches lockfile
+	# This handles git pull delivering CI updates: npm packages are updated in git,
+	# so the environment is already in sync even though .last-lockfile-hash is stale.
+	local lockfile_claude_ver
+	lockfile_claude_ver=$(jq -r '.claudeCodeVersion // empty' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
+
+	if [[ -n "$lockfile_claude_ver" && "$lockfile_claude_ver" != "unknown" ]]; then
+		local package_json="${ISOLATED_NVM_DIR}/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
+		local installed_claude_ver=""
+		if [[ -f "$package_json" ]]; then
+			installed_claude_ver=$(jq -r '.version // empty' "$package_json" 2>/dev/null || \
+				grep -oP '"version":\s*"\K[^"]+' "$package_json" 2>/dev/null || echo "")
+		fi
+
+		if [[ -n "$installed_claude_ver" && "$installed_claude_ver" == "$lockfile_claude_ver" ]]; then
+			# Installed version matches lockfile — environment is already up to date
+			# (e.g. CI pushed npm packages to git, user ran git pull)
+			update_lockfile_hash
+			return 0
+		fi
+	fi
+
+	# Lockfile changed and installed version differs — warn user
 	echo ""
 	print_warning "Lockfile has changed since last environment update"
 	print_info "File: $ISOLATED_LOCKFILE"
