@@ -118,6 +118,9 @@ scripts/.claude_proxy_credentials  # Legacy
 !.claude/skills/**
 .claude/sessions
 
+# Test fixtures with mock secrets (not committed)
+tests/fixtures/
+
 # Sphinx documentation build output (generated, not committed)
 docs/_build/
 docs/sphinx/_build/.doctrees/

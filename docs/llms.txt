@@ -97,4 +97,7 @@
 - [isolated](/_sources/sphinx/api-reference/update/isolated.md.txt)
 - [update](/_sources/sphinx/api-reference/update/update.md.txt)
 - [Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow](/_sources/CLAUDE_CODE_BACKEND.md.txt)
+- [Маскирование персональных данных в iclaude: PasteGuard и альтернативы](/_sources/PII_MASKING.md.txt)
 - [Claude Code Router: конфигурация и маршрутизация](/_sources/ROUTER.md.txt)
+- [Улучшения паттернов маскирования секретов в redact-secrets.py](/_sources/SECURITY_PATTERNS_IMPROVEMENTS.md.txt)
+- [Исследование: Улучшение маскирования секретов в PreToolUse hook](/_sources/SECURITY_RESEARCH.md.txt)

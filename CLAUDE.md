@@ -414,9 +414,26 @@ find /path/to/project/.claude -maxdepth 1 -type f -empty -perm 444 \
   -exec chmod 644 {} \; -delete
 ```
 
-**Хук `block-secrets.py`** работает независимо от sandbox. При работе агентов в других проектах:
+**Двухуровневые security hooks** работают независимо от sandbox:
+
+| Хук | Тип | Действие |
+|-----|-----|----------|
+| `block-secrets.py` | PreToolUse (Read/Edit/Write/Bash) | Блокирует по ПУТИ файла (exit 2) |
+| `redact-secrets.py` | PreToolUse (Write/Edit/MultiEdit/Bash) | Маскирует СОДЕРЖИМОЕ через `toolInputOverride` |
+
+**`block-secrets.py`** при работе агентов в других проектах:
 - `.env`, `.env.local`, `.env.production` — блокируются (реальные секреты)
 - `.env.example`, `.env.sample`, `.env.template` — разрешены (шаблоны, `SAFE_SUFFIXES`)
+
+**`redact-secrets.py`** покрывает в содержимом:
+- API keys: `sk-ant-...`, `sk-proj-...`, `AKIA...`, `ghp_/github_pat_`, JWT
+- URL credentials: `scheme://user:pass@host` (любые схемы: http, amqp, smtp, ldap...)
+- Пароли: `password = value` (с кавычками и без), `PGPASSWORD=`, `DB_PASS=`
+- `.env`-переменные: `[export] VAR_WITH_KEY_TOKEN_PASS_etc=value{20+}`
+- PEM: `BEGIN RSA/EC/DSA/OPENSSH/ENCRYPTED PRIVATE KEY`
+- **Не маскирует `Edit.old_string`** — поисковый паттерн, маскирование сломало бы Edit
+
+**Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
 
 ### Chrome Integration
 
