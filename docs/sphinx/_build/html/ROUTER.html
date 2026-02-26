@@ -382,6 +382,7 @@
 <h2>Содержание<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="#%D0%BA%D0%B0%D0%BA-iclaude-%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D1%83%D0%B5%D1%82-router"><span class="xref myst">Как iclaude использует Router</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B6%D0%B8%D0%B7%D0%BD%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9-%D1%86%D0%B8%D0%BA%D0%BB-ccr-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0"><span class="xref myst">Жизненный цикл CCR-сервера</span></a></p></li>
 <li><p><a class="reference internal" href="#%D0%BF%D0%B0%D1%80%D0%B0%D0%BC%D0%B5%D1%82%D1%80%D1%8B-%D0%B2%D0%B5%D1%80%D1%85%D0%BD%D0%B5%D0%B3%D0%BE-%D1%83%D1%80%D0%BE%D0%B2%D0%BD%D1%8F"><span class="xref myst">Параметры верхнего уровня</span></a></p></li>
 <li><p><a class="reference internal" href="#providers--%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%B9%D0%B4%D0%B5%D1%80%D1%8B-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D0%B5%D0%B9"><span class="xref myst">Providers — провайдеры моделей</span></a></p></li>
 <li><p><a class="reference internal" href="#transformer--%D1%82%D1%80%D0%B0%D0%BD%D1%81%D1%84%D0%BE%D1%80%D0%BC%D0%B5%D1%80%D1%8B"><span class="xref myst">Transformer — трансформеры</span></a></p></li>
@@ -438,8 +439,117 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 </section>
 </section>
 <hr class="docutils" />
+<section id="ccr">
+<h2>Жизненный цикл CCR-сервера<a class="headerlink" href="#ccr" title="Link to this heading">¶</a></h2>
 <section id="id2">
-<h2>Параметры верхнего уровня<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<h3>Архитектура процессов<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ccr</span> <span class="pre">code</span></code> — не демон, а менеджер сессии. При запуске <code class="docutils literal notranslate"><span class="pre">./iclaude.sh</span> <span class="pre">--router</span></code> происходит следующее:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>iclaude.sh
+  └─ exec ccr code          ← iclaude-процесс заменяется (exec, не spawn)
+       │
+       ├─ проверить PID-файл (~/.claude-code-router/*.pid)
+       │
+       ├─ [сервер НЕ запущен]:
+       │   spawn(&quot;node cli.js start&quot;, {detached:true, stdio:&quot;ignore&quot;})
+       │   .unref()          ← CCR-сервер уходит в фон как демон
+       │   ждать порт 3456 (timeout)
+       │
+       └─ spawn(&quot;claude&quot;, [...], {
+              env: { ANTHROPIC_BASE_URL: &quot;http://127.0.0.1:3456&quot;,
+                     ANTHROPIC_AUTH_TOKEN: &quot;test&quot;, ... },
+              stdio: &quot;inherit&quot;
+          })
+          on(&quot;close&quot;) → J0() → sC() → process.exit()
+</pre></div>
+</div>
+<p>После старта существуют два отдельных процесса:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Процесс</p></th>
+<th class="head"><p>PID-файл</p></th>
+<th class="head"><p>Роль</p></th>
+<th class="head"><p>Живёт пока</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">node</span> <span class="pre">cli.js</span> <span class="pre">start</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~/.claude-code-router/.claude-code-router.pid</span></code></p></td>
+<td><p>CCR HTTP-сервер на <code class="docutils literal notranslate"><span class="pre">:3456</span></code></p></td>
+<td><p>есть активные сессии</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ccr</span> <span class="pre">code</span></code></p></td>
+<td><p>— (родитель <code class="docutils literal notranslate"><span class="pre">claude</span></code>)</p></td>
+<td><p>менеджер сессии + счётчик</p></td>
+<td><p>работает <code class="docutils literal notranslate"><span class="pre">claude</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="reference-counting">
+<h3>Автоматическая остановка через reference counting<a class="headerlink" href="#reference-counting" title="Link to this heading">¶</a></h3>
+<p>CCR-сервер самоуправляемый — iclaude не участвует в его остановке (после <code class="docutils literal notranslate"><span class="pre">exec</span></code> iclaude-процесса нет):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ccr code запускается  → rC(): счётчик +1  (/tmp/claude-code-reference-count.txt)
+claude завершается    → J0(): счётчик -1
+                      → sC(): если счётчик == 0 → SIGTERM к CCR-серверу
+</pre></div>
+</div>
+<p>Несколько параллельных <code class="docutils literal notranslate"><span class="pre">--router</span></code> сессий используют <strong>один общий сервер</strong> — последняя закрывающаяся сессия его гасит.</p>
+</section>
+<section id="id3">
+<h3>Сценарии завершения<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Ситуация</p></th>
+<th class="head"><p>Что происходит с CCR-сервером</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Нормальный выход (<code class="docutils literal notranslate"><span class="pre">:q</span></code>, Ctrl+C)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ccr</span> <span class="pre">code</span></code> останавливает сервер автоматически</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kill</span> <span class="pre">-9</span> <span class="pre">claude</span></code> (SIGKILL дочернего)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ccr</span> <span class="pre">code</span></code> получает <code class="docutils literal notranslate"><span class="pre">close</span></code> event → очистка запускается → сервер останавливается</p></td>
+</tr>
+<tr class="row-even"><td><p>Два параллельных сеанса, первый вышел</p></td>
+<td><p>Сервер живёт (счётчик 2→1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Два параллельных, оба вышли</p></td>
+<td><p>Сервер останавливается (счётчик 1→0)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kill</span> <span class="pre">-9</span> <span class="pre">&lt;ccr</span> <span class="pre">code&gt;</span></code> (SIGKILL менеджера)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">J0()</span></code>/<code class="docutils literal notranslate"><span class="pre">sC()</span></code> не вызываются → <strong>сервер остаётся висеть</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Crash до <code class="docutils literal notranslate"><span class="pre">exec</span></code> в iclaude</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ccr</span> <span class="pre">code</span></code> не запустился → сервер не стартовал</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id4">
+<h3>Ручная очистка<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>Если CCR-сервер завис после kill/crash:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Через CLI</span>
+ccr<span class="w"> </span>stop
+
+<span class="c1"># Вручную</span>
+<span class="nb">kill</span><span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>~/.claude-code-router/.claude-code-router.pid<span class="k">)</span>
+rm<span class="w"> </span>~/.claude-code-router/.claude-code-router.pid
+rm<span class="w"> </span>-f<span class="w"> </span>/tmp/claude-code-reference-count.txt
+
+<span class="c1"># Проверить статус</span>
+ccr<span class="w"> </span>status
+./iclaude.sh<span class="w"> </span>--check-router
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h2>Параметры верхнего уровня<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
 <p><em>Источник: официальный README CCR</em></p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
@@ -527,8 +637,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 </tbody>
 </table>
 </div>
-<section id="id3">
-<h3>Два типа логов<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<section id="id6">
+<h3>Два типа логов<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
 <p>CCR ведёт два независимых лога:</p>
 <ul class="simple">
 <li><p><strong>Server-level</strong>: HTTP-запросы и API-вызовы → <code class="docutils literal notranslate"><span class="pre">~/.claude-code-router/logs/ccr-*.log</span></code> (через pino)</p></li>
@@ -539,8 +649,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <h3>PROXY_URL<a class="headerlink" href="#proxy-url" title="Link to this heading">¶</a></h3>
 <p>Применяется ко всем запросам CCR к внешним провайдерам. iclaude также передаёт <code class="docutils literal notranslate"><span class="pre">HTTPS_PROXY</span></code>/<code class="docutils literal notranslate"><span class="pre">HTTP_PROXY</span></code> из окружения. Для localhost-провайдеров (Ollama) прокси не нужен — <code class="docutils literal notranslate"><span class="pre">localhost</span></code> всегда в <code class="docutils literal notranslate"><span class="pre">NO_PROXY</span></code>.</p>
 </section>
-<section id="id4">
-<h3>Переменные окружения в значениях<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<section id="id7">
+<h3>Переменные окружения в значениях<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
 <p>CCR поддерживает <code class="docutils literal notranslate"><span class="pre">$VAR</span></code> и <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> в любых строковых полях конфига:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${DEEPSEEK_API_KEY}&quot;</span><span class="p">,</span>
@@ -555,8 +665,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <section id="providers">
 <h2>Providers — провайдеры моделей<a class="headerlink" href="#providers" title="Link to this heading">¶</a></h2>
 <p><em>Источник: официальный README CCR</em></p>
-<section id="id5">
-<h3>Поля провайдера<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<section id="id8">
+<h3>Поля провайдера<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -596,8 +706,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 </table>
 </div>
 </section>
-<section id="id6">
-<h3>Формат ссылки на провайдера<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<section id="id9">
+<h3>Формат ссылки на провайдера<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
 <p>В полях Router используется строка <code class="docutils literal notranslate"><span class="pre">&quot;provider_name,model_name&quot;</span></code>:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Router&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek,deepseek-chat&quot;</span><span class="p">,</span>
@@ -612,8 +722,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <h2>Transformer — трансформеры<a class="headerlink" href="#transformer" title="Link to this heading">¶</a></h2>
 <p><em>Источник: официальный README CCR</em></p>
 <p>Трансформеры преобразуют запросы Anthropic API ↔ формат конкретного провайдера.</p>
-<section id="id7">
-<h3>Встроенные трансформеры<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<section id="id10">
+<h3>Встроенные трансформеры<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -754,8 +864,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <section id="router">
 <h2>Router — слоты маршрутизации<a class="headerlink" href="#router" title="Link to this heading">¶</a></h2>
 <p><em>Источник: официальный README CCR</em></p>
-<section id="id8">
-<h3>Поддерживаемые слоты<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<section id="id11">
+<h3>Поддерживаемые слоты<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -797,8 +907,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 </table>
 </div>
 </section>
-<section id="id9">
-<h3>Динамическое переключение модели<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<section id="id12">
+<h3>Динамическое переключение модели<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
 <p>Во время активной сессии:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">model</span> <span class="n">provider_name</span><span class="p">,</span><span class="n">model_name</span>
 <span class="o">/</span><span class="n">model</span> <span class="n">deepseek</span><span class="p">,</span><span class="n">deepseek</span><span class="o">-</span><span class="n">chat</span>
@@ -890,8 +1000,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <div><p>Полные model ID типа <code class="docutils literal notranslate"><span class="pre">claude-haiku-4-5-20251001</span></code> в поле <code class="docutils literal notranslate"><span class="pre">model</span></code> <strong>молча игнорируются</strong> — агент переходит в режим <code class="docutils literal notranslate"><span class="pre">inherit</span></code>. Использовать только алиасы.</p>
 </div></blockquote>
 </section>
-<section id="id10">
-<h3>Текущая конфигурация агентов пайплайна<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<section id="id13">
+<h3>Текущая конфигурация агентов пайплайна<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -964,8 +1074,8 @@ iclaude копирует его в <code class="docutils literal notranslate"><s
 <hr class="docutils" />
 <section id="ollama">
 <h2>Внешние модели через Ollama<a class="headerlink" href="#ollama" title="Link to this heading">¶</a></h2>
-<section id="id11">
-<h3>Установка<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<section id="id14">
+<h3>Установка<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Установить Ollama</span>
 curl<span class="w"> </span>-fsSL<span class="w"> </span>https://ollama.ai/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
 
@@ -995,8 +1105,8 @@ curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span clas
 <li><p><code class="docutils literal notranslate"><span class="pre">transformer</span></code> — <strong>не нужен</strong> для Ollama (OpenAI-compatible API нативно)</p></li>
 </ul>
 </section>
-<section id="id12">
-<h3>Выбор модели<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<section id="id15">
+<h3>Выбор модели<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -1045,8 +1155,8 @@ curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span clas
 <section id="custom-router">
 <h2>Custom Router<a class="headerlink" href="#custom-router" title="Link to this heading">¶</a></h2>
 <p><em>Источник: официальный README CCR</em></p>
-<section id="id13">
-<h3>Конфигурация<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<section id="id16">
+<h3>Конфигурация<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
 <p>Путь задаётся через <code class="docutils literal notranslate"><span class="pre">CUSTOM_ROUTER_PATH</span></code> в <code class="docutils literal notranslate"><span class="pre">config.json</span></code> (не через фиксированный путь):</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;CUSTOM_ROUTER_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/home/user/.claude-code-router/custom-router.js&quot;</span>
@@ -1054,8 +1164,8 @@ curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span clas
 </pre></div>
 </div>
 </section>
-<section id="id14">
-<h3>Формат файла<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<section id="id17">
+<h3>Формат файла<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="c1">// custom-router.js</span>
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">router</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span><span class="w"> </span><span class="nx">config</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">messages</span><span class="p">;</span>
@@ -1081,10 +1191,10 @@ curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span clas
 </section>
 </section>
 <hr class="docutils" />
-<section id="id15">
-<h2>Примеры конфигурации<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
-<section id="id16">
-<h3>Текущая конфигурация проекта<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<section id="id18">
+<h2>Примеры конфигурации<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<section id="id19">
+<h3>Текущая конфигурация проекта<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3456</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;PROXY_URL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://...&quot;</span><span class="p">,</span>
@@ -1195,10 +1305,10 @@ curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span clas
 </section>
 </section>
 <hr class="docutils" />
-<section id="id17">
-<h2>Диагностика<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
-<section id="id18">
-<h3>Команды<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<section id="id20">
+<h2>Диагностика<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<section id="id21">
+<h3>Команды<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Статус Router</span>
 ./iclaude.sh<span class="w"> </span>--check-router
 
@@ -1219,17 +1329,17 @@ ccr<span class="w"> </span>preset<span class="w"> </span><span class="nb">export
 </pre></div>
 </div>
 </section>
-<section id="id19">
-<h3>Типичные проблемы<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
-<section id="id20">
-<h4>Агент не попадает в нужный слот<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h4>
+<section id="id22">
+<h3>Типичные проблемы<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<section id="id23">
+<h4>Агент не попадает в нужный слот<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h4>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">haiku</span><span class="w">           </span><span class="c1"># ✅ корректный алиас</span>
 <span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-haiku-4-5-20251001</span><span class="w">  </span><span class="c1"># ❌ полный ID — молча игнорируется</span>
 </pre></div>
 </div>
 </section>
-<section id="id21">
-<h4>Ollama не отвечает<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h4>
+<section id="id24">
+<h4>Ollama не отвечает<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h4>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>systemctl<span class="w"> </span>status<span class="w"> </span>ollama
 curl<span class="w"> </span>http://localhost:11434/v1/chat/completions<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;model&quot;:&quot;qwen2.5-coder:7b&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;hi&quot;}]}&#39;</span>
@@ -1241,8 +1351,8 @@ ollama<span class="w"> </span>list
 </pre></div>
 </div>
 </section>
-<section id="ccr">
-<h4>Конфиг не подхватывается CCR<a class="headerlink" href="#ccr" title="Link to this heading">¶</a></h4>
+<section id="id25">
+<h4>Конфиг не подхватывается CCR<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h4>
 <p>iclaude копирует <code class="docutils literal notranslate"><span class="pre">router.json</span></code> в <code class="docutils literal notranslate"><span class="pre">~/.claude-code-router/config.json</span></code> при каждом запуске <code class="docutils literal notranslate"><span class="pre">--router</span></code>. Проверить:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>~/.claude-code-router/config.json
 </pre></div>
@@ -1314,32 +1424,39 @@ ccr<span class="w"> </span>restart
 <li><a class="reference internal" href="#ccr-v2-0-0">Важно: схема конфига (CCR v2.0.0)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id2">Параметры верхнего уровня</a><ul>
-<li><a class="reference internal" href="#id3">Два типа логов</a></li>
+<li><a class="reference internal" href="#ccr">Жизненный цикл CCR-сервера</a><ul>
+<li><a class="reference internal" href="#id2">Архитектура процессов</a></li>
+<li><a class="reference internal" href="#reference-counting">Автоматическая остановка через reference counting</a></li>
+<li><a class="reference internal" href="#id3">Сценарии завершения</a></li>
+<li><a class="reference internal" href="#id4">Ручная очистка</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">Параметры верхнего уровня</a><ul>
+<li><a class="reference internal" href="#id6">Два типа логов</a></li>
 <li><a class="reference internal" href="#proxy-url">PROXY_URL</a></li>
-<li><a class="reference internal" href="#id4">Переменные окружения в значениях</a></li>
+<li><a class="reference internal" href="#id7">Переменные окружения в значениях</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#providers">Providers — провайдеры моделей</a><ul>
-<li><a class="reference internal" href="#id5">Поля провайдера</a></li>
-<li><a class="reference internal" href="#id6">Формат ссылки на провайдера</a></li>
+<li><a class="reference internal" href="#id8">Поля провайдера</a></li>
+<li><a class="reference internal" href="#id9">Формат ссылки на провайдера</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#transformer">Transformer — трансформеры</a><ul>
-<li><a class="reference internal" href="#id7">Встроенные трансформеры</a></li>
+<li><a class="reference internal" href="#id10">Встроенные трансформеры</a></li>
 <li><a class="reference internal" href="#transformer-use">Форматы transformer.use</a></li>
 <li><a class="reference internal" href="#custom-transformer">Custom Transformer плагины</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#router">Router — слоты маршрутизации</a><ul>
-<li><a class="reference internal" href="#id8">Поддерживаемые слоты</a></li>
-<li><a class="reference internal" href="#id9">Динамическое переключение модели</a></li>
+<li><a class="reference internal" href="#id11">Поддерживаемые слоты</a></li>
+<li><a class="reference internal" href="#id12">Динамическое переключение модели</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#model-agent-md">model в AGENT.md — официальная спецификация</a><ul>
 <li><a class="reference internal" href="#frontmatter">Полный список frontmatter полей</a></li>
 <li><a class="reference internal" href="#model">Допустимые значения model</a></li>
-<li><a class="reference internal" href="#id10">Текущая конфигурация агентов пайплайна</a></li>
+<li><a class="reference internal" href="#id13">Текущая конфигурация агентов пайплайна</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#sub-agents">Маршрутизация sub-agents</a><ul>
@@ -1349,29 +1466,29 @@ ccr<span class="w"> </span>restart
 </ul>
 </li>
 <li><a class="reference internal" href="#ollama">Внешние модели через Ollama</a><ul>
-<li><a class="reference internal" href="#id11">Установка</a></li>
+<li><a class="reference internal" href="#id14">Установка</a></li>
 <li><a class="reference internal" href="#router-json">Конфигурация в router.json</a></li>
-<li><a class="reference internal" href="#id12">Выбор модели</a></li>
+<li><a class="reference internal" href="#id15">Выбор модели</a></li>
 <li><a class="reference internal" href="#background-ollama">Активация background → Ollama</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#custom-router">Custom Router</a><ul>
-<li><a class="reference internal" href="#id13">Конфигурация</a></li>
-<li><a class="reference internal" href="#id14">Формат файла</a></li>
+<li><a class="reference internal" href="#id16">Конфигурация</a></li>
+<li><a class="reference internal" href="#id17">Формат файла</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id15">Примеры конфигурации</a><ul>
-<li><a class="reference internal" href="#id16">Текущая конфигурация проекта</a></li>
+<li><a class="reference internal" href="#id18">Примеры конфигурации</a><ul>
+<li><a class="reference internal" href="#id19">Текущая конфигурация проекта</a></li>
 <li><a class="reference internal" href="#openrouter">Все слоты + OpenRouter</a></li>
 <li><a class="reference internal" href="#github-actions-ci">GitHub Actions / CI</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id17">Диагностика</a><ul>
-<li><a class="reference internal" href="#id18">Команды</a></li>
-<li><a class="reference internal" href="#id19">Типичные проблемы</a><ul>
-<li><a class="reference internal" href="#id20">Агент не попадает в нужный слот</a></li>
-<li><a class="reference internal" href="#id21">Ollama не отвечает</a></li>
-<li><a class="reference internal" href="#ccr">Конфиг не подхватывается CCR</a></li>
+<li><a class="reference internal" href="#id20">Диагностика</a><ul>
+<li><a class="reference internal" href="#id21">Команды</a></li>
+<li><a class="reference internal" href="#id22">Типичные проблемы</a><ul>
+<li><a class="reference internal" href="#id23">Агент не попадает в нужный слот</a></li>
+<li><a class="reference internal" href="#id24">Ollama не отвечает</a></li>
+<li><a class="reference internal" href="#id25">Конфиг не подхватывается CCR</a></li>
 <li><a class="reference internal" href="#log-level-debug">LOG_LEVEL debug создаёт большие лог-файлы</a></li>
 <li><a class="reference internal" href="#check-router"><code class="docutils literal notranslate"><span class="pre">--check-router</span></code> показывает пустые провайдеры</a></li>
 </ul>

@@ -46,7 +46,28 @@ cd claude
 - **Сессии** - OSC 8 hyperlinks для навигации
 - **Oh My Posh** - кастомные темы
 
-### 🔒 Sandboxing
+### 🔒 Security Hooks
+
+Двухуровневая защита от случайной утечки секретов в запросы к LLM:
+
+| Хук | Триггер | Действие |
+|-----|---------|----------|
+| `block-secrets.py` | Путь к файлу (`.env`, `.pem`, `.ssh/`) | Блокирует операцию (exit 2) |
+| `redact-secrets.py` | Содержимое Write/Edit/Bash | Маскирует через `toolInputOverride` |
+
+**Покрытые форматы секретов:**
+- API keys: Anthropic, OpenAI, Stripe, OpenRouter (`sk-...`)
+- AWS: Access Key ID (`AKIA...`), Secret Access Key
+- GitHub: классические PAT (`ghp_`) и fine-grained PAT (`github_pat_`)
+- JWT, PEM private keys (RSA/EC/DSA/OPENSSH/ENCRYPTED)
+- URL credentials (`scheme://user:pass@host`) — любые схемы
+- Пароли в конфигах (с кавычками и без), `.env`-переменные
+
+**Важно:** `Edit.old_string` **не маскируется** намеренно — это поисковый паттерн, маскирование сломало бы операцию Edit.
+
+**Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+
+### 🛡️ Sandboxing
 - **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
 - **Установка зависимостей** - `./iclaude.sh --sandbox-install`
 - **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
@@ -120,6 +141,7 @@ Approval gates после каждого агента — можно остан�
 - **[Status Line](./docs/STATUSLINE.md)** - метрики в терминале
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
+- **[PII Masking](./docs/PII_MASKING.md)** - маскирование секретов (security hooks)
 
 ### Техническое
 - **[CLAUDE.md](./CLAUDE.md)** - архитектура проекта
@@ -259,7 +281,9 @@ export DEEPSEEK_API_KEY="your-key"
 │       ├── agents/                     # Agent pipeline (Researcher, Planner, Executor, Critic)
 │       ├── scripts/                    # Status Line и др.
 │       ├── themes/                     # Oh My Posh темы
-│       └── hooks/                      # Claude Code хуки (beforeCompact)
+│       └── hooks/                      # PreToolUse/PostToolUse хуки
+│           ├── block-secrets.py        # Блокировка по пути файла
+│           └── redact-secrets.py       # Маскирование содержимого
 ├── .claude/                            # Конфигурация Claude Code
 │   └── skills/                         # Навыки проекта
 ├── .nvm-isolated-lockfile.json         # Version lockfile
@@ -322,4 +346,4 @@ MIT License
 ---
 
 **Версия:** 4.0 (Modular Architecture)
-**Последнее обновление:** 2026-02-19
+**Последнее обновление:** 2026-02-25
