@@ -54,6 +54,81 @@
 
 ---
 
+## Жизненный цикл CCR-сервера
+
+### Архитектура процессов
+
+`ccr code` — не демон, а менеджер сессии. При запуске `./iclaude.sh --router` происходит следующее:
+
+```
+iclaude.sh
+  └─ exec ccr code          ← iclaude-процесс заменяется (exec, не spawn)
+       │
+       ├─ проверить PID-файл (~/.claude-code-router/*.pid)
+       │
+       ├─ [сервер НЕ запущен]:
+       │   spawn("node cli.js start", {detached:true, stdio:"ignore"})
+       │   .unref()          ← CCR-сервер уходит в фон как демон
+       │   ждать порт 3456 (timeout)
+       │
+       └─ spawn("claude", [...], {
+              env: { ANTHROPIC_BASE_URL: "http://127.0.0.1:3456",
+                     ANTHROPIC_AUTH_TOKEN: "test", ... },
+              stdio: "inherit"
+          })
+          on("close") → J0() → sC() → process.exit()
+```
+
+После старта существуют два отдельных процесса:
+
+| Процесс | PID-файл | Роль | Живёт пока |
+|---------|----------|------|-----------|
+| `node cli.js start` | `~/.claude-code-router/.claude-code-router.pid` | CCR HTTP-сервер на `:3456` | есть активные сессии |
+| `ccr code` | — (родитель `claude`) | менеджер сессии + счётчик | работает `claude` |
+
+### Автоматическая остановка через reference counting
+
+CCR-сервер самоуправляемый — iclaude не участвует в его остановке (после `exec` iclaude-процесса нет):
+
+```
+ccr code запускается  → rC(): счётчик +1  (/tmp/claude-code-reference-count.txt)
+claude завершается    → J0(): счётчик -1
+                      → sC(): если счётчик == 0 → SIGTERM к CCR-серверу
+```
+
+Несколько параллельных `--router` сессий используют **один общий сервер** — последняя закрывающаяся сессия его гасит.
+
+### Сценарии завершения
+
+| Ситуация | Что происходит с CCR-сервером |
+|----------|-------------------------------|
+| Нормальный выход (`:q`, Ctrl+C) | `ccr code` останавливает сервер автоматически |
+| `kill -9 claude` (SIGKILL дочернего) | `ccr code` получает `close` event → очистка запускается → сервер останавливается |
+| Два параллельных сеанса, первый вышел | Сервер живёт (счётчик 2→1) |
+| Два параллельных, оба вышли | Сервер останавливается (счётчик 1→0) |
+| `kill -9 <ccr code>` (SIGKILL менеджера) | `J0()`/`sC()` не вызываются → **сервер остаётся висеть** |
+| Crash до `exec` в iclaude | `ccr code` не запустился → сервер не стартовал |
+
+### Ручная очистка
+
+Если CCR-сервер завис после kill/crash:
+
+```bash
+# Через CLI
+ccr stop
+
+# Вручную
+kill $(cat ~/.claude-code-router/.claude-code-router.pid)
+rm ~/.claude-code-router/.claude-code-router.pid
+rm -f /tmp/claude-code-reference-count.txt
+
+# Проверить статус
+ccr status
+./iclaude.sh --check-router
+```
+
+---
+
 ## Параметры верхнего уровня
 
 *Источник: официальный README CCR*
