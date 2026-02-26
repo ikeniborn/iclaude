@@ -3,7 +3,7 @@ name: code-review
 description: Автоматический review кода перед commit
 user-invocable: true
 context: fork
-# version: 1.4.0
+# version: 1.5.0
 # tags: review, quality, security, code-smells, toon
 # dependencies: toon-skill, lsp-integration
 # files: templates: ./templates/*.json, rules: ./rules/*.md
@@ -36,6 +36,7 @@ context: fork
     - [TOON Optimization](#toon-optimization)
   - [Examples](#examples)
   - [Determinism & Idempotency](#determinism-idempotency)
+  - [Artifact Management](#artifact-management)
   - [Integration with Other Skills](#integration-with-other-skills)
   - [Advanced Topics](#advanced-topics)
     - [Custom Architecture Paths](#custom-architecture-paths)
@@ -463,6 +464,56 @@ total_score = Σ category_scores
 
 ---
 
+## Artifact Management
+
+<a id="artifact-management"></a>
+
+**Правило:** Все runtime-артефакты (отчёты ревью, TOON-файлы) **ЗАПРЕЩЕНО** записывать в корень проекта или произвольные пути.
+
+**Единственно допустимый путь:**
+
+```
+{PROJECT_ROOT}/.claude/code-review/
+```
+
+**Причина:** файлы типа `code-review-6.toon` в корне проекта попадают в `git status`, загрязняют diff и могут быть случайно закоммичены.
+
+### Правила записи артефактов
+
+```bash
+# ПРАВИЛЬНО — всегда через артефактную директорию
+ARTIFACT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/code-review"
+mkdir -p "$ARTIFACT_DIR"
+OUTPUT="$ARTIFACT_DIR/review-$(date +%Y%m%d-%H%M%S).json"
+
+# ЗАПРЕЩЕНО — никогда не писать в корень или /tmp
+./code-review-6.toon          # ❌ корень проекта
+/tmp/review.json              # ❌ системный tmp
+code-review.toon              # ❌ текущий каталог (без явного пути)
+```
+
+### Именование файлов
+
+| Тип | Шаблон | Пример |
+|-----|--------|--------|
+| JSON-отчёт | `review-{YYYYMMDD-HHMMSS}.json` | `review-20260226-143022.json` |
+| TOON-сводка | `review-{YYYYMMDD-HHMMSS}.toon` | `review-20260226-143022.toon` |
+| Последний отчёт | `review-latest.json` | `review-latest.json` |
+
+### .gitignore статус
+
+`.claude/code-review/` автоматически gitignored через правило `.claude/*` в `.gitignore`:
+
+```bash
+# Проверка:
+git check-ignore -v .claude/code-review/review-latest.json
+# → .gitignore:118:.claude/*  .claude/code-review/review-latest.json
+```
+
+**Полная спецификация:** [@rules:artifacts](./rules/artifacts.md)
+
+---
+
 ## Integration with Other Skills
 
 **Used by:**
@@ -549,6 +600,7 @@ files_changed[] → code-review skill
 - Architecture compliance: [@rules:architecture](./rules/architecture.md)
 - Security patterns: [@rules:security](./rules/security.md)
 - Determinism & Idempotency: [@rules:determinism](./rules/determinism.md)
+- Artifact management: [@rules:artifacts](./rules/artifacts.md)
 
 **Templates:**
 - Review output JSON schema: [templates/review-output.json](./templates/review-output.json)
@@ -572,6 +624,12 @@ files_changed[] → code-review skill
 ---
 
 ## Changelog
+
+### 1.5.0 (2026-02-26)
+- **Artifact Management**: новый раздел + @rules:artifacts — все артефакты строго в `.claude/code-review/`
+- **Запрет записи в корень проекта**: `code-review-N.toon` и подобные файлы в root — нарушение Rule A-2
+- **gitignore**: явная запись `.claude/code-review/` для документальной ясности
+- **Именование**: шаблон `review-{YYYYMMDD-HHMMSS}.{json,toon}` с временной меткой
 
 ### 1.4.0 (2026-02-26)
 - **Determinism & Idempotency**: новая секция + правила D-1..D-8 (@rules:determinism)
