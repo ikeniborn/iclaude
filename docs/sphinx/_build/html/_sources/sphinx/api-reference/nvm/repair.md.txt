@@ -42,3 +42,12 @@ Create Claude Code symlink
 -   0 - success
 -   1 - error
 
+## `repair_settings_paths`
+
+Repair absolute paths in settings.json Detects hardcoded .claude-isolated paths from another machine/installation and replaces them with the current ISOLATED_CONFIG_DIR path. Called automatically at every launch and during --repair-isolated.
+
+**Returns:**
+
+-   0 - success (paths correct or fixed)
+-   1 - could not repair
+

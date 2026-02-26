@@ -1,0 +1,61 @@
+{
+  "deep_research_results": {
+    "metadata": {
+      "query": "{{query: string}}",
+      "depth": "{{depth: enum shallow|standard|deep}}",
+      "sources_found": "{{sources_found: integer, min 0}}",
+      "sources_fetched": "{{sources_fetched: integer, min 0}}",
+      "search_queries_used": "{{search_queries_used: integer, min 1}}",
+      "timestamp": "{{timestamp: string}}",
+      "duration_estimate": "{{duration_estimate: string}}"
+    },
+    "key_findings": [
+      {
+        "finding": "{{finding: string}}",
+        "confidence": "{{confidence: enum high|medium|low}}",
+        "sources": ["{{source_url: string}}"],
+        "contested": "{{contested: boolean}}",
+        "synthesis": "{{optional: synthesis}}"
+      }
+    ],
+    "detailed_findings": {
+      "{{topic_area: string}}": {
+        "summary": "{{summary: string}}",
+        "key_points": ["{{key_point: string}}"],
+        "sources": ["{{source_url: string}}"],
+        "contested_points": ["{{optional: contested_point}}"]
+      }
+    },
+    "contradictions": [
+      {
+        "topic": "{{contradiction_topic: string}}",
+        "position_a": {
+          "claim": "{{claim_a: string}}",
+          "source": "{{source_a: string}}"
+        },
+        "position_b": {
+          "claim": "{{claim_b: string}}",
+          "source": "{{source_b: string}}"
+        },
+        "resolution": "{{resolution: enum unclear|position_a_stronger|position_b_stronger}}"
+      }
+    ],
+    "gaps": ["{{gap: string}}"],
+    "sources": [
+      {
+        "url": "{{url: string}}",
+        "title": "{{title: string}}",
+        "type": "{{source_type: enum official_docs|research|article|blog|github|other}}",
+        "reliability": "{{reliability: enum high|medium|low}}",
+        "fetched": "{{fetched: boolean}}",
+        "key_insights": ["{{insight: string}}"]
+      }
+    ],
+    "recommendations": {
+      "for_caller": "{{for_caller: enum researcher|user}}",
+      "action_items": ["{{action_item: string}}"],
+      "further_research_needed": ["{{optional: further_research}}"],
+      "confidence_overall": "{{confidence_overall: enum high|medium|low}}"
+    }
+  }
+}

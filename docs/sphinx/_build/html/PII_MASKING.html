@@ -1,0 +1,2147 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Улучшения паттернов маскирования секретов в redact-secrets.py" href="SECURITY_PATTERNS_IMPROVEMENTS.html"><link rel="prev" title="Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow" href="CLAUDE_CODE_BACKEND.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Маскирование персональных данных в iclaude: PasteGuard и альтернативы - iclaude Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #ea580c;
+  --color-brand-content: #c2410c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f97316;
+  --color-brand-content: #fb923c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="sphinx/index.html"><div class="brand">iclaude Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="sphinx/index.html">
+  
+  <span class="sidebar-brand-text">iclaude Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CONFIGURATION.html">Конфигурация iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONFIG_HIERARCHY.html">Configuration Hierarchy in Claude Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CONFIG.html">Claude Code Configuration Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QUICK_CONFIG.html">Quick Configuration Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PROXY.html">Настройка прокси</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="STATUSLINE.html">Claude Statusline Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INTEGRATIONS.html">Интеграции iclaude: AI-эффективность и возможности</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="ROUTER.html">Claude Code Router: конфигурация и маршрутизация</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CODE_BACKEND.html">Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Маскирование персональных данных в iclaude: PasteGuard и альтернативы</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY_PATTERNS_IMPROVEMENTS.html">Улучшения паттернов маскирования секретов в redact-secrets.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY_RESEARCH.html">Исследование: Улучшение маскирования секретов в PreToolUse hook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/chrome/index.html">Module: chrome</a><input aria-label="Toggle navigation of Module: chrome" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/chrome/detection.html">detection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/command/index.html">Module: command</a><input aria-label="Toggle navigation of Module: command" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/dispatch.html">dispatch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/parse.html">parse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/command/usage.html">usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/config/index.html">Module: config</a><input aria-label="Toggle navigation of Module: config" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/export.html">export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/remaining.html">remaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/resolve.html">resolve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/serve.html">serve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/repair.html">repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/pii-proxy/index.html">Module: pii-proxy</a><input aria-label="Toggle navigation of Module: pii-proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/PII_MASKING.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="iclaude-pasteguard">
+<h1>Маскирование персональных данных в iclaude: PasteGuard и альтернативы<a class="headerlink" href="#iclaude-pasteguard" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p>Исследование инструментов маскирования PII/конфиденциальных данных при работе с Claude Code.
+Анализ PasteGuard, точек интеграции в изолированную среду и альтернативных решений.</p>
+<p>Дата: 2026-02-25 | Версия: 1.0</p>
+</div></blockquote>
+<hr class="docutils" />
+<section id="id1">
+<h2>Содержание<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#%D0%B7%D0%B0%D1%87%D0%B5%D0%BC-%D0%BC%D0%B0%D1%81%D0%BA%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5-%D0%BF%D1%80%D0%B8-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B5-%D1%81-ai"><span class="xref myst">Зачем маскировать данные при работе с AI</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7-pasteguard"><span class="xref myst">Анализ PasteGuard</span></a></p></li>
+<li><p><a class="reference internal" href="#%D1%82%D0%B5%D0%BA%D1%83%D1%89%D0%B0%D1%8F-%D0%B7%D0%B0%D1%89%D0%B8%D1%82%D0%B0-%D0%B2-iclaude"><span class="xref myst">Текущая защита в iclaude</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D1%8F-pasteguard-%D1%81-iclaude"><span class="xref myst">Интеграция PasteGuard с iclaude</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B0%D0%BB%D1%8C%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%82%D0%B8%D0%B2%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D1%88%D0%B5%D0%BD%D0%B8%D1%8F"><span class="xref myst">Альтернативные решения</span></a></p></li>
+<li><p><a class="reference internal" href="#%D1%81%D1%80%D0%B0%D0%B2%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F-%D1%82%D0%B0%D0%B1%D0%BB%D0%B8%D1%86%D0%B0"><span class="xref myst">Сравнительная таблица</span></a></p></li>
+<li><p><a class="reference internal" href="#%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD%D0%B4%D0%B0%D1%86%D0%B8%D0%B8"><span class="xref myst">Рекомендации</span></a></p></li>
+<li><p><a class="reference internal" href="#%D0%B0%D1%80%D1%85%D0%B8%D1%82%D0%B5%D0%BA%D1%82%D1%83%D1%80%D0%B0-%D0%BF%D1%80%D0%B5%D0%B4%D0%BB%D0%B0%D0%B3%D0%B0%D0%B5%D0%BC%D0%BE%D0%B3%D0%BE-%D1%80%D0%B5%D1%88%D0%B5%D0%BD%D0%B8%D1%8F"><span class="xref myst">Архитектура предлагаемого решения</span></a></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="ai">
+<h2>Зачем маскировать данные при работе с AI<a class="headerlink" href="#ai" title="Link to this heading">¶</a></h2>
+<p>При работе с Claude Code в реальных проектах в контекст неизбежно попадают:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Категория</p></th>
+<th class="head"><p>Примеры</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Персональные данные (PII)</strong></p></td>
+<td><p>Имена клиентов, email, телефоны, адреса, СНИЛС, ИНН</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Учётные данные</strong></p></td>
+<td><p>API-ключи, токены, пароли, JWT, SSH-ключи</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Корпоративные данные</strong></p></td>
+<td><p>Внутренние имена проектов, ID клиентов, финансовые данные</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Медицинские данные</strong></p></td>
+<td><p>Диагнозы, результаты анализов, истории болезни</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Финансовые данные</strong></p></td>
+<td><p>Номера карт, IBAN, суммы транзакций</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Проблема: <strong>всё это передаётся в Anthropic API в облако</strong>, даже если пользователь этого не осознаёт — через код, конфиги, логи, тестовые данные.</p>
+<section id="claude-code">
+<h3>Сценарии риска в Claude Code<a class="headerlink" href="#claude-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Пользователь: &quot;Отладь этот код&quot;
+→ Код содержит БД-строку с паролем: mysql://admin:secret123@prod.db:3306/customers
+→ Контекст содержит customer_data.json с реальными email 50K клиентов
+→ Всё это уходит в Anthropic API → сохраняется в логах → попадает в training data
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pasteguard">
+<h2>Анализ PasteGuard<a class="headerlink" href="#pasteguard" title="Link to this heading">¶</a></h2>
+<p><strong>Репозиторий:</strong> https://github.com/sgasser/pasteguard
+<strong>Версия:</strong> v0.3.2 (20 февраля 2026)
+<strong>Лицензия:</strong> Apache 2.0</p>
+<section id="id2">
+<h3>Концепция<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>PasteGuard — <strong>локальный HTTP-прокси</strong> между клиентом и облачным LLM. Принцип: “AI gets the context. Not your secrets.”</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Клиент (Claude Code)
+    ↓ запрос с данными
+PasteGuard (localhost:3000)
+    ↓ маскирование PII: user@example.com → [[EMAIL_ADDRESS_1]]
+    ↓ маскирование секретов: sk-abc123 → [[API_KEY_SK_1]]
+Anthropic API / OpenAI API
+    ↓ ответ с [[EMAIL_ADDRESS_1]]
+PasteGuard
+    ↓ восстановление: [[EMAIL_ADDRESS_1]] → user@example.com
+Клиент (Claude Code)
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3>Два режима работы<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Режим</p></th>
+<th class="head"><p>Описание</p></th>
+<th class="head"><p>Когда использовать</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong><code class="docutils literal notranslate"><span class="pre">mask</span></code></strong></p></td>
+<td><p>Маскирование → Облачный LLM → Восстановление</p></td>
+<td><p>Доверяем облаку, нужно скрыть конкретные данные</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong><code class="docutils literal notranslate"><span class="pre">route</span></code></strong></p></td>
+<td><p>При обнаружении PII → перенаправление на локальный LLM (Ollama)</p></td>
+<td><p>Полная изоляция чувствительных запросов</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id4">
+<h3>Что маскирует<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<section id="pii-microsoft-presidio-24">
+<h4>PII (через Microsoft Presidio — 24 языка)<a class="headerlink" href="#pii-microsoft-presidio-24" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Тип</p></th>
+<th class="head"><p>Пример</p></th>
+<th class="head"><p>Плейсхолдер</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PERSON</p></td>
+<td><p>Иван Петров</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[PERSON_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>EMAIL_ADDRESS</p></td>
+<td><p>user&#64;company.com</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[EMAIL_ADDRESS_1]]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>PHONE_NUMBER</p></td>
+<td><p>+7 (495) 123-4567</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[PHONE_NUMBER_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>CREDIT_CARD</p></td>
+<td><p>4111-1111-1111-1111</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[CREDIT_CARD_1]]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>IP_ADDRESS</p></td>
+<td><p>192.168.1.100</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[IP_ADDRESS_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>LOCATION</p></td>
+<td><p>Москва, ул. Ленина 1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[LOCATION_1]]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>IBAN_CODE</p></td>
+<td><p>DE89 3704 0044 0532 0130 00</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[IBAN_CODE_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>URL</p></td>
+<td><p>https://internal.company.com</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[URL_1]]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="regex">
+<h4>Секреты (regex-паттерны)<a class="headerlink" href="#regex" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Тип</p></th>
+<th class="head"><p>Пример</p></th>
+<th class="head"><p>Плейсхолдер</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>API_KEY_SK</p></td>
+<td><p>sk-proj-aBcD…XyZ</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[API_KEY_SK_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>OPENSSH_PRIVATE_KEY</p></td>
+<td><p>—–BEGIN OPENSSH PRIVATE KEY—–</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[OPENSSH_PRIVATE_KEY_1]]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>JWT</p></td>
+<td><p>eyJhbGciOiJIUzI1NiIs…</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[JWT_1]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>AWS_SECRET_KEY</p></td>
+<td><p>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[AWS_SECRET_KEY_1]]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="id5">
+<h3>Технический стек<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Компонент</p></th>
+<th class="head"><p>Технология</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Язык</p></td>
+<td><p>TypeScript 96.7%, Python 2.3%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Runtime</p></td>
+<td><p>Bun</p></td>
+</tr>
+<tr class="row-even"><td><p>Web-фреймворк</p></td>
+<td><p>Hono v4.11</p></td>
+</tr>
+<tr class="row-odd"><td><p>PII-детекция</p></td>
+<td><p>Microsoft Presidio (Python-сервис на порту 5002)</p></td>
+</tr>
+<tr class="row-even"><td><p>Секреты-детекция</p></td>
+<td><p>Regex-паттерны</p></td>
+</tr>
+<tr class="row-odd"><td><p>БД (логи)</p></td>
+<td><p>SQLite</p></td>
+</tr>
+<tr class="row-even"><td><p>Контейнеризация</p></td>
+<td><p>Docker + supervisord</p></td>
+</tr>
+<tr class="row-odd"><td><p>Версия</p></td>
+<td><p>v0.3.2 (активно поддерживается: 6 релизов за 5 недель)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id6">
+<h3>Конфигурация<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># config.yaml</span>
+<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">route</span><span class="w">  </span><span class="c1"># или mask</span>
+
+<span class="nt">server</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3000</span>
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
+
+<span class="nt">providers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">anthropic</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://api.anthropic.com</span>
+<span class="w">    </span><span class="nt">api_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${ANTHROPIC_API_KEY}</span>
+
+<span class="c1"># Для route-режима: локальный LLM</span>
+<span class="nt">local</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ollama</span>
+<span class="w">  </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost:11434</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">llama3.2</span>
+
+<span class="nt">pii_detection</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">presidio_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost:5002</span>
+<span class="w">  </span><span class="nt">languages</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;en&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;ru&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">score_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.7</span>
+<span class="w">  </span><span class="nt">entities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">PERSON</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">EMAIL_ADDRESS</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">PHONE_NUMBER</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">CREDIT_CARD</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">IP_ADDRESS</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">scan_roles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">user</span><span class="p p-Indicator">]</span>
+
+<span class="nt">secrets_detection</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mask</span><span class="w">  </span><span class="c1"># mask | block | route_local</span>
+<span class="w">  </span><span class="nt">entities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">OPENSSH_PRIVATE_KEY</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">API_KEY_SK</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">JWT</span><span class="p p-Indicator">]</span>
+
+<span class="nt">masking</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">whitelist</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;You</span><span class="nv"> </span><span class="s">are</span><span class="nv"> </span><span class="s">Claude</span><span class="nv"> </span><span class="s">Code&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;CLAUDE.md&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h3>Ограничения PasteGuard<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Ограничение</p></th>
+<th class="head"><p>Детали</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Требует Docker</strong></p></td>
+<td><p>Presidio (Python NLP) запускается только в Docker</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Латентность</strong></p></td>
+<td><p>+50-200мс на запрос из-за NLP-обработки</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>False negatives</strong></p></td>
+<td><p>NLP-модели не 100% точны; редкие форматы могут пропускаться</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Потребление ресурсов</strong></p></td>
+<td><p>Presidio использует ~500MB RAM</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Только OpenAI/Anthropic API</strong></p></td>
+<td><p>Не поддерживает нестандартные API</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Браузерное расширение в beta</strong></p></td>
+<td><p>Для ChatGPT/Claude.ai — пока нестабильно</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Мультиязычность</strong></p></td>
+<td><p>Требует явного указания языков; русский поддерживается, но хуже EN</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="iclaude">
+<h2>Текущая защита в iclaude<a class="headerlink" href="#iclaude" title="Link to this heading">¶</a></h2>
+<p>iclaude уже имеет несколько механизмов защиты данных:</p>
+<section id="block-secrets-py-pretooluse-hook">
+<h3>1. block-secrets.py (PreToolUse Hook)<a class="headerlink" href="#block-secrets-py-pretooluse-hook" title="Link to this heading">¶</a></h3>
+<p><strong>Путь:</strong> <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/hooks/block-secrets.py</span></code></p>
+<p><strong>Работает:</strong> Перехватывает каждый вызов инструментов Read/Edit/Write/Bash <strong>до</strong> передачи в Claude Code.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Защищённые паттерны в путях файлов</span>
+<span class="n">SENSITIVE_PATH_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.pem&#39;</span><span class="p">,</span> <span class="s1">&#39;.key&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;credentials&#39;</span><span class="p">,</span> <span class="s1">&#39;secret&#39;</span><span class="p">,</span> <span class="s1">&#39;.ssh&#39;</span><span class="p">,</span> <span class="s1">&#39;.aws&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;.gnupg&#39;</span><span class="p">,</span> <span class="s1">&#39;.kube&#39;</span><span class="p">,</span> <span class="s1">&#39;token&#39;</span><span class="p">,</span> <span class="s1">&#39;id_rsa&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;id_ed25519&#39;</span><span class="p">,</span> <span class="s1">&#39;id_ecdsa&#39;</span><span class="p">,</span> <span class="s1">&#39;private_key&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;.netrc&#39;</span><span class="p">,</span> <span class="s1">&#39;.pgpass&#39;</span>
+<span class="p">]</span>
+
+<span class="c1"># Безопасные суффиксы (шаблоны — не блокируются)</span>
+<span class="n">SAFE_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;.example&#39;</span><span class="p">,</span> <span class="s1">&#39;.sample&#39;</span><span class="p">,</span> <span class="s1">&#39;.template&#39;</span><span class="p">,</span> <span class="s1">&#39;.dist&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Что НЕ делает:</strong> Не маскирует контент файлов, не проверяет содержимое промптов.</p>
+</section>
+<section id="id8">
+<h3>2. Конфигурационная изоляция<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.claude_config</span></code> (chmod 600) — учётные данные не попадают в git</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CLAUDE_CONFIG_DIR</span></code> → <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/</span></code> — изоляция от системного <code class="docutils literal notranslate"><span class="pre">~/.claude/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.gitignore</span></code> исключает session data, history.jsonl</p></li>
+</ul>
+</section>
+<section id="id9">
+<h3>3. Отсутствующая защита<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Что не защищено</p></th>
+<th class="head"><p>Риск</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Контент файлов (не пути)</p></td>
+<td><p>Код с паролями/токенами попадает в Claude Code</p></td>
+</tr>
+<tr class="row-odd"><td><p>Пользовательские промпты</p></td>
+<td><p>PII в тексте запросов уходит в API</p></td>
+</tr>
+<tr class="row-even"><td><p>history.jsonl</p></td>
+<td><p>Хранит все взаимодействия без фильтрации</p></td>
+</tr>
+<tr class="row-odd"><td><p>Аргументы инструментов</p></td>
+<td><p>JSON с данными виден Claude Code (и Anthropic)</p></td>
+</tr>
+<tr class="row-even"><td><p>Ответы Claude</p></td>
+<td><p>Могут содержать воспроизведённые PII</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pasteguard-iclaude">
+<h2>Интеграция PasteGuard с iclaude<a class="headerlink" href="#pasteguard-iclaude" title="Link to this heading">¶</a></h2>
+<section id="id10">
+<h3>Архитектура интеграции<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TB
+    User[&quot;Пользователь\n./iclaude.sh&quot;] --&gt; iclaude[&quot;iclaude.sh\nEntry Point&quot;]
+
+    subgraph iclaude_env[&quot;Изолированная среда (.nvm-isolated)&quot;]
+        iclaude --&gt; Launcher[&quot;lib/launcher/launch.sh&quot;]
+        Launcher --&gt; Claude[&quot;Claude Code CLI\n(claude binary)&quot;]
+    end
+
+    subgraph pasteguard_env[&quot;PasteGuard (Docker)&quot;]
+        PG[&quot;PasteGuard\nlocalhost:3000&quot;]
+        Presidio[&quot;Microsoft Presidio\nlocalhost:5002&quot;]
+        PG --&gt; Presidio
+    end
+
+    Claude --&gt;|&quot;ANTHROPIC_BASE_URL=\nhttp://localhost:3000/anthropic&quot;| PG
+    PG --&gt;|&quot;Маскированный запрос&quot;| AnthropicAPI[&quot;Anthropic API\n(облако)&quot;]
+    AnthropicAPI --&gt;|&quot;Ответ с плейсхолдерами&quot;| PG
+    PG --&gt;|&quot;Восстановленный ответ&quot;| Claude
+
+    style pasteguard_env fill:#e8f5e9
+    style iclaude_env fill:#e3f2fd
+</pre></div>
+</div>
+</section>
+<section id="id11">
+<h3>Метод 1: Переменная окружения (РЕКОМЕНДУЕТСЯ — Сложность: ⭐)<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>Самый простой способ — переопределить <code class="docutils literal notranslate"><span class="pre">ANTHROPIC_BASE_URL</span></code> в <code class="docutils literal notranslate"><span class="pre">.claude_config</span></code>:</p>
+<p><strong>Шаг 1: Запустить PasteGuard</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Создать config.yaml (скопировать из примера ниже)</span>
+docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>pasteguard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/pasteguard-config.yaml:/pasteguard/config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ghcr.io/sgasser/pasteguard:en
+</pre></div>
+</div>
+<p><strong>Шаг 2: Добавить в <code class="docutils literal notranslate"><span class="pre">.claude_config</span></code></strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># В файл .claude_config добавить:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_BASE_URL</span><span class="o">=</span>http://localhost:3000/anthropic
+
+<span class="c1"># Проверить что PasteGuard запущен перед iclaude:</span>
+<span class="c1"># curl http://localhost:3000/health</span>
+</pre></div>
+</div>
+<p><strong>Шаг 3: Запустить iclaude</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./iclaude.sh
+</pre></div>
+</div>
+<p>Claude Code автоматически подхватит <code class="docutils literal notranslate"><span class="pre">ANTHROPIC_BASE_URL</span></code> и начнёт отправлять запросы через PasteGuard.</p>
+<p><strong>Проверка:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dashboard PasteGuard покажет маскированные запросы</span>
+open<span class="w"> </span>http://localhost:3000/dashboard
+</pre></div>
+</div>
+</section>
+<section id="id12">
+<h3>Метод 2: Автозапуск PasteGuard через iclaude (Сложность: ⭐⭐⭐)<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>Интегрировать как модуль iclaude с автозапуском:</p>
+<p><strong>Файл: <code class="docutils literal notranslate"><span class="pre">lib/pasteguard/detect.sh</span></code></strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env bash</span>
+<span class="c1"># Определяет доступность PasteGuard</span>
+
+is_pasteguard_running<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span>curl<span class="w"> </span>-s<span class="w"> </span>--max-time<span class="w"> </span><span class="m">2</span><span class="w"> </span>http://localhost:3000/health<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<span class="o">}</span>
+
+setup_pasteguard_proxy<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">USE_PASTEGUARD</span><span class="k">:-</span><span class="nv">false</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;true&quot;</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span>!<span class="w"> </span>is_pasteguard_running<span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">            </span>print_warning<span class="w"> </span><span class="s2">&quot;PasteGuard не запущен. Запуск...&quot;</span>
+<span class="w">            </span>docker<span class="w"> </span>start<span class="w"> </span>pasteguard<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>print_error<span class="w"> </span><span class="s2">&quot;PasteGuard не найден. Установите: ./iclaude.sh --install-pasteguard&quot;</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
+<span class="w">        </span><span class="k">fi</span>
+<span class="w">        </span><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_BASE_URL</span><span class="o">=</span><span class="s2">&quot;http://localhost:3000/anthropic&quot;</span>
+<span class="w">        </span>print_info<span class="w"> </span><span class="s2">&quot;PasteGuard активен: PII маскируется перед отправкой в Anthropic API&quot;</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p><strong>В <code class="docutils literal notranslate"><span class="pre">.claude_config</span></code>:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">USE_PASTEGUARD</span><span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+</section>
+<section id="claude-code-hook">
+<h3>Метод 3: Интеграция через Claude Code Hook (Сложность: ⭐⭐)<a class="headerlink" href="#claude-code-hook" title="Link to this heading">¶</a></h3>
+<p>Создать PreToolUse hook для маскирования через PasteGuard API:</p>
+<p><strong>Файл: <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/hooks/mask-pii.py</span></code></strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">PreToolUse hook: Маскирует PII в аргументах инструментов через PasteGuard /api/mask</span>
+<span class="sd">Дополняет block-secrets.py — тот блокирует доступ к файлам с секретами,</span>
+<span class="sd">этот маскирует PII в передаваемом тексте.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
+
+<span class="n">PASTEGUARD_URL</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:3000/api/mask&quot;</span>
+<span class="n">MASK_TOOL_CALLS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Write&quot;</span><span class="p">,</span> <span class="s2">&quot;Edit&quot;</span><span class="p">,</span> <span class="s2">&quot;Bash&quot;</span><span class="p">}</span>  <span class="c1"># Только запись/исполнение</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mask_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Маскирует PII через PasteGuard /api/mask endpoint.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">})</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span>
+            <span class="n">PASTEGUARD_URL</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">},</span>
+            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="k">as</span> <span class="n">resp</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;masked_text&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">text</span>  <span class="c1"># Fallback: не блокировать при недоступности PasteGuard</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">hook_input</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
+    <span class="n">tool_name</span> <span class="o">=</span> <span class="n">hook_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">tool_input</span> <span class="o">=</span> <span class="n">hook_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_input&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">if</span> <span class="n">tool_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MASK_TOOL_CALLS</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Пропустить — инструмент не записывает данные</span>
+
+    <span class="c1"># Маскировать content/command аргументы</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;command&quot;</span><span class="p">,</span> <span class="s2">&quot;new_string&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">tool_input</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_input</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">tool_input</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_text</span><span class="p">(</span><span class="n">tool_input</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="c1"># Вернуть модифицированный вход (для поддерживаемых hook-систем)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;tool_input&quot;</span><span class="p">:</span> <span class="n">tool_input</span><span class="p">}))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Важно (Claude Code v2.0.10+):</strong> Начиная с v2.0.10, <code class="docutils literal notranslate"><span class="pre">PreToolUse</span></code> хуки <strong>могут модифицировать</strong> аргументы инструментов перед выполнением. Для вывода модифицированных данных хук должен напечатать JSON в stdout: <code class="docutils literal notranslate"><span class="pre">{&quot;hookSpecificOutput&quot;:</span> <span class="pre">{&quot;toolInputOverride&quot;:</span> <span class="pre">{...}}}</span></code>. Это позволяет реализовать <strong>прозрачное маскирование PII</strong> — Claude видит только маскированные данные, операция продолжается.</p>
+</div></blockquote>
+</section>
+<section id="id13">
+<h3>Конфигурация PasteGuard для iclaude<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pasteguard-config.yaml — конфиг для работы с iclaude</span>
+
+<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mask</span><span class="w">  </span><span class="c1"># или route если есть локальный Ollama</span>
+
+<span class="nt">server</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3000</span>
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
+
+<span class="nt">providers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">anthropic</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://api.anthropic.com</span>
+<span class="w">    </span><span class="c1"># API key берётся из Authorization header — iclaude передаёт его автоматически</span>
+
+<span class="nt">pii_detection</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">presidio_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost:5002</span><span class="w">  </span><span class="c1"># Presidio внутри Docker</span>
+<span class="w">  </span><span class="nt">languages</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;ru&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;en&quot;</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># Русский + английский</span>
+<span class="w">  </span><span class="nt">score_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.65</span><span class="w">  </span><span class="c1"># Чуть ниже порога для лучшего recall</span>
+<span class="w">  </span><span class="nt">entities</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PERSON</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EMAIL_ADDRESS</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PHONE_NUMBER</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CREDIT_CARD</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">IBAN_CODE</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">IP_ADDRESS</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LOCATION</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">URL</span>
+<span class="w">  </span><span class="nt">scan_roles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">user</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># Сканировать только сообщения пользователя</span>
+
+<span class="nt">secrets_detection</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">block</span><span class="w">  </span><span class="c1"># Заблокировать при обнаружении секретов (Claude Code не должен их видеть)</span>
+<span class="w">  </span><span class="nt">entities</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENSSH_PRIVATE_KEY</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PEM_PRIVATE_KEY</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">API_KEY_SK</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS_SECRET_KEY</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">JWT</span>
+<span class="w">  </span><span class="nt">log_detected_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">masking</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">whitelist</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;You</span><span class="nv"> </span><span class="s">are</span><span class="nv"> </span><span class="s">Claude</span><span class="nv"> </span><span class="s">Code&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;CLAUDE.md&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;iclaude.sh&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;.nvm-isolated&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;ANTHROPIC_BASE_URL&quot;</span>
+
+<span class="nt">logging</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">database</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/pasteguard/data/pasteguard.db</span>
+<span class="w">  </span><span class="nt">retention_days</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+<span class="w">  </span><span class="nt">log_content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># Не логировать исходный контент</span>
+<span class="w">  </span><span class="nt">log_masked_content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># Логировать только маскированный вариант</span>
+
+<span class="nt">dashboard</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">auth</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">username</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">admin</span>
+<span class="w">    </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">changeme</span><span class="w">  </span><span class="c1"># Сменить!</span>
+</pre></div>
+</div>
+</section>
+<section id="docker-compose-pasteguard-ollama-route">
+<h3>Docker Compose для PasteGuard + Ollama (режим route)<a class="headerlink" href="#docker-compose-pasteguard-ollama-route" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># docker-compose.pasteguard.yml</span>
+<span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3.8&quot;</span>
+
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pasteguard</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/sgasser/pasteguard:eu</span><span class="w">  </span><span class="c1"># eu-образ поддерживает русский язык</span>
+<span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pasteguard</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;3000:3000&quot;</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./pasteguard-config.yaml:/pasteguard/config.yaml</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pasteguard_data:/pasteguard/data</span>
+<span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Europe/Moscow</span>
+
+<span class="w">  </span><span class="nt">ollama</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ollama/ollama</span>
+<span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ollama</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;11434:11434&quot;</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ollama_data:/root/.ollama</span>
+<span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+
+<span class="nt">volumes</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pasteguard_data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ollama_data</span><span class="p">:</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Запуск</span>
+docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.pasteguard.yml<span class="w"> </span>up<span class="w"> </span>-d
+
+<span class="c1"># Загрузка локальной модели</span>
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ollama<span class="w"> </span>ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2:3b
+
+<span class="c1"># Проверка</span>
+curl<span class="w"> </span>http://localhost:3000/health
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id14">
+<h2>Альтернативные решения<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<section id="microsoft-presidio-standalone">
+<h3>1. Microsoft Presidio (standalone)<a class="headerlink" href="#microsoft-presidio-standalone" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Open source библиотека + REST API
+<strong>Технологии:</strong> Python, spaCy, transformers
+<strong>GitHub:</strong> https://github.com/microsoft/presidio</p>
+<p><strong>Описание:</strong> Движок NLP-детекции PII, который PasteGuard использует внутри. Можно использовать напрямую как Python-сервис.</p>
+<p><strong>Интеграция с Claude Code:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Скрипт-обёртка вместо PasteGuard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">presidio_analyzer</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzerEngine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">presidio_anonymizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnonymizerEngine</span>
+
+<span class="n">analyzer</span> <span class="o">=</span> <span class="n">AnalyzerEngine</span><span class="p">()</span>
+<span class="n">anonymizer</span> <span class="o">=</span> <span class="n">AnonymizerEngine</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mask_pii</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="s2">&quot;en&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">anonymizer</span><span class="o">.</span><span class="n">anonymize</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">analyzer_results</span><span class="o">=</span><span class="n">results</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐⭐⭐ (нужно писать обёртку)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ Можно установить в <code class="docutils literal notranslate"><span class="pre">.nvm-isolated</span></code> через pip</p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>✅ MIT License</p></td>
+</tr>
+<tr class="row-odd"><td><p>Требования</p></td>
+<td><p>Python 3.9+, ~500MB для spaCy моделей</p></td>
+</tr>
+<tr class="row-even"><td><p>Преимущества</p></td>
+<td><p>Максимальная гибкость, нет HTTP overhead</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ограничения</p></td>
+<td><p>Нет готовой прокси-обёртки, нет веб-дашборда</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="litellm-llm">
+<h3>2. LiteLLM (LLM-прокси с базовой безопасностью)<a class="headerlink" href="#litellm-llm" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Open source LLM-прокси
+<strong>GitHub:</strong> https://github.com/BerriAI/litellm</p>
+<p><strong>Описание:</strong> Унифицированный прокси для 100+ LLM-провайдеров. Базовая защита через input/output guardrails.</p>
+<p><strong>PII-возможности LiteLLM:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># litellm_config.yaml</span>
+<span class="nt">guardrails</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">guardrail_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;presidio&quot;</span>
+<span class="w">    </span><span class="nt">litellm_params</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">guardrail</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">presidio</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;pre_call&quot;</span><span class="w">  </span><span class="c1"># до отправки в LLM</span>
+<span class="w">      </span><span class="nt">presidio_analyzer_api_base</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost:5002</span>
+<span class="w">      </span><span class="nt">entities_to_mask</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">PERSON</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">EMAIL_ADDRESS</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">PHONE_NUMBER</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐⭐ (drop-in замена base_url)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ pip install litellm</p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>✅ MIT License</p></td>
+</tr>
+<tr class="row-odd"><td><p>PII-маскирование</p></td>
+<td><p>⚠️ Через интеграцию с Presidio (не нативное)</p></td>
+</tr>
+<tr class="row-even"><td><p>Преимущества</p></td>
+<td><p>Многофункциональный: мониторинг, retry, load balancing</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ограничения</p></td>
+<td><p>PII-функции менее специализированы чем у PasteGuard</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="scrubadub-python">
+<h3>3. Scrubadub (Python-библиотека)<a class="headerlink" href="#scrubadub-python" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Open source Python-библиотека
+<strong>GitHub:</strong> https://github.com/LeapBeyond/scrubadub
+<strong>PyPI:</strong> <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">scrubadub</span></code></p>
+<p><strong>Описание:</strong> Лёгкая библиотека для очистки PII в тексте. Без Docker, без тяжёлых NLP-моделей.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">scrubadub</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Contact John Smith at john@example.com or call +1-555-123-4567&quot;</span>
+<span class="n">scrubber</span> <span class="o">=</span> <span class="n">scrubadub</span><span class="o">.</span><span class="n">Scrubber</span><span class="p">()</span>
+<span class="n">clean</span> <span class="o">=</span> <span class="n">scrubber</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="c1"># → &quot;Contact {{NAME}} at {{EMAIL}} or call {{PHONE}}&quot;</span>
+</pre></div>
+</div>
+<p><strong>Использование в Claude Code Hook:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># В .nvm-isolated/.claude-isolated/hooks/scrub-pii.py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scrubadub</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">hook_input</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
+    <span class="c1"># Логировать попытки доступа к чувствительным данным</span>
+    <span class="n">tool_input</span> <span class="o">=</span> <span class="n">hook_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_input&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">tool_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">content</span> <span class="ow">and</span> <span class="n">scrubadub</span><span class="o">.</span><span class="n">Scrubber</span><span class="p">()</span><span class="o">.</span><span class="n">has_pii</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+        <span class="c1"># Предупредить пользователя</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;⚠️  Обнаружены персональные данные в передаваемом контенте</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐ (pip install + 10 строк кода)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ Отлично подходит</p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>✅ MIT License</p></td>
+</tr>
+<tr class="row-odd"><td><p>Точность</p></td>
+<td><p>⚠️ Ниже Presidio, regex-based</p></td>
+</tr>
+<tr class="row-even"><td><p>Преимущества</p></td>
+<td><p>Нет зависимостей, быстро, легко</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ограничения</p></td>
+<td><p>Нет восстановления данных, нет русского языка</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="mitmproxy-python">
+<h3>4. Mitmproxy + Python-скрипт<a class="headerlink" href="#mitmproxy-python" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Open source HTTP-прокси с scriptable перехватом
+<strong>GitHub:</strong> https://github.com/mitmproxy/mitmproxy</p>
+<p><strong>Описание:</strong> Профессиональный инструмент для перехвата и модификации HTTP-трафика. Можно написать скрипт для маскирования запросов к Anthropic API.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># pii_masker.py — аддон для mitmproxy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mitmproxy</span><span class="w"> </span><span class="kn">import</span> <span class="n">http</span>
+
+<span class="n">EMAIL_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b&#39;</span><span class="p">)</span>
+<span class="n">TOKEN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\bsk-[A-Za-z0-9]{20,}\b&#39;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">request</span><span class="p">(</span><span class="n">flow</span><span class="p">:</span> <span class="n">http</span><span class="o">.</span><span class="n">HTTPFlow</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s2">&quot;anthropic.com&quot;</span> <span class="ow">in</span> <span class="n">flow</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">host</span><span class="p">:</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">flow</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">if</span> <span class="n">body</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">EMAIL_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[EMAIL]&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">TOKEN_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[TOKEN]&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+            <span class="n">flow</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">body</span>
+</pre></div>
+</div>
+<p><strong>Запуск:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># В отдельном терминале</span>
+mitmproxy<span class="w"> </span>--mode<span class="w"> </span>regular<span class="w"> </span>-p<span class="w"> </span><span class="m">8080</span><span class="w"> </span>--scripts<span class="w"> </span>pii_masker.py
+
+<span class="c1"># В .claude_config</span>
+<span class="nv">HTTPS_PROXY</span><span class="o">=</span>http://localhost:8080
+<span class="nv">NODE_TLS_REJECT_UNAUTHORIZED</span><span class="o">=</span><span class="m">0</span><span class="w">  </span><span class="c1"># Для перехвата TLS (небезопасно!)</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐⭐⭐⭐ (TLS interception сложно настроить)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ pip install mitmproxy</p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>✅ MIT License</p></td>
+</tr>
+<tr class="row-odd"><td><p>Преимущества</p></td>
+<td><p>Максимальный контроль, перехват на уровне TCP</p></td>
+</tr>
+<tr class="row-even"><td><p>Ограничения</p></td>
+<td><p>Требует отключения TLS verification, только regex</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="claude-code-hooks-v2-0-10">
+<h3>5. Claude Code Hooks (нативный подход — ОБНОВЛЕНО v2.0.10+)<a class="headerlink" href="#claude-code-hooks-v2-0-10" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Встроенный механизм Claude Code
+<strong>Документация:</strong> https://docs.anthropic.com/en/docs/claude-code/hooks</p>
+<p><strong>Описание:</strong> Хуки PreToolUse/PostToolUse позволяют перехватывать каждый вызов инструментов и блокировать/модифицировать их.</p>
+<p><strong>Ключевое обновление v2.0.10:</strong> <code class="docutils literal notranslate"><span class="pre">PreToolUse</span></code> хуки теперь могут <strong>модифицировать аргументы инструментов</strong> перед выполнением. Это позволяет реализовать прозрачное маскирование PII без блокировки операций.</p>
+<p><strong>Три типа реакции хука:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Действие</p></th>
+<th class="head text-center"><p>Exit code</p></th>
+<th class="head"><p>stdout</p></th>
+<th class="head"><p>Эффект</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Разрешить</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>пусто</p></td>
+<td><p>Инструмент выполняется без изменений</p></td>
+</tr>
+<tr class="row-odd"><td><p>Модифицировать</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>JSON с <code class="docutils literal notranslate"><span class="pre">toolInputOverride</span></code></p></td>
+<td><p>Инструмент выполняется с изменёнными аргументами</p></td>
+</tr>
+<tr class="row-even"><td><p>Блокировать</p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p>сообщение</p></td>
+<td><p>Инструмент не выполняется, Claude видит причину</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Hook для маскирования PII в аргументах инструментов (v2.0.10+):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">PreToolUse hook: Маскирует PII и секреты в аргументах инструментов.</span>
+<span class="sd">Работает в режиме МОДИФИКАЦИИ (не блокировки) — инструмент выполняется,</span>
+<span class="sd">но с уже маскированными данными.</span>
+
+<span class="sd">Claude Code v2.0.10+ поддерживает toolInputOverride в stdout.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="c1"># Паттерны для маскирования (regex → placeholder)</span>
+<span class="n">REDACT_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># API ключи</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\bsk-(?:ant-|proj-)?[A-Za-z0-9\-_]{20,}&#39;</span><span class="p">),</span> <span class="s1">&#39;[ANTHROPIC_KEY]&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\bAKIA[0-9A-Z]</span><span class="si">{16}</span><span class="s1">\b&#39;</span><span class="p">),</span> <span class="s1">&#39;[AWS_ACCESS_KEY]&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?i)(?:api[_-]?key|secret|token)\s*[=:]\s*[&quot;</span><span class="se">\&#39;</span><span class="s1">]?([^\s&quot;</span><span class="se">\&#39;</span><span class="s1">]{16,})&#39;</span><span class="p">),</span>
+     <span class="s1">&#39;[SECRET_VALUE]&#39;</span><span class="p">),</span>
+    <span class="c1"># Приватные ключи</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----&#39;</span><span class="p">),</span>
+     <span class="s1">&#39;[PRIVATE_KEY_REDACTED]&#39;</span><span class="p">),</span>
+    <span class="c1"># Credentials в URL</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(https?://)[^:@\s]+:[^@\s]+@&#39;</span><span class="p">),</span> <span class="sa">r</span><span class="s1">&#39;\1[CREDENTIALS]@&#39;</span><span class="p">),</span>
+    <span class="c1"># Номера банковских карт (Luhn-like pattern)</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b(?:\d</span><span class="si">{4}</span><span class="s1">[- ]?)</span><span class="si">{3}</span><span class="s1">\d</span><span class="si">{4}</span><span class="s1">\b&#39;</span><span class="p">),</span> <span class="s1">&#39;[CARD_NUMBER]&#39;</span><span class="p">),</span>
+    <span class="c1"># Email (опционально — раскомментировать если нужно)</span>
+    <span class="c1"># (re.compile(r&#39;\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b&#39;), &#39;[EMAIL]&#39;),</span>
+<span class="p">]</span>
+
+<span class="c1"># Инструменты для маскирования в аргументах</span>
+<span class="n">REDACT_TOOLS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Write&quot;</span><span class="p">,</span> <span class="s2">&quot;Edit&quot;</span><span class="p">,</span> <span class="s2">&quot;MultiEdit&quot;</span><span class="p">,</span> <span class="s2">&quot;Bash&quot;</span><span class="p">}</span>
+
+<span class="c1"># Поля аргументов для сканирования</span>
+<span class="n">REDACT_FIELDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;command&quot;</span><span class="p">,</span> <span class="s2">&quot;new_string&quot;</span><span class="p">,</span> <span class="s2">&quot;old_string&quot;</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">redact_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Маскирует секреты в тексте. Возвращает (текст, изменён_ли).&quot;&quot;&quot;</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">replacement</span> <span class="ow">in</span> <span class="n">REDACT_PATTERNS</span><span class="p">:</span>
+        <span class="n">new_text</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">replacement</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_text</span> <span class="o">!=</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">new_text</span>
+    <span class="k">return</span> <span class="n">text</span><span class="p">,</span> <span class="n">changed</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">hook_input</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
+    <span class="n">tool_name</span> <span class="o">=</span> <span class="n">hook_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">tool_input</span> <span class="o">=</span> <span class="n">hook_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_input&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">if</span> <span class="n">tool_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">REDACT_TOOLS</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Не наш инструмент</span>
+
+    <span class="n">modified</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">new_tool_input</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tool_input</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">REDACT_FIELDS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">tool_input</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_input</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">redacted</span><span class="p">,</span> <span class="n">changed</span> <span class="o">=</span> <span class="n">redact_text</span><span class="p">(</span><span class="n">tool_input</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">changed</span><span class="p">:</span>
+                <span class="n">new_tool_input</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">redacted</span>
+                <span class="n">modified</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[pii-hook] Маскированы секреты в поле &#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;инструмента </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">modified</span><span class="p">:</span>
+        <span class="c1"># Вернуть модифицированные аргументы (Claude Code v2.0.10+)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s2">&quot;hookSpecificOutput&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;toolInputOverride&quot;</span><span class="p">:</span> <span class="n">new_tool_input</span>
+            <span class="p">}</span>
+        <span class="p">}))</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Конфигурация в settings.json:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;PreToolUse&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;matcher&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Write|Edit|MultiEdit|Bash&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;python3 /path/to/.claude-isolated/hooks/redact-secrets.py&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Расширение block-secrets.py для обнаружения PII в содержимом файлов:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Добавить в существующий block-secrets.py (в конец функции check_tool_use)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="c1"># Паттерны для предупреждений в содержимом (не блокировка, только предупреждение)</span>
+<span class="n">CONTENT_WARN_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;AKIA[0-9A-Z]</span><span class="si">{16}</span><span class="s1">&#39;</span><span class="p">),</span> <span class="s2">&quot;AWS Access Key ID&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-----BEGIN [A-Z ]+PRIVATE KEY-----&#39;</span><span class="p">),</span> <span class="s2">&quot;Private key&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?i)password\s*[=:]\s*[^\s\n]{8,}&#39;</span><span class="p">),</span> <span class="s2">&quot;Password in plaintext&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b(?:\d</span><span class="si">{4}</span><span class="s1">[- ]?)</span><span class="si">{3}</span><span class="s1">\d</span><span class="si">{4}</span><span class="s1">\b&#39;</span><span class="p">),</span> <span class="s2">&quot;Credit card number&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">warn_content_for_secrets</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Предупреждает о найденных секретах в содержимом (не блокирует).&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">CONTENT_WARN_PATTERNS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;⚠️  Найден </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2"> в </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Проверьте, что это не реальные данные.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐ (расширение существующего block-secrets.py)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ Уже в <code class="docutils literal notranslate"><span class="pre">.claude-isolated/hooks/</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>✅ Часть iclaude</p></td>
+</tr>
+<tr class="row-odd"><td><p>Версия CC</p></td>
+<td><p>Claude Code v2.0.10+ для модификации аргументов</p></td>
+</tr>
+<tr class="row-even"><td><p>Преимущества</p></td>
+<td><p>Нет внешних зависимостей, встроено, прозрачно</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ограничения</p></td>
+<td><p>Только regex (без NLP), нет русских имён</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="aws-comprehend-google-dlp">
+<h3>6. AWS Comprehend / Google DLP<a class="headerlink" href="#aws-comprehend-google-dlp" title="Link to this heading">¶</a></h3>
+<p><strong>Тип:</strong> Облачный API
+<strong>Провайдеры:</strong> AWS, Google Cloud</p>
+<p><strong>Описание:</strong> Коммерческие NLP-сервисы с высокой точностью детекции PII.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># AWS Comprehend</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+
+<span class="n">comprehend</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;comprehend&#39;</span><span class="p">)</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">comprehend</span><span class="o">.</span><span class="n">detect_pii_entities</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">LanguageCode</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+<span class="c1"># Поддерживает 20+ типов PII с высокой точностью</span>
+</pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Параметр</p></th>
+<th class="head"><p>Значение</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Сложность интеграции</p></td>
+<td><p>⭐⭐ (SDK + API keys)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Изолированная среда</p></td>
+<td><p>✅ через pip install boto3</p></td>
+</tr>
+<tr class="row-even"><td><p>Open source</p></td>
+<td><p>❌ Коммерческий</p></td>
+</tr>
+<tr class="row-odd"><td><p>Стоимость</p></td>
+<td><p>~$0.001/1000 символов</p></td>
+</tr>
+<tr class="row-even"><td><p>Преимущества</p></td>
+<td><p>Высокая точность, 12+ языков, enterprise SLA</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ограничения</p></td>
+<td><p>Данные уходят в AWS/Google (парадокс приватности!), платно</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id15">
+<h2>Сравнительная таблица<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Решение</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head text-center"><p>OS</p></th>
+<th class="head text-center"><p>Сложность</p></th>
+<th class="head text-center"><p>Точность</p></th>
+<th class="head text-center"><p>Производительность</p></th>
+<th class="head text-center"><p>Изоляция</p></th>
+<th class="head text-center"><p>Стоимость</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>PasteGuard</strong></p></td>
+<td><p>Прокси</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ Docker</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Presidio (standalone)</strong></p></td>
+<td><p>Library</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ pip</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>LiteLLM + Presidio</strong></p></td>
+<td><p>Прокси</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ pip</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Scrubadub</strong></p></td>
+<td><p>Library</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ pip</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>block-secrets.py (расширение)</strong></p></td>
+<td><p>Hook</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ встроен</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Mitmproxy</strong></p></td>
+<td><p>Прокси</p></td>
+<td class="text-center"><p>✅</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ pip</p></td>
+<td class="text-center"><p>Бесплатно</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>AWS Comprehend</strong></p></td>
+<td><p>API</p></td>
+<td class="text-center"><p>❌</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>⚠️ облако</p></td>
+<td class="text-center"><p>Платно</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Google DLP</strong></p></td>
+<td><p>API</p></td>
+<td class="text-center"><p>❌</p></td>
+<td class="text-center"><p>⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐</p></td>
+<td class="text-center"><p>⚠️ облако</p></td>
+<td class="text-center"><p>Платно</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Private AI</strong></p></td>
+<td><p>Service</p></td>
+<td class="text-center"><p>❌</p></td>
+<td class="text-center"><p>⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>⭐⭐⭐⭐</p></td>
+<td class="text-center"><p>✅ self-hosted</p></td>
+<td class="text-center"><p>Платно</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>OS</strong> = Open Source | <strong>Изоляция</strong> = Работает в изолированной среде без Docker (если не указано иное)</p>
+</section>
+<hr class="docutils" />
+<section id="id16">
+<h2>Рекомендации<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<section id="id17">
+<h3>Стратегия по уровням защиты<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Уровень 1 (МИНИМУМ, уже есть): block-secrets.py
+  → Блокирует доступ к файлам с секретами (.env, .key, .pem)
+  → Нулевые затраты, нет зависимостей
+
+Уровень 2 (БЫСТРО, без Docker): редактирующий PreToolUse hook (CC v2.0.10+)
+  → Regex-маскирование секретов в аргументах инструментов
+  → Прозрачно для пользователя: инструмент выполняется с маскированными данными
+  → toolInputOverride в stdout → Claude видит только маскированный контент
+  → 30 минут работы, нет зависимостей
+
+Уровень 3 (РЕКОМЕНДУЕТСЯ): PasteGuard в Docker
+  → Полноценное NLP-маскирование через Presidio
+  → Поддержка русского языка (образ :eu)
+  → Восстановление данных в ответах
+  → Веб-дашборд для мониторинга
+  → Сочетается с Уровнем 2 для двойной защиты
+
+Уровень 4 (МАКСИМУМ): PasteGuard режим route + Ollama
+  → При обнаружении PII → локальная модель
+  → Данные никогда не покидают машину
+  → Требует GPU/CPU для Ollama
+</pre></div>
+</div>
+</section>
+<section id="docker">
+<h3>Что делать прямо сейчас (без Docker)<a class="headerlink" href="#docker" title="Link to this heading">¶</a></h3>
+<p><strong>Вариант A (Claude Code v2.0.10+): редактирующий PreToolUse hook</strong></p>
+<p>Создать <code class="docutils literal notranslate"><span class="pre">/path/to/.claude-isolated/hooks/redact-secrets.py</span></code> (полный код в разделе “Альтернативные решения → Claude Code Hooks”).</p>
+<p>Зарегистрировать в <code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/settings.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;PreToolUse&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;matcher&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Write|Edit|MultiEdit|Bash&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;python3 .nvm-isolated/.claude-isolated/hooks/redact-secrets.py&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Вариант B: Расширение block-secrets.py</strong> — добавить предупреждения о контенте:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Добавить в конец block-secrets.py перед основной логикой</span>
+
+<span class="n">CONTENT_SECRET_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;sk-(?:ant-|proj-)?[A-Za-z0-9\-_]{20,}&#39;</span><span class="p">),</span> <span class="s2">&quot;Anthropic/OpenAI API key&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;AKIA[0-9A-Z]</span><span class="si">{16}</span><span class="s1">&#39;</span><span class="p">),</span> <span class="s2">&quot;AWS Access Key ID&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-----BEGIN (?:RSA |EC )?PRIVATE KEY-----&#39;</span><span class="p">),</span> <span class="s2">&quot;Private key&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?i)password\s*[=:]\s*[^\s\n]{8,}&#39;</span><span class="p">),</span> <span class="s2">&quot;Password in plaintext&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?i)(?:secret|token)\s*[=:]\s*[^\s\n]{8,}&#39;</span><span class="p">),</span> <span class="s2">&quot;Secret/Token&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="use-cases">
+<h3>Конкретные use cases<a class="headerlink" href="#use-cases" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Сценарий</p></th>
+<th class="head"><p>Рекомендация</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Корпоративная среда, данные клиентов</strong></p></td>
+<td><p>PasteGuard (mask режим) + Presidio EU-образ</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Медицинские/финансовые данные</strong></p></td>
+<td><p>PasteGuard (route режим) + Ollama локально</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Личные проекты, базовая защита</strong></p></td>
+<td><p>Расширение block-secrets.py</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Без Docker</strong></p></td>
+<td><p>LiteLLM + Presidio через pip</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Команда разработчиков</strong></p></td>
+<td><p>PasteGuard с дашбордом + basic auth</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Корпоративная сеть с прокси</strong></p></td>
+<td><p>PasteGuard совместим с iclaude proxy (см. ниже)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="iclaude-proxy">
+<h3>Совместимость с iclaude proxy<a class="headerlink" href="#iclaude-proxy" title="Link to this heading">¶</a></h3>
+<p>PasteGuard и iclaude proxy работают вместе:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Claude Code
+    ↓ ANTHROPIC_BASE_URL=http://localhost:3000/anthropic
+PasteGuard (маскирование)
+    ↓ HTTPS_PROXY=https://corp-proxy:8118 (от iclaude)
+Корпоративный прокси
+    ↓
+Anthropic API
+</pre></div>
+</div>
+<p>Конфиг в <code class="docutils literal notranslate"><span class="pre">.claude_config</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Корпоративный прокси (iclaude)</span>
+<span class="nv">PROXY_URL</span><span class="o">=</span>https://user:pass@corp-proxy.example.com:8118
+
+<span class="c1"># PasteGuard (маскирование PII)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_BASE_URL</span><span class="o">=</span>http://localhost:3000/anthropic
+</pre></div>
+</div>
+<p>PasteGuard наследует <code class="docutils literal notranslate"><span class="pre">HTTPS_PROXY</span></code> из окружения и использует его для исходящих запросов.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id18">
+<h2>Архитектура предлагаемого решения<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<section id="pasteguard-3">
+<h3>Полная схема с PasteGuard (Уровень 3)<a class="headerlink" href="#pasteguard-3" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────────────────────────────────────────────────────┐
+│                    Машина пользователя                        │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │              iclaude (изолированная среда)               │ │
+│  │                                                          │ │
+│  │  iclaude.sh → launcher/launch.sh → exec claude          │ │
+│  │                                                          │ │
+│  │  Переменные окружения:                                   │ │
+│  │  • CLAUDE_CONFIG_DIR=.nvm-isolated/.claude-isolated/    │ │
+│  │  • ANTHROPIC_BASE_URL=http://localhost:3000/anthropic   │ │
+│  │  • HTTPS_PROXY=https://corp-proxy:8118 (если нужно)     │ │
+│  │                                                          │ │
+│  │  Хуки (.claude-isolated/hooks/):                        │ │
+│  │  • block-secrets.py → Блокировка доступа к файлам       │ │
+│  │  • postToolUse.hook.sh → Мониторинг контекста           │ │
+│  └─────────────────────────────────────────────────────────┘ │
+│                         │                                     │
+│                    HTTP запрос                                │
+│                         ↓                                     │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │              PasteGuard (Docker)                         │ │
+│  │              localhost:3000                              │ │
+│  │                                                          │ │
+│  │  1. Принять запрос от Claude Code                       │ │
+│  │  2. Presidio: обнаружить PII в тексте                  │ │
+│  │     user@company.com → [[EMAIL_ADDRESS_1]]              │ │
+│  │  3. Regex: обнаружить секреты                           │ │
+│  │     sk-ant-xxx → [[API_KEY_SK_1]]                       │ │
+│  │  4. Форвардинг маскированного запроса                   │ │
+│  │  5. Восстановление в ответе                             │ │
+│  │  6. Логирование в SQLite (без исходных данных)          │ │
+│  └─────────────────────────────────────────────────────────┘ │
+│                         │                                     │
+└─────────────────────────│─────────────────────────────────────┘
+                          │ HTTPS (через корп. прокси если нужно)
+                          ↓
+              ┌───────────────────────┐
+              │    Anthropic API      │
+              │   api.anthropic.com   │
+              │   (только маскиров.)  │
+              └───────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="id19">
+<h3>Матрица решений<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>              Простота интеграции
+                     ▲
+              ⭐⭐⭐⭐⭐│  Scrubadub         block-secrets
+                     │  (pip, no Docker)  (уже есть)
+              ⭐⭐⭐⭐ │
+                     │        LiteLLM+Presidio
+              ⭐⭐⭐  │
+                     │           PasteGuard ◄── РЕКОМЕНДУЕТСЯ
+              ⭐⭐   │
+                     │
+              ⭐     │  Mitmproxy
+                     │
+                     └─────────────────────────────► Точность маскирования
+                        ⭐⭐    ⭐⭐⭐   ⭐⭐⭐⭐   ⭐⭐⭐⭐⭐
+                       Regex   NLP  NLP+context  ML+cloud
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id20">
+<h2>Быстрый старт<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<section id="a-docker">
+<h3>Вариант A: Минимальный (без Docker)<a class="headerlink" href="#a-docker" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Расширить block-secrets.py regex-проверкой контента</span>
+<span class="c1"># (см. раздел &quot;Что делать прямо сейчас&quot;)</span>
+
+<span class="c1"># 2. Добавить в .claude_config предупреждение при наличии PII</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;# PII warnings enabled in block-secrets.py&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>.claude_config
+
+<span class="c1"># Результат: предупреждения при обнаружении секретов в коде</span>
+</pre></div>
+</div>
+</section>
+<section id="b-pasteguard">
+<h3>Вариант B: PasteGuard (рекомендуется)<a class="headerlink" href="#b-pasteguard" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Скачать конфиг</span>
+curl<span class="w"> </span>-o<span class="w"> </span>pasteguard-config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>https://raw.githubusercontent.com/sgasser/pasteguard/main/config.example.yaml
+
+<span class="c1"># 2. Настроить (выбрать режим, языки, сущности)</span>
+vim<span class="w"> </span>pasteguard-config.yaml
+
+<span class="c1"># 3. Запустить PasteGuard</span>
+docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>pasteguard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/pasteguard-config.yaml:/pasteguard/config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>pasteguard_data:/pasteguard/data<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ghcr.io/sgasser/pasteguard:eu
+
+<span class="c1"># 4. Добавить в .claude_config</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>.claude_config
+
+<span class="c1"># 5. Запустить iclaude</span>
+./iclaude.sh
+
+<span class="c1"># 6. Мониторинг</span>
+open<span class="w"> </span>http://localhost:3000/dashboard
+</pre></div>
+</div>
+</section>
+<section id="c-pasteguard-ollama">
+<h3>Вариант C: PasteGuard + Ollama (максимальная защита)<a class="headerlink" href="#c-pasteguard-ollama" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Установить Ollama</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://ollama.ai/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2:3b
+
+<span class="c1"># 2. Docker Compose</span>
+docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.pasteguard.yml<span class="w"> </span>up<span class="w"> </span>-d
+
+<span class="c1"># 3. Настроить режим route в pasteguard-config.yaml</span>
+<span class="c1"># mode: route</span>
+<span class="c1"># local:</span>
+<span class="c1">#   type: ollama</span>
+<span class="c1">#   base_url: http://host.docker.internal:11434</span>
+<span class="c1">#   model: llama3.2:3b</span>
+
+<span class="c1"># 4. Добавить в .claude_config</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>.claude_config
+./iclaude.sh
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id21">
+<h2>Известные проблемы и ограничения<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<section id="id22">
+<h3>1. Маскирование системных промптов (ложные срабатывания)<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<p>PasteGuard может маскировать технические данные в системных промптах Claude Code (CLAUDE.md, пути файлов). Решение — использовать <code class="docutils literal notranslate"><span class="pre">whitelist</span></code> в конфиге.</p>
+</section>
+<section id="id23">
+<h3>2. Потеря контекста при маскировании кода<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<p>Если Claude видит <code class="docutils literal notranslate"><span class="pre">[[EMAIL_ADDRESS_1]]</span></code> вместо реального email, он не сможет помочь с валидацией email-адресов. Решение — использовать тестовые данные в паттерне <code class="docutils literal notranslate"><span class="pre">*&#64;example.com</span></code>.</p>
+</section>
+<section id="latency">
+<h3>3. Latency<a class="headerlink" href="#latency" title="Link to this heading">¶</a></h3>
+<p>Presidio добавляет 50-200мс к каждому запросу. Для интерактивного использования незаметно, для batch-обработки значительно.</p>
+</section>
+<section id="id24">
+<h3>4. Русский язык<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<p>PasteGuard v0.3.2 поддерживает русский, но Presidio хуже распознаёт русские имена/адреса чем английские. Рекомендуется повысить <code class="docutils literal notranslate"><span class="pre">score_threshold:</span> <span class="pre">0.5</span></code> для русского.</p>
+</section>
+<section id="streaming-responses">
+<h3>5. Streaming responses<a class="headerlink" href="#streaming-responses" title="Link to this heading">¶</a></h3>
+<p>PasteGuard поддерживает streaming — маскирование восстанавливается в буфере. Возможны артефакты при частичных токенах.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id25">
+<h2>Реализованное решение: двухуровневые хуки<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p><strong>Статус:</strong> Реализовано и протестировано (2026-02-25)
+<strong>Тесты:</strong> 37/37 passed (<code class="docutils literal notranslate"><span class="pre">tests/test-redact-hook.sh</span></code>)</p>
+</div></blockquote>
+<p>В iclaude реализована двухуровневая защита через PreToolUse хуки — без внешних зависимостей, только стандартная библиотека Python.</p>
+<section id="id26">
+<h3>Архитектура пайплайна<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Claude Code → PreToolUse
+    ├── block-secrets.py    (Слой 1: блокировка по ПУТИ)
+    │   ├── .env → exit 2 (блокировать)
+    │   ├── .pem → exit 2
+    │   ├── .ssh/* → exit 2
+    │   └── остальное → exit 0 (пропустить к Слою 2)
+    │
+    └── redact-secrets.py   (Слой 2: маскирование СОДЕРЖИМОГО)
+        ├── toolInputOverride → Claude видит маскированные данные
+        └── оригинал → никуда не отправляется
+</pre></div>
+</div>
+</section>
+<section id="v2-2026-02-25">
+<h3>Покрытие паттернов (v2, 2026-02-25)<a class="headerlink" href="#v2-2026-02-25" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Категория</p></th>
+<th class="head"><p>Паттерн</p></th>
+<th class="head"><p>Плейсхолдер</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Anthropic/OpenAI/Stripe</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sk-ant-...</span></code>, <code class="docutils literal notranslate"><span class="pre">sk-proj-...</span></code>, <code class="docutils literal notranslate"><span class="pre">sk-or-v1-...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[API_KEY_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>AWS Access Key ID</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AKIA{16}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[AWS_ACCESS_KEY_ID]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>AWS Secret Access Key</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">VAR_NAME={40}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">VAR_NAME=[AWS_SECRET_KEY_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>PEM private keys</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BEGIN</span> <span class="pre">*</span> <span class="pre">PRIVATE</span> <span class="pre">KEY</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[PRIVATE_KEY_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>GitHub классический PAT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ghp_</span></code>, <code class="docutils literal notranslate"><span class="pre">gho_</span></code>, <code class="docutils literal notranslate"><span class="pre">ghu_</span></code>, <code class="docutils literal notranslate"><span class="pre">ghs_</span></code>, <code class="docutils literal notranslate"><span class="pre">ghr_</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[GITHUB_TOKEN]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>GitHub fine-grained PAT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">github_pat_{82+}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[GITHUB_TOKEN]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Credentials в URL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">scheme://user:pass&#64;host</span></code> (любые схемы)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[CREDENTIALS]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Пароли в конфигах</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">password</span> <span class="pre">=</span> <span class="pre">value</span></code> (с кавычками и без)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[PASSWORD_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Generic secret/token</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">api_key:</span> <span class="pre">&quot;value&quot;</span></code> в кавычках</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[SECRET_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>JWT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">eyJ...</span></code> (три части base64url)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[JWT_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Банковские карты</p></td>
+<td><p>Visa/MC/Amex по IIN-диапазонам</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[CARD_NUMBER_REDACTED]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>.env переменные</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[export]</span> <span class="pre">VAR_WITH_KEY_TOKEN_etc=value{20+}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[REDACTED]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id27">
+<h3>Ключевые архитектурные решения<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<p><strong>H-4 bugfix:</strong> <code class="docutils literal notranslate"><span class="pre">Edit.old_string</span></code> <strong>не маскируется</strong> — это поисковый паттерн для поиска в файле. Маскирование привело бы к ошибке “строка не найдена”.</p>
+<p><strong>Fail-open:</strong> При JSON-ошибке или <code class="docutils literal notranslate"><span class="pre">tool_input:</span> <span class="pre">null</span></code> хук выходит с кодом 0 (разрешить). Безопасность жертвует доступностью, а не наоборот.</p>
+<p><strong>Порядок паттернов:</strong> Специфичные (AWS Secret, GitHub PAT) перед общими (.env). Двойное перемаскирование предотвращается lookahead <code class="docutils literal notranslate"><span class="pre">(?!&quot;?\[)</span></code>.</p>
+<p><strong>Python 3.8+:</strong> <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span> <span class="pre">annotations</span></code> обеспечивает совместимость с Ubuntu 20.04 LTS.</p>
+</section>
+<section id="id28">
+<h3>Известные ограничения<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Ограничение</p></th>
+<th class="head"><p>Обходной путь</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Нет Luhn-проверки номеров карт</p></td>
+<td><p>Повышен false positive риск для числовых ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>Нет покрытия: Google AI (<code class="docutils literal notranslate"><span class="pre">AIzaSy...</span></code>), Stripe (<code class="docutils literal notranslate"><span class="pre">sk_live_</span></code>)</p></td>
+<td><p>Добавить паттерны из <code class="docutils literal notranslate"><span class="pre">docs/SECURITY_PATTERNS_IMPROVEMENTS.md</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Generic secret требует кавычки</p></td>
+<td><p>YAML без кавычек не покрывается</p></td>
+</tr>
+<tr class="row-odd"><td><p>Нет NLP — только regex</p></td>
+<td><p>PII (имена, email) не маскируются автоматически</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id29">
+<h3>Расширение паттернов<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<p>Для добавления новых провайдеров (Google AI, Stripe, HuggingFace, Groq) — см. детальные рекомендации в:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="SECURITY_PATTERNS_IMPROVEMENTS.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">docs/SECURITY_PATTERNS_IMPROVEMENTS.md</span></code></span></a> — конкретные regex с примерами</p></li>
+<li><p><a class="reference internal" href="SECURITY_RESEARCH.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">docs/SECURITY_RESEARCH.md</span></code></span></a> — анализ 14+ провайдеров и инструментов (gitleaks, trufflehog)</p></li>
+<li><p><a class="reference internal" href="#../.nvm-isolated/.claude-isolated/hooks/patterns.json.example"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">.nvm-isolated/.claude-isolated/hooks/patterns.json.example</span></code></span></a> — шаблон конфигурации JSON</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id30">
+<h2>Дополнительные ресурсы<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sgasser/pasteguard">PasteGuard GitHub</a></p></li>
+<li><p><a class="reference external" href="https://microsoft.github.io/presidio/">Microsoft Presidio</a></p></li>
+<li><p><a class="reference external" href="https://docs.anthropic.com/en/docs/claude-code/hooks">Claude Code Hooks документация</a></p></li>
+<li><p><a class="reference download internal" download="" href="_downloads/5aa545e0efa8788a563197d60a7906f6/block-secrets.py"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">hooks/block-secrets.py</span></code></span></a> — блокировка по пути</p></li>
+<li><p><a class="reference download internal" download="" href="_downloads/564980141a21efd0de09f8be80bdfea2/redact-secrets.py"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">hooks/redact-secrets.py</span></code></span></a> — маскирование содержимого</p></li>
+<li><p><a class="reference download internal" download="" href="_downloads/03c08fb1e4eb44b28b16933f5cb6d97f/test-redact-hook.sh"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">tests/test-redact-hook.sh</span></code></span></a> — тест-сьют (37 тестов)</p></li>
+<li><p><a class="reference internal" href="PROXY.html"><span class="std std-doc">docs/PROXY.md</span></a> — прокси конфигурация</p></li>
+<li><p><a class="reference internal" href="INTEGRATIONS.html"><span class="std std-doc">docs/INTEGRATIONS.md</span></a> — обзор всех интеграций</p></li>
+</ul>
+<hr class="docutils" />
+<p><em>Документ создан: 2026-02-25 | Версия: 2.0 (добавлена секция реализации)</em>
+<em>Основан на анализе PasteGuard v0.3.2 и iclaude v4.0</em></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="SECURITY_PATTERNS_IMPROVEMENTS.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Улучшения паттернов маскирования секретов в redact-secrets.py</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="CLAUDE_CODE_BACKEND.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Маскирование персональных данных в iclaude: PasteGuard и альтернативы</a><ul>
+<li><a class="reference internal" href="#id1">Содержание</a></li>
+<li><a class="reference internal" href="#ai">Зачем маскировать данные при работе с AI</a><ul>
+<li><a class="reference internal" href="#claude-code">Сценарии риска в Claude Code</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pasteguard">Анализ PasteGuard</a><ul>
+<li><a class="reference internal" href="#id2">Концепция</a></li>
+<li><a class="reference internal" href="#id3">Два режима работы</a></li>
+<li><a class="reference internal" href="#id4">Что маскирует</a><ul>
+<li><a class="reference internal" href="#pii-microsoft-presidio-24">PII (через Microsoft Presidio — 24 языка)</a></li>
+<li><a class="reference internal" href="#regex">Секреты (regex-паттерны)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">Технический стек</a></li>
+<li><a class="reference internal" href="#id6">Конфигурация</a></li>
+<li><a class="reference internal" href="#id7">Ограничения PasteGuard</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iclaude">Текущая защита в iclaude</a><ul>
+<li><a class="reference internal" href="#block-secrets-py-pretooluse-hook">1. block-secrets.py (PreToolUse Hook)</a></li>
+<li><a class="reference internal" href="#id8">2. Конфигурационная изоляция</a></li>
+<li><a class="reference internal" href="#id9">3. Отсутствующая защита</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pasteguard-iclaude">Интеграция PasteGuard с iclaude</a><ul>
+<li><a class="reference internal" href="#id10">Архитектура интеграции</a></li>
+<li><a class="reference internal" href="#id11">Метод 1: Переменная окружения (РЕКОМЕНДУЕТСЯ — Сложность: ⭐)</a></li>
+<li><a class="reference internal" href="#id12">Метод 2: Автозапуск PasteGuard через iclaude (Сложность: ⭐⭐⭐)</a></li>
+<li><a class="reference internal" href="#claude-code-hook">Метод 3: Интеграция через Claude Code Hook (Сложность: ⭐⭐)</a></li>
+<li><a class="reference internal" href="#id13">Конфигурация PasteGuard для iclaude</a></li>
+<li><a class="reference internal" href="#docker-compose-pasteguard-ollama-route">Docker Compose для PasteGuard + Ollama (режим route)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id14">Альтернативные решения</a><ul>
+<li><a class="reference internal" href="#microsoft-presidio-standalone">1. Microsoft Presidio (standalone)</a></li>
+<li><a class="reference internal" href="#litellm-llm">2. LiteLLM (LLM-прокси с базовой безопасностью)</a></li>
+<li><a class="reference internal" href="#scrubadub-python">3. Scrubadub (Python-библиотека)</a></li>
+<li><a class="reference internal" href="#mitmproxy-python">4. Mitmproxy + Python-скрипт</a></li>
+<li><a class="reference internal" href="#claude-code-hooks-v2-0-10">5. Claude Code Hooks (нативный подход — ОБНОВЛЕНО v2.0.10+)</a></li>
+<li><a class="reference internal" href="#aws-comprehend-google-dlp">6. AWS Comprehend / Google DLP</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id15">Сравнительная таблица</a></li>
+<li><a class="reference internal" href="#id16">Рекомендации</a><ul>
+<li><a class="reference internal" href="#id17">Стратегия по уровням защиты</a></li>
+<li><a class="reference internal" href="#docker">Что делать прямо сейчас (без Docker)</a></li>
+<li><a class="reference internal" href="#use-cases">Конкретные use cases</a></li>
+<li><a class="reference internal" href="#iclaude-proxy">Совместимость с iclaude proxy</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id18">Архитектура предлагаемого решения</a><ul>
+<li><a class="reference internal" href="#pasteguard-3">Полная схема с PasteGuard (Уровень 3)</a></li>
+<li><a class="reference internal" href="#id19">Матрица решений</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id20">Быстрый старт</a><ul>
+<li><a class="reference internal" href="#a-docker">Вариант A: Минимальный (без Docker)</a></li>
+<li><a class="reference internal" href="#b-pasteguard">Вариант B: PasteGuard (рекомендуется)</a></li>
+<li><a class="reference internal" href="#c-pasteguard-ollama">Вариант C: PasteGuard + Ollama (максимальная защита)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id21">Известные проблемы и ограничения</a><ul>
+<li><a class="reference internal" href="#id22">1. Маскирование системных промптов (ложные срабатывания)</a></li>
+<li><a class="reference internal" href="#id23">2. Потеря контекста при маскировании кода</a></li>
+<li><a class="reference internal" href="#latency">3. Latency</a></li>
+<li><a class="reference internal" href="#id24">4. Русский язык</a></li>
+<li><a class="reference internal" href="#streaming-responses">5. Streaming responses</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id25">Реализованное решение: двухуровневые хуки</a><ul>
+<li><a class="reference internal" href="#id26">Архитектура пайплайна</a></li>
+<li><a class="reference internal" href="#v2-2026-02-25">Покрытие паттернов (v2, 2026-02-25)</a></li>
+<li><a class="reference internal" href="#id27">Ключевые архитектурные решения</a></li>
+<li><a class="reference internal" href="#id28">Известные ограничения</a></li>
+<li><a class="reference internal" href="#id29">Расширение паттернов</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id30">Дополнительные ресурсы</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=fa37347f"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>

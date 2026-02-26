@@ -1,6 +1,12 @@
 # Working directory (should not be in repository)
 /opt/vless/
 
+# Python cache (global)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Environment files
 .env
 *.env.local
@@ -8,7 +14,6 @@
 
 # Backup files
 *.bak
-*.backup
 *.tar.gz
 
 # Temporary files
@@ -55,7 +60,6 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/versions/node/*/include/
 .nvm-isolated/versions/node/*/.npm/
 .nvm-isolated/npm-global/.npm/
-*.log
 
 # Isolated Claude Code configuration (session data)
 # Ignore session data, but keep skills and templates
@@ -70,10 +74,13 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md
 !.nvm-isolated/.claude-isolated/task-lite-template-v7.0.md
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
+!.nvm-isolated/.claude-isolated/settings.json
+!.nvm-isolated/.claude-isolated/hooks/
+!.nvm-isolated/.claude-isolated/hooks/**
+# (Python cache rules covered by global __pycache__/ rule above)
 
-# Router configuration (allow both router files in git)
+# Router configuration (only example in git, actual config ignored)
 !.nvm-isolated/.claude-isolated/router.json.example
-!.nvm-isolated/.claude-isolated/router.json
 
 # Status line scripts and themes (Phase 1 & 2)
 !.nvm-isolated/.claude-isolated/scripts/
@@ -83,6 +90,12 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Prevent accidental commit of runtime router config
 .claude-code-router/
+
+# Backup files (any location, any extension with backup suffix)
+*.backup
+*.backup-*
+**/*.backup
+**/*.backup-*
 
 # NPM packages (tracked via lockfile only)
 # Exclude node_modules to prevent committing minified JavaScript artifacts
@@ -108,6 +121,9 @@ scripts/.claude_proxy_credentials  # Legacy
 !.claude/skills
 !.claude/skills/**
 .claude/sessions
+
+# Test fixtures with mock secrets (not committed)
+tests/fixtures/
 
 # Sphinx documentation build output (generated, not committed)
 docs/_build/

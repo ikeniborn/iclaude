@@ -202,7 +202,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MIGRATION.html">Migration to Native Installer</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
@@ -216,18 +215,24 @@
 <ul class="current">
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Claude Statusline Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
-<li class="toctree-l1"><a class="reference internal" href="features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="INTEGRATIONS.html">Интеграции iclaude: AI-эффективность и возможности</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="architecture/README.html">Loop Mode Architecture Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="PLANNING.html">Planning Mode Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ROUTER.html">Claude Code Router: конфигурация и маршрутизация</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CODE_BACKEND.html">Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PII_MASKING.html">Маскирование персональных данных в iclaude: PasteGuard и альтернативы</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY_PATTERNS_IMPROVEMENTS.html">Улучшения паттернов маскирования секретов в redact-secrets.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY_RESEARCH.html">Исследование: Улучшение маскирования секретов в PreToolUse hook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -248,13 +253,7 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/config/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/context/index.html">Module: context</a><input aria-label="Toggle navigation of Module: context" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/init.html">init</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/memory.html">memory</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/context/operations.html">operations</a></li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/core/index.html">Module: core</a><input aria-label="Toggle navigation of Module: core" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/init.html">init</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/json.html">json</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/logging.html">logging</a></li>
@@ -262,7 +261,7 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/core/validation.html">validation</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/docs/index.html">Module: docs</a><input aria-label="Toggle navigation of Module: docs" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/bash-parser.html">bash-parser</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/build.html">build</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/init.html">init</a></li>
@@ -272,39 +271,23 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/docs/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/gh/index.html">Module: gh</a><input aria-label="Toggle navigation of Module: gh" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/install.html">install</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/gh/status.html">status</a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="sphinx/api-reference/install/index.html">Module: install</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/launcher/index.html">Module: launcher</a><input aria-label="Toggle navigation of Module: launcher" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/launcher/launch.html">launch</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lockfile/index.html">Module: lockfile</a><input aria-label="Toggle navigation of Module: lockfile" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lockfile/save.html">save</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/loop/index.html">Module: loop</a><input aria-label="Toggle navigation of Module: loop" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/executor.html">executor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/git.html">git</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parallel.html">parallel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/parser.html">parser</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/retry.html">retry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/state.html">state</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/validator.html">validator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/loop/worktree.html">worktree</a></li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/lsp/index.html">Module: lsp</a><input aria-label="Toggle navigation of Module: lsp" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/repair.html">repair</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/lsp/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/nvm/index.html">Module: nvm</a><input aria-label="Toggle navigation of Module: nvm" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/claude.html">claude</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/detect.html">detect</a></li>
@@ -313,42 +296,48 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/nvm/setup.html">setup</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/oauth/index.html">Module: oauth</a><input aria-label="Toggle navigation of Module: oauth" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/oauth/token.html">token</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/ohmyposh/index.html">Module: ohmyposh</a><input aria-label="Toggle navigation of Module: ohmyposh" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/pii-proxy/index.html">Module: pii-proxy</a><input aria-label="Toggle navigation of Module: pii-proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
@@ -1018,18 +1007,18 @@ cat<span class="w"> </span>session.json<span class="w"> </span><span class="p">|
 </section>
 <section id="session-link">
 <h3>7. Session Link<a class="headerlink" href="#session-link" title="Link to this heading">¶</a></h3>
-<p>Format: <code class="docutils literal notranslate"><span class="pre">[session]</span></code> - clickable hyperlink (OSC 8)</p>
+<p>Format: <code class="docutils literal notranslate"><span class="pre">📄</span></code> - clickable hyperlink (OSC 8)</p>
 <p><strong>Features:</strong></p>
 <ul class="simple">
-<li><p>Click to open human-readable conversation in your editor</p></li>
+<li><p>Click to open human-readable conversation in your editor (TOON format)</p></li>
 <li><p><strong>Session-specific files</strong>: Each session has unique readable file (no conflicts)</p></li>
 <li><p><strong>Append-only optimization</strong>: Only processes new messages (19x faster)</p></li>
 <li><p><strong>Smart regeneration</strong>: Full rebuild only when needed (/compact, first run, JSONL truncated)</p></li>
 <li><p><strong>Performance</strong>: 94ms append vs 1.87s full regen (200 lines)</p></li>
-<li><p>Readable file saved to: <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/.claude-sessions/readable-{session-id}.txt</span></code></p></li>
-<li><p>Metadata tracking: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt.meta</span></code> (processed lines count)</p></li>
-<li><p><strong>Compact detection</strong>: Shows <code class="docutils literal notranslate"><span class="pre">━━━</span> <span class="pre">[cache]</span> <span class="pre">Context</span> <span class="pre">Compact</span> <span class="pre">━━━</span></code> marker after /compact</p></li>
-<li><p>Format: [user] USER / [assistant] ASSISTANT prefixes with word wrap (80 chars)</p></li>
+<li><p>Readable file saved to: <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/.claude/sessions/readable-{session-id}.toon</span></code></p></li>
+<li><p>Metadata tracking: <code class="docutils literal notranslate"><span class="pre">.claude/sessions/readable-{session-id}.toon.meta</span></code> (processed lines count)</p></li>
+<li><p><strong>Compact detection</strong>: Detects <code class="docutils literal notranslate"><span class="pre">/compact</span></code> in last 5 JSONL lines and triggers full rebuild</p></li>
+<li><p><strong>Broken JSONL recovery</strong>: Falls back to Python3 parser when <code class="docutils literal notranslate"><span class="pre">jq</span></code> fails on malformed records</p></li>
 <li><p>Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal</p></li>
 <li><p>Falls back to plain text in terminals without hyperlink support</p></li>
 </ul>
@@ -1218,23 +1207,24 @@ Model:<span class="w">  </span>.model.display_name
 </div>
 </section>
 <section id="session-link-optimizations-phase-2-1">
-<h3>Session Link Optimizations (Phase 2.1)<a class="headerlink" href="#session-link-optimizations-phase-2-1" title="Link to this heading">¶</a></h3>
+<h3>Session Link Optimizations (Phase 2.1+)<a class="headerlink" href="#session-link-optimizations-phase-2-1" title="Link to this heading">¶</a></h3>
 <p>The readable session generation uses three key optimizations for performance:</p>
 <section id="session-specific-filenames">
 <h4>1. Session-Specific Filenames<a class="headerlink" href="#session-specific-filenames" title="Link to this heading">¶</a></h4>
 <ul class="simple">
-<li><p>Each session gets unique file: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt</span></code></p></li>
+<li><p>Each session gets unique file: <code class="docutils literal notranslate"><span class="pre">.claude/sessions/readable-{session-id}.toon</span></code></p></li>
 <li><p>Prevents conflicts when running multiple parallel Claude sessions</p></li>
-<li><p>Example: <code class="docutils literal notranslate"><span class="pre">readable-abc123.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">readable-def456.txt</span></code></p></li>
+<li><p>Example: <code class="docutils literal notranslate"><span class="pre">readable-abc123.toon</span></code>, <code class="docutils literal notranslate"><span class="pre">readable-def456.toon</span></code></p></li>
 </ul>
 </section>
 <section id="append-only-updates">
 <h4>2. Append-Only Updates<a class="headerlink" href="#append-only-updates" title="Link to this heading">¶</a></h4>
 <ul class="simple">
-<li><p>Tracks processed lines in metadata file: <code class="docutils literal notranslate"><span class="pre">.claude-sessions/readable-{session-id}.txt.meta</span></code></p></li>
+<li><p>Tracks processed lines in metadata file: <code class="docutils literal notranslate"><span class="pre">.claude/sessions/readable-{session-id}.toon.meta</span></code></p></li>
 <li><p>Only processes NEW messages since last update (incremental)</p></li>
 <li><p>Performance: 94ms (append) vs 1.87s (full regen) for 200-line session</p></li>
 <li><p><strong>19x faster</strong> for incremental updates</p></li>
+<li><p><strong>Atomic writes</strong>: full regeneration uses <code class="docutils literal notranslate"><span class="pre">.tmp.PID</span></code> + <code class="docutils literal notranslate"><span class="pre">mv</span></code> to prevent 0-byte artifacts</p></li>
 </ul>
 </section>
 <section id="smart-regeneration-triggers">
@@ -1242,9 +1232,26 @@ Model:<span class="w">  </span>.model.display_name
 <p>Full rebuild occurs only when necessary:</p>
 <ul class="simple">
 <li><p>First run (readable file doesn’t exist)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">/compact</span></code> detected (context compression happened)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/compact</span></code> detected in last 5 JSONL lines (context compression happened)</p></li>
 <li><p>JSONL truncated (current lines &lt; processed lines)</p></li>
 <li><p>Append-only used for normal message additions</p></li>
+</ul>
+</section>
+<section id="broken-jsonl-recovery-scenario-b">
+<h4>4. Broken JSONL Recovery (Scenario B)<a class="headerlink" href="#broken-jsonl-recovery-scenario-b" title="Link to this heading">¶</a></h4>
+<p>Some JSONL files contain literal newlines inside JSON string values (e.g., multi-line tool outputs). <code class="docutils literal notranslate"><span class="pre">jq</span> <span class="pre">-s</span></code> exits with a parse error on these files, silently returning empty output.</p>
+<p><strong>Fallback strategy:</strong></p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">jq</span> <span class="pre">-s</span></code> attempted first (fast path)</p></li>
+<li><p>On empty output → Python3 line-by-line parser activated</p></li>
+<li><p>Python reads each line independently; lines not starting with <code class="docutils literal notranslate"><span class="pre">{</span></code> are skipped (continuation lines from broken records)</p></li>
+<li><p>Each candidate line parsed with <code class="docutils literal notranslate"><span class="pre">json.loads()</span></code> — failures silently discarded</p></li>
+<li><p>Result: valid messages extracted even from corrupted JSONL</p></li>
+</ol>
+<p><strong>Why icon was missing in other projects</strong> (two root causes):</p>
+<ul class="simple">
+<li><p><strong>Transient</strong>: New session JSONL contains only system metadata → <code class="docutils literal notranslate"><span class="pre">jq</span></code> returns <code class="docutils literal notranslate"><span class="pre">[]</span></code> → no messages → no icon. Self-corrects after first user message.</p></li>
+<li><p><strong>Permanent</strong>: JSONL has literal newlines in string values → <code class="docutils literal notranslate"><span class="pre">jq</span></code> parse error suppressed with <code class="docutils literal notranslate"><span class="pre">2&gt;/dev/null</span></code> → <code class="docutils literal notranslate"><span class="pre">messages_json</span></code> empty → icon never appears. Fixed by Python3 fallback.</p></li>
 </ul>
 </section>
 </section>
@@ -1262,11 +1269,11 @@ Model:<span class="w">  </span>.model.display_name
 </section>
 <section id="file-structure">
 <h3>File Structure<a class="headerlink" href="#file-structure" title="Link to this heading">¶</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">claude</span><span class="o">-</span><span class="n">sessions</span><span class="o">/</span>
-  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">txt</span>       <span class="c1"># Session abc123 conversation</span>
-  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata: processed lines count</span>
-  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">txt</span>       <span class="c1"># Session def456 conversation</span>
-  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">claude</span><span class="o">/</span><span class="n">sessions</span><span class="o">/</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">toon</span>       <span class="c1"># Session abc123 conversation (TOON format)</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">abc123</span><span class="o">.</span><span class="n">toon</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata: processed lines count</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">toon</span>       <span class="c1"># Session def456 conversation</span>
+  <span class="n">readable</span><span class="o">-</span><span class="n">def456</span><span class="o">.</span><span class="n">toon</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># Metadata</span>
 </pre></div>
 </div>
 </section>
@@ -1390,19 +1397,19 @@ Model:<span class="w">  </span>.model.display_name
 <h3>Viewing Readable Sessions<a class="headerlink" href="#viewing-readable-sessions" title="Link to this heading">¶</a></h3>
 <p>Auto-generated readable files can be accessed directly:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all readable sessions</span>
-ls<span class="w"> </span>-lh<span class="w"> </span>.claude-sessions/
+ls<span class="w"> </span>-lh<span class="w"> </span>.claude/sessions/
 
-<span class="c1"># View specific session</span>
-cat<span class="w"> </span>.claude-sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.txt
+<span class="c1"># View specific session (TOON format)</span>
+toon<span class="w"> </span>--decode<span class="w"> </span>.claude/sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.toon
 
-<span class="c1"># View most recent session (statusline generates them automatically)</span>
-ls<span class="w"> </span>-t<span class="w"> </span>.claude-sessions/readable-*.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>cat
+<span class="c1"># View most recent session</span>
+ls<span class="w"> </span>-t<span class="w"> </span>.claude/sessions/readable-*.toon<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>toon<span class="w"> </span>--decode
 
 <span class="c1"># Check metadata (processed lines)</span>
-cat<span class="w"> </span>.claude-sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.txt.meta
+cat<span class="w"> </span>.claude/sessions/readable-<span class="o">{</span>session-id<span class="o">}</span>.toon.meta
 
 <span class="c1"># Cleanup old sessions (older than 7 days)</span>
-find<span class="w"> </span>.claude-sessions/<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;readable-*.txt*&quot;</span><span class="w"> </span>-mtime<span class="w"> </span>+7<span class="w"> </span>-delete
+find<span class="w"> </span>.claude/sessions/<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;readable-*.toon*&quot;</span><span class="w"> </span>-mtime<span class="w"> </span>+7<span class="w"> </span>-delete
 </pre></div>
 </div>
 </section>
@@ -1433,7 +1440,7 @@ find<span class="w"> </span>.claude-sessions/<span class="w"> </span>-name<span 
 </section>
 <section id="session-link-not-clickable">
 <h3>Session link not clickable<a class="headerlink" href="#session-link-not-clickable" title="Link to this heading">¶</a></h3>
-<p><strong>Symptoms:</strong> [session] icon shows but not clickable</p>
+<p><strong>Symptoms:</strong> 📄 icon shows but not clickable</p>
 <p><strong>Solutions:</strong></p>
 <ol class="arabic simple">
 <li><p>Check terminal emulator supports OSC 8 hyperlinks:</p>
@@ -1442,9 +1449,23 @@ find<span class="w"> </span>.claude-sessions/<span class="w"> </span>-name<span 
 <li><p>Not supported: Basic xterm, older terminals</p></li>
 </ul>
 </li>
-<li><p>Verify readable file exists: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">.claude-sessions/readable-*.txt</span></code></p></li>
-<li><p>Check file permissions: <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">644</span> <span class="pre">.claude-sessions/readable-*.txt</span></code></p></li>
+<li><p>Verify readable file exists: <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">.claude/sessions/readable-*.toon</span></code></p></li>
+<li><p>Check file permissions: <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">644</span> <span class="pre">.claude/sessions/readable-*.toon</span></code></p></li>
 </ol>
+</section>
+<section id="session-icon-not-showing-in-other-projects">
+<h3>Session icon 📄 not showing in other projects<a class="headerlink" href="#session-icon-not-showing-in-other-projects" title="Link to this heading">¶</a></h3>
+<p><strong>Cause A — Transient (new session):</strong> JSONL contains only system metadata → <code class="docutils literal notranslate"><span class="pre">jq</span></code> returns <code class="docutils literal notranslate"><span class="pre">[]</span></code> → file is 0 bytes → icon hidden. Self-corrects after first user message.</p>
+<p><strong>Cause B — Permanent (broken JSONL):</strong> JSONL file has literal newlines inside JSON string values. <code class="docutils literal notranslate"><span class="pre">jq</span> <span class="pre">-s</span></code> exits with parse error (suppressed via <code class="docutils literal notranslate"><span class="pre">2&gt;/dev/null</span></code>) → <code class="docutils literal notranslate"><span class="pre">messages_json</span></code> empty → icon never appears.</p>
+<p><strong>Fix for Cause B:</strong> Python3 fallback now activates automatically when <code class="docutils literal notranslate"><span class="pre">jq</span></code> returns empty output. Requires <code class="docutils literal notranslate"><span class="pre">python3</span></code> installed (<code class="docutils literal notranslate"><span class="pre">which</span> <span class="pre">python3</span></code>).</p>
+<p><strong>Debug:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if jq parse error is the issue</span>
+jq<span class="w"> </span>-s<span class="w"> </span><span class="s1">&#39;.&#39;</span><span class="w"> </span>~/.claude/projects/YOUR_PROJECT/SESSION_ID.jsonl<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-5
+
+<span class="c1"># If you see &quot;parse error&quot; → Cause B. Python3 fallback handles this automatically.</span>
+<span class="c1"># If empty output with no error → Cause A (transient, wait for first message).</span>
+</pre></div>
+</div>
 </section>
 <section id="high-memory-usage">
 <h3>High memory usage<a class="headerlink" href="#high-memory-usage" title="Link to this heading">¶</a></h3>
@@ -1584,8 +1605,18 @@ grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;sea
 </section>
 <section id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h2>
-<section id="phase-2-2-current">
-<h3>Phase 2.2 (Current)<a class="headerlink" href="#phase-2-2-current" title="Link to this heading">¶</a></h3>
+<section id="phase-2-3-current-february-2026">
+<h3>Phase 2.3 (Current — February 2026)<a class="headerlink" href="#phase-2-3-current-february-2026" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Append-only caching for <code class="docutils literal notranslate"><span class="pre">generate_toon_session()</span></code></strong>: <code class="docutils literal notranslate"><span class="pre">.toon.meta</span></code> tracks processed line count; only new JSONL lines are encoded and appended on each statusline call</p></li>
+<li><p><strong>Broken JSONL fallback (Scenario B)</strong>: When <code class="docutils literal notranslate"><span class="pre">jq</span> <span class="pre">-s</span></code> fails on JSONL with literal newlines inside string values, Python3 line-by-line parser activates automatically; continuation lines (not starting with <code class="docutils literal notranslate"><span class="pre">{</span></code>) are skipped silently</p></li>
+<li><p><strong>Atomic writes</strong>: full regeneration writes to <code class="docutils literal notranslate"><span class="pre">.tmp.PID</span></code> temp file and <code class="docutils literal notranslate"><span class="pre">mv</span></code>s into place only on success — eliminates 0-byte TOON artifacts</p></li>
+<li><p><strong>No-op fast path</strong>: when <code class="docutils literal notranslate"><span class="pre">current_lines</span> <span class="pre">==</span> <span class="pre">processed_lines</span></code>, function returns immediately with no file I/O</p></li>
+<li><p>Fixed: session icon 📄 not appearing in other projects (transient: new session; permanent: broken JSONL)</p></li>
+</ul>
+</section>
+<section id="phase-2-2">
+<h3>Phase 2.2<a class="headerlink" href="#phase-2-2" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Added adaptive display modes (full/compact/minimal)</p></li>
 <li><p>Automatic terminal width detection</p></li>
@@ -1597,7 +1628,7 @@ grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;sea
 <section id="phase-2-1">
 <h3>Phase 2.1<a class="headerlink" href="#phase-2-1" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p>Added append-only optimization (19x faster)</p></li>
+<li><p>Added append-only optimization (19x faster) for <code class="docutils literal notranslate"><span class="pre">generate_readable_session()</span></code></p></li>
 <li><p>Session-specific readable files (no conflicts)</p></li>
 <li><p>Smart regeneration triggers</p></li>
 <li><p>Compact detection with summary marker</p></li>
@@ -1751,10 +1782,11 @@ grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;sea
 </ul>
 </li>
 <li><a class="reference internal" href="#token-parsing-claude-code-v2-1">Token Parsing (Claude Code v2.1+)</a></li>
-<li><a class="reference internal" href="#session-link-optimizations-phase-2-1">Session Link Optimizations (Phase 2.1)</a><ul>
+<li><a class="reference internal" href="#session-link-optimizations-phase-2-1">Session Link Optimizations (Phase 2.1+)</a><ul>
 <li><a class="reference internal" href="#session-specific-filenames">1. Session-Specific Filenames</a></li>
 <li><a class="reference internal" href="#append-only-updates">2. Append-Only Updates</a></li>
 <li><a class="reference internal" href="#smart-regeneration-triggers">3. Smart Regeneration Triggers</a></li>
+<li><a class="reference internal" href="#broken-jsonl-recovery-scenario-b">4. Broken JSONL Recovery (Scenario B)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#compact-detection">Compact Detection</a></li>
@@ -1792,6 +1824,7 @@ grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;sea
 <li><a class="reference internal" href="#status-line-not-showing">Status line not showing</a></li>
 <li><a class="reference internal" href="#incorrect-token-counts">Incorrect token counts</a></li>
 <li><a class="reference internal" href="#session-link-not-clickable">Session link not clickable</a></li>
+<li><a class="reference internal" href="#session-icon-not-showing-in-other-projects">Session icon 📄 not showing in other projects</a></li>
 <li><a class="reference internal" href="#high-memory-usage">High memory usage</a></li>
 <li><a class="reference internal" href="#git-info-missing">Git info missing</a></li>
 <li><a class="reference internal" href="#cache-metrics-incorrect-after-compact">Cache metrics incorrect after /compact</a></li>
@@ -1813,7 +1846,8 @@ grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">&quot;sea
 </li>
 <li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
 <li><a class="reference internal" href="#changelog">Changelog</a><ul>
-<li><a class="reference internal" href="#phase-2-2-current">Phase 2.2 (Current)</a></li>
+<li><a class="reference internal" href="#phase-2-3-current-february-2026">Phase 2.3 (Current — February 2026)</a></li>
+<li><a class="reference internal" href="#phase-2-2">Phase 2.2</a></li>
 <li><a class="reference internal" href="#phase-2-1">Phase 2.1</a></li>
 <li><a class="reference internal" href="#phase-2-0">Phase 2.0</a></li>
 <li><a class="reference internal" href="#phase-1-0">Phase 1.0</a></li>

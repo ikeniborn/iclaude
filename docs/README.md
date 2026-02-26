@@ -101,6 +101,21 @@ bash -c "source ./iclaude.sh && load_claude_config && env | grep CLAUDE_CODE"
 
 ---
 
+### [CLAUDE_CODE_BACKEND.md](./CLAUDE_CODE_BACKEND.md)
+
+Исследование и архитектурное проектирование: Claude Code как бэкенд для браузера и Telegram.
+
+**Включает:**
+- Обзор уровней интеграции (Headless CLI, Agent SDK, MCP, Multi-Agent)
+- Вариант A: Telegram-бот (python-telegram-bot + claude-agent-sdk, session management, whitelist)
+- Вариант B: FastAPI веб-бэкенд (SSE стрим, session storage, vanilla JS фронтенд)
+- Вариант C: Headless CLI + WebSocket сервер (Node.js, минимальный стек)
+- Multi-Agent workflow: AgentDefinition API, оркестрация, параллельность
+- Hook-уведомления: Telegram push при завершении задачи
+- Сравнение вариантов и рекомендации для iclaude
+
+---
+
 ## Обратная связь
 
 При возникновении проблем:

@@ -197,6 +197,7 @@ fi
     USE_ROUTER_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
     posh_insecure=false
+    model_value=""  # Model selection (empty = use Claude Code default)
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -459,6 +460,16 @@ fi
                 USE_CHROME=false
                 shift
                 ;;
+            --model)
+                if [[ -z "${2:-}" ]]; then
+                    print_error "--model requires a model name argument"
+                    echo "Usage: iclaude --model claude-opus-4-6"
+                    echo "Available models: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5"
+                    exit 1
+                fi
+                model_value="$2"
+                shift 2
+                ;;
             --no-test)
                 skip_test=true
                 shift
@@ -595,8 +606,16 @@ fi
             restore_git_proxy
         fi
 
+        # Save model selection to config if specified
+        if [[ -n "$model_value" ]]; then
+            save_model_to_config "$model_value"
+        fi
+
         # Check OAuth token expiration
         check_token_expiration
+
+        # Check if lockfile has changed since last environment update
+        check_lockfile_changes
 
         # Add --dangerously-skip-permissions only when --no-save is used
         if [[ "$skip_permissions" == true ]]; then
@@ -606,6 +625,13 @@ fi
         # Add --chrome flag if enabled (default)
         if [[ "$USE_CHROME" == true ]]; then
             claude_args+=("--chrome")
+        fi
+
+        # Add --model flag if specified
+        if [[ -n "$model_value" ]]; then
+            claude_args+=("--model" "$model_value")
+            export CLAUDE_CODE_MODEL="$model_value"
+            print_info "Using model: $model_value"
         fi
 
         # Launch Claude Code without proxy
@@ -641,6 +667,11 @@ fi
     # Configure proxy
     print_info "Configuring proxy..."
     configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
+
+    # Save model selection to config if specified
+    if [[ -n "$model_value" ]]; then
+        save_model_to_config "$model_value"
+    fi
 
     # Display configuration
     display_proxy_info "$show_password"
@@ -688,6 +719,9 @@ fi
     # Check OAuth token expiration
     check_token_expiration
 
+    # Check if lockfile has changed since last environment update
+    check_lockfile_changes
+
     # Add --dangerously-skip-permissions only when --no-save is used
     if [[ "$skip_permissions" == true ]]; then
         claude_args+=("--dangerously-skip-permissions")
@@ -704,6 +738,13 @@ fi
             print_info "Launching without browser automation..."
             echo ""
         fi
+    fi
+
+    # Add --model flag if specified
+    if [[ -n "$model_value" ]]; then
+        claude_args+=("--model" "$model_value")
+        export CLAUDE_CODE_MODEL="$model_value"
+        print_info "Using model: $model_value"
     fi
 
     # Launch Claude Code

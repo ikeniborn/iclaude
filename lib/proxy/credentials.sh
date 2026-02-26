@@ -97,18 +97,54 @@ save_credentials() {
     touch "$CREDENTIALS_FILE"
     chmod 600 "$CREDENTIALS_FILE"
 
-    # Save URL, PROXY_INSECURE, PROXY_CA, and NO_PROXY
+    # Save URL, PROXY_INSECURE, PROXY_CA, NO_PROXY, and CLAUDE_CODE_MODEL (if set)
     cat > "$CREDENTIALS_FILE" << EOF
 PROXY_URL=$proxy_url
 PROXY_INSECURE=${PROXY_INSECURE:-false}
 PROXY_CA=${PROXY_CA:-}
 NO_PROXY=$no_proxy
+CLAUDE_CODE_MODEL=${CLAUDE_CODE_MODEL:-}
 EOF
 
     print_success "Credentials saved to: $CREDENTIALS_FILE" >&2
 
     # Return final URL (after possible domain-to-IP conversion)
     echo "$proxy_url"
+}
+
+#######################################
+# Save model selection to credentials file
+# Arguments:
+#   $1 - Model name (e.g. claude-opus-4-6)
+# Returns:
+#   Exit code: 0 on success
+# Side effects:
+#   - Updates CLAUDE_CODE_MODEL line in CREDENTIALS_FILE (update-or-append)
+#   - Creates CREDENTIALS_FILE with chmod 600 if it doesn't exist
+#######################################
+save_model_to_config() {
+    local model_name="$1"
+
+    if [[ -z "$model_name" ]]; then
+        return 0
+    fi
+
+    # Ensure credentials file exists with correct permissions
+    if [[ ! -f "$CREDENTIALS_FILE" ]]; then
+        touch "$CREDENTIALS_FILE"
+        chmod 600 "$CREDENTIALS_FILE"
+    fi
+
+    # Update existing CLAUDE_CODE_MODEL line (including commented-out version) or append
+    if grep -q "^#\?[[:space:]]*CLAUDE_CODE_MODEL=" "$CREDENTIALS_FILE" 2>/dev/null; then
+        # Replace existing line (commented or uncommented)
+        sed -i "s|^#\?[[:space:]]*CLAUDE_CODE_MODEL=.*|CLAUDE_CODE_MODEL=$model_name|" "$CREDENTIALS_FILE"
+    else
+        # Append new line
+        echo "CLAUDE_CODE_MODEL=$model_name" >> "$CREDENTIALS_FILE"
+    fi
+
+    print_success "Model saved: $model_name" >&2
 }
 
 #######################################

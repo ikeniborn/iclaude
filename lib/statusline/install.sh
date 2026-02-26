@@ -84,13 +84,9 @@ install_statusline_script() {
         echo ""
     fi
 
-    # Get absolute path for settings.json
-    local abs_script_path
-    if command -v realpath &>/dev/null; then
-        abs_script_path=$(realpath "$script_path")
-    else
-        abs_script_path="$(cd "$(dirname "$script_path")" && pwd)/$(basename "$script_path")"
-    fi
+    # Get portable path for settings.json
+    # $CLAUDE_PROJECT_DIR is set by Claude Code at hook/statusline execution time
+    local abs_script_path='$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh'
 
     print_info "Installing claude-statusline.sh script..."
 

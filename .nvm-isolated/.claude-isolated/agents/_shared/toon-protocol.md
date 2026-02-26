@@ -1,6 +1,6 @@
 # TOON Protocol for Agent Pipeline
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Purpose:** Спецификация TOON-формата для межагентной коммуникации в системе Researcher → Planner → Executor
 
 **Полная спецификация TOON:** `@shared:TOON-REFERENCE.md`
@@ -27,7 +27,8 @@ TOON (Token-Oriented Object Notation) используется для перед
     "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
     "hints": {
       "language_hint": null,
-      "skip_context7": false
+      "skip_context7": false,
+      "skip_local_docs": false
     }
   }
 }
@@ -38,6 +39,7 @@ TOON (Token-Oriented Object Notation) используется для перед
 - `focus_areas` — области исследования (все по умолчанию)
 - `language_hint` — подсказка языка проекта (null = автоопределение)
 - `skip_context7` — пропустить Context7 MCP (false = использовать если доступен)
+- `skip_local_docs` — пропустить загрузку локальной документации (false = загружать docs/llms.txt)
 
 ---
 
@@ -49,6 +51,7 @@ TOON (Token-Oriented Object Notation) используется для перед
 
 ```json
 {
+  "schema_version": "2.1.0",
   "research_results": {
     "project_context": {
       "language": "bash",
@@ -85,7 +88,23 @@ TOON (Token-Oriented Object Notation) используется для перед
     },
     "external_docs": {
       "context7_status": "NO_LIBRARIES_DETECTED",
-      "docs_found": []
+      "deep_research_status": "NOT_TRIGGERED",
+      "docs_found": [],
+      "key_findings_summary": []
+    },
+    "local_docs": {
+      "docs_status": "FOUND",
+      "relevant_sections": [
+        {
+          "component": "lib/proxy/",
+          "source": "docs/sphinx/api-reference/proxy/validate.md",
+          "key_insights": [
+            "validate_proxy_url() validates HTTP/HTTPS only",
+            "Returns 0 on success, 1 on failure",
+            "No SOCKS5 support by design"
+          ]
+        }
+      ]
     },
     "recommendations": {
       "complexity_hint": "minimal",
@@ -118,6 +137,15 @@ lib/launcher/launch.sh|low|Launch orchestration
 - `reason` — краткое объяснение (< 60 символов)
 
 **Threshold:** >= 5 файлов → TOON. < 5 файлов → JSON-массив объектов.
+
+**Пороги для других полей research.toon:**
+
+| Поле | Формат |
+|------|--------|
+| `relevant_files` | TOON если >= 5 файлов |
+| `reusable_components` | всегда JSON (обычно < 5 элементов) |
+| `local_docs.relevant_sections` | всегда JSON (массив обычно < 5 элементов) |
+| `external_docs.docs_found` | всегда JSON (обычно < 5 элементов) |
 
 ### complexity_hint значения
 
@@ -158,7 +186,8 @@ lib/launcher/launch.sh|low|Launch orchestration
     "files_to_change": "<<TOON:files_to_change>>",
     "research_references": {
       "reusable_components_used": ["parse_args() from lib/command/args.sh"],
-      "risks_mitigated": ["R1: Empty session-env/ → print message"]
+      "risks_mitigated": ["R1: Empty session-env/ → print message"],
+      "docs_consulted": ["API Reference: proxy/validate.md"]
     }
   }
 }
@@ -202,41 +231,45 @@ lib/context/sessions.sh|create|2
 
 ---
 
-## report.md (Executor → пользователь)
+## report.json (Executor → пользователь + Critic)
 
-Markdown-формат (не TOON — нарративный документ для ревью).
+JSON-формат (не Markdown — машиночитаемый для Critic и трассируемости). Schema v2.1.0.
 
-### Шаблон
+### Минимальная структура
 
-```markdown
-# Execution Report: {task_description}
-
-**Session:** {session_id}
-**Status:** ✅ COMPLETED | ❌ FAILED | ⚠️ PARTIAL
-
-## Summary
-
-{краткое описание что было сделано}
-
-## Phase Results
-
-### Phase {N}: {phase_name}
-- **Status:** ✅ COMPLETED | ❌ FAILED
-- **Files:** `{file1}`, `{file2}`
-- **Validation:** `{validation_command}` → OK | FAILED
-- **Commit:** `{commit_message}` ({short_hash})
-
-## Risks Encountered
-
-| Risk | Severity | Resolution |
-|------|----------|------------|
-| {risk_description} | {severity} | {how_resolved} |
-
-## Next Steps
-
-- [ ] {manual_action_1}
-- [ ] {manual_action_2}
+```json
+{
+  "schema_version": "2.1.0",
+  "session_id": "2026-02-17T1523",
+  "task_description": "{из plan.toon}",
+  "status": "COMPLETED|FAILED|PARTIAL",
+  "phases": [
+    {
+      "phase_number": 1,
+      "phase_name": "{phase_name}",
+      "status": "COMPLETED|FAILED|SKIPPED",
+      "files": ["{file1}", "{file2}"],
+      "validation_command": "{команда из плана}",
+      "validation_result": "OK|FAILED|SKIPPED",
+      "commit_hash": "{7-char hash или null}",
+      "commit_message": "{conventional commit или null}"
+    }
+  ],
+  "files_changed": [
+    {"file": "{path}", "action": "created|modified|deleted", "phase": 1, "status": "COMPLETED"}
+  ],
+  "commits": [
+    {"hash": "{7-char}", "message": "{conventional commit}", "phase": 1, "files": ["{path}"]}
+  ],
+  "risks_encountered": [
+    {"risk_id": "R1|UNEXPECTED", "description": "...", "severity": "low|medium|high|critical", "resolution": "..."}
+  ],
+  "next_steps": ["{action1}", "{action2}"],
+  "recovery_attempts": []
+}
 ```
+
+Полная схема: `execution-agent/schemas/output.schema.json`
 
 ---
 

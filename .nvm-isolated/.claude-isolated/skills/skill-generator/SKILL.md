@@ -3,8 +3,11 @@ name: skill-generator
 description: Автоматизированное создание новых скиллов с интерактивными вопросами, генерацией templates, schemas и валидацией
 user-invocable: true
 context: fork
+# version: 1.5.0 | updated: 2026-02-24
+# tags: meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition
+# dependencies: thinking-framework, structured-planning, validation-framework, toon-skill
+# files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md
 ---
-<!-- version: 1.4.0 | tags: meta, generator, scaffolding, templates, schemas, validation, interactive, toon, decomposition | dependencies: thinking-framework, structured-planning, validation-framework, toon-skill | files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md -->
 
 # Skill Generator
 
@@ -107,7 +110,7 @@ if (fs.existsSync(projectSkillsDir)) {
 | Q3: Description | Brief description (1-2 sentences) | 20-200 chars |
 | Q4: context:fork | Run in isolated subagent? (heavy processing/many tools) | boolean |
 | Q5: agent type | `Explore` = read-only codebase search (Haiku); `Plan` = architecture/planning (read-only); `general-purpose` = complex multi-step + writes; `Bash` = terminal commands; `none` = omit field (defaults to general-purpose) | enum |
-| Q6: Dependencies | Skill dependencies (→ HTML comment, NOT frontmatter) | skill names |
+| Q6: Dependencies | Skill dependencies (→ # comment in YAML frontmatter) | skill names |
 
 *(See TOON block below for complete 14-question catalog)*
 
@@ -122,7 +125,7 @@ questionnaire[14]{question_id,prompt,validation,default,notes}:
   Q3,Brief description (1-2 sentences),20-200 chars,-,Must be informative (not placeholder)
   Q4,Run in isolated subagent? context:fork (Y/n),boolean,n,Y → adds context:fork (heavy processing/many tool calls/large output)
   Q5,Subagent type? none/Explore/Plan/general-purpose/Bash,enum,none,Explore=read-only Haiku; Plan=planning read-only; general-purpose=writes+complex; Bash=terminal; none=omit (default general-purpose). NEVER use Validation — not official!
-  Q6,Comma-separated skill dependencies,Must exist in skills/ no circular deps,none,Stored in HTML comment NOT frontmatter
+  Q6,Comma-separated skill dependencies,Must exist in skills/ no circular deps,none,Stored as # comment in YAML frontmatter (NOT HTML comment in body)
   Q7,Support minimal/standard/complex? (Y/n),boolean,n,Yes → multiple templates (input-lite.json input.json)
   Q8,1=JSON 2=YAML 3=Markdown 4=Text 5=Mixed,enum [1-2-3-4-5],JSON,Determines template structure
   Q9,Comma-separated template names,kebab-case,input output,Each → templates/{name}.json
@@ -215,14 +218,18 @@ ACCEPTANCE CRITERIA:
 **CRITICAL:** `Validation` is NOT a valid agent type. Do not use it.
 **Custom agents** from `.claude/agents/` directory are also valid values.
 
-**Non-official metadata** (`version`, `tags`, `dependencies`) → placed in HTML comment AFTER closing `---`:
+**Non-official metadata** (`version`, `tags`, `dependencies`) → placed as `#` comment INSIDE YAML frontmatter (before closing `---`):
+```yaml
+# version: 1.0.0 | updated: 2026-02-24
+# tags: ...
+# dependencies: ...
 ```
-<!-- version: 1.0.0 | tags: ... | dependencies: ... -->
-```
+
+> **Почему не HTML-комментарий в теле?** Claude Code передаёт тело SKILL.md/AGENT.md в контекст модели без обработки. `<!-- comment -->` попадает в контекст и потребляет токены. `# comment` внутри `---...---` отфильтровывается YAML-парсером и НЕ попадает в контекст.
 
 | Component | Description | Reference | Multiplicity |
 |-----------|-------------|-----------|--------------|
-| **SKILL.md** | YAML frontmatter (official fields only) + HTML comment (metadata) + sections with @references | `@template:skill-template-base` | 1 |
+| **SKILL.md** | YAML frontmatter (official fields + `#` comment metadata) + sections with @references | `@template:skill-template-base` | 1 |
 | **examples/*.md** | Usage scenarios (basic, advanced, error-handling, performance, security) | `@example:multi-example-skill` | 2-5 |
 | **rules/best-practices.md** | Best practices + common pitfalls + performance tips | `@template:rules-template` | 0-1 |
 | **templates/*.json** | Input/output templates with `{{placeholder}}` syntax | `@example:simple-system-skill` | 1-N |
@@ -318,7 +325,7 @@ If Q11 = yes, generates `rules/best-practices.md` using `@template:rules-templat
 
 | Validator | Checks | Status | Reference |
 |-----------|--------|--------|-----------|
-| **YAML Frontmatter** | Official fields only (name, description, user-invocable, context, agent, allowed-tools, model, hooks, license, argument-hint, disable-model-invocation); name format /^[a-z][a-z0-9-]{0,63}$/; agent value must be one of: Explore, Plan, general-purpose, Bash, or custom agent name from .claude/agents/ — NEVER "Validation"; no non-official fields (version/tags/dependencies → HTML comment) | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
+| **YAML Frontmatter** | Official fields only (name, description, user-invocable, context, agent, allowed-tools, model, hooks, license, argument-hint, disable-model-invocation); name format /^[a-z][a-z0-9-]{0,63}$/; agent value must be one of: Explore, Plan, general-purpose, Bash, or custom agent name from .claude/agents/ — NEVER "Validation"; non-official metadata (version/tags/dependencies) stored as `# comment` INSIDE frontmatter block — NOT as HTML comment in body | passed/failed | [@shared:frontmatter-parser](../_shared/frontmatter-parser.md) |
 | **JSON Templates** | JSON syntax, root key naming, placeholder extraction, placeholder format | passed/failed | `@rules:placeholder-mapping` |
 | **JSON Schemas** | JSON Schema syntax, `$schema` field = Draft-7, meta-schema validation, template cross-check | passed/failed | - |
 | **Markdown Formatting** | Frontmatter exists, required sections (When to Use, How It Works, Output Format), code blocks, references | passed/warning/failed | - |

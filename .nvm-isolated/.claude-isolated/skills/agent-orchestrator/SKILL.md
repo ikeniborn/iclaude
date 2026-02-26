@@ -3,8 +3,11 @@ name: agent-orchestrator
 description: Оркестратор пайплайна Researcher → Planner → Executor
 user-invocable: true
 context: fork
+# version: 1.1.0
+# tags: agents, orchestration, pipeline, researcher, planner, executor
+# invocation: /agent-orchestrator
+# dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md
 ---
-<!-- version: 1.0.0 | tags: agents, orchestration, pipeline, researcher, planner, executor | invocation: /agent-orchestrator | dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md -->
 
 # Agent Orchestrator
 
@@ -41,28 +44,61 @@ context: fork
 
 ### Шаг 1: Инициализация Workspace
 
-```bash
-# Агенты находятся в изолированной среде iclaude, не в рабочем проекте.
-# SKILL_BASE_DIR — директория этого скилла (из заголовка "Base directory for this skill:")
-# Пример: /home/user/.nvm-isolated/.claude-isolated/skills/agent-orchestrator
-AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
-# Результат: /home/user/.nvm-isolated/.claude-isolated/agents
+Определи переменные (в уме, без tool call):
+- `SKILL_BASE_DIR` — из заголовка "Base directory for this skill:" текущего скилла
+- `AGENTS_DIR` = `${SKILL_BASE_DIR}/../../agents`
+- `PROJECT_ROOT` = текущий рабочий каталог сессии Claude Code (pwd)
+- `SESSION_ID` = дата+время в формате `YYYY-MM-DDTHHMM`
+- `WORKSPACE` = `${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}`
 
-# Определить project root
+Затем **вызови `Bash()` tool** со следующими командами:
+
+```bash
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
 WORKSPACE="${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 
-# Создать структуру workspace
+# AGENTS_DIR existence check — вычислить из SKILL_BASE_DIR
+# SKILL_BASE_DIR берётся из заголовка "Base directory for this skill:" в начале этого SKILL.md
+# Подставить реальное значение SKILL_BASE_DIR перед выполнением:
+AGENTS_DIR="${SKILL_BASE_DIR}/../../agents"
+AGENTS_DIR="$(realpath "${AGENTS_DIR}" 2>/dev/null || echo "${AGENTS_DIR}")"
+
+if [ ! -d "${AGENTS_DIR}" ]; then
+  echo "ERROR: AGENTS_DIR not found: ${AGENTS_DIR}"
+  echo "Проверь что SKILL_BASE_DIR указан корректно в заголовке скилла."
+  echo "Ожидается: {iclaude_root}/.nvm-isolated/.claude-isolated/agents/"
+  exit 1
+fi
+
+# Проверить наличие всех необходимых AGENT.md файлов
+MISSING_AGENTS=""
+for agent in researcher-agent planning-agent execution-agent critic-agent; do
+  if [ ! -f "${AGENTS_DIR}/${agent}/AGENT.md" ]; then
+    MISSING_AGENTS="${MISSING_AGENTS} ${agent}/AGENT.md"
+  fi
+done
+
+if [ -n "${MISSING_AGENTS}" ]; then
+  echo "ERROR: Missing agent files in ${AGENTS_DIR}:${MISSING_AGENTS}"
+  echo "Запусти ./iclaude.sh --repair-isolated для восстановления симлинков."
+  exit 1
+fi
+
 mkdir -p "${WORKSPACE}"
-
-# Добавить .claude/workspace/ в .gitignore проекта (если нет)
 grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
-  echo -e "\n# Claude Code Agent Workspace\n.claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
-
+  printf '\n# Claude Code Agent Workspace\n.claude/workspace/\n' >> "${PROJECT_ROOT}/.gitignore"
+echo "AGENTS_DIR=${AGENTS_DIR}"
+echo "WORKSPACE=${WORKSPACE}"
 ```
 
+Запомни вывод `WORKSPACE=...` и `AGENTS_DIR=...` — эти пути используются во всех следующих шагах.
+
+**Если скрипт завершился с exit 1:** Остановить выполнение, сообщить пользователю ошибку из stdout и инструкцию по исправлению. Не продолжать пайплайн с некорректными путями.
+
 ### Шаг 2: Записать input.toon
+
+**Вызови `Write()` tool** для записи файла `{WORKSPACE}/input.toon` со следующим содержимым:
 
 ```json
 {
@@ -71,19 +107,24 @@ grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
     "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
     "hints": {
       "language_hint": null,
-      "skip_context7": false
+      "skip_context7": false,
+      "skip_local_docs": false
     }
   }
 }
 ```
 
-Записать в `{WORKSPACE}/input.toon`.
+Подставь реальный путь: `Write("{WORKSPACE}/input.toon", ...)` — директория уже создана на шаге 1.
 
 ### Шаг 3: Запустить Researcher Agent
 
 ```
 Прочитать: ${AGENTS_DIR}/researcher-agent/AGENT.md
-Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}\nTASK: {task_description}"
+Собрать prompt: AGENT.md + """
+WORKSPACE: {WORKSPACE}
+PROJECT_ROOT: {PROJECT_ROOT}
+TASK: {task_description}
+"""
 Запустить: Task(subagent_type="general-purpose", prompt=researcher_prompt)
 ```
 
@@ -124,6 +165,7 @@ loop:
   # Перезапустить Researcher с critique как контекстом
   researcher_prompt = researcher_md + """
   WORKSPACE: {WORKSPACE}
+  PROJECT_ROOT: {PROJECT_ROOT}
   TASK: {task_description}
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {WORKSPACE}/research-critique.toon
@@ -276,16 +318,29 @@ IF verdict == "ABORT":
 
 ### Шаг 8: Итоговый отчёт
 
-Показать содержимое `{WORKSPACE}/report.md`.
+Прочитать `{WORKSPACE}/report.json` и показать сводку.
 
 ```
 ════════════════════════════════════════════
 🎉 PIPELINE COMPLETE
 ════════════════════════════════════════════
 Session: {SESSION_ID}
-Report: {WORKSPACE}/report.md
+Report: {WORKSPACE}/report.json
 
-{содержимое report.md}
+Status: {report.json.status}
+Фаз выполнено: {completed_phases}/{total_phases}
+Коммитов: {commits.length}
+
+Файлы изменены:
+{для каждого в files_changed: "  [{action}] {file} (фаза {phase})"}
+
+Коммиты:
+{для каждого в commits: "  {hash} {message}"}
+
+{если status == "FAILED":
+  "Попытки восстановления:
+   {для каждого в recovery_attempts: '  Фаза {phase_number} шаг {step_number} попытка {attempt}: {result}'}"
+}
 
 Execution Review: {score}/100 [{verdict}]
 {if WARN: "⚠️  {critique.dimensions.* issues суммарно}"}
@@ -347,7 +402,7 @@ awk '/^---JSON---$/{found=1; next} found' {WORKSPACE}/{mode}-critique.toon \
 
 ```
 Очистить workspace? [yes/keep]
-(Рекомендуется: keep — report.md полезен как документация)
+(Рекомендуется: keep — report.json полезен как документация)
 ```
 
 При `yes`:
@@ -414,7 +469,7 @@ ${PROJECT_ROOT}/
     ├── research-critique.toon
     ├── plan.toon
     ├── plan-critique.toon
-    ├── report.md
+    ├── report.json
     └── execution-critique.toon
 ```
 
@@ -436,7 +491,7 @@ ${PROJECT_ROOT}/
 8. [Gate] Пользователь: "yes"
 9. Executor → изменяет 4 файла, 2 коммита
 10. Critic[execution]: score=95/100, verdict=PASS
-11. report.md записан: status=COMPLETED
+11. report.json записан: status=COMPLETED
 
 **Выход:**
 ```

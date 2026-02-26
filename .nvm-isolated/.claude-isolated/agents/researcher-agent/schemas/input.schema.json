@@ -48,6 +48,11 @@
               "type": "boolean",
               "description": "Пропустить Context7 MCP вызовы",
               "default": false
+            },
+            "skip_local_docs": {
+              "type": "boolean",
+              "description": "Пропустить загрузку локальной документации проекта (docs/llms.txt)",
+              "default": false
             }
           }
         }
@@ -61,7 +66,8 @@
         "focus_areas": ["codebase", "architecture", "risks", "external_docs"],
         "hints": {
           "language_hint": null,
-          "skip_context7": false
+          "skip_context7": false,
+          "skip_local_docs": false
         }
       }
     }

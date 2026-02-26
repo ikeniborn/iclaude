@@ -202,7 +202,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../README.html">Документация iclaude.sh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../INSTALLATION.html">Установка iclaude</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../MIGRATION.html">Migration to Native Installer</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
@@ -216,17 +215,24 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../STATUSLINE.html">Claude Statusline Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../USE_CASES.html">Use Cases</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../INTEGRATIONS.html">Интеграции iclaude: AI-эффективность и возможности</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../PLANNING.html">Planning Mode Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ROUTER.html">Claude Code Router: конфигурация и маршрутизация</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CLAUDE_CODE_BACKEND.html">Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../PII_MASKING.html">Маскирование персональных данных в iclaude: PasteGuard и альтернативы</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../SECURITY_PATTERNS_IMPROVEMENTS.html">Улучшения паттернов маскирования секретов в redact-secrets.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../SECURITY_RESEARCH.html">Исследование: Улучшение маскирования секретов в PreToolUse hook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
@@ -300,32 +306,38 @@
 <li class="toctree-l3"><a class="reference internal" href="../ohmyposh/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pii-proxy/index.html">Module: pii-proxy</a><input aria-label="Toggle navigation of Module: pii-proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pii-proxy/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pii-proxy/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pii-proxy/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../proxy/configure.html">configure</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../proxy/credentials.html">credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../proxy/git.html">git</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../proxy/validate.html">validate</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../router/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../router/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../router/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" checked="" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" checked="" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="detect.html">detect</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../statusline/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../statusline/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../statusline/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../update/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../update/isolated.html">isolated</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../update/update.html">update</a></li>

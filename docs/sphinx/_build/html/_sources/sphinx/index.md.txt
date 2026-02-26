@@ -14,7 +14,6 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 
 ../README
 ../INSTALLATION
-../MIGRATION
 ```
 
 ```{toctree}
@@ -34,24 +33,30 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 
 ../STATUSLINE
 ../USE_CASES
-../features/context-monitoring
+../INTEGRATIONS
 ```
 
 ```{toctree}
 :maxdepth: 1
 :caption: Architecture
 
-../architecture/README
 ../architecture/statusline-architecture
+../architecture/diagrams/README
+../architecture/diagrams/data-flow-isolated-installation
+../architecture/diagrams/data-flow-oauth-token-refresh
+../architecture/diagrams/data-flow-proxy-configuration
+../architecture/diagrams/data-flow-router-launch
 ```
 
 ```{toctree}
 :maxdepth: 1
-:caption: Development
+:caption: Advanced Topics
 
-../PLANNING
-../MODULARIZATION-COMPLETE
-../REMAINING_WORK
+../ROUTER
+../CLAUDE_CODE_BACKEND
+../PII_MASKING
+../SECURITY_PATTERNS_IMPROVEMENTS
+../SECURITY_RESEARCH
 ```
 
 ```{toctree}

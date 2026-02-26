@@ -3,8 +3,11 @@ name: architecture-documentation
 description: Generate detailed architectural documentation in YAML and TOON formats with component dependencies and relationships
 user-invocable: true
 context: fork
+# version: 1.4.0
+# tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency, sphinx
+# dependencies: context-awareness, thinking-framework, toon-skill, docs-builder | author: Claude Code Skills Team
+# files: templates: ./templates/*.yaml, templates_toon: ./templates/toon/*.toon.template, converters: ./converters/*.mjs, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, examples_toon: ./examples/toon/*.toon.example
 ---
-<!-- version: 1.4.0 | tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency, sphinx | dependencies: context-awareness, thinking-framework, toon-skill, docs-builder | author: Claude Code Skills Team | files: templates: ./templates/*.yaml, templates_toon: ./templates/toon/*.toon.template, converters: ./converters/*.mjs, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, examples_toon: ./examples/toon/*.toon.example -->
 
 # Architecture Documentation Skill
 

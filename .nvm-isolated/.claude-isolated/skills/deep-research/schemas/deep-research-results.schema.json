@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "deep-research-results",
+  "title": "Deep Research Results",
+  "description": "Output schema for Deep Research Agent",
+  "type": "object",
+  "required": ["deep_research_results"],
+  "properties": {
+    "deep_research_results": {
+      "type": "object",
+      "required": ["metadata", "key_findings", "sources", "recommendations"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["query", "depth", "sources_found", "sources_fetched", "search_queries_used"],
+          "properties": {
+            "query": { "type": "string" },
+            "depth": { "type": "string", "enum": ["shallow", "standard", "deep"] },
+            "sources_found": { "type": "integer", "minimum": 0 },
+            "sources_fetched": { "type": "integer", "minimum": 0 },
+            "search_queries_used": { "type": "integer", "minimum": 1 },
+            "timestamp": { "type": "string" },
+            "duration_estimate": { "type": "string" }
+          }
+        },
+        "key_findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["finding", "confidence", "sources", "contested"],
+            "properties": {
+              "finding": { "type": "string" },
+              "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+              "sources": { "type": "array", "items": { "type": "string" } },
+              "contested": { "type": "boolean" },
+              "synthesis": { "type": "boolean" }
+            }
+          }
+        },
+        "detailed_findings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "summary": { "type": "string" },
+              "key_points": { "type": "array", "items": { "type": "string" } },
+              "sources": { "type": "array", "items": { "type": "string" } },
+              "contested_points": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "topic": { "type": "string" },
+              "position_a": {
+                "type": "object",
+                "properties": {
+                  "claim": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              },
+              "position_b": {
+                "type": "object",
+                "properties": {
+                  "claim": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              },
+              "resolution": {
+                "type": "string",
+                "enum": ["unclear", "position_a_stronger", "position_b_stronger"]
+              }
+            }
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sources": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["url", "title", "type", "reliability", "fetched"],
+                "properties": {
+                  "url": { "type": "string" },
+                  "title": { "type": "string" },
+                  "type": {
+                    "type": "string",
+                    "enum": ["official_docs", "research", "article", "blog", "github", "other"]
+                  },
+                  "reliability": { "type": "string", "enum": ["high", "medium", "low"] },
+                  "fetched": { "type": "boolean" },
+                  "key_insights": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<<TOON:sources>>$",
+              "description": "TOON reference when >= 8 sources"
+            }
+          ]
+        },
+        "recommendations": {
+          "type": "object",
+          "required": ["confidence_overall"],
+          "properties": {
+            "for_caller": { "type": "string", "enum": ["researcher", "user"] },
+            "action_items": { "type": "array", "items": { "type": "string" } },
+            "further_research_needed": { "type": "array", "items": { "type": "string" } },
+            "confidence_overall": { "type": "string", "enum": ["high", "medium", "low"] }
+          }
+        }
+      }
+    }
+  }
+}

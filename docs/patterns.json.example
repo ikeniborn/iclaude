@@ -1,0 +1,463 @@
+{
+  "metadata": {
+    "version": "2.3.0",
+    "created": "2025-02-25T00:00:00Z",
+    "updated": "2025-02-25T12:00:00Z",
+    "description": "API token and secret detection patterns for redact-secrets.py PreToolUse hook",
+    "maintainer": "iclaude security team",
+    "changelog": {
+      "2.3.0": [
+        "Added: Google AI Studio (Gemini) API key detection",
+        "Added: Stripe API keys (sk_live/sk_test/pk_live/pk_test)",
+        "Added: HuggingFace User Access Token (hf_ prefix)",
+        "Added: OpenRouter API key (sk-or- prefix)",
+        "Added: Groq API key (gsk_ prefix)",
+        "Added: SendGrid API key (SG. format)",
+        "Added: GitHub fine-grained PAT token (github_pat_ prefix)",
+        "Improved: PEM private key pattern with length limits to prevent ReDoS",
+        "Improved: URL credentials pattern with maximum length limits",
+        "Improved: Generic secret pattern with maximum length limits"
+      ]
+    }
+  },
+  "global_settings": {
+    "fail_open": true,
+    "log_level": "info",
+    "max_regex_match_length": 10000
+  },
+  "patterns": [
+    {
+      "id": "anthropic-api-key",
+      "name": "Anthropic API Key",
+      "pattern": "\\bsk-(?:ant-api03-|ant-|proj-)?[A-Za-z0-9\\-_]{20,}",
+      "replacement": "[ANTHROPIC_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "Covers sk-ant-api03-, sk-ant-, sk-proj- prefixes",
+      "test_cases": {
+        "should_match": [
+          "sk-ant-api03-v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p",
+          "sk-ant-1234567890abcdefghijklmnopqrs",
+          "sk-proj-ABcD1234EFgh5678IJkl9012MNop"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "openai-api-key",
+      "name": "OpenAI API Key",
+      "pattern": "\\bsk-(?:svc|org|proj)-[A-Za-z0-9\\-_]{20,}",
+      "replacement": "[OPENAI_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "Covers sk-svc- (service), sk-org- (organization), sk-proj- (project) prefixes. Updated to include svc and org variants.",
+      "test_cases": {
+        "should_match": [
+          "sk-svc-ABcD1234EFgh5678IJkl9012MNop",
+          "sk-org-XYZ789abcdef1234567890klmnop",
+          "sk-proj-1234567890abcdefghijklmnopqr"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "google-ai-studio",
+      "name": "Google AI Studio (Gemini) API Key",
+      "pattern": "\\bAIzaSy[A-Za-z0-9_-]{32}\\b",
+      "replacement": "[GOOGLE_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "very_low",
+      "notes": "Google Cloud Console API keys for Gemini API. Unique prefix 'AIzaSy' makes it highly specific.",
+      "test_cases": {
+        "should_match": [
+          "AIzaSyDHn9_p-qvNbHk9Cc1xP2-YuL5RVZqJgLI",
+          "AIzaSy_abc123def456ghi789jklmnopqrst_XY"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "stripe-api-key",
+      "name": "Stripe API Key",
+      "pattern": "\\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{20,}\\b",
+      "replacement": "[STRIPE_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "low",
+      "notes": "Stripe secret keys (sk_) and publishable keys (pk_) with live/test variants",
+      "test_cases": {
+        "should_match": [
+          "sk_live_FAKE_EXAMPLE_NOT_REAL_KEY_XX",
+          "sk_test_FAKE_EXAMPLE_NOT_REAL_KEY_XX",
+          "pk_live_51234567890abcdefghijklm",
+          "pk_test_51234567890abcdefghijklm"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "huggingface-token",
+      "name": "Hugging Face User Access Token",
+      "pattern": "\\bhf_[A-Za-z0-9_]{30,}\\b",
+      "replacement": "[HUGGINGFACE_TOKEN]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "very_low",
+      "notes": "HuggingFace API tokens with hf_ prefix. Used for model access and inference.",
+      "test_cases": {
+        "should_match": [
+          "hf_ABcD1234EFgh5678IJkl9012MNop3456QRST",
+          "hf_x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "openrouter-api-key",
+      "name": "OpenRouter API Key",
+      "pattern": "\\bsk-or-[A-Za-z0-9\\-_]{50,}\\b",
+      "replacement": "[OPENROUTER_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "low",
+      "notes": "OpenRouter.ai API keys with sk-or- prefix for routing to multiple LLM providers",
+      "test_cases": {
+        "should_match": [
+          "sk-or-ABcD1234EFgh5678IJkl9012MNop3456QRSTuvwxyz1234567890"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "groq-api-key",
+      "name": "Groq API Key",
+      "pattern": "\\bgsk_[A-Za-z0-9\\-_]{50,}\\b",
+      "replacement": "[GROQ_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "very_low",
+      "notes": "Groq.com API keys with gsk_ prefix. Used for fast inference with Groq hardware.",
+      "test_cases": {
+        "should_match": [
+          "gsk_ABcD1234EFgh5678IJkl9012MNop3456QRSTuvwxyz"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "sendgrid-api-key",
+      "name": "SendGrid API Key",
+      "pattern": "\\bSG\\.[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\b",
+      "replacement": "[SENDGRID_API_KEY]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "low",
+      "notes": "SendGrid API keys with SG. prefix and two base64url components separated by dot",
+      "test_cases": {
+        "should_match": [
+          "SG.x123abc_DEf456ghi-JKl789mnO_pqRSTUV",
+          "SG.abc123_def456_ghi789_jkl012_mnopqr"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "github-fine-grained-pat",
+      "name": "GitHub Fine-Grained Personal Access Token",
+      "pattern": "\\bgithub_pat_[A-Za-z0-9_]{36,255}\\b",
+      "replacement": "[GITHUB_PAT_TOKEN]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2025-02-25",
+      "updated": "2025-02-25",
+      "coverage": "new",
+      "false_positive_risk": "very_low",
+      "notes": "New GitHub PAT format introduced in 2024 for fine-grained permissions control",
+      "test_cases": {
+        "should_match": [
+          "github_pat_11ABCDEF1234567890abcdef1234567890"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "aws-access-key-id",
+      "name": "AWS Access Key ID",
+      "pattern": "\\bAKIA[0-9A-Z]{16}\\b",
+      "replacement": "[AWS_ACCESS_KEY_ID]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "AWS Access Key ID format: AKIA prefix + 16 uppercase alphanumeric chars",
+      "test_cases": {
+        "should_match": [
+          "AKIA1234567890ABCDEF"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "aws-secret-access-key",
+      "name": "AWS Secret Access Key",
+      "pattern": "(?i)((?:aws[_\\-]?secret[_\\-]?(?:access[_\\-]?)?key|AWS_SECRET_ACCESS_KEY)\\s*[=:]\\s*)[\"\\']?[A-Za-z0-9/+]{40}[\"\\']?",
+      "replacement": "\\1[AWS_SECRET_KEY_REDACTED]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "AWS Secret Access Key: 40 base64 characters. Preserves variable name.",
+      "test_cases": {
+        "should_match": [
+          "AWS_SECRET_ACCESS_KEY=\"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\""
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "pem-private-key",
+      "name": "PEM Private Key Block",
+      "pattern": "-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----[\\s\\S]{0,5000}?-----END (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----",
+      "replacement": "[PRIVATE_KEY_REDACTED]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "very_low",
+      "notes": "PEM format private keys. Limited to 5000 chars max to prevent ReDoS on malformed keys.",
+      "test_cases": {
+        "should_match": [
+          "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3\n-----END PRIVATE KEY-----"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "github-token",
+      "name": "GitHub Token",
+      "pattern": "\\bgh[pousr]_[A-Za-z0-9_]{36,}\\b",
+      "replacement": "[GITHUB_TOKEN]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "GitHub tokens: ghp_ (personal), gho_ (OAuth), ghu_ (user), ghs_ (server), ghr_ (refresh)",
+      "test_cases": {
+        "should_match": [
+          "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+          "ghs_16C7e42F292c6912E7710c838347Ae178B4a"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "url-credentials",
+      "name": "Credentials in URL",
+      "pattern": "((?:https?|ftp|postgresql|mysql|mongodb|redis)://)[^:@\\s/]{1,100}:[^@\\s/]{1,100}@",
+      "replacement": "\\1[CREDENTIALS]@",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "Passwords in connection URLs. Limited to 100 chars each for performance.",
+      "test_cases": {
+        "should_match": [
+          "postgresql://user:password@localhost/dbname",
+          "mongodb+srv://admin:MyP@ssw0rd@cluster.mongodb.net"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "password-in-config",
+      "name": "Password in Config",
+      "pattern": "(?i)((?:password|passwd|pwd)\\s*[=:]\\s*)[\"\\']([^\"\\\']{4,})[\"\\']",
+      "replacement": "\\1\"[PASSWORD_REDACTED]\"",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 8,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "medium",
+      "false_positive_risk": "medium",
+      "notes": "Passwords in config files. Case-insensitive. Minimum 4 chars to reduce false positives.",
+      "test_cases": {
+        "should_match": [
+          "password = \"MyP@ssw0rd123\"",
+          "PASSWORD='TempPass123'"
+        ],
+        "should_not_match": [
+          "password = \"\"",
+          "password = \"xyz\""
+        ]
+      }
+    },
+    {
+      "id": "generic-secret",
+      "name": "Generic Secret/Token in Config",
+      "pattern": "(?i)((?:secret|api[_\\-]?key|access[_\\-]?token|auth[_\\-]?token|token|password|passwd|pwd)\\s*[=:]\\s*)[\"\\']([A-Za-z0-9\\-_./+]{16,256})[\"\\']",
+      "replacement": "\\1\"[SECRET_REDACTED]\"",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 8,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "medium",
+      "false_positive_risk": "medium",
+      "notes": "Generic secret patterns in config files. Limited to 256 chars max for performance.",
+      "test_cases": {
+        "should_match": [
+          "api_key=\"abc123def456ghi789jkl012\"",
+          "access_token='1234567890abcdefghijklmnop'"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "jwt-token",
+      "name": "JWT Token",
+      "pattern": "\\beyJ[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\b",
+      "replacement": "[JWT_REDACTED]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 8,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": "JWT tokens: three base64url parts separated by dots. Starts with eyJ (base64 for '{').",
+      "test_cases": {
+        "should_match": [
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "credit-card-number",
+      "name": "Credit Card Number",
+      "pattern": "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b",
+      "replacement": "[CARD_NUMBER_REDACTED]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 10,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "medium",
+      "false_positive_risk": "low",
+      "notes": "Credit card numbers (Luhn format check). Detects Visa, Mastercard, Amex.",
+      "test_cases": {
+        "should_match": [
+          "4532015112830366",
+          "5425233010103442"
+        ],
+        "should_not_match": []
+      }
+    },
+    {
+      "id": "env-secret-variable",
+      "name": ".env Secret Variable",
+      "pattern": "(?m)^((?:export\\s+)?[A-Z][A-Z0-9_]*(?:SECRET|TOKEN|KEY|PASSWORD|PASSWD|PWD|APIKEY)[A-Z0-9_]*\\s*=\\s*)(?![\"\\']?\\$\\{)(?!\\[)([^\\s#\\n]{20,256})",
+      "replacement": "\\1[REDACTED]",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 9,
+      "enabled": true,
+      "added": "2024-01-01",
+      "updated": "2025-02-25",
+      "coverage": "high",
+      "false_positive_risk": "low",
+      "notes": ".env format secrets. Ignores ${VAR} placeholders and [...] already redacted values. Limited to 256 chars.",
+      "test_cases": {
+        "should_match": [
+          "export MY_SECRET=1234567890abcdefghij",
+          "DB_PASSWORD=very_long_password_string"
+        ],
+        "should_not_match": [
+          "export MY_VAR=\"${OTHER_VAR}\"",
+          "export VALUE=\"[REDACTED]\""
+        ]
+      }
+    }
+  ],
+  "exclusions": {
+    "file_patterns": [
+      ".env.example",
+      ".env.sample",
+      ".env.template",
+      ".env.dist",
+      ".env.defaults",
+      ".env.placeholder",
+      "README.md",
+      "EXAMPLE.md",
+      "*.md"
+    ],
+    "directory_patterns": [
+      ".claude-isolated/hooks/",
+      ".claude/hooks/",
+      "docs/",
+      "examples/"
+    ],
+    "comment_markers": [
+      "# example:",
+      "// example:",
+      "# EXAMPLE:",
+      "// EXAMPLE:"
+    ]
+  },
+  "performance": {
+    "max_text_length_per_scan": 1000000,
+    "max_pattern_match_time_ms": 100,
+    "timeout_ms": 5000,
+    "fail_open": true
+  }
+}

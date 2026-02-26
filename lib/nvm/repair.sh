@@ -58,6 +58,11 @@ repair_isolated_environment() {
 	echo ""
 	create_claude_symlink || errors=$((errors + 1))
 
+	# Repair settings.json absolute paths
+	echo ""
+	print_info "Checking settings.json paths..."
+	repair_settings_paths || errors=$((errors + 1))
+
 	# Summary
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -152,6 +157,53 @@ create_claude_symlink() {
 		return 0
 	else
 		print_error "  ✗ Failed: claude symlink"
+		return 1
+	fi
+}
+
+#######################################
+# Repair absolute paths in settings.json
+# Detects hardcoded .claude-isolated paths from another machine/installation
+# and replaces them with the current ISOLATED_CONFIG_DIR path.
+# Called automatically at every launch and during --repair-isolated.
+# Returns:
+#   0 - success (paths correct or fixed)
+#   1 - could not repair
+#######################################
+repair_settings_paths() {
+	local settings_file="$ISOLATED_CONFIG_DIR/settings.json"
+
+	[[ ! -f "$settings_file" ]] && return 0
+
+	# Resolve current config dir to absolute path
+	local current_dir
+	if command -v realpath &>/dev/null; then
+		current_dir=$(realpath "$ISOLATED_CONFIG_DIR")
+	else
+		current_dir="$(cd "$ISOLATED_CONFIG_DIR" && pwd)"
+	fi
+
+	# Find any .claude-isolated path prefix that differs from current location
+	local stale_dir
+	stale_dir=$(grep -o '[^"[:space:]]*\.claude-isolated' "$settings_file" 2>/dev/null \
+		| sort -u | grep -vxF "$current_dir" | head -1) || true
+
+	[[ -z "$stale_dir" ]] && return 0
+
+	print_info "  Stale paths detected in settings.json"
+	print_info "    Was: $stale_dir"
+	print_info "    Now: $current_dir"
+
+	local temp_file="${settings_file}.tmp"
+	if sed "s|${stale_dir}|${current_dir}|g" "$settings_file" > "$temp_file" \
+		&& [[ -s "$temp_file" ]]; then
+		mv "$temp_file" "$settings_file"
+		chmod 600 "$settings_file"
+		print_success "  settings.json paths repaired"
+		return 0
+	else
+		rm -f "$temp_file"
+		print_error "  Failed to repair settings.json paths"
 		return 1
 	fi
 }

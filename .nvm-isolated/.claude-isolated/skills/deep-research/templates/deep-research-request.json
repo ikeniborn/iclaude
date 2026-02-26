@@ -1,0 +1,16 @@
+{
+  "deep_research_input": {
+    "query": "{{query: string, min 10 chars}}",
+    "depth": "{{depth: enum shallow|standard|deep}}",
+    "max_sources": "{{max_sources: integer, min 3, max 30}}",
+    "focus_areas": ["{{focus_area: string}}"],
+    "output_format": "{{output_format: enum summary|detailed|structured}}",
+    "caller": "{{caller: enum researcher|user|orchestrator}}",
+    "hints": {
+      "prefer_official_docs": "{{prefer_official_docs: boolean}}",
+      "recency_filter": "{{optional: recency_filter}}",
+      "language": "{{language: string}}",
+      "exclude_domains": ["{{optional: excluded_domain}}"]
+    }
+  }
+}

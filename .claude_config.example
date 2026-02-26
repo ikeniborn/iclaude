@@ -1,0 +1,171 @@
+#!/bin/bash
+# .claude_config.example — шаблон конфигурации iclaude
+#
+# Использование:
+#   cp .claude_config.example .claude_config
+#   # Отредактировать .claude_config, заполнить нужные значения
+#
+# ВАЖНО: .claude_config добавлен в .gitignore — не коммитить!
+# Файл содержит секреты: пароли прокси, API ключи.
+#
+# Файл автоматически загружается при запуске ./iclaude.sh
+# Все переменные становятся доступны в окружении Claude Code.
+#
+# Формат: bash-переменные (KEY=value или export KEY=value)
+# Пустые значения (KEY=) — переменная игнорируется.
+
+# ============================================================
+#  ПРОКСИ-СЕРВЕР
+# ============================================================
+# Адрес прокси-сервера.
+# Форматы:
+#   https://host:port                    — без аутентификации
+#   https://user:password@host:port      — с логином/паролем
+#   http://user:password@host:port       — HTTP прокси (хуже для OAuth)
+#
+# HTTPS прокси рекомендуется: сохраняет доменные имена для OAuth/TLS.
+# HTTP прокси не рекомендуется: проблемы с TLS-сертификатами Anthropic.
+# SOCKS5 не поддерживается: вызывает сбой в undici (Node.js HTTP-клиент).
+#
+# Устанавливается через: ./iclaude.sh --proxy https://user:pass@proxy:8118
+PROXY_URL=
+
+# Отключить проверку TLS-сертификата прокси-сервера.
+# true  — отключить (небезопасно, используйте только в крайнем случае)
+# false — включить (по умолчанию)
+#
+# Альтернатива: PROXY_CA (безопасный способ)
+PROXY_INSECURE=false
+
+# Путь к CA-сертификату прокси-сервера (PEM-формат).
+# Используется, когда прокси перехватывает HTTPS (corporate MITM proxy).
+# Пример: /etc/ssl/certs/my-corp-ca.pem
+#
+# Если задан, устанавливает NODE_EXTRA_CA_CERTS автоматически.
+# Предпочтительнее PROXY_INSECURE=true.
+PROXY_CA=
+
+# Список хостов, которые должны обходить прокси (через запятую).
+# Значение по умолчанию (если не задано):
+#   localhost,127.0.0.1,::1,github.com,githubusercontent.com,
+#   gitlab.com,bitbucket.org,registry.npmjs.org,nodejs.org
+#
+# Добавьте внутренние хосты, которые не должны идти через прокси.
+NO_PROXY=
+
+# ============================================================
+#  МОДЕЛЬ CLAUDE CODE
+# ============================================================
+# Принудительно задать модель Claude Code (переопределяет настройки по умолчанию).
+# Примеры: claude-opus-4-5, claude-sonnet-4-5, claude-haiku-4-5
+#
+# Используется при запуске без роутера (нативный Claude API).
+# При запуске с роутером (--router) модель задаётся в router.json.
+#
+# Устанавливается через: ./iclaude.sh --model claude-opus-4-5
+CLAUDE_CODE_MODEL=
+
+# ============================================================
+#  НАСТРОЙКИ CLAUDE CODE
+# ============================================================
+# Максимальное количество токенов в ответе.
+# По умолчанию: зависит от модели (обычно 8192 или 32768).
+# Увеличьте для длинных генераций кода.
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=
+
+# Включить систему задач (Tasks).
+# true  — включить (по умолчанию в iclaude)
+# false — отключить (использовать только если Tasks вызывают проблемы)
+#
+# Tasks позволяют создавать списки задач (TaskCreate/TaskUpdate/TaskList)
+# и отслеживать прогресс в интерактивном режиме.
+CLAUDE_CODE_ENABLE_TASKS=true
+
+# Отключить интеграцию с Chrome.
+# true  — отключить Chrome-инструменты (mcp__claude-in-chrome__*)
+# false — включить (по умолчанию)
+#
+# Отключается через: ./iclaude.sh --no-chrome
+CLAUDE_CODE_NO_CHROME=
+
+# Таймаут сессии в секундах.
+# По умолчанию: не задан (используется таймаут Claude Code по умолчанию).
+CLAUDE_CODE_SESSION_TIMEOUT=
+
+# Экспериментальная поддержка команд агентов (Agent Teams).
+# true  — включить (нестабильно, экспериментально)
+# false — отключить (по умолчанию)
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
+
+# ============================================================
+#  ROUTER: API-КЛЮЧИ LLM-ПРОВАЙДЕРОВ
+# ============================================================
+# Используются в router.json через плейсхолдеры ${VAR_NAME}.
+# Пример в router.json: "api_key": "${DEEPSEEK_API_KEY}"
+#
+# Для активации роутера: ./iclaude.sh --router
+# Конфиг роутера: .nvm-isolated/.claude-isolated/router.json
+# Шаблон конфига: .nvm-isolated/.claude-isolated/router.json.example
+
+# --- DeepSeek ---
+# Используется: Router.default, Router.think (в router.json)
+# Получить ключ: https://platform.deepseek.com/api_keys
+# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export DEEPSEEK_API_KEY=
+
+# --- OpenRouter ---
+# Агрегатор: 300+ моделей через единый API (GPT, Gemini, Llama, Mistral и др.)
+# Используется: Router.longContext, Router.webSearch, Router.image
+# Получить ключ: https://openrouter.ai/keys
+# Формат: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export OPENROUTER_API_KEY=
+
+# --- Google Gemini ---
+# Используется: Router.longContext (gemini-2.5-pro для длинного контекста)
+# Получить ключ: https://aistudio.google.com/app/apikey
+# Формат: AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export GOOGLE_API_KEY=
+
+# --- Groq ---
+# Сверхбыстрый inference на специализированном железе (LPU).
+# Подходит для: Router.background (быстрые фоновые задачи)
+# Получить ключ: https://console.groq.com/keys
+# Формат: gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export GROQ_API_KEY=
+
+# --- Volcengine (ByteDance) ---
+# Облако ByteDance, доступно в Китае и глобально.
+# Модели: Doubao-pro, Doubao-lite
+# Получить ключ: https://console.volcengine.com/ark
+export VOLCENGINE_API_KEY=
+
+# --- SiliconFlow ---
+# Китайская платформа: Qwen, DeepSeek, GLM через OpenAI-совместимый API.
+# Получить ключ: https://cloud.siliconflow.cn/account/ak
+# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export SILICONFLOW_API_KEY=
+
+# ============================================================
+#  ОТЛАДКА
+# ============================================================
+# Включить подробный вывод работы iclaude.sh.
+# true  — показывать отладочные сообщения
+# (оставить пустым для отключения)
+ICLAUDE_DEBUG=
+
+# ============================================================
+#  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
+# ============================================================
+# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
+# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ
+# ============================================================
+# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
+# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+#
+# export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#
+# CLAUDE_CODE_ENABLE_TASKS=true

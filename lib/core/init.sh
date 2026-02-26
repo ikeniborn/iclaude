@@ -42,7 +42,9 @@ init_environment() {
     CREDENTIALS_FILE="$CONFIG_FILE"
     GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
     ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
+    ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
     ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
+    LOCKFILE_HASH_FILE="${SCRIPT_DIR}/.nvm-isolated/.claude-isolated/.last-lockfile-hash"
     USE_ISOLATED_BY_DEFAULT=true  # Use isolated environment by default
 
     # Token refresh threshold in seconds (7 days = 604800)
@@ -54,10 +56,25 @@ init_environment() {
     export CREDENTIALS_FILE
     export GIT_BACKUP_FILE
     export ISOLATED_NVM_DIR
+    export ISOLATED_CONFIG_DIR
     export ISOLATED_LOCKFILE
+    export LOCKFILE_HASH_FILE
     export USE_ISOLATED_BY_DEFAULT
     export TOKEN_REFRESH_THRESHOLD
 
     # Color codes
     export RED GREEN YELLOW BLUE NC
+
+    # PII-Proxy configuration
+    PII_PROXY_PORT="${PII_PROXY_PORT:-9000}"
+    PII_PROXY_VENV="${ISOLATED_CONFIG_DIR}/pii-proxy-venv"
+    PII_PROXY_LOG_DIR="${ISOLATED_CONFIG_DIR}/pii-proxy-logs"
+    PII_PROXY_PID_FILE="${ISOLATED_CONFIG_DIR}/pii-proxy.pid"
+    PII_PROXY_SERVER_SCRIPT="${ISOLATED_CONFIG_DIR}/pii-proxy-server.py"
+
+    export PII_PROXY_PORT
+    export PII_PROXY_VENV
+    export PII_PROXY_LOG_DIR
+    export PII_PROXY_PID_FILE
+    export PII_PROXY_SERVER_SCRIPT
 }

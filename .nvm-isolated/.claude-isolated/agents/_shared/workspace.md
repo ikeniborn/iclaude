@@ -1,6 +1,6 @@
 # Agent Workspace Protocol
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Purpose:** Правила работы с workspace для агентов системы Researcher → [Critic] → Planner → [Critic] → Executor → [Critic]
 
 ---
@@ -21,7 +21,7 @@
     │       ├── plan-critique-r1.toon      # Critique retry 1 (если был retry)
     │       ├── plan-critique-r2.toon      # Critique retry 2 (если был retry)
     │       ├── plan-critique.toon         # Финальный critique (mode=plan)
-    │       ├── report.md          # Итог Executor
+    │       ├── report.json        # Итог Executor (машиночитаемый JSON, schema v2.1.0)
     │       └── execution-critique.toon    # Critique (mode=execution)
     └── latest -> workspace/{last-session-id}/  # симлинк на последнюю сессию
 ```
@@ -69,7 +69,7 @@ mkdir -p "${PROJECT_ROOT}/.claude/workspace/${SESSION_ID}"
 # (json файл с задачей пользователя)
 
 # 4. Добавить .claude/workspace/ в .gitignore проекта (если ещё нет)
-grep -q "^.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
+grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
   echo ".claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 ```
 
@@ -130,7 +130,7 @@ plan.toon               ← Planner пишет (перезаписывает п�
 plan-critique.toon      ← Critic[plan] пишет (переименовывается при retry)
                         → Planner читает при RETRY (READ-ONLY)
 
-report.md               ← Executor пишет
+report.json             ← Executor пишет (schema_version: "2.1.0")
                         → Critic[execution] читает
 
 execution-critique.toon ← Critic[execution] пишет
@@ -153,14 +153,14 @@ execution-critique.toon ← Critic[execution] пишет
 ```
 Workspace: /path/to/.claude/workspace/2026-02-17T1523
 Файлы: input.toon, research.toon, research-critique*.toon,
-       plan.toon, plan-critique*.toon, report.md, execution-critique.toon
+       plan.toon, plan-critique*.toon, report.json, execution-critique.toon
 
 Очистить workspace? [yes/keep]
 ```
 
 **По умолчанию:** `keep` — пользователь может изучить артефакты сессии.
 
-`report.md` рекомендуется сохранить как документацию принятых решений.
+`report.json` рекомендуется сохранить как документацию принятых решений.
 `*-critique.toon` содержат историю оценок качества — полезны для анализа.
 
 ## Error Handling

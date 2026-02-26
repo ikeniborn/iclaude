@@ -46,19 +46,32 @@ cd claude
 - **Сессии** - OSC 8 hyperlinks для навигации
 - **Oh My Posh** - кастомные темы
 
-### 🔒 Sandboxing
-- **OS-level изоляция** - файловая система и сеть
-- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap)
+### 🔒 Security Hooks
 
-### 🐙 GitHub Integration
-- **PR automation** - создание PR с автоматическим исправлением ошибок
-- **CI/CD мониторинг** - GitHub Actions checks
-- **gh CLI** - интеграция в изолированное окружение
+Двухуровневая защита от случайной утечки секретов в запросы к LLM:
 
-### 🧠 Auto Memory
-- **MEMORY.md** - persistent context в `.claude/memory/`
-- **Best practices** - первые 200 строк → system prompt
-- **Git versioning** - история изменений памяти
+| Хук | Триггер | Действие |
+|-----|---------|----------|
+| `block-secrets.py` | Путь к файлу (`.env`, `.pem`, `.ssh/`) | Блокирует операцию (exit 2) |
+| `redact-secrets.py` | Содержимое Write/Edit/Bash | Маскирует через `toolInputOverride` |
+
+**Покрытые форматы секретов:**
+- API keys: Anthropic, OpenAI, Stripe, OpenRouter (`sk-...`)
+- AWS: Access Key ID (`AKIA...`), Secret Access Key
+- GitHub: классические PAT (`ghp_`) и fine-grained PAT (`github_pat_`)
+- JWT, PEM private keys (RSA/EC/DSA/OPENSSH/ENCRYPTED)
+- URL credentials (`scheme://user:pass@host`) — любые схемы
+- Пароли в конфигах (с кавычками и без), `.env`-переменные
+
+**Важно:** `Edit.old_string` **не маскируется** намеренно — это поисковый паттерн, маскирование сломало бы операцию Edit.
+
+**Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+
+### 🛡️ Sandboxing
+- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
+- **Установка зависимостей** - `./iclaude.sh --sandbox-install`
+- **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
+- **Подробности** - см. раздел "Sandbox Limitations" в [CLAUDE.md](./CLAUDE.md)
 
 ### 📄 Sphinx Documentation
 - **Per-project** - работает в любом проекте, не только iclaude
@@ -70,19 +83,20 @@ cd claude
 - **Context Awareness** - автоопределение стека
 - **LSP Integration** - автоустановка Language Servers
 - **PR Automation** - создание PR + CI/CD мониторинг
-- **Ralph-Loop** - итеративное выполнение с автокоррекцией
+- **Agent Orchestrator** - пайплайн Researcher → Critic → Planner → Executor
 
 ### 🤖 Agent System
 
-Трёхуровневый пайплайн специализированных суб-агентов:
+Четырёхуровневый пайплайн специализированных суб-агентов:
 
 ```
-Пользователь → Researcher → [Gate] → Planner → [Gate] → Executor → report.md
+Пользователь → Researcher → [Critic] → [Gate] → Planner → [Critic] → [Gate] → Executor → [Critic] → Report
 ```
 
 | Агент | Что делает | Файлы |
 |-------|-----------|-------|
 | **Researcher** | Исследует кодовую базу (2 параллельных Explore) | → `research.toon` |
+| **Critic** | Оценивает артефакт (PASS/WARN/RETRY/ABORT) | → `*-critique.toon` |
 | **Planner** | Создаёт пошаговый план на основе research | → `plan.toon` |
 | **Executor** | Вносит изменения в код, валидирует, коммитит | → `report.md` |
 
@@ -91,7 +105,7 @@ cd claude
 /agent-orchestrator <описание задачи>
 ```
 
-**Артефакты** хранятся в `.iclaude/workspace/{session-id}/` (в `.gitignore`).
+**Артефакты** хранятся в `.claude/workspace/{session-id}/` (в `.gitignore`).
 Approval gates после каждого агента — можно остановиться на любом этапе.
 
 **Пример 1 — простая задача:**
@@ -124,10 +138,10 @@ Approval gates после каждого агента — можно остан�
 
 ### Специфичное
 - **[Прокси](./docs/PROXY.md)** - настройка HTTP/HTTPS/SOCKS5
-- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - решение проблем
 - **[Status Line](./docs/STATUSLINE.md)** - метрики в терминале
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
+- **[PII Masking](./docs/PII_MASKING.md)** - маскирование секретов (security hooks)
 
 ### Техническое
 - **[CLAUDE.md](./CLAUDE.md)** - архитектура проекта
@@ -259,13 +273,19 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── router/                         # Claude Code Router
 │   ├── lsp/                            # LSP server management
 │   ├── lockfile/                       # Version locking
-│   └── ...                             # 20+ модулей
+│   └── ...                             # 16 модулей
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
 │   └── .claude-isolated/               # Конфигурация + skills
 │       ├── skills/                     # Claude Code Skills
+│       ├── agents/                     # Agent pipeline (Researcher, Planner, Executor, Critic)
 │       ├── scripts/                    # Status Line и др.
-│       └── memory/                     # Auto Memory (MEMORY.md)
+│       ├── themes/                     # Oh My Posh темы
+│       └── hooks/                      # PreToolUse/PostToolUse хуки
+│           ├── block-secrets.py        # Блокировка по пути файла
+│           └── redact-secrets.py       # Маскирование содержимого
+├── .claude/                            # Конфигурация Claude Code
+│   └── skills/                         # Навыки проекта
 ├── .nvm-isolated-lockfile.json         # Version lockfile
 └── docs/                               # Документация
     └── sphinx/                         # Sphinx (HTML + llms.txt)
@@ -296,8 +316,10 @@ export DEEPSEEK_API_KEY="your-key"
 - `.nvm-isolated/` - изолированное окружение (опционально)
 - `.nvm-isolated-lockfile.json` - version lockfile
 - `.nvm-isolated/.claude-isolated/skills/` - skills
+- `.nvm-isolated/.claude-isolated/agents/` - agent pipeline
 - `.nvm-isolated/.claude-isolated/scripts/` - scripts
-- `.nvm-isolated/.claude-isolated/memory/` - MEMORY.md
+- `.nvm-isolated/.claude-isolated/themes/` - Oh My Posh темы
+- `.nvm-isolated/.claude-isolated/hooks/` - Claude Code хуки
 
 ---
 
@@ -320,9 +342,8 @@ MIT License
 - [Claude Code Docs](https://code.claude.com/docs)
 - [Claude API Docs](https://docs.anthropic.com)
 - [Claude Code Router](https://github.com/zckly/claude-code-router)
-- [Ralph Technique](https://ghuntley.com/ralph/)
 
 ---
 
 **Версия:** 4.0 (Modular Architecture)
-**Последнее обновление:** 2026-02-19
+**Последнее обновление:** 2026-02-25

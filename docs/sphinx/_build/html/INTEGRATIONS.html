@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Status Line Architecture Documentation" href="architecture/statusline-architecture.html"><link rel="prev" title="Use Cases" href="USE_CASES.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>Интеграции iclaude: AI-эффективность и возможности - iclaude Documentation</title>
@@ -202,7 +202,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Документация iclaude.sh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="INSTALLATION.html">Установка iclaude</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MIGRATION.html">Migration to Native Installer</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
@@ -213,20 +212,19 @@
 <li class="toctree-l1"><a class="reference internal" href="PROXY.html">Настройка прокси</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Features</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="STATUSLINE.html">Claude Statusline Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="USE_CASES.html">Use Cases</a></li>
-<li class="toctree-l1"><a class="reference internal" href="features/context-monitoring.html">Context Window Monitoring для iclaude.sh</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Интеграции iclaude: AI-эффективность и возможности</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="architecture/statusline-architecture.html">Status Line Architecture Documentation</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Development</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="PLANNING.html">Planning Mode Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MODULARIZATION-COMPLETE.html">iclaudeiclaude.sh Modularization - COMPLETE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="REMAINING_WORK.html">Оставшаяся работа по модуляризации iclaude.sh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/README.html">Архитектурные диаграммы iclaude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-isolated-installation.html">Поток изолированной установки</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-oauth-token-refresh.html">Поток обновления OAuth токена</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -1305,8 +1303,26 @@
       <footer>
         
         <div class="related-pages">
-          
-          
+          <a class="next-page" href="architecture/statusline-architecture.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Status Line Architecture Documentation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="USE_CASES.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Use Cases</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
