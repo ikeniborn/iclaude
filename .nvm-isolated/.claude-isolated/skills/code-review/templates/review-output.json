@@ -2,7 +2,7 @@
   "$comment": "Code review output template with Architecture Compliance, LSP diagnostics. v1.4.0",
   "$comment_determinism": "All suggestion fields follow canonical format: {VERB} {SPECIFIC_TARGET} {CRITERION}. See rules/determinism.md Rule D-4.",
   "code_review": {
-    "score": 75,
+    "score": 55,
     "passed": false,
     "blocking_issues": [
       {
@@ -112,10 +112,10 @@
         "issues": 0
       },
       "type_safety": {
-        "score": 5,
+        "score": 0,
         "max": 10,
         "issues": 3,
-        "$comment": "issues: 2 LSP diagnostics (error=-10pts, warning=-5pts) + 1 regex warning. score = max(0, 10 - 10 - 5) = 0; shown as 5 for illustration."
+        "$comment": "issues: 1 regex warning (missing_type_hint, -5pts) + 1 LSP error (str->int, -10pts) + 1 LSP warning (unusedVar, -5pts). score = max(0, 10 - 5 - 10 - 5) = 0"
       }
     },
     "files_reviewed": [
@@ -127,6 +127,7 @@
     ],
     "lsp_available": true,
     "architecture_available": true,
+    "$comment_score": "score=55: arch(5=25-10-10)+sec(15=25-10)+cq(20=25-5)+eh(15)+ts(0=10-5-10-5). All max(0,...) applied.",
     "$comment": [
       "lsp_available: true когда lsp_status.status == 'READY'",
       "architecture_available: true когда docs/architecture/overview.yaml существует и yq/jq доступны",

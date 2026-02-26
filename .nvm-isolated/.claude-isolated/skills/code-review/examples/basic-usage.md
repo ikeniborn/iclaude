@@ -92,8 +92,7 @@ passed = blocking_issues.length === 0
         "line": 15,
         "rule": "missing_type_hint",
         "message": "Missing type hint for function parameter `data`",
-        "suggestion": "Add type annotation to parameter `data` in `process_data()` (models.py:15) as `data: dict` until pyright reports no missing-type-hints for this function",
-        "source": "pyright"
+        "suggestion": "Add type annotation to parameter `data` in `process_data()` (models.py:15) as `data: dict` until pyright reports no missing-type-hints for this function"
       }
     ],
     "lsp_diagnostics": [
@@ -105,7 +104,7 @@ passed = blocking_issues.length === 0
         "column": 12,
         "message": "Type 'str' is not assignable to type 'int'",
         "code": "reportGeneralTypeIssues",
-        "suggestion": "Add type conversion: int(value)"
+        "suggestion": "Add type conversion wrapping `value` at service.py:45 as `int(value)` until pyright reportGeneralTypeIssues is resolved for this line"
       }
     ],
     "metrics": {
@@ -142,12 +141,12 @@ passed = blocking_issues.length === 0
 - src/models.py:15 [missing_type_hint] Missing type hint for parameter `data`
   Fix: Add type annotation to parameter `data` in `process_data()` (models.py:15)
        as `data: dict` until pyright reports no missing-type-hints for this function
-  Source: pyright LSP
 
 🔍 LSP Diagnostics (1):
 - src/service.py:45:12 [reportGeneralTypeIssues] Type 'str' is not assignable to 'int'
   Source: pyright
-  Fix: Add type conversion: int(value)
+  Fix: Add type conversion wrapping `value` at service.py:45 as `int(value)`
+       until pyright reportGeneralTypeIssues is resolved for this line
 
 📊 Metrics:
 | Category               | Score | Max | Issues |
@@ -196,12 +195,12 @@ passed = blocking_issues.length === 0
 **When LSP available (lsp_status.status == "READY"):**
 ```
 1. Request LSP diagnostics for changed files
-2. Parse diagnostics:
-   - severity: "error" → BLOCKING issue
-   - severity: "warning" → WARNING issue
-   - severity: "information" → INFO suggestion
-3. Merge into code_review.warnings[] with category: "type_safety"
-4. Enhanced scoring: LSP errors = -10 points (instead of -5)
+2. Map severity:
+   - severity: "error" → lsp_diagnostics[] only; score penalty: -10
+   - severity: "warning" → warnings[] (category: "type_safety") + lsp_diagnostics[]; score penalty: -5
+   - severity: "information" → lsp_diagnostics[] only; no score penalty
+3. passed = blocking_issues.length === 0 (LSP errors do NOT affect passed)
+4. Enhanced scoring: LSP errors = -10 points, LSP warnings = -5 points (see Rule D-8)
 ```
 
 **Without LSP:**
