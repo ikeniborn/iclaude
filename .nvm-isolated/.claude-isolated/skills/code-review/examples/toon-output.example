@@ -1,8 +1,11 @@
 /**
  * Code Review TOON Output Example
  *
- * Demonstrates hybrid JSON + TOON format for code-review skill output
- * Generated when warnings.length >= 5 OR lsp_diagnostics.length >= 5
+ * Demonstrates hybrid JSON + TOON format for code-review skill output.
+ * Generated when warnings.length >= 5 OR lsp_diagnostics.length >= 5.
+ *
+ * All suggestion fields follow canonical format: {VERB} {SPECIFIC_TARGET} {CRITERION}
+ * See rules/determinism.md Rule D-4.
  */
 
 // ============================================
@@ -11,15 +14,17 @@
 
 {
   "code_review": {
-    "score": 72,
+    "score": 35,
+    "passed": false,
     "blocking_issues": [
       {
         "category": "security",
         "file": "api/auth.py",
         "line": 156,
         "severity": "BLOCKING",
-        "message": "SQL injection vulnerability detected",
-        "suggestion": "Use parameterized queries or ORM"
+        "rule": "sql_injection",
+        "message": "SQL injection: f-string used in DB query (auth.py:156)",
+        "suggestion": "Replace f-string in `authenticate()` (auth.py:156) with `cursor.execute(query, (user_id,))` until no f-string/%-format is used in DB queries in this function"
       }
     ],
     "warnings": [
@@ -28,318 +33,153 @@
         "file": "services/user_service.py",
         "line": 42,
         "severity": "WARNING",
-        "message": "Function too long (85 lines)",
-        "suggestion": "Extract helper methods for readability"
+        "rule": "function_too_long",
+        "message": "Function too long (85 lines, limit: 50)",
+        "suggestion": "Split `process_user()` (user_service.py:42-126) into sub-functions until each function in user_service.py:42-126 is ≤50 lines"
       },
       {
         "category": "code_quality",
         "file": "services/payment_service.py",
         "line": 128,
         "severity": "WARNING",
-        "message": "High cyclomatic complexity (15)",
-        "suggestion": "Simplify conditional logic"
+        "rule": "high_complexity",
+        "message": "High cyclomatic complexity (15, limit: 10)",
+        "suggestion": "Split `process_payment()` (payment_service.py:128) into smaller functions until cyclomatic complexity ≤10 for this function"
       },
       {
         "category": "error_handling",
         "file": "utils/validator.py",
         "line": 67,
         "severity": "WARNING",
-        "message": "Empty catch block",
-        "suggestion": "Add error logging or re-throw"
+        "rule": "empty_catch",
+        "message": "Empty except block at validator.py:67",
+        "suggestion": "Wrap bare `except` at validator.py:67 with logging or re-raise until no silent exception swallowing exists in this block"
       },
       {
         "category": "code_quality",
         "file": "models/product.py",
         "line": 234,
-        "severity": "INFO",
-        "message": "Magic number detected (42)",
-        "suggestion": "Extract to named constant"
+        "severity": "WARNING",
+        "rule": "magic_number",
+        "message": "Magic number 42 at product.py:234",
+        "suggestion": "Replace literal `42` at product.py:234 with named constant `MAX_RETRY_COUNT = 42` until no bare numeric literal appears in this expression"
       },
       {
         "category": "code_quality",
         "file": "api/handlers.py",
         "line": 89,
         "severity": "WARNING",
-        "message": "Code duplication detected (similarity: 87%)",
-        "suggestion": "Extract common logic to shared function"
+        "rule": "code_duplication",
+        "message": "Code duplication detected (similarity: 87% with handlers.py:120)",
+        "suggestion": "Extract duplicated block at handlers.py:89 (and handlers.py:120) into shared helper function until duplication ratio <50% between these blocks"
       },
       {
         "category": "type_safety",
         "file": "utils/helpers.py",
         "line": 23,
         "severity": "INFO",
-        "message": "Missing type hints on function parameters",
-        "suggestion": "Add type annotations for better IDE support"
+        "rule": "missing_type_hint",
+        "message": "Missing type hints on function parameters at helpers.py:23",
+        "suggestion": "Add type annotations to all parameters of `format_response()` (helpers.py:23) until pyright reports no missing-type-hints for this function"
       },
       {
         "category": "security",
         "file": "config/settings.py",
         "line": 12,
         "severity": "WARNING",
-        "message": "Hardcoded secret detected",
-        "suggestion": "Use environment variables or secrets manager"
+        "rule": "hardcoded_secret",
+        "message": "Hardcoded secret: DB_PASSWORD assigned a string literal (settings.py:12)",
+        "suggestion": "Replace literal value of `DB_PASSWORD` at settings.py:12 with `os.environ.get('DB_PASSWORD')` until no string literal is assigned to secret variables in this file"
       },
       {
         "category": "code_quality",
         "file": "services/email_service.py",
         "line": 145,
         "severity": "WARNING",
-        "message": "Deep nesting detected (5 levels)",
-        "suggestion": "Use guard clauses or early returns"
+        "rule": "deep_nesting",
+        "message": "Deep nesting detected (5 levels, limit: 4) at email_service.py:145",
+        "suggestion": "Refactor `send_notification()` (email_service.py:145) using guard clauses until max nesting depth ≤4 in this function"
       },
       {
         "category": "error_handling",
         "file": "api/webhooks.py",
         "line": 178,
         "severity": "WARNING",
-        "message": "Unhandled promise rejection",
-        "suggestion": "Add .catch() or try-catch wrapper"
+        "rule": "unhandled_promise",
+        "message": "Unhandled promise rejection at webhooks.py:178",
+        "suggestion": "Wrap promise at webhooks.py:178 with `.catch(handler)` or `try/except` until no unhandled promise rejections exist in this function"
       },
       {
         "category": "code_quality",
         "file": "utils/cache.py",
         "line": 56,
         "severity": "INFO",
-        "message": "Unused import: datetime",
-        "suggestion": "Remove unused import"
+        "rule": "unused_import",
+        "message": "Unused import: `datetime` at cache.py:56",
+        "suggestion": "Remove `import datetime` at cache.py:56 until no unused imports remain in this file"
       },
       {
         "category": "security",
         "file": "api/upload.py",
         "line": 203,
         "severity": "WARNING",
-        "message": "Path traversal vulnerability",
-        "suggestion": "Sanitize file paths and validate against whitelist"
+        "rule": "path_traversal",
+        "message": "Path traversal: unsanitized filename used in open() at upload.py:203",
+        "suggestion": "Wrap `filename` at upload.py:203 with `os.path.basename(filename)` before passing to `os.path.join()` until no unsanitized user input is used in file paths in this function"
       },
       {
         "category": "code_quality",
         "file": "tests/test_integration.py",
         "line": 312,
         "severity": "WARNING",
-        "message": "Test function too long (120 lines)",
-        "suggestion": "Split into smaller test cases"
+        "rule": "function_too_long",
+        "message": "Test function too long (120 lines, limit: 50)",
+        "suggestion": "Split `test_checkout_flow()` (test_integration.py:312-431) into smaller test functions until each test function is ≤50 lines"
       },
       {
         "category": "type_safety",
         "file": "models/order.py",
         "line": 78,
         "severity": "INFO",
-        "message": "Implicit type conversion detected",
-        "suggestion": "Add explicit cast for clarity"
+        "rule": "implicit_type_conversion",
+        "message": "Implicit type conversion at order.py:78",
+        "suggestion": "Add explicit cast at order.py:78 as `int(total_amount)` until no implicit numeric conversions appear in this expression"
       },
       {
         "category": "error_handling",
         "file": "services/notification.py",
         "line": 91,
         "severity": "WARNING",
-        "message": "Missing null check on API response",
-        "suggestion": "Validate response before accessing properties"
+        "rule": "missing_null_check",
+        "message": "Missing null check on API response at notification.py:91",
+        "suggestion": "Add null guard before `response.data` access at notification.py:91 as `if response and response.data:` until no unguarded attribute access on nullable API response in this function"
       },
       {
         "category": "code_quality",
         "file": "background/tasks.py",
         "line": 267,
         "severity": "WARNING",
-        "message": "Potential memory leak in long-running task",
-        "suggestion": "Release resources explicitly or use context manager"
+        "rule": "resource_leak",
+        "message": "Potential resource leak in long-running task at tasks.py:267",
+        "suggestion": "Wrap resource allocation at tasks.py:267 in `with` context manager until no manual resource cleanup is needed in this function"
       }
-    ],
-    "suggestions": [
-      "Consider adding docstrings to public functions",
-      "Review error handling strategy across the codebase",
-      "Update dependencies: 3 packages have security updates"
     ],
     "passed": false,
+    "metrics": {
+      "architecture_compliance": {"score": 25, "max": 25, "issues": 0},
+      "security": {"score": 10, "max": 25, "issues": 2},
+      "code_quality": {"score": 0, "max": 25, "issues": 8},
+      "error_handling": {"score": 0, "max": 15, "issues": 4},
+      "type_safety": {"score": 0, "max": 10, "issues": 3}
+    },
+    "$comment_score": "score=35: arch(25)+sec(10=25-10blocking-5warning)+cq(0=25-40)+eh(0=15-20)+ts(0=10-15). All max(0,...) applied.",
+    "lsp_available": false,
+    "architecture_available": true,
     "toon": {
-      "warnings_toon": "warnings[15]{category,file,line,severity,message,suggestion}:\n  code_quality,services/user_service.py,42,WARNING,Function too long (85 lines),Extract helper methods for readability\n  code_quality,services/payment_service.py,128,WARNING,High cyclomatic complexity (15),Simplify conditional logic\n  error_handling,utils/validator.py,67,WARNING,Empty catch block,Add error logging or re-throw\n  code_quality,models/product.py,234,INFO,Magic number detected (42),Extract to named constant\n  code_quality,api/handlers.py,89,WARNING,Code duplication detected (similarity: 87%),Extract common logic to shared function\n  type_safety,utils/helpers.py,23,INFO,Missing type hints on function parameters,Add type annotations for better IDE support\n  security,config/settings.py,12,WARNING,Hardcoded secret detected,Use environment variables or secrets manager\n  code_quality,services/email_service.py,145,WARNING,Deep nesting detected (5 levels),Use guard clauses or early returns\n  error_handling,api/webhooks.py,178,WARNING,Unhandled promise rejection,Add .catch() or try-catch wrapper\n  code_quality,utils/cache.py,56,INFO,Unused import: datetime,Remove unused import\n  security,api/upload.py,203,WARNING,Path traversal vulnerability,Sanitize file paths and validate against whitelist\n  code_quality,tests/test_integration.py,312,WARNING,Test function too long (120 lines),Split into smaller test cases\n  type_safety,models/order.py,78,INFO,Implicit type conversion detected,Add explicit cast for clarity\n  error_handling,services/notification.py,91,WARNING,Missing null check on API response,Validate response before accessing properties\n  code_quality,background/tasks.py,267,WARNING,Potential memory leak in long-running task,Release resources explicitly or use context manager",
-      "token_savings": "43.2%",
-      "size_comparison": "JSON: 3450 tokens, TOON: 1960 tokens"
+      "warnings_toon": "warnings[15]{category,file,line,severity,rule,message}:\n  code_quality,services/user_service.py,42,WARNING,function_too_long,Function too long (85 lines limit: 50)\n  code_quality,services/payment_service.py,128,WARNING,high_complexity,High cyclomatic complexity (15 limit: 10)\n  error_handling,utils/validator.py,67,WARNING,empty_catch,Empty except block\n  code_quality,models/product.py,234,WARNING,magic_number,Magic number 42\n  code_quality,api/handlers.py,89,WARNING,code_duplication,Code duplication (87% similarity with handlers.py:120)\n  type_safety,utils/helpers.py,23,INFO,missing_type_hint,Missing type hints on function parameters\n  security,config/settings.py,12,WARNING,hardcoded_secret,Hardcoded secret DB_PASSWORD\n  code_quality,services/email_service.py,145,WARNING,deep_nesting,Deep nesting (5 levels limit: 4)\n  error_handling,api/webhooks.py,178,WARNING,unhandled_promise,Unhandled promise rejection\n  code_quality,utils/cache.py,56,INFO,unused_import,Unused import: datetime\n  security,api/upload.py,203,WARNING,path_traversal,Path traversal: unsanitized filename in open()\n  code_quality,tests/test_integration.py,312,WARNING,function_too_long,Test function too long (120 lines limit: 50)\n  type_safety,models/order.py,78,INFO,implicit_type_conversion,Implicit type conversion\n  error_handling,services/notification.py,91,WARNING,missing_null_check,Missing null check on API response\n  code_quality,background/tasks.py,267,WARNING,resource_leak,Potential resource leak in long-running task",
+      "token_savings": "38.1%",
+      "size_comparison": "JSON: 4120 tokens, TOON: 2550 tokens",
+      "$comment": "TOON omits suggestion field for token savings; full canonical suggestions available in warnings[] JSON above"
     }
   }
 }
-
-// ============================================
-// Example 2: Code Review with LSP Diagnostics
-// ============================================
-
-{
-  "code_review": {
-    "score": 78,
-    "blocking_issues": [],
-    "warnings": [
-      {
-        "category": "code_quality",
-        "file": "src/app.ts",
-        "line": 23,
-        "severity": "WARNING",
-        "message": "Function complexity too high (12)",
-        "suggestion": "Refactor into smaller functions"
-      },
-      {
-        "category": "security",
-        "file": "src/api/auth.ts",
-        "line": 156,
-        "severity": "WARNING",
-        "message": "Potential XSS vulnerability in template rendering",
-        "suggestion": "Use sanitized template engine"
-      }
-    ],
-    "lsp_diagnostics": [
-      {
-        "file": "src/app.ts",
-        "line": 15,
-        "severity": "error",
-        "code": "TS2322",
-        "message": "Type 'string' is not assignable to type 'number'"
-      },
-      {
-        "file": "src/utils.ts",
-        "line": 89,
-        "severity": "warning",
-        "code": "TS6133",
-        "message": "Variable 'unused' is declared but never used"
-      },
-      {
-        "file": "src/services/user.ts",
-        "line": 45,
-        "severity": "error",
-        "code": "TS2345",
-        "message": "Argument of type 'undefined' is not assignable to parameter of type 'string'"
-      },
-      {
-        "file": "src/models/product.ts",
-        "line": 67,
-        "severity": "warning",
-        "code": "TS2769",
-        "message": "No overload matches this call"
-      },
-      {
-        "file": "src/api/handlers.ts",
-        "line": 123,
-        "severity": "error",
-        "code": "TS2339",
-        "message": "Property 'email' does not exist on type 'User'"
-      },
-      {
-        "file": "src/config/settings.ts",
-        "line": 34,
-        "severity": "warning",
-        "code": "TS2531",
-        "message": "Object is possibly 'null'"
-      },
-      {
-        "file": "src/background/tasks.ts",
-        "line": 178,
-        "severity": "information",
-        "code": "TS7006",
-        "message": "Parameter 'data' implicitly has an 'any' type"
-      }
-    ],
-    "suggestions": [
-      "Enable strict null checks in tsconfig.json",
-      "Add explicit return types to all public functions",
-      "Consider using unknown instead of any for better type safety"
-    ],
-    "passed": true,
-    "toon": {
-      "lsp_diagnostics_toon": "lsp_diagnostics[7]{file,line,severity,code,message}:\n  src/app.ts,15,error,TS2322,Type 'string' is not assignable to type 'number'\n  src/utils.ts,89,warning,TS6133,Variable 'unused' is declared but never used\n  src/services/user.ts,45,error,TS2345,Argument of type 'undefined' is not assignable to parameter of type 'string'\n  src/models/product.ts,67,warning,TS2769,No overload matches this call\n  src/api/handlers.ts,123,error,TS2339,Property 'email' does not exist on type 'User'\n  src/config/settings.ts,34,warning,TS2531,Object is possibly 'null'\n  src/background/tasks.ts,178,information,TS7006,Parameter 'data' implicitly has an 'any' type",
-      "token_savings": "48.5%",
-      "size_comparison": "JSON: 1850 tokens, TOON: 953 tokens"
-    }
-  }
-}
-
-// ============================================
-// Example 3: Combined Warnings + LSP (Maximum Savings)
-// ============================================
-
-{
-  "code_review": {
-    "score": 65,
-    "blocking_issues": [
-      {
-        "category": "architecture",
-        "file": "src/services/payment.ts",
-        "line": 0,
-        "severity": "BLOCKING",
-        "message": "Component 'payment-service' creates circular dependency with 'order-service'",
-        "suggestion": "Refactor to break circular dependency"
-      }
-    ],
-    "warnings": [
-      // ... 12 warnings (omitted for brevity)
-    ],
-    "lsp_diagnostics": [
-      // ... 38 LSP diagnostics (omitted for brevity)
-    ],
-    "suggestions": [
-      "Run architecture-documentation skill to update component diagram",
-      "Fix type errors before committing",
-      "Review security vulnerabilities marked as BLOCKING"
-    ],
-    "passed": false,
-    "toon": {
-      "warnings_toon": "warnings[12]{category,file,line,severity,message,suggestion}:\n  ...",
-      "lsp_diagnostics_toon": "lsp_diagnostics[38]{file,line,severity,code,message}:\n  ...",
-      "token_savings": "45.8%",
-      "size_comparison": "JSON: 5230 tokens, TOON: 2834 tokens"
-    }
-  }
-}
-
-// ============================================
-// Example 4: Below Threshold (No TOON)
-// ============================================
-
-{
-  "code_review": {
-    "score": 92,
-    "blocking_issues": [],
-    "warnings": [
-      {
-        "category": "code_quality",
-        "file": "src/utils.ts",
-        "line": 23,
-        "severity": "INFO",
-        "message": "Consider using const instead of let",
-        "suggestion": "Change to const for immutability"
-      },
-      {
-        "category": "type_safety",
-        "file": "src/models.ts",
-        "line": 45,
-        "severity": "INFO",
-        "message": "Missing return type annotation",
-        "suggestion": "Add explicit return type"
-      }
-    ],
-    "suggestions": [
-      "Great work! Code quality is excellent"
-    ],
-    "passed": true
-    // NO toon field - only 2 warnings (below threshold of 5)
-  }
-}
-
-/**
- * Token Savings Breakdown:
- *
- * Example 1 (15 warnings):
- * - JSON: 3450 tokens
- * - TOON: 1960 tokens
- * - Savings: 43.2% (1490 tokens saved)
- *
- * Example 2 (7 LSP diagnostics):
- * - JSON: 1850 tokens
- * - TOON: 953 tokens
- * - Savings: 48.5% (897 tokens saved)
- *
- * Example 3 (12 warnings + 38 LSP diagnostics):
- * - JSON: 5230 tokens
- * - TOON: 2834 tokens
- * - Savings: 45.8% (2396 tokens saved!)
- *
- * Example 4 (2 warnings):
- * - No TOON generation (below threshold)
- * - JSON only: 420 tokens
- */

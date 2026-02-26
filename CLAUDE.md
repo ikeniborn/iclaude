@@ -16,6 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Automatic OAuth token refresh** using `claude setup-token` (long-lived ~1 year tokens)
 - **Claude Code Router integration** for alternative LLM providers (OpenRouter, DeepSeek, Ollama, Gemini)
 - **Two-layer security hooks** — block sensitive file access + redact secrets in content
+- **PII proxy** — Python HTTP proxy with Presidio NLP masking 100% of Anthropic API traffic
 
 ## Quick Start
 
@@ -202,6 +203,38 @@ Opt-in activation for alternative LLM providers:
 - **Launch:** `./iclaude.sh --router` (default: native Claude)
 - **Proxy compatible:** Inherits `HTTPS_PROXY` environment variables
 
+### PII Proxy (API Traffic Masking)
+
+Python HTTP proxy that intercepts 100% of Anthropic API traffic to mask PII and secrets:
+- **Masking scope:** system prompt, `messages[].content`, `tool_results` — all content types
+- **Engine:** Presidio NLP (when installed) + deterministic regex fallback (always active)
+- **Regex patterns:** API keys, JWT, AWS credentials, PEM keys, GitHub tokens, passwords, credit cards
+- **Transport:** SSE streaming pass-through (no buffering for real-time responses)
+
+**Setup:**
+```bash
+# Install Python venv + Presidio NLP (~500MB, one-time)
+./iclaude.sh --install-pii-proxy
+
+# Check installation
+./iclaude.sh --check-pii-proxy
+
+# Enable permanently
+echo 'USE_PII_PROXY=true' >> .claude_config
+
+# Enable for one session
+./iclaude.sh --pii-proxy
+```
+
+**Architecture:** `claude → PII proxy (:9000) → Anthropic API`
+
+- `ANTHROPIC_BASE_URL=http://127.0.0.1:9000` set before launch
+- `ANTHROPIC_UPSTREAM_URL` preserves original upstream (Anthropic or CCR)
+- Proxy started as background process; cleaned up via `trap EXIT` on claude exit
+- Note: `--pii-proxy` and `--router` are mutually exclusive (CCR spawns its own claude child)
+
+**Documentation:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+
 ### Status Line
 
 Custom status line script showing real-time metrics. See **[docs/STATUSLINE.md](../../../docs/STATUSLINE.md)** for complete documentation.
@@ -344,6 +377,10 @@ PATH="$ISOLATED_NVM_DIR/npm-global/bin:$ISOLATED_NVM_DIR/versions/node/.../bin:$
 
 # Claude Code features
 CLAUDE_CODE_ENABLE_TASKS="true"  # Enable tasks system
+
+# PII proxy (set by iclaude.sh when --pii-proxy active)
+ANTHROPIC_BASE_URL="http://127.0.0.1:9000"     # Redirects claude API traffic to proxy
+ANTHROPIC_UPSTREAM_URL="https://api.anthropic.com"  # Proxy forwards here (or CCR URL)
 ```
 
 ## Modular Architecture
@@ -370,7 +407,8 @@ lib/
 ├── statusline/    # Status line integration
 ├── chrome/        # Chrome integration detection
 ├── ohmyposh/      # oh-my-posh integration
-└── sandbox/       # Sandbox environment detection
+├── sandbox/       # Sandbox environment detection
+└── pii-proxy/     # PII/secrets masking HTTP proxy (Presidio NLP)
 ```
 
 **Module loading:** All modules are sourced in `iclaude.sh` entry point. Each module is self-contained and reusable.
@@ -592,4 +630,5 @@ TypeScript, Python, Go, Rust, C#, Java, Kotlin, Lua, PHP, C/C++, Swift
 7. **Router API Keys:** Store in `.claude_config` as `export DEEPSEEK_API_KEY=...`; referenced in `router.json` via `${VAR}` placeholders
 8. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` — block sensitive file access and redact secrets in content; portable via `$CLAUDE_PROJECT_DIR` (works across machines/users)
 9. **Hook Portability:** `settings.json` uses `$CLAUDE_PROJECT_DIR` (set by Claude Code at runtime) instead of absolute paths — safe to commit to git
+10. **PII Proxy:** When enabled, all API traffic (system prompt + messages + tool_results) is masked before reaching Anthropic servers; runs on localhost only (127.0.0.1)
 

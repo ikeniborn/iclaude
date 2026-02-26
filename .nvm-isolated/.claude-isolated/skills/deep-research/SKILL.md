@@ -76,6 +76,9 @@ context: fork
 
 ### Шаг 2: Подготовка Workspace
 
+**ОБЯЗАТЕЛЬНО:** Вызови `Bash()` tool — без этого шага переменная `WORKSPACE` не будет определена
+и Шаг 3 запишет файл в неправильное место:
+
 ```bash
 PROJECT_ROOT=$(pwd)
 SESSION_ID=$(date +%Y-%m-%dT%H%M)
@@ -86,6 +89,8 @@ mkdir -p "${WORKSPACE}"
 grep -q "^\.claude/workspace/" "${PROJECT_ROOT}/.gitignore" 2>/dev/null || \
   echo -e "\n# Claude Code Agent Workspace\n.claude/workspace/" >> "${PROJECT_ROOT}/.gitignore"
 ```
+
+Сохранить значение `WORKSPACE` — оно будет использоваться во всех следующих шагах.
 
 ### Шаг 3: Записать deep-research-request.toon
 
