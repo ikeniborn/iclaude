@@ -1,6 +1,12 @@
 # Working directory (should not be in repository)
 /opt/vless/
 
+# Python cache (global)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Environment files
 .env
 *.env.local
@@ -71,9 +77,7 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**
-.nvm-isolated/.claude-isolated/hooks/__pycache__/
-.nvm-isolated/.claude-isolated/hooks/**/__pycache__/
-.nvm-isolated/.claude-isolated/hooks/**/*.pyc
+# (Python cache rules covered by global __pycache__/ rule above)
 
 # Router configuration (only example in git, actual config ignored)
 !.nvm-isolated/.claude-isolated/router.json.example

@@ -14,7 +14,6 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 
 ../README
 ../INSTALLATION
-../MIGRATION
 ```
 
 ```{toctree}
@@ -35,8 +34,6 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 ../STATUSLINE
 ../USE_CASES
 ../INTEGRATIONS
-../features/README
-../features/context-monitoring
 ```
 
 ```{toctree}
@@ -53,11 +50,13 @@ Bash-based wrapper for Claude Code with automatic proxy configuration, isolated 
 
 ```{toctree}
 :maxdepth: 1
-:caption: Development
+:caption: Advanced Topics
 
-../PLANNING
-../MODULARIZATION-COMPLETE
-../REMAINING_WORK
+../ROUTER
+../CLAUDE_CODE_BACKEND
+../PII_MASKING
+../SECURITY_PATTERNS_IMPROVEMENTS
+../SECURITY_RESEARCH
 ```
 
 ```{toctree}
