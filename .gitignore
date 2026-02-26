@@ -122,6 +122,15 @@ scripts/.claude_proxy_credentials  # Legacy
 !.claude/skills/**
 .claude/sessions
 
+# Code review runtime artifacts (review reports, TOON output)
+# Covered by .claude/* above; explicit entry for documentation clarity
+.claude/code-review/
+
+# TOON runtime artifacts — session files from all skills (code-review, researcher, etc.)
+# All skills MUST write .toon files to .claude/<skill>/ — never to project root
+# This rule catches violations (files written to wrong location)
+*.toon
+
 # Test fixtures with mock secrets (not committed)
 tests/fixtures/
 
