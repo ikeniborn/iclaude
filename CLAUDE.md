@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - TLS certificate support for HTTPS proxies
 - **Automatic OAuth token refresh** using `claude setup-token` (long-lived ~1 year tokens)
 - **Claude Code Router integration** for alternative LLM providers (OpenRouter, DeepSeek, Ollama, Gemini)
+- **Two-layer security hooks** — block sensitive file access + redact secrets in content
 
 ## Quick Start
 
@@ -90,6 +91,17 @@ cd iclaude
 
 # Validate script syntax
 bash -n iclaude.sh
+
+# Run security hooks test suite (28 tests)
+python3 -m pytest tests/test_patterns_examples.py -v
+
+# Test block-secrets hook manually (should print "BLOCKED" and exit 2)
+echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
+  | python3 .nvm-isolated/.claude-isolated/hooks/block-secrets.py; echo "exit: $?"
+
+# Test redact-secrets hook manually (should return toolInputOverride with masked content)
+echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVabcdef"}}' \
+  | python3 .nvm-isolated/.claude-isolated/hooks/redact-secrets.py
 ```
 
 ### Installation Management
@@ -199,6 +211,62 @@ Custom status line script showing real-time metrics. See **[docs/STATUSLINE.md](
 - **Format:** `112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1.06 [proxy] [router]provider [session] branch`
 - **Features:** Dual context tracking, cache visibility, session links, append-only optimization
 
+### Security Hooks (PreToolUse)
+
+Two-layer protection for sensitive data, active during all Claude Code sessions. Hooks are configured in `.nvm-isolated/.claude-isolated/settings.json` using portable `$CLAUDE_PROJECT_DIR` paths — works across different machines and users without manual path edits.
+
+**Layer 1: `block-secrets.py`** — File path blocker
+
+Intercepts Read/Edit/Write/MultiEdit/Bash calls. Blocks access to sensitive files by path pattern before the tool executes.
+
+| Pattern | Action |
+|---------|--------|
+| `.env`, `.env.local`, `.env.production` | Blocked (реальные секреты) |
+| `.pem`, `.key`, `.p12`, `.pfx` | Blocked (криптоключи) |
+| `.ssh/`, `.gnupg/` | Blocked (системные ключи) |
+| `.env.example`, `.env.sample`, `.env.template` | Allowed (безопасные суффиксы) |
+| `.nvm-isolated/.claude-isolated/hooks/` | Allowed (самоисключение) |
+
+Exit codes: `2` = block (tool NOT executed), `0` = allow
+
+**Layer 2: `redact-secrets.py`** — Content redactor
+
+Intercepts Write/Edit/MultiEdit/Bash calls. Rewrites tool arguments via `toolInputOverride` to mask secrets **before** they reach the tool (and before any logging).
+
+| Pattern | Replacement |
+|---------|-------------|
+| Anthropic/OpenAI keys (`sk-ant-...`, `sk-proj-...`) | `[ANTHROPIC_API_KEY]` |
+| AWS Access Key (`AKIA[0-9A-Z]{16}`) | `[AWS_ACCESS_KEY_ID]` |
+| GitHub tokens (`ghp_`, `github_pat_`) | `[GITHUB_TOKEN]` |
+| JWT tokens (`eyJ...header.payload.sig`) | `[JWT_REDACTED]` |
+| URL credentials (`scheme://user:pass@host`) | `[CREDENTIALS_REDACTED]` |
+| Password assignments (`password = value`) | `[PASSWORD_REDACTED]` |
+| `.env` variables (`VAR_WITH_KEY=value{20+}`) | `[ENV_VAR_REDACTED]` |
+| PEM private keys (`BEGIN ... PRIVATE KEY`) | `[PRIVATE_KEY_REDACTED]` |
+
+**Note:** `Edit.old_string` is NOT redacted — it's a search pattern; masking would break the Edit tool.
+
+**Configuration** (portable paths via `$CLAUDE_PROJECT_DIR`):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|Bash",
+        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/block-secrets.py\""}]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/redact-secrets.py\""}]
+      }
+    ]
+  }
+}
+```
+
+**Documentation:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+
 ## Code Architecture
 
 ### Main Components
@@ -238,6 +306,11 @@ For detailed architecture documentation, see **@skill:iclaude-architecture**.
 8. **Router Management** (lib/router/*.sh)
    - Opt-in activation via `--router` flag
    - Configuration with environment variable substitution
+
+9. **Security Hooks** (.nvm-isolated/.claude-isolated/hooks/)
+   - PreToolUse interception: file path blocking + content redaction
+   - Portable `$CLAUDE_PROJECT_DIR` paths for cross-machine compatibility
+   - Test suite: `tests/test_patterns_examples.py` (28 tests)
 
 ### Critical Functions
 
@@ -322,7 +395,10 @@ lib/
 │       ├── history.jsonl              # Command history
 │       ├── session-env/               # Active sessions
 │       ├── .credentials.json          # Anthropic credentials
-│       ├── settings.json              # User settings
+│       ├── settings.json              # User settings (in git)
+│       ├── hooks/                     # PreToolUse security hooks (in git)
+│       │   ├── block-secrets.py       # File path blocker (exit 2 = block)
+│       │   └── redact-secrets.py      # Content redactor (toolInputOverride)
 │       ├── skills/                    # Claude Code skills
 │       ├── projects/                  # Project configs
 │       └── scripts/                   # Custom scripts
@@ -421,19 +497,7 @@ find /path/to/project/.claude -maxdepth 1 -type f -empty -perm 444 \
 | `block-secrets.py` | PreToolUse (Read/Edit/Write/Bash) | Блокирует по ПУТИ файла (exit 2) |
 | `redact-secrets.py` | PreToolUse (Write/Edit/MultiEdit/Bash) | Маскирует СОДЕРЖИМОЕ через `toolInputOverride` |
 
-**`block-secrets.py`** при работе агентов в других проектах:
-- `.env`, `.env.local`, `.env.production` — блокируются (реальные секреты)
-- `.env.example`, `.env.sample`, `.env.template` — разрешены (шаблоны, `SAFE_SUFFIXES`)
-
-**`redact-secrets.py`** покрывает в содержимом:
-- API keys: `sk-ant-...`, `sk-proj-...`, `AKIA...`, `ghp_/github_pat_`, JWT
-- URL credentials: `scheme://user:pass@host` (любые схемы: http, amqp, smtp, ldap...)
-- Пароли: `password = value` (с кавычками и без), `PGPASSWORD=`, `DB_PASS=`
-- `.env`-переменные: `[export] VAR_WITH_KEY_TOKEN_PASS_etc=value{20+}`
-- PEM: `BEGIN RSA/EC/DSA/OPENSSH/ENCRYPTED PRIVATE KEY`
-- **Не маскирует `Edit.old_string`** — поисковый паттерн, маскирование сломало бы Edit
-
-**Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+Подробнее: **[Security Hooks (PreToolUse)](#security-hooks-pretooluse)** в разделе Features.
 
 ### Chrome Integration
 
@@ -526,4 +590,6 @@ TypeScript, Python, Go, Rust, C#, Java, Kotlin, Lua, PHP, C/C++, Swift
 5. **Proxy Trust:** Only use trusted proxy servers (MitM risk with `undici` ProxyAgent)
 6. **TLS Verification:** `undici` does not verify target server certificates when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
 7. **Router API Keys:** Store in `.claude_config` as `export DEEPSEEK_API_KEY=...`; referenced in `router.json` via `${VAR}` placeholders
+8. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` — block sensitive file access and redact secrets in content; portable via `$CLAUDE_PROJECT_DIR` (works across machines/users)
+9. **Hook Portability:** `settings.json` uses `$CLAUDE_PROJECT_DIR` (set by Claude Code at runtime) instead of absolute paths — safe to commit to git
 
