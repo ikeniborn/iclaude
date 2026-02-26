@@ -64,4 +64,17 @@ init_environment() {
 
     # Color codes
     export RED GREEN YELLOW BLUE NC
+
+    # PII-Proxy configuration
+    PII_PROXY_PORT="${PII_PROXY_PORT:-9000}"
+    PII_PROXY_VENV="${ISOLATED_CONFIG_DIR}/pii-proxy-venv"
+    PII_PROXY_LOG_DIR="${ISOLATED_CONFIG_DIR}/pii-proxy-logs"
+    PII_PROXY_PID_FILE="${ISOLATED_CONFIG_DIR}/pii-proxy.pid"
+    PII_PROXY_SERVER_SCRIPT="${ISOLATED_CONFIG_DIR}/pii-proxy-server.py"
+
+    export PII_PROXY_PORT
+    export PII_PROXY_VENV
+    export PII_PROXY_LOG_DIR
+    export PII_PROXY_PID_FILE
+    export PII_PROXY_SERVER_SCRIPT
 }
