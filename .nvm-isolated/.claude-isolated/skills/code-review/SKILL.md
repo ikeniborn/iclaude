@@ -3,7 +3,7 @@ name: code-review
 description: Автоматический review кода перед commit
 user-invocable: true
 context: fork
-# version: 1.3.0
+# version: 1.4.0
 # tags: review, quality, security, code-smells, toon
 # dependencies: toon-skill, lsp-integration
 # files: templates: ./templates/*.json, rules: ./rules/*.md
@@ -35,6 +35,7 @@ context: fork
     - [Score Calculation](#score-calculation)
     - [TOON Optimization](#toon-optimization)
   - [Examples](#examples)
+  - [Determinism & Idempotency](#determinism-idempotency)
   - [Integration with Other Skills](#integration-with-other-skills)
   - [Advanced Topics](#advanced-topics)
     - [Custom Architecture Paths](#custom-architecture-paths)
@@ -196,9 +197,12 @@ check_categories[5]{id,category,severity,examples,details}:
 ```
 IF lsp_status.status == "READY":
   1. Request LSP diagnostics for files_changed
-  2. Parse severity: error → BLOCKING, warning → WARNING, info → INFO
-  3. Merge into code_review.warnings[] + lsp_diagnostics[]
-  4. Adjust score: LSP errors -10 points (vs. -5 for regex checks)
+  2. Map severity:
+     - error   → lsp_diagnostics[] only; score penalty: -10 (enhanced)
+     - warning  → warnings[] (category: "type_safety", source: LSP) + lsp_diagnostics[]; score penalty: -5
+     - information → lsp_diagnostics[] only; no score penalty
+  3. passed = blocking_issues.length === 0 (LSP errors do NOT affect passed)
+  4. Adjust score: LSP errors -10 pts, LSP warnings -5 pts (see Rule D-8)
 ELSE:
   Fallback to regex-based checks
 ```
@@ -233,8 +237,8 @@ ELSE:
         "severity": "WARNING",
         "file": "service.py",
         "line": 42,
-        "message": "Function too long (65 lines)",
-        "suggestion": "Extract helper methods"
+        "message": "Function too long (65 lines, limit: 50)",
+        "suggestion": "Split `process_data()` (service.py:42-106) into sub-functions until each is ≤50 lines"
       }
     ],
     "lsp_diagnostics": [...],       // Optional (if LSP available)
@@ -290,15 +294,18 @@ passed = blocking_issues.length === 0
 ```markdown
 ## Code Review: 75/100
 
-🛑 BLOCKING ISSUES:
-- file.py:42 — SQL injection detected
+🛑 BLOCKING ISSUES (1):
+- file.py:42 [sql_injection] SQL injection: f-string used in DB query
+  Fix: Replace f-string in `get_user()` (file.py:42) with
+       `cursor.execute(query, (email,))` until no f-string is used in DB queries
 
-⚠️ WARNINGS:
-- service.py:65 — Function too long (72 lines)
-- models.py:15 — Missing type hint
-
-💡 SUGGESTIONS:
-- Consider adding docstrings to public functions
+⚠️ WARNINGS (2):
+- service.py:65 [function_too_long] Function too long (72 lines, limit: 50)
+  Fix: Split `process_data()` (service.py:65-136) into sub-functions
+       until each is ≤50 lines
+- models.py:15 [missing_type_hint] Missing type hint for parameter `data`
+  Fix: Add type annotation `data: dict` in `process_data()` (models.py:15)
+       until pyright reports no missing-type-hints for this function
 
 ✗ Review failed - fix blocking issues before commit
 ```
@@ -381,16 +388,78 @@ if (review.lsp_diagnostics?.length >= 5) {
 | Scenario | Files | Score | Result | Details |
 |----------|-------|-------|--------|---------|
 | **Simple Review** | 2 files, 2 warnings | 92/100 | ✓ Passed | [examples/basic-usage.md](./examples/basic-usage.md) |
-| **LSP Integration** | 3 TS files, 5 type errors | 58/100 | ✗ Failed (BLOCKING) | [examples/architecture-validation.md](./examples/architecture-validation.md) |
-| **TOON Optimization** | 8 files, 12 warnings + 8 LSP | 73/100 | ✓ Passed (40.2% savings) | [examples/toon-output.example](./examples/toon-output.example) |
+| **LSP Integration** | 3 TS files, 5 LSP errors | 58/100 | ✗ Failed (BLOCKING arch issue) | [examples/architecture-validation.md](./examples/architecture-validation.md) |
+| **TOON Optimization** | 8 files, 1 blocking + 15 warnings | 35/100 | ✗ Failed (38.1% savings) | [examples/toon-output.example](./examples/toon-output.example) |
 
 **Example 1 Summary:** Small change (payment service + test), 2 non-blocking warnings (complexity, type hint), review passed.
 
-**Example 2 Summary:** TypeScript refactor, LSP detected 5 blocking type errors (string|undefined mismatch, missing property, null checks), review failed.
+**Example 2 Summary:** TypeScript refactor, LSP detected 5 type errors with -10 pts each; review failed due to architecture BLOCKING issue.
 
-**Example 3 Summary:** Full module review, 12 code quality warnings + 8 LSP diagnostics (unused imports, partial types), TOON optimization saved 40.2% tokens (3560 → 2130).
+**Example 3 Summary:** Full module review, 1 BLOCKING + 15 warnings across 8 files; TOON optimization saved 38.1% tokens (4120 → 2550) by omitting repeated fields.
 
 **Детальные примеры:** См. директорию [examples/](./examples/)
+
+---
+
+## Determinism & Idempotency
+
+<a id="determinism-idempotency"></a>
+
+**Критическое требование:** Повторный ревью одного и того же кода должен давать **идентичные findings**.
+
+**Без этого требования:** каждый прогон ревью генерирует новые suggestions → разработчик исправляет по suggestion_1 → следующий ревью выдаёт suggestion_2 для того же места → бесконечный цикл.
+
+**Полная спецификация:** [@rules:determinism](./rules/determinism.md)
+
+### Ключевые правила
+
+**D-1: Idempotency** — Два ревью одного кода без изменений = идентичный результат. Все findings только на объективных паттернах.
+
+**D-2: Scope-Based Stability** — Security/Code Quality/Error Handling/Type Safety findings выдаются только для `git_diff_files`. Layer boundary — для `git_diff_files ∪ dependents`. Исключение: Referential integrity и Circular dependency detection работают на весь граф (глобальные свойства, не имеют смысла в частичном scope).
+
+**D-3: Explicit Threshold Constants**
+
+| Метрика | Порог | Семантика |
+|---------|-------|-----------|
+| Длина функции | **50 строк** | `> 50` → WARNING; ровно 50 → PASS |
+| Cyclomatic complexity | **10** | `> 10` → WARNING |
+| Глубина вложенности | **4** | `> 4` → WARNING |
+| Дублирующийся блок | **7 строк** | блок `> 7` строк встречается 2+ раз → WARNING |
+
+**D-4: Canonical Suggestion Format** — каждый `suggestion` обязан следовать:
+
+```
+{VERB} {SPECIFIC_TARGET} {CRITERION}
+```
+
+```json
+// ПРАВИЛЬНО
+"suggestion": "Split `process_data()` (service.py:65-136) into sub-functions until each function ≤ 50 lines"
+"suggestion": "Replace f-string in `get_user()` (users.py:42) with `cursor.execute(query, (email,))` until no f-string is used in DB queries in this function"
+
+// ЗАПРЕЩЕНО — расплывчато, нет criterion
+"suggestion": "Extract helper methods to reduce complexity"
+"suggestion": "Use parameterized queries"
+"suggestion": "Consider adding docstrings"
+```
+
+**D-5: Запрет `suggestions[]` верхнего уровня** — массив открытых текстовых рекомендаций без `file:line` **запрещён**. Любое наблюдение оформляется как WARNING/INFO с обязательными `file`, `line`, `rule`.
+
+**D-6: Pre-Verified Fix Patterns** — для каждого security rule — фиксированный before/after код (см. [@rules:determinism#rule-d-6](./rules/determinism.md#rule-d-6)).
+
+**D-7: Re-Run Behavior** — при повторном ревью:
+- Исправленные issues (прошли verification criterion) → **не выдаются**
+- Не исправленные → выдаются с **теми же** `rule`, `message`, `suggestion`
+- Не изменённые файлы вне scope → **не проверяются**
+
+**D-8: Score Calculation (Canonical)** — единственная верная формула:
+
+```
+category_score = max(0, max_score - blocking×10 - warnings×5)
+total_score = Σ category_scores
+```
+
+Формула `100 - blocking×20 - warnings×5 - suggestions×1` из basic-usage.md — **устаревшая, не используется**.
 
 ---
 
@@ -479,6 +548,7 @@ files_changed[] → code-review skill
 **Rules:**
 - Architecture compliance: [@rules:architecture](./rules/architecture.md)
 - Security patterns: [@rules:security](./rules/security.md)
+- Determinism & Idempotency: [@rules:determinism](./rules/determinism.md)
 
 **Templates:**
 - Review output JSON schema: [templates/review-output.json](./templates/review-output.json)
@@ -502,6 +572,18 @@ files_changed[] → code-review skill
 ---
 
 ## Changelog
+
+### 1.4.0 (2026-02-26)
+- **Determinism & Idempotency**: новая секция + правила D-1..D-8 (@rules:determinism)
+- **Canonical Suggestion Format**: `{VERB} {SPECIFIC_TARGET} {CRITERION}` — запрещены расплывчатые suggestions
+- **Запрет `suggestions[]`**: открытые рекомендации без file:line запрещены (Rule D-5)
+- **Pre-Verified Fix Patterns**: зафиксированные before/after паттерны для security rules (Rule D-6)
+- **Explicit Thresholds**: MAX_FUNCTION_LINES=50, MAX_COMPLEXITY=10, MAX_NESTING=4, MAX_DUPLICATE_BLOCK=7 (все `> N`)
+- **Scope-Based Stability**: findings только для git diff scope; исключения для global checks (Rule D-2)
+- **Score Calculation**: каноническая формула D-8; LSP errors=-10pts (lsp_diagnostics[] only), LSP warnings=-5pts (warnings[]+lsp_diagnostics[])
+- **LSP severity mapping**: исправлено — LSP errors НЕ добавляются в blocking_issues[], не влияют на passed
+- **Markdown Output**: убран `💡 SUGGESTIONS:` блок, добавлен `[rule]` формат
+- Ссылки на @rules:determinism добавлены в References
 
 ### 1.3.0 (2026-01-26)
 - Структурная оптимизация: TOC, Quick Start, компактные секции

@@ -15,6 +15,11 @@ launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
 
+    # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
+    # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
+    # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
+    unset CHROME_DESKTOP
+
     # Auto-repair stale settings.json paths (silent if no change needed)
     repair_settings_paths
 
@@ -27,9 +32,32 @@ launch_claude() {
         use_router=true
     fi
 
+    # PII proxy: intercept and mask PII/secrets in Anthropic API traffic
+    local use_pii_proxy=false
+    if [[ "${USE_PII_PROXY_FLAG:-false}" == "true" ]]; then
+        if [[ "$skip_isolated" == "true" ]]; then
+            # System mode uses host Node.js; PII proxy requires isolated venv — abort (fail-secure)
+            print_error "PII proxy is not supported in --system mode (isolated environment only)"
+            print_info "Remove --pii-proxy or omit --system to use PII masking"
+            exit 1
+        elif type detect_pii_proxy &>/dev/null && detect_pii_proxy "$skip_isolated"; then
+            use_pii_proxy=true
+            # PII proxy and CCR router are mutually exclusive (CCR spawns its own claude child
+            # and overwrites ANTHROPIC_BASE_URL, bypassing the proxy)
+            if [[ "$use_router" == "true" ]]; then
+                print_warning "PII proxy active: CCR router disabled for this session"
+                use_router=false
+            fi
+        else
+            print_warning "PII proxy not installed (run: ./iclaude.sh --install-pii-proxy)"
+        fi
+    fi
+
     echo ""
     if [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code via Router..."
+    elif [[ "$use_pii_proxy" == "true" ]]; then
+        print_info "Launching Claude Code with PII masking..."
     else
         print_info "Launching Claude Code..."
     fi
@@ -130,6 +158,16 @@ launch_claude() {
     if [[ -z "$claude_cmd" ]]; then
         if command -v npx &> /dev/null; then
             print_info "Using npx to run Claude Code..."
+            if [[ "$use_pii_proxy" == "true" ]]; then
+                if ! start_pii_proxy_server "$skip_isolated"; then
+                    print_error "PII proxy failed to start — aborting for safety"
+                    print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                    exit 1
+                fi
+                trap 'stop_pii_proxy_server' EXIT INT TERM
+                npx @anthropic-ai/claude-code "$@"
+                exit $?
+            fi
             exec npx @anthropic-ai/claude-code "$@"
         else
             print_error "Claude Code not found"
@@ -160,11 +198,187 @@ launch_claude() {
         echo ""
     fi
 
-    # Pass through any additional arguments
-    # Use eval if command contains spaces (e.g., "node /path/to/cli.js")
+    # Launch Claude Code
+    # When PII proxy is active: cannot use exec — EXIT trap would fire before the
+    # new process starts, killing the proxy before claude makes its first API call.
+    # BUG-10: removed eval (double-quoted variables handle spaces in paths correctly)
+    if [[ "$use_pii_proxy" == "true" ]]; then
+        if ! start_pii_proxy_server "$skip_isolated"; then
+            print_error "PII proxy failed to start — aborting for safety"
+            print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+            exit 1
+        fi
+        trap 'stop_pii_proxy_server' EXIT INT TERM
+        "$claude_cmd" "$@"
+        exit $?
+    fi
+
+    # Standard exec path: replace shell process (no cleanup needed)
     if [[ "$claude_cmd" == *" "* ]]; then
         eval exec "$claude_cmd" '"$@"'
     else
         exec "$claude_cmd" "$@"
+    fi
+}
+
+#######################################
+# Start PII proxy server and redirect API traffic through it
+# Arguments:
+#   $1 - skip_isolated: "true" to skip isolated environment
+# Returns:
+#   0 on success, 1 on failure
+# Globals set:
+#   PII_PROXY_ACTIVE_PORT - actual TCP port the server bound to
+#######################################
+start_pii_proxy_server() {
+    local skip_isolated="${1:-false}"
+
+    local python_bin
+    python_bin=$(get_pii_proxy_python "$skip_isolated")
+    if [[ -z "$python_bin" ]]; then
+        print_warning "PII proxy: venv not found - run --install-pii-proxy"
+        return 1
+    fi
+
+    if [[ ! -f "$PII_PROXY_SERVER_SCRIPT" ]]; then
+        print_warning "PII proxy: server script not found - run --install-pii-proxy"
+        return 1
+    fi
+
+    # BUG-4R4-1: health check helper — port passed as argv (not bash-interpolated into
+    # Python string), preventing injection if port_file content is unexpected
+    _pii_proxy_http_health() {
+        local port="$1"
+        # Validate port is a pure integer before use
+        [[ "$port" =~ ^[0-9]+$ ]] || return 1
+        "$python_bin" -c '
+import urllib.request, sys
+port = sys.argv[1]
+try:
+    urllib.request.urlopen("http://127.0.0.1:" + port + "/api/health", timeout=2)
+    sys.exit(0)
+except Exception:
+    sys.exit(1)
+' -- "$port" 2>/dev/null
+    }
+
+    # BUG-4R4-7: Check for existing running instance before starting a new one
+    # (prevents duplicate proxies on concurrent launches / stale PID file)
+    local port_file="$PII_PROXY_LOG_DIR/server.port"
+    if [[ -f "$PII_PROXY_PID_FILE" ]]; then
+        local existing_pid
+        existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
+        if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
+            # Process alive — try to reuse if healthy
+            if [[ -f "$port_file" ]]; then
+                local existing_port
+                existing_port=$(cat "$port_file" 2>/dev/null)
+                if _pii_proxy_http_health "$existing_port"; then
+                    PII_PROXY_ACTIVE_PORT="$existing_port"
+                    export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                    # Reuse-then-kill fix: mark proxy as NOT owned by this session so
+                    # stop_pii_proxy_server will NOT kill it when this session exits
+                    PII_PROXY_SESSION_OWNED=false
+                    print_info "PII proxy: reusing existing instance on :$PII_PROXY_ACTIVE_PORT"
+                    return 0
+                fi
+            fi
+            # Unhealthy existing instance — kill it, start fresh
+            kill "$existing_pid" 2>/dev/null || true
+        fi
+        rm -f "$PII_PROXY_PID_FILE"
+    fi
+
+    # Preserve current ANTHROPIC_BASE_URL as upstream URL
+    # This enables future CCR chaining: claude → PII proxy → CCR → Anthropic
+    local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+
+    # Remove stale port file from any previous session
+    rm -f "$port_file"
+    # BUG-4R4-9: chmod 700 — restrict log dir to current user only
+    mkdir -p "$PII_PROXY_LOG_DIR"
+    chmod 700 "$PII_PROXY_LOG_DIR"
+
+    # Start server in background; redirect stdout/stderr to log file
+    ANTHROPIC_UPSTREAM_URL="$upstream_url" \
+        "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
+        --port "$PII_PROXY_PORT" \
+        --log-dir "$PII_PROXY_LOG_DIR" \
+        >>"$PII_PROXY_LOG_DIR/server.log" 2>&1 &
+
+    local proxy_pid=$!
+    echo "$proxy_pid" > "$PII_PROXY_PID_FILE"
+
+    # Poll for port file, then verify HTTP readiness via /api/health (max 15 seconds)
+    # B3: TCP check via bash /dev/tcp filters out ticks before socket is bound,
+    # avoiding python subprocess spawns before the server is even listening.
+    # HTTP health check is still required (TCP succeeds at bind; serve_forever may lag).
+    local max_ticks=30
+    local ticks=0
+    local health_ok=false
+    PII_PROXY_ACTIVE_PORT=""
+
+    while [[ $ticks -lt $max_ticks ]]; do
+        # Detect early process exit to fail fast instead of waiting 15s
+        if ! kill -0 "$proxy_pid" 2>/dev/null; then
+            print_warning "PII proxy: server process exited unexpectedly"
+            break
+        fi
+        if [[ -f "$port_file" ]]; then
+            PII_PROXY_ACTIVE_PORT=$(cat "$port_file" 2>/dev/null)
+            if [[ -n "$PII_PROXY_ACTIVE_PORT" ]] && \
+               [[ "$PII_PROXY_ACTIVE_PORT" =~ ^[0-9]+$ ]]; then
+                # B3: TCP check first (bash built-in, no subprocess)
+                # then HTTP health check only when TCP is up
+                if (: >/dev/tcp/127.0.0.1/"$PII_PROXY_ACTIVE_PORT") 2>/dev/null; then
+                    if _pii_proxy_http_health "$PII_PROXY_ACTIVE_PORT"; then
+                        health_ok=true
+                        break
+                    fi
+                fi
+            fi
+        fi
+        sleep 0.5
+        ticks=$((ticks + 1))
+    done
+
+    if [[ "$health_ok" != "true" ]]; then
+        print_warning "PII proxy: server did not become ready within 15s"
+        kill "$proxy_pid" 2>/dev/null
+        rm -f "$PII_PROXY_PID_FILE"
+        return 1
+    fi
+
+    # Redirect all claude API traffic through PII proxy
+    export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+    PII_PROXY_SESSION_OWNED=true  # this session started the proxy; stop_pii_proxy_server may kill it
+    print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url"
+    return 0
+}
+
+#######################################
+# Stop PII proxy server (trap cleanup on EXIT/INT/TERM)
+#######################################
+stop_pii_proxy_server() {
+    # Reuse-then-kill fix: only kill the proxy if THIS session started it.
+    # When reusing a proxy from another session, PII_PROXY_SESSION_OWNED=false
+    # and we leave the shared proxy running so other sessions are not interrupted.
+    if [[ "${PII_PROXY_SESSION_OWNED:-true}" != "true" ]]; then
+        return 0
+    fi
+    if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
+        local pid
+        pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
+        rm -f "$PII_PROXY_PID_FILE"
+        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null
+            # Wait for clean shutdown (up to 1s), then force-kill
+            local waited=0
+            while kill -0 "$pid" 2>/dev/null && [[ $waited -lt 10 ]]; do
+                sleep 0.1
+                waited=$((waited + 1))
+            done
+            kill -9 "$pid" 2>/dev/null || true
+        fi
     fi
 }

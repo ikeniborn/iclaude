@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API Reference" href="sphinx/api-reference/index.html"><link rel="prev" title="Улучшения паттернов маскирования секретов в redact-secrets.py" href="SECURITY_PATTERNS_IMPROVEMENTS.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>Исследование: Улучшение маскирования секретов в PreToolUse hook - iclaude Documentation</title>
@@ -226,6 +226,14 @@
 <li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-proxy-configuration.html">Поток настройки прокси</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture/diagrams/data-flow-router-launch.html">Поток запуска через Router</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="ROUTER.html">Claude Code Router: конфигурация и маршрутизация</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CLAUDE_CODE_BACKEND.html">Claude Code как Backend: Браузер, Telegram и Multi-Agent Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PII_MASKING.html">Маскирование персональных данных в iclaude: PasteGuard и альтернативы</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY_PATTERNS_IMPROVEMENTS.html">Улучшения паттернов маскирования секретов в redact-secrets.py</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Исследование: Улучшение маскирования секретов в PreToolUse hook</a></li>
+</ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="sphinx/api-reference/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -298,32 +306,38 @@
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/ohmyposh/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/pii-proxy/index.html">Module: pii-proxy</a><input aria-label="Toggle navigation of Module: pii-proxy" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/detect.html">detect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/install.html">install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/pii-proxy/status.html">status</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/proxy/index.html">Module: proxy</a><input aria-label="Toggle navigation of Module: proxy" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/configure.html">configure</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/credentials.html">credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/git.html">git</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/proxy/validate.html">validate</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/router/index.html">Module: router</a><input aria-label="Toggle navigation of Module: router" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/router/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/sandbox/index.html">Module: sandbox</a><input aria-label="Toggle navigation of Module: sandbox" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/sandbox/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/statusline/index.html">Module: statusline</a><input aria-label="Toggle navigation of Module: statusline" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/detect.html">detect</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/install.html">install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/statusline/status.html">status</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="sphinx/api-reference/update/index.html">Module: update</a><input aria-label="Toggle navigation of Module: update" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/cleanup.html">cleanup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/isolated.html">isolated</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sphinx/api-reference/update/update.html">update</a></li>
@@ -764,8 +778,26 @@
       <footer>
         
         <div class="related-pages">
-          
-          
+          <a class="next-page" href="sphinx/api-reference/index.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">API Reference</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="SECURITY_PATTERNS_IMPROVEMENTS.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Улучшения паттернов маскирования секретов в redact-secrets.py</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">

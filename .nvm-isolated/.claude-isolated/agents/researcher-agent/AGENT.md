@@ -27,6 +27,33 @@ TASK: {описание задачи пользователя}
 
 ## Алгоритм выполнения
 
+### Шаг 0: Определить AGENTS_DIR
+
+Определить путь к директории агентов — он нужен в Шаге 3b для запуска Deep Research Agent.
+
+**Приоритет 1:** Если оркестратор передал `AGENTS_DIR: /path/to/agents` в prompt — использовать его напрямую.
+
+**Приоритет 2 (fallback через Glob):** Найти `deep-research-agent/AGENT.md` как опорный файл:
+
+```
+# Попытка 1 — стандартный путь
+found = Glob(".nvm-isolated/.claude-isolated/agents/deep-research-agent/AGENT.md")
+
+# Попытка 2 — рекурсивный поиск (если изолированная среда не в корне)
+если found пустой:
+    found = Glob("**/.claude-isolated/agents/deep-research-agent/AGENT.md")
+
+# Если нашли — вычислить AGENTS_DIR как родительскую директорию
+если found непустой:
+    AGENTS_DIR = parent(parent(found[0]))
+    # Пример: ".nvm-isolated/.claude-isolated/agents/deep-research-agent/AGENT.md"
+    #          → ".nvm-isolated/.claude-isolated/agents"
+иначе:
+    AGENTS_DIR = null  # Deep Research недоступен → graceful skip в Шаге 3b
+```
+
+Сохранить `AGENTS_DIR` как переменную для использования в Шаге 3b.
+
 ### Шаг 1: Прочитать input.toon
 
 ```
@@ -208,9 +235,11 @@ Write({WORKSPACE}/deep-research-request.toon, {
   }
 })
 
-# 3. Прочитать AGENT.md Deep Research
-AGENTS_DIR = {путь к agents/ директории — см. Шаг 0}
-deep_research_md = Read("{AGENTS_DIR}/deep-research-agent/AGENT.md")
+# 3. Прочитать AGENT.md Deep Research (AGENTS_DIR определён в Шаге 0)
+если AGENTS_DIR == null:
+    → пропустить Deep Research, записать deep_research_status: "AGENTS_DIR_NOT_FOUND"
+иначе:
+    deep_research_md = Read("{AGENTS_DIR}/deep-research-agent/AGENT.md")
 
 # 4. Запустить субагент (без запроса разрешения — CALLER=researcher)
 Task(

@@ -63,6 +63,11 @@ repair_isolated_environment() {
 	print_info "Checking settings.json paths..."
 	repair_settings_paths || errors=$((errors + 1))
 
+	# Configure git hooks path
+	echo ""
+	print_info "Checking git hooks configuration..."
+	configure_git_hooks || errors=$((errors + 1))
+
 	# Summary
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -206,4 +211,41 @@ repair_settings_paths() {
 		print_error "  Failed to repair settings.json paths"
 		return 1
 	fi
+}
+
+#######################################
+# Configure git hooks path
+# Sets core.hooksPath to .githooks so shared hooks are active after clone
+# Returns:
+#   0 - success
+#   1 - not a git repository or git not found
+#######################################
+configure_git_hooks() {
+	if ! command -v git &>/dev/null; then
+		print_warning "  ! git not found, skipping hooks configuration"
+		return 0
+	fi
+
+	if ! git -C "$SCRIPT_DIR" rev-parse --git-dir &>/dev/null 2>&1; then
+		print_warning "  ! Not a git repository, skipping hooks configuration"
+		return 0
+	fi
+
+	local hooks_dir="$SCRIPT_DIR/.githooks"
+	if [[ ! -d "$hooks_dir" ]]; then
+		print_warning "  ! .githooks directory not found, skipping"
+		return 0
+	fi
+
+	local current
+	current=$(git -C "$SCRIPT_DIR" config core.hooksPath 2>/dev/null || true)
+
+	if [[ "$current" == ".githooks" ]]; then
+		print_success "  ✓ git hooks path already set to .githooks"
+		return 0
+	fi
+
+	git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+	print_success "  ✓ git hooks path set to .githooks"
+	return 0
 }

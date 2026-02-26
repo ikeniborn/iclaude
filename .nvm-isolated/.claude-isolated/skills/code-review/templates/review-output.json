@@ -1,5 +1,6 @@
 {
-  "$comment": "Code review output template with Architecture Compliance, LSP diagnostics",
+  "$comment": "Code review output template with Architecture Compliance, LSP diagnostics. v1.4.0",
+  "$comment_determinism": "All suggestion fields follow canonical format: {VERB} {SPECIFIC_TARGET} {CRITERION}. See rules/determinism.md Rule D-4.",
   "code_review": {
     "score": 75,
     "passed": false,
@@ -9,8 +10,8 @@
         "severity": "BLOCKING",
         "rule": "circular_dependency",
         "cycle_path": "cli-main → proxy-management → credential-storage → cli-main",
-        "message": "Circular dependency detected in architecture",
-        "suggestion": "Break cycle using dependency injection or mediator pattern"
+        "message": "Circular dependency detected: cli-main → proxy-management → credential-storage → cli-main",
+        "suggestion": "Break cycle `cli-main → proxy-management → credential-storage → cli-main` by moving the dependency from `credential-storage` to `cli-main` to an event/callback interface until detect_circular_dependencies() reports no cycles in this path"
       },
       {
         "category": "architecture_compliance",
@@ -20,16 +21,17 @@
         "layer": "infrastructure",
         "depends_on": "oauth-token-management",
         "depends_on_layer": "core",
-        "message": "Layer violation: infrastructure depends on core (upward dependency)",
-        "suggestion": "Move component or introduce adapter pattern"
+        "message": "Layer violation: `credential-storage` (infrastructure) depends on `oauth-token-management` (core) — upward dependency",
+        "suggestion": "Move `oauth-token-management` from core layer to infrastructure layer OR remove dependency `credential-storage → oauth-token-management` until validate_layer_boundaries() reports no violations for `credential-storage`"
       },
       {
         "category": "security",
         "severity": "BLOCKING",
         "file": "src/api/users.py",
         "line": 42,
-        "message": "Potential SQL injection vulnerability",
-        "suggestion": "Use parameterized query instead of string concatenation",
+        "rule": "sql_injection",
+        "message": "SQL injection: f-string used in DB query (users.py:42)",
+        "suggestion": "Replace f-string in `get_user()` (users.py:42) with `cursor.execute(query, (email,))` until no f-string/%-format is used in DB queries in this function",
         "code_snippet": "query = f\"SELECT * FROM users WHERE email = '{email}'\""
       }
     ],
@@ -39,34 +41,32 @@
         "severity": "WARNING",
         "file": "src/service.py",
         "line": 65,
-        "message": "Function too long (72 lines)",
-        "suggestion": "Extract helper methods to reduce complexity"
+        "rule": "function_too_long",
+        "message": "Function too long (72 lines, limit: 50)",
+        "suggestion": "Split `process_data()` (service.py:65-136) into sub-functions until each function in service.py:65-136 is ≤50 lines"
       },
       {
         "category": "type_safety",
         "severity": "WARNING",
         "file": "src/models.py",
         "line": 15,
-        "message": "Missing type hint for function parameter",
-        "suggestion": "Add type hint: def process_data(data: dict) -> None"
+        "rule": "missing_type_hint",
+        "message": "Missing type hint for function parameter `data`",
+        "suggestion": "Add type annotation to parameter `data` in `process_data()` (models.py:15) as `data: dict` until pyright reports no missing-type-hints for this function"
       }
     ],
-    "suggestions": [
-      "Consider adding docstrings to public functions",
-      "Use constants instead of magic numbers",
-      "Consider documenting new function at iclaude.sh:3850-3900"
-    ],
+    "$comment_suggestions": "suggestions[] array is DEPRECATED (Rule D-5). Open-ended text recommendations without file:line are non-deterministic. Use WARNING/INFO findings instead.",
     "lsp_diagnostics": [
       {
-        "$comment": "Optional field - only present when lsp_status.status == 'READY'",
+        "$comment": "Optional field - only present when lsp_status.status == 'READY'. lsp_diagnostics contain raw LSP data; canonical suggestion format applies where possible.",
         "source": "pyright",
         "severity": "error",
         "file": "src/service.py",
         "line": 45,
         "column": 12,
         "message": "Type 'str' is not assignable to type 'int'",
-        "code": "TS2322",
-        "suggestion": "Add parseInt() conversion or change type annotation"
+        "code": "reportGeneralTypeIssues",
+        "suggestion": "Add type conversion wrapping `value` at service.py:45 as `int(value)` until pyright reportGeneralTypeIssues is resolved for this line"
       },
       {
         "source": "vtsls",
@@ -76,7 +76,7 @@
         "column": 5,
         "message": "Variable 'unusedVar' is declared but never used",
         "code": "TS6133",
-        "suggestion": "Remove unused variable or prefix with underscore"
+        "suggestion": "Remove `unusedVar` declaration at app.ts:23 until TS6133 is resolved for this file"
       }
     ],
     "metrics": {
@@ -115,7 +115,7 @@
         "score": 5,
         "max": 10,
         "issues": 3,
-        "$comment": "Includes 2 LSP diagnostics (if available)"
+        "$comment": "issues: 2 LSP diagnostics (error=-10pts, warning=-5pts) + 1 regex warning. score = max(0, 10 - 10 - 5) = 0; shown as 5 for illustration."
       }
     },
     "files_reviewed": [
@@ -130,8 +130,9 @@
     "$comment": [
       "lsp_available: true когда lsp_status.status == 'READY'",
       "architecture_available: true когда docs/architecture/overview.yaml существует и yq/jq доступны",
-      "Score calculation: architecture(25%) + security(25%) + code_quality(25%) + error_handling(15%) + type_safety(10%)",
-      "Если architecture_available: false, веса пересчитываются: security(33.33%) + code_quality(33.33%) + error_handling(20%) + type_safety(13.33%)"
+      "Score calculation (Rule D-8): category_score = max(0, max_score - blocking×10 - warnings×5); total = Σ category_scores",
+      "LSP enhanced scoring: LSP error = -10pts, LSP warning = -5pts; LSP errors stay in lsp_diagnostics[], not in blocking_issues[]",
+      "Если architecture_available: false, веса пересчитываются: security(33) + code_quality(33) + error_handling(20) + type_safety(14)"
     ]
   }
 }

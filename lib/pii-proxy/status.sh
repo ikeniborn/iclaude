@@ -92,13 +92,15 @@ check_pii_proxy_status() {
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
             print_success "Server running: PID $pid"
-            # Try to get port
+            # Read actual bound port from port file (written by server on startup)
             local port
-            port=$(ss -tlnp 2>/dev/null | grep "pid=$pid" | grep -oP ':\K\d+' | head -1 || echo "")
-            [[ -n "$port" ]] && echo "  Port: $port" || echo "  Port: $PII_PROXY_PORT (default)"
+            port=$(cat "$PII_PROXY_LOG_DIR/server.port" 2>/dev/null || echo "")
+            [[ -n "$port" ]] && echo "  Port: $port" || echo "  Port: $PII_PROXY_PORT (configured)"
         else
             print_info "Server not running"
             echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
+            # Clean up stale PID file
+            rm -f "$PII_PROXY_PID_FILE"
         fi
     else
         print_info "Server not running"
