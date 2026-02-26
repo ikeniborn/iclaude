@@ -27,7 +27,7 @@ install_isolated_pii_proxy() {
         print_error "Python 3.8+ required for Presidio (found: $(python3 --version 2>&1))"
         return 1
     fi
-    print_success "Python $(python3 --version 2>&1 | grep -oP '[\d.]+'): OK"
+    print_success "Python $(python3 --version 2>&1 | grep -oE '[0-9][0-9.]*'): OK"
 
     # Check isolated environment
     if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
@@ -43,9 +43,11 @@ install_isolated_pii_proxy() {
     fi
     print_success "Virtual environment: $PII_PROXY_VENV"
 
-    # Upgrade pip
+    # Upgrade pip (non-fatal: old pip can still install packages)
     print_info "Upgrading pip..."
-    "$PII_PROXY_VENV/bin/python3" -m pip install --quiet --upgrade pip
+    if ! "$PII_PROXY_VENV/bin/python3" -m pip install --quiet --upgrade pip; then
+        print_warning "pip upgrade failed — continuing with existing version"
+    fi
 
     # Install Presidio
     print_info "Installing presidio-analyzer + presidio-anonymizer (~100MB)..."
@@ -77,6 +79,7 @@ install_isolated_pii_proxy() {
         return 1
     fi
     print_info "Installing server script..."
+    mkdir -p "$(dirname "$PII_PROXY_SERVER_SCRIPT")"
     cp "$src_script" "$PII_PROXY_SERVER_SCRIPT"
     chmod 700 "$PII_PROXY_SERVER_SCRIPT"
     print_success "Server script: $PII_PROXY_SERVER_SCRIPT"

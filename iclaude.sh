@@ -97,6 +97,15 @@ if [[ -d "$LIB_DIR/router" ]]; then
 fi
 
 #######################################
+# Load PII proxy modules
+#######################################
+if [[ -d "$LIB_DIR/pii-proxy" ]]; then
+    source "${LIB_DIR}/pii-proxy/detect.sh"
+    source "${LIB_DIR}/pii-proxy/install.sh"
+    source "${LIB_DIR}/pii-proxy/status.sh"
+fi
+
+#######################################
 # Load LSP modules (Phase 8.1)
 #######################################
 if [[ -d "$LIB_DIR/lsp" ]]; then
@@ -195,9 +204,20 @@ fi
     use_shared_config=false
     claude_args=()
     USE_ROUTER_FLAG=false
+    USE_PII_PROXY_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
     posh_insecure=false
     model_value=""  # Model selection (empty = use Claude Code default)
+
+    # Apply persistent settings from config file (before argument parsing so CLI can override)
+    if [[ -f "$CREDENTIALS_FILE" ]]; then
+        # Match: USE_PII_PROXY=true  USE_PII_PROXY="true"  USE_PII_PROXY='true'  export USE_PII_PROXY=true
+        _cfg_pii=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?USE_PII_PROXY[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_pii" ]] && USE_PII_PROXY_FLAG=true
+        unset _cfg_pii
+    fi
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -455,6 +475,24 @@ fi
             --router)
                 USE_ROUTER_FLAG=true
                 shift
+                ;;
+            --pii-proxy)
+                USE_PII_PROXY_FLAG=true
+                shift
+                ;;
+            --install-pii-proxy)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-pii-proxy"
+                    echo ""
+                    echo "PII proxy is only available in isolated environment"
+                    exit 1
+                fi
+                install_isolated_pii_proxy
+                exit $?
+                ;;
+            --check-pii-proxy)
+                check_pii_proxy_status
+                exit 0
                 ;;
             --no-chrome)
                 USE_CHROME=false

@@ -48,9 +48,11 @@ code-review skill выполняет следующие шаги:
 
 ### Step 3: Score Calculation
 ```
-score = 100 - (blocking_issues * 20) - (warnings * 5) - (suggestions * 1)
+category_score = max(0, max_score - blocking_in_category × 10 - warnings_in_category × 5)
+total_score = Σ category_scores
 passed = blocking_issues.length === 0
 ```
+См. [@rules:determinism Rule D-8](../rules/determinism.md#rule-d-8) для канонической формулы.
 
 ---
 
@@ -67,8 +69,9 @@ passed = blocking_issues.length === 0
         "severity": "BLOCKING",
         "file": "src/api/users.py",
         "line": 42,
-        "message": "Potential SQL injection vulnerability - user input not sanitized",
-        "suggestion": "Use parameterized query instead of string concatenation",
+        "rule": "sql_injection",
+        "message": "SQL injection: f-string used in DB query (users.py:42)",
+        "suggestion": "Replace f-string in `get_user()` (users.py:42) with `cursor.execute(query, (email,))` until no f-string/%-format is used in DB queries in this function",
         "code_snippet": "query = f\"SELECT * FROM users WHERE email = '{email}'\""
       }
     ],
@@ -78,16 +81,18 @@ passed = blocking_issues.length === 0
         "severity": "WARNING",
         "file": "src/service.py",
         "line": 65,
-        "message": "Function too long (72 lines)",
-        "suggestion": "Extract helper methods to reduce complexity"
+        "rule": "function_too_long",
+        "message": "Function too long (72 lines, limit: 50)",
+        "suggestion": "Split `process_data()` (service.py:65-136) into sub-functions until each function in service.py:65-136 is ≤50 lines"
       },
       {
         "category": "type_safety",
         "severity": "WARNING",
         "file": "src/models.py",
         "line": 15,
-        "message": "Missing type hint for function parameter",
-        "suggestion": "Add type hint: def process_data(data: dict) -> None",
+        "rule": "missing_type_hint",
+        "message": "Missing type hint for function parameter `data`",
+        "suggestion": "Add type annotation to parameter `data` in `process_data()` (models.py:15) as `data: dict` until pyright reports no missing-type-hints for this function",
         "source": "pyright"
       }
     ],
@@ -103,18 +108,16 @@ passed = blocking_issues.length === 0
         "suggestion": "Add type conversion: int(value)"
       }
     ],
-    "suggestions": [
-      "Consider adding docstrings to public functions",
-      "Use constants instead of magic numbers"
-    ],
     "metrics": {
-      "security": {"score": 5, "max": 25, "issues": 1},
+      "architecture_compliance": {"score": 25, "max": 25, "issues": 0},
+      "security": {"score": 15, "max": 25, "issues": 1},
       "code_quality": {"score": 20, "max": 25, "issues": 1},
-      "error_handling": {"score": 25, "max": 25, "issues": 0},
-      "type_safety": {"score": 25, "max": 25, "issues": 2}
+      "error_handling": {"score": 15, "max": 15, "issues": 0},
+      "type_safety": {"score": 0, "max": 10, "issues": 2}
     },
     "files_reviewed": ["src/api/users.py", "src/service.py", "src/models.py"],
-    "lsp_available": true
+    "lsp_available": true,
+    "architecture_available": true
   }
 }
 ```
@@ -124,40 +127,37 @@ passed = blocking_issues.length === 0
 ## Code Review: 75/100
 
 🛑 BLOCKING ISSUES (1):
-- src/api/users.py:42 - Potential SQL injection vulnerability
-  Suggestion: Use parameterized query instead of string concatenation
+- src/api/users.py:42 [sql_injection] SQL injection: f-string used in DB query
+  Fix: Replace f-string in `get_user()` (users.py:42) with
+       `cursor.execute(query, (email,))` until no f-string/%-format
+       is used in DB queries in this function
 
-  Code:
-  query = f"SELECT * FROM users WHERE email = '{email}'"  # DANGEROUS
-
-  Fix:
-  query = "SELECT * FROM users WHERE email = %s"
-  cursor.execute(query, (email,))
+  Code: query = f"SELECT * FROM users WHERE email = '{email}'"
 
 ⚠️ WARNINGS (2):
-- src/service.py:65 - Function too long (72 lines)
-  Suggestion: Extract helper methods to reduce complexity
+- src/service.py:65 [function_too_long] Function too long (72 lines, limit: 50)
+  Fix: Split `process_data()` (service.py:65-136) into sub-functions
+       until each function in service.py:65-136 is ≤50 lines
 
-- src/models.py:15 - Missing type hint for function parameter
-  Suggestion: Add type hint: def process_data(data: dict) -> None
+- src/models.py:15 [missing_type_hint] Missing type hint for parameter `data`
+  Fix: Add type annotation to parameter `data` in `process_data()` (models.py:15)
+       as `data: dict` until pyright reports no missing-type-hints for this function
   Source: pyright LSP
 
-💡 SUGGESTIONS:
-- Consider adding docstrings to public functions
-- Use constants instead of magic numbers
-
 🔍 LSP Diagnostics (1):
-- src/service.py:45:12 - Type 'str' is not assignable to type 'int'
+- src/service.py:45:12 [reportGeneralTypeIssues] Type 'str' is not assignable to 'int'
   Source: pyright
-  Suggestion: Add type conversion: int(value)
+  Fix: Add type conversion: int(value)
 
 📊 Metrics:
-| Category        | Score | Issues |
-|-----------------|-------|--------|
-| Security        |  5/25 |   1    |
-| Code Quality    | 20/25 |   1    |
-| Error Handling  | 25/25 |   0    |
-| Type Safety     | 25/25 |   2    |
+| Category               | Score | Max | Issues |
+|------------------------|-------|-----|--------|
+| Architecture Compliance| 25    |  25 |   0    |
+| Security               | 15    |  25 |   1    |
+| Code Quality           | 20    |  25 |   1    |
+| Error Handling         | 15    |  15 |   0    |
+| Type Safety            |  0    |  10 |   2    |
+| **Total**              | **75**|**100**|      |
 
 ✗ Review FAILED - Fix blocking issues before committing
 ```

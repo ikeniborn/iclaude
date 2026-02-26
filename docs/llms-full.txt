@@ -9047,6 +9047,7 @@ Auto-generated from bash module comments in `lib/`.
 | [nvm](nvm/index.md) | Claude Code Management Module |
 | [oauth](oauth/index.md) | OAuth Token Module |
 | [ohmyposh](ohmyposh/index.md) | Oh-My-Posh detection module |
+| [pii-proxy](pii-proxy/index.md) | PII-Proxy detection module |
 | [proxy](proxy/index.md) | Proxy Configuration Module |
 | [router](router/index.md) | Router detection module |
 | [sandbox](sandbox/index.md) | Sandbox detection module |
@@ -9068,6 +9069,7 @@ lsp/index
 nvm/index
 oauth/index
 ohmyposh/index
+pii-proxy/index
 proxy/index
 router/index
 sandbox/index
@@ -10878,6 +10880,95 @@ Provides function for checking Oh-My-Posh status and configuration
 ## `check_ohmyposh_status`
 
 Check Oh My Posh status and configuration Shows installation, version, platform
+
+**Returns:**
+
+-   0 - success
+
+
+
+# Module: pii-proxy
+
+> Source: `lib/pii-proxy/`
+
+- [detect](detect.md) — 2 functions
+- [install](install.md) — 1 functions
+- [status](status.md) — 1 functions
+
+```{toctree}
+:hidden:
+
+detect
+install
+status
+```
+
+
+
+# detect
+
+> **Module:** `pii-proxy` | **File:** `lib/pii-proxy/detect.sh`
+
+PII-Proxy detection module
+Provides functions for detecting PII-proxy installation
+
+---
+
+## `detect_pii_proxy`
+
+Detect if PII-proxy is available Checks Python 3.8+ and server script existence
+
+**Arguments:**
+
+- `  $1 - skip_isolated (optional): "true" to skip isolated environment`
+
+**Returns:**
+
+-   0 - PII-proxy available
+-   1 - not available
+
+## `get_pii_proxy_python`
+
+Get PII-proxy Python interpreter path
+
+**Returns:**
+
+-   path to python3 in venv, or empty string
+
+
+
+# install
+
+> **Module:** `pii-proxy` | **File:** `lib/pii-proxy/install.sh`
+
+PII-Proxy installation module
+Provides function for installing Presidio NLP dependencies
+
+---
+
+## `install_isolated_pii_proxy`
+
+Install PII-proxy to isolated environment Creates venv, installs Presidio + spaCy, copies server script
+
+**Returns:**
+
+-   0 - success
+-   1 - error
+
+
+
+# status
+
+> **Module:** `pii-proxy` | **File:** `lib/pii-proxy/status.sh`
+
+PII-Proxy status module
+Provides function for checking PII-proxy status
+
+---
+
+## `check_pii_proxy_status`
+
+Check PII-proxy status Shows installation, venv, model, server state
 
 **Returns:**
 
