@@ -296,7 +296,7 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 ./iclaude.sh --check-pii-proxy
 ```
 
-**Примечание:** `--pii-proxy` и `--router` несовместимы (CCR сам управляет дочерним процессом claude).
+**Примечание:** При одновременном использовании `--pii-proxy` и `--router` — **PII proxy имеет приоритет**, роутер (CCR) автоматически отключается с предупреждением. Цепочка: `claude → PII proxy → Anthropic API`.
 
 ### Использовать DeepSeek вместо Anthropic
 
