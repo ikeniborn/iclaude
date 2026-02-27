@@ -32,6 +32,7 @@ SAFE_SUFFIXES = (
 )
 
 # Паттерны чувствительных файлов и путей
+# Проверяются как подстрока в ПОЛНОМ пути (включая директории)
 SENSITIVE_PATH_PATTERNS = [
     '.env',
     '.pem',
@@ -44,7 +45,6 @@ SENSITIVE_PATH_PATTERNS = [
     '.aws',
     '.gnupg',
     '.kube',
-    'token',
     'id_rsa',
     'id_ed25519',
     'id_ecdsa',
@@ -52,6 +52,24 @@ SENSITIVE_PATH_PATTERNS = [
     '.netrc',
     '.pgpass',
 ]
+
+# Паттерны для проверки только по ИМЕНИ ФАЙЛА (не полному пути).
+# Исключает ложные срабатывания на исходники вроде lib/oauth/token.sh,
+# token_manager.py и т.д., но блокирует файлы-хранилища токенов.
+TOKEN_FILENAME_PATTERNS = (
+    '.token',        # скрытый файл ~/.token
+    'token.json',    # JSON-хранилища: token.json, access_token.json, refresh_token.json
+    'token.txt',     # текстовые токены
+    'token.yaml',
+    'token.yml',
+    'token.xml',
+    'access_token',  # access_token.json, access_token.txt и т.д.
+    'refresh_token', # refresh_token.json и т.д.
+    'oauth_token',
+    'auth_token',
+    'api_token',
+    'id_token',
+)
 
 # Инструменты, которые проверяются на чувствительные пути
 PATH_CHECK_TOOLS = {'Read', 'Edit', 'Write', 'MultiEdit'}
@@ -80,8 +98,15 @@ def is_sensitive_path(path: str) -> 'tuple[bool, str]':
     if is_safe_template(path):
         return False, ''
     path_lower = path.lower()
+    # Проверка по полному пути (директории + имя файла)
     for pattern in SENSITIVE_PATH_PATTERNS:
         if pattern in path_lower:
+            return True, pattern
+    # Проверка token-паттернов только по имени файла,
+    # чтобы не блокировать исходники вроде lib/oauth/token.sh
+    filename = path_lower.rsplit('/', 1)[-1]
+    for pattern in TOKEN_FILENAME_PATTERNS:
+        if pattern in filename:
             return True, pattern
     return False, ''
 
