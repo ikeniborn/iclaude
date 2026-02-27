@@ -16,14 +16,12 @@ install_isolated_pii_proxy() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 
-    # Check Python 3.8+
+    # Check Python 3.8+ (integer comparison avoids awk float bug: "3.10" → 3.1 < 3.8)
     if ! python3 --version &>/dev/null; then
         print_error "Python 3 not found. Install Python 3.8+ first."
         return 1
     fi
-    local py_ver
-    py_ver=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null)
-    if ! awk "BEGIN{exit ($py_ver >= 3.8) ? 1 : 0}" 2>/dev/null; then
+    if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' 2>/dev/null; then
         print_error "Python 3.8+ required for Presidio (found: $(python3 --version 2>&1))"
         return 1
     fi
