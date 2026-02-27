@@ -1,7 +1,7 @@
 {
   "_comment": "Claude Code Router v2.0.0 configuration template. Copy to router.json and fill in your API keys.",
   "_docs": "https://github.com/musistudio/claude-code-router | docs/ROUTER.md",
-  "_anthropic_oauth_note": "To use your Claude subscription (no separate API key): set Anthropic provider with 'UseBearer: true' and 'api_key': '${ANTHROPIC_ACCESS_TOKEN}'. iclaude.sh auto-exports ANTHROPIC_ACCESS_TOKEN from .credentials.json before CCR starts.",
+  "_anthropic_note": "CCR requires a real Anthropic API key (sk-ant-api03-...) — subscription OAuth tokens are NOT accepted by api.anthropic.com. Get a key: https://console.anthropic.com/settings/keys. Without a key, use Ollama/DeepSeek/OpenRouter for all roles.",
 
   "PORT": 3456,
   "HOST": "127.0.0.1",
@@ -11,14 +11,13 @@
 
   "Providers": [
     {
-      "_comment_anthropic": "Anthropic via subscription OAuth (no API key needed). iclaude.sh auto-sets ANTHROPIC_ACCESS_TOKEN.",
+      "_comment_anthropic": "Anthropic API — requires ANTHROPIC_API_KEY (real API key, NOT subscription OAuth token). Set in .claude_config: export ANTHROPIC_API_KEY=sk-ant-api03-...",
       "name": "anthropic",
       "api_base_url": "https://api.anthropic.com/v1/messages",
-      "api_key": "${ANTHROPIC_ACCESS_TOKEN}",
+      "api_key": "${ANTHROPIC_API_KEY}",
       "models": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5"],
       "transformer": {
-        "use": ["anthropic"],
-        "UseBearer": true
+        "use": ["anthropic"]
       }
     },
     {

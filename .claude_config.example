@@ -109,18 +109,11 @@ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
 # В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
 # Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
 
-# --- Anthropic OAuth token (для роутинга через CCR) ---
-# АВТОМАТИЧЕСКИ: iclaude.sh извлекает accessToken из .credentials.json и
-# экспортирует как ANTHROPIC_ACCESS_TOKEN перед стартом CCR (~1 год, sk-ant-oat01-...).
-# Задавать вручную не нужно — используется токен подписки OAuth.
-#
-# Задать вручную только если хочешь отдельный API ключ вместо OAuth:
-#   export ANTHROPIC_ACCESS_TOKEN=sk-ant-api03-...  # + "UseBearer": false в router.json
-export ANTHROPIC_ACCESS_TOKEN=
-
-# --- Anthropic API key (опционально, только если нужен отдельный billing) ---
-# Нужен только при роутинге через CCR с отдельным Anthropic API аккаунтом.
-# В нативном режиме (без --router) Claude Code использует OAuth из .credentials.json.
+# --- Anthropic API key (для роутинга через CCR) ---
+# Нужен при роутинге через CCR к Anthropic (--router + Anthropic в router.json).
+# В нативном режиме (без --router) Claude Code использует OAuth из .credentials.json — API ключ не нужен.
+# ВАЖНО: OAuth токен подписки (sk-ant-oat01-...) НЕ принимается api.anthropic.com.
+#   CCR требует обычный API ключ. Без него используйте Ollama/DeepSeek/OpenRouter.
 # Получить ключ: https://console.anthropic.com/settings/keys
 # Формат: sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export ANTHROPIC_API_KEY=
@@ -214,7 +207,7 @@ DEBUG_LAUNCH=
 # Роутинг: main/think/longContext → Anthropic, background → Ollama
 # router.json: {"Router": {"default": "anthropic,claude-sonnet-4-6",
 #                           "background": "ollama,qwen2.5:7b", ...}}
-# ВНИМАНИЕ: нативный OAuth не используется; нужен обычный API ключ.
+# Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
 #
 # export ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
