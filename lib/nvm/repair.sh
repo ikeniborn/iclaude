@@ -168,47 +168,58 @@ create_claude_symlink() {
 
 #######################################
 # Repair absolute paths in settings.json
-# Detects hardcoded .claude-isolated paths from another machine/installation
-# and replaces them with the current ISOLATED_CONFIG_DIR path.
-# Called automatically at every launch and during --repair-isolated.
+# Migrates legacy hardcoded .claude-isolated paths to $CLAUDE_CONFIG_DIR variable
+# (exported by iclaude.sh before launch, inherited by hooks/statusLine subprocesses).
+# Handles two legacy formats:
+#   1. Absolute paths:      /some/path/.claude-isolated/hooks/...
+#   2. $CLAUDE_PROJECT_DIR: $CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/...
+# Both are replaced with the canonical form: $CLAUDE_CONFIG_DIR/hooks/...
+# Called during --repair-isolated for one-time migration of old installs.
 # Returns:
-#   0 - success (paths correct or fixed)
-#   1 - could not repair
+#   0 - success (already canonical or migrated)
+#   1 - could not migrate
 #######################################
 repair_settings_paths() {
 	local settings_file="$ISOLATED_CONFIG_DIR/settings.json"
 
 	[[ ! -f "$settings_file" ]] && return 0
 
-	# Resolve current config dir to absolute path
-	local current_dir
-	if command -v realpath &>/dev/null; then
-		current_dir=$(realpath "$ISOLATED_CONFIG_DIR")
-	else
-		current_dir="$(cd "$ISOLATED_CONFIG_DIR" && pwd)"
+	# Already using canonical $CLAUDE_CONFIG_DIR everywhere — nothing to do.
+	# Excludes non-canonical $CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated form.
+	if grep -q '\$CLAUDE_CONFIG_DIR' "$settings_file" 2>/dev/null \
+		&& ! grep -q '\$CLAUDE_PROJECT_DIR/\.nvm-isolated/\.claude-isolated' \
+		         "$settings_file" 2>/dev/null \
+		&& ! grep -o '[^"[:space:]]*\.claude-isolated' "$settings_file" 2>/dev/null \
+		       | grep -qv '^\$CLAUDE_CONFIG_DIR'; then
+		return 0
 	fi
 
-	# Find any .claude-isolated path prefix that differs from current location
-	local stale_dir
-	stale_dir=$(grep -o '[^"[:space:]]*\.claude-isolated' "$settings_file" 2>/dev/null \
-		| sort -u | grep -vxF "$current_dir" | head -1) || true
-
-	[[ -z "$stale_dir" ]] && return 0
-
-	print_info "  Stale paths detected in settings.json"
-	print_info "    Was: $stale_dir"
-	print_info "    Now: $current_dir"
-
 	local temp_file="${settings_file}.tmp"
-	if sed "s|${stale_dir}|${current_dir}|g" "$settings_file" > "$temp_file" \
-		&& [[ -s "$temp_file" ]]; then
+	cp "$settings_file" "$temp_file"
+
+	# Step 1: migrate $CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated → $CLAUDE_CONFIG_DIR
+	sed -i 's|\$CLAUDE_PROJECT_DIR/\.nvm-isolated/\.claude-isolated|\$CLAUDE_CONFIG_DIR|g' \
+		"$temp_file"
+
+	# Step 2: migrate any remaining absolute /path/.claude-isolated → $CLAUDE_CONFIG_DIR
+	local stale_dir
+	stale_dir=$(grep -o '[^"[:space:]]*\.claude-isolated' "$temp_file" 2>/dev/null \
+		| sort -u | grep -v '^\$CLAUDE_CONFIG_DIR' | head -1) || true
+
+	if [[ -n "$stale_dir" ]]; then
+		print_info "  Migrating settings.json to portable \$CLAUDE_CONFIG_DIR paths"
+		print_info "    Was: $stale_dir"
+		sed -i "s|${stale_dir}|\$CLAUDE_CONFIG_DIR|g" "$temp_file"
+	fi
+
+	if [[ -s "$temp_file" ]]; then
 		mv "$temp_file" "$settings_file"
 		chmod 600 "$settings_file"
-		print_success "  settings.json paths repaired"
+		print_success "  settings.json migrated to portable paths (\$CLAUDE_CONFIG_DIR)"
 		return 0
 	else
 		rm -f "$temp_file"
-		print_error "  Failed to repair settings.json paths"
+		print_error "  Failed to migrate settings.json paths"
 		return 1
 	fi
 }

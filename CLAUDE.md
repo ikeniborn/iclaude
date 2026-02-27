@@ -254,7 +254,7 @@ Custom status line script showing real-time metrics. See **[docs/STATUSLINE.md](
 
 ### Security Hooks (PreToolUse)
 
-Two-layer protection for sensitive data, active during all Claude Code sessions. Hooks are configured in `.nvm-isolated/.claude-isolated/settings.json` using portable `$CLAUDE_PROJECT_DIR` paths — works across different machines and users without manual path edits.
+Two-layer protection for sensitive data, active during all Claude Code sessions. Hooks are configured in `.nvm-isolated/.claude-isolated/settings.json` using `$CLAUDE_CONFIG_DIR` paths — exported by iclaude.sh before launch and inherited by hook subprocesses, so paths are correct in any project.
 
 **Layer 1: `block-secrets.py`** — File path blocker
 
@@ -287,7 +287,7 @@ Intercepts Write/Edit/MultiEdit/Bash calls. Rewrites tool arguments via `toolInp
 
 **Note:** `Edit.old_string` is NOT redacted — it's a search pattern; masking would break the Edit tool.
 
-**Configuration** (portable paths via `$CLAUDE_PROJECT_DIR`):
+**Configuration** (portable paths via `$CLAUDE_CONFIG_DIR`):
 
 ```json
 {
@@ -295,11 +295,11 @@ Intercepts Write/Edit/MultiEdit/Bash calls. Rewrites tool arguments via `toolInp
     "PreToolUse": [
       {
         "matcher": "Read|Edit|Write|MultiEdit|Bash",
-        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/block-secrets.py\""}]
+        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/block-secrets.py\""}]
       },
       {
         "matcher": "Write|Edit|MultiEdit|Bash",
-        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/redact-secrets.py\""}]
+        "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""}]
       }
     ]
   }
@@ -350,7 +350,7 @@ For detailed architecture documentation, see **@skill:iclaude-architecture**.
 
 9. **Security Hooks** (.nvm-isolated/.claude-isolated/hooks/)
    - PreToolUse interception: file path blocking + content redaction
-   - Portable `$CLAUDE_PROJECT_DIR` paths for cross-machine compatibility
+   - `$CLAUDE_CONFIG_DIR` paths — works across machines and projects
    - Test suite: `tests/test_patterns_examples.py` (28 tests)
 
 ### Critical Functions
@@ -636,7 +636,7 @@ TypeScript, Python, Go, Rust, C#, Java, Kotlin, Lua, PHP, C/C++, Swift
 5. **Proxy Trust:** Only use trusted proxy servers (MitM risk with `undici` ProxyAgent)
 6. **TLS Verification:** `undici` does not verify target server certificates when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
 7. **Router API Keys:** Store in `.claude_config` as `export DEEPSEEK_API_KEY=...`; referenced in `router.json` via `${VAR}` placeholders
-8. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` — block sensitive file access and redact secrets in content; portable via `$CLAUDE_PROJECT_DIR` (works across machines/users)
-9. **Hook Portability:** `settings.json` uses `$CLAUDE_PROJECT_DIR` (set by Claude Code at runtime) instead of absolute paths — safe to commit to git
+8. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` — block sensitive file access and redact secrets in content; use `$CLAUDE_CONFIG_DIR` (exported by iclaude.sh, works across machines and projects)
+9. **Hook Portability:** `settings.json` uses `$CLAUDE_CONFIG_DIR` (exported before launch, inherited by hook subprocesses) — hooks resolve correctly in any project, safe to commit to git
 10. **PII Proxy:** When enabled, all API traffic (system prompt + messages + tool_results) is masked before reaching Anthropic servers; runs on localhost only (127.0.0.1)
 
