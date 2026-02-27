@@ -296,7 +296,14 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 ./iclaude.sh --check-pii-proxy
 ```
 
-**Примечание:** При одновременном использовании `--pii-proxy` и `--router` — **PII proxy имеет приоритет**, роутер (CCR) автоматически отключается с предупреждением. Цепочка: `claude → PII proxy → Anthropic API`.
+**Примечание:** `--pii-proxy` и `--router` работают вместе в режиме цепочки:
+`claude → PII proxy (:9000) → CCR (:3456) → провайдеры`
+
+**Важно:** PII proxy venv **не хранится в git** (~500MB). После `git clone` или `git pull` на новой машине нужно переустановить:
+```bash
+./iclaude.sh --repair-isolated   # напомнит если venv отсутствует
+./iclaude.sh --install-pii-proxy
+```
 
 ### Использовать DeepSeek вместо Anthropic
 
@@ -306,6 +313,8 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 export DEEPSEEK_API_KEY="your-key"
 ./iclaude.sh --router
 ```
+
+**Ограничение CCR + Anthropic:** Claude Code Router **не может** использовать OAuth токен подписки для роутинга к Anthropic API. `api.anthropic.com` возвращает `401 "OAuth authentication is currently not supported"` при попытке использовать `sk-ant-oat01-...` токен. Для роутинга через CCR к Anthropic нужен отдельный API ключ (`sk-ant-api03-...`) с [console.anthropic.com](https://console.anthropic.com/settings/keys). Без него — используйте Ollama/DeepSeek/OpenRouter.
 
 **Больше примеров:** См. [docs/USE_CASES.md](./docs/USE_CASES.md)
 

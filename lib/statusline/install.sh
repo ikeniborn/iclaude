@@ -84,9 +84,10 @@ install_statusline_script() {
         echo ""
     fi
 
-    # Get portable path for settings.json
-    # $CLAUDE_PROJECT_DIR is set by Claude Code at hook/statusline execution time
-    local abs_script_path='$CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh'
+    # Get portable path for settings.json.
+    # $CLAUDE_CONFIG_DIR is exported by iclaude.sh before launch and inherited by
+    # statusLine subprocess — always points to .claude-isolated/ regardless of project.
+    local abs_script_path='$CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh'
 
     print_info "Installing claude-statusline.sh script..."
 

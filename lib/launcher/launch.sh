@@ -20,9 +20,6 @@ launch_claude() {
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
     unset CHROME_DESKTOP
 
-    # Auto-repair stale settings.json paths (silent if no change needed)
-    repair_settings_paths
-
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 
@@ -290,7 +287,9 @@ start_pii_proxy_server() {
     fi
 
     # BUG-4R4-1: health check helper — port passed as argv (not bash-interpolated into
-    # Python string), preventing injection if port_file content is unexpected
+    # Python string), preventing injection if port_file content is unexpected.
+    # NOTE: do NOT use '-- "$port"' here — python3 -c 'code' -- N gives sys.argv=['-c','--','N']
+    # so sys.argv[1] == '--' instead of the port. Port is pre-validated to ^[0-9]+$ above.
     _pii_proxy_http_health() {
         local port="$1"
         # Validate port is a pure integer before use
@@ -303,7 +302,7 @@ try:
     sys.exit(0)
 except Exception:
     sys.exit(1)
-' -- "$port" 2>/dev/null
+' "$port" 2>/dev/null
     }
 
     # BUG-4R4-7: Check for existing running instance before starting a new one
