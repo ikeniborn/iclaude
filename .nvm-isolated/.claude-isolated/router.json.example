@@ -1,6 +1,7 @@
 {
   "_comment": "Claude Code Router v2.0.0 configuration template. Copy to router.json and fill in your API keys.",
   "_docs": "https://github.com/musistudio/claude-code-router | docs/ROUTER.md",
+  "_anthropic_oauth_note": "To use your Claude subscription (no separate API key): set Anthropic provider with 'UseBearer: true' and 'api_key': '${ANTHROPIC_ACCESS_TOKEN}'. iclaude.sh auto-exports ANTHROPIC_ACCESS_TOKEN from .credentials.json before CCR starts.",
 
   "PORT": 3456,
   "HOST": "127.0.0.1",
@@ -9,6 +10,17 @@
   "API_TIMEOUT_MS": 60000,
 
   "Providers": [
+    {
+      "_comment_anthropic": "Anthropic via subscription OAuth (no API key needed). iclaude.sh auto-sets ANTHROPIC_ACCESS_TOKEN.",
+      "name": "anthropic",
+      "api_base_url": "https://api.anthropic.com/v1/messages",
+      "api_key": "${ANTHROPIC_ACCESS_TOKEN}",
+      "models": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5"],
+      "transformer": {
+        "use": ["anthropic"],
+        "UseBearer": true
+      }
+    },
     {
       "name": "deepseek",
       "api_base_url": "https://api.deepseek.com/chat/completions",
