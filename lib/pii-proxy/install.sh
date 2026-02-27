@@ -23,7 +23,7 @@ install_isolated_pii_proxy() {
     fi
     local py_ver
     py_ver=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null)
-    if ! awk "BEGIN{exit ($py_ver >= 3.8) ? 0 : 1}" 2>/dev/null; then
+    if ! awk "BEGIN{exit ($py_ver >= 3.8) ? 1 : 0}" 2>/dev/null; then
         print_error "Python 3.8+ required for Presidio (found: $(python3 --version 2>&1))"
         return 1
     fi

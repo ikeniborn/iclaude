@@ -89,6 +89,18 @@ launch_claude() {
 
         print_info "Using Claude Code Router: $ccr_cmd"
 
+        # CCR v2.0.0 requires Node.js v20+ (File global, unavailable in Node v18).
+        # Prepend node v20+ to PATH so ccr binary's #!/usr/bin/env node resolves correctly.
+        if [[ -n "${ISOLATED_NVM_DIR:-}" ]]; then
+            local ccr_node_bin
+            ccr_node_bin=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -type d \
+                -name "v2[0-9]*" 2>/dev/null | LC_ALL=C sort | tail -1)
+            if [[ -n "$ccr_node_bin" ]] && [[ -d "$ccr_node_bin/bin" ]]; then
+                export PATH="$ccr_node_bin/bin:$PATH"
+                print_info "CCR: using Node $(basename "$ccr_node_bin") (v20+ required)"
+            fi
+        fi
+
         # Show router version
         local router_version=$("$ccr_cmd" --version 2>/dev/null | head -1 || echo "unknown")
         if [[ "$router_version" != "unknown" ]]; then
@@ -446,7 +458,9 @@ start_ccr_server() {
         return 0
     fi
 
-    # Start CCR as background daemon using 'ccr start' (server-only mode, no claude child)
+    # Start CCR as background daemon using 'ccr start' (server-only mode, no claude child).
+    # Note: PATH must already include node v20+ before this function is called
+    # (launch_claude() prepends v20 bin to PATH before invoking start_ccr_server).
     print_info "CCR router: starting daemon on ${CCR_HOST}:${CCR_PORT}..."
     nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
     CCR_PID=$!
