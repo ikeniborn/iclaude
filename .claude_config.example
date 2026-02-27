@@ -158,9 +158,9 @@ export SILICONFLOW_API_KEY=
 # Требуется однократная установка: ./iclaude.sh --install-pii-proxy
 # Статус: ./iclaude.sh --check-pii-proxy
 #
-# Приоритет: если USE_PII_PROXY=true и активирован --router,
-# PII proxy имеет приоритет — роутер отключается автоматически.
-# Цепочка: claude → PII proxy (:9000) → Anthropic API
+# Режимы запуска:
+#   solo:     --pii-proxy           → claude → PII proxy (:9000) → Anthropic API
+#   combined: --pii-proxy --router  → claude → PII proxy (:9000) → CCR (:3456) → провайдеры
 #
 # true  — автозапуск прокси при каждом старте claude
 # false — прокси не стартует (можно включить разово: --pii-proxy)
