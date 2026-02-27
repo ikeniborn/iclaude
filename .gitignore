@@ -77,7 +77,9 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**
-# (Python cache rules covered by global __pycache__/ rule above)
+# Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
+.nvm-isolated/.claude-isolated/hooks/__pycache__/
+.nvm-isolated/.claude-isolated/hooks/**/*.pyc
 
 # Router configuration (only example in git, actual config ignored)
 !.nvm-isolated/.claude-isolated/router.json.example
