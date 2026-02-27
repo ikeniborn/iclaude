@@ -55,9 +55,11 @@ OPTIONS:
   --install-router                  Install Claude Code Router in isolated environment
   --check-router                    Show router status and configuration
   --router                          Launch via Claude Code Router (requires router.json)
+                                    Can be combined with --pii-proxy: traffic goes PII proxy → CCR → providers
   --install-pii-proxy               Install PII proxy (Python venv + Presidio NLP)
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
   --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
+                                    Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
   --no-chrome                       Disable Chrome integration (enabled by default)
   --model MODEL                     Select Claude model (e.g. claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5)
                                     Saved to config and applied on every launch until changed
@@ -208,6 +210,9 @@ PII PROXY (MASKING):
 
   # Enable permanently via config
   echo 'USE_PII_PROXY=true' >> .claude_config
+
+  # Combined mode: PII masking + CCR router (chain: claude → PII:9000 → CCR:3456 → providers)
+  ./iclaude.sh --pii-proxy --router
 
 SANDBOX INTEGRATION:
   # Check sandbox availability and requirements

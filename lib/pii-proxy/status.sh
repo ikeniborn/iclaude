@@ -96,15 +96,26 @@ check_pii_proxy_status() {
             local port
             port=$(cat "$PII_PROXY_LOG_DIR/server.port" 2>/dev/null || echo "")
             [[ -n "$port" ]] && echo "  Port: $port" || echo "  Port: $PII_PROXY_PORT (configured)"
+            # Show upstream chaining info (combined mode: upstream points to CCR, not Anthropic)
+            local upstream_url="${ANTHROPIC_UPSTREAM_URL:-}"
+            if [[ -n "$upstream_url" ]]; then
+                if [[ "$upstream_url" == http://127.* || "$upstream_url" == http://localhost* ]]; then
+                    print_info "  Upstream: $upstream_url (chaining to CCR router)"
+                else
+                    print_info "  Upstream: $upstream_url"
+                fi
+            fi
         else
             print_info "Server not running"
             echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
+            echo "  Use --pii-proxy --router to enable combined PII masking + CCR routing"
             # Clean up stale PID file
             rm -f "$PII_PROXY_PID_FILE"
         fi
     else
         print_info "Server not running"
         echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
+        echo "  Use --pii-proxy --router to enable combined PII masking + CCR routing"
     fi
 
     # Config

@@ -60,7 +60,7 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
      '[GROQ_API_KEY]', 'Groq API key'),
     (re.compile(r'\bAIzaSy[A-Za-z0-9_\-]{32,}\b'),
      '[GOOGLE_API_KEY]', 'Google AI Studio API key'),
-    (re.compile(r'([a-zA-Z][a-zA-Z0-9+\-.]*://)[^:@\s/]+:[^@\s/]+@'),
+    (re.compile(r'([a-zA-Z][a-zA-Z0-9+\-.]*://)(?:[^@\s/]*@)+'),
      r'\1[CREDENTIALS]@', 'credentials in URL'),
     (re.compile(
         r'(?i)((?:password|passwd|pwd|db_pass|pgpassword)\s*[=:]\s*)'
@@ -403,7 +403,10 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
 
     def do_HEAD(self) -> None:
         # RFC 7231 §4.3.2: HEAD MUST NOT send body; forward headers only
-        self._proxy_head()
+        if self.path == '/api/health':
+            self._health_head()
+        else:
+            self._proxy_head()
 
     def do_OPTIONS(self) -> None:
         self._proxy_passthrough()
@@ -419,6 +422,18 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _health_head(self) -> None:
+        """HEAD /api/health — return headers only, no body (RFC 7231 §4.3.2)."""
+        body = json.dumps({
+            'status': 'ready',
+            'analyzer_ready': _presidio_ready,
+            'fallback_enabled': ENABLE_FALLBACK,
+        }).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
 
     # 100 MB sanity limit: prevents DoS via OOM from huge or negative Content-Length
     _MAX_BODY_BYTES = 100_000_000
