@@ -77,4 +77,18 @@ init_environment() {
     export PII_PROXY_LOG_DIR
     export PII_PROXY_PID_FILE
     export PII_PROXY_SERVER_SCRIPT
+
+    # CCR (Claude Code Router) daemon configuration — used in combined PII proxy + router mode
+    # CCR_PID: PID of background CCR daemon started by start_ccr_server()
+    # CCR_SESSION_OWNED: true if this session started CCR (stop_ccr_server should kill it)
+    CCR_PID=""
+    CCR_SESSION_OWNED=false
+    # CCR_HOST/CCR_PORT: parsed from router.json; fallback to defaults
+    CCR_HOST="127.0.0.1"
+    CCR_PORT=3456
+
+    export CCR_PID
+    export CCR_SESSION_OWNED
+    export CCR_HOST
+    export CCR_PORT
 }

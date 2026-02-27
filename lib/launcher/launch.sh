@@ -42,19 +42,20 @@ launch_claude() {
             exit 1
         elif type detect_pii_proxy &>/dev/null && detect_pii_proxy "$skip_isolated"; then
             use_pii_proxy=true
-            # PII proxy and CCR router are mutually exclusive (CCR spawns its own claude child
-            # and overwrites ANTHROPIC_BASE_URL, bypassing the proxy)
-            if [[ "$use_router" == "true" ]]; then
-                print_warning "PII proxy active: CCR router disabled for this session"
-                use_router=false
-            fi
+            # Combined mode: PII proxy + CCR router can now work together.
+            # Chain: claude → PII proxy(:9000) → CCR(:3456) → providers
+            # When both are active, CCR is started as a background daemon (not via exec ccr code).
+            # ANTHROPIC_UPSTREAM_URL is set to http://CCR_HOST:CCR_PORT before starting PII proxy,
+            # so all API traffic is masked by PII proxy before reaching CCR.
         else
             print_warning "PII proxy not installed (run: ./iclaude.sh --install-pii-proxy)"
         fi
     fi
 
     echo ""
-    if [[ "$use_router" == "true" ]]; then
+    if [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code with PII masking → CCR router chain..."
+    elif [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code via Router..."
     elif [[ "$use_pii_proxy" == "true" ]]; then
         print_info "Launching Claude Code with PII masking..."
@@ -98,8 +99,30 @@ launch_claude() {
         # Signal to statusline that router is active (suppresses RL display)
         export ICLAUDE_ROUTER_ACTIVE=1
 
-        # Launch via ccr code
-        exec "$ccr_cmd" code "$@"
+        # Combined mode: PII proxy + CCR router
+        # Start CCR as background daemon, then PII proxy in front of it.
+        # Cannot use 'exec ccr code' here — combined mode requires both processes running.
+        if [[ "$use_pii_proxy" == "true" ]]; then
+            if ! start_ccr_server "$skip_isolated" "$ccr_cmd"; then
+                print_error "CCR router failed to start — aborting"
+                exit 1
+            fi
+            trap 'stop_pii_proxy_server; stop_ccr_server' EXIT INT TERM
+
+            # ANTHROPIC_UPSTREAM_URL is set to CCR URL by start_ccr_server()
+            # start_pii_proxy_server() reads ANTHROPIC_BASE_URL as upstream → captures CCR URL
+            if ! start_pii_proxy_server "$skip_isolated"; then
+                print_error "PII proxy failed to start — aborting for safety"
+                stop_ccr_server
+                exit 1
+            fi
+
+            # fall through to native claude launch below (exec disabled for combined mode)
+            # (do NOT return here — need to reach claude binary detection below)
+        else
+            # Solo router mode: standard exec ccr code path
+            exec "$ccr_cmd" code "$@"
+        fi
     fi
 
     # EXISTING: Find claude installation (native launch path)
@@ -159,12 +182,16 @@ launch_claude() {
         if command -v npx &> /dev/null; then
             print_info "Using npx to run Claude Code..."
             if [[ "$use_pii_proxy" == "true" ]]; then
-                if ! start_pii_proxy_server "$skip_isolated"; then
-                    print_error "PII proxy failed to start — aborting for safety"
-                    print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
-                    exit 1
+                # Solo PII proxy mode: start proxy now (combined mode: proxy already started)
+                if [[ "$use_router" != "true" ]]; then
+                    if ! start_pii_proxy_server "$skip_isolated"; then
+                        print_error "PII proxy failed to start — aborting for safety"
+                        print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                        exit 1
+                    fi
+                    trap 'stop_pii_proxy_server' EXIT INT TERM
                 fi
-                trap 'stop_pii_proxy_server' EXIT INT TERM
+                # Combined mode trap already set above
                 npx @anthropic-ai/claude-code "$@"
                 exit $?
             fi
@@ -203,12 +230,17 @@ launch_claude() {
     # new process starts, killing the proxy before claude makes its first API call.
     # BUG-10: removed eval (double-quoted variables handle spaces in paths correctly)
     if [[ "$use_pii_proxy" == "true" ]]; then
-        if ! start_pii_proxy_server "$skip_isolated"; then
-            print_error "PII proxy failed to start — aborting for safety"
-            print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
-            exit 1
+        # Combined mode (PII + router): both servers already started above in router block.
+        # Solo PII proxy mode: start proxy now.
+        if [[ "$use_router" != "true" ]]; then
+            if ! start_pii_proxy_server "$skip_isolated"; then
+                print_error "PII proxy failed to start — aborting for safety"
+                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                exit 1
+            fi
+            trap 'stop_pii_proxy_server' EXIT INT TERM
         fi
-        trap 'stop_pii_proxy_server' EXIT INT TERM
+        # In combined mode trap was already set (stop_pii_proxy_server + stop_ccr_server)
         "$claude_cmd" "$@"
         exit $?
     fi
@@ -354,6 +386,109 @@ except Exception:
     PII_PROXY_SESSION_OWNED=true  # this session started the proxy; stop_pii_proxy_server may kill it
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url"
     return 0
+}
+
+#######################################
+# Start CCR (Claude Code Router) as a background daemon
+# Used in combined PII proxy + CCR router mode.
+# In this mode CCR is started with 'ccr start' (not 'ccr code') so it runs as a
+# persistent HTTP server without spawning a claude child process.
+# After CCR is ready, sets ANTHROPIC_UPSTREAM_URL to http://CCR_HOST:CCR_PORT so that
+# the subsequent start_pii_proxy_server() call will chain: PII proxy → CCR → providers.
+# Arguments:
+#   $1 - skip_isolated: "true" to skip isolated environment
+#   $2 - ccr_cmd: path to ccr binary (optional; detected via get_router_path if omitted)
+# Returns:
+#   0 on success, 1 on failure
+# Globals set:
+#   CCR_PID - PID of background CCR daemon
+#   CCR_SESSION_OWNED - true (this session started CCR)
+#   ANTHROPIC_UPSTREAM_URL - http://CCR_HOST:CCR_PORT
+#######################################
+start_ccr_server() {
+    local skip_isolated="${1:-false}"
+    local ccr_cmd="${2:-}"
+
+    # Resolve CCR binary path if not provided
+    if [[ -z "$ccr_cmd" ]]; then
+        ccr_cmd=$(get_router_path "$skip_isolated")
+        if [[ -z "$ccr_cmd" ]]; then
+            print_warning "CCR router: binary not found - run --install-router"
+            return 1
+        fi
+    fi
+
+    # Parse CCR host and port from router.json (updates CCR_HOST and CCR_PORT globals)
+    get_ccr_port "$skip_isolated" || true  # Retain defaults on failure
+
+    # Check if CCR is already running on the target port
+    if (: >/dev/tcp/"$CCR_HOST"/"$CCR_PORT") 2>/dev/null; then
+        print_info "CCR router: reusing existing instance on ${CCR_HOST}:${CCR_PORT}"
+        CCR_SESSION_OWNED=false
+        export ANTHROPIC_UPSTREAM_URL="http://${CCR_HOST}:${CCR_PORT}"
+        return 0
+    fi
+
+    # Start CCR as background daemon using 'ccr start' (server-only mode, no claude child)
+    print_info "CCR router: starting daemon on ${CCR_HOST}:${CCR_PORT}..."
+    nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
+    CCR_PID=$!
+    CCR_SESSION_OWNED=true
+    export CCR_PID CCR_SESSION_OWNED
+
+    # Wait for CCR to be ready (max 10 × 0.5s = 5 seconds) via bash /dev/tcp health check
+    local max_ticks=10
+    local ticks=0
+    local ccr_ready=false
+
+    while [[ $ticks -lt $max_ticks ]]; do
+        # Detect early process exit to fail fast
+        if ! kill -0 "$CCR_PID" 2>/dev/null; then
+            print_warning "CCR router: daemon process exited unexpectedly"
+            break
+        fi
+        if (: >/dev/tcp/"$CCR_HOST"/"$CCR_PORT") 2>/dev/null; then
+            ccr_ready=true
+            break
+        fi
+        sleep 0.5
+        ticks=$((ticks + 1))
+    done
+
+    if [[ "$ccr_ready" != "true" ]]; then
+        print_warning "CCR router: daemon did not become ready within 5s"
+        kill "$CCR_PID" 2>/dev/null || true
+        CCR_PID=""
+        CCR_SESSION_OWNED=false
+        return 1
+    fi
+
+    # Point PII proxy upstream at CCR (will be captured by start_pii_proxy_server as upstream_url)
+    export ANTHROPIC_UPSTREAM_URL="http://${CCR_HOST}:${CCR_PORT}"
+    print_info "CCR router: ready on ${CCR_HOST}:${CCR_PORT} (PID $CCR_PID)"
+    return 0
+}
+
+#######################################
+# Stop CCR background daemon (trap cleanup on EXIT/INT/TERM)
+# Mirrors stop_pii_proxy_server() pattern.
+#######################################
+stop_ccr_server() {
+    # Only kill CCR if this session started it
+    if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]]; then
+        return 0
+    fi
+    if [[ -n "${CCR_PID:-}" ]] && kill -0 "$CCR_PID" 2>/dev/null; then
+        kill "$CCR_PID" 2>/dev/null || true
+        # Wait for clean shutdown (up to 1s), then force-kill
+        local waited=0
+        while kill -0 "$CCR_PID" 2>/dev/null && [[ $waited -lt 10 ]]; do
+            sleep 0.1
+            waited=$((waited + 1))
+        done
+        kill -9 "$CCR_PID" 2>/dev/null || true
+        CCR_PID=""
+    fi
 }
 
 #######################################
