@@ -297,35 +297,47 @@ except Exception:
     # BUG-4R4-7: Check for existing running instance before starting a new one
     # (prevents duplicate proxies on concurrent launches / stale PID file)
     local port_file="$PII_PROXY_LOG_DIR/server.port"
+    # Desired upstream: CCR URL in combined mode, Anthropic API in solo mode.
+    # Computed here so the reuse check can compare against it.
+    local desired_upstream="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
     if [[ -f "$PII_PROXY_PID_FILE" ]]; then
         local existing_pid
         existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
         if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
-            # Process alive — try to reuse if healthy
+            # Process alive — try to reuse if healthy AND upstream matches.
+            # In combined mode (desired_upstream=CCR URL) an existing solo-mode proxy
+            # has ANTHROPIC_UPSTREAM_URL=api.anthropic.com baked in its process env
+            # (immutable after spawn). Reusing it would silently bypass CCR.
+            # Kill and restart only when upstream mismatch is detected.
             if [[ -f "$port_file" ]]; then
                 local existing_port
                 existing_port=$(cat "$port_file" 2>/dev/null)
                 if _pii_proxy_http_health "$existing_port"; then
-                    PII_PROXY_ACTIVE_PORT="$existing_port"
-                    export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
-                    # Reuse-then-kill fix: mark proxy as NOT owned by this session so
-                    # stop_pii_proxy_server will NOT kill it when this session exits
-                    PII_PROXY_SESSION_OWNED=false
-                    print_info "PII proxy: reusing existing instance on :$PII_PROXY_ACTIVE_PORT"
-                    return 0
+                    if [[ "$desired_upstream" == "https://api.anthropic.com" ]]; then
+                        # Solo mode: upstream matches — safe to reuse
+                        PII_PROXY_ACTIVE_PORT="$existing_port"
+                        export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                        # Reuse-then-kill fix: mark proxy as NOT owned by this session so
+                        # stop_pii_proxy_server will NOT kill it when this session exits
+                        PII_PROXY_SESSION_OWNED=false
+                        print_info "PII proxy: reusing existing instance on :$PII_PROXY_ACTIVE_PORT"
+                        return 0
+                    else
+                        # Combined mode: existing proxy has wrong upstream — kill and restart
+                        print_info "PII proxy: restarting (upstream changed to $desired_upstream)"
+                        kill "$existing_pid" 2>/dev/null || true
+                    fi
                 fi
             fi
-            # Unhealthy existing instance — kill it, start fresh
+            # Unhealthy or upstream-mismatched instance — kill, start fresh
             kill "$existing_pid" 2>/dev/null || true
         fi
         rm -f "$PII_PROXY_PID_FILE"
     fi
 
-    # Preserve current ANTHROPIC_BASE_URL as upstream URL.
-    # In combined mode (--pii-proxy --router), start_ccr_server() has already set
-    # ANTHROPIC_BASE_URL=http://CCR:PORT, so this captures CCR as upstream.
-    # In solo PII mode, ANTHROPIC_BASE_URL is unset → defaults to Anthropic API.
-    local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+    # desired_upstream was computed at the top of this function (before the reuse check).
+    # Use it directly — ANTHROPIC_BASE_URL has not changed since then.
+    local upstream_url="$desired_upstream"
 
     # Remove stale port file from any previous session
     rm -f "$port_file"
@@ -506,7 +518,8 @@ stop_pii_proxy_server() {
     # Reuse-then-kill fix: only kill the proxy if THIS session started it.
     # When reusing a proxy from another session, PII_PROXY_SESSION_OWNED=false
     # and we leave the shared proxy running so other sessions are not interrupted.
-    if [[ "${PII_PROXY_SESSION_OWNED:-true}" != "true" ]]; then
+    # Default is false (not true) so that calling stop before start is a safe no-op.
+    if [[ "${PII_PROXY_SESSION_OWNED:-false}" != "true" ]]; then
         return 0
     fi
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
