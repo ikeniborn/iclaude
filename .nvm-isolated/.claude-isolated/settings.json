@@ -117,7 +117,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/block-secrets.py\""
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/block-secrets.py\""
           }
         ]
       },
@@ -126,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/redact-secrets.py\""
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""
           }
         ]
       }
@@ -134,7 +134,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh",
+    "command": "$CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh",
     "padding": 1
   },
   "skipDangerousModePermissionPrompt": true,

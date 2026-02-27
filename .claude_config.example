@@ -109,6 +109,15 @@ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
 # В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
 # Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
 
+# --- Anthropic API key (для роутинга через CCR) ---
+# Нужен при роутинге через CCR к Anthropic (--router + Anthropic в router.json).
+# В нативном режиме (без --router) Claude Code использует OAuth из .credentials.json — API ключ не нужен.
+# ВАЖНО: OAuth токен подписки (sk-ant-oat01-...) НЕ принимается api.anthropic.com.
+#   CCR требует обычный API ключ. Без него используйте Ollama/DeepSeek/OpenRouter.
+# Получить ключ: https://console.anthropic.com/settings/keys
+# Формат: sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export ANTHROPIC_API_KEY=
+
 # --- DeepSeek ---
 # Используется в router.json.example (провайдер по умолчанию)
 # Получить ключ: https://platform.deepseek.com/api_keys
@@ -181,7 +190,7 @@ DEBUG_LAUNCH=
 # PROXY_CA=/etc/ssl/company/corporate-ca.crt
 
 # ============================================================
-#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ
+#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (DeepSeek + Ollama)
 # ============================================================
 # PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
 # PROXY_CA=/etc/ssl/company/corporate-ca.crt
@@ -191,6 +200,16 @@ DEBUG_LAUNCH=
 # export GOOGLE_API_KEY=AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #
 # CLAUDE_CODE_ENABLE_TASKS=true
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (Anthropic + Ollama)
+# ============================================================
+# Роутинг: main/think/longContext → Anthropic, background → Ollama
+# router.json: {"Router": {"default": "anthropic,claude-sonnet-4-6",
+#                           "background": "ollama,qwen2.5:7b", ...}}
+# Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
+#
+# export ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
