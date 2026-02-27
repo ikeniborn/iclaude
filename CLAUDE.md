@@ -202,6 +202,7 @@ Opt-in activation for alternative LLM providers:
 - **Configuration:** `router.json` with `${VAR_NAME}` placeholders
 - **Launch:** `./iclaude.sh --router` (default: native Claude)
 - **Proxy compatible:** Inherits `HTTPS_PROXY` environment variables
+- **⚠️ CCR + Anthropic limitation:** CCR cannot use the subscription OAuth token (`sk-ant-oat01-...`). `api.anthropic.com` returns `401 "OAuth authentication is currently not supported"`. A real API key (`sk-ant-api03-...`) from `console.anthropic.com` is required for CCR→Anthropic routing. Without it, use Ollama/DeepSeek/OpenRouter for all CCR roles.
 
 ### PII Proxy (API Traffic Masking)
 
@@ -211,9 +212,11 @@ Python HTTP proxy that intercepts 100% of Anthropic API traffic to mask PII and 
 - **Regex patterns:** API keys, JWT, AWS credentials, PEM keys, GitHub tokens, passwords, credit cards
 - **Transport:** SSE streaming pass-through (no buffering for real-time responses)
 
+**Note:** Python venv (~500MB) is **not stored in git**. After `git clone` or `git pull` on a new machine, reinstall: `./iclaude.sh --install-pii-proxy`. Running `--repair-isolated` will remind you if venv is missing.
+
 **Setup:**
 ```bash
-# Install Python venv + Presidio NLP (~500MB, one-time)
+# Install Python venv + Presidio NLP (~500MB, one-time per machine)
 ./iclaude.sh --install-pii-proxy
 
 # Check installation
