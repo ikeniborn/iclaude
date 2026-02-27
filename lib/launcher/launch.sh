@@ -45,7 +45,7 @@ launch_claude() {
             # Combined mode: PII proxy + CCR router can now work together.
             # Chain: claude → PII proxy(:9000) → CCR(:3456) → providers
             # When both are active, CCR is started as a background daemon (not via exec ccr code).
-            # ANTHROPIC_UPSTREAM_URL is set to http://CCR_HOST:CCR_PORT before starting PII proxy,
+            # ANTHROPIC_BASE_URL is set to http://CCR_HOST:CCR_PORT before starting PII proxy,
             # so all API traffic is masked by PII proxy before reaching CCR.
         else
             print_warning "PII proxy not installed (run: ./iclaude.sh --install-pii-proxy)"
@@ -109,8 +109,8 @@ launch_claude() {
             fi
             trap 'stop_pii_proxy_server; stop_ccr_server' EXIT INT TERM
 
-            # ANTHROPIC_UPSTREAM_URL is set to CCR URL by start_ccr_server()
-            # start_pii_proxy_server() reads ANTHROPIC_BASE_URL as upstream → captures CCR URL
+            # start_ccr_server() sets ANTHROPIC_BASE_URL=http://CCR:PORT
+            # start_pii_proxy_server() reads ANTHROPIC_BASE_URL as upstream_url → chains to CCR
             if ! start_pii_proxy_server "$skip_isolated"; then
                 print_error "PII proxy failed to start — aborting for safety"
                 stop_ccr_server
@@ -321,8 +321,10 @@ except Exception:
         rm -f "$PII_PROXY_PID_FILE"
     fi
 
-    # Preserve current ANTHROPIC_BASE_URL as upstream URL
-    # This enables future CCR chaining: claude → PII proxy → CCR → Anthropic
+    # Preserve current ANTHROPIC_BASE_URL as upstream URL.
+    # In combined mode (--pii-proxy --router), start_ccr_server() has already set
+    # ANTHROPIC_BASE_URL=http://CCR:PORT, so this captures CCR as upstream.
+    # In solo PII mode, ANTHROPIC_BASE_URL is unset → defaults to Anthropic API.
     local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
 
     # Remove stale port file from any previous session
@@ -393,8 +395,10 @@ except Exception:
 # Used in combined PII proxy + CCR router mode.
 # In this mode CCR is started with 'ccr start' (not 'ccr code') so it runs as a
 # persistent HTTP server without spawning a claude child process.
-# After CCR is ready, sets ANTHROPIC_UPSTREAM_URL to http://CCR_HOST:CCR_PORT so that
+# After CCR is ready, sets ANTHROPIC_BASE_URL to http://CCR_HOST:CCR_PORT so that
 # the subsequent start_pii_proxy_server() call will chain: PII proxy → CCR → providers.
+# (start_pii_proxy_server reads ANTHROPIC_BASE_URL as upstream_url; after it runs,
+# ANTHROPIC_BASE_URL is overwritten to point to the PII proxy port instead.)
 # Arguments:
 #   $1 - skip_isolated: "true" to skip isolated environment
 #   $2 - ccr_cmd: path to ccr binary (optional; detected via get_router_path if omitted)
@@ -403,7 +407,7 @@ except Exception:
 # Globals set:
 #   CCR_PID - PID of background CCR daemon
 #   CCR_SESSION_OWNED - true (this session started CCR)
-#   ANTHROPIC_UPSTREAM_URL - http://CCR_HOST:CCR_PORT
+#   ANTHROPIC_BASE_URL - http://CCR_HOST:CCR_PORT (overwritten by PII proxy after chaining)
 #######################################
 start_ccr_server() {
     local skip_isolated="${1:-false}"
@@ -425,7 +429,8 @@ start_ccr_server() {
     if (: >/dev/tcp/"$CCR_HOST"/"$CCR_PORT") 2>/dev/null; then
         print_info "CCR router: reusing existing instance on ${CCR_HOST}:${CCR_PORT}"
         CCR_SESSION_OWNED=false
-        export ANTHROPIC_UPSTREAM_URL="http://${CCR_HOST}:${CCR_PORT}"
+        # Set ANTHROPIC_BASE_URL so start_pii_proxy_server() captures CCR as upstream_url
+        export ANTHROPIC_BASE_URL="http://${CCR_HOST}:${CCR_PORT}"
         return 0
     fi
 
@@ -463,8 +468,11 @@ start_ccr_server() {
         return 1
     fi
 
-    # Point PII proxy upstream at CCR (will be captured by start_pii_proxy_server as upstream_url)
-    export ANTHROPIC_UPSTREAM_URL="http://${CCR_HOST}:${CCR_PORT}"
+    # Set ANTHROPIC_BASE_URL so start_pii_proxy_server() captures CCR as upstream_url.
+    # start_pii_proxy_server() reads ANTHROPIC_BASE_URL (not ANTHROPIC_UPSTREAM_URL) to
+    # determine the upstream it forwards masked traffic to.
+    # After start_pii_proxy_server() runs, ANTHROPIC_BASE_URL is overwritten to the PII proxy port.
+    export ANTHROPIC_BASE_URL="http://${CCR_HOST}:${CCR_PORT}"
     print_info "CCR router: ready on ${CCR_HOST}:${CCR_PORT} (PID $CCR_PID)"
     return 0
 }
