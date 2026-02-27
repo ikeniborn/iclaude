@@ -99,6 +99,8 @@ check_router_status() {
 		print_success "Router configured and ready"
 		echo "  (router.json exists and ccr binary found)"
 		echo "  Use --router flag to launch via router"
+		echo "  Can be combined with --pii-proxy for PII masking of CCR traffic"
+		echo "  Combined mode: claude → PII proxy(:9000) → CCR(:3456) → providers"
 	else
 		print_info "Router not fully configured"
 		echo "  Run --install-router to set up router"
