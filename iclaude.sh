@@ -597,6 +597,15 @@ fi
         esac
     done
 
+    # Combined mode: PII proxy + CCR router — show informational message
+    # Both flags can now be combined; chain: claude → PII proxy(:9000) → CCR(:3456) → providers
+    # No mutual exclusion — combined mode is handled in launch_claude() via start_ccr_server()
+    if [[ "$USE_PII_PROXY_FLAG" == "true" ]] && [[ "$USE_ROUTER_FLAG" == "true" ]]; then
+        print_info "Combined mode detected: PII proxy + CCR router chain will be activated"
+        print_info "Traffic chain: claude → PII proxy(:${PII_PROXY_PORT:-9000}) → CCR(:${CCR_PORT:-3456}) → providers"
+        echo ""
+    fi
+
     # Configure isolated config if needed
     # Priority:
     # 1. If --isolated-config is set, use isolated config
