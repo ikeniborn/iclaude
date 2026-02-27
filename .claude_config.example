@@ -57,12 +57,12 @@ NO_PROXY=
 #  МОДЕЛЬ CLAUDE CODE
 # ============================================================
 # Принудительно задать модель Claude Code (переопределяет настройки по умолчанию).
-# Примеры: claude-opus-4-5, claude-sonnet-4-5, claude-haiku-4-5
+# Актуальные модели: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5
 #
 # Используется при запуске без роутера (нативный Claude API).
 # При запуске с роутером (--router) модель задаётся в router.json.
 #
-# Устанавливается через: ./iclaude.sh --model claude-opus-4-5
+# Устанавливается через: ./iclaude.sh --model claude-sonnet-4-6
 CLAUDE_CODE_MODEL=
 
 # ============================================================
@@ -106,41 +106,45 @@ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
 # Для активации роутера: ./iclaude.sh --router
 # Конфиг роутера: .nvm-isolated/.claude-isolated/router.json
 # Шаблон конфига: .nvm-isolated/.claude-isolated/router.json.example
+#
+# В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
+# Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
 
 # --- DeepSeek ---
-# Используется: Router.default, Router.think (в router.json)
+# Используется в router.json.example (провайдер по умолчанию)
 # Получить ключ: https://platform.deepseek.com/api_keys
 # Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export DEEPSEEK_API_KEY=
 
 # --- OpenRouter ---
 # Агрегатор: 300+ моделей через единый API (GPT, Gemini, Llama, Mistral и др.)
-# Используется: Router.longContext, Router.webSearch, Router.image
+# Используется в router.json.example
 # Получить ключ: https://openrouter.ai/keys
 # Формат: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export OPENROUTER_API_KEY=
 
 # --- Google Gemini ---
-# Используется: Router.longContext (gemini-2.5-pro для длинного контекста)
+# Используется в router.json.example (gemini-2.5-pro для длинного контекста)
 # Получить ключ: https://aistudio.google.com/app/apikey
 # Формат: AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export GOOGLE_API_KEY=
 
-# --- Groq ---
+# --- Groq (опционально) ---
 # Сверхбыстрый inference на специализированном железе (LPU).
-# Подходит для: Router.background (быстрые фоновые задачи)
+# Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://console.groq.com/keys
 # Формат: gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export GROQ_API_KEY=
 
-# --- Volcengine (ByteDance) ---
-# Облако ByteDance, доступно в Китае и глобально.
-# Модели: Doubao-pro, Doubao-lite
+# --- Volcengine (ByteDance, опционально) ---
+# Облако ByteDance: модели Doubao-pro, Doubao-lite.
+# Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://console.volcengine.com/ark
 export VOLCENGINE_API_KEY=
 
-# --- SiliconFlow ---
+# --- SiliconFlow (опционально) ---
 # Китайская платформа: Qwen, DeepSeek, GLM через OpenAI-совместимый API.
+# Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://cloud.siliconflow.cn/account/ak
 # Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export SILICONFLOW_API_KEY=
@@ -155,6 +159,10 @@ export SILICONFLOW_API_KEY=
 # Требуется однократная установка: ./iclaude.sh --install-pii-proxy
 # Статус: ./iclaude.sh --check-pii-proxy
 #
+# Приоритет: если USE_PII_PROXY=true и активирован --router,
+# PII proxy имеет приоритет — роутер отключается автоматически.
+# Цепочка: claude → PII proxy (:9000) → Anthropic API
+#
 # true  — автозапуск прокси при каждом старте claude
 # false — прокси не стартует (можно включить разово: --pii-proxy)
 USE_PII_PROXY=false
@@ -162,10 +170,10 @@ USE_PII_PROXY=false
 # ============================================================
 #  ОТЛАДКА
 # ============================================================
-# Включить подробный вывод работы iclaude.sh.
-# true  — показывать отладочные сообщения
+# Включить подробный вывод при запуске claude в launch.sh.
+# 1 — показывать: путь к бинарю, аргументы, переменные окружения
 # (оставить пустым для отключения)
-ICLAUDE_DEBUG=
+DEBUG_LAUNCH=
 
 # ============================================================
 #  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
@@ -181,5 +189,12 @@ ICLAUDE_DEBUG=
 #
 # export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # export OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export GOOGLE_API_KEY=AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #
 # CLAUDE_CODE_ENABLE_TASKS=true
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
+# ============================================================
+# USE_PII_PROXY=true
+# # При первом использовании установить: ./iclaude.sh --install-pii-proxy
