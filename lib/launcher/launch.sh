@@ -20,9 +20,6 @@ launch_claude() {
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
     unset CHROME_DESKTOP
 
-    # Auto-repair stale settings.json paths (silent if no change needed)
-    repair_settings_paths
-
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 
@@ -85,6 +82,30 @@ launch_claude() {
             mkdir -p "$HOME/.claude-code-router"
             cp "$router_config" "$HOME/.claude-code-router/config.json"
             print_info "Using router config: $router_config"
+        fi
+
+        # Auto-export OAuth access token so router.json can reference it as
+        # "${ANTHROPIC_ACCESS_TOKEN}" with "UseBearer": true in the Anthropic provider.
+        # This lets subscription users route to Anthropic through CCR without a
+        # separate API key — the subscription OAuth token is used via Bearer auth.
+        # CCR performs ${VAR} → process.env[VAR] substitution when loading config.
+        # Only runs if ANTHROPIC_ACCESS_TOKEN is not already set externally.
+        if [[ -z "${ANTHROPIC_ACCESS_TOKEN:-}" ]] && [[ -n "${ISOLATED_CONFIG_DIR:-}" ]]; then
+            local _creds="${ISOLATED_CONFIG_DIR}/.credentials.json"
+            if [[ -f "$_creds" ]]; then
+                local _token
+                _token=$(python3 -c "
+import json,sys
+try:
+    c=json.load(open(sys.argv[1]))
+    print(c.get('claudeAiOauth',{}).get('accessToken',''))
+except Exception:
+    pass" "$_creds" 2>/dev/null)
+                if [[ -n "$_token" ]]; then
+                    export ANTHROPIC_ACCESS_TOKEN="$_token"
+                    print_info "CCR: exported OAuth token as ANTHROPIC_ACCESS_TOKEN"
+                fi
+            fi
         fi
 
         print_info "Using Claude Code Router: $ccr_cmd"
