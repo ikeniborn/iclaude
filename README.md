@@ -46,6 +46,33 @@ cd claude
 - **Сессии** - OSC 8 hyperlinks для навигации
 - **Oh My Posh** - кастомные темы
 
+### 🕵️ PII Proxy
+
+HTTP-прокси, который перехватывает **100% трафика к Anthropic API** и маскирует PII/секреты до отправки на серверы Anthropic:
+
+- **Движок** — Presidio NLP (точное NER-распознавание) + детерминированный regex (всегда активен как fallback)
+- **Охват** — `system prompt`, `messages[].content`, `tool_results` — все типы контента
+- **Streaming** — SSE pass-through без буферизации (ответ в реальном времени)
+- **Паттерны** — API keys, JWT, AWS credentials, PEM keys, GitHub tokens, пароли, кредитные карты
+
+```bash
+# Установить Python venv + Presidio (~500MB, один раз)
+./iclaude.sh --install-pii-proxy
+
+# Проверить статус
+./iclaude.sh --check-pii-proxy
+
+# Запустить с PII-маскированием (разово)
+./iclaude.sh --pii-proxy
+
+# Включить постоянно
+echo 'USE_PII_PROXY=true' >> .claude_config
+```
+
+**Архитектура:** `claude → PII proxy (:9000) → Anthropic API`
+
+**Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
+
 ### 🔒 Security Hooks
 
 Двухуровневая защита от случайной утечки секретов в запросы к LLM:
@@ -169,6 +196,11 @@ Approval gates после каждого агента — можно остан�
 ./iclaude.sh --repair-isolated         # Починить симлинки после git clone
 ./iclaude.sh --repair-plugins          # Починить пути плагинов
 
+# PII Proxy (маскирование персональных данных)
+./iclaude.sh --install-pii-proxy       # Установить Presidio NLP (~500MB, один раз)
+./iclaude.sh --check-pii-proxy         # Статус venv, моделей, PID
+./iclaude.sh --pii-proxy               # Запуск с PII-маскированием
+
 # Дополнительно
 ./iclaude.sh --install-statusline      # Установить Status Line
 ./iclaude.sh --sandbox-install         # Установить sandboxing (Linux/WSL2)
@@ -246,6 +278,25 @@ iclaude  # Работает глобально
 # Тестировать
 ./iclaude.sh --test
 ```
+
+### Маскировать PII/секреты в API-трафике
+
+```bash
+# Установить Presidio NLP (один раз, ~500MB)
+./iclaude.sh --install-pii-proxy
+
+# Постоянный режим — добавить в конфиг
+echo 'USE_PII_PROXY=true' >> .claude_config
+./iclaude.sh
+
+# Разовый запуск без изменения конфига
+./iclaude.sh --pii-proxy
+
+# Проверить что всё работает
+./iclaude.sh --check-pii-proxy
+```
+
+**Примечание:** `--pii-proxy` и `--router` несовместимы (CCR сам управляет дочерним процессом claude).
 
 ### Использовать DeepSeek вместо Anthropic
 
