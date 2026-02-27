@@ -224,14 +224,22 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 
 # Enable for one session
 ./iclaude.sh --pii-proxy
+
+# Combined mode: PII masking + CCR router (chain: claude → PII proxy → CCR → providers)
+./iclaude.sh --pii-proxy --router
 ```
 
-**Architecture:** `claude → PII proxy (:9000) → Anthropic API`
+**Architecture (solo mode):** `claude → PII proxy (:9000) → Anthropic API`
+
+**Architecture (combined mode):** `claude → PII proxy (:9000) → CCR (:3456) → providers`
 
 - `ANTHROPIC_BASE_URL=http://127.0.0.1:9000` set before launch
-- `ANTHROPIC_UPSTREAM_URL` preserves original upstream (Anthropic or CCR)
+- `ANTHROPIC_UPSTREAM_URL` preserves original upstream (Anthropic or CCR URL)
 - Proxy started as background process; cleaned up via `trap EXIT` on claude exit
-- Note: `--pii-proxy` and `--router` are mutually exclusive (CCR spawns its own claude child)
+- **Combined mode** (`--pii-proxy --router`): CCR started as background daemon (`ccr start`),
+  `ANTHROPIC_UPSTREAM_URL=http://127.0.0.1:3456` passed to PII proxy → all API traffic is
+  masked before reaching CCR; CCR port parsed from `router.json` (default 3456)
+- Solo `--pii-proxy` and solo `--router` modes unchanged (backward compatible)
 
 **Documentation:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
 

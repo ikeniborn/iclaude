@@ -375,6 +375,54 @@ class TestEdgeCases:
 
 
 # ============================================================================
+# TEST CASES: server.py regex_mask (direct import)
+# ============================================================================
+
+class TestServerRegexMask:
+    """Tests for server.py regex_mask — imported directly to catch divergence."""
+
+    @pytest.fixture
+    def mask(self):
+        import importlib.util, os
+        src = os.path.join(os.path.dirname(__file__), '..', 'lib', 'pii-proxy', 'server.py')
+        spec = importlib.util.spec_from_file_location('pii_server', src)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.regex_mask
+
+    def test_url_credentials_simple(self, mask):
+        """Simple user:pass@host should be masked."""
+        text = 'Connect to https://admin:secret123@db.example.com'
+        masked, found = mask(text)
+        assert 'secret123' not in masked
+        assert '[CREDENTIALS]' in masked
+        assert 'credentials in URL' in found
+
+    def test_url_credentials_at_in_password(self, mask):
+        """Password containing @ must not leak after masking."""
+        text = 'postgres://admin:s3cr3tP@ssw0rd@db.example.com:5432/mydb'
+        masked, found = mask(text)
+        # Full userinfo (including '@' inside password) must be gone
+        assert 's3cr3tP' not in masked
+        assert 'ssw0rd' not in masked
+        assert masked == 'postgres://[CREDENTIALS]@db.example.com:5432/mydb'
+
+    def test_url_no_credentials_not_masked(self, mask):
+        """URLs without credentials must not be altered."""
+        text = 'See https://example.com/path for details'
+        masked, _ = mask(text)
+        assert masked == text
+
+    def test_url_credentials_performance(self, mask):
+        """Long URL with credentials should not cause ReDoS."""
+        import time
+        text = ('https://user:pass@' + 'a' * 2000 + '.example.com') * 5
+        start = time.time()
+        mask(text)
+        assert time.time() - start < 0.5, 'URL credentials pattern too slow'
+
+
+# ============================================================================
 # MAIN / CLI
 # ============================================================================
 
