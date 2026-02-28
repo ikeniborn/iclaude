@@ -125,20 +125,23 @@ test_proxy() {
     fi
 
     # Prepare curl command with proxy (use -k for insecure mode by default)
-    local curl_opts=(-x "$proxy_url" -k -s -m 5 -o /dev/null -w "%{http_code}")
+    # Timeout 15s to allow TLS handshake with proxy + CONNECT + TLS to target
+    local curl_opts=(-x "$proxy_url" -k -s -m 15 -o /dev/null -w "%{http_code}")
 
     # For HTTPS proxies, also use --proxy-insecure
     if [[ "$proxy_url" =~ ^https:// ]]; then
         curl_opts+=(--proxy-insecure)
     fi
 
-    # Test connection through proxy
-    local http_code=$(curl "${curl_opts[@]}" https://www.google.com 2>/dev/null)
+    # Test connection through proxy to Anthropic API endpoint
+    # IMPORTANT: unset HTTPS_PROXY/HTTP_PROXY env vars before curl call.
+    # If they are already exported (by configure_proxy_from_url), curl picks up
+    # both the -x flag AND the env var, tries to proxy-through-proxy → returns 000.
+    # We use -x explicitly, so env proxy vars must be cleared.
+    local http_code=$(HTTPS_PROXY="" HTTP_PROXY="" https_proxy="" http_proxy="" \
+        curl "${curl_opts[@]}" https://api.anthropic.com 2>/dev/null)
 
-    if [[ "$http_code" == "200" ]]; then
-        print_success "Proxy connection successful"
-        return 0
-    elif [[ "$http_code" == "000" ]]; then
+    if [[ "$http_code" == "000" ]]; then
         print_warning "Proxy connection failed (timeout or refused)"
         echo ""
         echo "  This could mean:"
@@ -149,9 +152,9 @@ test_proxy() {
         echo "  Claude Code may still work if proxy becomes available"
         return 1
     else
-        print_warning "Proxy test returned HTTP $http_code (not 200 OK)"
-        echo ""
-        echo "  Claude Code may still work - the test URL might be blocked"
-        return 1
+        # Any non-000 response means the proxy itself is reachable
+        # (200, 401, 403, 404, etc. all indicate proxy connectivity)
+        print_success "Proxy connection successful (HTTP $http_code)"
+        return 0
     fi
 }

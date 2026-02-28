@@ -27,10 +27,11 @@ import re
 import signal
 import sys
 import threading
-import urllib.request
-import urllib.error
 from pathlib import Path
 from typing import Any
+
+import requests as _requests
+from requests.exceptions import ConnectionError as _ReqConnError, Timeout as _ReqTimeout
 
 # ---------------------------------------------------------------------------
 # Deterministic regex patterns (ported from redact-secrets.py)
@@ -112,6 +113,25 @@ except (ValueError, TypeError):
     DEFAULT_PORT = 9000
 LOG_DIR = Path(os.environ.get('PII_PROXY_LOG_DIR', '/tmp/pii-proxy-logs'))
 ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() != 'false'
+
+# ---------------------------------------------------------------------------
+# HTTP session (requests library — handles HTTPS proxies correctly via urllib3,
+# unlike Python's stdlib urllib.request which can't TLS-handshake to the proxy
+# itself, causing BadStatusLine on HTTPS_PROXY=https://... configurations).
+# ---------------------------------------------------------------------------
+# SSL verification: disabled when NODE_TLS_REJECT_UNAUTHORIZED=0 (insecure mode).
+# Custom CA cert: reads REQUESTS_CA_BUNDLE or NODE_EXTRA_CA_CERTS (Node.js compat).
+def _build_ssl_verify():
+    if os.environ.get('NODE_TLS_REJECT_UNAUTHORIZED') == '0':
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        return False
+    ca = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('NODE_EXTRA_CA_CERTS')
+    return ca if ca else True
+
+_SSL_VERIFY = _build_ssl_verify()
+_HTTP_SESSION = _requests.Session()
+_HTTP_SESSION.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
 
 # Presidio globals (lazy-loaded, protected by _presidio_lock)
 _analyzer = None
@@ -510,23 +530,24 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             k: v for k, v in self.headers.items()
             if k.lower() not in ('host', 'content-length', 'transfer-encoding')
         }
-        req = urllib.request.Request(target, headers=headers, method='HEAD')
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                self.send_response(resp.status)
-                for key, val in resp.headers.items():
-                    if key.lower() not in ('transfer-encoding', 'connection'):
-                        self.send_header(key, val)
-                self.end_headers()
-                # Intentionally no body write — RFC 7231 §4.3.2
-        except urllib.error.HTTPError as exc:
-            self.send_response(exc.code)
-            for key, val in exc.headers.items():
+            resp = _HTTP_SESSION.request(
+                method='HEAD',
+                url=target,
+                headers=headers,
+                stream=False,
+                verify=_SSL_VERIFY,
+                timeout=30,
+                allow_redirects=False,
+            )
+            self.send_response(resp.status_code)
+            for key, val in resp.headers.items():
                 if key.lower() not in ('transfer-encoding', 'connection'):
                     self.send_header(key, val)
             self.end_headers()
-        except urllib.error.URLError as exc:
-            log.error('Upstream HEAD error: %s', exc.reason)
+            # Intentionally no body write — RFC 7231 §4.3.2
+        except (_ReqConnError, _ReqTimeout) as exc:
+            log.error('Upstream HEAD error: %s', exc)
             self.send_response(502)
             self.end_headers()
         except Exception as exc:
@@ -535,54 +556,59 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def _forward(self, body: bytes) -> None:
-        """Forward request to upstream and stream response back."""
+        """Forward request to upstream and stream response back.
+
+        Uses requests (not urllib.request) because Python's stdlib urllib does NOT
+        support HTTPS proxies (HTTPS_PROXY=https://...). When the proxy itself requires
+        TLS, urllib connects via plain HTTP → proxy sends a TLS Alert → urllib raises
+        http.client.BadStatusLine which is not a URLError subclass → silently returns
+        502 'PII-proxy internal error'. requests/urllib3 handles TLS-to-proxy correctly.
+        """
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = {
             k: v for k, v in self.headers.items()
             if k.lower() not in ('host', 'content-length', 'transfer-encoding')
         }
-        headers['Content-Length'] = str(len(body))
-
-        req = urllib.request.Request(target, data=body, headers=headers, method=self.command)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                self.send_response(resp.status)
+            with _HTTP_SESSION.request(
+                method=self.command,
+                url=target,
+                headers=headers,
+                data=body,
+                stream=True,
+                verify=_SSL_VERIFY,
+                timeout=30,
+                allow_redirects=False,
+            ) as resp:
+                self.send_response(resp.status_code)
+                # Exclude headers that change after requests decompresses the body:
+                # content-encoding (decoded), content-length (recalculated below),
+                # transfer-encoding / connection (hop-by-hop, not for client).
+                _skip = ('transfer-encoding', 'connection', 'content-encoding', 'content-length')
                 for key, val in resp.headers.items():
-                    if key.lower() not in ('transfer-encoding', 'connection'):
+                    if key.lower() not in _skip:
                         self.send_header(key, val)
-                self.end_headers()
 
-                is_streaming = 'text/event-stream' in (resp.headers.get('Content-Type', ''))
+                is_streaming = 'text/event-stream' in resp.headers.get('Content-Type', '')
                 if is_streaming:
-                    # Stream SSE without buffering.
-                    # TimeoutError (socket.timeout) guards against a permanently stalled
-                    # upstream. If the upstream genuinely sends no data for 30s (very
-                    # unusual for Anthropic API), close the stream gracefully rather than
-                    # crashing the entire handler thread. Non-timeout errors propagate.
-                    while True:
-                        try:
-                            chunk = resp.read(4096)
-                        except TimeoutError:
-                            log.warning('SSE upstream timed out — closing stream')
-                            break
-                        if not chunk:
-                            break
-                        self.wfile.write(chunk)
-                        self.wfile.flush()
+                    # SSE: stream chunks without buffering; no Content-Length.
+                    self.end_headers()
+                    for chunk in resp.iter_content(chunk_size=4096):
+                        if chunk:
+                            try:
+                                self.wfile.write(chunk)
+                                self.wfile.flush()
+                            except (BrokenPipeError, ConnectionResetError):
+                                break  # client disconnected mid-stream
                 else:
-                    self.wfile.write(resp.read())
+                    content = resp.content  # fully buffered (already decompressed by requests)
+                    self.send_header('Content-Length', str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
 
-        except urllib.error.HTTPError as exc:
-            # HTTPError is a URLError subclass — catch BEFORE generic URLError
-            self.send_response(exc.code)
-            for key, val in exc.headers.items():
-                if key.lower() not in ('transfer-encoding', 'connection'):
-                    self.send_header(key, val)
-            self.end_headers()
-            self.wfile.write(exc.read())
-        except urllib.error.URLError as exc:
-            # Network errors: connection refused, DNS failure, timeout
-            log.error('Upstream connection error: %s', exc.reason)
+        except (_ReqConnError, _ReqTimeout) as exc:
+            # Network errors: proxy unreachable, DNS failure, connection refused, timeout
+            log.error('Upstream connection error: %s', exc)
             error_body = json.dumps({
                 'type': 'error',
                 'error': {'type': 'api_error', 'message': 'PII proxy upstream unavailable'},
