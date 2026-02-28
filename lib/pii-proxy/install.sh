@@ -69,7 +69,7 @@ install_isolated_pii_proxy() {
         print_warning "Using en_core_web_sm (lower accuracy). Consider: python3 -m spacy download en_core_web_lg"
     fi
 
-    # Copy server script to isolated config dir
+    # Symlink server script to isolated config dir (not a copy — so git updates take effect immediately)
     local src_script
     src_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/server.py"
     if [[ ! -f "$src_script" ]]; then
@@ -78,9 +78,9 @@ install_isolated_pii_proxy() {
     fi
     print_info "Installing server script..."
     mkdir -p "$(dirname "$PII_PROXY_SERVER_SCRIPT")"
-    cp "$src_script" "$PII_PROXY_SERVER_SCRIPT"
-    chmod 700 "$PII_PROXY_SERVER_SCRIPT"
-    print_success "Server script: $PII_PROXY_SERVER_SCRIPT"
+    ln -sf "$src_script" "$PII_PROXY_SERVER_SCRIPT"
+    chmod 700 "$src_script"
+    print_success "Server script: $PII_PROXY_SERVER_SCRIPT → $src_script"
 
     # Create log directory
     mkdir -p "$PII_PROXY_LOG_DIR"
