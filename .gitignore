@@ -65,6 +65,8 @@ scripts/.claude_proxy_credentials  # Legacy
 # Ignore session data, but keep skills and templates
 # NOTE: CLAUDE.md is in project root (not here) to avoid user-level memory pollution
 .nvm-isolated/.claude-isolated/*
+!.nvm-isolated/.claude-isolated/commands/
+!.nvm-isolated/.claude-isolated/commands/**
 !.nvm-isolated/.claude-isolated/skills/
 !.nvm-isolated/.claude-isolated/skills/**
 !.nvm-isolated/.claude-isolated/agents/
