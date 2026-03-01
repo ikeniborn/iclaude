@@ -63,6 +63,13 @@ repair_isolated_environment() {
 	print_info "Checking settings.json paths..."
 	repair_settings_paths || errors=$((errors + 1))
 
+	# Repair plugin registry files (create known_marketplaces.json if missing after git rm)
+	echo ""
+	print_info "Checking plugin registry files..."
+	if declare -f repair_plugin_paths &>/dev/null; then
+		repair_plugin_paths || errors=$((errors + 1))
+	fi
+
 	# Configure git hooks path
 	echo ""
 	print_info "Checking git hooks configuration..."
