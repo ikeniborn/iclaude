@@ -120,30 +120,57 @@ echo "WORKSPACE=${WORKSPACE}"
 
 ```
 Прочитать: ${AGENTS_DIR}/researcher-agent/AGENT.md
-Собрать prompt: AGENT.md + """
+```
+
+**КРИТИЧНО: Пре-подстановка перед запуском** (см. раздел "Как читать AGENT.md файл"):
+Заменить в тексте AGENT.md все `{WORKSPACE}` → реальный workspace_path,
+все `{PROJECT_ROOT}` → реальный project_root.
+
+```
+Собрать prompt: [замещённое содержимое AGENT.md] + """
 WORKSPACE: {WORKSPACE}
 PROJECT_ROOT: {PROJECT_ROOT}
 TASK: {task_description}
 """
-Запустить: Task(subagent_type="general-purpose", prompt=researcher_prompt)
+Запустить: Task(subagent_type="researcher-agent", prompt=researcher_prompt)
 ```
 
 Дождаться завершения. Показать пользователю key_insights из вывода агента.
+
+**После завершения — обязательная проверка:**
+
+```bash
+# Проверить что research.toon создан в WORKSPACE, а не в корне проекта
+if [ ! -f "${WORKSPACE}/research.toon" ]; then
+  if [ -f "${PROJECT_ROOT}/research.toon" ]; then
+    echo "⚠️  WARN: research.toon создан в корне проекта вместо WORKSPACE — исправляю"
+    mv "${PROJECT_ROOT}/research.toon" "${WORKSPACE}/research.toon"
+  else
+    echo "ERROR: research.toon не найден ни в WORKSPACE ни в PROJECT_ROOT"
+    echo "Researcher Agent не создал выходной файл."
+    exit 1
+  fi
+fi
+```
 
 ### Шаг 3.5: Запустить Critic Agent (mode=research)
 
 ```
 Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
+```
 
+**Пре-подстановка:** заменить `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md перед использованием.
+
+```
 retry_count = 0
 loop:
-  critic_prompt = critic_md + """
+  critic_prompt = [замещённое содержимое critic AGENT.md] + """
   WORKSPACE: {WORKSPACE}
   EVALUATION_MODE: research
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {null если retry_count==0 иначе WORKSPACE/research-critique.toon}
   """
-  Task(subagent_type="general-purpose", prompt=critic_prompt)
+  Task(subagent_type="critic-agent", prompt=critic_prompt)
 
   verdict = parse(Read("{WORKSPACE}/research-critique.toon").critique.verdict)
 
@@ -163,14 +190,15 @@ loop:
     STOP.
 
   # Перезапустить Researcher с critique как контекстом
-  researcher_prompt = researcher_md + """
+  # (пре-подстановка {WORKSPACE} и {PROJECT_ROOT} в researcher AGENT.md — обязательно)
+  researcher_prompt = [замещённое содержимое researcher AGENT.md] + """
   WORKSPACE: {WORKSPACE}
   PROJECT_ROOT: {PROJECT_ROOT}
   TASK: {task_description}
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {WORKSPACE}/research-critique.toon
   """
-  Task(subagent_type="general-purpose", prompt=researcher_prompt)
+  Task(subagent_type="researcher-agent", prompt=researcher_prompt)
   # Вернуться в начало loop для нового critique
 ```
 
@@ -203,26 +231,49 @@ Workspace: {WORKSPACE}
 
 ```
 Прочитать: ${AGENTS_DIR}/planning-agent/AGENT.md
-Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}"
-Запустить: Task(subagent_type="general-purpose", prompt=planner_prompt)
+```
+
+**Пре-подстановка:** заменить `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md на реальные значения.
+
+```
+Собрать prompt: [замещённое содержимое AGENT.md] + "WORKSPACE: {WORKSPACE}"
+Запустить: Task(subagent_type="planning-agent", prompt=planner_prompt)
 ```
 
 Дождаться завершения. Показать пользователю summary плана.
+
+**После завершения — обязательная проверка:**
+
+```bash
+if [ ! -f "${WORKSPACE}/plan.toon" ]; then
+  if [ -f "${PROJECT_ROOT}/plan.toon" ]; then
+    echo "⚠️  WARN: plan.toon создан в корне проекта вместо WORKSPACE — исправляю"
+    mv "${PROJECT_ROOT}/plan.toon" "${WORKSPACE}/plan.toon"
+  else
+    echo "ERROR: plan.toon не найден ни в WORKSPACE ни в PROJECT_ROOT"
+    exit 1
+  fi
+fi
+```
 
 ### Шаг 5.5: Запустить Critic Agent (mode=plan)
 
 ```
 Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
+```
 
+**Пре-подстановка:** заменить `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md перед использованием.
+
+```
 retry_count = 0
 loop:
-  critic_prompt = critic_md + """
+  critic_prompt = [замещённое содержимое critic AGENT.md] + """
   WORKSPACE: {WORKSPACE}
   EVALUATION_MODE: plan
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {null если retry_count==0 иначе WORKSPACE/plan-critique.toon}
   """
-  Task(subagent_type="general-purpose", prompt=critic_prompt)
+  Task(subagent_type="critic-agent", prompt=critic_prompt)
 
   verdict = parse(Read("{WORKSPACE}/plan-critique.toon").critique.verdict)
 
@@ -242,12 +293,12 @@ loop:
     STOP.
 
   # Перезапустить Planner с critique как контекстом
-  planner_prompt = planner_md + """
+  planner_prompt = [замещённое содержимое planner AGENT.md] + """
   WORKSPACE: {WORKSPACE}
   RETRY_NUMBER: {retry_count}
   PREVIOUS_CRITIQUE: {WORKSPACE}/plan-critique.toon
   """
-  Task(subagent_type="general-purpose", prompt=planner_prompt)
+  Task(subagent_type="planning-agent", prompt=planner_prompt)
   # Вернуться в начало loop для нового critique
 ```
 
@@ -281,24 +332,47 @@ Workspace: {WORKSPACE}
 
 ```
 Прочитать: ${AGENTS_DIR}/execution-agent/AGENT.md
-Собрать prompt: AGENT.md + "WORKSPACE: {WORKSPACE}"
-Запустить: Task(subagent_type="general-purpose", prompt=executor_prompt)
+```
+
+**Пре-подстановка:** заменить `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md на реальные значения.
+
+```
+Собрать prompt: [замещённое содержимое AGENT.md] + "WORKSPACE: {WORKSPACE}"
+Запустить: Task(subagent_type="execution-agent", prompt=executor_prompt)
 ```
 
 Дождаться завершения (Execution Agent сам запрашивает подтверждения для high-risk фаз).
+
+**После завершения — обязательная проверка:**
+
+```bash
+if [ ! -f "${WORKSPACE}/report.json" ]; then
+  if [ -f "${PROJECT_ROOT}/report.json" ]; then
+    echo "⚠️  WARN: report.json создан в корне проекта вместо WORKSPACE — исправляю"
+    mv "${PROJECT_ROOT}/report.json" "${WORKSPACE}/report.json"
+  else
+    echo "ERROR: report.json не найден ни в WORKSPACE ни в PROJECT_ROOT"
+    exit 1
+  fi
+fi
+```
 
 ### Шаг 7.5: Запустить Critic Agent (mode=execution)
 
 ```
 Прочитать: ${AGENTS_DIR}/critic-agent/AGENT.md
+```
 
-critic_prompt = critic_md + """
+**Пре-подстановка:** заменить `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md перед использованием.
+
+```
+critic_prompt = [замещённое содержимое critic AGENT.md] + """
 WORKSPACE: {WORKSPACE}
 EVALUATION_MODE: execution
 RETRY_NUMBER: 0
 PREVIOUS_CRITIQUE: null
 """
-Task(subagent_type="general-purpose", prompt=critic_prompt)
+Task(subagent_type="critic-agent", prompt=critic_prompt)
 
 verdict = parse(Read("{WORKSPACE}/execution-critique.toon").critique.verdict)
 
@@ -360,19 +434,30 @@ Workspace сохранён: {WORKSPACE}
 agent_md_path = f"{AGENTS_DIR}/{agent_name}/AGENT.md"
 agent_md_content = Read(agent_md_path)
 
+# ⚠️ КРИТИЧНО: Пре-подстановка шаблонных переменных
+# AGENT.md содержит {WORKSPACE} и {PROJECT_ROOT} как плейсхолдеры.
+# Без явной замены суб-агент (особенно Haiku) может не разрешить
+# плейсхолдер и записать файлы в CWD (корень проекта) вместо WORKSPACE.
+agent_md_content = agent_md_content
+    .replace("{WORKSPACE}", workspace_path)    # "/other/project/.claude/workspace/SESSION_ID"
+    .replace("{PROJECT_ROOT}", project_root)   # "/other/project"
+
 prompt = f"""{agent_md_content}
 
 ---
 
 WORKSPACE: {workspace_path}
+PROJECT_ROOT: {project_root}
 TASK: {task_description}
 """
 
-result = Task(subagent_type="general-purpose", prompt=prompt)
+result = Task(subagent_type="<agent-name>", prompt=prompt)
 ```
 
-**Важно:** AGENT.md содержит полные инструкции для агента. Он читается и передаётся
-в prompt как есть — агент получает роль, алгоритм и правила.
+**Правило:** После чтения AGENT.md и ДО передачи в Task — всегда выполнить
+текстовую замену `{WORKSPACE}` → реальный workspace_path и `{PROJECT_ROOT}` → реальный project_root.
+Это гарантирует что суб-агент видит конкретные пути в каждой инструкции,
+а не шаблонные плейсхолдеры.
 
 **Разделение путей:**
 - `AGENTS_DIR` — изолированная среда iclaude (не меняется при смене проекта)
@@ -439,6 +524,21 @@ rm -rf "${WORKSPACE}"
 
 Оркестратор трактует это как RETRY-без-guidance, не ABORT.
 Перезапустить Critic, затем целевой агент.
+
+### Файлы plan.toon/research.toon появились в корне проекта (не в .claude/workspace/)
+
+**Симптом:** `plan.toon`, `research.toon` или `report.json` созданы в `PROJECT_ROOT/`
+вместо `PROJECT_ROOT/.claude/workspace/SESSION_ID/`.
+
+**Причина:** Суб-агент не подставил WORKSPACE-плейсхолдер и использовал
+относительный путь (`Write("plan.toon")` вместо `Write("WORKSPACE/plan.toon")`).
+
+**Исправление (автоматическое):** Каждый шаг (3, 5, 7) содержит Bash-проверку,
+которая перемещает файл из PROJECT_ROOT в WORKSPACE если он там обнаружен.
+
+**Профилактика:** Пре-подстановка `{WORKSPACE}` в тексте AGENT.md перед передачей
+в Task (см. раздел "Как читать AGENT.md файл"). Убедитесь что замена выполняется
+перед каждым `Task(...)` вызовом.
 
 ## Связанные файлы
 

@@ -114,13 +114,29 @@ Critic Agent **НЕ ДОЛЖЕН** изменять файлы проекта.
 
 ### Workspace Path передача
 
-Оркестратор передаёт `workspace_path` в prompt каждого агента:
+Оркестратор передаёт `workspace_path` в prompt каждого агента, а также
+**выполняет пре-подстановку** `{WORKSPACE}` и `{PROJECT_ROOT}` в тексте AGENT.md
+перед передачей суб-агенту:
 
 ```
 WORKSPACE: /path/to/project/.claude/workspace/2026-02-17T1523
+PROJECT_ROOT: /path/to/project
 ```
 
-Агент использует этот путь для чтения input-файлов и записи output-файлов.
+Агент использует этот путь как **абсолютный префикс** для всех файловых операций:
+
+```python
+# ПРАВИЛЬНО:
+Write("/path/to/project/.claude/workspace/SESSION_ID/research.toon", content)
+
+# НЕПРАВИЛЬНО — записывает в CWD (корень проекта):
+Write("research.toon", content)
+Write("./research.toon", content)
+```
+
+⚠️ **Важно:** Все Write/Read операции с файлами workspace ВСЕГДА используют
+абсолютный путь, начинающийся с значения WORKSPACE. Никогда не используй
+относительные пути для workspace-файлов.
 
 ### Файловые зависимости
 
