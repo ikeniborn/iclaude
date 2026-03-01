@@ -68,6 +68,13 @@ repair_isolated_environment() {
 	print_info "Checking git hooks configuration..."
 	configure_git_hooks || errors=$((errors + 1))
 
+	# Install plugins from manifest (if function is defined and manifest exists)
+	if declare -f install_plugins_from_manifest &>/dev/null; then
+		echo ""
+		print_info "Checking plugins from plugins-manifest.json..."
+		install_plugins_from_manifest
+	fi
+
 	# Summary
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

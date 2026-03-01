@@ -44,7 +44,7 @@ OPTIONS:
   --install-from-lockfile           Install from .nvm-isolated-lockfile.json (reproducible setup, auto-detected on launch)
   --check-isolated                  Show status of isolated environment
   --cleanup-isolated                Remove isolated environment (keeps lockfile)
-  --repair-isolated                 Repair symlinks and permissions after git clone
+  --repair-isolated                 Repair symlinks, permissions, and plugins after git clone
   --repair-plugins                  Repair plugin paths after moving project directory
   --isolated-config                 Use isolated config directory (automatic for isolated install)
   --shared-config                   Use shared config directory (default: ~/.claude/)

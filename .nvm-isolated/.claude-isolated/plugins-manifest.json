@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "description": "Plugins to install after git clone. Edit to add/remove plugins. Run: ./iclaude.sh --repair-isolated",
+  "plugins": [
+    {
+      "name": "commit-commands",
+      "marketplace": "claude-plugins-official",
+      "description": "Git workflow: commit, push, PR commands"
+    },
+    {
+      "name": "code-review",
+      "marketplace": "claude-plugins-official",
+      "description": "Code review commands"
+    },
+    {
+      "name": "hookify",
+      "marketplace": "claude-plugins-official",
+      "description": "Hooks management utilities"
+    },
+    {
+      "name": "claude-md-management",
+      "marketplace": "claude-plugins-official",
+      "description": "CLAUDE.md file management"
+    },
+    {
+      "name": "typescript-lsp",
+      "marketplace": "claude-plugins-official",
+      "description": "TypeScript Language Server Protocol"
+    },
+    {
+      "name": "pyright-lsp",
+      "marketplace": "claude-plugins-official",
+      "description": "Python Language Server Protocol (Pyright)"
+    },
+    {
+      "name": "gopls-lsp",
+      "marketplace": "claude-plugins-official",
+      "description": "Go Language Server Protocol"
+    }
+  ]
+}
