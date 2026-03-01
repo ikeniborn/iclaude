@@ -85,6 +85,8 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/.claude-isolated/plugins/marketplaces/
 .nvm-isolated/.claude-isolated/plugins/install-counts-cache.json
 .nvm-isolated/.claude-isolated/plugins/blocklist.json
+.nvm-isolated/.claude-isolated/plugins/known_marketplaces.json
+.nvm-isolated/.claude-isolated/plugins/installed_plugins.json
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
 .nvm-isolated/.claude-isolated/hooks/__pycache__/
 .nvm-isolated/.claude-isolated/hooks/**/*.pyc
