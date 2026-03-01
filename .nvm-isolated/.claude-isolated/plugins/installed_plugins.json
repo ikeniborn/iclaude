@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "plugins": {
+    "frontend-design@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/frontend-design/e30768372b41",
+        "version": "e30768372b41",
+        "installedAt": "2025-12-31T05:37:13.692Z",
+        "lastUpdated": "2026-01-21T12:04:52.275Z",
+        "gitCommitSha": "68a0ecf3c11ce3e1d3e1f868cef237b9ddae1800"
+      }
+    ],
+    "github@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/github/e30768372b41",
+        "version": "e30768372b41",
+        "installedAt": "2025-12-31T05:37:30.041Z",
+        "lastUpdated": "2026-01-21T12:04:52.276Z",
+        "gitCommitSha": "68a0ecf3c11ce3e1d3e1f868cef237b9ddae1800"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/code-review/e30768372b41",
+        "version": "e30768372b41",
+        "installedAt": "2025-12-31T05:37:40.317Z",
+        "lastUpdated": "2026-01-21T12:04:52.277Z",
+        "gitCommitSha": "68a0ecf3c11ce3e1d3e1f868cef237b9ddae1800"
+      }
+    ],
+    "figma@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/figma/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2025-12-31T05:37:52.852Z",
+        "lastUpdated": "2025-12-31T05:37:52.852Z",
+        "gitCommitSha": "20aca44ee6ba6092037e943c151c067896828360"
+      }
+    ],
+    "context7@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/iclaude",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/context7/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-01-10T09:38:48.760Z",
+        "lastUpdated": "2026-02-10T21:58:32.050Z",
+        "gitCommitSha": "895429e44e158516a9ea62d30af51faf3218cb90"
+      }
+    ],
+    "ralph-loop@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/iclaude",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/ralph-loop/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-01-10T09:39:08.825Z",
+        "lastUpdated": "2026-02-10T21:58:32.048Z",
+        "gitCommitSha": "895429e44e158516a9ea62d30af51faf3218cb90"
+      }
+    ],
+    "typescript-lsp@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-10T09:42:40.291Z",
+        "lastUpdated": "2026-01-10T09:42:40.291Z",
+        "gitCommitSha": "895429e44e158516a9ea62d30af51faf3218cb90"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/iclaude",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-10T19:54:37.272Z",
+        "lastUpdated": "2026-01-10T19:54:37.272Z",
+        "gitCommitSha": "98481684e3a21d6e4a8da6635ea378de41335a97"
+      }
+    ],
+    "pyright-lsp@claude-plugins-official": [
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-10T09:42:52.523Z",
+        "lastUpdated": "2026-01-10T09:42:52.523Z",
+        "gitCommitSha": "895429e44e158516a9ea62d30af51faf3218cb90"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/ikeniborn/Documents/Project/iclaude",
+        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-10T19:54:39.566Z",
+        "lastUpdated": "2026-01-10T19:54:39.566Z",
+        "gitCommitSha": "98481684e3a21d6e4a8da6635ea378de41335a97"
+      }
+    ]
+  }
+}
