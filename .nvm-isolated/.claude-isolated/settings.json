@@ -130,6 +130,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/capture-tool-results.py\""
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
