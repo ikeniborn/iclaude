@@ -89,6 +89,14 @@ def main() -> int:
     session_id = data.get("session_id", "")
     transcript_path = data.get("transcript_path", "")
 
+    # Validate session_id from stdin to UUID format before use in file operations
+    # (prevents path traversal via crafted session_id in hook JSON).
+    _UUID_RE = re.compile(
+        r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    )
+    if session_id and not _UUID_RE.fullmatch(session_id):
+        session_id = ""  # force fallback to transcript_path extraction
+
     # Попытка извлечь session_id из transcript_path если не передан явно.
     # transcript_path вида .../projects/{encoded}/{UUID}.jsonl
     if not session_id and transcript_path:
