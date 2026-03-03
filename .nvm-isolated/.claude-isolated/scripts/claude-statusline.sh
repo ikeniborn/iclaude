@@ -611,7 +611,8 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
     SESSIONS_DIR="$PROJECT_DIR/.claude/sessions"
 
     # Always write TOON format (compact, 30-60% token savings)
-    TOON_FILE="$SESSIONS_DIR/readable-${SESSION_ID}.toon"
+    # Write directly into date subdirectory — no movement needed, append-only works.
+    TOON_FILE="$SESSIONS_DIR/$(date +%Y-%m-%d)/readable-${SESSION_ID}.toon"
 
     READABLE_FILE=""
     if generate_toon_session "$SESSION_FILE" "$TOON_FILE"; then
