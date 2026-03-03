@@ -155,7 +155,7 @@ def build_toon_content(meta: dict, details: list) -> str:
         ts = d.get("ts", "")
         tool = d.get("tool", "")
         status = d.get("status", "success")
-        target = str(d.get("target", "")).replace("|", "/").replace("\n", " ")
+        target = get_target(tool, d.get("input", {})).replace("|", "/")
         lines.append(f"{ts}|{tool}|{status}|{target}")
 
     lines.append("")
@@ -211,7 +211,6 @@ def main() -> None:
     ts_str = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     session_id = get_session_id(hook_input)
-    target = get_target(tool_name, tool_input)
     status = get_status(tool_result)
     compact_input = get_compact_input(tool_name, tool_input)
 
@@ -238,12 +237,11 @@ def main() -> None:
             "started_at": ts_str,
         }
 
-    # Добавить новую запись
+    # Добавить новую запись (target не хранится — выводится из input в build_toon_content)
     call = {
         "ts": ts_str,
         "tool": tool_name,
         "status": status,
-        "target": target,
         "input": compact_input,
     }
     details.append(call)
