@@ -91,6 +91,10 @@ Sequential/parallel task execution with retry logic (experimental).
 | Router | `--router` | Launch via router |
 | LSP | `--install-lsp` | Install LSP servers |
 | Sandbox | `--sandbox-check` | Check sandbox availability |
+| PII Proxy | `--install-pii-proxy` | Install Presidio NLP (idempotent — skips installed components) |
+| PII Proxy | `--install-pii-proxy --force` | Force reinstall all PII proxy components from scratch |
+| PII Proxy | `--check-pii-proxy` | Show venv/model/process status |
+| PII Proxy | `--pii-proxy` | Launch with PII masking active |
 
 **Full tables:** См. `examples/testing-commands.md` и `examples/installation-commands.md`
 
