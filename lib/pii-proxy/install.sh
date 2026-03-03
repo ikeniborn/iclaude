@@ -3,29 +3,56 @@
 # Provides function for installing Presidio NLP dependencies
 
 #######################################
-# Install PII-proxy to isolated environment
-# Idempotent: skips steps that are already up to date.
-# Arguments:
-#   $1 - "--force" to skip all checks and reinstall from scratch
-# Returns:
-#   0 - success
-#   1 - error
+# Detect ALT Linux distribution
+# Returns: 0 if ALT Linux, 1 otherwise
 #######################################
-install_isolated_pii_proxy() {
-    local force=false
-    [[ "${1:-}" == "--force" ]] && force=true
+_detect_alt_linux() {
+    [[ -f /etc/altlinux-release ]] && return 0
+    local id
+    id=$(grep '^ID=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"' | tr -d "'")
+    [[ "$id" == "altlinux" || "$id" == "alt" ]] && return 0
+    return 1
+}
 
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  PII-Proxy: Install Presidio NLP"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    [[ "$force" == true ]] && echo "  Mode: forced reinstall (--force)"
-    echo ""
+#######################################
+# Level 1: Full Presidio install with current spacy
+# Args: $1 - venv path
+# Returns: 0 on success, 1 on failure
+#######################################
+_try_install_presidio_full() {
+    local venv="$1"
+    CC=gcc "$venv/bin/python3" -m pip install \
+        presidio-analyzer presidio-anonymizer spacy \
+        --prefer-binary --quiet 2>&1
+}
 
-    local steps_skipped=0
-    local steps_done=0
+#######################################
+# Level 2: Legacy Presidio install with spacy<3.8 (pre-built blis wheels)
+# Args: $1 - venv path
+# Returns: 0 on success, 1 on failure
+#######################################
+_try_install_presidio_legacy() {
+    local venv="$1"
+    CC=gcc "$venv/bin/python3" -m pip install \
+        presidio-analyzer presidio-anonymizer "spacy>=3.6,<3.8" \
+        --prefer-binary --quiet 2>&1
+}
 
-    # ── Python version check ────────────────────────────────────────────────
+#######################################
+# Level 3: Regex-only mode (requests only, no NLP)
+# Args: $1 - venv path
+# Returns: 0 on success, 1 on failure
+#######################################
+_install_regex_only_mode() {
+    local venv="$1"
+    "$venv/bin/python3" -m pip install requests --quiet 2>&1
+}
+
+#######################################
+# Check Python version, ALT Linux hint, isolated env
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_proxy_check_prerequisites() {
     if ! python3 --version &>/dev/null; then
         print_error "Python 3 not found. Install Python 3.8+ first."
         return 1
@@ -36,141 +63,147 @@ install_isolated_pii_proxy() {
     fi
     print_success "Python $(python3 --version 2>&1 | grep -oE '[0-9][0-9.]*'): OK"
 
-    # ── Isolated environment check ──────────────────────────────────────────
+    if _detect_alt_linux; then
+        print_warning "ALT Linux detected: blis C extension may fail to compile."
+        echo "  If installation fails, install gcc first:"
+        echo "    sudo apt-get install gcc-c++ python3-dev"
+        echo "  Then retry: ./iclaude.sh --install-pii-proxy"
+        echo ""
+    fi
+
     if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
         print_error "Isolated environment not found. Run --isolated-install first."
         return 1
     fi
+}
 
-    # ── Step 1: Virtual environment ─────────────────────────────────────────
-    local venv_python="$PII_PROXY_VENV/bin/python3"
-    local venv_ok=false
+#######################################
+# Create venv and upgrade pip
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_proxy_setup_venv() {
+    print_info "Creating Python virtual environment..."
+    if ! python3 -m venv "$PII_PROXY_VENV"; then
+        print_error "Failed to create virtual environment at: $PII_PROXY_VENV"
+        return 1
+    fi
+    print_success "Virtual environment: $PII_PROXY_VENV"
 
-    if [[ "$force" == false ]] && [[ -x "$venv_python" ]]; then
-        # Verify version inside venv (must be ≥ 3.8)
-        if "$venv_python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' 2>/dev/null; then
-            venv_ok=true
-            print_success "venv: already exists, skipping creation"
-            (( steps_skipped++ )) || true
+    print_info "Upgrading pip..."
+    if ! "$PII_PROXY_VENV/bin/python3" -m pip install --quiet --upgrade pip; then
+        print_warning "pip upgrade failed — continuing with existing version"
+    fi
+}
+
+#######################################
+# Run cascading install: full → legacy → regex-only.
+# Sets $pii_mode in caller's scope via bash dynamic scoping.
+# Returns: 0 on success, 1 if even requests fails
+#######################################
+_pii_proxy_cascade_install() {
+    local _output
+
+    # Level 1: Full Presidio with current spacy
+    print_info "Installing presidio-analyzer + presidio-anonymizer + spacy (~100MB)..."
+    if _output=$(_try_install_presidio_full "$PII_PROXY_VENV"); then
+        pii_mode="presidio-full"
+        print_success "Presidio installed (full NLP mode)"
+    fi
+
+    # Level 2: Legacy Presidio with spacy<3.8 (if level 1 failed)
+    if [[ -z "$pii_mode" ]]; then
+        print_warning "Full Presidio install failed (blis compilation error)."
+        echo "  Trying legacy spacy<3.8 (uses pre-built blis wheels)..."
+        echo ""
+        print_info "Installing presidio + spacy>=3.6,<3.8 (legacy mode)..."
+        if _output=$(_try_install_presidio_legacy "$PII_PROXY_VENV"); then
+            pii_mode="presidio-legacy"
+            print_success "Presidio installed (legacy spacy<3.8 mode)"
         fi
     fi
 
-    if [[ "$venv_ok" == false ]]; then
-        # --force: remove stale venv first
-        if [[ "$force" == true ]] && [[ -n "$PII_PROXY_VENV" ]] && [[ -d "$PII_PROXY_VENV" ]]; then
-            print_info "Removing existing venv..."
-            rm -rf "$PII_PROXY_VENV"
-        fi
-        print_info "Creating Python virtual environment..."
-        if ! python3 -m venv "$PII_PROXY_VENV"; then
-            print_error "Failed to create virtual environment at: $PII_PROXY_VENV"
-            return 1
-        fi
-        print_success "Virtual environment: $PII_PROXY_VENV"
-        (( steps_done++ )) || true
-
-        # Upgrade pip only when venv is freshly created (non-fatal)
-        print_info "Upgrading pip..."
-        if ! "$venv_python" -m pip install --quiet --upgrade pip; then
-            print_warning "pip upgrade failed — continuing with existing version"
-        fi
-    fi
-
-    # ── Step 2: Presidio + spaCy packages ──────────────────────────────────
-    local packages_ok=false
-
-    if [[ "$force" == false ]]; then
-        if "$venv_python" -m pip show presidio-analyzer presidio-anonymizer spacy &>/dev/null; then
-            packages_ok=true
-            print_success "Presidio: already installed, skipping pip install"
-            (( steps_skipped++ )) || true
-        fi
-    fi
-
-    if [[ "$packages_ok" == false ]]; then
-        print_info "Installing presidio-analyzer + presidio-anonymizer + spacy (~100MB)..."
-        if ! "$venv_python" -m pip install \
-            presidio-analyzer \
-            presidio-anonymizer \
-            spacy; then
-            print_error "Failed to install Presidio packages"
-            return 1
-        fi
-        print_success "Presidio installed"
-        (( steps_done++ )) || true
-    fi
-
-    # ── Step 3: spaCy model (CRITICAL — lg=587MB, sm=12MB) ─────────────────
-    local model_lg_ok=false
-    local model_sm_ok=false
-
-    if [[ "$force" == false ]]; then
-        if "$venv_python" -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
-            model_lg_ok=true
-            print_success "spaCy model: en_core_web_lg already installed, skipping download (587MB saved)"
-            (( steps_skipped++ )) || true
-        elif "$venv_python" -c "import spacy; spacy.load('en_core_web_sm')" 2>/dev/null; then
-            model_sm_ok=true
-            print_warning "spaCy model: en_core_web_sm already installed (lower accuracy)"
-            print_info "  To upgrade: $venv_python -m spacy download en_core_web_lg"
-            (( steps_skipped++ )) || true
-        fi
-    fi
-
-    if [[ "$model_lg_ok" == false ]] && [[ "$model_sm_ok" == false ]]; then
-        print_info "Downloading spaCy en_core_web_lg model (~587MB, may take a few minutes)..."
-        if "$venv_python" -m spacy download en_core_web_lg; then
-            print_success "spaCy model: en_core_web_lg downloaded"
-            (( steps_done++ )) || true
+    # Level 3: Regex-only mode (if both NLP modes failed)
+    if [[ -z "$pii_mode" ]]; then
+        print_warning "Legacy Presidio install also failed."
+        echo ""
+        print_info "Installing requests (regex-only mode)..."
+        if _output=$(_install_regex_only_mode "$PII_PROXY_VENV"); then
+            pii_mode="regex-only"
+            echo ""
+            print_warning "Presidio (NLP) could not be installed. PII-Proxy will use regex-only mode."
+            echo "  Regex mode covers: API keys, JWT, AWS credentials, GitHub tokens,"
+            echo "  passwords, credit cards, PEM keys, URL credentials."
+            echo "  For full NLP entity detection (persons, emails, phone numbers),"
+            echo "  install gcc and retry: sudo apt-get install gcc-c++ && ./iclaude.sh --install-pii-proxy"
         else
-            print_warning "Failed to download en_core_web_lg, trying en_core_web_sm (~12MB)..."
-            if "$venv_python" -m spacy download en_core_web_sm; then
-                print_warning "Using en_core_web_sm (lower accuracy). Upgrade later: $venv_python -m spacy download en_core_web_lg"
-                (( steps_done++ )) || true
-            else
-                print_error "Failed to download spaCy model"
-                return 1
-            fi
+            print_error "Failed to install even requests package: $_output"
+            return 1
         fi
     fi
+}
 
-    # ── Step 4: Server script ───────────────────────────────────────────────
+#######################################
+# Download spaCy model (lg preferred, sm fallback)
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_proxy_download_model() {
+    print_info "Downloading spaCy en_core_web_lg model (~500MB, may take a few minutes)..."
+    if ! "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_lg; then
+        print_warning "Failed to download en_core_web_lg, trying en_core_web_sm (~12MB)..."
+        if ! "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_sm; then
+            print_error "Failed to download spaCy model"
+            return 1
+        fi
+        print_warning "Using en_core_web_sm (lower accuracy). Consider: python3 -m spacy download en_core_web_lg"
+    fi
+}
+
+#######################################
+# Symlink server.py and create log directory
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_proxy_install_server() {
     local src_script
     src_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/server.py"
     if [[ ! -f "$src_script" ]]; then
         print_error "server.py not found at: $src_script"
         return 1
     fi
+    print_info "Installing server script..."
+    mkdir -p "$(dirname "$PII_PROXY_SERVER_SCRIPT")"
+    ln -sf "$src_script" "$PII_PROXY_SERVER_SCRIPT"
+    chmod 700 "$src_script"
+    print_success "Server script: $PII_PROXY_SERVER_SCRIPT → $src_script"
+}
 
-    local script_ok=false
-    if [[ "$force" == false ]] && [[ -f "$PII_PROXY_SERVER_SCRIPT" ]]; then
-        if diff -q "$src_script" "$PII_PROXY_SERVER_SCRIPT" &>/dev/null; then
-            script_ok=true
-            print_success "Server script: up to date, skipping copy"
-            (( steps_skipped++ )) || true
-        fi
-    fi
+#######################################
+# Install PII-proxy to isolated environment
+# Creates venv, installs Presidio + spaCy, copies server script
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_isolated_pii_proxy() {
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  PII-Proxy: Install Presidio NLP"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
 
-    if [[ "$script_ok" == false ]]; then
-        print_info "Installing server script..."
-        mkdir -p "$(dirname "$PII_PROXY_SERVER_SCRIPT")"
-        cp "$src_script" "$PII_PROXY_SERVER_SCRIPT"
-        chmod 700 "$PII_PROXY_SERVER_SCRIPT"
-        print_success "Server script: $PII_PROXY_SERVER_SCRIPT"
-        (( steps_done++ )) || true
-    fi
+    _pii_proxy_check_prerequisites || return 1
+    _pii_proxy_setup_venv || return 1
 
-    # ── Log directory ───────────────────────────────────────────────────────
+    local pii_mode=""
+    _pii_proxy_cascade_install || return 1
+    echo "$pii_mode" > "$PII_PROXY_VENV/pii_proxy_mode"
+
+    [[ "$pii_mode" != "regex-only" ]] && { _pii_proxy_download_model || return 1; }
+
+    _pii_proxy_install_server || return 1
     mkdir -p "$PII_PROXY_LOG_DIR"
 
-    # ── Summary ─────────────────────────────────────────────────────────────
     echo ""
-    if (( steps_done == 0 )); then
-        print_success "PII-Proxy: already up to date (${steps_skipped} steps skipped)"
-        print_info "Use --force to reinstall: ./iclaude.sh --install-pii-proxy --force"
-    else
-        print_success "PII-Proxy installed successfully! (${steps_done} steps done, ${steps_skipped} skipped)"
-    fi
+    print_success "PII-Proxy installed successfully! Mode: $pii_mode"
     echo ""
     print_info "Next steps:"
     print_info "  1. Enable: add USE_PII_PROXY=true to .claude_config"

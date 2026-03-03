@@ -1920,7 +1920,7 @@ export interface ExitPlanModeOutput {
    */
   filePath?: string;
   /**
-   * Whether the Task tool is available in the current context
+   * Whether the Agent tool is available in the current context
    */
   hasTaskTool?: boolean;
   /**
