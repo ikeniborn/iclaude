@@ -23,6 +23,7 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import random
 import re
 import signal
 import sys
@@ -608,19 +609,52 @@ def main() -> None:
     log_dir = Path(args.log_dir)
     setup_logging(log_dir)
 
-    # Try the requested port first; if taken, let OS assign any free port.
-    # Both paths are atomic (single HTTPServer bind call) — no TOCTOU race.
-    # Previously find_available_port() bound then released a socket before
-    # HTTPServer re-bound it, leaving a ~1 ms window where another process
-    # could steal the port.
+    # Port selection strategy:
+    #   port == 0  → auto-select a random free port from [PORT_MIN, PORT_MAX]
+    #   port != 0  → try exact port first, then fall back to range
+    # Trying up to 30 random candidates from the range before last-resort bind(0).
+    # Each attempt is an atomic bind (no TOCTOU race).
     try:
-        server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
-    except OSError:
-        server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
+        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
+    except (ValueError, TypeError):
+        _port_min, _port_max = 20000, 40000
+    # Sanity check: must be valid unprivileged range with at least one port
+    if not (1024 <= _port_min < _port_max <= 65535):
+        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
+        _port_min, _port_max = 20000, 40000
+    server = None
+
+    if args.port != 0:
+        # Explicit port requested — honour it if free
+        try:
+            server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+        except OSError:
+            pass  # fall through to range selection below
+
+    if server is None:
+        # Auto-select: probe a random sample from the range to spread sessions
+        # across 20000-40000 without sequential clustering.
+        _n = min(30, _port_max - _port_min + 1)
+        for _p in random.sample(range(_port_min, _port_max + 1), _n):
+            try:
+                server = http.server.HTTPServer(('127.0.0.1', _p), PIIProxyHandler)
+                break
+            except OSError:
+                continue
+        if server is None:
+            # Last resort: let OS pick any free port
+            server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+
     port = server.server_address[1]  # actual port assigned by OS
 
-    # Write port file AFTER successful bind so shell polling sees a ready server
-    port_file = log_dir / 'server.port'
+    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions each
+    # write their own file and never overwrite each other (eliminates the global server.port
+    # race where session-2 could overwrite session-1's file before session-1 read it).
+    # Validate session_id to hex-only to prevent path traversal via env variable.
+    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+    session_id = _raw_sid if re.fullmatch(r'[0-9a-f]{12}', _raw_sid) else 'default'
+    port_file = log_dir / f'pii-proxy-{session_id}.port'
     port_file.write_text(str(port))
 
     def _shutdown(signum: int, _: Any) -> None:
