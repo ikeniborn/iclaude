@@ -19,10 +19,15 @@ PostToolUse hook — логирует вызовы мутирующих инст
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+# Allowed characters for session_id used as a filename component.
+# Rejects path separators, dots, null bytes and other traversal sequences.
+_SAFE_SESSION_ID_RE = re.compile(r'^[a-zA-Z0-9_\-]{1,64}$')
 
 MUTABLE_TOOLS = {"Write", "Edit", "MultiEdit", "Bash"}
 
@@ -48,8 +53,9 @@ def get_project_dir() -> Optional[Path]:
 def get_session_id(hook_input: dict) -> str:
     """Получить session_id из hook input или окружения."""
     # Из stdin (Claude Code передаёт session_id в PostToolUse)
+    # Validate before use as filename component to prevent path traversal.
     sid = hook_input.get("session_id") or hook_input.get("sessionId")
-    if sid:
+    if sid and _SAFE_SESSION_ID_RE.fullmatch(str(sid)):
         return str(sid)
 
     # Из переменной окружения
@@ -62,7 +68,6 @@ def get_session_id(hook_input: dict) -> str:
     if project_dir:
         sessions_dir = project_dir / ".claude" / "sessions"
         if sessions_dir.is_dir():
-            import re
             files = sorted(sessions_dir.glob("readable-*.toon.tmp.*"))
             if files:
                 m = re.search(r"readable-([a-f0-9-]{36})\.toon\.tmp\.", files[-1].name)
@@ -218,6 +223,10 @@ def main() -> None:
         sys.exit(0)
 
     toon_file = tools_dir / f"{session_id}.toon"
+
+    # Defense-in-depth: verify no path traversal despite validation above.
+    if toon_file.parent.resolve() != tools_dir.resolve():
+        sys.exit(0)  # fail-open: skip logging rather than crashing
 
     # Прочитать существующий файл (если есть)
     existing_meta, details = parse_toon_file(toon_file)
