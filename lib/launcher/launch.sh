@@ -15,6 +15,20 @@ launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
 
+    # Export project directory for PostToolUse hooks (e.g. log-tools.py)
+    # This allows hooks to write to {project}/.claude/tools/ regardless of cwd
+    export CLAUDE_PROJECT_DIR="${PWD}"
+
+    # Archive stale sessions from previous runs (Stop hook may not fire on crash)
+    archive_stale_sessions "${CLAUDE_PROJECT_DIR}"
+
+    # Ensure .claude/tools/ is excluded from git in the current project
+    local gitignore_file="${PWD}/.gitignore"
+    local tools_pattern=".claude/tools/"
+    if [[ -f "$gitignore_file" ]] && ! grep -qF "$tools_pattern" "$gitignore_file" 2>/dev/null; then
+        echo "$tools_pattern" >> "$gitignore_file"
+    fi
+
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
@@ -263,7 +277,75 @@ launch_claude() {
 }
 
 #######################################
-# Start PII proxy server and redirect API traffic through it
+# Clean up stale session files from the sessions/ root.
+#
+# .toon.tmp.{PID} — internal Claude Code markers per turn; deleted when PID is dead.
+# .toon (0-byte)  — Claude Code finalization marker; deleted (real .toon is in {date}/).
+# .txt / .txt.meta — redundant transcripts created by Claude Code on /exit; deleted.
+#
+# Real session content (.toon with data) is written by the statusline directly into
+# .claude/sessions/{YYYY-MM-DD}/ — no movement or archiving needed here.
+#
+# Arguments:
+#   $1 - project_dir: path to project root (must contain .claude/sessions/)
+#######################################
+archive_stale_sessions() {
+    local project_dir="${1:-}"
+    local sessions_dir="${project_dir}/.claude/sessions"
+    [[ -d "$sessions_dir" ]] || return 0
+
+    # 1. Delete .toon.tmp.{PID} files whose process is dead.
+    # These are internal child-process markers — users don't need them.
+    # Files with alive PIDs are left alone (active turn in progress).
+    while IFS= read -r -d '' f; do
+        local filename
+        filename="$(basename "$f")"
+        local pid="${filename##*.}"
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+        if ! kill -0 "$pid" 2>/dev/null; then
+            rm -f "$f" 2>/dev/null || true
+        fi
+    done < <(find "$sessions_dir" -maxdepth 1 -name "readable-*.toon.tmp.*" -print0 2>/dev/null)
+
+    # 2. Delete leftover files from sessions/ root: 0-byte .toon markers,
+    # .txt and .txt.meta transcripts — all redundant when .toon is in {date}/.
+    find "$sessions_dir" -maxdepth 1 \
+        \( -name "readable-*.toon" -o -name "readable-*.txt" -o -name "readable-*.txt.meta" \) \
+        -print0 2>/dev/null \
+        | xargs -0 rm -f 2>/dev/null || true
+}
+
+#######################################
+# Cleanup orphaned PII proxy processes from terminated sessions.
+# Removes stale per-session PID and port files when the associated process is gone.
+# Called at the start of start_pii_proxy_server() to keep the log dir tidy.
+#######################################
+cleanup_orphaned_pii_proxies() {
+    local dir="${ISOLATED_CONFIG_DIR:-}"
+    [[ -z "$dir" ]] || [[ ! -d "$dir" ]] && return 0
+
+    local cleaned=0
+    for pid_file in "$dir"/pii-proxy-*.pid; do
+        [[ -f "$pid_file" ]] || continue
+        local pid
+        pid=$(cat "$pid_file" 2>/dev/null)
+        if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+            # Dead process — extract session ID from filename and remove both files
+            local bn="${pid_file##*/}"                    # pii-proxy-<SID>.pid
+            local sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
+            rm -f "$pid_file"
+            rm -f "${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}/pii-proxy-${sid}.port"
+            cleaned=$((cleaned + 1))
+        fi
+    done
+    [[ $cleaned -gt 0 ]] && print_info "PII proxy: cleaned $cleaned orphaned session(s)"
+}
+
+#######################################
+# Start PII proxy server and redirect API traffic through it.
+# Each iclaude session starts its own independent proxy on a dynamic port.
+# Per-session PID and port files (pii-proxy-<SESSION_ID>.{pid,port}) prevent
+# race conditions when multiple sessions run simultaneously.
 # Arguments:
 #   $1 - skip_isolated: "true" to skip isolated environment
 # Returns:
@@ -305,59 +387,38 @@ except Exception:
 ' "$port" 2>/dev/null
     }
 
-    # BUG-4R4-7: Check for existing running instance before starting a new one
-    # (prevents duplicate proxies on concurrent launches / stale PID file)
-    local port_file="$PII_PROXY_LOG_DIR/server.port"
-    # Desired upstream: CCR URL in combined mode, Anthropic API in solo mode.
-    # Computed here so the reuse check can compare against it.
-    local desired_upstream="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
-    if [[ -f "$PII_PROXY_PID_FILE" ]]; then
-        local existing_pid
-        existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
-        if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
-            # Process alive — try to reuse if healthy AND upstream matches.
-            # In combined mode (desired_upstream=CCR URL) an existing solo-mode proxy
-            # has ANTHROPIC_UPSTREAM_URL=api.anthropic.com baked in its process env
-            # (immutable after spawn). Reusing it would silently bypass CCR.
-            # Kill and restart only when upstream mismatch is detected.
-            if [[ -f "$port_file" ]]; then
-                local existing_port
-                existing_port=$(cat "$port_file" 2>/dev/null)
-                if _pii_proxy_http_health "$existing_port"; then
-                    if [[ "$desired_upstream" == "https://api.anthropic.com" ]]; then
-                        # Solo mode: upstream matches — safe to reuse
-                        PII_PROXY_ACTIVE_PORT="$existing_port"
-                        export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
-                        # Reuse-then-kill fix: mark proxy as NOT owned by this session so
-                        # stop_pii_proxy_server will NOT kill it when this session exits
-                        PII_PROXY_SESSION_OWNED=false
-                        print_info "PII proxy: reusing existing instance on :$PII_PROXY_ACTIVE_PORT"
-                        return 0
-                    else
-                        # Combined mode: existing proxy has wrong upstream — kill and restart
-                        print_info "PII proxy: restarting (upstream changed to $desired_upstream)"
-                        kill "$existing_pid" 2>/dev/null || true
-                    fi
-                fi
-            fi
-            # Unhealthy or upstream-mismatched instance — kill, start fresh
-            kill "$existing_pid" 2>/dev/null || true
+    # Cleanup orphaned proxies from previous (terminated) sessions
+    cleanup_orphaned_pii_proxies
+
+    # Backward compatibility: migrate legacy global PID file (pre-per-session format).
+    # Kill any still-running legacy proxy to avoid port 9000 squatting.
+    local legacy_pid_file="${ISOLATED_CONFIG_DIR}/pii-proxy.pid"
+    if [[ -f "$legacy_pid_file" ]]; then
+        local legacy_pid
+        legacy_pid=$(cat "$legacy_pid_file" 2>/dev/null)
+        if [[ -n "$legacy_pid" ]] && kill -0 "$legacy_pid" 2>/dev/null; then
+            print_info "PII proxy: stopping legacy shared instance (PID $legacy_pid)"
+            kill "$legacy_pid" 2>/dev/null || true
         fi
-        rm -f "$PII_PROXY_PID_FILE"
+        rm -f "$legacy_pid_file" "${PII_PROXY_LOG_DIR}/server.port"
     fi
 
-    # desired_upstream was computed at the top of this function (before the reuse check).
-    # Use it directly — ANTHROPIC_BASE_URL has not changed since then.
-    local upstream_url="$desired_upstream"
+    # Per-session port file: written by Python server after successful bind.
+    # Using session-scoped name avoids the global server.port race where two concurrent
+    # sessions overwrite each other's file and read the wrong port.
+    local port_file="${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port"
+    local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
 
-    # Remove stale port file from any previous session
+    # Remove stale port file from any previous run with the same session ID (paranoia)
     rm -f "$port_file"
     # BUG-4R4-9: chmod 700 — restrict log dir to current user only
     mkdir -p "$PII_PROXY_LOG_DIR"
     chmod 700 "$PII_PROXY_LOG_DIR"
 
-    # Start server in background; redirect stdout/stderr to log file
+    # Start per-session proxy server in background.
+    # ICLAUDE_SESSION_ID is passed so server.py names its port file accordingly.
     ANTHROPIC_UPSTREAM_URL="$upstream_url" \
+    ICLAUDE_SESSION_ID="$ICLAUDE_SESSION_ID" \
         "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
@@ -402,14 +463,14 @@ except Exception:
     if [[ "$health_ok" != "true" ]]; then
         print_warning "PII proxy: server did not become ready within 15s"
         kill "$proxy_pid" 2>/dev/null
-        rm -f "$PII_PROXY_PID_FILE"
+        rm -f "$PII_PROXY_PID_FILE" "$port_file"
         return 1
     fi
 
-    # Redirect all claude API traffic through PII proxy
+    # Redirect all claude API traffic through this session's PII proxy
     export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
-    PII_PROXY_SESSION_OWNED=true  # this session started the proxy; stop_pii_proxy_server may kill it
-    print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url"
+    PII_PROXY_SESSION_OWNED=true
+    print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID})"
     return 0
 }
 
@@ -526,19 +587,17 @@ stop_ccr_server() {
 
 #######################################
 # Stop PII proxy server (trap cleanup on EXIT/INT/TERM)
+# Each session owns its own proxy process — always safe to kill on exit.
 #######################################
 stop_pii_proxy_server() {
-    # Reuse-then-kill fix: only kill the proxy if THIS session started it.
-    # When reusing a proxy from another session, PII_PROXY_SESSION_OWNED=false
-    # and we leave the shared proxy running so other sessions are not interrupted.
-    # Default is false (not true) so that calling stop before start is a safe no-op.
-    if [[ "${PII_PROXY_SESSION_OWNED:-false}" != "true" ]]; then
-        return 0
-    fi
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
         local pid
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
         rm -f "$PII_PROXY_PID_FILE"
+        # Remove per-session port file so status.sh doesn't show stale entries.
+        # Guard against empty vars to avoid accidentally deleting /pii-proxy-*.port
+        [[ -n "${PII_PROXY_LOG_DIR:-}" && -n "${ICLAUDE_SESSION_ID:-}" ]] && \
+            rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port"
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
             kill "$pid" 2>/dev/null
             # Wait for clean shutdown (up to 1s), then force-kill

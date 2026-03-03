@@ -66,6 +66,11 @@ Integrate Claude Code Router for alternative LLM providers.
 Auto-disable Claude Code CLI auto-updates for CI/CD.
 **Function:** `disable_auto_updates`
 
+### 10. PII Proxy Management (lib/pii-proxy/)
+Intercept and mask PII/secrets in 100% of Anthropic API traffic via Python HTTP proxy.
+**Functions:** `install_isolated_pii_proxy`, `detect_pii_proxy`, `check_pii_proxy_status`, `start_pii_proxy_server`, `stop_pii_proxy_server`
+**Install:** Idempotent — skips venv/packages/spaCy model/script if already up to date; `--force` flag for full reinstall.
+
 **См. подробнее:** `examples/components-overview.md`
 
 ## Critical Functions Quick Reference
