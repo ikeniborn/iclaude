@@ -1086,6 +1086,50 @@ echo "export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic" >> .claude_conf
 
 ---
 
+## Идемпотентная установка PII Proxy
+
+> **Статус:** Реализовано (2026-03-03)
+> **Файл:** `lib/pii-proxy/install.sh` — функция `install_isolated_pii_proxy()`
+
+`--install-pii-proxy` полностью идемпотентна: повторный запуск безопасен и не перекачивает уже установленные компоненты.
+
+### Проверки по шагам
+
+| Шаг | Что проверяется | Экономия при пропуске |
+|-----|-----------------|----------------------|
+| **venv** | `$PII_PROXY_VENV/bin/python3` существует и версия ≥ 3.8 | Пересоздание venv + pip upgrade |
+| **Presidio** | `pip show presidio-analyzer presidio-anonymizer spacy` | ~100MB pip install |
+| **spaCy lg** | `spacy.load('en_core_web_lg')` загружается без ошибки | **587MB скачивания** |
+| **spaCy sm** | Fallback: `spacy.load('en_core_web_sm')` | 12MB (при использовании sm) |
+| **Server script** | `diff -q` источника и установленного файла | Копирование файла |
+
+### Вывод при повторном запуске (всё актуально)
+
+```
+✓ Python 3.11: OK
+✓ venv: already exists, skipping creation
+✓ Presidio: already installed, skipping pip install
+✓ spaCy model: en_core_web_lg already installed, skipping download (587MB saved)
+✓ Server script: up to date, skipping copy
+
+✓ PII-Proxy: already up to date (4 steps skipped)
+  Use --force to reinstall: ./iclaude.sh --install-pii-proxy --force
+```
+
+### Принудительная переустановка
+
+```bash
+./iclaude.sh --install-pii-proxy --force
+```
+
+Флаг `--force`:
+- Удаляет существующий venv (`rm -rf`) и создаёт заново
+- Запускает `pip install` безусловно
+- Скачивает spaCy модель заново
+- Перезаписывает server script
+
+---
+
 ## Известные проблемы и ограничения
 
 ### 1. Маскирование системных промптов (ложные срабатывания)

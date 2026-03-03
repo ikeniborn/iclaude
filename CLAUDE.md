@@ -216,8 +216,11 @@ Python HTTP proxy that intercepts 100% of Anthropic API traffic to mask PII and 
 
 **Setup:**
 ```bash
-# Install Python venv + Presidio NLP (~500MB, one-time per machine)
+# Install Python venv + Presidio NLP (idempotent — skips already installed components)
 ./iclaude.sh --install-pii-proxy
+
+# Force reinstall from scratch (removes venv, re-downloads everything)
+./iclaude.sh --install-pii-proxy --force
 
 # Check installation
 ./iclaude.sh --check-pii-proxy
