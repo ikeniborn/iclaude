@@ -65,14 +65,26 @@ init_environment() {
     # Color codes
     export RED GREEN YELLOW BLUE NC
 
+    # Per-session isolation: unique ID prevents race conditions in parallel iclaude sessions.
+    # Each session gets its own PID and port files so sessions don't interfere with each other.
+    # Inherit if already set (e.g. subshells launched by the same session).
+    ICLAUDE_SESSION_ID="${ICLAUDE_SESSION_ID:-$(od -An -N6 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || printf '%012x' $((RANDOM * RANDOM + RANDOM)))}"
+    export ICLAUDE_SESSION_ID
+
     # PII-Proxy configuration
-    PII_PROXY_PORT="${PII_PROXY_PORT:-9000}"
+    # PII_PROXY_PORT=0 means "auto-select from range" (default).
+    # Set to a specific value in .claude_config to pin a port.
+    PII_PROXY_PORT="${PII_PROXY_PORT:-0}"
+    PII_PROXY_PORT_MIN="${PII_PROXY_PORT_MIN:-20000}"
+    PII_PROXY_PORT_MAX="${PII_PROXY_PORT_MAX:-40000}"
     PII_PROXY_VENV="${ISOLATED_CONFIG_DIR}/pii-proxy-venv"
     PII_PROXY_LOG_DIR="${ISOLATED_CONFIG_DIR}/pii-proxy-logs"
-    PII_PROXY_PID_FILE="${ISOLATED_CONFIG_DIR}/pii-proxy.pid"
+    PII_PROXY_PID_FILE="${ISOLATED_CONFIG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.pid"
     PII_PROXY_SERVER_SCRIPT="${ISOLATED_CONFIG_DIR}/pii-proxy-server.py"
 
     export PII_PROXY_PORT
+    export PII_PROXY_PORT_MIN
+    export PII_PROXY_PORT_MAX
     export PII_PROXY_VENV
     export PII_PROXY_LOG_DIR
     export PII_PROXY_PID_FILE
