@@ -277,10 +277,15 @@ launch_claude() {
 }
 
 #######################################
-# Archive stale session files from previous runs.
-# Moves readable-*.toon.tmp.{PID} files whose PID is dead into
-# .claude/sessions/{YYYY-MM-DD}/ subdirectories (mtime of the file).
-# Complements the Stop hook archive-sessions.py which handles normal exits.
+# Clean up stale session files from the sessions/ root.
+#
+# .toon.tmp.{PID} — internal Claude Code markers per turn; deleted when PID is dead.
+# .toon (0-byte)  — Claude Code finalization marker; deleted (real .toon is in {date}/).
+# .txt / .txt.meta — redundant transcripts created by Claude Code on /exit; deleted.
+#
+# Real session content (.toon with data) is written by the statusline directly into
+# .claude/sessions/{YYYY-MM-DD}/ — no movement or archiving needed here.
+#
 # Arguments:
 #   $1 - project_dir: path to project root (must contain .claude/sessions/)
 #######################################
@@ -289,39 +294,25 @@ archive_stale_sessions() {
     local sessions_dir="${project_dir}/.claude/sessions"
     [[ -d "$sessions_dir" ]] || return 0
 
-    # 1. Archive .toon.tmp.{PID} files whose process is dead (crashed/killed sessions)
+    # 1. Delete .toon.tmp.{PID} files whose process is dead.
+    # These are internal child-process markers — users don't need them.
+    # Files with alive PIDs are left alone (active turn in progress).
     while IFS= read -r -d '' f; do
         local filename
         filename="$(basename "$f")"
-        # Extract PID: readable-{UUID}.toon.tmp.{PID}
         local pid="${filename##*.}"
         [[ "$pid" =~ ^[0-9]+$ ]] || continue
-
-        # Archive only dead processes
         if ! kill -0 "$pid" 2>/dev/null; then
-            local date_str
-            date_str="$(date -r "$f" +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d)"
-            local target_dir="${sessions_dir}/${date_str}"
-            mkdir -p "$target_dir"
-            mv "$f" "$target_dir/" 2>/dev/null || true
+            rm -f "$f" 2>/dev/null || true
         fi
     done < <(find "$sessions_dir" -maxdepth 1 -name "readable-*.toon.tmp.*" -print0 2>/dev/null)
 
-    # 2. Archive completed session files (.toon, .txt, .txt.meta) that are not today
-    # These are finalized by Claude Code after graceful exit — safe to move any time
-    local today
-    today="$(date +%Y-%m-%d)"
-    while IFS= read -r -d '' f; do
-        local date_str
-        date_str="$(date -r "$f" +%Y-%m-%d 2>/dev/null || echo "$today")"
-        # Skip files already modified today (might still be in use)
-        [[ "$date_str" == "$today" ]] && continue
-        local target_dir="${sessions_dir}/${date_str}"
-        mkdir -p "$target_dir"
-        mv "$f" "$target_dir/" 2>/dev/null || true
-    done < <(find "$sessions_dir" -maxdepth 1 \
+    # 2. Delete leftover files from sessions/ root: 0-byte .toon markers,
+    # .txt and .txt.meta transcripts — all redundant when .toon is in {date}/.
+    find "$sessions_dir" -maxdepth 1 \
         \( -name "readable-*.toon" -o -name "readable-*.txt" -o -name "readable-*.txt.meta" \) \
-        -print0 2>/dev/null)
+        -print0 2>/dev/null \
+        | xargs -0 rm -f 2>/dev/null || true
 }
 
 #######################################
