@@ -23,15 +23,15 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 import os
-import random
 import re
 import signal
 import sys
 import threading
-import urllib.request
-import urllib.error
 from pathlib import Path
 from typing import Any
+
+import requests as _requests
+from requests.exceptions import ConnectionError as _ReqConnError, Timeout as _ReqTimeout
 
 # ---------------------------------------------------------------------------
 # Deterministic regex patterns (ported from redact-secrets.py)
@@ -107,18 +107,37 @@ def _validate_upstream_url(url: str) -> str:
 UPSTREAM_URL = _validate_upstream_url(
     os.environ.get('ANTHROPIC_UPSTREAM_URL', 'https://api.anthropic.com')
 )
-
-# Trusted API key from proxy's own environment.
-# Used to re-inject credentials after stripping inbound auth headers,
-# preventing credential relay by other local processes.
-# Empty string → OAuth mode: auth headers forwarded as-is (no API key to inject).
-_API_KEY_FROM_ENV = os.environ.get('ANTHROPIC_API_KEY', '')
 try:
     DEFAULT_PORT = int(os.environ.get('PII_PROXY_PORT', '9000'))
 except (ValueError, TypeError):
     DEFAULT_PORT = 9000
 LOG_DIR = Path(os.environ.get('PII_PROXY_LOG_DIR', '/tmp/pii-proxy-logs'))
 ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() != 'false'
+
+# ---------------------------------------------------------------------------
+# HTTP session (requests library — handles HTTPS proxies correctly via urllib3,
+# unlike Python's stdlib urllib.request which can't TLS-handshake to the proxy
+# itself, causing BadStatusLine on HTTPS_PROXY=https://... configurations).
+# ---------------------------------------------------------------------------
+# SSL verification: disabled when NODE_TLS_REJECT_UNAUTHORIZED=0 (insecure mode).
+# Custom CA cert: reads REQUESTS_CA_BUNDLE or NODE_EXTRA_CA_CERTS (Node.js compat).
+def _build_ssl_verify():
+    if os.environ.get('NODE_TLS_REJECT_UNAUTHORIZED') == '0':
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        return False
+    ca = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('NODE_EXTRA_CA_CERTS')
+    return ca if ca else True
+
+_SSL_VERIFY = _build_ssl_verify()
+_HTTP_SESSION = _requests.Session()
+_HTTP_SESSION.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+
+# Trusted API key from proxy's own environment.
+# Used to re-inject credentials after stripping inbound auth headers,
+# preventing credential relay by other local processes.
+# Empty string → OAuth mode: auth headers forwarded as-is (no API key to inject).
+_API_KEY_FROM_ENV = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # Presidio globals (lazy-loaded, protected by _presidio_lock)
 _analyzer = None
@@ -542,23 +561,24 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         """Forward HEAD request and relay status + headers without body (RFC 7231 §4.3.2)."""
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
-        req = urllib.request.Request(target, headers=headers, method='HEAD')
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                self.send_response(resp.status)
-                for key, val in resp.headers.items():
-                    if key.lower() not in ('transfer-encoding', 'connection'):
-                        self.send_header(key, val)
-                self.end_headers()
-                # Intentionally no body write — RFC 7231 §4.3.2
-        except urllib.error.HTTPError as exc:
-            self.send_response(exc.code)
-            for key, val in exc.headers.items():
+            resp = _HTTP_SESSION.request(
+                method='HEAD',
+                url=target,
+                headers=headers,
+                stream=False,
+                verify=_SSL_VERIFY,
+                timeout=30,
+                allow_redirects=False,
+            )
+            self.send_response(resp.status_code)
+            for key, val in resp.headers.items():
                 if key.lower() not in ('transfer-encoding', 'connection'):
                     self.send_header(key, val)
             self.end_headers()
-        except urllib.error.URLError as exc:
-            log.error('Upstream HEAD error: %s', exc.reason)
+            # Intentionally no body write — RFC 7231 §4.3.2
+        except (_ReqConnError, _ReqTimeout) as exc:
+            log.error('Upstream HEAD error: %s', exc)
             self.send_response(502)
             self.end_headers()
         except Exception as exc:
@@ -567,51 +587,56 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def _forward(self, body: bytes) -> None:
-        """Forward request to upstream and stream response back."""
+        """Forward request to upstream and stream response back.
+
+        Uses requests (not urllib.request) because Python's stdlib urllib does NOT
+        support HTTPS proxies (HTTPS_PROXY=https://...). When the proxy itself requires
+        TLS, urllib connects via plain HTTP → proxy sends a TLS Alert → urllib raises
+        http.client.BadStatusLine which is not a URLError subclass → silently returns
+        502 'PII-proxy internal error'. requests/urllib3 handles TLS-to-proxy correctly.
+        """
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
-        headers['Content-Length'] = str(len(body))
-
-        req = urllib.request.Request(target, data=body, headers=headers, method=self.command)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                self.send_response(resp.status)
+            with _HTTP_SESSION.request(
+                method=self.command,
+                url=target,
+                headers=headers,
+                data=body,
+                stream=True,
+                verify=_SSL_VERIFY,
+                timeout=30,
+                allow_redirects=False,
+            ) as resp:
+                self.send_response(resp.status_code)
+                # Exclude headers that change after requests decompresses the body:
+                # content-encoding (decoded), content-length (recalculated below),
+                # transfer-encoding / connection (hop-by-hop, not for client).
+                _skip = ('transfer-encoding', 'connection', 'content-encoding', 'content-length')
                 for key, val in resp.headers.items():
-                    if key.lower() not in ('transfer-encoding', 'connection'):
+                    if key.lower() not in _skip:
                         self.send_header(key, val)
-                self.end_headers()
 
-                is_streaming = 'text/event-stream' in (resp.headers.get('Content-Type', ''))
+                is_streaming = 'text/event-stream' in resp.headers.get('Content-Type', '')
                 if is_streaming:
-                    # Stream SSE without buffering.
-                    # TimeoutError (socket.timeout) guards against a permanently stalled
-                    # upstream. If the upstream genuinely sends no data for 30s (very
-                    # unusual for Anthropic API), close the stream gracefully rather than
-                    # crashing the entire handler thread. Non-timeout errors propagate.
-                    while True:
-                        try:
-                            chunk = resp.read(4096)
-                        except TimeoutError:
-                            log.warning('SSE upstream timed out — closing stream')
-                            break
-                        if not chunk:
-                            break
-                        self.wfile.write(chunk)
-                        self.wfile.flush()
+                    # SSE: stream chunks without buffering; no Content-Length.
+                    self.end_headers()
+                    for chunk in resp.iter_content(chunk_size=4096):
+                        if chunk:
+                            try:
+                                self.wfile.write(chunk)
+                                self.wfile.flush()
+                            except (BrokenPipeError, ConnectionResetError):
+                                break  # client disconnected mid-stream
                 else:
-                    self.wfile.write(resp.read())
+                    content = resp.content  # fully buffered (already decompressed by requests)
+                    self.send_header('Content-Length', str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
 
-        except urllib.error.HTTPError as exc:
-            # HTTPError is a URLError subclass — catch BEFORE generic URLError
-            self.send_response(exc.code)
-            for key, val in exc.headers.items():
-                if key.lower() not in ('transfer-encoding', 'connection'):
-                    self.send_header(key, val)
-            self.end_headers()
-            self.wfile.write(exc.read())
-        except urllib.error.URLError as exc:
-            # Network errors: connection refused, DNS failure, timeout
-            log.error('Upstream connection error: %s', exc.reason)
+        except (_ReqConnError, _ReqTimeout) as exc:
+            # Network errors: proxy unreachable, DNS failure, connection refused, timeout
+            log.error('Upstream connection error: %s', exc)
             error_body = json.dumps({
                 'type': 'error',
                 'error': {'type': 'api_error', 'message': 'PII proxy upstream unavailable'},
@@ -637,52 +662,19 @@ def main() -> None:
     log_dir = Path(args.log_dir)
     setup_logging(log_dir)
 
-    # Port selection strategy:
-    #   port == 0  → auto-select a random free port from [PORT_MIN, PORT_MAX]
-    #   port != 0  → try exact port first, then fall back to range
-    # Trying up to 30 random candidates from the range before last-resort bind(0).
-    # Each attempt is an atomic bind (no TOCTOU race).
+    # Try the requested port first; if taken, let OS assign any free port.
+    # Both paths are atomic (single HTTPServer bind call) — no TOCTOU race.
+    # Previously find_available_port() bound then released a socket before
+    # HTTPServer re-bound it, leaving a ~1 ms window where another process
+    # could steal the port.
     try:
-        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
-        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
-    except (ValueError, TypeError):
-        _port_min, _port_max = 20000, 40000
-    # Sanity check: must be valid unprivileged range with at least one port
-    if not (1024 <= _port_min < _port_max <= 65535):
-        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
-        _port_min, _port_max = 20000, 40000
-    server = None
-
-    if args.port != 0:
-        # Explicit port requested — honour it if free
-        try:
-            server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
-        except OSError:
-            pass  # fall through to range selection below
-
-    if server is None:
-        # Auto-select: probe a random sample from the range to spread sessions
-        # across 20000-40000 without sequential clustering.
-        _n = min(30, _port_max - _port_min + 1)
-        for _p in random.sample(range(_port_min, _port_max + 1), _n):
-            try:
-                server = http.server.HTTPServer(('127.0.0.1', _p), PIIProxyHandler)
-                break
-            except OSError:
-                continue
-        if server is None:
-            # Last resort: let OS pick any free port
-            server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
-
+        server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+    except OSError:
+        server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
     port = server.server_address[1]  # actual port assigned by OS
 
-    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions each
-    # write their own file and never overwrite each other (eliminates the global server.port
-    # race where session-2 could overwrite session-1's file before session-1 read it).
-    # Validate session_id to hex-only to prevent path traversal via env variable.
-    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
-    session_id = _raw_sid if re.fullmatch(r'[0-9a-f]{12}', _raw_sid) else 'default'
-    port_file = log_dir / f'pii-proxy-{session_id}.port'
+    # Write port file AFTER successful bind so shell polling sees a ready server
+    port_file = log_dir / 'server.port'
     port_file.write_text(str(port))
 
     def _shutdown(signum: int, _: Any) -> None:
