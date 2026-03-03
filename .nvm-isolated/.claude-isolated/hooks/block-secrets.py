@@ -18,6 +18,7 @@ import json
 EXCLUDE_DIRS = [
     '.claude-isolated/hooks',
     '.claude/hooks',
+    '.claude/tools',  # логи инструментов — не секреты
 ]
 
 # Суффиксы-шаблоны: .env.example, .env.sample, .env.template, .env.dist

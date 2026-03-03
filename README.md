@@ -56,8 +56,11 @@ HTTP-прокси, который перехватывает **100% трафик
 - **Паттерны** — API keys, JWT, AWS credentials, PEM keys, GitHub tokens, пароли, кредитные карты
 
 ```bash
-# Установить Python venv + Presidio (~500MB, один раз)
+# Установить Python venv + Presidio (~500MB, один раз; повторный запуск — безопасен, идемпотентен)
 ./iclaude.sh --install-pii-proxy
+
+# Принудительная переустановка всех компонентов с нуля
+./iclaude.sh --install-pii-proxy --force
 
 # Проверить статус
 ./iclaude.sh --check-pii-proxy
@@ -69,7 +72,7 @@ HTTP-прокси, который перехватывает **100% трафик
 echo 'USE_PII_PROXY=true' >> .claude_config
 ```
 
-**Архитектура:** `claude → PII proxy (:9000) → Anthropic API`
+**Архитектура:** `claude → PII proxy (авто-порт 20000–40000) → Anthropic API`
 
 **Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
 
@@ -197,7 +200,8 @@ Approval gates после каждого агента — можно остан�
 ./iclaude.sh --repair-plugins          # Починить пути плагинов
 
 # PII Proxy (маскирование персональных данных)
-./iclaude.sh --install-pii-proxy       # Установить Presidio NLP (~500MB, один раз)
+./iclaude.sh --install-pii-proxy       # Установить Presidio NLP (идемпотентно — пропускает актуальные)
+./iclaude.sh --install-pii-proxy --force  # Переустановить всё с нуля
 ./iclaude.sh --check-pii-proxy         # Статус venv, моделей, PID
 ./iclaude.sh --pii-proxy               # Запуск с PII-маскированием
 
@@ -282,8 +286,16 @@ iclaude  # Работает глобально
 ### Маскировать PII/секреты в API-трафике
 
 ```bash
-# Установить Presidio NLP (один раз, ~500MB)
+# Установить Presidio NLP (идемпотентно: пропускает уже установленные компоненты)
 ./iclaude.sh --install-pii-proxy
+
+# Повторный запуск безопасен — покажет что пропущено, что установлено:
+# ✓ venv: already exists, skipping creation
+# ✓ Presidio: already installed, skipping pip install
+# ✓ spaCy en_core_web_lg: already installed, skipping download (587MB saved)
+# ✓ Server script: up to date
+# Принудительная переустановка с нуля:
+./iclaude.sh --install-pii-proxy --force
 
 # Постоянный режим — добавить в конфиг
 echo 'USE_PII_PROXY=true' >> .claude_config
@@ -297,7 +309,9 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 ```
 
 **Примечание:** `--pii-proxy` и `--router` работают вместе в режиме цепочки:
-`claude → PII proxy (:9000) → CCR (:3456) → провайдеры`
+`claude → PII proxy (авто-порт) → CCR (:3456) → провайдеры`
+
+**Параллельные сессии:** каждый запуск `./iclaude.sh --pii-proxy` получает изолированный прокси-процесс на отдельном порту из диапазона 20000–40000. Сессии не конфликтуют и не зависят друг от друга.
 
 **Важно:** PII proxy venv **не хранится в git** (~500MB). После `git clone` или `git pull` на новой машине нужно переустановить:
 ```bash

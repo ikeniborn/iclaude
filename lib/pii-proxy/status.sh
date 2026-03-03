@@ -103,44 +103,49 @@ check_pii_proxy_status() {
         echo "  (not created yet)"
     fi
 
-    # Running process
+    # Running processes (per-session: scan all pii-proxy-*.pid files)
     echo ""
-    if [[ -f "$PII_PROXY_PID_FILE" ]]; then
-        local pid
-        pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
+    local found_running=0
+    local found_orphaned=0
+    for pid_file in "${ISOLATED_CONFIG_DIR}"/pii-proxy-*.pid; do
+        [[ -f "$pid_file" ]] || continue
+        local pid bn sid port current_marker
+        pid=$(cat "$pid_file" 2>/dev/null)
+        bn="${pid_file##*/}"                         # pii-proxy-<SID>.pid
+        sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-            print_success "Server running: PID $pid"
-            # Read actual bound port from port file (written by server on startup)
-            local port
-            port=$(cat "$PII_PROXY_LOG_DIR/server.port" 2>/dev/null || echo "")
-            [[ -n "$port" ]] && echo "  Port: $port" || echo "  Port: $PII_PROXY_PORT (configured)"
-            # Show upstream chaining info (combined mode: upstream points to CCR, not Anthropic)
-            local upstream_url="${ANTHROPIC_UPSTREAM_URL:-}"
-            if [[ -n "$upstream_url" ]]; then
-                if [[ "$upstream_url" == http://127.* || "$upstream_url" == http://localhost* ]]; then
-                    print_info "  Upstream: $upstream_url (chaining to CCR router)"
-                else
-                    print_info "  Upstream: $upstream_url"
-                fi
+            port=$(cat "${PII_PROXY_LOG_DIR}/pii-proxy-${sid}.port" 2>/dev/null || echo "")
+            current_marker=""
+            [[ "${ICLAUDE_SESSION_ID:-}" == "$sid" ]] && current_marker=" ← current session"
+            if [[ -n "$port" ]]; then
+                print_success "Session ${sid}${current_marker}: PID $pid, port $port"
+            else
+                print_success "Session ${sid}${current_marker}: PID $pid, port unknown"
             fi
+            found_running=$((found_running + 1))
         else
-            print_info "Server not running"
-            echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
-            echo "  Use --pii-proxy --router to enable combined PII masking + CCR routing"
-            # Clean up stale PID file
-            rm -f "$PII_PROXY_PID_FILE"
+            rm -f "$pid_file"
+            found_orphaned=$((found_orphaned + 1))
         fi
-    else
+    done
+    if [[ $found_running -eq 0 ]]; then
         print_info "Server not running"
         echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
         echo "  Use --pii-proxy --router to enable combined PII masking + CCR routing"
+    elif [[ $found_running -gt 1 ]]; then
+        print_info "  Total: $found_running active sessions (parallel mode)"
     fi
+    [[ $found_orphaned -gt 0 ]] && print_info "  Cleaned $found_orphaned orphaned PID file(s)"
 
     # Config
     echo ""
     print_info "Configuration (.claude_config):"
     echo "  USE_PII_PROXY=${USE_PII_PROXY:-false}"
-    echo "  PII_PROXY_PORT=${PII_PROXY_PORT:-9000}"
+    local _port_label
+    [[ "${PII_PROXY_PORT:-0}" == "0" ]] \
+        && _port_label="auto (range ${PII_PROXY_PORT_MIN:-20000}-${PII_PROXY_PORT_MAX:-40000})" \
+        || _port_label="${PII_PROXY_PORT}"
+    echo "  PII_PROXY_PORT=${_port_label}"
     echo "  PII_PROXY_ENABLE_FALLBACK=${PII_PROXY_ENABLE_FALLBACK:-true}"
 
     echo ""

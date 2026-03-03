@@ -133,6 +133,12 @@ _SSL_VERIFY = _build_ssl_verify()
 _HTTP_SESSION = _requests.Session()
 _HTTP_SESSION.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
 
+# Trusted API key from proxy's own environment.
+# Used to re-inject credentials after stripping inbound auth headers,
+# preventing credential relay by other local processes.
+# Empty string → OAuth mode: auth headers forwarded as-is (no API key to inject).
+_API_KEY_FROM_ENV = os.environ.get('ANTHROPIC_API_KEY', '')
+
 # Presidio globals (lazy-loaded, protected by _presidio_lock)
 _analyzer = None
 _anonymizer = None
@@ -399,6 +405,34 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
         del format, args  # intentionally suppress default HTTP server logging
 
+    # Headers stripped unconditionally (connection-management, hop-by-hop).
+    _STRIP_ALWAYS = frozenset({'host', 'content-length', 'transfer-encoding'})
+    # Auth headers stripped in API-key mode and replaced with trusted env value.
+    _STRIP_AUTH = frozenset({'authorization', 'x-api-key'})
+
+    def _build_upstream_headers(self) -> dict[str, str]:
+        """Build request headers for upstream forwarding.
+
+        In API-key mode (ANTHROPIC_API_KEY set): strips inbound auth headers
+        and re-injects the trusted key from the proxy's environment. This
+        prevents credential relay — a rogue local process cannot route API
+        calls through the proxy using stolen credentials.
+
+        In OAuth mode (ANTHROPIC_API_KEY empty): forwards auth headers as-is
+        (there is no env-based key to inject, so stripping would break requests).
+        """
+        if _API_KEY_FROM_ENV:
+            strip = self._STRIP_ALWAYS | self._STRIP_AUTH
+        else:
+            strip = self._STRIP_ALWAYS
+
+        headers = {k: v for k, v in self.headers.items() if k.lower() not in strip}
+
+        if _API_KEY_FROM_ENV:
+            headers['x-api-key'] = _API_KEY_FROM_ENV
+
+        return headers
+
     def do_GET(self) -> None:
         if self.path == '/api/health':
             self._health()
@@ -526,10 +560,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
     def _proxy_head(self) -> None:
         """Forward HEAD request and relay status + headers without body (RFC 7231 §4.3.2)."""
         target = UPSTREAM_URL.rstrip('/') + self.path
-        headers = {
-            k: v for k, v in self.headers.items()
-            if k.lower() not in ('host', 'content-length', 'transfer-encoding')
-        }
+        headers = self._build_upstream_headers()
         try:
             resp = _HTTP_SESSION.request(
                 method='HEAD',
@@ -565,10 +596,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         502 'PII-proxy internal error'. requests/urllib3 handles TLS-to-proxy correctly.
         """
         target = UPSTREAM_URL.rstrip('/') + self.path
-        headers = {
-            k: v for k, v in self.headers.items()
-            if k.lower() not in ('host', 'content-length', 'transfer-encoding')
-        }
+        headers = self._build_upstream_headers()
         try:
             with _HTTP_SESSION.request(
                 method=self.command,

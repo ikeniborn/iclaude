@@ -167,13 +167,23 @@ export SILICONFLOW_API_KEY=
 # Требуется однократная установка: ./iclaude.sh --install-pii-proxy
 # Статус: ./iclaude.sh --check-pii-proxy
 #
-# Режимы запуска:
-#   solo:     --pii-proxy           → claude → PII proxy (:9000) → Anthropic API
-#   combined: --pii-proxy --router  → claude → PII proxy (:9000) → CCR (:3456) → провайдеры
+# Режимы запуска (каждая сессия запускает собственный прокси-процесс):
+#   solo:     --pii-proxy           → claude → PII proxy (авто-порт) → Anthropic API
+#   combined: --pii-proxy --router  → claude → PII proxy (авто-порт) → CCR (:3456) → провайдеры
+#
+# Параллельные сессии iclaude не конфликтуют: каждая получает изолированный
+# прокси-процесс на своём порту из диапазона PII_PROXY_PORT_MIN..PII_PROXY_PORT_MAX.
 #
 # true  — автозапуск прокси при каждом старте claude
 # false — прокси не стартует (можно включить разово: --pii-proxy)
 USE_PII_PROXY=false
+
+# Диапазон портов для автовыбора PII proxy (по умолчанию 20000–40000).
+# Порт выбирается случайно из диапазона при каждом запуске сессии.
+# Задайте PII_PROXY_PORT=<N> для фиксации конкретного порта (например, для firewall-правил).
+# PII_PROXY_PORT=0
+# PII_PROXY_PORT_MIN=20000
+# PII_PROXY_PORT_MAX=40000
 
 # ============================================================
 #  ОТЛАДКА
@@ -216,3 +226,6 @@ DEBUG_LAUNCH=
 # ============================================================
 # USE_PII_PROXY=true
 # # При первом использовании установить: ./iclaude.sh --install-pii-proxy
+# # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
+# # PII_PROXY_PORT_MIN=30000
+# # PII_PROXY_PORT_MAX=35000

@@ -487,7 +487,9 @@ fi
                     echo "PII proxy is only available in isolated environment"
                     exit 1
                 fi
-                install_isolated_pii_proxy
+                _pii_install_force=""
+                [[ "${2:-}" == "--force" ]] && { _pii_install_force="--force"; shift; }
+                install_isolated_pii_proxy "$_pii_install_force"
                 exit $?
                 ;;
             --check-pii-proxy)
