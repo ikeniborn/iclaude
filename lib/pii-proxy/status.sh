@@ -50,21 +50,39 @@ check_pii_proxy_status() {
         return 0
     fi
 
-    # Presidio installation
-    if "$PII_PROXY_VENV/bin/python3" -c "import presidio_analyzer" 2>/dev/null; then
-        print_success "Presidio: installed"
-    else
-        print_warning "Presidio not installed in venv"
-        echo "  Run: ./iclaude.sh --install-pii-proxy"
+    # Presidio installation — check mode marker file first
+    local pii_mode=""
+    local mode_file="$PII_PROXY_VENV/pii_proxy_mode"
+    if [[ -f "$mode_file" ]]; then
+        pii_mode=$(cat "$mode_file" 2>/dev/null | tr -d '[:space:]')
     fi
 
-    # spaCy model
-    if "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
-        print_success "spaCy model: en_core_web_lg"
-    elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_sm')" 2>/dev/null; then
-        print_warning "spaCy model: en_core_web_sm (reduced accuracy)"
+    if [[ "$pii_mode" == "presidio-full" ]]; then
+        print_success "Presidio: installed (full NLP mode)"
+    elif [[ "$pii_mode" == "presidio-legacy" ]]; then
+        print_success "Presidio: installed (legacy spacy<3.8 mode)"
+    elif [[ "$pii_mode" == "regex-only" ]]; then
+        print_warning "Presidio: regex-only mode (NLP unavailable)"
+        echo "  For full NLP: sudo apt-get install gcc-c++ && ./iclaude.sh --install-pii-proxy"
     else
-        print_warning "spaCy model: not found"
+        # No marker file — fall back to import test
+        if "$PII_PROXY_VENV/bin/python3" -c "import presidio_analyzer" 2>/dev/null; then
+            print_success "Presidio: installed"
+        else
+            print_warning "Presidio not installed in venv"
+            echo "  Run: ./iclaude.sh --install-pii-proxy"
+        fi
+    fi
+
+    # spaCy model — skip check in regex-only mode
+    if [[ "$pii_mode" != "regex-only" ]]; then
+        if "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
+            print_success "spaCy model: en_core_web_lg"
+        elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_sm')" 2>/dev/null; then
+            print_warning "spaCy model: en_core_web_sm (reduced accuracy)"
+        else
+            print_warning "spaCy model: not found"
+        fi
     fi
 
     # Log directory
