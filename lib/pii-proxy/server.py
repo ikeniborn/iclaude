@@ -14,6 +14,7 @@ Environment:
     PII_PROXY_PORT          - default listen port (default: 9000)
     PII_PROXY_LOG_DIR       - log directory (default: /tmp/pii-proxy-logs)
     PII_PROXY_ENABLE_FALLBACK - use regex if Presidio unavailable (default: true)
+    ICLAUDE_SESSION_ID      - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
 
@@ -673,8 +674,13 @@ def main() -> None:
         server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
     port = server.server_address[1]  # actual port assigned by OS
 
-    # Write port file AFTER successful bind so shell polling sees a ready server
-    port_file = log_dir / 'server.port'
+    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions each
+    # write their own file and never overwrite each other (eliminates the global server.port
+    # race where session-2 could overwrite session-1's file before session-1 read it).
+    # Validate session_id to hex-only (12 chars) to prevent path traversal via env variable.
+    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+    session_id = _raw_sid if re.fullmatch(r'[0-9a-f]{12}', _raw_sid) else 'default'
+    port_file = log_dir / f'pii-proxy-{session_id}.port'
     port_file.write_text(str(port))
 
     def _shutdown(signum: int, _: Any) -> None:
