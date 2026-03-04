@@ -421,8 +421,10 @@ print(json.dumps(messages, ensure_ascii=False))
         all_messages=$(_parse_jsonl_range "$jsonl_file" 1)
 
         # Atomic write: encode to temp file first, then mv
+        # Do NOT use --stats: stats lines would be written mid-file when
+        # subsequent append-only runs add new messages after them.
         local tmp_file="${output_file}.tmp.$$"
-        echo "$all_messages" | toon --encode --stats 2>/dev/null > "$tmp_file"
+        echo "$all_messages" | toon --encode 2>/dev/null > "$tmp_file"
         if [[ -s "$tmp_file" ]]; then
             mv "$tmp_file" "$output_file"
             echo "$current_lines" > "$metadata_file"
@@ -441,8 +443,8 @@ print(json.dumps(messages, ensure_ascii=False))
         delta_messages=$(_parse_jsonl_range "$jsonl_file" "$new_start")
 
         if [[ -n "$delta_messages" ]] && [[ "$delta_messages" != "[]" ]]; then
-            # Encode delta; strip the TOON header line (first line) so we only
-            # get the data rows to append.  toon --stats header is on line 1.
+            # Encode delta; strip the TOON header line (first line, "[N]{fields}:")
+            # so we only get the data rows to append.
             local delta_toon
             delta_toon=$(echo "$delta_messages" | toon --encode 2>/dev/null | tail -n +2)
             if [[ -n "$delta_toon" ]]; then
