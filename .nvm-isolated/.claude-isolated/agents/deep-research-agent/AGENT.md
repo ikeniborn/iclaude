@@ -6,6 +6,7 @@ disallowedTools: Edit, Bash, Task
 maxTurns: 60
 model: opus
 # version: 2.0.2 | updated: 2026-02-24
+# implements: RFC-0002 (extended research role)
 ---
 
 ## Abstract

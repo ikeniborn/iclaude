@@ -6,6 +6,7 @@ disallowedTools: Edit, Bash, WebSearch, WebFetch
 maxTurns: 60
 model: haiku
 # version: 2.1.1 | updated: 2026-02-24
+# implements: RFC-0002 (researcher role)
 ---
 
 ## Abstract

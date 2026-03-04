@@ -6,6 +6,7 @@ disallowedTools: Edit, Glob, Grep, Task
 maxTurns: 30
 model: sonnet
 # version: 2.1.1 | updated: 2026-02-24
+# implements: RFC-0002 (critic role)
 ---
 
 ## Abstract
