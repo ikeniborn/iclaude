@@ -1,6 +1,7 @@
 # Agent Workspace Protocol
 
 **Version:** 1.2.0
+**Implements:** RFC-0002 (Workspace Protocol section) — authoritative spec at `docs/RFC-0002-agent-protocol-spec.md`
 **Purpose:** Правила работы с workspace для агентов системы Researcher → [Critic] → Planner → [Critic] → Executor → [Critic]
 
 ---

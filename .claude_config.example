@@ -27,6 +27,7 @@
 # HTTP прокси не рекомендуется: проблемы с TLS-сертификатами Anthropic.
 # SOCKS5 не поддерживается: вызывает сбой в undici (Node.js HTTP-клиент).
 #
+# По умолчанию: не задан (прокси не используется).
 # Устанавливается через: ./iclaude.sh --proxy https://user:pass@proxy:8118
 PROXY_URL=
 
@@ -41,6 +42,7 @@ PROXY_INSECURE=false
 # Используется, когда прокси перехватывает HTTPS (corporate MITM proxy).
 # Пример: /etc/ssl/certs/my-corp-ca.pem
 #
+# По умолчанию: не задан (дополнительный CA-сертификат не устанавливается).
 # Если задан, устанавливает NODE_EXTRA_CA_CERTS автоматически.
 # Предпочтительнее PROXY_INSECURE=true.
 PROXY_CA=
@@ -60,9 +62,24 @@ NO_PROXY=
 #
 # Используется при запуске без роутера (нативный Claude API).
 # При запуске с роутером (--router) модель задаётся в router.json.
+# По умолчанию (если не задан): claude-sonnet-4-6
 #
 # Устанавливается через: ./iclaude.sh --model claude-sonnet-4-6
 CLAUDE_CODE_MODEL=
+
+# Нативная переменная Claude Code для выбора модели по умолчанию.
+# Альтернатива CLAUDE_CODE_MODEL: читается напрямую Claude Code (без флага --model).
+# Если задан и CLAUDE_CODE_MODEL — флаг --model имеет приоритет.
+# По умолчанию (если не задан): claude-sonnet-4-6
+# Пример: claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5-20251001
+ANTHROPIC_MODEL=
+
+# Переопределить alias-маппинг семейств моделей (opus/sonnet/haiku → конкретная версия).
+# Полезно для закрепления точной версии модели без изменения конфигов роутера.
+# По умолчанию: последняя версия соответствующего семейства.
+ANTHROPIC_DEFAULT_OPUS_MODEL=   # По умолчанию: claude-opus-4-6
+ANTHROPIC_DEFAULT_SONNET_MODEL= # По умолчанию: claude-sonnet-4-6
+ANTHROPIC_DEFAULT_HAIKU_MODEL=  # По умолчанию: claude-haiku-4-5-20251001
 
 # ============================================================
 #  НАСТРОЙКИ CLAUDE CODE
@@ -96,6 +113,32 @@ CLAUDE_CODE_SESSION_TIMEOUT=
 # false — отключить (по умолчанию)
 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
 
+# Отдельная модель для субагентов (Task tool, параллельные агенты).
+# По умолчанию: Haiku (быстрый и дешёвый для фоновых подзадач).
+# Пример: claude-sonnet-4-6 — если субагентам нужно более высокое качество.
+CLAUDE_CODE_SUBAGENT_MODEL=
+
+# Уровень усилий Claude Code (влияет на extended thinking и глубину анализа).
+# low    — быстро, меньше thinking
+# medium — баланс скорости и качества (по умолчанию)
+# high   — максимальное качество, больше thinking (дороже)
+CLAUDE_CODE_EFFORT_LEVEL=
+
+# Отключить extended thinking (adaptive thinking) у Opus/Sonnet 4.6.
+# 1 — отключить (ускоряет ответы, снижает стоимость, отключает глубокий анализ)
+# (оставить пустым — adaptive thinking включён по умолчанию)
+CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=
+
+# Отключить расширенный контекст (200K context window).
+# 1 — использовать стандартный контекст модели
+# По умолчанию: не задан (расширенный контекст активен)
+CLAUDE_CODE_DISABLE_1M_CONTEXT=
+
+# Отключить экспериментальные API-фичи (beta endpoints).
+# 1 — только стабильные API (рекомендуется для production-сред)
+# По умолчанию: не задан (experimental betas включены)
+CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
+
 # ============================================================
 #  ROUTER: API-КЛЮЧИ LLM-ПРОВАЙДЕРОВ
 # ============================================================
@@ -127,12 +170,14 @@ export DEEPSEEK_API_KEY=
 # --- OpenRouter ---
 # Агрегатор: 300+ моделей через единый API (GPT, Gemini, Llama, Mistral и др.)
 # Используется в router.json.example
+# По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://openrouter.ai/keys
 # Формат: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export OPENROUTER_API_KEY=
 
 # --- Google Gemini ---
 # Используется в router.json.example (gemini-2.5-pro для длинного контекста)
+# По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://aistudio.google.com/app/apikey
 # Формат: AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 export GOOGLE_API_KEY=
@@ -176,7 +221,25 @@ export SILICONFLOW_API_KEY=
 #
 # true  — автозапуск прокси при каждом старте claude
 # false — прокси не стартует (можно включить разово: --pii-proxy)
+# По умолчанию: false
 USE_PII_PROXY=false
+
+# Уровень маскирования PII proxy.
+# Управляет агрессивностью маскирования содержимого API-запросов:
+#
+#   off      — маскирование отключено; прокси работает, содержимое передаётся без изменений.
+#              Используйте для отладки или если маскирование мешает работе.
+#
+#   secrets  — только регулярные выражения (API ключи, токены, пароли, URL с учётными данными).
+#              Быстро, без NLP. Не обнаруживает имена, email, телефоны, адреса.
+#              Рекомендуется для минимального overhead без потери защиты секретов.
+#
+#   standard — полное маскирование: Presidio NLP + регулярные выражения (по умолчанию).
+#              Маскирует имена, email, телефоны, адреса, номера карт + все типы секретов.
+#              Требует установленного Presidio; при отсутствии — fallback на режим secrets.
+#
+# По умолчанию: standard
+# PII_PROXY_MASKING_LEVEL=standard
 
 # Диапазон портов для автовыбора PII proxy (по умолчанию 20000–40000).
 # Порт выбирается случайно из диапазона при каждом запуске сессии.
@@ -226,6 +289,12 @@ DEBUG_LAUNCH=
 # ============================================================
 # USE_PII_PROXY=true
 # # При первом использовании установить: ./iclaude.sh --install-pii-proxy
+# #
+# # Уровень маскирования (по умолчанию: standard — Presidio NLP + regex):
+# # PII_PROXY_MASKING_LEVEL=standard   # полное (NLP + regex) — максимальная защита
+# # PII_PROXY_MASKING_LEVEL=secrets    # только regex — быстро, без NLP
+# # PII_PROXY_MASKING_LEVEL=off        # без маскирования (только для отладки)
+# #
 # # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
 # # PII_PROXY_PORT_MIN=30000
 # # PII_PROXY_PORT_MAX=35000
