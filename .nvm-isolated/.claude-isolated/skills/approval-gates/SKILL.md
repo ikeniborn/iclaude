@@ -3,9 +3,14 @@ name: approval-gates
 description: Упрощённые approval gates для подтверждения плана
 user-invocable: false
 # version: 2.2.0
+# see-also: RFC-0002 (Approval Gate Protocol — human gates after Critic evaluations)
 # tags: approval, confirmation, user-interaction
 # dependencies: structured-planning, plan-validation | files.templates: ./templates/*.md
 ---
+
+## Abstract
+
+This skill presents a structured approval gate to the user before executing a plan, showing plan summary, validation results, and risks with a clear yes/no/modify prompt. It gates execution at plan approval checkpoints in the workflow. Use this skill after plan-validation to get explicit human sign-off before making code changes. It does not execute any code — it only collects user decision and passes it downstream.
 
 # Approval Gates v2.0
 

@@ -5,10 +5,15 @@ user-invocable: false
 context: fork
 agent: Plan
 # version: 2.4.0
+# see-also: RFC-0002 (plan.toon data contract for agent pipeline plans)
 # tags: planning, json-schema, structured-output, skill-generation, prd, toon
 # dependencies: thinking-framework, adaptive-workflow, skill-generator, prd-generator, toon-skill
 # files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md
 ---
+
+## Abstract
+
+This skill creates adaptive task execution plans with JSON Schema validation, selecting complexity level (minimal/standard/complex) based on task scope. It produces a structured plan object with phases, steps, validation commands, and commit messages. Use this skill before execution to ensure tasks are broken into trackable, reversible phases. It is invoked automatically by adaptive-workflow and can be used standalone for manual planning.
 
 # Structured Planning v2.4
 

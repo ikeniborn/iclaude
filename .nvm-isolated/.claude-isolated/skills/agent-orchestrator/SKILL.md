@@ -4,10 +4,16 @@ description: Оркестратор пайплайна Researcher → Planner �
 user-invocable: true
 context: fork
 # version: 1.1.0
+# implements: RFC-0002 (orchestrator)
+# format: RFC-0003 (TOON pipeline artifacts)
 # tags: agents, orchestration, pipeline, researcher, planner, executor
 # invocation: /agent-orchestrator
 # dependencies: agents/researcher-agent/AGENT.md, agents/planning-agent/AGENT.md, agents/execution-agent/AGENT.md, agents/critic-agent/AGENT.md, agents/_shared/workspace.md, agents/_shared/toon-protocol.md
 ---
+
+## Abstract
+
+This skill orchestrates the full Researcher → [Critic] → Planner → [Critic] → Executor → [Critic] pipeline. It initializes the workspace, writes `input.toon`, sequentially launches sub-agents via the Agent tool, runs Critic evaluations at each gate, and presents a final report. Use this skill for tasks requiring multi-file code changes with codebase research, structured planning, and quality gating. It produces TOON and JSON artifacts in `{PROJECT_ROOT}/.claude/workspace/{SESSION_ID}/` per RFC-0002.
 
 # Agent Orchestrator
 
