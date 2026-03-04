@@ -4,10 +4,15 @@ description: Multi-perspective validation of planning outputs before execution
 user-invocable: true
 context: fork
 # version: 1.0.1
+# see-also: RFC-0002 (Critic Agent rubrics for agent pipeline plan evaluation)
 # tags: validation, planning, quality-assurance, blocking, pre-execution
 # dependencies: structured-planning, adaptive-workflow, thinking-framework, toon-skill
 # files: templates=./templates/*.json, schemas=./schemas/*.json, examples=./examples/*.md, rules=./rules/*.md, levels=./levels/*.md
 ---
+
+## Abstract
+
+This skill validates a structured plan from multiple perspectives (semantic, technical, risk) before execution begins. It checks plan completeness, step coverage, risk coverage, and validation commands, then emits PASS/WARN/FAIL with blocking issues and fix recommendations. Use this skill after structured-planning and before approval-gates to catch plan quality issues early. It does not execute code or modify files.
 
 # Plan Validation
 

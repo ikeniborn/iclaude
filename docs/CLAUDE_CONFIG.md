@@ -1,487 +1,431 @@
-# Claude Code Configuration Variables
+# Переменные окружения Claude Code
 
-Этот документ описывает переменные окружения для управления поведением Claude Code через файл `.claude_proxy_credentials`.
+Справочник по всем переменным, поддерживаемым iclaude.sh и Claude Code.
 
 ## Расположение конфигурации
 
-**Файл:** `/home/ikeniborn/Documents/Project/iclaude/.claude_proxy_credentials`
+**Файл:** `.claude_config` в корне репозитория
 
-Этот файл содержит как proxy-настройки, так и дополнительные параметры Claude Code.
-
-## Доступные переменные
-
-### 1. Output Token Limits
-
-#### `CLAUDE_CODE_MAX_OUTPUT_TOKENS`
-
-**Описание:** Максимальное количество токенов на вывод (output) в одном ответе Claude.
-
-**Значения:**
-- **По умолчанию:** 32000
-- **Рекомендуемое:** 64000 (для сложных задач)
-- **Максимум:** 128000
-
-**Пример:**
 ```bash
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+cp .claude_config.example .claude_config
+# Отредактировать: заполнить нужные значения
+chmod 600 .claude_config   # устанавливается автоматически
 ```
 
-**Когда использовать:**
-- Ошибка: "Claude's response exceeded the 32000 output token maximum"
-- Работа с большими файлами или сложными рефакторингами
-- Генерация обширной документации
+> ⚠️ `.claude_config` добавлен в `.gitignore` — содержит секреты, не коммитить.
+> `.claude_config.example` — безопасный шаблон, хранится в git.
 
-**Внимание:** Более высокие значения увеличивают стоимость API-запросов.
+Файл загружается автоматически при каждом запуске `./iclaude.sh`.
 
 ---
 
-### 2. Tasks System
-
-#### `CLAUDE_CODE_ENABLE_TASKS`
-
-**Описание:** Включает/выключает новую систему управления задачами (tasks).
-
-**Значения:**
-- `true` - Включено (по умолчанию, рекомендуется)
-- `false` - Выключено (старая система)
-
-**Пример:**
-```bash
-CLAUDE_CODE_ENABLE_TASKS=true
-```
-
-**Возможности tasks system:**
-- Отслеживание прогресса выполнения работы
-- Управление зависимостями между задачами (blocks/blockedBy)
-- Отслеживание фоновых процессов (bash shell, subagents)
-- Шаринг задач между сессиями
-
-**Когда отключать:**
-- Проблемы совместимости с новой системой
-- Предпочтение старого интерфейса
-
----
-
-### 3. Chrome Integration
-
-#### `CLAUDE_CODE_NO_CHROME`
-
-**Описание:** Отключает интеграцию с браузером Chrome (claude-in-chrome extension).
-
-**Значения:**
-- `false` - Chrome интеграция включена (по умолчанию)
-- `true` - Chrome интеграция выключена
-
-**Пример:**
-```bash
-CLAUDE_CODE_NO_CHROME=false
-```
-
-**Chrome integration возможности:**
-- Автоматизация браузера (навигация, клики, ввод данных)
-- Чтение консоли и сетевых запросов
-- Запись GIF-анимаций взаимодействия
-- Автоматическое заполнение форм
-
-**Когда отключать:**
-- Chrome не установлен
-- Не нужна автоматизация браузера
-- Экономия контекста (Chrome integration увеличивает использование токенов)
-
----
-
-### 4. Model Selection
-
-#### `CLAUDE_CODE_MODEL`
-
-**Описание:** Выбор модели Claude для использования.
-
-**Значения:**
-- `claude-3-opus` - Самая мощная модель (дорого, высокое качество)
-- `claude-3-sonnet` - Балансированная модель (по умолчанию)
-- `claude-3-haiku` - Быстрая модель (дешево, базовое качество)
-- `claude-4-6-opus` - Новая Opus 4.6 модель
-- `claude-4-5-sonnet` - Новая Sonnet 4.5 модель (по умолчанию в новых версиях)
-
-**Пример:**
-```bash
-CLAUDE_CODE_MODEL=claude-3-opus
-```
-
-**Когда использовать:**
-- Opus: сложные задачи, рефакторинг, архитектурные решения
-- Sonnet: повседневная разработка, code review
-- Haiku: простые задачи, быстрые правки
-
----
-
-### 5. Session Management
-
-#### `CLAUDE_CODE_SESSION_TIMEOUT`
-
-**Описание:** Таймаут сессии в секундах.
-
-**Значения:**
-- **По умолчанию:** 3600 (1 час)
-- **Диапазон:** 300-7200 (5 минут - 2 часа)
-
-**Пример:**
-```bash
-CLAUDE_CODE_SESSION_TIMEOUT=7200
-```
-
-**Когда изменять:**
-- Длительные сессии разработки (увеличить)
-- Быстрые задачи (уменьшить)
-
----
-
-### 6. Agent Teams (EXPERIMENTAL)
-
-#### `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
-
-**Описание:** Включает экспериментальную функцию Agent Teams - координацию нескольких экземпляров Claude Code, работающих как команда.
-
-**Статус:** ⚠️ Экспериментальная функция (research preview, февраль 2026)
-
-**Значения:**
-- `1` - Включено (agent teams активны)
-- Не установлено - Выключено (по умолчанию)
-
-**Пример:**
-```bash
-CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-```
-
-**Что это дает:**
-- **Team Lead:** Основная сессия координирует работу, назначает задачи, синтезирует результаты
-- **Teammates:** Отдельные экземпляры Claude Code работают независимо, каждый в своем контексте
-- **Shared Task List:** Общий список задач для координации работы
-- **Direct Communication:** Агенты могут напрямую общаться друг с другом
-
-**Сравнение с Subagents:**
-
-| Характеристика | Subagents | Agent Teams |
-|----------------|-----------|-------------|
-| Контекст | Свой контекст, результаты возвращаются вызывающему | Полностью независимый контекст |
-| Коммуникация | Только с главным агентом | Прямое общение между агентами |
-| Координация | Главный агент управляет всей работой | Shared task list с самокоординацией |
-| Подходит для | Фокусные задачи, где важен только результат | Сложная работа, требующая обсуждения и коллаборации |
-| Token cost | Ниже (результаты суммаризируются) | Выше (каждый teammate = отдельный Claude instance) |
-
-**Лучшие use cases:**
-- ✅ **Research и review:** Параллельное исследование разных аспектов проблемы
-- ✅ **Новые модули/фичи:** Каждый teammate владеет отдельной частью
-- ✅ **Debugging с конкурирующими гипотезами:** Тестирование разных теорий параллельно
-- ✅ **Cross-layer координация:** Frontend, backend, tests - каждый owned by teammate
-
-**Требования:**
-- Claude Code CLI v2.0+
-- Paid Claude plan (Pro/Team/Enterprise)
-- Опционально: `tmux` или iTerm2 для split-pane режима
-
-**Display modes:**
-- **In-process:** Все teammates в главном терминале (Shift+Up/Down для переключения)
-- **Split panes:** Каждый teammate в отдельной панели (требует tmux/iTerm2)
-
-**⚠️ Важно:**
-- **Высокое использование токенов:** Каждый teammate = отдельный Claude instance
-- **Экспериментальная функция:** Известные ограничения (см. документацию)
-- **Нет session resumption:** `/resume` и `/rewind` не восстанавливают teammates
-- **Один team за сессию:** Lead может управлять только одной командой
-
-**Когда использовать:**
-- Задачи, где параллельное исследование добавляет реальную ценность
-- Teammates могут работать независимо без частых синхронизаций
-- Готовность платить за увеличенное использование токенов
-
-**Когда НЕ использовать:**
-- Последовательные задачи
-- Редактирование одного файла несколькими агентами
-- Работа с множеством зависимостей между задачами
-- Простые задачи (координация overhead > benefit)
-
-**Пример использования:**
-
-```bash
-# После включения в .claude_proxy_credentials
-CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-
-# Запустите Claude Code
-./iclaude.sh
-
-# В Claude Code запросите team
-> Create an agent team to review PR #142. Spawn three reviewers:
-> - One focused on security implications
-> - One checking performance impact
-> - One validating test coverage
-> Have them each review and report findings.
-```
-
-**Документация:**
-- [Orchestrate teams of Claude Code sessions](https://code.claude.com/docs/en/agent-teams)
-- [Agent Teams Setup Guide](https://www.marc0.dev/en/blog/claude-code-agent-teams-multiple-ai-agents-working-in-parallel-setup-guide-1770317684454)
-- [Agent Teams Best Practices](https://scottspence.com/posts/enable-team-mode-in-claude-code)
-
----
-
-## Proxy Configuration Variables
+## Прокси-сервер
 
 ### `PROXY_URL`
+URL прокси-сервера.
 
-**Описание:** URL HTTP/HTTPS прокси-сервера.
+| | |
+|---|---|
+| **По умолчанию** | не задан (прокси не используется) |
+| **Формат** | `https://[user:pass@]host:port` |
 
-**Формат:**
-```
-protocol://username:password@host:port
-```
-
-**Примеры:**
 ```bash
-PROXY_URL=https://user:pass@proxy.example.com:8118
-PROXY_URL=http://192.168.1.100:8118
+PROXY_URL=https://user:password@proxy.company.com:8118
 ```
 
-**Поддерживаемые протоколы:**
-- `https://` - Рекомендуется (сохраняет домен для OAuth/TLS)
-- `http://` - Не рекомендуется
+**Протоколы:**
+- `https://` — рекомендуется (сохраняет домены для OAuth/TLS)
+- `http://` — не рекомендуется (проблемы с TLS Anthropic)
+- SOCKS5 — не поддерживается (сбой в undici)
+
+Задать через CLI: `./iclaude.sh --proxy https://user:pass@proxy:8118`
 
 ---
 
 ### `PROXY_INSECURE`
+Отключить проверку TLS-сертификата прокси.
 
-**Описание:** Отключает проверку TLS-сертификата прокси.
+| | |
+|---|---|
+| **По умолчанию** | `false` |
+| **Значения** | `true` / `false` |
 
-**Значения:**
-- `true` - Отключить проверку (небезопасно, но работает с самоподписанными сертификатами)
-- `false` - Включить проверку (рекомендуется, используйте с `PROXY_CA`)
-
-**Пример:**
 ```bash
 PROXY_INSECURE=false
 ```
+
+> Используйте `PROXY_CA` вместо `PROXY_INSECURE=true` — безопаснее.
 
 ---
 
 ### `PROXY_CA`
+Путь к CA-сертификату прокси (PEM-формат).
 
-**Описание:** Путь к файлу CA-сертификата прокси-сервера (для самоподписанных сертификатов).
+| | |
+|---|---|
+| **По умолчанию** | не задан (NODE_EXTRA_CA_CERTS не устанавливается) |
 
-**Пример:**
 ```bash
-PROXY_CA=/path/to/proxy-cert.pem
+PROXY_CA=/etc/ssl/certs/corporate-ca.pem
 ```
 
-**Использование:**
-1. Получите сертификат прокси-сервера
-2. Сохраните в файл (например, `proxy-cert.pem`)
-3. Укажите путь в `PROXY_CA`
-4. Установите `PROXY_INSECURE=false`
+При наличии файла автоматически устанавливает `NODE_EXTRA_CA_CERTS`.
 
 ---
 
 ### `NO_PROXY`
+Список хостов, обходящих прокси (через запятую).
 
-**Описание:** Список хостов, для которых НЕ использовать прокси (через запятую).
+| | |
+|---|---|
+| **По умолчанию** | `localhost,127.0.0.1,::1,github.com,githubusercontent.com,gitlab.com,bitbucket.org,registry.npmjs.org,nodejs.org` |
 
-**По умолчанию:**
 ```bash
-NO_PROXY=localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org
-```
-
-**Когда изменять:**
-- Добавьте внутренние хосты компании
-- Добавьте API-эндпоинты, доступные напрямую
-
----
-
-## Дополнительные переменные окружения
-
-Эти переменные не хранятся в `.claude_proxy_credentials`, но могут быть экспортированы в shell перед запуском.
-
-### `CLAUDE_CODE_TASK_LIST_ID`
-
-**Описание:** ID списка задач для шаринга между сессиями.
-
-**Пример:**
-```bash
-export CLAUDE_CODE_TASK_LIST_ID=shared-task-list-123
-./iclaude.sh
+NO_PROXY=localhost,127.0.0.1,internal.company.com
 ```
 
 ---
 
-### `NODE_EXTRA_CA_CERTS`
+## Выбор модели
 
-**Описание:** Дополнительные CA-сертификаты для Node.js (автоматически устанавливается из `PROXY_CA`).
+### `CLAUDE_CODE_MODEL`
+Принудительно задать модель через флаг `--model` при запуске.
 
-**Пример:**
+| | |
+|---|---|
+| **По умолчанию** | `claude-sonnet-4-6` |
+
 ```bash
-export NODE_EXTRA_CA_CERTS=/path/to/cert.pem
+CLAUDE_CODE_MODEL=claude-opus-4-6
 ```
+
+> Применяется только в нативном режиме (без `--router`).
+> При `--router` модели задаются в `router.json`.
+
+Задать через CLI: `./iclaude.sh --model claude-opus-4-6`
 
 ---
 
-### `NODE_TLS_REJECT_UNAUTHORIZED`
+### `ANTHROPIC_MODEL`
+Нативная переменная Claude Code для выбора модели. Альтернатива `CLAUDE_CODE_MODEL` — не требует флага `--model`.
 
-**Описание:** Отключает проверку TLS-сертификатов в Node.js (автоматически устанавливается из `PROXY_INSECURE`).
+| | |
+|---|---|
+| **По умолчанию** | `claude-sonnet-4-6` |
 
-**Значения:**
-- `0` - Отключить проверку (небезопасно)
-- `1` - Включить проверку (по умолчанию)
-
-**Пример:**
 ```bash
-export NODE_TLS_REJECT_UNAUTHORIZED=0
+ANTHROPIC_MODEL=claude-sonnet-4-6
 ```
+
+> Если заданы оба — `CLAUDE_CODE_MODEL` (`--model`) имеет приоритет.
 
 ---
 
-## Примеры конфигурации
+### `ANTHROPIC_DEFAULT_OPUS_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL`
+Переопределить alias-маппинг семейств моделей на конкретную версию.
 
-### Базовая конфигурация (с proxy)
-
-```bash
-PROXY_URL=https://user:pass@proxy.example.com:8118
-PROXY_INSECURE=false
-NO_PROXY=localhost,127.0.0.1,github.com
-
-# Увеличенный лимит токенов
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
-```
-
-### Конфигурация для сложных задач
+| Переменная | По умолчанию |
+|---|---|
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | `claude-opus-4-6` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | `claude-sonnet-4-6` |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | `claude-haiku-4-5-20251001` |
 
 ```bash
-PROXY_URL=https://user:pass@proxy.example.com:8118
-PROXY_INSECURE=false
-NO_PROXY=localhost,127.0.0.1
-
-# Максимальный лимит токенов
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
-
-# Модель Opus для сложных задач
-CLAUDE_CODE_MODEL=claude-3-opus
-
-# Длительный таймаут сессии (2 часа)
-CLAUDE_CODE_SESSION_TIMEOUT=7200
+ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
+ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-4-5-20251001
 ```
 
-### Конфигурация без Chrome integration
-
-```bash
-PROXY_URL=https://user:pass@proxy.example.com:8118
-PROXY_INSECURE=false
-
-# Отключить Chrome (экономия контекста)
-CLAUDE_CODE_NO_CHROME=true
-
-# Стандартный лимит токенов
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
-```
+Полезно для закрепления точной версии модели без изменения конфигов роутера.
 
 ---
 
-## Применение изменений
+## Настройки Claude Code
 
-После изменения `.claude_proxy_credentials`:
+### `CLAUDE_CODE_MAX_OUTPUT_TOKENS`
+Максимальное количество токенов в одном ответе.
 
-1. **Перезапустите iclaude.sh:**
-   ```bash
-   ./iclaude.sh
-   ```
+| | |
+|---|---|
+| **По умолчанию** | зависит от модели (обычно 8192) |
 
-2. **Или экспортируйте переменные вручную:**
-   ```bash
-   source .claude_proxy_credentials
-   export CLAUDE_CODE_MAX_OUTPUT_TOKENS
-   ./iclaude.sh
-   ```
+```bash
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000
+```
 
-3. **Проверьте применение:**
-   ```bash
-   bash -c "source ./iclaude.sh && load_claude_config && env | grep CLAUDE_CODE"
-   ```
+> Увеличьте при ошибке "Claude's response exceeded the output token maximum".
 
 ---
 
-## Troubleshooting
+### `CLAUDE_CODE_ENABLE_TASKS`
+Включить систему задач (TaskCreate/TaskUpdate/TaskList).
 
-### Ошибка "output token maximum exceeded"
+| | |
+|---|---|
+| **По умолчанию** | `true` (в iclaude) |
 
-**Решение:**
-```bash
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
-```
-или
-```bash
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
-```
-
-### Chrome integration не работает
-
-**Проверьте:**
-1. Chrome установлен и запущен
-2. Claude in Chrome extension v1.0.36+
-3. Paid Claude plan (Pro/Team/Enterprise)
-
-**Или отключите:**
-```bash
-CLAUDE_CODE_NO_CHROME=true
-```
-
-### Медленная работа модели
-
-**Попробуйте Haiku:**
-```bash
-CLAUDE_CODE_MODEL=claude-3-haiku
-```
-
-### Tasks system не работает
-
-**Включите явно:**
 ```bash
 CLAUDE_CODE_ENABLE_TASKS=true
 ```
 
 ---
 
-## Полезные команды
+### `CLAUDE_CODE_NO_CHROME`
+Отключить интеграцию с браузером Chrome.
+
+| | |
+|---|---|
+| **По умолчанию** | `false` (Chrome включён) |
 
 ```bash
-# Просмотреть текущую конфигурацию
-cat .claude_proxy_credentials
+CLAUDE_CODE_NO_CHROME=true
+```
 
-# Редактировать конфигурацию
-nano .claude_proxy_credentials
+Отключить через CLI: `./iclaude.sh --no-chrome`
 
-# Проверить экспортированные переменные
-bash -c "source ./iclaude.sh && load_claude_config && env | grep CLAUDE_CODE"
+---
 
-# Запуск с проверкой конфигурации
-./iclaude.sh --test
+### `CLAUDE_CODE_SESSION_TIMEOUT`
+Таймаут сессии в секундах.
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (Claude Code не ограничивает длительность) |
+
+```bash
+CLAUDE_CODE_SESSION_TIMEOUT=7200
+```
+
+---
+
+### `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
+Экспериментальная функция Agent Teams — несколько экземпляров Claude Code в одной сессии.
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (отключено) |
+| **Значение для включения** | `1` |
+
+```bash
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+> ⚠️ Экспериментальная функция. Увеличивает расход токенов. Не поддерживает `/resume`.
+
+---
+
+### `CLAUDE_CODE_SUBAGENT_MODEL`
+Отдельная модель для субагентов (Task tool, параллельные агенты).
+
+| | |
+|---|---|
+| **По умолчанию** | `claude-haiku-4-5-20251001` |
+
+```bash
+CLAUDE_CODE_SUBAGENT_MODEL=claude-sonnet-4-6
+```
+
+---
+
+### `CLAUDE_CODE_EFFORT_LEVEL`
+Уровень усилий — влияет на глубину extended thinking и анализа.
+
+| | |
+|---|---|
+| **По умолчанию** | `medium` |
+| **Значения** | `low` / `medium` / `high` |
+
+```bash
+CLAUDE_CODE_EFFORT_LEVEL=high
+```
+
+| Значение | Поведение |
+|---|---|
+| `low` | Быстро, минимум thinking |
+| `medium` | Баланс скорости и качества |
+| `high` | Максимальное качество, больше thinking (дороже) |
+
+---
+
+### `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`
+Отключить extended thinking (adaptive thinking) у Opus/Sonnet 4.6.
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (adaptive thinking включён) |
+| **Значение для отключения** | `1` |
+
+```bash
+CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
+```
+
+> Ускоряет ответы и снижает стоимость. Отключает глубокий анализ.
+
+---
+
+### `CLAUDE_CODE_DISABLE_1M_CONTEXT`
+Отключить расширенный контекст (200K context window).
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (расширенный контекст активен) |
+| **Значение для отключения** | `1` |
+
+```bash
+CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+```
+
+---
+
+### `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`
+Использовать только стабильные API (отключить beta endpoints).
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (experimental betas включены) |
+| **Значение для отключения** | `1` |
+
+```bash
+CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
+```
+
+---
+
+## API-ключи для роутера
+
+Используются в `router.json` через плейсхолдеры `${VAR_NAME}`.
+Активация роутера: `./iclaude.sh --router`
+
+| Переменная | Провайдер | По умолчанию |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Anthropic (для CCR) | не нужен в нативном режиме |
+| `DEEPSEEK_API_KEY` | DeepSeek | не задан |
+| `OPENROUTER_API_KEY` | OpenRouter | не задан |
+| `GOOGLE_API_KEY` | Google Gemini | не задан |
+| `GROQ_API_KEY` | Groq (опционально) | не задан |
+| `VOLCENGINE_API_KEY` | Volcengine/ByteDance (опционально) | не задан |
+| `SILICONFLOW_API_KEY` | SiliconFlow (опционально) | не задан |
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-api03-...
+export DEEPSEEK_API_KEY=sk-...
+export OPENROUTER_API_KEY=sk-or-v1-...
+export GOOGLE_API_KEY=AIzaSy-...
+```
+
+> ⚠️ `ANTHROPIC_API_KEY`: OAuth-токен подписки (`sk-ant-oat01-...`) не принимается при роутинге через CCR. Нужен обычный API-ключ из [console.anthropic.com](https://console.anthropic.com/settings/keys).
+
+---
+
+## PII Proxy
+
+### `USE_PII_PROXY`
+Автозапуск HTTP-прокси с Presidio NLP для маскирования PII в API-трафике.
+
+| | |
+|---|---|
+| **По умолчанию** | `false` |
+
+```bash
+USE_PII_PROXY=true
+```
+
+Установка перед первым использованием: `./iclaude.sh --install-pii-proxy`
+
+Разовое включение: `./iclaude.sh --pii-proxy`
+
+---
+
+### `PII_PROXY_PORT` / `PII_PROXY_PORT_MIN` / `PII_PROXY_PORT_MAX`
+Управление портом PII proxy.
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `PII_PROXY_PORT` | `0` (авто) | Зафиксировать конкретный порт |
+| `PII_PROXY_PORT_MIN` | `20000` | Нижняя граница диапазона |
+| `PII_PROXY_PORT_MAX` | `40000` | Верхняя граница диапазона |
+
+```bash
+# Фиксированный порт (для firewall-правил)
+PII_PROXY_PORT=9000
+
+# Или ограничить диапазон
+PII_PROXY_PORT_MIN=30000
+PII_PROXY_PORT_MAX=35000
+```
+
+---
+
+## Отладка
+
+### `DEBUG_LAUNCH`
+Показать путь к бинарю, аргументы и переменные окружения при запуске.
+
+| | |
+|---|---|
+| **По умолчанию** | не задан (отключено) |
+| **Значение для включения** | `1` |
+
+```bash
+DEBUG_LAUNCH=1
+```
+
+---
+
+## Примеры конфигураций
+
+### Минимальная (только прокси)
+```bash
+PROXY_URL=https://user:password@proxy.company.com:8118
+PROXY_CA=/etc/ssl/certs/corporate-ca.pem
+```
+
+### С роутером (DeepSeek + OpenRouter)
+```bash
+PROXY_URL=https://user:password@proxy.company.com:8118
+PROXY_CA=/etc/ssl/certs/corporate-ca.pem
+
+export DEEPSEEK_API_KEY=sk-...
+export OPENROUTER_API_KEY=sk-or-v1-...
+export GOOGLE_API_KEY=AIzaSy-...
+```
+
+### С PII-маскированием
+```bash
+USE_PII_PROXY=true
+# PII_PROXY_PORT_MIN=30000
+# PII_PROXY_PORT_MAX=35000
+```
+
+### Максимальное качество (Opus + high effort)
+```bash
+CLAUDE_CODE_MODEL=claude-opus-4-6
+CLAUDE_CODE_EFFORT_LEVEL=high
+CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000
+CLAUDE_CODE_SUBAGENT_MODEL=claude-sonnet-4-6
+```
+
+### Экономный режим (Haiku + без thinking)
+```bash
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+CLAUDE_CODE_EFFORT_LEVEL=low
+CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
 ```
 
 ---
 
 ## Безопасность
 
-⚠️ **ВНИМАНИЕ:** Файл `.claude_proxy_credentials` содержит чувствительные данные (пароли прокси, API-ключи).
-
-**Защита:**
-- Файл имеет права `600` (только владелец может читать/писать)
-- Файл исключен из git (`.gitignore`)
-- НЕ передавайте этот файл другим людям
-- НЕ коммитьте этот файл в публичные репозитории
+- `.claude_config` создаётся с правами `600` (только владелец)
+- Файл исключён из git через `.gitignore`
+- Не передавайте файл третьим лицам и не коммитьте в публичные репозитории
+- Шаблон `.claude_config.example` — безопасен для git (не содержит секретов)
 
 ---
 
-## Дополнительная информация
+## См. также
 
-- **Claude Code Documentation:** https://code.claude.com/docs
-- **iclaude.sh README:** [README.md](./README.md)
-- **iclaude.sh CLAUDE.md:** [.nvm-isolated/.claude-isolated/CLAUDE.md](./.nvm-isolated/.claude-isolated/CLAUDE.md)
-
----
-
-Обновлено: 2026-02-10
+- [`.claude_config.example`](../.claude_config.example) — шаблон со всеми переменными
+- [PROXY.md](./PROXY.md) — детальная настройка прокси
+- [ROUTER.md](./ROUTER.md) — конфигурация роутера и провайдеров
+- [PII_MASKING.md](./PII_MASKING.md) — маскирование секретов
+- [CONFIG_HIERARCHY.md](./CONFIG_HIERARCHY.md) — иерархия конфигурационных файлов

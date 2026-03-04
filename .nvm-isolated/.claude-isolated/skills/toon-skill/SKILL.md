@@ -3,9 +3,15 @@ name: toon-skill
 description: Централизованный API для конвертации JSON ↔ TOON и расчёта token savings
 user-invocable: false
 # version: 1.1.0 | category: utility
+# see-also: RFC-0003 (native TOON format for agent pipeline — different syntax)
+# note: toon-skill uses @toon-format/toon npm syntax; RFC-0003 uses native pipe-separated TOON
 # tags: toon, token-optimization, data-format, inter-skill-communication | author: Claude Code Team | created_at: 2026-01-23 | updated_at: 2026-01-25
 # dependencies: npm: @toon-format/toon ^1.0.0
 ---
+
+## Abstract
+
+This skill provides a centralized API for JSON ↔ TOON conversion and token savings calculation in the skills communication layer. It uses the `@toon-format/toon` npm package with `name[N]{fields}:` syntax. Use this skill when a skill produces tabular data (arrays >= 5 items) for inter-skill communication. For agent pipeline artifacts (research.toon, plan.toon, critique.toon), use RFC-0003 native TOON format instead — see `agents/_shared/toon-protocol.md`.
 
 # TOON Skill - Token-Oriented Object Notation Support
 
@@ -21,6 +27,21 @@ TOON (Token-Oriented Object Notation) предназначен для:
 
 ---
 
+## Relationship to RFC-0003
+
+toon-skill and RFC-0003 both implement TOON but serve **different layers** with **different syntax**:
+
+| Layer | Format | Syntax | Parser |
+|-------|--------|--------|--------|
+| **Skills layer** (this skill) | `@toon-format/toon` npm | `name[N]{field1,field2}:` | npm package |
+| **Agent pipeline layer** (RFC-0003) | Native TOON v1 | `TOON:name:v1\nfield1\|field2\nval1\|val2` | Claude native (no npm) |
+
+**Rule:** Skills that produce output consumed by the agent pipeline (research.toon, plan.toon, critique.toon) MUST use RFC-0003 native format, NOT toon-skill npm syntax.
+
+**Reference implementation:** `agents/_shared/toon-protocol.md`
+
+---
+
 ## References
 
 **TOON Format Specification:**
@@ -28,11 +49,14 @@ TOON (Token-Oriented Object Notation) предназначен для:
 - Patterns & integration: `@shared:TOON-REFERENCE.md#integration-patterns`
 - Token savings benchmarks: `@shared:TOON-REFERENCE.md#token-savings`
 
+**Agent Pipeline TOON (RFC-0003 native):**
+- Protocol spec: `docs/RFC-0003-toon-protocol.md`
+- Implementation reference: `agents/_shared/toon-protocol.md`
+
 **Task Structure:**
 - TOON optimization definition: `@shared:TASK-STRUCTURE.md#toon-optimization`
 
 **External References:**
-- **TOON Specification**: https://toonformat.dev/spec
 - **NPM Package**: @toon-format/toon
 - **CLI Tool**: @toon-format/cli (installed: `.nvm-isolated/npm-global/bin/toon`)
 

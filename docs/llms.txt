@@ -99,3 +99,13 @@
 - [cleanup](/_sources/sphinx/api-reference/update/cleanup.md.txt)
 - [isolated](/_sources/sphinx/api-reference/update/isolated.md.txt)
 - [update](/_sources/sphinx/api-reference/update/update.md.txt)
+
+## RFC Documents (Agent Protocols)
+
+Protocol specifications for the iclaude multi-agent pipeline. These are normative
+documents for AI agents working with the agent orchestrator pipeline.
+
+- [RFC-0001: Documentation Standards](/docs/RFC-0001-documentation-standards.md)
+- [RFC-0002: Agent Pipeline Protocol Specification](/docs/RFC-0002-agent-protocol-spec.md)
+- [RFC-0003: TOON Protocol Specification](/docs/RFC-0003-toon-protocol.md)
+- [RFC-0004: Inter-Agent Communication Optimization](/docs/RFC-0004-inter-agent-communication.md)
