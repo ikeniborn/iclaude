@@ -10,11 +10,15 @@ Usage:
     python3 server.py [--port PORT] [--log-dir DIR]
 
 Environment:
-    ANTHROPIC_UPSTREAM_URL  - upstream API URL (default: https://api.anthropic.com)
-    PII_PROXY_PORT          - default listen port (default: 9000)
-    PII_PROXY_LOG_DIR       - log directory (default: /tmp/pii-proxy-logs)
+    ANTHROPIC_UPSTREAM_URL    - upstream API URL (default: https://api.anthropic.com)
+    PII_PROXY_PORT            - default listen port (default: 9000)
+    PII_PROXY_LOG_DIR         - log directory (default: /tmp/pii-proxy-logs)
     PII_PROXY_ENABLE_FALLBACK - use regex if Presidio unavailable (default: true)
-    ICLAUDE_SESSION_ID      - 12-char hex session ID for per-session port file naming
+    PII_PROXY_MASKING_LEVEL   - masking aggressiveness: off|secrets|standard (default: standard)
+                                  off      - pass content through unmodified (proxy still runs)
+                                  secrets  - regex-only: API keys, tokens, credentials
+                                  standard - full: Presidio NLP + regex (default)
+    ICLAUDE_SESSION_ID        - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
 
@@ -115,6 +119,13 @@ except (ValueError, TypeError):
     DEFAULT_PORT = 9000
 LOG_DIR = Path(os.environ.get('PII_PROXY_LOG_DIR', '/tmp/pii-proxy-logs'))
 ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() != 'false'
+
+# Masking level: controls aggressiveness of content masking.
+#   'off'      - no masking; content forwarded unchanged (proxy still runs for auth)
+#   'secrets'  - regex-only: API keys, tokens, credentials, passwords (fast, no NLP)
+#   'standard' - full masking: Presidio NLP + regex (default)
+_raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower().strip()
+MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
 
 # ---------------------------------------------------------------------------
 # HTTP session (requests library — handles HTTPS proxies correctly via urllib3,
@@ -249,7 +260,20 @@ def _mask_value(value: Any, _depth: int = 0) -> tuple[Any, list[str]]:
 
 
 def presidio_mask(text: str) -> tuple[str, list[str]]:
-    """Apply Presidio NLP masking. Falls back to regex on failure."""
+    """Apply masking according to MASKING_LEVEL.
+
+    'off'      - return text unchanged (no masking)
+    'secrets'  - regex-only masking (API keys, tokens, passwords, credentials)
+    'standard' - Presidio NLP + regex; falls back to regex when Presidio unavailable
+    """
+    if MASKING_LEVEL == 'off':
+        return text, []
+
+    if MASKING_LEVEL == 'secrets':
+        masked, found = regex_mask(text)
+        return masked, found
+
+    # standard: Presidio NLP + regex fallback
     # Short-circuit when Presidio permanently failed: do NOT call init_presidio().
     # When _presidio_failed is True, the `or` short-circuits — init_presidio() is skipped.
     if _presidio_failed or (not _presidio_ready and not init_presidio()):
@@ -472,6 +496,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             'status': 'ready',
             'analyzer_ready': _presidio_ready,
             'fallback_enabled': ENABLE_FALLBACK,
+            'masking_level': MASKING_LEVEL,
         }).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -485,6 +510,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             'status': 'ready',
             'analyzer_ready': _presidio_ready,
             'fallback_enabled': ENABLE_FALLBACK,
+            'masking_level': MASKING_LEVEL,
         }).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -535,6 +561,10 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         raw_body = self._read_body()
         if raw_body is None:
             return  # _read_body already sent error response
+
+        if MASKING_LEVEL == 'off':
+            self._forward(raw_body)
+            return
 
         try:
             body = json.loads(raw_body)
@@ -721,10 +751,11 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
-    log.info('PII-proxy listening on 127.0.0.1:%d -> %s', port, UPSTREAM_URL)
+    log.info('PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s)', port, UPSTREAM_URL, MASKING_LEVEL)
 
-    # Pre-load Presidio in background thread (threading imported at top)
-    threading.Thread(target=init_presidio, daemon=True).start()
+    # Pre-load Presidio in background thread only when needed (threading imported at top)
+    if MASKING_LEVEL == 'standard':
+        threading.Thread(target=init_presidio, daemon=True).start()
 
     server.serve_forever()
 

@@ -141,6 +141,7 @@ check_pii_proxy_status() {
     echo ""
     print_info "Configuration (.claude_config):"
     echo "  USE_PII_PROXY=${USE_PII_PROXY:-false}"
+    echo "  PII_PROXY_MASKING_LEVEL=${PII_PROXY_MASKING_LEVEL:-standard}"
     local _port_label
     [[ "${PII_PROXY_PORT:-0}" == "0" ]] \
         && _port_label="auto (range ${PII_PROXY_PORT_MIN:-20000}-${PII_PROXY_PORT_MAX:-40000})" \
