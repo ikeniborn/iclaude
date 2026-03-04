@@ -3,9 +3,15 @@ name: toon-skill
 description: Централизованный API для конвертации JSON ↔ TOON и расчёта token savings
 user-invocable: false
 # version: 1.1.0 | category: utility
+# see-also: RFC-0003 (native TOON format for agent pipeline — different syntax)
+# note: toon-skill uses @toon-format/toon npm syntax; RFC-0003 uses native pipe-separated TOON
 # tags: toon, token-optimization, data-format, inter-skill-communication | author: Claude Code Team | created_at: 2026-01-23 | updated_at: 2026-01-25
 # dependencies: npm: @toon-format/toon ^1.0.0
 ---
+
+## Abstract
+
+This skill provides a centralized API for JSON ↔ TOON conversion and token savings calculation in the skills communication layer. It uses the `@toon-format/toon` npm package with `name[N]{fields}:` syntax. Use this skill when a skill produces tabular data (arrays >= 5 items) for inter-skill communication. For agent pipeline artifacts (research.toon, plan.toon, critique.toon), use RFC-0003 native TOON format instead — see `agents/_shared/toon-protocol.md`.
 
 # TOON Skill - Token-Oriented Object Notation Support
 
