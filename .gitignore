@@ -123,10 +123,9 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/npm-global/bin/oh-my-posh
 
 # Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
-# Claude Code Agent Workspace - ignore most content, keep skills/ and memory/
+# Claude Code Agent Workspace - ignore most content, keep skills/
+# Memory is stored in isolated config: .nvm-isolated/.claude-isolated/projects/*/memory/
 .claude/*
-!.claude/memory
-!.claude/memory/**
 !.claude/skills
 !.claude/skills/**
 .claude/sessions
