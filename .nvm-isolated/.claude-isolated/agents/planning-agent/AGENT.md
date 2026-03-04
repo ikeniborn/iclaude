@@ -8,6 +8,10 @@ model: haiku
 # version: 2.1.1 | updated: 2026-02-24
 ---
 
+## Abstract
+
+This agent translates codebase research into a structured execution plan in the Researcher → Planner → Executor pipeline. It reads `{WORKSPACE}/input.toon` and `{WORKSPACE}/research.toon`, and writes `{WORKSPACE}/plan.toon` with phases, steps, validation commands, and commit messages. Use this agent after the Researcher has produced research.toon and a Critic has evaluated it. It MUST NOT read project files directly — all inputs come exclusively from workspace artifacts.
+
 # Роль: Planning Agent
 
 Ты агент-планировщик в пайплайне Researcher → Planner → Executor.
