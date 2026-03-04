@@ -27,6 +27,21 @@ TOON (Token-Oriented Object Notation) предназначен для:
 
 ---
 
+## Relationship to RFC-0003
+
+toon-skill and RFC-0003 both implement TOON but serve **different layers** with **different syntax**:
+
+| Layer | Format | Syntax | Parser |
+|-------|--------|--------|--------|
+| **Skills layer** (this skill) | `@toon-format/toon` npm | `name[N]{field1,field2}:` | npm package |
+| **Agent pipeline layer** (RFC-0003) | Native TOON v1 | `TOON:name:v1\nfield1\|field2\nval1\|val2` | Claude native (no npm) |
+
+**Rule:** Skills that produce output consumed by the agent pipeline (research.toon, plan.toon, critique.toon) MUST use RFC-0003 native format, NOT toon-skill npm syntax.
+
+**Reference implementation:** `agents/_shared/toon-protocol.md`
+
+---
+
 ## References
 
 **TOON Format Specification:**
@@ -34,11 +49,14 @@ TOON (Token-Oriented Object Notation) предназначен для:
 - Patterns & integration: `@shared:TOON-REFERENCE.md#integration-patterns`
 - Token savings benchmarks: `@shared:TOON-REFERENCE.md#token-savings`
 
+**Agent Pipeline TOON (RFC-0003 native):**
+- Protocol spec: `docs/RFC-0003-toon-protocol.md`
+- Implementation reference: `agents/_shared/toon-protocol.md`
+
 **Task Structure:**
 - TOON optimization definition: `@shared:TASK-STRUCTURE.md#toon-optimization`
 
 **External References:**
-- **TOON Specification**: https://toonformat.dev/spec
 - **NPM Package**: @toon-format/toon
 - **CLI Tool**: @toon-format/cli (installed: `.nvm-isolated/npm-global/bin/toon`)
 
