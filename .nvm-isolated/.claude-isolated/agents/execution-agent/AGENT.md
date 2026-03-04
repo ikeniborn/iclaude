@@ -5,6 +5,7 @@ tools: Read, Glob, Grep, Write, Edit, Bash, Task
 maxTurns: 100
 model: sonnet
 # version: 2.1.1 | updated: 2026-02-24
+# implements: RFC-0002 (executor role)
 ---
 
 ## Abstract
