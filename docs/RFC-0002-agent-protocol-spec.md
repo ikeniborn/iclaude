@@ -206,6 +206,33 @@ Session IDs MUST NOT contain descriptive suffixes or task names. Use `input.toon
 
 This path MUST be added to PROJECT_ROOT/.gitignore if not already present.
 
+### Retry Artifact Naming Pattern
+
+When the Critic produces a RETRY verdict and an agent is re-run, the previous critique file MUST be renamed before the new critique is written. This preserves the history of all evaluation attempts for traceability.
+
+```
+RETRY_NUMBER=1: {mode}-critique.toon → {mode}-critique-r1.toon  (rename before new write)
+RETRY_NUMBER=2: {mode}-critique.toon → {mode}-critique-r2.toon  (rename before new write)
+Final:          {mode}-critique.toon  (no suffix — always the latest)
+```
+
+The Critic agent is responsible for the rename operation (via `Bash(mv ...)`). The orchestrator and downstream agents MUST always read `{mode}-critique.toon` (without suffix) as the current/final critique.
+
+The research.toon and plan.toon files are **overwritten** on retry (not renamed) — only critique files follow the rename pattern.
+
+**Full workspace file set after 1 retry:**
+```
+{SESSION_ID}/
+├── input.toon
+├── research.toon              ← overwritten by retry
+├── research-critique-r1.toon  ← previous critique (archived)
+├── research-critique.toon     ← final critique (latest)
+├── plan.toon
+├── plan-critique.toon
+├── report.json
+└── execution-critique.toon
+```
+
 ## Hallucination Prevention Mechanisms
 
 The pipeline includes several structural features that prevent agent hallucinations:
