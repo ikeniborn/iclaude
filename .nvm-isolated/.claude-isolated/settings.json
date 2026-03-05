@@ -4,6 +4,7 @@
     "autoAllowBashIfSandboxed": false
   },
   "cleanupPeriodDays": 7,
+  "autoMemoryEnabled": true,
   "env": {
     "DISABLE_AUTOUPDATER": "1",
     "DEBUG_STATUSLINE": "1",
