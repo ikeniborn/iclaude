@@ -108,11 +108,6 @@ export type AgentOutput =
        * Whether the calling agent has Read/Bash tools to check progress
        */
       canReadOutputFile?: boolean;
-    }
-  | {
-      status: "sub_agent_entered";
-      description: string;
-      message: string;
     };
 export type FileReadOutput =
   | {
@@ -270,10 +265,6 @@ export interface AgentInput {
    */
   subagent_type: string;
   /**
-   * Optional model to use for this agent. If not specified, inherits from parent. Prefer haiku for quick, straightforward tasks to minimize cost and latency.
-   */
-  model?: "sonnet" | "opus" | "haiku";
-  /**
    * Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript.
    */
   resume?: string;
@@ -281,10 +272,6 @@ export interface AgentInput {
    * Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output.
    */
   run_in_background?: boolean;
-  /**
-   * Maximum number of agentic turns (API round-trips) before stopping. Used internally for warmup.
-   */
-  max_turns?: number;
   /**
    * Name for the spawned agent
    */
@@ -672,6 +659,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -682,6 +673,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -694,6 +689,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -704,6 +703,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -714,6 +717,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -726,6 +733,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -736,6 +747,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -746,6 +761,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -756,6 +775,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -791,6 +814,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -801,6 +828,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -813,6 +844,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -823,6 +858,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -833,6 +872,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -845,6 +888,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -855,6 +902,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -865,6 +916,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -875,6 +930,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -908,6 +967,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -918,6 +981,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -930,6 +997,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -940,6 +1011,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -950,6 +1025,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -962,6 +1041,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -972,6 +1055,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -982,6 +1069,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -992,6 +1083,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1027,6 +1122,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1037,6 +1136,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1049,6 +1152,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1059,6 +1166,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1069,6 +1180,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1081,6 +1196,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1091,6 +1210,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1101,6 +1224,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1111,6 +1238,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1144,6 +1275,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1154,6 +1289,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1166,6 +1305,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1176,6 +1319,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1186,6 +1333,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1198,6 +1349,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1208,6 +1363,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1218,6 +1377,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1228,6 +1391,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1261,6 +1428,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1271,6 +1442,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1283,6 +1458,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1293,6 +1472,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1303,6 +1486,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1315,6 +1502,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1325,6 +1516,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1335,6 +1530,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1345,6 +1544,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1380,6 +1583,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1390,6 +1597,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1402,6 +1613,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1412,6 +1627,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1422,6 +1641,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1434,6 +1657,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1444,6 +1671,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1454,6 +1685,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1464,6 +1699,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1497,6 +1736,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1507,6 +1750,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1519,6 +1766,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1529,6 +1780,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1539,6 +1794,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1551,6 +1810,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1561,6 +1824,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1571,6 +1838,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1581,6 +1852,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1614,6 +1889,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1624,6 +1903,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1636,6 +1919,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1646,6 +1933,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1656,6 +1947,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1668,6 +1963,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1678,6 +1977,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1688,6 +1991,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1698,6 +2005,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1731,6 +2042,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1741,6 +2056,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1753,6 +2072,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1763,6 +2086,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1773,6 +2100,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ]
             | [
@@ -1785,6 +2116,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1795,6 +2130,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1805,6 +2144,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 },
                 {
                   /**
@@ -1815,6 +2158,10 @@ export interface AskUserQuestionInput {
                    * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
                    */
                   description: string;
+                  /**
+                   * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+                   */
+                  preview?: string;
                 }
               ];
           /**
@@ -1828,6 +2175,21 @@ export interface AskUserQuestionInput {
    */
   answers?: {
     [k: string]: string;
+  };
+  /**
+   * Optional per-question annotations from the user (e.g., notes on preview selections). Keyed by question text.
+   */
+  annotations?: {
+    [k: string]: {
+      /**
+       * The preview content of the selected option, if the question used previews.
+       */
+      preview?: string;
+      /**
+       * Free-text notes the user added to their selection.
+       */
+      notes?: string;
+    };
   };
   /**
    * Optional metadata for tracking and analytics purposes. Not displayed to user.
@@ -1931,6 +2293,10 @@ export interface ExitPlanModeOutput {
    * Unique identifier for the plan approval request
    */
   requestId?: string;
+  /**
+   * Whether this plan was generated by an ultraplan remote session
+   */
+  isUltraplan?: boolean;
 }
 export interface FileEditOutput {
   /**
@@ -1974,6 +2340,10 @@ export interface FileEditOutput {
     deletions: number;
     changes: number;
     patch: string;
+    /**
+     * GitHub owner/repo when available
+     */
+    repository?: string | null;
   };
 }
 export interface FileWriteOutput {
@@ -2010,6 +2380,10 @@ export interface FileWriteOutput {
     deletions: number;
     changes: number;
     patch: string;
+    /**
+     * GitHub owner/repo when available
+     */
+    repository?: string | null;
   };
 }
 export interface GlobOutput {
@@ -2110,6 +2484,10 @@ export interface ReadMcpResourceOutput {
      * Text content of the resource
      */
     text?: string;
+    /**
+     * Path where binary blob content was saved
+     */
+    blobSavedTo?: string;
   }[];
 }
 export interface SubscribeMcpResourceOutput {
@@ -2161,6 +2539,7 @@ export interface TodoWriteOutput {
     status: "pending" | "in_progress" | "completed";
     activeForm: string;
   }[];
+  verificationNudgeNeeded?: boolean;
 }
 export interface WebFetchOutput {
   /**
@@ -2253,6 +2632,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2263,6 +2646,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           }
         ]
       | [
@@ -2275,6 +2662,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2285,6 +2676,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2295,6 +2690,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           }
         ]
       | [
@@ -2307,6 +2706,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2317,6 +2720,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2327,6 +2734,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           },
           {
             /**
@@ -2337,6 +2748,10 @@ export interface AskUserQuestionOutput {
              * Explanation of what this option means or what will happen if chosen. Useful for providing context about trade-offs or implications.
              */
             description: string;
+            /**
+             * Optional preview content rendered when this option is focused. Use for mockups, code snippets, or visual comparisons that help users compare options. See the tool description for the expected content format.
+             */
+            preview?: string;
           }
         ];
     /**
@@ -2349,6 +2764,21 @@ export interface AskUserQuestionOutput {
    */
   answers: {
     [k: string]: string;
+  };
+  /**
+   * Optional per-question annotations from the user (e.g., notes on preview selections). Keyed by question text.
+   */
+  annotations?: {
+    [k: string]: {
+      /**
+       * The preview content of the selected option, if the question used previews.
+       */
+      preview?: string;
+      /**
+       * Free-text notes the user added to their selection.
+       */
+      notes?: string;
+    };
   };
 }
 export interface ConfigOutput {
