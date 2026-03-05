@@ -43,7 +43,8 @@ cd claude
 
 ### 🎨 Status Line
 - **Метрики** - token usage, cache, стоимость
-- **Сессии** - OSC 8 hyperlinks для навигации
+- **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат)
+- **Память** - 🧠 OSC 8 hyperlink на `MEMORY.md` проекта (авто-память Claude Code)
 - **Oh My Posh** - кастомные темы
 
 ### 🕵️ PII Proxy

@@ -571,7 +571,19 @@ Format: `📄` - clickable hyperlink (OSC 8)
 - Works in modern terminals: iTerm2, kitty, GNOME Terminal 3.x+, Windows Terminal
 - Falls back to plain text in terminals without hyperlink support
 
-### 8. Git Info
+### 8. Memory Link
+
+Format: `🧠` - clickable hyperlink (OSC 8)
+
+**Features:**
+- Click to open the project's auto-memory file (`MEMORY.md`) directly in your editor
+- Auto-memory is maintained by Claude Code across sessions (persistent project knowledge)
+- **Shown only when the file exists**: icon appears only if `MEMORY.md` is present for the current project
+- **Project-key resolution**: key extracted from `transcript_path` in session data — correctly handles dots, Cyrillic, and any non-ASCII characters in project paths
+- File location: `$CLAUDE_CONFIG_DIR/projects/{project-key}/memory/MEMORY.md`
+- Available in: **full** and **compact** display modes
+
+### 9. Git Info
 
 Branch name + uncommitted changes count (e.g., "master" or "feature-branch +3")
 
@@ -597,30 +609,30 @@ The status line automatically adapts to terminal width to prevent line wrapping 
 
 **Full Mode (≥130 columns)**
 ```
-💳 113K | 📊 51K (26%) | 📦 79K | 🔒 45K | Sonnet 4.5 | $1.06 🌐 | 🔀 claude-sonnet-4-5 | 📄 | 🔱 test ●2
+💳 113K | 📊 51K (26%) | 📦 79K | 🔒 45K | Sonnet 4.5 | $1.06 🌐 | 🔀 claude-sonnet-4-5 | 📄 | 🧠 | 🔱 test ●2
 ```
 - All components visible without abbreviations
 - Shows buffer (🔒), full model name, full router provider
+- 🧠 shown when project has `MEMORY.md`
 - Optimal for wide terminals (≥130 cols)
 
 **Compact Mode (110-129 columns)**
 ```
-💳 113K | 📊 51K (26%) | 📦 79K | S4.5 | $1.06 🌐 | 🔀 sonnet-4-5 | 📄 | 🔱 test ●2
+💳 113K | 📊 51K (26%) | 📦 79K | S4.5 | $1.06 | 🧠
 ```
 - Smart abbreviations to save space
 - Model abbreviated: "Sonnet 4.5" → "S4.5"
-- Router abbreviated: "claude-sonnet-4-5" → "sonnet-4-5"
+- Router, proxy, session link, git info hidden
+- 🧠 retained (quick access to project memory)
 - Buffer hidden (not critical)
-- Saves ~24 characters compared to full mode
 
 **Minimal Mode (<110 columns)**
 ```
 💳 113K | 📊 51K (26%) | S4.5 | $1.06
 ```
 - Only critical metrics: tokens, model, cost
-- Hides cache, proxy, router, session link, git info
+- Hides cache, proxy, router, session link, memory link, git info
 - Guaranteed to fit in narrow terminals
-- Saves ~84 characters compared to full mode
 
 #### Configuration
 
@@ -1106,7 +1118,12 @@ grep -l "search term" .claude-sessions/readable-*.txt
 
 ## Changelog
 
-### Phase 2.3 (Current — February 2026)
+### Phase 2.4 (Current — March 2026)
+- **Memory Link (🧠)**: new OSC 8 hyperlink to project `MEMORY.md` (auto-memory maintained by Claude Code)
+- Shown only when file exists; available in full and compact display modes
+- Project-key resolution via `transcript_path` — correctly handles dots, Cyrillic, and non-ASCII paths (fixes regression where `sed 's|/|-|g'` only replaced slashes)
+
+### Phase 2.3 (February 2026)
 - **Append-only caching for `generate_toon_session()`**: `.toon.meta` tracks processed line count; only new JSONL lines are encoded and appended on each statusline call
 - **Broken JSONL fallback (Scenario B)**: When `jq -s` fails on JSONL with literal newlines inside string values, Python3 line-by-line parser activates automatically; continuation lines (not starting with `{`) are skipped silently
 - **Atomic writes**: full regeneration writes to `.tmp.PID` temp file and `mv`s into place only on success — eliminates 0-byte TOON artifacts
