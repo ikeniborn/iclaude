@@ -171,5 +171,5 @@
   "skipDangerousModePermissionPrompt": true,
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "plansDirectory": "docs/plans"
+  "plansDirectory": ".claude/plans"
 }
