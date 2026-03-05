@@ -630,6 +630,20 @@ if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]] && [[ -n "$PROJECT_DIR" 
     fi
 fi
 
+# Memory link (OSC 8 hyperlink to project MEMORY.md)
+# Project key extracted from SESSION_FILE path (Claude Code's own encoding — handles dots, Cyrillic, etc.)
+# SESSION_FILE = $CLAUDE_CONFIG_DIR/projects/{project-key}/{session-id}.jsonl
+MEMORY_LINK=""
+
+if [[ -n "$SESSION_FILE" ]]; then
+    MEMORY_KEY=$(basename "$(dirname "$SESSION_FILE")")
+    MEMORY_PATH="${CLAUDE_CONFIG_DIR}/projects/${MEMORY_KEY}/memory/MEMORY.md"
+    if [[ -f "$MEMORY_PATH" ]]; then
+        OSC8_ESC=$'\033'
+        MEMORY_LINK=" | ${OSC8_ESC}]8;;file://${MEMORY_PATH}${OSC8_ESC}\\🧠${OSC8_ESC}]8;;${OSC8_ESC}\\"
+    fi
+fi
+
 # Git info (branch + uncommitted changes)
 GIT_INFO=""
 GIT_TIMEOUT=2  # 2 second timeout
@@ -1022,15 +1036,15 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${SESSION_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
         # Compact mode: MINIMAL components for 60-149 cols terminals
         # Remove: router, proxy, session link, git info
-        # Keep: tokens, cache, model, cost, rate limit
+        # Keep: tokens, cache, model, cost, rate limit, memory link
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MEMORY_LINK}"
         ;;
 
     minimal)
