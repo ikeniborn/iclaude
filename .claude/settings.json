@@ -4,6 +4,5 @@
     "typescript-lsp@claude-plugins-official": true
   },
   "language": "Russian",
-  "alwaysThinkingEnabled": true,
-  "plansDirectory": "docs/plans"
+  "alwaysThinkingEnabled": true
 }
