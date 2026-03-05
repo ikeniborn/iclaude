@@ -153,3 +153,4 @@ docs/sphinx/_build/
 # Claude Code Agent Workspace
 .claude/workspace/
 .claude/tools/
+.claude/plans/
