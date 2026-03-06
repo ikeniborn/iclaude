@@ -107,7 +107,7 @@ landlock_add_rule(ruleset_fd, LANDLOCK_RULE_PATH_BENEATH, &rule, 0);
 landlock_restrict_self(ruleset_fd, 0);
 ```
 
-Для iclaude — CLI-обёртка через `unshare` + `bpf`/seccomp фильтр. `landrun` как концептуальная обёртка (инструмент необходимо найти в актуальных репозиториях; официальные kernel tools: [linux/tools/testing/selftests/landlock](https://github.com/torvalds/linux/tree/master/tools/testing/selftests/landlock)):
+Для iclaude — CLI-обёртка вокруг Landlock syscalls (`landlock_restrict_self`) + отдельный seccomp BPF фильтр (`prctl(PR_SET_SECCOMP, ...)`). `landrun` как концептуальная обёртка (инструмент необходимо найти в актуальных репозиториях; официальные kernel tools: [linux/tools/testing/selftests/landlock](https://github.com/torvalds/linux/tree/master/tools/testing/selftests/landlock)):
 
 ```bash
 # Концептуально: разрешить только workspace и конфиг dirs
@@ -135,9 +135,16 @@ landrun \
 **Операционная сложность:** средняя. `runsc` (gVisor runtime для Docker/containerd) устанавливается как deb-пакет. Для iclaude:
 
 ```bash
-# Запуск Claude Code под gVisor
-runsc --rootfs "${PWD}" --env-file <(export -p) \
-  do claude "$@"
+# Запуск Claude Code под gVisor через Docker (рекомендованный путь)
+# Предварительно: настроить runsc как Docker runtime (runsc install)
+docker run --runtime=runsc \
+  -v "${PWD}:/workspace" \
+  -v "${ISOLATED_NVM_DIR}:${ISOLATED_NVM_DIR}:ro" \
+  -e CLAUDE_CONFIG_DIR -e ANTHROPIC_BASE_URL \
+  --workdir /workspace \
+  claude-code-image claude "$@"
+# Прямой запуск (runsc do — минимальный OCI sandbox без Docker):
+# runsc do -- claude "$@"  # упрощён; требует OCI bundle для production use
 ```
 
 **Ограничения:** gVisor не поддерживает все Linux syscalls — некоторые инструменты (особенно с BPF, io_uring) могут не работать. Claude Code использует Node.js — совместимость нужно проверять.
@@ -287,7 +294,7 @@ start_microvm() {
 **microVM технически обоснован** для iclaude при правильном threat model: Claude Code выполняет AI-directed tool calls, prompt injection — реальный вектор, kernel exploit через bash tool call — теоретически возможен. Firecracker изолирует guest kernel от host kernel — это не избыточно, это правильный ответ на конкретную угрозу.
 
 **Практический путь:**
-1. **Сейчас:** Landlock + seccomp вместо буббелврапа — низкая сложность, быстро
+1. **Сейчас:** Landlock + seccomp вместо bubblewrap — низкая сложность, быстро
 2. **Следующий шаг:** gVisor (`runsc`) — userspace kernel, проверить совместимость с Claude Code
 3. **Максимум:** Firecracker microVM — при необходимости полной kernel isolation
 
