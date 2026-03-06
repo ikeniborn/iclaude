@@ -1,10 +1,5 @@
 {
-  "sandbox": {
-    "enabled": false,
-    "autoAllowBashIfSandboxed": false
-  },
   "cleanupPeriodDays": 7,
-  "autoMemoryEnabled": true,
   "env": {
     "DISABLE_AUTOUPDATER": "1",
     "DEBUG_STATUSLINE": "1",
@@ -168,8 +163,16 @@
     "command": "$CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh",
     "padding": 1
   },
-  "skipDangerousModePermissionPrompt": true,
   "language": "Russian",
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": false
+  },
   "alwaysThinkingEnabled": true,
-  "plansDirectory": ".claude/plans"
+  "plansDirectory": ".claude/plans",
+  "autoMemoryEnabled": true,
+  "skipDangerousModePermissionPrompt": true,
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true
+  }
 }

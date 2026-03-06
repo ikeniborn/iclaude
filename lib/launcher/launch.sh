@@ -422,6 +422,7 @@ except Exception:
         "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
+        --project-dir "${PWD}" \
         >>"$PII_PROXY_LOG_DIR/server.log" 2>&1 &
 
     local proxy_pid=$!
@@ -470,7 +471,14 @@ except Exception:
     # Redirect all claude API traffic through this session's PII proxy
     export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
     PII_PROXY_SESSION_OWNED=true
-    print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID})"
+    # Signal to statusline that PII proxy is active (enables live metrics display)
+    export ICLAUDE_PII_ACTIVE=1
+    export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
+    export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
+    # Export TOON audit log path so statusline can hyperlink the PII icon
+    export ICLAUDE_PII_LOG_PATH="${PWD}/.claude/pii/$(date +%Y-%m-%d)/${ICLAUDE_SESSION_ID}.toon"
+    print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
+    print_info "PII proxy: audit log → ${ICLAUDE_PII_LOG_PATH}"
     return 0
 }
 

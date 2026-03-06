@@ -1221,6 +1221,105 @@ Claude Code → PreToolUse
 
 ---
 
+## Метрики и статуслайн
+
+> **Статус:** Реализовано (Вариант B, 2026-03-06)
+
+### GET /api/metrics
+
+PII proxy сервер (`lib/pii-proxy/server.py`) предоставляет endpoint с live-метриками:
+
+```bash
+curl http://127.0.0.1:<PORT>/api/metrics
+```
+
+Ответ:
+
+```json
+{
+  "masked_items_total": 42,
+  "uptime_seconds": 183.5,
+  "masking_level": "standard",
+  "analyzer_ready": true
+}
+```
+
+| Поле | Описание |
+|------|----------|
+| `masked_items_total` | Суммарное число замаскированных элементов с момента старта |
+| `uptime_seconds` | Время работы прокси в секундах |
+| `masking_level` | Уровень маскирования: `off`, `secrets`, `standard` |
+| `analyzer_ready` | Загружен ли Presidio NLP |
+
+### Отображение в статуслайне
+
+При запуске с `--pii-proxy` в статуслайне появляется иконка 🛡 со счётчиком:
+
+```
+↓ 42.3k ↑ 5.1k ≈85% [cache: 1.2k] | Sonnet 4.5 | $0.023 | 🔀 anthropic | 🛡42 | #abc123 🧠 | main +2 | 🌐
+```
+
+| Режим | Отображение | Описание |
+|-------|-------------|----------|
+| **full** | `🛡{count}` | Иконка + счётчик замаскированных элементов |
+| **compact** | `🛡{count}` | Иконка + счётчик |
+| **minimal** | `🛡` | Только иконка (без счётчика) |
+
+Метрики кэшируются 30 секунд в `/tmp/pii-metrics-{SESSION_ID}`.
+Запрос к `/api/metrics` выполняется с таймаутом 0.2s — не замедляет обновление статуслайна.
+
+### Переменные окружения (экспортируются launch.sh)
+
+| Переменная | Значение | Описание |
+|------------|----------|----------|
+| `ICLAUDE_PII_ACTIVE` | `1` | PII proxy запущен и готов |
+| `ICLAUDE_PII_MASKING_LEVEL` | `standard` / `secrets` / `off` | Уровень маскирования |
+| `ICLAUDE_PII_ACTIVE_PORT` | `<port>` | Порт прокси для curl к `/api/metrics` |
+| `ICLAUDE_PII_LOG_PATH` | `{project}/.claude/pii/{date}/{session}.toon` | Путь к TOON audit log текущей сессии |
+
+### TOON Audit Log
+
+При каждом маскировании PII proxy дописывает JSON-строку в файл-лог сессии:
+
+```
+{project}/.claude/pii/YYYY-MM-DD/{SESSION_ID}.toon
+```
+
+**Формат записи** (JSON-lines, одна строка на запрос):
+
+```json
+{"ts": "2026-03-06T12:14:00+00:00", "count": 3, "types": ["Anthropic/OpenAI/Stripe API key", "JWT token"], "masking_level": "standard"}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `ts` | ISO 8601 | Время запроса (UTC) |
+| `count` | int | Число замаскированных элементов в запросе |
+| `types` | list[str] | Уникальные типы найденных элементов (дедуплицированы) |
+| `masking_level` | str | Уровень маскирования (`off`, `secrets`, `standard`) |
+
+**Запись неблокирующая** — выполняется в daemon-потоке, не влияет на задержку прокси.
+
+**Директория автоматически создаётся** (`mkdir -p`) при первой записи.
+
+**`.claude/pii/` добавляется в `.gitignore`** проекта при старте PII proxy (если ещё не добавлено), чтобы метаданные маскирования не попали в git.
+
+**Иконка 🛡 в статуслайне** становится кликабельной (OSC 8 гиперссылка) после первого замаскированного запроса — открывает TOON log в терминале.
+
+**Просмотр лога:**
+
+```bash
+# Последние записи текущей сессии
+tail -f .claude/pii/$(date +%Y-%m-%d)/*.toon | python3 -c "
+import sys, json
+for line in sys.stdin:
+    d = json.loads(line)
+    print(f\"{d['ts']} | {d['count']} items | {', '.join(d['types'])}\")
+"
+```
+
+---
+
 ## Дополнительные ресурсы
 
 - [PasteGuard GitHub](https://github.com/sgasser/pasteguard)

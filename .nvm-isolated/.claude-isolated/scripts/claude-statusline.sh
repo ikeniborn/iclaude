@@ -200,6 +200,43 @@ if [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && [[ -f "$CLAUDE_CONFIG_DIR/route
     ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
+# PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)
+# Fetches live masking count from /api/metrics with 30s TTL cache
+PII_ICON=""
+if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && [[ -n "${ICLAUDE_PII_ACTIVE_PORT:-}" ]]; then
+    _PII_CACHE_FILE="/tmp/pii-metrics-${SESSION_ID:-default}"
+    _PII_NOW=$(date +%s 2>/dev/null || echo 0)
+    _PII_CACHE_VALID=0
+    if [[ -f "$_PII_CACHE_FILE" ]]; then
+        _PII_CACHE_AGE=$(( _PII_NOW - $(stat -c %Y "$_PII_CACHE_FILE" 2>/dev/null || echo 0) ))
+        [[ $_PII_CACHE_AGE -lt 30 ]] && _PII_CACHE_VALID=1
+    fi
+    if [[ "$_PII_CACHE_VALID" == "1" ]]; then
+        _PII_METRICS=$(cat "$_PII_CACHE_FILE" 2>/dev/null)
+    else
+        _PII_METRICS=$(curl -s --max-time 0.2 \
+            "http://127.0.0.1:${ICLAUDE_PII_ACTIVE_PORT}/api/metrics" 2>/dev/null)
+        [[ -n "$_PII_METRICS" ]] && printf '%s' "$_PII_METRICS" > "$_PII_CACHE_FILE"
+    fi
+    if [[ -n "$_PII_METRICS" ]]; then
+        _PII_COUNT=$(printf '%s' "$_PII_METRICS" | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('masked_items_total',0))" 2>/dev/null)
+        if [[ -n "$_PII_COUNT" ]] && [[ "$_PII_COUNT" =~ ^[0-9]+$ ]]; then
+            PII_ICON=" | 🛡 ${_PII_COUNT}"
+        else
+            PII_ICON=" | 🛡"
+        fi
+    else
+        PII_ICON=" | 🛡"
+    fi
+    # Wrap PII icon in OSC 8 hyperlink to TOON audit log when the file exists
+    if [[ -n "${ICLAUDE_PII_LOG_PATH:-}" ]] && [[ -f "${ICLAUDE_PII_LOG_PATH}" ]]; then
+        OSC8_ESC=$'\033'
+        _PII_LABEL="${PII_ICON# | }"
+        PII_ICON=" | ${OSC8_ESC}]8;;file://${ICLAUDE_PII_LOG_PATH}${OSC8_ESC}\\${_PII_LABEL}${OSC8_ESC}]8;;${OSC8_ESC}\\"
+    fi
+fi
+
 # Rate limit display (Anthropic-only, no router)
 # Fetches async via background curl, reads from 60s TTL cache
 # ICLAUDE_ROUTER_ACTIVE=1 is exported by iclaude.sh when --router is used
@@ -1036,21 +1073,23 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
         # Compact mode: MINIMAL components for 60-149 cols terminals
         # Remove: router, proxy, session link, git info
-        # Keep: tokens, cache, model, cost, rate limit, memory link
+        # Keep: tokens, cache, model, cost, rate limit, memory link, pii icon
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MEMORY_LINK}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${PII_ICON}${MEMORY_LINK}"
         ;;
 
     minimal)
-        # Minimal mode: только критичное (tokens, cache, model, cost)
+        # Minimal mode: только критичное (tokens, cache, model, cost) + PII shield if active
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}"
+        _PII_MINIMAL=""
+        [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && _PII_MINIMAL=" 🛡"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${_PII_MINIMAL}"
         ;;
 esac
 
