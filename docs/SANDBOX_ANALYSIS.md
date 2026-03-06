@@ -1,14 +1,48 @@
-# Анализ: Изоляция AI агентов на базе микро-ВМ и применимость в iclaude
+# Анализ: Изоляция процессов Claude Code — от OS sandbox до микро-ВМ
 
 **Источник:** [A field guide to sandboxes for AI](https://www.luiscardoso.dev/blog/sandboxes-for-ai) — Luis Cardoso, Jan 5, 2026
-**Дата анализа:** 2026-03-05
-**Статус:** Исследование завершено
+**Дата анализа:** 2026-03-06
+**Статус:** Актуализирован с корректным threat model
+
+---
+
+## Threat Model: что именно защищаем
+
+### Цепочка атаки
+
+```
+Внешний контент (репо, веб, файл)
+    ↓ prompt injection
+Claude Code (AI-directed tool calls)
+    ↓ выполняет вредоносный bash / read / write
+Host OS kernel
+    ↓ kernel exploit
+Полный контроль над машиной пользователя
+```
+
+**Ключевое:** Claude Code — доверенный инструмент, но он выполняет **AI-directed tool calls** — bash-команды, чтение файлов, сетевые запросы — направляемые моделью. Модель может быть введена в заблуждение через:
+
+- Вредоносный код в читаемом репозитории
+- Malicious content на веб-странице (WebFetch)
+- Специально сформированный файл с инструкциями для модели
+- MitM-инъекция в API-ответы (при использовании proxy)
+
+**Цель изоляции:** даже если prompt injection привёл к выполнению произвольного кода, этот код не должен иметь возможности повлиять на ядро хостовой ОС, выйти за пределы рабочей директории или похитить credentials пользователя.
+
+### Две независимые угрозы
+
+| Угроза | Вектор | Что защищает |
+|--------|--------|--------------|
+| **Policy leakage** | Чтение ~/.ssh, ~/.aws, утечка кода в сеть | Hooks (block-secrets, redact-secrets) |
+| **Kernel compromise** | Exploit ядра через tool call (bash, Wasm, native) | OS sandbox / gVisor / microVM |
+
+Текущий iclaude закрывает **policy leakage** через hooks, но **kernel boundary** отсутствует (bubblewrap отключён).
 
 ---
 
 ## Резюме статьи
 
-Статья классифицирует технологии изоляции для AI агентов по трём ортогональным измерениям:
+Статья классифицирует технологии изоляции по трём измерениям:
 
 | Измерение | Вопрос |
 |-----------|--------|
@@ -16,119 +50,54 @@
 | **Policy** | Что код может трогать (файлы, сеть, устройства)? |
 | **Lifecycle** | Что выживает между запусками? |
 
-### Четыре категории изоляции
+### Четыре категории изоляции (переоценённые)
 
-| Тип | Что изолирует | Когда применять |
-|-----|---------------|-----------------|
-| **Container** | Process namespaces + seccomp + cgroups | Доверенный код в одном trust domain |
-| **gVisor** | Syscall interposition (Sentry, 68 host syscalls) | Semi-trusted, нужна полная Linux совместимость |
-| **microVM** (Firecracker) | Guest kernel за KVM/VMM | Multi-tenant SaaS, hostile user-submitted code |
-| **Runtime** (Wasm/V8) | Нет syscall ABI — только explicit host imports | Capability-scoped tools |
+| Тип | Что изолирует | Kernel isolation | Применимость к iclaude |
+|-----|---------------|-----------------|------------------------|
+| **Container** | Process namespaces + seccomp + cgroups | ❌ Общий host kernel | Базово, но недостаточно |
+| **gVisor** | Syscall interposition (Sentry) | ✅ Частичная (userspace kernel) | Хороший баланс |
+| **microVM** (Firecracker) | Guest kernel за KVM/VMM | ✅ Полная (отдельный kernel) | Максимальная защита |
+| **Landlock+seccomp** | Filesystem + syscall policy | ❌ Общий host kernel | Практичный первый шаг |
 
-### Ключевые тезисы
-
-1. **Containers — не security boundary.** Они разделяют host kernel. Kernel exploit — host exploit.
-2. **Policy leakage — главная AI-специфичная угроза:** чтение ~/.ssh, ~/.aws, утечка кода в сеть, pivot в internal networks. Не kernel exploit.
-3. **Threat model определяет выбор boundary.** Неправильный выбор → слишком слабая или слишком дорогая защита.
-4. **microVMs для multi-tenant SaaS.** Hostile code от разных пользователей на одном хосте → Firecracker / cloud-hypervisor.
-5. **Local agents — отдельный случай.** Статья явно выделяет Appendix для Claude Code, Codex CLI и аналогов.
-
-### Appendix: Рекомендации для локальных агентов
-
-Автор прямо упоминает `Claude Code` и `Codex CLI` как примеры локальных агентов и описывает специфичные для них механизмы:
-
-| ОС | Механизм | Описание |
-|----|----------|----------|
-| **macOS** | Seatbelt (SBPL profiles) | Kernel-enforced per-process policy: allow workspace dirs, deny ~/.ssh |
-| **Linux** | Landlock + seccomp | Unprivileged LSM для filesystem + TCP; seccomp блокирует опасные syscalls |
-| **Windows** | AppContainer | Capability-based process isolation (SID tokens) |
-
-Автор заключает: *"I personally run my code agents only with a sandbox enabled and do advise others to do the same"* — имея в виду OS-level local sandboxes, не microVMs.
+**Переоценка:** Статья описывает microVM как "для multi-tenant SaaS", но это упрощение. Правильный критерий — **необходимость kernel isolation**, которая определяется не количеством пользователей, а threat model: если AI-процесс может выполнять произвольный код, kernel isolation защищает хост вне зависимости от количества арендаторов.
 
 ---
 
 ## Текущее состояние изоляции в iclaude
 
-### Что уже реализовано
-
 | Компонент | Файлы | Статус | Что защищает |
 |-----------|-------|--------|--------------|
 | **CLAUDE_CONFIG_DIR isolation** | `lib/config/isolated.sh` | ✅ Активно | Config в `.nvm-isolated/.claude-isolated/`, не в `~/.claude` |
-| **Bubblewrap sandbox** | `lib/sandbox/*.sh` | ⚠️ Disabled | OS-level isolation для Claude Code process |
-| **block-secrets.py** | `hooks/block-secrets.py` | ✅ Активно | Блокирует чтение `.env`, `.pem`, `.ssh/` |
-| **redact-secrets.py** | `hooks/redact-secrets.py` | ✅ Активно | Маскирует API ключи, токены в Write/Edit/Bash |
-| **PII proxy** | `lib/pii-proxy/` | ✅ Опционально | Маскирует PII в API трафике до Anthropic |
+| **Bubblewrap sandbox** | `lib/sandbox/*.sh` | ⚠️ Disabled (upstream bug) | Process-level isolation |
+| **block-secrets.py** | `hooks/block-secrets.py` | ✅ Активно | Policy: блокирует чтение `.env`, `.pem`, `.ssh/` |
+| **redact-secrets.py** | `hooks/redact-secrets.py` | ✅ Активно | Policy: маскирует API ключи, токены |
+| **PII proxy** | `lib/pii-proxy/` | ✅ Опционально | API traffic masking |
 
 ### Bubblewrap: почему отключён
 
-Bubblewrap (`sandbox.enabled: false` в `settings.json`) отключён из-за upstream бага Claude Code: при активированном sandbox создаются 0-байтные файлы-заглушки в `.claude/settings.json` других открытых проектов:
+`sandbox.enabled: false` в `settings.json` — upstream баг Claude Code: при активированном sandbox создаются 0-байтные файлы-заглушки в `.claude/settings.json` других открытых проектов (chmod 444, не очищаются после выхода).
 
-```bash
-.claude/settings.json (0 bytes, chmod 444)
-.claude/agents (0 bytes, chmod 444)
-```
-
-Файлы остаются после выхода из sandbox — автоматической очистки нет. Это делает bubblewrap непригодным в текущем виде, пока upstream не исправит баг.
-
-### Два независимых механизма изоляции
-
-Статья помогает точнее описать архитектуру iclaude:
+### Текущий gap
 
 ```
-CLAUDE_CONFIG_DIR isolation  →  Config isolation (всегда активно)
-                                 Hooks work in any project
-
-Bubblewrap sandbox           →  OS-level boundary (disabled)
-                                 Process-level isolation
+Policy layer      ✅  block-secrets + redact-secrets → закрыт
+OS boundary       ❌  bubblewrap отключён → открыт
+Kernel isolation  ❌  отсутствует полностью → открыт
 ```
-
-Это корректная двухуровневая модель: config isolation + OS-level boundary. Статья подтверждает правильность подхода.
 
 ---
 
-## Критическая оценка: применимость microVM к iclaude
+## Переоценённые варианты решения: от практичного к максимальному
 
-### Вывод: microVM НЕ релевантны для iclaude в текущей форме
+### Уровень 1 — OS Policy (Landlock + seccomp)
 
-#### Несоответствие threat model
+**Что даёт:** ограничивает доступ к filesystem и набор разрешённых syscalls для процесса Claude Code. Если injected bash пытается читать `~/.ssh` — ядро блокирует на уровне LSM. Если пытается вызвать `ptrace`, `kexec_load`, `bpf` — seccomp блокирует.
 
-| Аспект | SaaS платформа (microVM релевантен) | iclaude (microVM НЕ релевантен) |
-|--------|-------------------------------------|----------------------------------|
-| Кто запускает код | Пользователи SaaS — strangers | Сам пользователь на своей машине |
-| Источник кода | User-submitted — hostile | Claude Code — trusted AI tool |
-| Количество изолятов | Тысячи параллельно | 1 экземпляр на пользователя |
-| Kernel exploit важен? | Да — multi-tenant | Нет — single-tenant |
-| Главная угроза | Kernel exploit, tenant isolation | Prompt injection → policy leakage |
+**Что НЕ даёт:** если exploit использует разрешённый syscall с уязвимостью в ядре — kernel compromise возможен. Ядро одно на хост и Claude Code процесс.
 
-Статья прямо формулирует decision table:
+**Реализация для iclaude:**
 
-> *"AI coding agent (single-tenant / self-hosted): semi-trusted, full Linux → hardened container or gVisor"*
-
-iclaude попадает в категорию **single-tenant / self-hosted** — не multi-tenant SaaS.
-
-#### Операционные барьеры для microVM в iclaude
-
-1. **KVM зависимость.** KVM недоступен в CI, VMs, WSL1, некоторых cloud instances. iclaude уже обрабатывает WSL1 как unsupported — добавление KVM требования существенно сузит поддерживаемые платформы.
-
-2. **Сложность lifecycle management.** Firecracker требует VMM процесс на VM, boot/snapshot/destroy lifecycle, virtio device management. iclaude — bash wrapper; добавление microVM превратит его в orchestration platform.
-
-3. **PII proxy и CCR router несовместимы с guest isolation без дополнительной работы.** `ANTHROPIC_BASE_URL` и другие env vars нужно явно передавать в guest через cloud-init / vsock / virtio-serial. Это нетривиальная интеграция.
-
-4. **Нарушение принципа минимальности.** Статья: *"MicroVMs recommended only for multi-tenant SaaS with hostile user-submitted code."* iclaude запускает Claude Code — известный, проверенный инструмент, не hostile code.
-
-#### Когда microVM станет релевантным для iclaude
-
-Если iclaude эволюционирует в **оркестратор агентских задач** с возможностью выполнения кода от разных пользователей или с multi-tenant доступом — microVM (Firecracker) становится правильным выбором для execution environment. В текущей форме — нет.
-
----
-
-## Что реально улучшить: приоритизированные рекомендации
-
-### Приоритет 1: Исправить bubblewrap или заменить Landlock+seccomp (Linux)
-
-Статья точно описывает правильный подход для Linux local agents: **Landlock + seccomp**.
-
-Landlock — непривилегированный LSM (Linux 5.13+), позволяет процессу ограничить собственный filesystem access. Ключевое свойство: ограничение **необратимо и наследуется дочерними процессами**.
+Landlock (Linux 5.13+, текущий хост: 6.17 — полная поддержка):
 
 ```c
 // Иллюстративный фрагмент (не production-ready: опущена инициализация
@@ -138,10 +107,10 @@ landlock_add_rule(ruleset_fd, LANDLOCK_RULE_PATH_BENEATH, &rule, 0);
 landlock_restrict_self(ruleset_fd, 0);
 ```
 
-**Для iclaude:** Вместо `bwrap` (bubblewrap) можно использовать `landrun` — CLI обёртку вокруг Landlock (инструмент необходимо найти в актуальных репозиториях; официальные kernel tools: [linux/tools/testing/selftests/landlock](https://github.com/torvalds/linux/tree/master/tools/testing/selftests/landlock)):
+Для iclaude — CLI-обёртка через `unshare` + `bpf`/seccomp фильтр. `landrun` как концептуальная обёртка (инструмент необходимо найти в актуальных репозиториях; официальные kernel tools: [linux/tools/testing/selftests/landlock](https://github.com/torvalds/linux/tree/master/tools/testing/selftests/landlock)):
 
 ```bash
-# Концептуально: разрешить только workspace и конфиг dirs, запретить ~/ целиком
+# Концептуально: разрешить только workspace и конфиг dirs
 landrun \
   --allow-rw "${PWD}" \
   --allow-ro "${ISOLATED_NVM_DIR}" \
@@ -151,104 +120,186 @@ landrun \
   -- claude "$@"
 ```
 
-Преимущества перед bubblewrap:
-- Не создаёт 0-байтных файлов в других проектах (нет upstream бага)
-- Работает без `CAP_SYS_ADMIN`
-- Linux 5.13+ (все современные дистрибутивы); текущее ядро хоста: **6.17** — полная поддержка включая TCP
-- Ограничение filesystem + TCP (Linux 6.7+)
+**Статус iclaude:** `detect_sandbox_platform()` (`lib/sandbox/detect.sh`) возвращает "linux" как supported. `check_sandbox_dependencies()` (`lib/sandbox/install.sh`) проверяет `bwrap` — нужно добавить проверку Landlock availability.
 
-**Статус iclaude:** `detect_sandbox_platform()` уже возвращает "linux" как supported. `check_sandbox_dependencies()` проверяет `bwrap` — аналогичную функцию можно добавить для `landrun`.
-
-### Приоритет 2: macOS Seatbelt — реализовать профиль
-
-macOS Seatbelt уже частично поддержан в `lib/sandbox/detect.sh` (возвращает "macos", mark as supported). Нужен SBPL профиль:
-
-```scheme
-;; Минимальный профиль для Claude Code
-(version 1)
-(deny default)
-(allow file-read* (subpath (string-append (getenv "HOME") "/Documents")))
-(allow file-read-write* (subpath (string-append (getenv "HOME") "/Documents/Project")))
-(allow file-read* (subpath "/usr/lib") (subpath "/usr/local/lib"))
-(allow network-outbound (remote tcp "api.anthropic.com:443"))
-(deny file-read* (subpath (string-append (getenv "HOME") "/.ssh")))
-(deny file-read* (subpath (string-append (getenv "HOME") "/.aws")))
-```
-
-**Важно:** `sandbox-exec` (CLI обёртка вокруг Seatbelt) deprecated, но сам механизм активен. Современный путь — через entitlements или launchd. Для CLI wrapper `sandbox-exec` всё ещё работает на текущих macOS.
-
-### Приоритет 3: Security hooks уже закрывают главную угрозу
-
-Статья называет **policy leakage** главной AI-специфичной угрозой:
-
-> *"If your sandbox can read the repo and has outbound network access, the agent can leak the repo. If it can read ~/.aws or mount host volumes, it can leak credentials."*
-
-iclaude уже решает это через:
-
-| Hook | Что закрывает | Статус |
-|------|---------------|--------|
-| `block-secrets.py` | Блокирует Read `.env`, `.pem`, `.ssh/`, `.gnupg/` (exit 2) | ✅ |
-| `redact-secrets.py` | Маскирует API keys, JWT, PEM, AWS keys в Write/Edit/Bash | ✅ |
-| `PII proxy` | Маскирует PII в API трафике до Anthropic серверов | ✅ (опционально) |
-
-Текущие hooks адресуют exfiltration vector (утечка через файловые операции и API). **Это правильная стратегия для local agent threat model.**
-
-Статья предлагает seccomp как дополнение (restrict syscalls) — для Claude Code это означало бы профиль ограничивающий `ptrace`, `mount`, `kexec_load`, `bpf`, `perf_event_open`. Это можно добавить поверх существующей sandbox.enabled инфраструктуры.
-
-### Приоритет 4: Сетевая политика
-
-Статья: *"Before picking a boundary, write down a minimum viable policy. Default-deny outbound network, then allowlist."*
-
-Для iclaude: Claude Code требует доступ только к `api.anthropic.com:443`. Всё остальное — либо конфигурируемые инструменты (WebFetch, Bash с curl), либо не нужно самому клиенту.
-
-Возможные улучшения:
-- Документировать required outbound endpoints для `--proxy` и `--router` режимов
-- В sandbox профиле (Seatbelt/Landlock) явно allowlist API endpoints
+**Защита:** Policy leakage ✅ | Kernel isolation ❌ (shared kernel)
 
 ---
 
-## Сравнение: текущий iclaude vs рекомендации статьи
+### Уровень 2 — gVisor (syscall interposition)
 
-| Аспект | Рекомендация статьи | Текущий iclaude | Gap |
-|--------|---------------------|-----------------|-----|
-| **Boundary** | OS sandbox (Landlock/Seatbelt) | Bubblewrap (disabled) | Нужна замена |
-| **Policy — filesystem** | Deny-by-default, allowlist workspace | block-secrets.py (path blocklist) | Хорошо, но не exhaustive |
-| **Policy — network** | Default-deny + allowlist | Нет ограничений | Gap |
-| **Policy — secrets** | No long-lived credentials in sandbox | redact-secrets.py | Частично |
-| **Lifecycle** | Fresh per run (local agent) | Fresh (каждый запуск новый процесс) | ✅ Соответствует |
-| **Observability** | Log process tree, network egress, failures | log-tools.py, capture-tool-results.py | ✅ Есть |
+**Что даёт:** Claude Code видит Linux ABI, но syscalls перехватываются userspace Sentry процессом. Host kernel получает только ~68 системных вызовов от Sentry. Даже если injected code использует kernel exploit через uname, read, mmap — exploit бьёт в Sentry userspace, не в host kernel.
+
+**Что НЕ даёт:** если exploit в одном из 68 syscalls которые Sentry пропускает в host kernel — возможен escape. Не полная изоляция, но значительно сужает attack surface.
+
+**Операционная сложность:** средняя. `runsc` (gVisor runtime для Docker/containerd) устанавливается как deb-пакет. Для iclaude:
+
+```bash
+# Запуск Claude Code под gVisor
+runsc --rootfs "${PWD}" --env-file <(export -p) \
+  do claude "$@"
+```
+
+**Ограничения:** gVisor не поддерживает все Linux syscalls — некоторые инструменты (особенно с BPF, io_uring) могут не работать. Claude Code использует Node.js — совместимость нужно проверять.
+
+**Защита:** Policy leakage ✅ | Kernel isolation ✅ (частичная, userspace kernel)
+
+---
+
+### Уровень 3 — microVM (Firecracker / cloud-hypervisor)
+
+**Что даёт:** Claude Code процесс и все его subprocess выполняются внутри отдельной виртуальной машины с собственным Linux ядром. Если injected bash запускает kernel exploit — он эксплуатирует **guest kernel**, изолированный от host kernel через KVM/VMM. Host kernel не получает ни одного syscall от guest кода напрямую.
+
+**Это максимальная доступная защита** от prompt injection → kernel compromise цепочки.
+
+**Что НЕ даёт:** не защищает от уязвимостей в самом KVM гипервизоре (крайне редкий вектор). Требует KVM-совместимого хоста.
+
+#### Архитектура microVM для iclaude
+
+```
+Host OS (Linux + KVM)
+├── iclaude.sh               ← управляет microVM lifecycle
+├── VMM (Firecracker)        ← запускает guest, управляет virtio devices
+│   ├── virtio-net           ← гостевой сетевой интерфейс (только allowlist)
+│   └── virtio-fs / virtiofs ← монтирует workspace в гость
+└── Guest VM
+    ├── Minimal Linux kernel (5.x) ← изолированный guest kernel
+    ├── claude process             ← Claude Code запущен здесь
+    │   ├── bash tool calls        ← всё внутри гостя
+    │   └── file operations        ← ограничены virtio-fs mount
+    └── vsock / virtio-serial      ← канал для env vars, PII proxy, CCR router
+```
+
+#### Интеграция с iclaude компонентами
+
+| Компонент iclaude | Проблема в guest | Решение |
+|-------------------|-----------------|---------|
+| `ANTHROPIC_BASE_URL` (PII proxy) | Env var недоступен в guest | Передать через `cloud-init` или vsock |
+| `CLAUDE_CONFIG_DIR` hooks | Path к hooks в guest другой | Монтировать hooks dir через virtio-fs |
+| CCR router `router.json` | API keys в env vars | Передать в guest environment при boot |
+| `--proxy` HTTPS | Guest network через VMM bridge | Настроить NAT + proxy env в guest |
+
+#### Практические барьеры
+
+1. **KVM зависимость.** Недоступен: CI без nested virt, WSL1, некоторые cloud VMs. iclaude уже обрабатывает WSL1 как unsupported — нужно добавить KVM detection.
+
+2. **Boot latency.** Firecracker с снэпшотом запускается ~125ms, без снэпшота — ~1-2s. Для интерактивного использования приемлемо, но требует snapshot management.
+
+3. **Операционная сложность.** Firecracker требует VMM процесс, virtio device management, network bridge setup. Это значительно усложняет iclaude как bash wrapper. Минимальная реализация: ~500-800 строк дополнительного кода + конфиги.
+
+4. **Сопровождение guest image.** Нужен минимальный rootfs с Node.js + claude binary. Либо использовать virtiofs для монтирования host Node.js.
+
+#### Оценка: когда microVM оправдан
+
+| Критерий | Оценка |
+|----------|--------|
+| Claude Code выполняет bash tool calls от имени AI | ✅ Да — риск есть |
+| Prompt injection через репозитории/веб — реальный вектор | ✅ Да |
+| Пользователь работает с чувствительными данными/системами | ✅ Зависит |
+| KVM доступен на целевом хосте | ✅ На текущем хосте (Linux 6.17) |
+| Готовность к увеличению сложности iclaude | ⚠️ Решение за пользователем |
+
+**Вывод:** microVM **технически оправдан** для максимальной защиты ядра хоста. Это не избыточно, если пользователь принимает операционные издержки. Для большинства случаев Landlock+seccomp или gVisor достаточны.
+
+---
+
+## Сравнительная таблица: выбор уровня изоляции
+
+| Уровень | Технология | Kernel isolation | Сложность | Рекомендован когда |
+|---------|-----------|-----------------|-----------|-------------------|
+| **0 (текущий)** | hooks only | ❌ | Минимальная | Базовая policy, без OS boundary |
+| **1** | Landlock + seccomp | ❌ (shared) | Низкая | Практичный первый шаг, быстро |
+| **2** | gVisor (runsc) | ✅ частичная | Средняя | Хороший баланс защиты и совместимости |
+| **3** | microVM (Firecracker) | ✅ полная | Высокая | Максимальная защита, KVM доступен |
+
+---
+
+## Сравнение: текущий iclaude vs целевое состояние
+
+| Аспект | Текущий iclaude | Уровень 1 | Уровень 3 (microVM) |
+|--------|-----------------|-----------|---------------------|
+| **Policy — filesystem** | block-secrets.py (blocklist) | Landlock deny-by-default | virtio-fs limited mount |
+| **Policy — network** | Нет ограничений | seccomp + Landlock TCP | VMM bridge allowlist only |
+| **Kernel boundary** | ❌ | ❌ shared kernel | ✅ guest kernel |
+| **Kernel exploit blast radius** | Весь хост | Весь хост | Только guest VM |
+| **PII proxy** | ✅ опционально | ✅ без изменений | ⚠️ нужна vsock интеграция |
+| **Hooks** | ✅ активно | ✅ без изменений | ✅ монтировать hooks dir |
+| **Сложность реализации** | — | Низкая | Высокая (~800 LOC + infra) |
+| **Совместимость (WSL, CI)** | Широкая | Широкая (Linux 5.13+) | KVM required |
+
+---
+
+## Приоритизированные рекомендации
+
+### Приоритет 1 (практичный, немедленный): Landlock + seccomp
+
+Заменить отключённый bubblewrap. Закрывает policy leakage полностью, существенно сужает syscall attack surface. Ядро остаётся общим — kernel exploit теоретически возможен, но attack surface сокращается на 80%+.
+
+**Изменения в iclaude:**
+- `lib/sandbox/detect.sh` → добавить `detect_landlock_support()` (проверить `/proc/sys/kernel/landlock_abi`)
+- `lib/sandbox/install.sh` → добавить проверку и инструкцию для Landlock CLI wrapper
+- Заменить `bwrap` вызов в launcher на Landlock-based запуск
+
+### Приоритет 2 (сильная защита, приемлемая сложность): gVisor
+
+gVisor даёт userspace kernel — injected code не получает прямого доступа к host kernel syscalls. Совместимость с Node.js / Claude Code нужно проверить (`runsc` + Node.js совместим, но BPF/io_uring могут не работать).
+
+**Изменения в iclaude:**
+- Добавить `detect_gvisor_support()` (наличие `runsc` binary)
+- Launcher: `runsc do -- claude "$@"` вместо прямого вызова
+- Новый флаг: `--sandbox-gvisor`
+
+### Приоритет 3 (максимальная защита, высокая сложность): microVM
+
+Для пользователей с KVM и требованием максимальной защиты ядра хоста. Требует отдельной подсистемы управления VM в iclaude.
+
+**Минимальная архитектура:**
+```bash
+# lib/sandbox/microvm.sh (концептуально)
+start_microvm() {
+  # 1. Создать TAP интерфейс для network
+  # 2. Запустить Firecracker с конфигом (kernel, rootfs, virtio-fs для workspace)
+  # 3. Передать env vars (ANTHROPIC_BASE_URL, hooks path) через cloud-init
+  # 4. Ждать готовности guest (vsock handshake)
+  # 5. Выполнить claude в guest
+  # 6. По завершении — destroy VM, cleanup TAP
+}
+```
+
+Новый флаг: `--sandbox-microvm` (требует KVM, firecracker binary)
+
+### Текущий security hooks layer — оставить без изменений
+
+`block-secrets.py` + `redact-secrets.py` закрывают policy leakage независимо от уровня sandbox. Они работают поверх любого варианта изоляции как дополнительный слой.
+
+---
+
+## Что НЕ нужно делать
+
+- **Wasm sandbox для Claude Code** — Claude Code — ELF binary, не Wasm workload
+- **Docker container** — не даёт kernel isolation (shared kernel), при этом требует daemon и привилегий
+- **Отказаться от microVM только потому что "это для SaaS"** — неправильный критерий; правильный критерий — необходимость kernel boundary при выполнении AI-directed arbitrary code
 
 ---
 
 ## Итоговая оценка
 
-### Что статья подтверждает (iclaude делает правильно)
+**microVM технически обоснован** для iclaude при правильном threat model: Claude Code выполняет AI-directed tool calls, prompt injection — реальный вектор, kernel exploit через bash tool call — теоретически возможен. Firecracker изолирует guest kernel от host kernel — это не избыточно, это правильный ответ на конкретную угрозу.
 
-1. Двухуровневая изоляция (config + OS-level boundary) — правильная архитектура.
-2. Security hooks как policy layer — правильная стратегия для local agent threat model.
-3. macOS Seatbelt как sandbox mechanism — правильный выбор для macOS (уже в roadmap).
-4. Изолированная NVM среда (`.nvm-isolated/`) — правильный паттерн config isolation.
+**Практический путь:**
+1. **Сейчас:** Landlock + seccomp вместо буббелврапа — низкая сложность, быстро
+2. **Следующий шаг:** gVisor (`runsc`) — userspace kernel, проверить совместимость с Claude Code
+3. **Максимум:** Firecracker microVM — при необходимости полной kernel isolation
 
-### Что нужно улучшить
-
-1. **Критично:** Заменить bubblewrap на Landlock+seccomp (Linux) — устранить upstream bug, получить рабочий OS sandbox.
-2. **Важно:** Реализовать macOS Seatbelt профиль — завершить уже начатую поддержку.
-3. **Полезно:** Задокументировать minimum viable network policy для каждого режима запуска.
-4. **Опционально:** Добавить seccomp профиль поверх sandbox для дополнительного сужения syscall attack surface.
-
-### Что НЕ нужно делать
-
-- **microVM (Firecracker, cloud-hypervisor)** — несоответствие threat model, операционная сложность несоразмерна задаче.
-- **gVisor** — избыточно для single-tenant local agent; совместимость риска выше, чем security gain.
-- **Wasm sandbox для Claude Code** — Claude Code — general-purpose ELF binary, не Wasm-совместимый workload.
+**Текущие security hooks остаются актуальными** на всех уровнях — они закрывают policy leakage независимо от наличия kernel boundary.
 
 ---
 
 ## Связанные документы
 
 - [docs/SECURITY_RESEARCH.md](SECURITY_RESEARCH.md) — исследование по улучшению `redact-secrets.py`
-- [docs/SECURITY_PATTERNS_IMPROVEMENTS.md](SECURITY_PATTERNS_IMPROVEMENTS.md) — конкретные паттерны для hooks
+- [docs/SECURITY_PATTERNS_IMPROVEMENTS.md](SECURITY_PATTERNS_IMPROVEMENTS.md) — паттерны для hooks
 - [CLAUDE.md](../CLAUDE.md) — sandbox limitations (bubblewrap bug documented)
-- `lib/sandbox/` — текущая sandbox инфраструктура
-- `lib/sandbox/detect.sh` — `detect_sandbox_platform()` — расширить для Landlock detection
-- `lib/sandbox/install.sh` — `check_sandbox_dependencies()` — добавить landrun check
+- `lib/sandbox/detect.sh` — `detect_sandbox_platform()` → расширить для Landlock + gVisor detection
+- `lib/sandbox/install.sh` — `check_sandbox_dependencies()` → добавить Landlock / runsc / firecracker check
+- `lib/sandbox/status.sh` — `check_sandbox_status()` → добавить tier reporting
