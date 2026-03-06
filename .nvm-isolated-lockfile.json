@@ -1,6 +1,6 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.69",
+  "claudeCodeVersion": "2.1.70",
   "routerVersion": "unknown",
   "lspServers": {
     "pyright": "1.1.408"
@@ -16,6 +16,6 @@
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-03-05T04:41:14Z",
+  "installedAt": "2026-03-06T04:28:15Z",
   "nvmVersion": "0.39.7"
 }
