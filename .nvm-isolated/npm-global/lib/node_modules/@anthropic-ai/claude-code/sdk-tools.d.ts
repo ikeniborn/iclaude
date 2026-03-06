@@ -263,13 +263,13 @@ export interface AgentInput {
   /**
    * The type of specialized agent to use for this task
    */
-  subagent_type: string;
+  subagent_type?: string;
   /**
    * Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript.
    */
   resume?: string;
   /**
-   * Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output.
+   * Set to true to run this agent in the background. You will be notified when it completes.
    */
   run_in_background?: boolean;
   /**
@@ -2270,6 +2270,10 @@ export interface BashOutput {
    * Total size of the output in bytes (set when output is too large for inline)
    */
   persistedOutputSize?: number;
+  /**
+   * Compressed output sent to model when token-saver is active (UI still uses stdout)
+   */
+  tokenSaverOutput?: string;
 }
 export interface ExitPlanModeOutput {
   /**
