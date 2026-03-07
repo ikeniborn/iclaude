@@ -623,13 +623,13 @@ start_microvm() {
     # would corrupt ext4. Sparse copy (~90ms for 300MB on ext4) is negligible overhead.
     local rootfs_base="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
     local rootfs_session="${session_dir}/rootfs.ext4"
+    # Save original before overriding, so it can be restored after vmconfig is written.
+    local _rootfs_path_orig="${MICRO_VM_ROOTFS_PATH:-}"
     if ! cp --sparse=always "$rootfs_base" "$rootfs_session" 2>/dev/null; then
         print_error "microVM: failed to create per-session rootfs copy at ${rootfs_session}"
         rm -rf "$session_dir" 2>/dev/null; return 1
     fi
-    # Override locally so build_microvm_config picks up the per-session copy.
-    # Restore the original value afterwards so repeated calls use the correct base.
-    local _rootfs_path_orig="${MICRO_VM_ROOTFS_PATH:-}"
+    # Override so build_microvm_config picks up the per-session copy.
     MICRO_VM_ROOTFS_PATH="$rootfs_session"
 
     # NVM image: pre-built at --install-microvm time, mounted read-only as /dev/vdb → /mnt/nvm
