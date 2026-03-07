@@ -131,6 +131,8 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 
 **Архитектура v2:** `Firecracker VMM → guest-init (PID 1) → vdb:/mnt/nvm + vdc:/workspace → sshd → claude (inside guest)`
 
+Полная документация: [docs/MICROVM.md](docs/MICROVM.md)
+
 ---
 
 ### 🛡️ Sandboxing (bubblewrap)
