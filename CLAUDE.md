@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **iclaude** is a bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration. It provides both isolated (portable) and system-wide installation modes, with secure credential storage and automatic environment setup.
 
-Key features: isolated env (`.nvm-isolated/`), proxy management, version locking, OAuth auto-refresh, Claude Code Router, two-layer security hooks, PII proxy (Presidio NLP).
+Key features: isolated env (`.nvm-isolated/`), proxy management, version locking, OAuth auto-refresh, Claude Code Router, two-layer security hooks, PII proxy (Presidio NLP), microVM sandbox (Firecracker, virtio-blk+SSH, full kernel isolation).
 
 See [README.md](README.md) for full feature list.
 
@@ -69,6 +69,9 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
 ./iclaude.sh --pii-proxy              # Launch with PII masking enabled
 ./iclaude.sh --pii-proxy --router     # Combined: PII masking + CCR router
+./iclaude.sh --install-microvm        # Install Firecracker + vmlinux + rootfs + nvm.img (~1.4GB)
+./iclaude.sh --check-microvm          # Check KVM, images, TAP, SSH key status
+./iclaude.sh --sandbox-microvm        # Launch with microVM kernel isolation
 ```
 
 ## Features
@@ -79,6 +82,7 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 | Router Integration (OpenRouter, DeepSeek, Ollama…) | [docs/ROUTER.md](docs/ROUTER.md) |
 | PII Proxy (Presidio NLP, SSE streaming) | [docs/PII_MASKING.md](docs/PII_MASKING.md) |
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
+| microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
 | OAuth Token Management (auto-refresh, ~1yr tokens) | `lib/oauth/token.sh` |
 | Isolated Environment (NVM+Node.js in `.nvm-isolated/`) | `lib/nvm/` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
@@ -209,5 +213,4 @@ For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-c
 
 ## Docs for LLM
 
-Short docs for read always docs/llms.txt
-After read docs/llms.txt for search use docs/llms-full.txt and use target docs after searching.
+Use @skill:context-awareness для работы с документацией 
