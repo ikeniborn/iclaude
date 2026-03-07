@@ -70,6 +70,14 @@ OPTIONS:
   --sandbox-install                 Install sandbox system dependencies (bubblewrap, socat)
   --sandbox-check                   Show sandbox availability status and configuration
   --check-sandbox                   (Alias for --sandbox-check)
+  --install-microvm                 Install Firecracker microVM (binary, kernel, rootfs, TAP networking)
+                                    Downloads ~72MB to isolated environment (not in git)
+                                    Requires: KVM (/dev/kvm), virtiofsd, iproute2
+  --check-microvm                   Show microVM status (KVM, binaries, networking, configuration)
+  --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
+                                    Requires prior --install-microvm setup
+                                    Can be combined with --pii-proxy: traffic routed through host TAP IP
+                                    Enable permanently: add MICRO_VM_ENABLED=true to .claude_config
   --no-test                         Skip proxy connectivity test
 
 Oh My Posh Commands:

@@ -43,6 +43,21 @@ launch_claude() {
         use_router=true
     fi
 
+    # microVM sandbox: run Claude inside Firecracker VM (kernel isolation)
+    local use_microvm=false
+    if [[ "${USE_MICRO_VM_FLAG:-false}" == "true" ]]; then
+        if [[ "$skip_isolated" == "true" ]]; then
+            print_error "microVM is not supported in --system mode (isolated environment only)"
+            print_info "Remove --sandbox-microvm or omit --system to use microVM isolation"
+            exit 1
+        elif type detect_microvm &>/dev/null && detect_microvm "$skip_isolated"; then
+            use_microvm=true
+        else
+            print_warning "microVM not available (run: ./iclaude.sh --install-microvm)"
+            print_info "Continuing without microVM isolation..."
+        fi
+    fi
+
     # PII proxy: intercept and mask PII/secrets in Anthropic API traffic
     local use_pii_proxy=false
     if [[ "${USE_PII_PROXY_FLAG:-false}" == "true" ]]; then
@@ -64,7 +79,15 @@ launch_claude() {
     fi
 
     echo ""
-    if [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+    if [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code in microVM + PII masking → CCR router chain..."
+    elif [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]]; then
+        print_info "Launching Claude Code in microVM with PII masking..."
+    elif [[ "$use_microvm" == "true" ]] && [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code in microVM via Router..."
+    elif [[ "$use_microvm" == "true" ]]; then
+        print_info "Launching Claude Code in microVM (Firecracker kernel isolation)..."
+    elif [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code with PII masking → CCR router chain..."
     elif [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code via Router..."
@@ -74,6 +97,75 @@ launch_claude() {
         print_info "Launching Claude Code..."
     fi
     echo ""
+
+    # Start microVM if requested (before PII proxy / CCR, as it must wrap everything)
+    if [[ "$use_microvm" == "true" ]]; then
+        # Start CCR and/or PII proxy on host first so configure_guest_environment()
+        # can see their ports when building the guest env file.
+        if [[ "$use_router" == "true" ]]; then
+            local ccr_cmd
+            ccr_cmd=$(get_router_path "$skip_isolated")
+            if [[ -z "$ccr_cmd" ]]; then
+                print_error "Router enabled but ccr binary not found"
+                print_info "Install with: ./iclaude.sh --install-router"
+                exit 1
+            fi
+            if ! start_ccr_server "$skip_isolated" "$ccr_cmd"; then
+                print_error "CCR router failed to start — aborting"
+                exit 1
+            fi
+        fi
+        if [[ "$use_pii_proxy" == "true" ]]; then
+            if ! start_pii_proxy_server "$skip_isolated"; then
+                print_error "PII proxy failed to start — aborting for safety"
+                [[ "$use_router" == "true" ]] && stop_ccr_server
+                exit 1
+            fi
+            # The proxy listens on 127.0.0.1; guest reaches it via TAP host IP + NAT.
+        fi
+
+        if ! start_microvm "$skip_isolated"; then
+            print_error "microVM failed to start"
+            [[ "$use_pii_proxy" == "true" ]] && stop_pii_proxy_server
+            [[ "$use_router" == "true" ]] && stop_ccr_server
+            exit 1
+        fi
+
+        # Register cleanup trap for all active components
+        if [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+            trap 'stop_microvm; stop_pii_proxy_server; stop_ccr_server' EXIT INT TERM
+        elif [[ "$use_pii_proxy" == "true" ]]; then
+            trap 'stop_microvm; stop_pii_proxy_server' EXIT INT TERM
+        elif [[ "$use_router" == "true" ]]; then
+            trap 'stop_microvm; stop_ccr_server' EXIT INT TERM
+        else
+            setup_microvm_traps
+        fi
+
+        # Find claude binary — see docs/MIGRATION.md §microVM for architecture roadmap.
+        local claude_bin
+        if detect_nvm "$skip_isolated"; then
+            claude_bin=$(get_nvm_claude_path)
+        fi
+        if [[ -z "${claude_bin:-}" ]]; then
+            claude_bin=$(command -v claude 2>/dev/null || echo "")
+        fi
+        if [[ -z "$claude_bin" ]]; then
+            print_error "Claude Code not found"
+            stop_microvm
+            exit 1
+        fi
+
+        print_info "microVM: guest started, running claude on host with VM isolation layer"
+        print_info "Using Claude Code: $claude_bin"
+        export ICLAUDE_MICROVM_ACTIVE=1
+        # Unset CLAUDECODE so nested claude process doesn't detect parent session
+        unset CLAUDECODE
+        "$claude_bin" "$@"
+        local exit_code=$?
+        # Traps handle cleanup
+        exit $exit_code
+    fi
 
     # NEW: Router launch path
     if [[ "$use_router" == "true" ]]; then

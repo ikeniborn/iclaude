@@ -139,6 +139,7 @@ if [[ -d "$LIB_DIR/sandbox" ]]; then
     source "${LIB_DIR}/sandbox/detect.sh"
     source "${LIB_DIR}/sandbox/install.sh"
     source "${LIB_DIR}/sandbox/status.sh"
+    source "${LIB_DIR}/sandbox/microvm.sh"
 fi
 
 #######################################
@@ -205,6 +206,7 @@ fi
     claude_args=()
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
+    USE_MICRO_VM_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
     posh_insecure=false
     model_value=""  # Model selection (empty = use Claude Code default)
@@ -217,6 +219,13 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_pii" ]] && USE_PII_PROXY_FLAG=true
         unset _cfg_pii
+
+        # Match: MICRO_VM_ENABLED=true  MICRO_VM_ENABLED="true"  export MICRO_VM_ENABLED=true
+        _cfg_microvm=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?MICRO_VM_ENABLED[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
+        unset _cfg_microvm
     fi
 
     # Parse arguments
@@ -495,6 +504,24 @@ fi
             --check-pii-proxy)
                 check_pii_proxy_status
                 exit 0
+                ;;
+            --install-microvm)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-microvm"
+                    echo ""
+                    echo "microVM is only available in isolated environment"
+                    exit 1
+                fi
+                install_microvm
+                exit $?
+                ;;
+            --check-microvm)
+                check_microvm_status
+                exit 0
+                ;;
+            --sandbox-microvm)
+                USE_MICRO_VM_FLAG=true
+                shift
                 ;;
             --no-chrome)
                 USE_CHROME=false

@@ -104,7 +104,37 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 
 **Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
 
-### 🛡️ Sandboxing
+### 🔥 microVM Sandbox (Firecracker)
+
+Kernel isolation через KVM: каждый инструментальный вызов Claude Code работает в гостевой ВМ с **отдельным Linux ядром**, изолированным от хостовой ОС.
+
+- **Kernel isolation** — prompt injection → kernel exploit затрагивает guest kernel, не host
+- **virtiofs** — workspace и NVM монтируются как read-write/read-only virtio-fs mount
+- **TAP networking** — гостевая сеть через NAT (iptables MASQUERADE)
+- **OS matrix** — Ubuntu 22+, Debian 10+ (cargo), ALT Linux 10+, WSL2 (с nested virt)
+- **Автоустановка virtiofsd** — дистро-aware: `apt-get` или `cargo install virtiofsd` для Debian 10
+
+```bash
+# Установить Firecracker + vmlinux + rootfs (~350MB, один раз)
+./iclaude.sh --install-microvm
+
+# Проверить готовность (KVM, virtiofsd, образы, TAP)
+./iclaude.sh --check-microvm
+
+# Запустить с microVM изоляцией
+./iclaude.sh --sandbox-microvm
+
+# Постоянный режим
+echo 'MICRO_VM_ENABLED=true' >> .claude_config
+```
+
+**Архитектура v1 (текущая):** `virtiofsd (NVM ro + workspace rw) → Firecracker VMM → Guest kernel → claude (host process)`
+
+**Документация:** [docs/MIGRATION.md](./docs/MIGRATION.md) — roadmap v1→v2 (full in-guest execution)
+
+---
+
+### 🛡️ Sandboxing (bubblewrap)
 - **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
 - **Установка зависимостей** - `./iclaude.sh --sandbox-install`
 - **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
@@ -179,6 +209,7 @@ Approval gates после каждого агента — можно остан�
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
 - **[PII Masking](./docs/PII_MASKING.md)** - маскирование секретов (security hooks)
+- **[Sandbox Analysis](./docs/SANDBOX_ANALYSIS.md)** - threat model, выбор уровня изоляции
 
 ### Техническое
 - **[CLAUDE.md](./CLAUDE.md)** - архитектура проекта
@@ -211,6 +242,11 @@ Approval gates после каждого агента — можно остан�
 ./iclaude.sh --install-pii-proxy --force  # Переустановить всё с нуля
 ./iclaude.sh --check-pii-proxy         # Статус venv, моделей, PID
 ./iclaude.sh --pii-proxy               # Запуск с PII-маскированием
+
+# microVM (Firecracker kernel isolation)
+./iclaude.sh --install-microvm        # Установить Firecracker + образы (~350MB)
+./iclaude.sh --check-microvm          # Проверить KVM, virtiofsd, TAP
+./iclaude.sh --sandbox-microvm        # Запустить с kernel isolation
 
 # Дополнительно
 ./iclaude.sh --install-statusline      # Установить Status Line
@@ -354,6 +390,7 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── router/                         # Claude Code Router
 │   ├── lsp/                            # LSP server management
 │   ├── lockfile/                       # Version locking
+│   ├── sandbox/                        # microVM (Firecracker) + bubblewrap
 │   └── ...                             # 16 модулей
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
@@ -384,6 +421,7 @@ export DEEPSEEK_API_KEY="your-key"
 - `git` - для git-workflow skill
 - `gh` - для pr-automation skill (установить через `gh` пакетный менеджер)
 - `bubblewrap`, `socat` - для sandboxing на Linux/WSL2 (`./iclaude.sh --sandbox-install`)
+- `kvm` (`/dev/kvm`) - для microVM sandbox (`./iclaude.sh --install-microvm`)
 
 ---
 

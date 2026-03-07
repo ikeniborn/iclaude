@@ -53,6 +53,10 @@ qr_codes/
 scripts/.claude_config
 scripts/.claude_proxy_credentials  # Legacy
 
+# microVM guest environment file — written to $PWD at runtime, may contain credentials
+# (HTTPS_PROXY with embedded password, ANTHROPIC_BASE_URL with port info)
+.iclaude-guest-env.sh
+
 # Isolated NVM environment - temporary/cache files only
 .nvm-isolated/.cache/
 .nvm-isolated/.npm/

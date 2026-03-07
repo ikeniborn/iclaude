@@ -103,4 +103,54 @@ init_environment() {
     export CCR_SESSION_OWNED
     export CCR_HOST
     export CCR_PORT
+
+    # microVM (Firecracker) sandbox configuration
+    # Binaries stored in ISOLATED_CONFIG_DIR/bin/ — already covered by .gitignore
+    MICRO_VM_ENABLED="${MICRO_VM_ENABLED:-false}"
+    MICRO_VM_BACKEND="${MICRO_VM_BACKEND:-firecracker}"
+    MICRO_VM_VCPU="${MICRO_VM_VCPU:-2}"
+    MICRO_VM_MEM_MB="${MICRO_VM_MEM_MB:-1024}"
+    MICRO_VM_NET_ENABLED="${MICRO_VM_NET_ENABLED:-true}"
+    MICRO_VM_NET_TAP_IFACE="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+    MICRO_VM_NET_HOST_IP="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
+    MICRO_VM_NET_GUEST_IP="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+    MICRO_VM_SNAPSHOT_ENABLED="${MICRO_VM_SNAPSHOT_ENABLED:-false}"
+    MICRO_VM_SNAPSHOT_DIR="${MICRO_VM_SNAPSHOT_DIR:-${ISOLATED_CONFIG_DIR}/microvm-snapshots}"
+    MICRO_VM_ROOTFS_PATH="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
+    MICRO_VM_KERNEL_PATH="${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}"
+    MICRO_VM_BIN_PATH="${ISOLATED_CONFIG_DIR}/bin/firecracker"
+    MICRO_VM_WORK_DIR="${ISOLATED_CONFIG_DIR}/microvm-run"
+    MICRO_VM_LOG_LEVEL="${MICRO_VM_LOG_LEVEL:-warn}"
+    MICRO_VM_PROXY_PASS="${MICRO_VM_PROXY_PASS:-true}"
+    MICRO_VM_MOUNT_WORKSPACE="${MICRO_VM_MOUNT_WORKSPACE:-true}"
+
+    # Per-session microVM state (managed by lifecycle functions)
+    MICRO_VM_PID=""
+    MICRO_VM_SOCKET=""
+    MICRO_VM_SESSION_OWNED=false
+    VIRTIOFSD_PID_NVM=""
+    VIRTIOFSD_PID_WORKSPACE=""
+
+    export MICRO_VM_ENABLED
+    export MICRO_VM_BACKEND
+    export MICRO_VM_VCPU
+    export MICRO_VM_MEM_MB
+    export MICRO_VM_NET_ENABLED
+    export MICRO_VM_NET_TAP_IFACE
+    export MICRO_VM_NET_HOST_IP
+    export MICRO_VM_NET_GUEST_IP
+    export MICRO_VM_SNAPSHOT_ENABLED
+    export MICRO_VM_SNAPSHOT_DIR
+    export MICRO_VM_ROOTFS_PATH
+    export MICRO_VM_KERNEL_PATH
+    export MICRO_VM_BIN_PATH
+    export MICRO_VM_WORK_DIR
+    export MICRO_VM_LOG_LEVEL
+    export MICRO_VM_PROXY_PASS
+    export MICRO_VM_MOUNT_WORKSPACE
+    export MICRO_VM_PID
+    export MICRO_VM_SOCKET
+    export MICRO_VM_SESSION_OWNED
+    export VIRTIOFSD_PID_NVM
+    export VIRTIOFSD_PID_WORKSPACE
 }
