@@ -358,28 +358,49 @@ MICRO_VM_ENABLED=false
 # По умолчанию: true
 # MICRO_VM_PROXY_PASS=true
 
-# Монтировать рабочий проект ($PWD) в /workspace внутри VM через virtiofs.
-# true  — изменения файлов в VM немедленно видны на хосте (двусторонний mount)
-# false — проект не монтируется (read-only mode для максимальной изоляции)
-# По умолчанию: true
-# MICRO_VM_MOUNT_WORKSPACE=true
+# Режим монтирования рабочего каталога в гостевую VM через virtiofs.
+#
+# full     — монтировать $PWD (каталог проекта, в котором запускается iclaude) как /workspace (rw)
+#            изменения файлов в VM немедленно видны на хосте (двусторонний mount)
+#            это режим по умолчанию — полный доступ к файлам проекта
+#
+# path     — монтировать MICRO_VM_WORKSPACE_PATH как /workspace (rw)
+#            если MICRO_VM_WORKSPACE_PATH не задан — используется $PWD (аналог full)
+#            позволяет явно указать конкретный каталог независимо от cwd
+#
+# isolated — гость не имеет доступа к файловой системе хоста
+#            вместо проекта монтируется временный каталог (только для env-файла и SSH-ключей)
+#            максимальная изоляция: утечка файлов проекта невозможна
+#
+# По умолчанию: full
+# MICRO_VM_WORKSPACE_MODE=full
+
+# Путь к каталогу для монтирования в /workspace (только при MICRO_VM_WORKSPACE_MODE=path).
+# Если не задан — используется $PWD.
+# Пример: /home/user/projects/my-project
+# MICRO_VM_WORKSPACE_PATH=
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
 # ============================================================
-# # Базовый microVM (без снэпшотов):
+# # Базовый microVM — монтировать текущий проект (по умолчанию):
 # MICRO_VM_ENABLED=true
 # MICRO_VM_VCPU=2
 # MICRO_VM_MEM_MB=2048
 #
+# # Конкретный путь вместо текущего каталога:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_MODE=path
+# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+#
+# # Максимальная изоляция — без доступа к файлам хоста:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_MODE=isolated
+# MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
+#
 # # С быстрым стартом через снэпшоты (virtiofs будет отключён):
 # MICRO_VM_ENABLED=true
 # MICRO_VM_SNAPSHOT_ENABLED=true
-#
-# # Максимальная изоляция (без сети):
-# MICRO_VM_ENABLED=true
-# MICRO_VM_NET_ENABLED=false
-# MICRO_VM_MOUNT_WORKSPACE=false
 
 # ============================================================
 #  OAUTH ТОКЕН
