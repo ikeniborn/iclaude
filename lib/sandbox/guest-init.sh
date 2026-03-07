@@ -43,7 +43,9 @@ fi
 # Source environment written by host before VM start (via workspace block device)
 [ -f /workspace/.iclaude-guest-env.sh ] && . /workspace/.iclaude-guest-env.sh && log "env sourced"
 
-# SSH authorized_keys from workspace (dynamic per-session, written by start_microvm)
+# SSH authorized_keys: baked into rootfs at install time by _inject_rootfs_guest_init().
+# Workspace fallback (v1 compat): if workspace key file exists, it overrides the baked key.
+# In v2 mode the workspace file is never written — this block is normally a no-op.
 if [ -f /workspace/.iclaude-ssh/authorized_keys ]; then
     mkdir -p /root/.ssh
     cp /workspace/.iclaude-ssh/authorized_keys /root/.ssh/authorized_keys
