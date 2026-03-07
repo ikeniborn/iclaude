@@ -109,16 +109,17 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 Kernel isolation через KVM: каждый инструментальный вызов Claude Code работает в гостевой ВМ с **отдельным Linux ядром**, изолированным от хостовой ОС.
 
 - **Kernel isolation** — prompt injection → kernel exploit затрагивает guest kernel, не host
-- **virtiofs** — workspace и NVM монтируются как read-write/read-only virtio-fs mount
-- **TAP networking** — гостевая сеть через NAT (iptables MASQUERADE)
-- **OS matrix** — Ubuntu 22+, Debian 10+ (cargo), ALT Linux 10+, WSL2 (с nested virt)
-- **Автоустановка virtiofsd** — дистро-aware: `apt-get` или `cargo install virtiofsd` для Debian 10
+- **virtio-blk block devices** — `/dev/vdb` = NVM snapshot (RO, Node.js + claude), `/dev/vdc` = per-session workspace (RW, sparse ext4)
+- **SSH exec** — claude выполняется **внутри guest** по SSH; host управляет только lifecycle
+- **tar-over-SSH sync** — двунаправленная синхронизация workspace (full/path/isolated режимы)
+- **IP-пул слотов** — `MICRO_VM_NET_SUBNET=172.16.0.0/26`, до 31 concurrent сессий без конфликтов адресов
+- **OS matrix** — Ubuntu 22+, Debian 10+, ALT Linux 10+, WSL2 (с nested virt)
 
 ```bash
-# Установить Firecracker + vmlinux + rootfs (~350MB, один раз)
+# Установить Firecracker + vmlinux + rootfs + nvm.img (~1.4GB, один раз)
 ./iclaude.sh --install-microvm
 
-# Проверить готовность (KVM, virtiofsd, образы, TAP)
+# Проверить готовность (KVM, образы, TAP, SSH ключ)
 ./iclaude.sh --check-microvm
 
 # Запустить с microVM изоляцией
@@ -128,9 +129,7 @@ Kernel isolation через KVM: каждый инструментальный �
 echo 'MICRO_VM_ENABLED=true' >> .claude_config
 ```
 
-**Архитектура v1 (текущая):** `virtiofsd (NVM ro + workspace rw) → Firecracker VMM → Guest kernel → claude (host process)`
-
-**Документация:** [docs/MIGRATION.md](./docs/MIGRATION.md) — roadmap v1→v2 (full in-guest execution)
+**Архитектура v2:** `Firecracker VMM → guest-init (PID 1) → vdb:/mnt/nvm + vdc:/workspace → sshd → claude (inside guest)`
 
 ---
 
@@ -245,7 +244,7 @@ Approval gates после каждого агента — можно остан�
 
 # microVM (Firecracker kernel isolation)
 ./iclaude.sh --install-microvm        # Установить Firecracker + образы (~350MB)
-./iclaude.sh --check-microvm          # Проверить KVM, virtiofsd, TAP
+./iclaude.sh --check-microvm          # Проверить KVM, nvm.img, TAP, SSH ключ
 ./iclaude.sh --sandbox-microvm        # Запустить с kernel isolation
 
 # Дополнительно

@@ -270,16 +270,19 @@ USE_PII_PROXY=false
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================
-# Запускает Claude Code внутри лёгкой виртуальной машины (Firecracker + KVM).
+# Запускает Claude Code ВНУТРИ Firecracker guest VM по SSH.
 # Guest kernel изолирован от host kernel — максимальная защита от prompt injection
-# → kernel exploit цепочки. Рабочий проект монтируется в VM через virtiofs.
+# → kernel exploit цепочки. Workspace синхронизируется через tar-over-SSH.
+#
+# Архитектура v2: guest PID 1 (iclaude-guest-init) монтирует блочные устройства:
+#   /dev/vdb → /mnt/nvm    (NVM snapshot, RO — Node.js + claude binary)
+#   /dev/vdc → /workspace  (per-session sparse ext4, RW)
 #
 # Требования:
 #   - KVM поддержка (/dev/kvm): Linux с аппаратной виртуализацией
-#   - virtiofsd: sudo apt-get install virtiofsd
 #   - Однократная установка: ./iclaude.sh --install-microvm
-#     (скачивает firecracker ~22MB, vmlinux ~20MB, rootfs.ext4 ~30MB
-#      в .nvm-isolated/.claude-isolated/bin/ — не попадают в git)
+#     (скачивает firecracker ~22MB, vmlinux ~20MB, rootfs.ext4 ~30MB,
+#      строит nvm.img ~1GB из .nvm-isolated/ в .nvm-isolated/.claude-isolated/bin/)
 #   - TAP networking: ./iclaude.sh --install-microvm настроит автоматически
 #     (требует sudo для ip tuntap + iptables)
 #
@@ -328,14 +331,9 @@ MICRO_VM_ENABLED=false
 # По умолчанию: 172.16.0.0/26
 # MICRO_VM_NET_SUBNET=172.16.0.0/26
 #
-# Устаревшие параметры (не используйте вместе с SUBNET):
-# MICRO_VM_NET_HOST_IP=172.16.0.1   # фиксированный IP хоста (legacy, 1 сессия)
-# MICRO_VM_NET_GUEST_IP=172.16.0.2  # фиксированный IP гостя (legacy, 1 сессия)
-
 # Использовать снэпшоты для быстрого старта VM.
 # true  — повторный запуск ~125ms (снэпшот восстанавливается)
 # false — каждый запуск холодный ~1-2s (без снэпшота)
-# Внимание: снэпшоты несовместимы с virtiofs; при включении — virtiofs отключается.
 # По умолчанию: false
 # MICRO_VM_SNAPSHOT_ENABLED=false
 
@@ -364,19 +362,21 @@ MICRO_VM_ENABLED=false
 # По умолчанию: true
 # MICRO_VM_PROXY_PASS=true
 
-# Режим монтирования рабочего каталога в гостевую VM через virtiofs.
+# Режим синхронизации рабочего каталога с гостевой VM.
+# Синхронизация выполняется через tar-over-SSH (host→guest перед запуском claude,
+# guest→host после завершения). Секретные файлы всегда исключены из sync:
+# .claude_config, .iclaude-guest-env.sh, .iclaude-ssh/, .nvm-isolated/, .git/
 #
-# full     — монтировать $PWD (каталог проекта, в котором запускается iclaude) как /workspace (rw)
-#            изменения файлов в VM немедленно видны на хосте (двусторонний mount)
-#            это режим по умолчанию — полный доступ к файлам проекта
+# full     — синхронизировать $PWD (проект, текущий каталог) ↔ /workspace
+#            двунаправленная синхронизация: изменения в guest сохраняются на хосте
+#            режим по умолчанию — полный доступ к файлам проекта
 #
-# path     — монтировать MICRO_VM_WORKSPACE_PATH как /workspace (rw)
+# path     — синхронизировать MICRO_VM_WORKSPACE_PATH ↔ /workspace
 #            если MICRO_VM_WORKSPACE_PATH не задан — используется $PWD (аналог full)
 #            позволяет явно указать конкретный каталог независимо от cwd
 #
-# isolated — гость не имеет доступа к файловой системе хоста
-#            вместо проекта монтируется временный каталог (только для env-файла и SSH-ключей)
-#            максимальная изоляция: утечка файлов проекта невозможна
+# isolated — workspace пустой, синхронизация отсутствует
+#            максимальная изоляция: файлы проекта недоступны в guest
 #
 # По умолчанию: full
 # MICRO_VM_WORKSPACE_MODE=full
@@ -404,7 +404,7 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_WORKSPACE_MODE=isolated
 # MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
 #
-# # С быстрым стартом через снэпшоты (virtiofs будет отключён):
+# # С быстрым стартом через снэпшоты:
 # MICRO_VM_ENABLED=true
 # MICRO_VM_SNAPSHOT_ENABLED=true
 
