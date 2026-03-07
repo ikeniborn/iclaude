@@ -371,7 +371,11 @@ build_microvm_config() {
     # v2: guest init replaces systemd (fast boot, block devices + SSH control)
     # Use /usr/sbin/ — Ubuntu 22.04 rootfs has /sbin as symlink; kernel init= resolves
     # paths in the rootfs before symlinks are set up, so use the canonical path.
-    if [[ -f "${rootfs%.ext4}.v2-ready" ]]; then
+    # NOTE: rootfs may be a per-session sparse copy; the v2-ready marker lives next to
+    # the original base image (MICRO_VM_ROOTFS_PATH before session override, or the
+    # default base path). Check the base marker explicitly.
+    local rootfs_base_marker="${ISOLATED_CONFIG_DIR}/bin/rootfs.v2-ready"
+    if [[ -f "$rootfs_base_marker" ]]; then
         boot_args="${boot_args} init=/usr/sbin/iclaude-guest-init"
     fi
 
