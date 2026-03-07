@@ -208,6 +208,7 @@ Approval gates после каждого агента — можно остан�
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
 - **[PII Masking](./docs/PII_MASKING.md)** - маскирование секретов (security hooks)
+- **[microVM Sandbox](./docs/MICROVM.md)** - Firecracker kernel isolation: установка, запуск, troubleshooting
 - **[Sandbox Analysis](./docs/SANDBOX_ANALYSIS.md)** - threat model, выбор уровня изоляции
 
 ### Техническое

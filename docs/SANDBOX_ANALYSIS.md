@@ -2,7 +2,7 @@
 
 **Источник:** [A field guide to sandboxes for AI](https://www.luiscardoso.dev/blog/sandboxes-for-ai) — Luis Cardoso, Jan 5, 2026
 **Дата анализа:** 2026-03-06
-**Статус:** Актуализирован — microVM v1 реализован (2026-03-07)
+**Статус:** Актуализирован — microVM v2 реализован: virtio-blk + SSH exec (2026-03-07)
 
 ---
 
@@ -223,17 +223,17 @@ Host OS (Linux + KVM)
 
 ## Сравнение: уровни изоляции iclaude
 
-| Аспект | Base (hooks) | microVM v1 ✅ | microVM v2 (planned) |
-|--------|-------------|--------------|----------------------|
-| **Policy — filesystem** | block-secrets.py (blocklist) | virtiofs (NVM ro + workspace rw) | то же |
-| **Policy — network** | Нет ограничений | TAP + iptables NAT | то же |
-| **Kernel boundary** | ❌ | ✅ guest kernel | ✅ guest kernel |
-| **Kernel exploit blast radius** | Весь хост | Только guest VM | Только guest VM |
-| **Где выполняется claude** | host | host (virtiofs isolation) | guest (full in-guest) |
-| **PII proxy** | ✅ опционально | ✅ host-side, guest via NAT | ✅ vsock |
-| **Hooks** | ✅ активно | ✅ без изменений | ✅ без изменений |
-| **Статус** | всегда активен | `--sandbox-microvm` | roadmap |
-| **Совместимость** | Широкая | KVM required (Linux/WSL2) | KVM required |
+| Аспект | Base (hooks) | microVM v2 ✅ CURRENT |
+|--------|-------------|----------------------|
+| **Policy — filesystem** | block-secrets.py (blocklist) | virtio-blk: vdb=nvm (RO), vdc=workspace (RW) |
+| **Policy — network** | Нет ограничений | TAP + iptables NAT + IP-пул слотов |
+| **Kernel boundary** | ❌ | ✅ guest kernel (KVM) |
+| **Kernel exploit blast radius** | Весь хост | Только guest VM |
+| **Где выполняется claude** | host | guest (full in-guest, SSH exec) |
+| **PII proxy** | ✅ опционально | ✅ host-side, `ANTHROPIC_BASE_URL=host_ip:PORT` в guest env |
+| **Hooks** | ✅ активно | ✅ без изменений |
+| **Статус** | всегда активен | `--sandbox-microvm` |
+| **Совместимость** | Широкая | KVM required (Linux/WSL2) |
 
 ---
 
@@ -257,32 +257,32 @@ gVisor даёт userspace kernel — injected code не получает пря�
 - Launcher: `runsc do -- claude "$@"` вместо прямого вызова
 - Новый флаг: `--sandbox-gvisor`
 
-### Приоритет 3 (максимальная защита): microVM ✅ РЕАЛИЗОВАН (v1)
+### Приоритет 3 (максимальная защита): microVM ✅ РЕАЛИЗОВАН (v2)
 
-Реализован как `lib/sandbox/microvm.sh` + `lib/sandbox/install.sh` + `lib/sandbox/detect.sh`.
+Реализован как `lib/sandbox/microvm.sh` + `lib/sandbox/install.sh` + `lib/sandbox/guest-init.sh`.
 
-**Текущая архитектура (v1):**
+**Текущая архитектура (v2 — virtio-blk + SSH exec):**
 ```
-Host OS
-├── iclaude.sh             ← управляет VM lifecycle
-├── virtiofsd (NVM, ro)    ← virtiofs mount: Node.js + claude binary
-├── virtiofsd (workspace, rw) ← virtiofs mount: $PWD проекта
-└── Firecracker VMM        ← guest kernel (KVM)
-    ├── /mnt/nvm  (ro)     ← изолированный доступ к Node.js
-    └── /workspace (rw)    ← проектные файлы
-claude process выполняется на host с virtiofs isolation.
+Host OS (Linux + KVM)
+├── iclaude.sh              ← управляет lifecycle VM
+├── Firecracker VMM         ← virtio-blk devices (vda/vdb/vdc)
+└── Guest VM
+    ├── iclaude-guest-init  ← PID 1: монтирует vdb→/mnt/nvm, vdc→/workspace, стартует sshd
+    └── claude              ← выполняется ВНУТРИ GUEST (full in-guest)
 ```
+
+Claude Code и все tool calls выполняются внутри guest с отдельным Linux ядром. Host управляет только lifecycle VM.
 
 **Команды:**
 ```bash
-./iclaude.sh --install-microvm    # Firecracker v1.11 + vmlinux + rootfs (~350MB)
-./iclaude.sh --check-microvm      # KVM, virtiofsd, TAP, образы
+./iclaude.sh --install-microvm    # Firecracker v1.11 + vmlinux + rootfs + nvm.img (~1.4GB)
+./iclaude.sh --check-microvm      # KVM, nvm.img, TAP, SSH ключ
 ./iclaude.sh --sandbox-microvm    # Запуск с изоляцией
 ```
 
-**OS matrix:** Ubuntu 22+, Debian 11+ (apt), Debian 10 (cargo install virtiofsd), ALT Linux 10+, WSL2.
+**OS matrix:** Ubuntu 22+, Debian 10+, ALT Linux 10+, WSL2 (nested virt).
 
-**Roadmap v2:** full in-guest execution — `docs/MIGRATION.md`.
+**Документация:** [docs/MICROVM.md](MICROVM.md) · [Architecture diagram](architecture/diagrams/data-flow-microvm-launch.md)
 
 ### Текущий security hooks layer — оставить без изменений
 
@@ -302,10 +302,10 @@ claude process выполняется на host с virtiofs isolation.
 
 **microVM технически обоснован** для iclaude при правильном threat model: Claude Code выполняет AI-directed tool calls, prompt injection — реальный вектор, kernel exploit через bash tool call — теоретически возможен. Firecracker изолирует guest kernel от host kernel — это не избыточно, это правильный ответ на конкретную угрозу.
 
-**Практический путь:**
-1. **Сейчас:** Landlock + seccomp вместо bubblewrap — низкая сложность, быстро
-2. **Следующий шаг:** gVisor (`runsc`) — userspace kernel, проверить совместимость с Claude Code
-3. **Максимум:** Firecracker microVM — при необходимости полной kernel isolation
+**Статус реализации:**
+- ✅ **microVM (Firecracker v2)** — реализован, `--sandbox-microvm`
+- ⬜ **gVisor (`runsc`)** — не реализован; userspace kernel, средняя сложность
+- ⬜ **Landlock + seccomp** — не реализован; заменит отключённый bubblewrap, низкая сложность
 
 **Текущие security hooks остаются актуальными** на всех уровнях — они закрывают policy leakage независимо от наличия kernel boundary.
 
@@ -313,8 +313,8 @@ claude process выполняется на host с virtiofs isolation.
 
 ## Связанные документы
 
-- [docs/SECURITY_RESEARCH.md](SECURITY_RESEARCH.md) — исследование по улучшению `redact-secrets.py`
-- [docs/SECURITY_PATTERNS_IMPROVEMENTS.md](SECURITY_PATTERNS_IMPROVEMENTS.md) — паттерны для hooks
+- [docs/MICROVM.md](MICROVM.md) — операционное руководство по microVM (установка, запуск, troubleshooting)
+- [docs/architecture/diagrams/data-flow-microvm-launch.md](architecture/diagrams/data-flow-microvm-launch.md) — архитектурная диаграмма v2
 - [CLAUDE.md](../CLAUDE.md) — sandbox limitations (bubblewrap bug documented)
 - `lib/sandbox/detect.sh` — `detect_sandbox_platform()` → расширить для Landlock + gVisor detection
 - `lib/sandbox/install.sh` — `check_sandbox_dependencies()` → добавить Landlock / runsc / firecracker check
