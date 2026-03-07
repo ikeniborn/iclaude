@@ -451,22 +451,6 @@ fi
                 install_statusline_script
                 exit $?
                 ;;
-            --sandbox-install)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --sandbox-install"
-                    echo ""
-                    echo "Sandboxing is only available in isolated environment"
-                    exit 1
-                fi
-                install_sandbox_dependencies
-                # Update lockfile after installation
-                save_isolated_lockfile
-                exit $?
-                ;;
-            --sandbox-check|--check-sandbox)
-                check_sandbox_status
-                exit 0
-                ;;
             --install-posh|--install-ohmyposh)
                 if [[ "$use_system" == true ]]; then
                     print_error "--system cannot be used with --install-posh"
