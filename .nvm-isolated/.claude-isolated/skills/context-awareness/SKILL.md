@@ -1,6 +1,6 @@
 ---
 name: context-awareness
-description: Автоматическое определение контекста проекта
+description: Автоматическое определение контекста проекта. Поиск по документации.
 user-invocable: false
 agent: Explore
 # version: 1.2.0
