@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sandbox detection module
-# Provides functions for detecting sandbox platform and microVM support
+# Provides functions for detecting microVM (Firecracker) support
 #
 # microVM (Firecracker) OS support matrix:
 #   Ubuntu 22.04+   — virtiofsd in universe repo (apt-get install virtiofsd)
@@ -9,43 +9,6 @@
 #   ALT Linux 10+   — virtiofsd in Sisyphus/p10  (apt-get install virtiofsd)
 #   WSL2            — KVM available if host has nested virt enabled
 #   macOS           — NOT supported (KVM is Linux-only)
-
-#######################################
-# Detect platform for sandboxing support
-# Returns:
-#   0 - platform supported (macos, linux, wsl2)
-#   1 - platform not supported (wsl1, windows, unknown)
-# Output: platform name (macos|linux|wsl2|wsl1|windows|unsupported)
-#######################################
-detect_sandbox_platform() {
-	case $(uname -s) in
-		Darwin)
-			echo "macos"
-			return 0
-			;;
-		Linux)
-			if grep -qE "(Microsoft|WSL)" /proc/version 2>/dev/null; then
-				if grep -q "WSL2" /proc/version 2>/dev/null; then
-					echo "wsl2"
-					return 0
-				else
-					echo "wsl1"
-					return 1
-				fi
-			fi
-			echo "linux"
-			return 0
-			;;
-		MINGW*|MSYS*|CYGWIN*)
-			echo "windows"
-			return 1
-			;;
-		*)
-			echo "unsupported"
-			return 1
-			;;
-	esac
-}
 
 #######################################
 # Detect Linux distribution and version from /etc/os-release.
@@ -70,48 +33,6 @@ detect_linux_distro() {
 	esac
 
 	[[ -n "$id" ]] && echo "${id}:${version_id}" || { echo "unknown:0"; return 1; }
-}
-
-#######################################
-# Return virtiofsd install instruction for the current Linux distro.
-# Output: install command string (stdout)
-#######################################
-_virtiofsd_install_hint() {
-	local distro_ver; distro_ver=$(detect_linux_distro 2>/dev/null || echo "unknown:0")
-	local distro="${distro_ver%%:*}"
-	local ver="${distro_ver##*:}"
-	local ver_major="${ver%%.*}"
-
-	case "$distro" in
-		ubuntu)
-			if [[ "${ver_major:-0}" -ge 22 ]]; then
-				echo "sudo apt-get install virtiofsd"
-			else
-				echo "# Ubuntu ${ver} не поддерживается (требуется 22.04+)"
-			fi
-			;;
-		debian)
-			if [[ "${ver_major:-0}" -ge 11 ]]; then
-				echo "sudo apt-get install virtiofsd"
-			elif [[ "${ver_major:-0}" -ge 10 ]]; then
-				echo "# Debian 10: virtiofsd отсутствует в репозиториях — будет установлен из исходников"
-				echo "# Запустите: ./iclaude.sh --install-microvm  (cargo install virtiofsd)"
-			else
-				echo "# Debian ${ver} не поддерживается (требуется Debian 10+)"
-			fi
-			;;
-		altlinux)
-			if [[ "${ver_major:-0}" -ge 10 ]]; then
-				echo "sudo apt-get install virtiofsd"
-			else
-				echo "# ALT Linux ${ver} не поддерживается (требуется 10+)"
-			fi
-			;;
-		*)
-			echo "# Установите virtiofsd из репозиториев вашего дистрибутива"
-			echo "# https://gitlab.com/virtio-fs/virtiofsd/-/releases"
-			;;
-	esac
 }
 
 #######################################
