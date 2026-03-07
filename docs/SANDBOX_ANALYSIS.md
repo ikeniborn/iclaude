@@ -2,7 +2,7 @@
 
 **Источник:** [A field guide to sandboxes for AI](https://www.luiscardoso.dev/blog/sandboxes-for-ai) — Luis Cardoso, Jan 5, 2026
 **Дата анализа:** 2026-03-06
-**Статус:** Актуализирован с корректным threat model
+**Статус:** Актуализирован — microVM v1 реализован (2026-03-07)
 
 ---
 
@@ -214,25 +214,26 @@ Host OS (Linux + KVM)
 
 | Уровень | Технология | Kernel isolation | Сложность | Рекомендован когда |
 |---------|-----------|-----------------|-----------|-------------------|
-| **0 (текущий)** | hooks only | ❌ | Минимальная | Базовая policy, без OS boundary |
+| **0 (base)** | hooks only | ❌ | Минимальная | Базовая policy, без OS boundary |
 | **1** | Landlock + seccomp | ❌ (shared) | Низкая | Практичный первый шаг, быстро |
 | **2** | gVisor (runsc) | ✅ частичная | Средняя | Хороший баланс защиты и совместимости |
-| **3** | microVM (Firecracker) | ✅ полная | Высокая | Максимальная защита, KVM доступен |
+| **3 ✅ реализован** | microVM (Firecracker) | ✅ полная | Высокая | Максимальная защита, KVM доступен |
 
 ---
 
-## Сравнение: текущий iclaude vs целевое состояние
+## Сравнение: уровни изоляции iclaude
 
-| Аспект | Текущий iclaude | Уровень 1 | Уровень 3 (microVM) |
-|--------|-----------------|-----------|---------------------|
-| **Policy — filesystem** | block-secrets.py (blocklist) | Landlock deny-by-default | virtio-fs limited mount |
-| **Policy — network** | Нет ограничений | seccomp + Landlock TCP | VMM bridge allowlist only |
-| **Kernel boundary** | ❌ | ❌ shared kernel | ✅ guest kernel |
-| **Kernel exploit blast radius** | Весь хост | Весь хост | Только guest VM |
-| **PII proxy** | ✅ опционально | ✅ без изменений | ⚠️ нужна vsock интеграция |
-| **Hooks** | ✅ активно | ✅ без изменений | ✅ монтировать hooks dir |
-| **Сложность реализации** | — | Низкая | Высокая (~800 LOC + infra) |
-| **Совместимость (WSL, CI)** | Широкая | Широкая (Linux 5.13+) | KVM required |
+| Аспект | Base (hooks) | microVM v1 ✅ | microVM v2 (planned) |
+|--------|-------------|--------------|----------------------|
+| **Policy — filesystem** | block-secrets.py (blocklist) | virtiofs (NVM ro + workspace rw) | то же |
+| **Policy — network** | Нет ограничений | TAP + iptables NAT | то же |
+| **Kernel boundary** | ❌ | ✅ guest kernel | ✅ guest kernel |
+| **Kernel exploit blast radius** | Весь хост | Только guest VM | Только guest VM |
+| **Где выполняется claude** | host | host (virtiofs isolation) | guest (full in-guest) |
+| **PII proxy** | ✅ опционально | ✅ host-side, guest via NAT | ✅ vsock |
+| **Hooks** | ✅ активно | ✅ без изменений | ✅ без изменений |
+| **Статус** | всегда активен | `--sandbox-microvm` | roadmap |
+| **Совместимость** | Широкая | KVM required (Linux/WSL2) | KVM required |
 
 ---
 
@@ -256,24 +257,32 @@ gVisor даёт userspace kernel — injected code не получает пря�
 - Launcher: `runsc do -- claude "$@"` вместо прямого вызова
 - Новый флаг: `--sandbox-gvisor`
 
-### Приоритет 3 (максимальная защита, высокая сложность): microVM
+### Приоритет 3 (максимальная защита): microVM ✅ РЕАЛИЗОВАН (v1)
 
-Для пользователей с KVM и требованием максимальной защиты ядра хоста. Требует отдельной подсистемы управления VM в iclaude.
+Реализован как `lib/sandbox/microvm.sh` + `lib/sandbox/install.sh` + `lib/sandbox/detect.sh`.
 
-**Минимальная архитектура:**
-```bash
-# lib/sandbox/microvm.sh (концептуально)
-start_microvm() {
-  # 1. Создать TAP интерфейс для network
-  # 2. Запустить Firecracker с конфигом (kernel, rootfs, virtio-fs для workspace)
-  # 3. Передать env vars (ANTHROPIC_BASE_URL, hooks path) через cloud-init
-  # 4. Ждать готовности guest (vsock handshake)
-  # 5. Выполнить claude в guest
-  # 6. По завершении — destroy VM, cleanup TAP
-}
+**Текущая архитектура (v1):**
+```
+Host OS
+├── iclaude.sh             ← управляет VM lifecycle
+├── virtiofsd (NVM, ro)    ← virtiofs mount: Node.js + claude binary
+├── virtiofsd (workspace, rw) ← virtiofs mount: $PWD проекта
+└── Firecracker VMM        ← guest kernel (KVM)
+    ├── /mnt/nvm  (ro)     ← изолированный доступ к Node.js
+    └── /workspace (rw)    ← проектные файлы
+claude process выполняется на host с virtiofs isolation.
 ```
 
-Новый флаг: `--sandbox-microvm` (требует KVM, firecracker binary)
+**Команды:**
+```bash
+./iclaude.sh --install-microvm    # Firecracker v1.11 + vmlinux + rootfs (~350MB)
+./iclaude.sh --check-microvm      # KVM, virtiofsd, TAP, образы
+./iclaude.sh --sandbox-microvm    # Запуск с изоляцией
+```
+
+**OS matrix:** Ubuntu 22+, Debian 11+ (apt), Debian 10 (cargo install virtiofsd), ALT Linux 10+, WSL2.
+
+**Roadmap v2:** full in-guest execution — `docs/MIGRATION.md`.
 
 ### Текущий security hooks layer — оставить без изменений
 

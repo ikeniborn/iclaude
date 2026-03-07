@@ -206,3 +206,8 @@ For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-c
 7. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` use `$CLAUDE_CONFIG_DIR` — work in any project, safe to commit
 8. **PII Proxy:** All API traffic masked before Anthropic servers; runs on localhost only (127.0.0.1)
 9. **CCR + Anthropic:** CCR cannot use OAuth token (`sk-ant-oat01-...`); requires real API key (`sk-ant-api03-...`) from `console.anthropic.com`
+
+## Docs for LLM
+
+Short docs for read always docs/llms.txt
+After read docs/llms.txt for search use docs/llms-full.txt and use target docs after searching.

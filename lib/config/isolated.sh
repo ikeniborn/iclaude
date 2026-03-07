@@ -100,5 +100,22 @@ load_claude_config() {
     [[ -n "${PII_PROXY_MASKING_LEVEL:-}" ]] && export PII_PROXY_MASKING_LEVEL
     [[ -n "${PII_PROXY_ENABLE_FALLBACK:-}" ]] && export PII_PROXY_ENABLE_FALLBACK
 
+    # Export microVM configuration (values from .claude_config override init.sh defaults)
+    [[ -n "${MICRO_VM_ENABLED:-}" ]] && export MICRO_VM_ENABLED
+    [[ -n "${MICRO_VM_BACKEND:-}" ]] && export MICRO_VM_BACKEND
+    [[ -n "${MICRO_VM_VCPU:-}" ]] && export MICRO_VM_VCPU
+    [[ -n "${MICRO_VM_MEM_MB:-}" ]] && export MICRO_VM_MEM_MB
+    [[ -n "${MICRO_VM_NET_ENABLED:-}" ]] && export MICRO_VM_NET_ENABLED
+    [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && export MICRO_VM_NET_TAP_IFACE
+    [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && export MICRO_VM_NET_HOST_IP
+    [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && export MICRO_VM_NET_GUEST_IP
+    [[ -n "${MICRO_VM_SNAPSHOT_ENABLED:-}" ]] && export MICRO_VM_SNAPSHOT_ENABLED
+    [[ -n "${MICRO_VM_SNAPSHOT_DIR:-}" ]] && export MICRO_VM_SNAPSHOT_DIR
+    [[ -n "${MICRO_VM_ROOTFS_PATH:-}" ]] && export MICRO_VM_ROOTFS_PATH
+    [[ -n "${MICRO_VM_KERNEL_PATH:-}" ]] && export MICRO_VM_KERNEL_PATH
+    [[ -n "${MICRO_VM_LOG_LEVEL:-}" ]] && export MICRO_VM_LOG_LEVEL
+    [[ -n "${MICRO_VM_PROXY_PASS:-}" ]] && export MICRO_VM_PROXY_PASS
+    [[ -n "${MICRO_VM_MOUNT_WORKSPACE:-}" ]] && export MICRO_VM_MOUNT_WORKSPACE
+
     return 0
 }

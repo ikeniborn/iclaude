@@ -1,10 +1,10 @@
 project:
   id: iclaude
   name: iclaude
-  description: Bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration and isolated environment management
+  description: Bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration, isolated environment management, and Firecracker microVM kernel isolation
   language: bash
   framework: none
-  version: "2.0"
+  version: "4.1"
   repository: https://github.com/ikeniborn/iclaude
 
 architecture:
@@ -44,6 +44,17 @@ layers:
       - Install and update Claude Code CLI
       - Install and configure Claude Code Router
       - Create and maintain symlinks
+
+  - id: sandbox
+    name: Sandbox Layer
+    description: Process isolation mechanisms — microVM (Firecracker) and bubblewrap
+    responsibilities:
+      - Detect platform and KVM support
+      - Install Firecracker VMM, vmlinux kernel, rootfs image
+      - Install virtiofsd (apt-get or cargo for Debian 10)
+      - Manage VM lifecycle (start, configure guest env, stop, cleanup)
+      - Setup TAP networking with iptables NAT
+      - Provide status and dependency checking
 
   - id: infrastructure
     name: Infrastructure
@@ -428,6 +439,72 @@ components:
     dependencies:
       - claude-path-finder
 
+  # Sandbox Layer
+  - id: sandbox-detect
+    name: Sandbox Detection Module
+    layer: sandbox
+    type: module
+    file_path: lib/sandbox/detect.sh
+    description: Detects platform support, KVM availability, Linux distro/version, virtiofsd binary
+    subcomponents:
+      - detect_sandbox_platform
+      - detect_linux_distro
+      - detect_kvm_support
+      - detect_microvm_binary
+      - detect_virtiofsd
+      - check_distro_microvm_support
+      - _virtiofsd_install_hint
+    dependencies: []
+
+  - id: sandbox-install
+    name: Sandbox Installation Module
+    layer: sandbox
+    type: module
+    file_path: lib/sandbox/install.sh
+    description: Installs Firecracker VMM, vmlinux kernel, rootfs image; installs virtiofsd (apt or cargo); configures TAP networking
+    subcomponents:
+      - install_microvm
+      - check_microvm_dependencies
+      - _install_virtiofsd_auto
+      - _install_virtiofsd_cargo
+      - _apt_install_virtiofsd
+      - _setup_microvm_network_or_instruct
+      - install_sandbox_dependencies
+    dependencies:
+      - sandbox-detect
+      - firecracker-binary
+      - virtiofsd-binary
+
+  - id: microvm-launcher
+    name: microVM Lifecycle Manager
+    layer: sandbox
+    type: module
+    file_path: lib/sandbox/microvm.sh
+    description: Manages Firecracker VM lifecycle — start virtiofsd, configure guest environment, launch Firecracker, stop and cleanup
+    subcomponents:
+      - start_microvm
+      - stop_microvm
+      - configure_guest_environment
+      - build_microvm_config
+      - detect_microvm
+      - setup_microvm_traps
+      - _start_virtiofsd
+      - _cleanup_virtiofsd
+    dependencies:
+      - sandbox-detect
+      - firecracker-binary
+      - virtiofsd-binary
+
+  - id: sandbox-status
+    name: Sandbox Status Checker
+    layer: sandbox
+    type: module
+    file_path: lib/sandbox/status.sh
+    description: Displays microVM status — KVM, Firecracker binary, guest images, virtiofsd, TAP networking, configuration, snapshots
+    dependencies:
+      - sandbox-detect
+      - microvm-launcher
+
   # Infrastructure Layer
   - id: credential-storage
     name: Credential Storage
@@ -532,6 +609,27 @@ components:
     layer: external
     type: external-binary
     description: JSON processor for parsing credentials and router config
+    dependencies: []
+
+  - id: firecracker-binary
+    name: Firecracker VMM
+    layer: external
+    type: external-binary
+    description: Firecracker v1.11 microVM monitor — manages guest VM lifecycle via KVM
+    dependencies: []
+
+  - id: virtiofsd-binary
+    name: virtiofsd
+    layer: external
+    type: external-binary
+    description: Rust virtiofs daemon — provides virtio-fs filesystem sharing (NVM ro, workspace rw) between host and guest
+    dependencies: []
+
+  - id: kvm-device
+    name: KVM (/dev/kvm)
+    layer: external
+    type: kernel-device
+    description: Linux Kernel-based Virtual Machine — hardware virtualization interface required by Firecracker
     dependencies: []
 
 dependency_graph:
@@ -846,9 +944,38 @@ data_flows:
       - component: cli-main
         action: Display success message
 
+  - id: microvm-launch-flow
+    name: microVM Launch Flow
+    description: Launch Claude Code with Firecracker kernel isolation
+    steps:
+      - component: cli-main
+        action: Receive --sandbox-microvm flag
+      - component: sandbox-detect
+        action: detect_kvm_support() — verify /dev/kvm accessible
+      - component: sandbox-detect
+        action: detect_microvm() — verify Firecracker binary and guest images present
+      - component: microvm-launcher
+        action: _start_virtiofsd(NVM dir, ro) — mount Node.js for guest
+      - component: microvm-launcher
+        action: _start_virtiofsd(workspace, rw) — mount project files for guest
+      - component: microvm-launcher
+        action: configure_guest_environment() — write .iclaude-guest-env.sh (chmod 600)
+      - component: microvm-launcher
+        action: build_microvm_config() — generate Firecracker JSON config (virtiofs, network, kernel)
+      - component: firecracker-binary
+        action: Start Firecracker VMM — spawn guest kernel via KVM
+      - component: microvm-launcher
+        action: Poll Firecracker API socket until ready
+      - component: cli-main
+        action: unset CLAUDECODE — prevent nested session detection
+      - component: claude-cli
+        action: Execute claude process on host (v1) with virtiofs isolation
+      - component: microvm-launcher
+        action: stop_microvm() on EXIT trap — kill Firecracker, virtiofsd, cleanup /tmp sockets
+
 metrics:
-  total_components: 48
-  total_dependencies: 43
+  total_components: 57
+  total_dependencies: 51
   max_dependency_depth: 5
   cyclomatic_complexity: medium
 
@@ -871,6 +998,14 @@ security_considerations:
     mitigation: Require --show-password flag to display
   - description: OAuth tokens persisted in .credentials.json
     mitigation: Automatic refresh within 7 days of expiration
+  - description: microVM TAP interface and iptables rules require sudo
+    mitigation: Setup done once during --install-microvm; runtime launch requires no elevated privileges
+  - description: Interface name validation before sudo iptables commands
+    mitigation: Regex check ^[a-zA-Z0-9_-]{1,15}$ in _setup_microvm_network_or_instruct()
+  - description: Guest environment file written to workspace ($PWD/.iclaude-guest-env.sh)
+    mitigation: install -m 600; file deleted by stop_microvm() cleanup trap on exit
+  - description: Firecracker socket path in /tmp (world-readable directory)
+    mitigation: Socket created by Firecracker with default umask; removed on cleanup
 
 deployment:
   installation_modes:
@@ -894,6 +1029,21 @@ deployment:
         - OpenAI
         - Volcengine
         - SiliconFlow
+  microvm_sandbox:
+    - mode: opt-in
+    - activation: --sandbox-microvm flag or MICRO_VM_ENABLED=true
+    - version: v1 (host-launch with virtiofs isolation)
+    - roadmap: v2 (full in-guest execution) — see docs/MIGRATION.md
+    - os_support:
+        - ubuntu: "22.04+"
+        - debian: "10+ (10 via cargo install virtiofsd)"
+        - altlinux: "10+"
+        - wsl2: "with nested KVM enabled"
+    - requires:
+        - /dev/kvm (KVM hardware virtualization)
+        - firecracker binary (auto-installed by --install-microvm)
+        - virtiofsd (apt-get or cargo, auto-installed by --install-microvm)
+        - TAP interface (sudo, configured once by --install-microvm)
 
 skills_integration:
   skills_directory: .nvm-isolated/.claude-isolated/skills/

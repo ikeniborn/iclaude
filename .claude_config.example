@@ -268,6 +268,120 @@ USE_PII_PROXY=false
 # ------------------------------------------------------------
 
 # ============================================================
+#  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
+# ============================================================
+# Запускает Claude Code внутри лёгкой виртуальной машины (Firecracker + KVM).
+# Guest kernel изолирован от host kernel — максимальная защита от prompt injection
+# → kernel exploit цепочки. Рабочий проект монтируется в VM через virtiofs.
+#
+# Требования:
+#   - KVM поддержка (/dev/kvm): Linux с аппаратной виртуализацией
+#   - virtiofsd: sudo apt-get install virtiofsd
+#   - Однократная установка: ./iclaude.sh --install-microvm
+#     (скачивает firecracker ~22MB, vmlinux ~20MB, rootfs.ext4 ~30MB
+#      в .nvm-isolated/.claude-isolated/bin/ — не попадают в git)
+#   - TAP networking: ./iclaude.sh --install-microvm настроит автоматически
+#     (требует sudo для ip tuntap + iptables)
+#
+# Режимы запуска:
+#   solo:     --sandbox-microvm           → claude внутри VM → Anthropic API
+#   combined: --sandbox-microvm --pii-proxy → PII proxy на хосте (TAP IP) → VM → API
+#
+# Статус: ./iclaude.sh --check-microvm
+#
+# true  — автозапуск VM при каждом старте claude (если KVM доступен)
+# false — отключено (можно включить разово: --sandbox-microvm)
+# По умолчанию: false
+MICRO_VM_ENABLED=false
+
+# Backend виртуализации.
+# firecracker — единственный поддерживаемый вариант в текущей версии.
+# По умолчанию: firecracker
+# MICRO_VM_BACKEND=firecracker
+
+# Количество виртуальных CPU для гостя.
+# Диапазон: 1–8. По умолчанию: 2
+# MICRO_VM_VCPU=2
+
+# Объём RAM гостя в MiB.
+# Диапазон: 512–8192. По умолчанию: 1024
+# MICRO_VM_MEM_MB=1024
+
+# Включить TAP networking (доступ к сети из гостя через NAT).
+# Требуется для: Anthropic API, прокси, загрузок внутри VM.
+# false — полностью изолированный гость без сети (максимальная безопасность).
+# По умолчанию: true
+# MICRO_VM_NET_ENABLED=true
+
+# Имя TAP-интерфейса на хосте.
+# Изменяйте только при конфликте с существующими интерфейсами.
+# По умолчанию: tap-iclaude
+# MICRO_VM_NET_TAP_IFACE=tap-iclaude
+
+# IP хоста в гостевой сети (шлюз для гостя).
+# По умолчанию: 172.16.0.1
+# MICRO_VM_NET_HOST_IP=172.16.0.1
+
+# IP гостевой VM.
+# По умолчанию: 172.16.0.2
+# MICRO_VM_NET_GUEST_IP=172.16.0.2
+
+# Использовать снэпшоты для быстрого старта VM.
+# true  — повторный запуск ~125ms (снэпшот восстанавливается)
+# false — каждый запуск холодный ~1-2s (без снэпшота)
+# Внимание: снэпшоты несовместимы с virtiofs; при включении — virtiofs отключается.
+# По умолчанию: false
+# MICRO_VM_SNAPSHOT_ENABLED=false
+
+# Директория для хранения снэпшотов VM.
+# По умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
+# MICRO_VM_SNAPSHOT_DIR=
+
+# Путь к rootfs образу (ext4, Alpine Linux ~30MB).
+# По умолчанию: .nvm-isolated/.claude-isolated/bin/rootfs.ext4
+# Устанавливается автоматически через --install-microvm.
+# MICRO_VM_ROOTFS_PATH=
+
+# Путь к ядру Linux для гостя (vmlinux, ~20MB).
+# По умолчанию: .nvm-isolated/.claude-isolated/bin/vmlinux
+# Устанавливается автоматически через --install-microvm.
+# MICRO_VM_KERNEL_PATH=
+
+# Уровень логирования Firecracker VMM.
+# debug | info | warn | error
+# По умолчанию: warn
+# MICRO_VM_LOG_LEVEL=warn
+
+# Передавать настройки прокси в гостевую VM.
+# true  — PROXY_URL, PROXY_CA пробрасываются в гостя через TAP (host IP в качестве шлюза)
+# false — гость использует прямое соединение
+# По умолчанию: true
+# MICRO_VM_PROXY_PASS=true
+
+# Монтировать рабочий проект ($PWD) в /workspace внутри VM через virtiofs.
+# true  — изменения файлов в VM немедленно видны на хосте (двусторонний mount)
+# false — проект не монтируется (read-only mode для максимальной изоляции)
+# По умолчанию: true
+# MICRO_VM_MOUNT_WORKSPACE=true
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
+# ============================================================
+# # Базовый microVM (без снэпшотов):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_VCPU=2
+# MICRO_VM_MEM_MB=2048
+#
+# # С быстрым стартом через снэпшоты (virtiofs будет отключён):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_SNAPSHOT_ENABLED=true
+#
+# # Максимальная изоляция (без сети):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_NET_ENABLED=false
+# MICRO_VM_MOUNT_WORKSPACE=false
+
+# ============================================================
 #  ОТЛАДКА
 # ============================================================
 # Включить подробный вывод при запуске claude в launch.sh.
