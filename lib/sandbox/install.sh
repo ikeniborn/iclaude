@@ -992,6 +992,20 @@ EOF
 		print_warning "authorized_keys NOT baked — run _generate_microvm_ssh_key first"
 	fi
 
+	# Extract SSH host public key from rootfs for per-session known_hosts pinning.
+	# Stored once at install time; used by start_microvm() to build known_hosts per slot.
+	local host_key_pub="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
+	local _tmp_hk; _tmp_hk=$(mktemp)
+	debugfs -R "dump /etc/ssh/ssh_host_ed25519_key.pub ${_tmp_hk}" "$rootfs" 2>/dev/null
+	if [[ -s "$_tmp_hk" ]]; then
+		cp "$_tmp_hk" "$host_key_pub"
+		chmod 644 "$host_key_pub"
+		print_success "SSH host pubkey extracted: ${host_key_pub}"
+	else
+		print_warning "ssh_host_ed25519_key.pub not found in rootfs — host key verification disabled"
+	fi
+	rm -f "$_tmp_hk"
+
 	# Mark v2 ready (marker file alongside rootfs)
 	touch "${rootfs%.ext4}.v2-ready"
 	print_success "Guest init injected (rootfs ready for v2)"
