@@ -30,8 +30,16 @@ print_info()    { :; }
 print_success() { :; }
 print_warning() { :; }
 print_error()   { :; }
+# init_environment uses SCRIPT_DIR to derive paths; override after to keep PROJECT_DIR as base
+SCRIPT_DIR="$PROJECT_DIR"
 source "${PROJECT_DIR}/lib/core/init.sh"
 init_environment
+# Re-pin to project root (init_environment may resolve to tests/ subdir when called from tests/)
+ISOLATED_NVM_DIR="${PROJECT_DIR}/.nvm-isolated"
+ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.nvm-isolated/.claude-isolated"
+export ISOLATED_NVM_DIR ISOLATED_CONFIG_DIR
+# Load user config to pick up MICRO_VM_NET_SUBNET and other overrides
+[[ -f "${PROJECT_DIR}/.claude_config" ]] && source "${PROJECT_DIR}/.claude_config" 2>/dev/null || true
 source "${PROJECT_DIR}/lib/sandbox/microvm.sh"
 
 cleanup() {
