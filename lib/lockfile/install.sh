@@ -7,7 +7,7 @@
 
 #######################################
 # Install isolated environment from lockfile
-# Installs: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins, Sandbox dependencies
+# Installs: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins
 # Returns:
 #   0 - success
 #   1 - error
@@ -161,39 +161,6 @@ install_from_lockfile() {
 			fi
 		fi
 	fi
-
-	# Restore sandbox dependencies if marked as available
-	echo ""
-	print_info "Checking sandbox availability from lockfile..."
-	local sandbox_available
-	# Using core/json.sh get_lockfile_field()
-	sandbox_available=$(get_lockfile_field "sandboxAvailable" 2>/dev/null || echo "false")
-	[[ "$sandbox_available" == "unknown" ]] && sandbox_available="false"
-
-	if [[ "$sandbox_available" == "true" ]]; then
-		print_info "Lockfile indicates sandbox was available"
-		echo ""
-
-		# Check if dependencies still need installation
-		if ! check_sandbox_dependencies &>/dev/null; then
-			print_warning "Sandbox dependencies missing - installing..."
-			echo ""
-
-			if install_sandbox_dependencies; then
-				print_success "Sandbox dependencies restored from lockfile"
-			else
-				print_warning "Failed to restore sandbox dependencies"
-				echo "  You may need to install manually:"
-				echo "  ./iclaude.sh --sandbox-install"
-			fi
-		else
-			print_success "Sandbox dependencies already installed"
-		fi
-	else
-		print_info "Sandbox was not available in original installation"
-		echo "  Run ./iclaude.sh --sandbox-install to enable"
-	fi
-	echo ""
 
 	print_success "Installation from lockfile complete"
 	echo ""
