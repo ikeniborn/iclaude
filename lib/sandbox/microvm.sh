@@ -618,6 +618,20 @@ start_microvm() {
 
     # ── Block device images ────────────────────────────────────────────────────
 
+    # Rootfs: per-session sparse copy of the shared base image.
+    # Firecracker opens it read-write (vda); sharing one rw file across concurrent VMs
+    # would corrupt ext4. Sparse copy (~90ms for 300MB on ext4) is negligible overhead.
+    local rootfs_base="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
+    local rootfs_session="${session_dir}/rootfs.ext4"
+    if ! cp --sparse=always "$rootfs_base" "$rootfs_session" 2>/dev/null; then
+        print_error "microVM: failed to create per-session rootfs copy at ${rootfs_session}"
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
+    # Override locally so build_microvm_config picks up the per-session copy.
+    # Restore the original value afterwards so repeated calls use the correct base.
+    local _rootfs_path_orig="${MICRO_VM_ROOTFS_PATH:-}"
+    MICRO_VM_ROOTFS_PATH="$rootfs_session"
+
     # NVM image: pre-built at --install-microvm time, mounted read-only as /dev/vdb → /mnt/nvm
     local nvm_img="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
     if [[ ! -f "$nvm_img" ]]; then
@@ -681,8 +695,11 @@ start_microvm() {
     vmconfig=$(build_microvm_config "$session_dir" "$nvm_img" "$ws_img") || {
         print_error "microVM: failed to generate vmconfig.json"
         rm -rf "$session_dir" 2>/dev/null || true
+        MICRO_VM_ROOTFS_PATH="$_rootfs_path_orig"
         return 1
     }
+    # Restore original MICRO_VM_ROOTFS_PATH (per-session copy is baked into vmconfig.json)
+    MICRO_VM_ROOTFS_PATH="$_rootfs_path_orig"
 
     print_info "microVM: starting Firecracker VMM..."
     print_info "microVM: vCPU=${MICRO_VM_VCPU:-2} RAM=${MICRO_VM_MEM_MB:-1024}MiB"
