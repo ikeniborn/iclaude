@@ -77,6 +77,191 @@ _sh_escape_val() {
     printf '%s' "${val//\'/\'\\\'\'}"
 }
 
+# ── Subnet allocation helpers ──────────────────────────────────────────────────
+# Support multiple concurrent microVM sessions by allocating unique IP pairs
+# from a configurable subnet (MICRO_VM_NET_SUBNET, default 172.16.0.0/26).
+#
+# Slot model (no per-slot broadcast waste):
+#   Slot N → host IP = base+2N+1, guest IP = base+2N+2, TAP = tap-iclaude[-N]
+# Example with 172.16.0.0/26 (62 usable hosts → 31 slots):
+#   Slot 0: host=172.16.0.1  guest=172.16.0.2  tap=tap-iclaude
+#   Slot 1: host=172.16.0.3  guest=172.16.0.4  tap=tap-iclaude-1
+#   Slot 2: host=172.16.0.5  guest=172.16.0.6  tap=tap-iclaude-2
+
+# Parse "base/prefix" CIDR into MICROVM_SUBNET_INT and MICROVM_SUBNET_PREFIX.
+_microvm_parse_subnet() {
+    local subnet="$1"
+    MICROVM_SUBNET_PREFIX="${subnet#*/}"
+    local base="${subnet%/*}"
+    if ! [[ "$MICROVM_SUBNET_PREFIX" =~ ^[0-9]+$ ]] || \
+       (( MICROVM_SUBNET_PREFIX < 1 || MICROVM_SUBNET_PREFIX > 30 )); then
+        return 1
+    fi
+    if ! _validate_ip "$base"; then return 1; fi
+    local o1 o2 o3 o4
+    IFS='.' read -r o1 o2 o3 o4 <<< "$base"
+    MICROVM_SUBNET_INT=$(( o1*16777216 + o2*65536 + o3*256 + o4 ))
+}
+
+# Get dotted-decimal IP at offset N from parsed subnet base.
+_microvm_ip_at() {
+    local n=$(( MICROVM_SUBNET_INT + $1 ))
+    printf '%d.%d.%d.%d' $(( (n>>24)&255 )) $(( (n>>16)&255 )) $(( (n>>8)&255 )) $(( n&255 ))
+}
+
+# Convert prefix length to dotted-decimal netmask (e.g., 26 → 255.255.255.192).
+_microvm_prefix_to_mask() {
+    local prefix="$1"
+    local m=$(( (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF ))
+    printf '%d.%d.%d.%d' $(( (m>>24)&255 )) $(( (m>>16)&255 )) $(( (m>>8)&255 )) $(( m&255 ))
+}
+
+#######################################
+# Allocate a free network slot from MICRO_VM_NET_SUBNET.
+# Exports MICRO_VM_SLOT, MICRO_VM_NET_TAP_IFACE, MICRO_VM_NET_HOST_IP,
+#         MICRO_VM_NET_GUEST_IP, MICRO_VM_NET_MASK.
+# Legacy mode: if MICRO_VM_NET_GUEST_IP is set without MICRO_VM_NET_SUBNET,
+#              uses those values directly (slot 0, mask /24).
+# Returns 0 on success, 1 if all slots occupied.
+#######################################
+_alloc_microvm_slot() {
+    # Legacy mode: explicit GUEST/HOST IP without subnet config
+    if [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && [[ -z "${MICRO_VM_NET_SUBNET:-}" ]]; then
+        MICRO_VM_SLOT=0
+        MICRO_VM_NET_TAP_IFACE="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+        MICRO_VM_NET_HOST_IP="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
+        MICRO_VM_NET_MASK="255.255.255.0"
+        MICROVM_SUBNET_PREFIX=24
+        export MICRO_VM_SLOT MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_HOST_IP \
+               MICRO_VM_NET_GUEST_IP MICRO_VM_NET_MASK
+        return 0
+    fi
+
+    local subnet="${MICRO_VM_NET_SUBNET:-172.16.0.0/26}"
+    if ! _microvm_parse_subnet "$subnet"; then
+        print_error "microVM: invalid MICRO_VM_NET_SUBNET='${subnet}' (use CIDR, e.g. 172.16.0.0/26)"
+        return 1
+    fi
+
+    local size=$(( 1 << (32 - MICROVM_SUBNET_PREFIX) ))
+    local max_slots=$(( (size - 2) / 2 ))
+    if (( max_slots < 1 )); then
+        print_error "microVM: subnet ${subnet} too small (need at least /30 for one slot)"
+        return 1
+    fi
+
+    local slots_dir="${ISOLATED_CONFIG_DIR}/microvm-slots"
+    mkdir -p "$slots_dir"
+
+    local slot
+    for slot in $(seq 0 $((max_slots - 1))); do
+        local lock="${slots_dir}/slot-${slot}.lock"
+        # Skip if a live Firecracker process owns this slot
+        if [[ -f "$lock" ]]; then
+            local lock_pid; lock_pid=$(cat "$lock" 2>/dev/null)
+            if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
+                continue
+            fi
+            rm -f "$lock"   # stale lockfile from crashed session
+        fi
+
+        # Claim slot
+        MICRO_VM_SLOT="$slot"
+        MICRO_VM_NET_HOST_IP="$(_microvm_ip_at $((2*slot + 1)))"
+        MICRO_VM_NET_GUEST_IP="$(_microvm_ip_at $((2*slot + 2)))"
+        MICRO_VM_NET_MASK="$(_microvm_prefix_to_mask "$MICROVM_SUBNET_PREFIX")"
+        if [[ "$slot" -eq 0 ]]; then
+            MICRO_VM_NET_TAP_IFACE="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+        else
+            MICRO_VM_NET_TAP_IFACE="tap-iclaude-${slot}"
+        fi
+        export MICRO_VM_SLOT MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_HOST_IP \
+               MICRO_VM_NET_GUEST_IP MICRO_VM_NET_MASK
+        return 0
+    done
+
+    print_error "microVM: all ${max_slots} slots in ${subnet} occupied (too many concurrent sessions)"
+    return 1
+}
+
+# Write slot lockfile after Firecracker process starts.
+_claim_microvm_slot() {
+    [[ -z "${MICRO_VM_SLOT:-}" ]] && return 0
+    local slots_dir="${ISOLATED_CONFIG_DIR}/microvm-slots"
+    mkdir -p "$slots_dir"
+    echo "$MICRO_VM_PID" > "${slots_dir}/slot-${MICRO_VM_SLOT}.lock"
+}
+
+# Release slot lockfile when VM stops.
+_free_microvm_slot() {
+    [[ -z "${MICRO_VM_SLOT:-}" ]] && return 0
+    rm -f "${ISOLATED_CONFIG_DIR}/microvm-slots/slot-${MICRO_VM_SLOT}.lock" 2>/dev/null || true
+}
+
+#######################################
+# Ensure TAP interface for the current slot exists with the correct host IP.
+# Creates TAP via sudo if missing; updates IP if mismatched.
+# Requires MICRO_VM_NET_TAP_IFACE, MICRO_VM_NET_HOST_IP, MICROVM_SUBNET_PREFIX.
+#######################################
+_ensure_slot_tap() {
+    [[ "${MICRO_VM_NET_ENABLED:-true}" != "true" ]] && return 0
+    local tap="${MICRO_VM_NET_TAP_IFACE}"
+    local host_ip="${MICRO_VM_NET_HOST_IP}"
+    local prefix="${MICROVM_SUBNET_PREFIX:-24}"
+
+    if ! ip link show "$tap" &>/dev/null; then
+        # TAP doesn't exist — try to create via sudo
+        if ! sudo -n true 2>/dev/null; then
+            print_error "microVM: TAP ${tap} not found (sudo unavailable to create it)"
+            print_info "  Run: sudo ip tuntap add dev ${tap} mode tap"
+            print_info "  Run: sudo ip addr add ${host_ip}/${prefix} dev ${tap}"
+            print_info "  Run: sudo ip link set ${tap} up"
+            return 1
+        fi
+        if sudo ip tuntap add dev "$tap" mode tap 2>/dev/null && \
+           sudo ip addr add "${host_ip}/${prefix}" dev "$tap" 2>/dev/null && \
+           sudo ip link set "$tap" up 2>/dev/null; then
+            # Add FORWARD rules for new TAP
+            local out_iface; out_iface=$(ip route 2>/dev/null | awk '/^default/ {print $5; exit}')
+            if [[ -n "$out_iface" ]] && [[ "$out_iface" =~ ^[a-zA-Z0-9_-]{1,15}$ ]]; then
+                sudo iptables -A FORWARD -i "$tap" -o "$out_iface" -j ACCEPT 2>/dev/null || true
+                sudo iptables -A FORWARD -i "$out_iface" -o "$tap" \
+                    -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+            fi
+            print_info "microVM: TAP ${tap} created (${host_ip}/${prefix})"
+        else
+            print_error "microVM: failed to create TAP ${tap} — re-run --install-microvm"
+            return 1
+        fi
+        return 0
+    fi
+
+    # TAP exists — verify host IP matches; update if not
+    local tap_ip
+    tap_ip=$(ip addr show "$tap" 2>/dev/null | awk '/inet / {split($2,a,"/"); print a[1]; exit}')
+    if [[ "$tap_ip" == "$host_ip" ]]; then
+        # Correct IP already assigned; ensure UP
+        ip link show "$tap" 2>/dev/null | grep -q "UP" || \
+            sudo ip link set "$tap" up 2>/dev/null || true
+        return 0
+    fi
+
+    print_warning "microVM: TAP ${tap} has IP ${tap_ip:-none}, expected ${host_ip}/${prefix} — updating"
+    if sudo -n true 2>/dev/null; then
+        [[ -n "$tap_ip" ]] && sudo ip addr del "${tap_ip}/${prefix}" dev "$tap" 2>/dev/null || true
+        sudo ip addr add "${host_ip}/${prefix}" dev "$tap" 2>/dev/null && \
+        sudo ip link set "$tap" up 2>/dev/null && \
+        print_info "microVM: TAP ${tap} IP updated → ${host_ip}/${prefix}" || \
+        print_warning "microVM: failed to update TAP IP — routing may fail"
+    else
+        print_error "microVM: TAP IP mismatch, sudo unavailable to fix it"
+        print_info "  Expected: ${host_ip}/${prefix} on ${tap}"
+        print_info "  Fix: sudo ip addr add ${host_ip}/${prefix} dev ${tap}"
+        print_info "  Or: re-run ./iclaude.sh --install-microvm with updated config"
+        return 1
+    fi
+}
+
 #######################################
 # Detect if microVM is fully functional (all components present)
 # Returns:
@@ -134,6 +319,10 @@ build_microvm_config() {
     local tap="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
     local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
     local host_ip="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
+    local mask="${MICRO_VM_NET_MASK:-255.255.255.0}"
+    # Per-slot MAC: AA:FC:00:00:00:<slot+1 hex> — unique per concurrent VM
+    local slot_hex; printf -v slot_hex '%02X' $(( ${MICRO_VM_SLOT:-0} + 1 ))
+    local guest_mac="AA:FC:00:00:00:${slot_hex}"
 
     # ── Input validation (security: prevent JSON injection) ────────────────────
     if ! _validate_int_range "$vcpu" 1 128; then
@@ -167,7 +356,7 @@ build_microvm_config() {
 
     # Kernel boot arguments — IPs validated above (digits/dots only, safe for cmdline)
     local boot_args="console=ttyS0 reboot=k panic=1 pci=off nomodules"
-    boot_args="${boot_args} ip=${guest_ip}::${host_ip}:255.255.255.0::eth0:off"
+    boot_args="${boot_args} ip=${guest_ip}::${host_ip}:${mask}::eth0:off"
 
     # v2: guest init replaces systemd (fast boot, block devices + SSH control)
     # Use /usr/sbin/ — Ubuntu 22.04 rootfs has /sbin as symlink; kernel init= resolves
@@ -224,7 +413,7 @@ build_microvm_config() {
             printf ',\n'
             printf '  "network-interfaces": [{\n'
             printf '    "iface_id": "eth0",\n'
-            printf '    "guest_mac": "AA:FC:00:00:00:01",\n'
+            printf '    "guest_mac": "%s",\n' "$guest_mac"
             printf '    "host_dev_name": "%s"\n' "$tap_j"
             printf '  }]'
         fi
@@ -392,6 +581,16 @@ start_microvm() {
         return 1
     }
 
+    # Allocate a free network slot (unique guest/host IP pair within subnet pool).
+    # Exports MICRO_VM_SLOT, MICRO_VM_NET_TAP_IFACE, MICRO_VM_NET_HOST_IP,
+    #         MICRO_VM_NET_GUEST_IP, MICRO_VM_NET_MASK.
+    _alloc_microvm_slot || return 1
+
+    # Ensure the allocated TAP interface exists with the correct host IP.
+    if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
+        _ensure_slot_tap || return 1
+    fi
+
     # Create per-session working directory (mode 700: no world/group access)
     local session_id="${ICLAUDE_SESSION_ID:-$$}"
     local session_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}/${session_id}"
@@ -495,6 +694,7 @@ start_microvm() {
     MICRO_VM_PID=$!
     MICRO_VM_SESSION_OWNED=true
     export MICRO_VM_PID MICRO_VM_SOCKET MICRO_VM_SESSION_OWNED
+    _claim_microvm_slot   # write slot-N.lock with FC PID
 
     # Wait for Firecracker API socket to appear (max 10s)
     local ticks=0
@@ -628,6 +828,10 @@ stop_microvm() {
 
     # Remove Firecracker API socket (in /tmp for short path)
     rm -f "/tmp/iclaude-${session_id}-fc.sock" 2>/dev/null || true
+
+    # Release network slot so it can be reused by another session
+    _free_microvm_slot
+    MICRO_VM_SLOT=""
 
     # Clear workspace tracking vars
     MICRO_VM_WORKSPACE_HOSTDIR=""

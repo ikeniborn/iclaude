@@ -681,7 +681,29 @@ install_microvm() {
 #######################################
 _setup_microvm_network_or_instruct() {
 	local tap_iface="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
-	local host_ip="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
+
+	# Derive host IP and prefix from MICRO_VM_NET_SUBNET (slot 0 = base+1).
+	# Legacy: fall back to MICRO_VM_NET_HOST_IP if SUBNET not set.
+	local host_ip prefix
+	if [[ -n "${MICRO_VM_NET_SUBNET:-}" ]]; then
+		local subnet="${MICRO_VM_NET_SUBNET}"
+		local base="${subnet%/*}"
+		prefix="${subnet#*/}"
+		if ! [[ "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 30 )); then
+			print_error "microVM network: invalid prefix in MICRO_VM_NET_SUBNET='${subnet}'"
+			return 1
+		fi
+		# Compute base+1 for slot-0 host IP
+		IFS='.' read -r _o1 _o2 _o3 _o4 <<< "$base"
+		local base_int=$(( _o1*16777216 + _o2*65536 + _o3*256 + _o4 ))
+		local host_int=$(( base_int + 1 ))
+		host_ip=$(printf '%d.%d.%d.%d' \
+			$(( (host_int>>24)&255 )) $(( (host_int>>16)&255 )) \
+			$(( (host_int>>8)&255 )) $(( host_int&255 )))
+	else
+		host_ip="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
+		prefix=24
+	fi
 
 	# Validate inputs before use in sudo commands (prevent command injection)
 	if ! [[ "$tap_iface" =~ ^[a-zA-Z0-9_-]{1,15}$ ]]; then
@@ -693,18 +715,35 @@ _setup_microvm_network_or_instruct() {
 		return 1
 	fi
 
-	print_info "Setting up TAP networking (${tap_iface}, ${host_ip}/24)..."
+	print_info "Setting up TAP networking (${tap_iface}, ${host_ip}/${prefix})..."
 
 	# Check if TAP already exists
 	if ip link show "$tap_iface" &>/dev/null; then
-		print_success "TAP interface ${tap_iface} already exists"
+		# Verify IP matches — update if not
+		local tap_ip
+		tap_ip=$(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {split($2,a,"/"); print a[1]; exit}')
+		if [[ "$tap_ip" == "$host_ip" ]]; then
+			print_success "TAP interface ${tap_iface} already configured (${host_ip}/${prefix})"
+			return 0
+		fi
+		print_warning "TAP ${tap_iface} has IP ${tap_ip:-none}, expected ${host_ip}/${prefix} — updating"
+		if sudo -n true 2>/dev/null; then
+			[[ -n "$tap_ip" ]] && sudo ip addr del "${tap_ip}/${prefix}" dev "$tap_iface" 2>/dev/null || true
+			sudo ip addr add "${host_ip}/${prefix}" dev "$tap_iface" 2>/dev/null && \
+			sudo ip link set "$tap_iface" up 2>/dev/null && \
+			print_success "TAP ${tap_iface} IP updated → ${host_ip}/${prefix}" || \
+			print_warning "TAP IP update failed — routing may not work"
+		else
+			print_warning "Cannot update TAP IP (sudo unavailable) — routing may fail"
+			print_info "  Fix: sudo ip addr add ${host_ip}/${prefix} dev ${tap_iface}"
+		fi
 		return 0
 	fi
 
-	# Try sudo (non-interactive)
+	# TAP doesn't exist — try to create via sudo
 	if sudo -n true 2>/dev/null; then
 		if sudo ip tuntap add dev "$tap_iface" mode tap 2>/dev/null && \
-		   sudo ip addr add "${host_ip}/24" dev "$tap_iface" 2>/dev/null && \
+		   sudo ip addr add "${host_ip}/${prefix}" dev "$tap_iface" 2>/dev/null && \
 		   sudo ip link set "$tap_iface" up 2>/dev/null; then
 			# Enable IP forwarding and NAT
 			sudo sysctl -w net.ipv4.ip_forward=1 &>/dev/null || true
@@ -720,7 +759,7 @@ _setup_microvm_network_or_instruct() {
 					sudo iptables -A FORWARD -i "$out_iface" -o "$tap_iface" -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
 				fi
 			fi
-			print_success "TAP interface configured: ${tap_iface} (${host_ip}/24)"
+			print_success "TAP interface configured: ${tap_iface} (${host_ip}/${prefix})"
 			return 0
 		fi
 	fi
@@ -731,7 +770,7 @@ _setup_microvm_network_or_instruct() {
 	echo "Run the following commands manually to enable networking in microVM:"
 	echo ""
 	echo "  sudo ip tuntap add dev ${tap_iface} mode tap"
-	echo "  sudo ip addr add ${host_ip}/24 dev ${tap_iface}"
+	echo "  sudo ip addr add ${host_ip}/${prefix} dev ${tap_iface}"
 	echo "  sudo ip link set ${tap_iface} up"
 	echo "  sudo sysctl -w net.ipv4.ip_forward=1"
 	echo "  OUT=\$(ip route | awk '/^default/ {print \$5; exit}')"
