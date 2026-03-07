@@ -168,13 +168,21 @@ launch_claude() {
         local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
         if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
-            # Exclude heavyweight dirs not needed inside the guest VM:
-            #   .nvm-isolated/ — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
-            #   .git/          — git history: large, rarely needed for claude tool calls
+            # Exclude heavyweight dirs and secret files from host→guest sync:
+            #   .nvm-isolated/           — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
+            #   .git/                    — git history: large, rarely needed for claude tool calls
+            #   .claude_config           — contains HTTPS_PROXY credentials and API keys
+            #   .claude_proxy_credentials — legacy credentials file
+            #   .iclaude-guest-env.sh    — may exist in PWD from a previous sync-back; never needed
+            #   .iclaude-ssh/            — SSH keys for microVM access
             # User can add more exclusions via MICRO_VM_SYNC_EXCLUDE (colon-separated paths).
             local _sync_excludes=(
                 "--exclude=./.nvm-isolated"
                 "--exclude=./.git"
+                "--exclude=./.claude_config"
+                "--exclude=./.claude_proxy_credentials"
+                "--exclude=./.iclaude-guest-env.sh"
+                "--exclude=./.iclaude-ssh"
             )
             if [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]]; then
                 local IFS=':'; local _extra
@@ -226,7 +234,7 @@ launch_claude() {
                 -o ServerAliveCountMax=3 \
                 -o LogLevel=ERROR \
                 "root@${guest_ip}" \
-                'tar -czf - -C /workspace --exclude=./lost+found . 2>/dev/null' 2>/dev/null \
+                'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh . 2>/dev/null' 2>/dev/null \
                 | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
                 print_warning "microVM: workspace sync-back had errors — some changes may not persist"
         fi
