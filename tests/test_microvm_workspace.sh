@@ -132,7 +132,6 @@ touch "$FC_LOG"
 "$FC_BIN" --api-sock "$FC_SOCK" --config-file "${WORK_DIR}/vmconfig.json" \
     --log-path "$FC_LOG" --level Info &>/dev/null &
 MICRO_VM_PID=$!
-MICRO_VM_SLOT="${MICRO_VM_SLOT}"  # ensure var is set for _claim_microvm_slot
 _claim_microvm_slot 2>/dev/null
 
 ticks=0
