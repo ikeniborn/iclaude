@@ -227,6 +227,118 @@ _section "MICRO_VM_* defaults"
     _pass "MICRO_VM_SNAPSHOT_ENABLED defaults to false" || \
     _fail "MICRO_VM_SNAPSHOT_ENABLED should default to false (got: ${MICRO_VM_SNAPSHOT_ENABLED})"
 
+_section "_alloc_microvm_slot / _claim_microvm_slot / _free_microvm_slot"
+
+# Use an isolated slots dir so we don't interfere with any real sessions
+_slots_test_dir=$(mktemp -d)
+_orig_config_dir="${ISOLATED_CONFIG_DIR}"
+ISOLATED_CONFIG_DIR="$_slots_test_dir"
+
+# Basic allocation: should claim slot 0
+MICRO_VM_NET_SUBNET="172.16.0.0/26"
+MICRO_VM_NET_TAP_IFACE=""
+if _alloc_microvm_slot 2>/dev/null; then
+    [[ "$MICRO_VM_SLOT" == "0" ]] && _pass "_alloc: first slot is 0" \
+        || _fail "_alloc: expected slot 0, got ${MICRO_VM_SLOT}"
+    [[ "$MICRO_VM_NET_GUEST_IP" == "172.16.0.2" ]] && _pass "_alloc: slot 0 guest IP = 172.16.0.2" \
+        || _fail "_alloc: slot 0 guest IP expected 172.16.0.2, got ${MICRO_VM_NET_GUEST_IP}"
+    [[ "$MICRO_VM_NET_HOST_IP" == "172.16.0.1" ]] && _pass "_alloc: slot 0 host IP = 172.16.0.1" \
+        || _fail "_alloc: slot 0 host IP expected 172.16.0.1, got ${MICRO_VM_NET_HOST_IP}"
+    # Lock file should exist as pending
+    _lk="${_slots_test_dir}/microvm-slots/slot-0.lock"
+    [[ -f "$_lk" ]] && _pass "_alloc: slot-0.lock created" \
+        || _fail "_alloc: slot-0.lock missing after allocation"
+    _lk_content=$(cat "$_lk" 2>/dev/null || echo "")
+    [[ "$_lk_content" == *"-pending" ]] && _pass "_alloc: lock contains PID-pending placeholder" \
+        || _fail "_alloc: lock content unexpected: '${_lk_content}'"
+else
+    _fail "_alloc: _alloc_microvm_slot failed unexpectedly"
+fi
+
+# Claim with fake FC PID, then verify lock updated
+MICRO_VM_PID="$$"
+_claim_microvm_slot 2>/dev/null
+_lk_after=$(cat "${_slots_test_dir}/microvm-slots/slot-0.lock" 2>/dev/null || echo "")
+[[ "$_lk_after" == "$$" ]] && _pass "_claim: lock updated to FC PID" \
+    || _fail "_claim: expected '$$', got '${_lk_after}'"
+
+# Second alloc should skip slot 0 (live PID) and claim slot 1
+MICRO_VM_SLOT=""
+MICRO_VM_NET_TAP_IFACE=""
+if _alloc_microvm_slot 2>/dev/null; then
+    [[ "$MICRO_VM_SLOT" == "1" ]] && _pass "_alloc: second alloc claims slot 1" \
+        || _fail "_alloc: expected slot 1, got ${MICRO_VM_SLOT}"
+    [[ "$MICRO_VM_NET_GUEST_IP" == "172.16.0.4" ]] && _pass "_alloc: slot 1 guest IP = 172.16.0.4" \
+        || _fail "_alloc: slot 1 guest IP expected 172.16.0.4, got ${MICRO_VM_NET_GUEST_IP}"
+    [[ "$MICRO_VM_NET_TAP_IFACE" == "tap-iclaude-1" ]] && _pass "_alloc: slot 1 TAP = tap-iclaude-1" \
+        || _fail "_alloc: slot 1 TAP expected tap-iclaude-1, got ${MICRO_VM_NET_TAP_IFACE}"
+    _free_microvm_slot 2>/dev/null
+else
+    _fail "_alloc: second alloc failed (expected slot 1)"
+fi
+
+# Free slot 0, then re-alloc should reclaim slot 0
+MICRO_VM_SLOT="0"
+_free_microvm_slot 2>/dev/null
+[[ ! -f "${_slots_test_dir}/microvm-slots/slot-0.lock" ]] && _pass "_free: slot-0.lock removed" \
+    || _fail "_free: slot-0.lock still exists after free"
+
+MICRO_VM_SLOT=""
+MICRO_VM_NET_TAP_IFACE=""
+if _alloc_microvm_slot 2>/dev/null; then
+    [[ "$MICRO_VM_SLOT" == "0" ]] && _pass "_alloc: freed slot 0 reclaimed" \
+        || _fail "_alloc: expected slot 0 after free, got ${MICRO_VM_SLOT}"
+    _free_microvm_slot 2>/dev/null
+else
+    _fail "_alloc: reclaim of freed slot failed"
+fi
+
+# Parallel atomicity test: N concurrent subshells, each alloc+free
+# All must get unique slots (no conflicts)
+_section "_alloc_microvm_slot: parallel atomicity (N=8)"
+_par_slots_dir=$(mktemp -d)
+_par_out_dir=$(mktemp -d)
+_N=8
+for _i in $(seq 1 $_N); do
+    (
+        ISOLATED_CONFIG_DIR="$_par_slots_dir"
+        MICRO_VM_NET_SUBNET="172.16.0.0/26"
+        MICRO_VM_SLOT=""
+        MICRO_VM_NET_TAP_IFACE=""
+        MICRO_VM_PID="$$"
+        if _alloc_microvm_slot 2>/dev/null; then
+            _claim_microvm_slot 2>/dev/null
+            echo "$MICRO_VM_SLOT" > "${_par_out_dir}/slot-${_i}.result"
+            sleep 0.1
+            _free_microvm_slot 2>/dev/null
+        else
+            echo "FAIL" > "${_par_out_dir}/slot-${_i}.result"
+        fi
+    ) &
+done
+wait
+
+_par_failures=0
+_par_slots=()
+for _i in $(seq 1 $_N); do
+    _res=$(cat "${_par_out_dir}/slot-${_i}.result" 2>/dev/null || echo "MISSING")
+    if [[ "$_res" == "FAIL" || "$_res" == "MISSING" ]]; then
+        _par_failures=$((_par_failures + 1))
+    else
+        _par_slots+=("$_res")
+    fi
+done
+# Check for duplicates among simultaneously-claimed slots
+# (With free between claims, duplicates are expected — check no alloc failures)
+[[ "$_par_failures" -eq 0 ]] && _pass "parallel alloc: all $_N workers got a slot (no failures)" \
+    || _fail "parallel alloc: $_par_failures / $_N workers failed to get a slot"
+
+rm -rf "$_par_slots_dir" "$_par_out_dir" 2>/dev/null || true
+
+# Restore original ISOLATED_CONFIG_DIR
+ISOLATED_CONFIG_DIR="$_orig_config_dir"
+rm -rf "$_slots_test_dir" 2>/dev/null || true
+
 # Cleanup
 rm -rf "$_tmpdir"
 

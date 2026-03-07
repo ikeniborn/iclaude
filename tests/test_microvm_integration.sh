@@ -55,11 +55,13 @@ else
     _fail ".claude_config.example missing microVM section header"
 fi
 
-# Check all planned variables are documented
+# Check all current variables are documented
+# Note: MICRO_VM_NET_HOST_IP / MICRO_VM_NET_GUEST_IP replaced by MICRO_VM_NET_SUBNET in v2
+# Note: MICRO_VM_MOUNT_WORKSPACE replaced by MICRO_VM_WORKSPACE_MODE in v2
 for var in MICRO_VM_ENABLED MICRO_VM_VCPU MICRO_VM_MEM_MB MICRO_VM_NET_ENABLED \
-           MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_HOST_IP MICRO_VM_NET_GUEST_IP \
+           MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_SUBNET \
            MICRO_VM_SNAPSHOT_ENABLED MICRO_VM_ROOTFS_PATH MICRO_VM_KERNEL_PATH \
-           MICRO_VM_LOG_LEVEL MICRO_VM_PROXY_PASS MICRO_VM_MOUNT_WORKSPACE; do
+           MICRO_VM_LOG_LEVEL MICRO_VM_PROXY_PASS MICRO_VM_WORKSPACE_MODE; do
     if grep -q "^#.*${var}\|^${var}" .claude_config.example; then
         _pass ".claude_config.example documents ${var}"
     else

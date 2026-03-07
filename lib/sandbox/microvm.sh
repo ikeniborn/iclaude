@@ -156,16 +156,25 @@ _alloc_microvm_slot() {
     local slot
     for slot in $(seq 0 $((max_slots - 1))); do
         local lock="${slots_dir}/slot-${slot}.lock"
-        # Skip if a live Firecracker process owns this slot
+        # Check if slot is held by a live process
         if [[ -f "$lock" ]]; then
-            local lock_pid; lock_pid=$(cat "$lock" 2>/dev/null)
-            if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
+            local lock_content; lock_content=$(cat "$lock" 2>/dev/null || echo "")
+            # Handle both "PID" and "PID-pending" formats
+            local lock_pid="${lock_content%%-*}"
+            if [[ "$lock_pid" =~ ^[0-9]+$ ]] && kill -0 "$lock_pid" 2>/dev/null; then
                 continue
             fi
-            rm -f "$lock"   # stale lockfile from crashed session
+            # Stale lock — remove before atomic claim attempt
+            rm -f "$lock" 2>/dev/null || true
         fi
 
-        # Claim slot
+        # Atomically claim the slot via noclobber (set -C).
+        # If another process writes the file first, this fails and we try the next slot.
+        if ! (set -C; echo "$$-pending" > "$lock") 2>/dev/null; then
+            continue
+        fi
+
+        # Slot claimed — populate variables
         MICRO_VM_SLOT="$slot"
         MICRO_VM_NET_HOST_IP="$(_microvm_ip_at $((2*slot + 1)))"
         MICRO_VM_NET_GUEST_IP="$(_microvm_ip_at $((2*slot + 2)))"
@@ -184,7 +193,8 @@ _alloc_microvm_slot() {
     return 1
 }
 
-# Write slot lockfile after Firecracker process starts.
+# Overwrite the pending placeholder with the real Firecracker PID.
+# Called after FC process starts — replaces "$$-pending" written by _alloc_microvm_slot.
 _claim_microvm_slot() {
     [[ -z "${MICRO_VM_SLOT:-}" ]] && return 0
     local slots_dir="${ISOLATED_CONFIG_DIR}/microvm-slots"
@@ -451,8 +461,12 @@ configure_guest_environment() {
     {
         echo "# iclaude microVM guest environment — auto-generated, do not edit"
         echo "export ANTHROPIC_BASE_URL='${api_base_e}'"
-        # CLAUDE_CONFIG_DIR: hooks/settings inside the NVM block image (mounted at /mnt/nvm)
-        echo "export CLAUDE_CONFIG_DIR='/mnt/nvm/.claude-isolated'"
+        # CLAUDE_CONFIG_DIR: create writable guest config at /workspace/.claude-guest.
+        # Symlinks all subdirs from the RO nvm image; writes a patched settings.json
+        # without skipDangerousModePermissionPrompt (Claude refuses that flag as root).
+        # shellcheck disable=SC2016
+        echo 'python3 -c '"'"'import json,pathlib; src=pathlib.Path("/mnt/nvm/.claude-isolated"); dst=pathlib.Path("/workspace/.claude-guest"); dst.mkdir(exist_ok=True); [((dst/i.name).symlink_to(i) if not (dst/i.name).exists() and i.name not in ("projects","settings.json") else None) for i in src.iterdir()]; s=src/"settings.json"; d=json.loads(s.read_text()) if s.exists() else {}; d.pop("skipDangerousModePermissionPrompt",None); (dst/"settings.json").write_text(json.dumps(d,indent=2))'"'"' 2>/dev/null || true'
+        echo "export CLAUDE_CONFIG_DIR='/workspace/.claude-guest'"
 
         # Proxy settings
         if [[ "${MICRO_VM_PROXY_PASS:-true}" == "true" ]] && \
@@ -763,11 +777,23 @@ start_microvm() {
     fi
     print_info "microVM: guest SSH ready (${ticks}× 0.5s)"
 
+    # Build per-session known_hosts for SSH host key pinning.
+    # Host pubkey extracted from rootfs at install time; combined here with the slot IP.
+    local host_key_pub="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
+    local known_hosts_file="${session_dir}/known_hosts"
+    local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+    if [[ -f "$host_key_pub" ]]; then
+        { printf '%s ' "$guest_ip"; cat "$host_key_pub"; } > "$known_hosts_file"
+        chmod 600 "$known_hosts_file"
+        export MICRO_VM_KNOWN_HOSTS="$known_hosts_file"
+        _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${known_hosts_file}")
+        print_info "microVM: SSH host key pinned (${known_hosts_file})"
+    fi
+
     # Push guest environment file to /workspace via SCP
     scp \
         -i "$ssh_key" \
-        -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
+        "${_ssh_kh_opts[@]}" \
         -o LogLevel=ERROR \
         "$env_file" "root@${guest_ip}:/workspace/.iclaude-guest-env.sh" 2>/dev/null || \
         print_warning "microVM: could not push guest env — guest may start without proxy/API config"
