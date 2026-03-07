@@ -152,6 +152,13 @@ launch_claude() {
             stop_microvm; exit 1
         fi
 
+        # Use pinned host key if extracted at install time (set by start_microvm).
+        # Falls back to no verification for installs that predate host key extraction.
+        local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+        if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
+            _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${MICRO_VM_KNOWN_HOSTS}")
+        fi
+
         # Build quoted arg list for safe passing through SSH
         local quoted_args=""
         for arg in "$@"; do
@@ -194,8 +201,7 @@ launch_claude() {
             tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>/dev/null \
                 | ssh -T \
                     -i "$ssh_key" \
-                    -o StrictHostKeyChecking=no \
-                    -o UserKnownHostsFile=/dev/null \
+                    "${_ssh_kh_opts[@]}" \
                     -o LogLevel=ERROR \
                     "root@${guest_ip}" \
                     'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
@@ -211,13 +217,12 @@ launch_claude() {
         # shellcheck disable=SC2086
         ssh $ssh_tty \
             -i "$ssh_key" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
+            "${_ssh_kh_opts[@]}" \
             -o ConnectTimeout=15 \
             -o ServerAliveInterval=30 \
             -o LogLevel=ERROR \
             "root@${guest_ip}" \
-            "source /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
+            "source /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
 
         local exit_code=$?
 
@@ -227,14 +232,13 @@ launch_claude() {
             print_info "microVM: syncing workspace ← guest..."
             ssh -T \
                 -i "$ssh_key" \
-                -o StrictHostKeyChecking=no \
-                -o UserKnownHostsFile=/dev/null \
+                "${_ssh_kh_opts[@]}" \
                 -o ConnectTimeout=10 \
                 -o ServerAliveInterval=5 \
                 -o ServerAliveCountMax=3 \
                 -o LogLevel=ERROR \
                 "root@${guest_ip}" \
-                'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh . 2>/dev/null' 2>/dev/null \
+                'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                 | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
                 print_warning "microVM: workspace sync-back had errors — some changes may not persist"
         fi
@@ -437,11 +441,8 @@ launch_claude() {
     fi
 
     # Standard exec path: replace shell process (no cleanup needed)
-    if [[ "$claude_cmd" == *" "* ]]; then
-        eval exec "$claude_cmd" '"$@"'
-    else
-        exec "$claude_cmd" "$@"
-    fi
+    # Double-quoted variable handles spaces in path correctly without eval.
+    exec "$claude_cmd" "$@"
 }
 
 #######################################
