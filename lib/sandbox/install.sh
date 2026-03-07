@@ -253,12 +253,6 @@ check_microvm_dependencies() {
 		missing+=("rootfs.ext4 (run: ./iclaude.sh --install-microvm)")
 	fi
 
-	# virtiofsd (required for workspace/nvm mounts)
-	if ! detect_virtiofsd &>/dev/null; then
-		local vfsd_hint; vfsd_hint=$(_virtiofsd_install_hint 2>/dev/null || echo "sudo apt-get install virtiofsd")
-		missing+=("virtiofsd: ${vfsd_hint}")
-	fi
-
 	# ip tool for TAP networking
 	if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
 		command -v ip &>/dev/null || missing+=("iproute2 (sudo apt-get install iproute2)")
@@ -457,6 +451,39 @@ install_microvm() {
 		return 1
 	fi
 
+	# ── Fast-path: check existing install status ────────────────────────────────
+	local _bin_dir="${ISOLATED_CONFIG_DIR}/bin"
+	local _rootfs="${MICRO_VM_ROOTFS_PATH:-${_bin_dir}/rootfs.ext4}"
+	local _v2_marker="${_rootfs%.ext4}.v2-ready"
+	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+
+	if [[ -f "$_rootfs" ]]; then
+		if [[ -f "$_v2_marker" && -f "$_ssh_key" ]]; then
+			print_success "microVM already installed and up-to-date (v2)"
+			print_info "Rootfs: $_rootfs"
+			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
+			return 0
+		fi
+
+		# Rootfs exists but v2 not applied — upgrade without re-downloading
+		print_info "Existing rootfs found — upgrading to v2 (keygen + inject + NVM image)..."
+		echo ""
+		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
+		_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
+		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
+		if [[ -f "$_guest_init_src" ]]; then
+			_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
+				|| print_warning "v2 inject failed"
+		else
+			print_warning "guest-init.sh not found at $_guest_init_src — v2 unavailable"
+		fi
+		_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
+		echo ""
+		print_success "microVM v2 upgrade complete"
+		print_info "Verify: debugfs -R 'stat /usr/sbin/iclaude-guest-init' $_rootfs"
+		return 0
+	fi
+
 	# Detect architecture
 	local arch
 	arch=$(uname -m)
@@ -491,12 +518,6 @@ install_microvm() {
 	fi
 	if [[ "${distro_ver%%:*}" != "unknown" ]]; then
 		print_info "OS: ${distro_ver} — supported"
-	fi
-
-	# Install virtiofsd automatically (distro-aware; Debian 10 uses cargo)
-	if ! _install_virtiofsd_auto; then
-		print_warning "virtiofsd not available — workspace/NVM mounts will be disabled"
-		echo ""
 	fi
 
 	# Prepare bin directory (inside .gitignore-covered path)
@@ -563,14 +584,13 @@ install_microvm() {
 	rm -rf "$tmp_dir"
 	print_success "Firecracker: $fc_bin"
 
-	# Download kernel (microvm-optimized vmlinux)
+	# Kernel: Firecracker CI kernel (ELF vmlinux, works with all Firecracker versions).
+	# Note: Firecracker v1.11.0 does not implement virtiofs backend — block devices used instead.
 	local kernel_path="${MICRO_VM_KERNEL_PATH:-${bin_dir}/vmlinux}"
 	local kernel_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/vmlinux-6.1.102"
-
 	print_info "Downloading Linux kernel (vmlinux, ~40MB)..."
 	echo "  Source: $kernel_url"
 	echo ""
-
 	if command -v curl &>/dev/null; then
 		if ! curl -fsSL --progress-bar -o "$kernel_path" "$kernel_url"; then
 			print_error "Failed to download vmlinux kernel"
@@ -618,6 +638,25 @@ install_microvm() {
 		echo ""
 		_setup_microvm_network_or_instruct
 	fi
+
+	# Generate SSH key pair FIRST — public key is baked into rootfs by _inject_rootfs_guest_init
+	# so the guest can accept SSH connections without any per-session key passing.
+	_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
+
+	# Inject guest init for v2 (claude runs inside guest via SSH)
+	# Also bakes authorized_keys from the key generated above into /root/.ssh/
+	local guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
+	if [[ -f "$guest_init_src" ]]; then
+		if ! _inject_rootfs_guest_init "$rootfs_path" "$guest_init_src"; then
+			print_warning "microVM v2 init injection failed"
+		fi
+	else
+		print_warning "guest-init.sh not found at $guest_init_src — v2 unavailable"
+	fi
+
+	# Build NVM block image (pre-built, attached read-only each session as /dev/vdb → /mnt/nvm)
+	# Replaces per-session virtiofsd: simpler, more reliable, works with FC v1.11.0
+	_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
 
 	echo ""
 	print_success "microVM installed successfully!"
@@ -697,4 +736,214 @@ _setup_microvm_network_or_instruct() {
 	echo ""
 	echo "Or launch without networking: ./iclaude.sh --sandbox-microvm (MICRO_VM_NET_ENABLED=false)"
 	echo ""
+}
+
+#######################################
+# Generate SSH key pair for microVM guest access (v2).
+# Key stored in ISOLATED_CONFIG_DIR/ssh/microvm (ed25519, no passphrase).
+# Public key is baked into rootfs /root/.ssh/authorized_keys by _inject_rootfs_guest_init().
+# Returns:
+#   0 - key exists or generated successfully
+#   1 - generation failed
+#######################################
+_generate_microvm_ssh_key() {
+	local key_dir="${ISOLATED_CONFIG_DIR}/ssh"
+	local key_path="${key_dir}/microvm"
+	mkdir -p "$key_dir"
+	chmod 700 "$key_dir"
+	if [[ -f "${key_path}" ]]; then
+		print_success "microVM SSH key: ${key_path}"
+		return 0
+	fi
+	print_info "Generating SSH key pair for microVM access..."
+	if ! ssh-keygen -t ed25519 -N "" -C "iclaude-microvm-$(date +%Y%m%d)" \
+			-f "$key_path" >/dev/null 2>&1; then
+		print_error "ssh-keygen failed"
+		return 1
+	fi
+	chmod 600 "$key_path"
+	chmod 644 "${key_path}.pub"
+	print_success "SSH key: ${key_path}"
+	return 0
+}
+
+#######################################
+# Create pre-built NVM ext4 block image from the isolated NVM directory.
+# The image is attached read-only to each session as /dev/vdb → /mnt/nvm.
+# One-time at install; re-run --install-microvm to rebuild after NVM updates.
+# Requires sudo (loop mount for populating the image via rsync).
+# Image stored at ISOLATED_CONFIG_DIR/bin/nvm.img (covered by .gitignore).
+# Returns:
+#   0 - success (or image already up-to-date)
+#   1 - failure
+#######################################
+_create_microvm_nvm_image() {
+	local nvm_img="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
+	local nvm_src="${ISOLATED_NVM_DIR:-}"
+
+	if [[ -z "$nvm_src" || ! -d "$nvm_src" ]]; then
+		print_error "microVM: isolated NVM directory not found: ${nvm_src:-<unset>}"
+		print_error "Run --isolated-install first"
+		return 1
+	fi
+
+	# Check sudo access (needed for loop mount)
+	if ! sudo -n true 2>/dev/null; then
+		print_error "microVM: sudo required to create NVM block image (loop mount)"
+		echo "  Grant passwordless sudo then re-run: ./iclaude.sh --install-microvm"
+		return 1
+	fi
+
+	# Estimate NVM content size (exclude large host-specific dirs: bin/, projects/, pii-proxy-venv/).
+	# Add 20% headroom. Minimum 512MiB, round to 64MiB boundary.
+	local nvm_size_kb
+	nvm_size_kb=$(du -sk \
+		--exclude="$nvm_src/.claude-isolated/bin" \
+		--exclude="$nvm_src/.claude-isolated/projects" \
+		--exclude="$nvm_src/.claude-isolated/pii-proxy-venv" \
+		--exclude="$nvm_src/.claude-isolated/debug" \
+		"$nvm_src" 2>/dev/null | awk '{print $1}')
+	local nvm_size_mb=$(( (nvm_size_kb * 12 / 10 + 1023) / 1024 ))
+	nvm_size_mb=$(( (nvm_size_mb < 512 ? 512 : nvm_size_mb + 63) / 64 * 64 ))
+
+	print_info "microVM: creating NVM block image (${nvm_size_mb}MiB from $(basename "$nvm_src"))..."
+
+	local tmp_img="${nvm_img}.tmp"
+	# Create sparse ext4 image
+	if ! dd if=/dev/zero of="$tmp_img" bs=1M count=0 seek="$nvm_size_mb" 2>/dev/null; then
+		print_error "microVM: failed to create NVM image at ${tmp_img}"
+		rm -f "$tmp_img"; return 1
+	fi
+	if ! mkfs.ext4 -F -q -L iclaude-nvm "$tmp_img" 2>/dev/null; then
+		print_error "microVM: failed to format NVM image (mkfs.ext4)"
+		rm -f "$tmp_img"; return 1
+	fi
+
+	# Mount and populate via rsync (requires sudo for loop device setup).
+	# Exclude host-specific dirs not needed in guest: microVM binaries, session history,
+	# Python venvs, SSH keys, logs, caches, and other runtime-only data.
+	local mnt_tmp; mnt_tmp=$(mktemp -d)
+	if ! sudo mount -o loop "$tmp_img" "$mnt_tmp" 2>/dev/null; then
+		print_error "microVM: failed to mount NVM image (loop device)"
+		rm -f "$tmp_img"; rmdir "$mnt_tmp" 2>/dev/null; return 1
+	fi
+
+	print_info "microVM: populating NVM image via rsync..."
+	if ! sudo rsync -a --delete \
+		--exclude='.claude-isolated/bin/' \
+		--exclude='.claude-isolated/projects/' \
+		--exclude='.claude-isolated/pii-proxy-venv/' \
+		--exclude='.claude-isolated/pii-proxy*' \
+		--exclude='.claude-isolated/debug/' \
+		--exclude='.claude-isolated/file-history/' \
+		--exclude='.claude-isolated/todos/' \
+		--exclude='.claude-isolated/paste-cache/' \
+		--exclude='.claude-isolated/tasks/' \
+		--exclude='.claude-isolated/telemetry/' \
+		--exclude='.claude-isolated/session-env/' \
+		--exclude='.claude-isolated/cache/' \
+		--exclude='.claude-isolated/shell-snapshots/' \
+		--exclude='.claude-isolated/plans/' \
+		--exclude='.claude-isolated/statsig/' \
+		--exclude='.claude-isolated/ssh/' \
+		--exclude='.claude-isolated/chrome/' \
+		--exclude='.claude-isolated/microvm-run/' \
+		--exclude='.claude-isolated/microvm-snapshots/' \
+		--exclude='.claude-isolated/backups/' \
+		--exclude='versions/node/*/include/' \
+		--exclude='versions/node/*/.npm/' \
+		--exclude='.npm/' \
+		"$nvm_src/" "$mnt_tmp/" 2>/dev/null; then
+		print_warning "microVM: rsync had errors — NVM image may be incomplete"
+	fi
+
+	sudo umount "$mnt_tmp" && rmdir "$mnt_tmp" 2>/dev/null || true
+
+	# Atomically replace old image
+	mv "$tmp_img" "$nvm_img"
+	chmod 644 "$nvm_img"
+
+	local actual_size; actual_size=$(du -sh "$nvm_img" 2>/dev/null | awk '{print $1}')
+	print_success "NVM block image: $nvm_img (${actual_size} on disk, ${nvm_size_mb}MiB virtual)"
+	return 0
+}
+
+#######################################
+# Inject guest init script into rootfs image (via debugfs, no sudo).
+# Injects:
+#   /usr/sbin/iclaude-guest-init  — PID 1 init script (block device mounts + sshd)
+#   /etc/ssh/sshd_config.d/iclaude.conf — SSH config (PermitRootLogin yes, pubkey only)
+#   /root/.ssh/authorized_keys    — static per-machine SSH pubkey (from ssh/microvm.pub)
+#   /mnt, /mnt/nvm, /workspace    — mount point directories
+# Marks rootfs as v2-ready via a sibling .v2-ready marker file.
+# Arguments:
+#   $1 - rootfs: path to rootfs.ext4 image
+#   $2 - init_src: path to guest-init.sh on host
+# Returns:
+#   0 - success
+#   1 - failure (debugfs missing or command failed)
+#######################################
+_inject_rootfs_guest_init() {
+	local rootfs="$1"
+	local init_src="$2"
+
+	if ! command -v debugfs &>/dev/null; then
+		print_error "debugfs not found (install e2fsprogs: sudo apt-get install e2fsprogs)"
+		return 1
+	fi
+
+	print_info "Injecting guest init into rootfs (via debugfs)..."
+
+	# Write SSH config override
+	local ssh_conf_tmp; ssh_conf_tmp=$(mktemp)
+	printf 'PermitRootLogin yes\nPubkeyAuthentication yes\nPasswordAuthentication no\n' \
+		> "$ssh_conf_tmp"
+
+	# NOTE: Ubuntu 22.04 rootfs has /sbin → /usr/sbin as a symlink.
+	# debugfs does NOT follow symlinks when writing, so we must use /usr/sbin directly.
+	# debugfs 'chmod' command is broken (no-op) in some versions — use 'set_inode_field' instead.
+	# 0100755 = regular file (010----) + rwxr-xr-x (0755)
+	# 0100644 = regular file (010----) + rw-r--r-- (0644)
+	debugfs -w "$rootfs" <<EOF 2>/dev/null
+write ${init_src} /usr/sbin/iclaude-guest-init
+set_inode_field /usr/sbin/iclaude-guest-init mode 0100755
+write ${ssh_conf_tmp} /etc/ssh/sshd_config.d/iclaude.conf
+set_inode_field /etc/ssh/sshd_config.d/iclaude.conf mode 0100644
+mkdir /mnt
+mkdir /mnt/nvm
+mkdir /workspace
+EOF
+	local rc=$?
+	rm -f "$ssh_conf_tmp"
+	if [[ $rc -ne 0 ]]; then
+		print_error "debugfs injection failed (rc=$rc)"
+		return 1
+	fi
+
+	# Bake SSH authorized_keys into rootfs (static per-machine key generated by _generate_microvm_ssh_key).
+	# This allows guest to accept SSH connections without any per-session key injection.
+	# The key is in /root/.ssh/authorized_keys; guest-init.sh reads from /workspace/.iclaude-ssh/
+	# ONLY as a fallback — the baked key is authoritative.
+	local ssh_pubkey="${ISOLATED_CONFIG_DIR}/ssh/microvm.pub"
+	if [[ -f "$ssh_pubkey" ]]; then
+		debugfs -w "$rootfs" <<EOF 2>/dev/null
+mkdir /root
+mkdir /root/.ssh
+write ${ssh_pubkey} /root/.ssh/authorized_keys
+set_inode_field /root/.ssh/authorized_keys mode 0100600
+EOF
+		if debugfs -R 'stat /root/.ssh/authorized_keys' "$rootfs" 2>/dev/null | grep -q "Inode:"; then
+			print_success "SSH authorized_keys baked into rootfs"
+		else
+			print_warning "authorized_keys injection failed — SSH access may not work"
+		fi
+	else
+		print_warning "SSH public key not found: $ssh_pubkey"
+		print_warning "authorized_keys NOT baked — run _generate_microvm_ssh_key first"
+	fi
+
+	# Mark v2 ready (marker file alongside rootfs)
+	touch "${rootfs%.ext4}.v2-ready"
+	print_success "Guest init injected (rootfs ready for v2)"
+	return 0
 }

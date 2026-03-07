@@ -142,28 +142,93 @@ launch_claude() {
             setup_microvm_traps
         fi
 
-        # Find claude binary — see docs/MIGRATION.md §microVM for architecture roadmap.
-        local claude_bin
-        if detect_nvm "$skip_isolated"; then
-            claude_bin=$(get_nvm_claude_path)
-        fi
-        if [[ -z "${claude_bin:-}" ]]; then
-            claude_bin=$(command -v claude 2>/dev/null || echo "")
-        fi
-        if [[ -z "$claude_bin" ]]; then
-            print_error "Claude Code not found"
-            stop_microvm
-            exit 1
+        # v2: execute claude inside guest VM via SSH
+        local ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+        local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+
+        if [[ ! -f "$ssh_key" ]]; then
+            print_error "microVM SSH key not found: ${ssh_key}"
+            print_info "Re-run: ./iclaude.sh --install-microvm"
+            stop_microvm; exit 1
         fi
 
-        print_info "microVM: guest started, running claude on host with VM isolation layer"
-        print_info "Using Claude Code: $claude_bin"
+        # Build quoted arg list for safe passing through SSH
+        local quoted_args=""
+        for arg in "$@"; do
+            quoted_args+=" $(printf '%q' "$arg")"
+        done
+
+        # Request PTY only when stdin is a terminal (avoid "not a TTY" error in CI)
+        local ssh_tty="-T"
+        [[ -t 0 ]] && ssh_tty="-t"
+
+        # Sync workspace host→guest (full/path modes): populate /workspace before claude runs.
+        # Uses tar-over-SSH — guest rootfs is minimal and may not have rsync; tar is always present.
+        # 'isolated' mode: guest /workspace stays empty — no project files exposed.
+        local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
+        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
+            # Exclude heavyweight dirs not needed inside the guest VM:
+            #   .nvm-isolated/ — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
+            #   .git/          — git history: large, rarely needed for claude tool calls
+            # User can add more exclusions via MICRO_VM_SYNC_EXCLUDE (colon-separated paths).
+            local _sync_excludes=(
+                "--exclude=./.nvm-isolated"
+                "--exclude=./.git"
+            )
+            if [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]]; then
+                local IFS=':'; local _extra
+                for _extra in $MICRO_VM_SYNC_EXCLUDE; do
+                    _sync_excludes+=("--exclude=./${_extra#./}")
+                done
+                unset IFS
+            fi
+            tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>/dev/null \
+                | ssh -T \
+                    -i "$ssh_key" \
+                    -o StrictHostKeyChecking=no \
+                    -o UserKnownHostsFile=/dev/null \
+                    -o LogLevel=ERROR \
+                    "root@${guest_ip}" \
+                    'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+        fi
+
+        print_info "microVM: connecting to guest VM via SSH (${guest_ip})..."
         export ICLAUDE_MICROVM_ACTIVE=1
         # Unset CLAUDECODE so nested claude process doesn't detect parent session
         unset CLAUDECODE
-        "$claude_bin" "$@"
+
+        # Run claude (no exec — allows post-claude sync below to run when claude exits)
+        # shellcheck disable=SC2086
+        ssh $ssh_tty \
+            -i "$ssh_key" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=30 \
+            -o LogLevel=ERROR \
+            "root@${guest_ip}" \
+            "source /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
+
         local exit_code=$?
-        # Traps handle cleanup
+
+        # Sync workspace guest→host (full/path modes): persist changes claude made in guest.
+        # Run BEFORE stop_microvm (which kills Firecracker and makes SSH inaccessible).
+        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_info "microVM: syncing workspace ← guest..."
+            ssh -T \
+                -i "$ssh_key" \
+                -o StrictHostKeyChecking=no \
+                -o UserKnownHostsFile=/dev/null \
+                -o LogLevel=ERROR \
+                "root@${guest_ip}" \
+                'tar -czf - -C /workspace --exclude=./lost+found . 2>/dev/null' 2>/dev/null \
+                | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
+                print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+        fi
+
+        # Traps handle cleanup (stop_microvm, PII proxy, CCR)
         exit $exit_code
     fi
 

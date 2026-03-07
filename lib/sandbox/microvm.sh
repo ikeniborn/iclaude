@@ -111,14 +111,20 @@ detect_microvm() {
 # Writes vmconfig.json to MICRO_VM_WORK_DIR/<session>/
 # Arguments:
 #   $1 - session_dir: working directory for this session
-#   $2 - virtiofs_nvm_socket: path to virtiofsd socket for NVM mount (or "")
-#   $3 - virtiofs_ws_socket: path to virtiofsd socket for workspace mount (or "")
+#   $2 - nvm_img: path to pre-built ext4 block image for /mnt/nvm (or "")
+#   $3 - workspace_img: path to ext4 block image for /workspace (or "")
+# Block device layout in guest:
+#   /dev/vda — rootfs (drive_id: rootfs, is_root_device: true)
+#   /dev/vdb — nvm image (drive_id: nvm, read-only, contains .nvm-isolated)
+#   /dev/vdc — workspace image (drive_id: workspace, read-write)
 # Returns:
 #   0 - success; outputs path to config file
 #   1 - failure
 #######################################
 build_microvm_config() {
     local session_dir="$1"
+    local nvm_img="${2:-}"         # path to pre-built NVM ext4 block image (or "" if not available)
+    local workspace_img="${3:-}"   # path to workspace ext4 block image (or "" if not available)
 
     local config_file="${session_dir}/vmconfig.json"
     local kernel="${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}"
@@ -162,6 +168,14 @@ build_microvm_config() {
     # Kernel boot arguments — IPs validated above (digits/dots only, safe for cmdline)
     local boot_args="console=ttyS0 reboot=k panic=1 pci=off nomodules"
     boot_args="${boot_args} ip=${guest_ip}::${host_ip}:255.255.255.0::eth0:off"
+
+    # v2: guest init replaces systemd (fast boot, block devices + SSH control)
+    # Use /usr/sbin/ — Ubuntu 22.04 rootfs has /sbin as symlink; kernel init= resolves
+    # paths in the rootfs before symlinks are set up, so use the canonical path.
+    if [[ -f "${rootfs%.ext4}.v2-ready" ]]; then
+        boot_args="${boot_args} init=/usr/sbin/iclaude-guest-init"
+    fi
+
     local boot_args_j; boot_args_j=$(_json_escape_str "$boot_args")
 
     # ── Build JSON config ──────────────────────────────────────────────────────
@@ -171,12 +185,35 @@ build_microvm_config() {
         printf '    "kernel_image_path": "%s",\n' "$kernel_j"
         printf '    "boot_args": "%s"\n' "$boot_args_j"
         printf '  },\n'
-        printf '  "drives": [{\n'
-        printf '    "drive_id": "rootfs",\n'
-        printf '    "path_on_host": "%s",\n' "$rootfs_j"
-        printf '    "is_root_device": true,\n'
-        printf '    "is_read_only": false\n'
-        printf '  }],\n'
+
+        # Drives: rootfs (vda) + optional nvm block image (vdb) + workspace block image (vdc)
+        printf '  "drives": [\n'
+        printf '    {\n'
+        printf '      "drive_id": "rootfs",\n'
+        printf '      "path_on_host": "%s",\n' "$rootfs_j"
+        printf '      "is_root_device": true,\n'
+        printf '      "is_read_only": false\n'
+        printf '    }'
+        if [[ -n "$nvm_img" && -f "$nvm_img" ]]; then
+            local nvm_img_j; nvm_img_j=$(_json_escape_str "$nvm_img")
+            printf ',\n    {\n'
+            printf '      "drive_id": "nvm",\n'
+            printf '      "path_on_host": "%s",\n' "$nvm_img_j"
+            printf '      "is_root_device": false,\n'
+            printf '      "is_read_only": true\n'
+            printf '    }'
+        fi
+        if [[ -n "$workspace_img" && -f "$workspace_img" ]]; then
+            local ws_img_j; ws_img_j=$(_json_escape_str "$workspace_img")
+            printf ',\n    {\n'
+            printf '      "drive_id": "workspace",\n'
+            printf '      "path_on_host": "%s",\n' "$ws_img_j"
+            printf '      "is_root_device": false,\n'
+            printf '      "is_read_only": false\n'
+            printf '    }'
+        fi
+        printf '\n  ],\n'
+
         printf '  "machine-config": {\n'
         printf '    "vcpu_count": %d,\n' "$vcpu"
         printf '    "mem_size_mib": %d\n' "$mem"
@@ -225,7 +262,8 @@ configure_guest_environment() {
     {
         echo "# iclaude microVM guest environment — auto-generated, do not edit"
         echo "export ANTHROPIC_BASE_URL='${api_base_e}'"
-        echo "export CLAUDE_CONFIG_DIR='/mnt/hooks'"
+        # CLAUDE_CONFIG_DIR: hooks/settings inside the NVM block image (mounted at /mnt/nvm)
+        echo "export CLAUDE_CONFIG_DIR='/mnt/nvm/.claude-isolated'"
 
         # Proxy settings
         if [[ "${MICRO_VM_PROXY_PASS:-true}" == "true" ]] && \
@@ -334,11 +372,15 @@ _start_virtiofsd() {
 #######################################
 # Start Firecracker microVM and prepare guest for claude launch.
 # Sets MICRO_VM_PID, MICRO_VM_SOCKET, MICRO_VM_SESSION_OWNED globals.
-# v1 architecture: Claude runs on the host with virtiofs workspace isolation.
+# v2 architecture: Claude runs INSIDE guest VM via SSH; block devices for storage.
+# Block device layout:
+#   /dev/vda — rootfs (is_root_device: true)
+#   /dev/vdb — nvm.img (pre-built at install, read-only, contains .nvm-isolated)
+#   /dev/vdc — workspace.img (per-session sparse ext4, populated via SSH rsync)
 # Arguments:
 #   $1 - skip_isolated: "true" | "false"
 # Returns:
-#   0 - VM started and ready
+#   0 - VM started and SSH ready
 #   1 - failure
 #######################################
 start_microvm() {
@@ -358,51 +400,82 @@ start_microvm() {
         return 1
     fi
 
-    # Unix socket paths have a 108-byte SUN_LEN limit on Linux.
-    # session_dir inside ISOLATED_CONFIG_DIR can be ~115 bytes — too long.
-    # Use /tmp for sockets (short paths); keep session_dir for config/log files.
+    # Unix socket path (108-byte SUN_LEN limit on Linux — use /tmp, not session_dir)
     MICRO_VM_SOCKET="/tmp/iclaude-${session_id}-fc.sock"
-    local nvm_socket="/tmp/iclaude-${session_id}-nvm.sock"
-    local ws_socket="/tmp/iclaude-${session_id}-ws.sock"
-    local nvm_pid=""
-    local ws_pid=""
 
-    if [[ -d "${ISOLATED_NVM_DIR:-}" ]]; then
-        print_info "microVM: starting virtiofsd for NVM dir (read-only)..."
-        if nvm_pid=$(_start_virtiofsd "$ISOLATED_NVM_DIR" "$nvm_socket"); then
-            VIRTIOFSD_PID_NVM="$nvm_pid"
-            print_info "microVM: virtiofsd NVM PID $nvm_pid"
-        else
-            print_warning "microVM: could not start virtiofsd for NVM — Node.js unavailable in guest"
-        fi
+    # ── Block device images ────────────────────────────────────────────────────
+
+    # NVM image: pre-built at --install-microvm time, mounted read-only as /dev/vdb → /mnt/nvm
+    local nvm_img="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
+    if [[ ! -f "$nvm_img" ]]; then
+        print_warning "microVM: NVM block image not found: ${nvm_img}"
+        print_warning "microVM: Node.js and claude binary unavailable in guest — run --install-microvm"
+        nvm_img=""
     fi
 
-    # Start virtiofsd for workspace (rw: project directory)
-    if [[ "${MICRO_VM_MOUNT_WORKSPACE:-true}" == "true" ]] && [[ -d "${PWD}" ]]; then
-        print_info "microVM: starting virtiofsd for workspace (read-write)..."
-        if ws_pid=$(_start_virtiofsd "$PWD" "$ws_socket"); then
-            VIRTIOFSD_PID_WORKSPACE="$ws_pid"
-            print_info "microVM: virtiofsd workspace PID $ws_pid"
-        else
-            print_warning "microVM: could not start virtiofsd for workspace"
-        fi
+    # Workspace image: per-session sparse ext4, populated via SSH rsync after boot
+    local ws_img="${session_dir}/workspace.img"
+    MICRO_VM_WORKSPACE_IMG="$ws_img"
+    export MICRO_VM_WORKSPACE_IMG
+
+    # ── Resolve workspace mode ─────────────────────────────────────────────────
+    #   full     (default) — sync $PWD to guest /workspace rw; sync back on exit
+    #   path               — sync $MICRO_VM_WORKSPACE_PATH; falls back to $PWD
+    #   isolated           — guest /workspace starts empty; no sync
+    local workspace_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
+    MICRO_VM_ISOLATED_TMPDIR=""   # reset before case (avoid stale value from previous run)
+    case "$workspace_mode" in
+        full)
+            MICRO_VM_WORKSPACE_HOSTDIR="$PWD"
+            ;;
+        path)
+            MICRO_VM_WORKSPACE_HOSTDIR="${MICRO_VM_WORKSPACE_PATH:-$PWD}"
+            if [[ ! -d "$MICRO_VM_WORKSPACE_HOSTDIR" ]]; then
+                print_error "microVM: MICRO_VM_WORKSPACE_PATH does not exist: ${MICRO_VM_WORKSPACE_HOSTDIR}"
+                rm -rf "$session_dir" 2>/dev/null; return 1
+            fi
+            ;;
+        isolated)
+            MICRO_VM_WORKSPACE_HOSTDIR=""
+            ;;
+        *)
+            print_warning "microVM: unknown MICRO_VM_WORKSPACE_MODE='$workspace_mode' — using 'full'"
+            workspace_mode="full"
+            MICRO_VM_WORKSPACE_HOSTDIR="$PWD"
+            ;;
+    esac
+    export MICRO_VM_WORKSPACE_HOSTDIR MICRO_VM_ISOLATED_TMPDIR
+
+    # ── Create sparse workspace ext4 image ────────────────────────────────────
+    # Content populated via SSH rsync after boot; sparse → minimal host disk usage.
+    local ws_size_mb="${MICRO_VM_WORKSPACE_SIZE_MB:-2048}"
+    print_info "microVM: creating workspace image (${ws_size_mb}MiB sparse)..."
+    if ! dd if=/dev/zero of="$ws_img" bs=1M count=0 seek="$ws_size_mb" 2>/dev/null; then
+        print_error "microVM: failed to create workspace image at ${ws_img}"
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
+    if ! mkfs.ext4 -F -q "$ws_img" 2>/dev/null; then
+        print_error "microVM: failed to format workspace image (mkfs.ext4)"
+        rm -rf "$session_dir" 2>/dev/null; return 1
     fi
 
-    # Write guest environment file to session dir
+    # Write guest environment file (pushed to guest via SCP after SSH is ready)
     local env_file="${session_dir}/guest-env.sh"
     configure_guest_environment "$env_file"
 
-    # Build Firecracker config
+    # Build Firecracker config with block device images
     local vmconfig
-    vmconfig=$(build_microvm_config "$session_dir" "$nvm_socket" "$ws_socket") || {
+    vmconfig=$(build_microvm_config "$session_dir" "$nvm_img" "$ws_img") || {
         print_error "microVM: failed to generate vmconfig.json"
-        _cleanup_virtiofsd
         rm -rf "$session_dir" 2>/dev/null || true
         return 1
     }
 
     print_info "microVM: starting Firecracker VMM..."
     print_info "microVM: vCPU=${MICRO_VM_VCPU:-2} RAM=${MICRO_VM_MEM_MB:-1024}MiB"
+
+    # Remove stale API socket if left over from a previous crashed run
+    rm -f "$MICRO_VM_SOCKET" 2>/dev/null || true
 
     # Firecracker opens (not creates) the log file — must exist before launch.
     local fc_log="${session_dir}/firecracker.log"
@@ -422,7 +495,6 @@ start_microvm() {
     MICRO_VM_PID=$!
     MICRO_VM_SESSION_OWNED=true
     export MICRO_VM_PID MICRO_VM_SOCKET MICRO_VM_SESSION_OWNED
-    export VIRTIOFSD_PID_NVM VIRTIOFSD_PID_WORKSPACE
 
     # Wait for Firecracker API socket to appear (max 10s)
     local ticks=0
@@ -430,7 +502,6 @@ start_microvm() {
         if ! kill -0 "$MICRO_VM_PID" 2>/dev/null; then
             print_error "microVM: Firecracker process exited unexpectedly"
             print_info "microVM: log: ${session_dir}/firecracker.log"
-            _cleanup_virtiofsd
             rm -rf "$session_dir" 2>/dev/null || true
             return 1
         fi
@@ -442,19 +513,64 @@ start_microvm() {
     if [[ ! -S "$MICRO_VM_SOCKET" ]]; then
         print_error "microVM: Firecracker API socket did not appear within 10s"
         kill "$MICRO_VM_PID" 2>/dev/null || true
-        _cleanup_virtiofsd
         rm -rf "$session_dir" 2>/dev/null || true
         return 1
     fi
 
-    # Propagate guest env: copy to workspace root so guest init can source it via virtiofs.
-    # Guest init reads /workspace/.iclaude-guest-env.sh (virtiofs rw mount of $PWD).
-    # install -m 600 atomically creates the file with restricted permissions.
-    # File is deleted by stop_microvm() and is covered by .gitignore.
-    if ! install -m 600 "$env_file" "${PWD}/.iclaude-guest-env.sh" 2>/dev/null; then
-        print_warning "microVM: could not write guest env to workspace (read-only FS or quota?)"
-        print_warning "microVM: guest may start without proxy/API configuration"
+    # ── Poll SSH connectivity ──────────────────────────────────────────────────
+    # authorized_keys is baked into rootfs at install time (no per-session injection).
+    # Guest init boots fast (~1s), mounts block devices, starts sshd.
+    local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+    local ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+
+    if [[ ! -f "$ssh_key" ]]; then
+        print_error "microVM: SSH private key not found: ${ssh_key}"
+        print_info "Run: ./iclaude.sh --install-microvm  (generates and bakes the key)"
+        kill "$MICRO_VM_PID" 2>/dev/null || true
+        rm -rf "$session_dir" 2>/dev/null; return 1
     fi
+
+    print_info "microVM: waiting for guest SSH (${guest_ip})..."
+    local ssh_ready=false
+    ticks=0
+    while [[ $ticks -lt 60 ]]; do   # 60 × 0.5s = 30s
+        if ! kill -0 "$MICRO_VM_PID" 2>/dev/null; then
+            print_error "microVM: Firecracker exited before guest SSH was ready"
+            print_info "microVM: log: ${session_dir}/firecracker.log"
+            rm -rf "$session_dir" 2>/dev/null; return 1
+        fi
+        if ssh \
+            -i "$ssh_key" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ConnectTimeout=1 \
+            -o BatchMode=yes \
+            -o LogLevel=ERROR \
+            "root@${guest_ip}" \
+            'exit 0' 2>/dev/null; then
+            ssh_ready=true
+            break
+        fi
+        sleep 0.5
+        ticks=$((ticks + 1))
+    done
+
+    if [[ "$ssh_ready" != "true" ]]; then
+        print_error "microVM: guest SSH did not become ready within 30s"
+        print_info "microVM: log: ${session_dir}/firecracker.log"
+        kill "$MICRO_VM_PID" 2>/dev/null || true
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
+    print_info "microVM: guest SSH ready (${ticks}× 0.5s)"
+
+    # Push guest environment file to /workspace via SCP
+    scp \
+        -i "$ssh_key" \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        "$env_file" "root@${guest_ip}:/workspace/.iclaude-guest-env.sh" 2>/dev/null || \
+        print_warning "microVM: could not push guest env — guest may start without proxy/API config"
 
     # Signal to statusline that microVM is active
     export ICLAUDE_MICROVM_ACTIVE=1
@@ -504,21 +620,18 @@ stop_microvm() {
         MICRO_VM_SESSION_OWNED=false
     fi
 
-    # Stop virtiofsd daemons
-    _cleanup_virtiofsd
-
-    # Remove guest env file from workspace
-    rm -f "${PWD}/.iclaude-guest-env.sh" 2>/dev/null || true
-
-    # Remove per-session work dir and /tmp sockets (virtiofsd creates .pid files alongside)
+    # Remove per-session work dir (contains workspace.img, guest-env.sh, vmconfig.json, fc log)
     local session_id="${ICLAUDE_SESSION_ID:-$$}"
     local session_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}/${session_id}"
     rm -rf "$session_dir" 2>/dev/null || true
-    rm -f "/tmp/iclaude-${session_id}-fc.sock" \
-          "/tmp/iclaude-${session_id}-nvm.sock" \
-          "/tmp/iclaude-${session_id}-nvm.sock.pid" \
-          "/tmp/iclaude-${session_id}-ws.sock" \
-          "/tmp/iclaude-${session_id}-ws.sock.pid" 2>/dev/null || true
+    MICRO_VM_WORKSPACE_IMG=""
+
+    # Remove Firecracker API socket (in /tmp for short path)
+    rm -f "/tmp/iclaude-${session_id}-fc.sock" 2>/dev/null || true
+
+    # Clear workspace tracking vars
+    MICRO_VM_WORKSPACE_HOSTDIR=""
+    MICRO_VM_ISOLATED_TMPDIR=""
 }
 
 #######################################
