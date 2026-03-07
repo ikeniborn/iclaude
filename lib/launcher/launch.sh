@@ -159,9 +159,12 @@ launch_claude() {
             _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${MICRO_VM_KNOWN_HOSTS}")
         fi
 
-        # Build quoted arg list for safe passing through SSH
+        # Build quoted arg list for safe passing through SSH.
+        # Strip --dangerously-skip-permissions: claude refuses it as root, and inside an
+        # isolated guest VM the permission bypass is unnecessary (KVM provides isolation).
         local quoted_args=""
         for arg in "$@"; do
+            [[ "$arg" == "--dangerously-skip-permissions" ]] && continue
             quoted_args+=" $(printf '%q' "$arg")"
         done
 
