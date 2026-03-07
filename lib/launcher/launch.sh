@@ -221,6 +221,9 @@ launch_claude() {
                 -i "$ssh_key" \
                 -o StrictHostKeyChecking=no \
                 -o UserKnownHostsFile=/dev/null \
+                -o ConnectTimeout=10 \
+                -o ServerAliveInterval=5 \
+                -o ServerAliveCountMax=3 \
                 -o LogLevel=ERROR \
                 "root@${guest_ip}" \
                 'tar -czf - -C /workspace --exclude=./lost+found . 2>/dev/null' 2>/dev/null \

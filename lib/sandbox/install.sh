@@ -457,10 +457,13 @@ install_microvm() {
 	local _v2_marker="${_rootfs%.ext4}.v2-ready"
 	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 
+	local _nvm_img="${MICRO_VM_NVM_IMG:-${_bin_dir}/nvm.img}"
+
 	if [[ -f "$_rootfs" ]]; then
-		if [[ -f "$_v2_marker" && -f "$_ssh_key" ]]; then
+		if [[ -f "$_v2_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
 			print_success "microVM already installed and up-to-date (v2)"
 			print_info "Rootfs: $_rootfs"
+			print_info "NVM image: $_nvm_img"
 			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
 			return 0
 		fi
@@ -794,15 +797,23 @@ _create_microvm_nvm_image() {
 		return 1
 	fi
 
-	# Estimate NVM content size (exclude large host-specific dirs: bin/, projects/, pii-proxy-venv/).
+	# Estimate NVM content size (subtract large host-specific dirs: bin/, projects/, pii-proxy-venv/).
+	# Note: du --exclude=PATTERN does not work reliably with full paths on all GNU versions.
+	# Use subtraction: total minus excluded dirs (if they exist).
 	# Add 20% headroom. Minimum 512MiB, round to 64MiB boundary.
 	local nvm_size_kb
-	nvm_size_kb=$(du -sk \
-		--exclude="$nvm_src/.claude-isolated/bin" \
-		--exclude="$nvm_src/.claude-isolated/projects" \
-		--exclude="$nvm_src/.claude-isolated/pii-proxy-venv" \
-		--exclude="$nvm_src/.claude-isolated/debug" \
-		"$nvm_src" 2>/dev/null | awk '{print $1}')
+	nvm_size_kb=$(du -sk "$nvm_src" 2>/dev/null | awk '{print $1}')
+	for _excl_dir in \
+		"$nvm_src/.claude-isolated/bin" \
+		"$nvm_src/.claude-isolated/projects" \
+		"$nvm_src/.claude-isolated/pii-proxy-venv" \
+		"$nvm_src/.claude-isolated/debug"; do
+		if [[ -d "$_excl_dir" ]]; then
+			local _excl_kb; _excl_kb=$(du -sk "$_excl_dir" 2>/dev/null | awk '{print $1}')
+			nvm_size_kb=$(( nvm_size_kb - _excl_kb ))
+		fi
+	done
+	[[ "$nvm_size_kb" -lt 1 ]] && nvm_size_kb=1
 	local nvm_size_mb=$(( (nvm_size_kb * 12 / 10 + 1023) / 1024 ))
 	nvm_size_mb=$(( (nvm_size_mb < 512 ? 512 : nvm_size_mb + 63) / 64 * 64 ))
 
