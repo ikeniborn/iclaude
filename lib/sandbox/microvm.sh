@@ -535,51 +535,6 @@ configure_guest_environment() {
     return 0
 }
 
-#######################################
-# Start virtiofsd daemon for a directory mount
-# Arguments:
-#   $1 - source_dir: host directory to share
-#   $2 - socket_path: UNIX socket path for virtiofsd
-# Returns:
-#   0 - started; outputs PID
-#   1 - failure
-#######################################
-_start_virtiofsd() {
-    local source_dir="$1"
-    local socket_path="$2"
-
-    local vfsd
-    vfsd=$(detect_virtiofsd 2>/dev/null) || {
-        print_warning "virtiofsd not found — workspace mount unavailable"
-        echo ""
-        return 1
-    }
-
-    local -a fc_args=(
-        --socket-path "$socket_path"
-        --shared-dir  "$source_dir"
-    )
-    # Note: --readonly is not supported in virtiofsd 1.x (libvhost-user implementation).
-    # Read-only enforcement for NVM mount is applied in the guest via mount options.
-    # --sandbox none: virtiofsd's seccomp/landlock profile conflicts with some filesystem
-    # operations on certain kernels. Intentional trade-off: virtiofs functionality over
-    # daemon-level sandboxing. virtiofsd still runs as unprivileged user.
-    fc_args+=(--sandbox none --cache always --log-level error)
-
-    "$vfsd" "${fc_args[@]}" &>/dev/null &
-
-    local pid=$!
-    # Wait briefly for socket to appear
-    local ticks=0
-    while [[ $ticks -lt 20 ]]; do
-        [[ -S "$socket_path" ]] && { echo "$pid"; return 0; }
-        sleep 0.1
-        ticks=$((ticks + 1))
-    done
-
-    kill "$pid" 2>/dev/null || true
-    return 1
-}
 
 #######################################
 # Start Firecracker microVM and prepare guest for claude launch.
@@ -909,24 +864,6 @@ stop_microvm() {
     MICRO_VM_ISOLATED_TMPDIR=""
 }
 
-#######################################
-# Kill virtiofsd daemon processes owned by this session.
-#######################################
-_cleanup_virtiofsd() {
-    for pid_var in VIRTIOFSD_PID_NVM VIRTIOFSD_PID_WORKSPACE; do
-        local pid="${!pid_var:-}"
-        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-            kill "$pid" 2>/dev/null || true
-            local waited=0
-            while kill -0 "$pid" 2>/dev/null && [[ $waited -lt 10 ]]; do
-                sleep 0.1
-                waited=$((waited + 1))
-            done
-            kill -9 "$pid" 2>/dev/null || true
-        fi
-        printf -v "${pid_var}" '%s' ''
-    done
-}
 
 #######################################
 # Register signal traps for microVM cleanup.

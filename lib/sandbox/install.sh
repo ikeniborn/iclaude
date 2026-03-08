@@ -170,7 +170,7 @@ _install_virtiofsd_auto() {
 	case "$distro" in
 		ubuntu)
 			if [[ "${ver_major:-0}" -lt 22 ]]; then
-				print_error "Ubuntu ${ver} не поддерживается (требуется 22.04+)"
+				print_error "Ubuntu ${ver} is not supported (requires 22.04+)"
 				return 1
 			fi
 			_apt_install_virtiofsd; return $?
@@ -184,12 +184,12 @@ _install_virtiofsd_auto() {
 				echo ""
 				_install_virtiofsd_cargo; return $?
 			fi
-			print_error "Debian ${ver} не поддерживается (требуется Debian 10+)"
+			print_error "Debian ${ver} is not supported (requires Debian 10+)"
 			return 1
 			;;
 		altlinux)
 			if [[ "${ver_major:-0}" -lt 10 ]]; then
-				print_error "ALT Linux ${ver} не поддерживается (требуется 10+)"
+				print_error "ALT Linux ${ver} is not supported (requires 10+)"
 				return 1
 			fi
 			_apt_install_virtiofsd; return $?
@@ -750,15 +750,20 @@ _inject_rootfs_guest_init() {
 	# 0100755 = regular file (010----) + rwxr-xr-x (0755)
 	# 0100644 = regular file (010----) + rw-r--r-- (0644)
 	# 0100440 = regular file (010----) + r--r----- (0440) — sudoers required mode
+	# Use 'rm' before 'write' to handle re-injection (debugfs 'write' fails with
+	# "Ext2 file already exists" if the target file exists — no overwrite support).
 	debugfs -w "$rootfs" <<EOF 2>/dev/null
+rm /usr/sbin/iclaude-guest-init
 write "${init_src}" /usr/sbin/iclaude-guest-init
 set_inode_field /usr/sbin/iclaude-guest-init mode 0100755
+rm /etc/ssh/sshd_config.d/iclaude.conf
 write "${ssh_conf_tmp}" /etc/ssh/sshd_config.d/iclaude.conf
 set_inode_field /etc/ssh/sshd_config.d/iclaude.conf mode 0100644
 mkdir /mnt
 mkdir /mnt/nvm
 mkdir /workspace
 mkdir /etc/sudoers.d
+rm /etc/sudoers.d/iclaude-vm
 write "${sudoers_tmp}" /etc/sudoers.d/iclaude-vm
 set_inode_field /etc/sudoers.d/iclaude-vm mode 0100440
 EOF
