@@ -787,7 +787,12 @@ rm /usr/bin/jq
 write ${jq_host} /usr/bin/jq
 set_inode_field /usr/bin/jq mode 0100755
 EOF
-		print_success "jq injected into guest rootfs (/usr/bin/jq)"
+		local _jq_rc=$?
+		if [[ $_jq_rc -eq 0 ]]; then
+			print_success "jq injected into guest rootfs (/usr/bin/jq)"
+		else
+			print_warning "jq injection failed (debugfs rc=${_jq_rc}) — statusline may not work in guest"
+		fi
 	else
 		print_warning "jq not found on host — statusline requires jq (install: sudo apt install jq, then re-run --install-microvm)"
 	fi
@@ -795,6 +800,7 @@ EOF
 	# Inject CA certificate bundle from host into guest rootfs.
 	# Required for HTTPS connections inside the VM (curl, node, claude CLI).
 	# The Ubuntu 22.04 minimal rootfs may lack ca-certificates package.
+	# mkdir is idempotent in debugfs (no-op if dir already exists).
 	local ca_bundle="/etc/ssl/certs/ca-certificates.crt"
 	if [[ -f "$ca_bundle" ]]; then
 		debugfs -w "$rootfs" <<EOF 2>/dev/null
@@ -804,7 +810,12 @@ rm /etc/ssl/certs/ca-certificates.crt
 write ${ca_bundle} /etc/ssl/certs/ca-certificates.crt
 set_inode_field /etc/ssl/certs/ca-certificates.crt mode 0100644
 EOF
-		print_success "CA bundle injected into guest rootfs (/etc/ssl/certs/ca-certificates.crt)"
+		local _ca_rc=$?
+		if [[ $_ca_rc -eq 0 ]]; then
+			print_success "CA bundle injected into guest rootfs (/etc/ssl/certs/ca-certificates.crt)"
+		else
+			print_warning "CA bundle injection failed (debugfs rc=${_ca_rc}) — HTTPS will fail in guest"
+		fi
 	else
 		print_warning "CA bundle not found at ${ca_bundle} — HTTPS will fail in guest (install: sudo apt install ca-certificates)"
 	fi
