@@ -87,11 +87,9 @@ graph TD
     DEP_CHECK[dependency-checker<br/>Dependency Checker]
     OUTPUT[output-formatters<br/>Output Formatters]
 
-    %% Sandbox Layer
-    SANDBOX_DETECT[sandbox-detect<br/>Platform/KVM/Distro]
+    %% Sandbox Layer (microVM only)
     SANDBOX_INSTALL[sandbox-install<br/>microVM Installer]
     MICROVM_LAUNCH[microvm-launcher<br/>VM Lifecycle]
-    SANDBOX_STATUS[sandbox-status<br/>Status Checker]
 
     %% External Dependencies
     CLAUDE_CLI[claude-cli<br/>Claude Code CLI]
@@ -110,7 +108,7 @@ graph TD
     CLI -->|routes to| VERSION_MGT
     CLI -.->|optional| OAUTH
     CLI -.->|optional| ROUTER
-    CLI -.->|optional| SANDBOX_DETECT
+    CLI -.->|optional| SANDBOX_INSTALL
 
     %% Dependencies - Proxy Management
     PROXY --> VALIDATE
@@ -171,10 +169,8 @@ graph TD
     CONFIG_MGT --> FILE_OPS
 
     %% Dependencies - Sandbox Layer
-    SANDBOX_DETECT --> SANDBOX_INSTALL
-    SANDBOX_DETECT --> MICROVM_LAUNCH
-    SANDBOX_DETECT --> SANDBOX_STATUS
     SANDBOX_INSTALL --> CURL_BIN
+    SANDBOX_INSTALL --> MICROVM_LAUNCH
     MICROVM_LAUNCH --> FC_BIN
     MICROVM_LAUNCH --> VFSD_BIN
     MICROVM_LAUNCH --> KVM_DEV
@@ -192,7 +188,7 @@ graph TD
     class PROXY,VALIDATE,RESOLVE,PARSE,CONFIG_PROXY,TEST_PROXY,ISOLATED,SETUP_NVM,REPAIR,CHECK_STATUS,VERSION_MGT,SAVE_LOCK,INSTALL_LOCK,CONFIG_MGT,SETUP_CONFIG,EXPORT_IMPORT,OAUTH,CHECK_TOKEN,REFRESH_TOKEN,CHECK_EXP,ROUTER,DETECT_ROUTER,GET_ROUTER,CHECK_ROUTER coreLayer
     class NVM_INST,NODE_INST,CLAUDE_INST,ROUTER_INST,UPDATER,CLEANUP,SYMLINK,NVM_DETECT,CLAUDE_PATH,VERSION_DETECT installLayer
     class CRED_STORE,GIT_PROXY,FILE_OPS,JQ_VALID,DEP_CHECK,OUTPUT infraLayer
-    class SANDBOX_DETECT,SANDBOX_INSTALL,MICROVM_LAUNCH,SANDBOX_STATUS sandboxLayer
+    class SANDBOX_INSTALL,MICROVM_LAUNCH sandboxLayer
     class CLAUDE_CLI,ROUTER_CLI,NVM_BIN,GIT_BIN,CURL_BIN,JQ_BIN,FC_BIN,VFSD_BIN,KVM_DEV externalLayer
 ```
 

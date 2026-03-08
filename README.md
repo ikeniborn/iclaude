@@ -135,12 +135,6 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 
 ---
 
-### 🛡️ Sandboxing (bubblewrap)
-- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
-- **Установка зависимостей** - `./iclaude.sh --sandbox-install`
-- **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
-- **Подробности** - см. раздел "Sandbox Limitations" в [CLAUDE.md](./CLAUDE.md)
-
 ### 📄 Sphinx Documentation
 - **Per-project** - работает в любом проекте, не только iclaude
 - **docs/sphinx/** - изолированная поддиректория, не засоряет `docs/`
@@ -252,8 +246,6 @@ Approval gates после каждого агента — можно остан�
 
 # Дополнительно
 ./iclaude.sh --install-statusline      # Установить Status Line
-./iclaude.sh --sandbox-install         # Установить sandboxing (Linux/WSL2)
-
 # Oh My Posh (опционально, для красивого status line)
 ./iclaude.sh --install-posh            # Скачать и установить (автоматически)
 ./iclaude.sh --insecure --install-posh # То же, но с корпоративным прокси (TLS)
@@ -392,7 +384,7 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── router/                         # Claude Code Router
 │   ├── lsp/                            # LSP server management
 │   ├── lockfile/                       # Version locking
-│   ├── sandbox/                        # microVM (Firecracker) + bubblewrap
+│   ├── sandbox/                        # microVM (Firecracker)
 │   └── ...                             # 16 модулей
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
@@ -422,7 +414,6 @@ export DEEPSEEK_API_KEY="your-key"
 **Опциональные:**
 - `git` - для git-workflow skill
 - `gh` - для pr-automation skill (установить через `gh` пакетный менеджер)
-- `bubblewrap`, `socat` - для sandboxing на Linux/WSL2 (`./iclaude.sh --sandbox-install`)
 - `kvm` (`/dev/kvm`) - для microVM sandbox (`./iclaude.sh --install-microvm`)
 
 ---

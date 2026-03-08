@@ -62,7 +62,7 @@ Proxy → OAuth → Chrome → Sandbox = полноценный AI-агент
 
 ## Архитектура интеграций
 
-iclaude содержит **10 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
+iclaude содержит **9 внешних интеграций**, реализованных как независимые bash-модули в `lib/`.
 
 ```
 lib/
@@ -72,7 +72,7 @@ lib/
 ├── lsp/          # Language Server Protocol
 ├── statusline/   # Строка состояния Claude Code
 ├── ohmyposh/     # Oh-My-Posh промпт
-├── sandbox/      # Определение sandbox-платформы
+├── sandbox/      # microVM (Firecracker): install, launch, status
 ├── proxy/        # HTTP/HTTPS прокси
 ├── docs/         # Sphinx документация
 └── nvm/          # NVM / Node.js окружение
@@ -106,7 +106,7 @@ graph TB
         LSP["lsp/install.sh\nLSP серверы"]
         Status["statusline/status.sh\nСтрока состояния"]
         OhMyPosh["ohmyposh/install.sh\noh-my-posh"]
-        Sandbox["sandbox/detect.sh\nSandbox"]
+        MicroVM["sandbox/microvm.sh\nmicroVM"]
     end
 
     subgraph External["Внешние системы"]
@@ -131,7 +131,7 @@ graph TB
     Launch --> Status
     Launch --> LSP
     Launch --> OhMyPosh
-    Launch --> Sandbox
+    Launch --> MicroVM
 ```
 
 ### Последовательность запуска
@@ -298,22 +298,21 @@ flowchart LR
 
 ---
 
-### 7. Sandbox (Claude Code native sandbox)
+### 7. microVM Sandbox (Firecracker kernel isolation)
 
 | Параметр | Значение |
 |----------|----------|
-| Модуль | `lib/sandbox/` (3 файла: detect.sh, install.sh, status.sh) |
-| Файлов | 3 |
-| Флаги | `--sandbox-install`, `--check-sandbox` |
-| Зависимости | bubblewrap + socat (Linux/WSL2), `@anthropic-ai/sandbox-runtime` (npm, `srt`) |
-| Статус | **Полная** |
+| Модуль | `lib/sandbox/` (microvm.sh, install.sh, status.sh, guest-init.sh) |
+| Файлов | 4 |
+| Флаги | `--sandbox-microvm`, `--install-microvm`, `--check-microvm` |
+| Зависимости | KVM (`/dev/kvm`), `iproute2`, `iptables` |
+| Статус | **Полная (v2)** |
 
-**Назначение:** установка зависимостей для нативного `--sandbox` флага Claude Code. Позволяет Claude Code выполнять код в изолированном окружении (bubblewrap + seccomp фильтры).
+**Назначение:** запуск Claude Code внутри изолированной Firecracker VM с отдельным Linux kernel. Максимальная защита от prompt injection → kernel exploit.
 
-**Компоненты по платформам:**
-- macOS: встроенный **Seatbelt** (зависимостей не нужно)
-- Linux / WSL2: **bubblewrap** (`bwrap`) + **socat** + **@anthropic-ai/sandbox-runtime**
-- WSL1 / Windows: не поддерживается
+**Платформы:** Linux (KVM required), WSL2 (nested virtualization). macOS/WSL1 — не поддерживаются.
+
+**Документация:** [docs/MICROVM.md](./MICROVM.md)
 
 ---
 
