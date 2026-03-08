@@ -246,9 +246,13 @@ _ensure_slot_tap() {
         return 0
     fi
 
-    # TAP exists — verify host IP matches; update if not
-    local tap_ip
-    tap_ip=$(ip addr show "$tap" 2>/dev/null | awk '/inet / {split($2,a,"/"); print a[1]; exit}')
+    # TAP exists — verify host IP matches; update if not.
+    # Capture full CIDR (e.g. "172.32.0.1/26") so deletion uses the original prefix,
+    # not the new one — mismatched prefix causes ip addr del to fail and leaves a
+    # stale kernel route for the old subnet.
+    local tap_cidr tap_ip
+    tap_cidr=$(ip addr show "$tap" 2>/dev/null | awk '/inet / {print $2; exit}')
+    tap_ip="${tap_cidr%%/*}"
     if [[ "$tap_ip" == "$host_ip" ]]; then
         # Correct IP already assigned; ensure UP
         ip link show "$tap" 2>/dev/null | grep -q "UP" || \
@@ -258,7 +262,8 @@ _ensure_slot_tap() {
 
     print_warning "microVM: TAP ${tap} has IP ${tap_ip:-none}, expected ${host_ip}/${prefix} — updating"
     if sudo -n true 2>/dev/null; then
-        [[ -n "$tap_ip" ]] && sudo ip addr del "${tap_ip}/${prefix}" dev "$tap" 2>/dev/null || true
+        # Delete using the exact CIDR from the interface (preserves original prefix length)
+        [[ -n "$tap_cidr" ]] && sudo ip addr del "$tap_cidr" dev "$tap" 2>/dev/null || true
         sudo ip addr add "${host_ip}/${prefix}" dev "$tap" 2>/dev/null && \
         sudo ip link set "$tap" up 2>/dev/null && \
         print_info "microVM: TAP ${tap} IP updated → ${host_ip}/${prefix}" || \
@@ -611,6 +616,12 @@ start_microvm() {
 
     # Create per-session working directory (mode 700: no world/group access)
     local session_id="${ICLAUDE_SESSION_ID:-$$}"
+    # Validate session_id: only alphanumeric, dash, underscore allowed.
+    # Prevents path traversal if ICLAUDE_SESSION_ID is set to a malicious value (e.g. "../../../etc").
+    if ! [[ "$session_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        print_error "microVM: invalid session_id '${session_id}' — must contain only [a-zA-Z0-9_-]"
+        return 1
+    fi
     local session_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}/${session_id}"
     if ! mkdir -p "$session_dir" || ! chmod 700 "$session_dir"; then
         print_error "microVM: failed to create session directory: ${session_dir}"
@@ -765,6 +776,20 @@ start_microvm() {
         rm -rf "$session_dir" 2>/dev/null; return 1
     fi
 
+    # Build per-session known_hosts BEFORE the readiness poll so that host key
+    # verification is active from the very first SSH connection (no TOFU window).
+    # Host pubkey is extracted from rootfs at install time by _inject_rootfs_guest_init().
+    local host_key_pub="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
+    local known_hosts_file="${session_dir}/known_hosts"
+    local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+    if [[ -f "$host_key_pub" ]]; then
+        { printf '%s ' "$guest_ip"; cat "$host_key_pub"; } > "$known_hosts_file"
+        chmod 600 "$known_hosts_file"
+        export MICRO_VM_KNOWN_HOSTS="$known_hosts_file"
+        _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${known_hosts_file}")
+        print_info "microVM: SSH host key pinned (${known_hosts_file})"
+    fi
+
     print_info "microVM: waiting for guest SSH (${guest_ip})..."
     local ssh_ready=false
     ticks=0
@@ -776,8 +801,7 @@ start_microvm() {
         fi
         if ssh \
             -i "$ssh_key" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
+            "${_ssh_kh_opts[@]}" \
             -o ConnectTimeout=1 \
             -o BatchMode=yes \
             -o LogLevel=ERROR \
@@ -797,19 +821,6 @@ start_microvm() {
         rm -rf "$session_dir" 2>/dev/null; return 1
     fi
     print_info "microVM: guest SSH ready (${ticks}× 0.5s)"
-
-    # Build per-session known_hosts for SSH host key pinning.
-    # Host pubkey extracted from rootfs at install time; combined here with the slot IP.
-    local host_key_pub="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
-    local known_hosts_file="${session_dir}/known_hosts"
-    local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
-    if [[ -f "$host_key_pub" ]]; then
-        { printf '%s ' "$guest_ip"; cat "$host_key_pub"; } > "$known_hosts_file"
-        chmod 600 "$known_hosts_file"
-        export MICRO_VM_KNOWN_HOSTS="$known_hosts_file"
-        _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${known_hosts_file}")
-        print_info "microVM: SSH host key pinned (${known_hosts_file})"
-    fi
 
     # Push guest environment file to /workspace via SCP (iclaude user, workspace is chowned to it)
     scp \
@@ -912,4 +923,48 @@ setup_microvm_traps() {
     trap 'stop_microvm' EXIT
     trap 'stop_microvm; exit 130' INT
     trap 'stop_microvm; exit 143' TERM
+}
+
+#######################################
+# Clean up orphaned microVM artifacts from sessions that exited without cleanup
+# (e.g. SIGKILL, host reboot). Removes stale FC sockets and session directories.
+# Safe to call at launch time — only removes artifacts with no live owner process.
+#######################################
+cleanup_orphaned_microvm_sessions() {
+    local cleaned=0
+
+    # Remove stale Firecracker API sockets in /tmp.
+    # Requires fuser (psmisc). Skip socket cleanup if unavailable — better to leave
+    # stale sockets than to delete sockets of live processes.
+    local sock session_id
+    if command -v fuser &>/dev/null; then
+        for sock in /tmp/iclaude-*-fc.sock; do
+            [[ -S "$sock" ]] || continue
+            # fuser returns non-zero when no process holds the socket
+            if ! fuser "$sock" &>/dev/null 2>&1; then
+                rm -f "$sock" 2>/dev/null || true
+                cleaned=$((cleaned + 1))
+            fi
+        done
+    fi
+
+    # Remove stale session directories in microvm-run/
+    local run_dir="${ISOLATED_CONFIG_DIR}/microvm-run"
+    if [[ -d "$run_dir" ]]; then
+        local dir slot_lock
+        for dir in "$run_dir"/*/; do
+            [[ -d "$dir" ]] || continue
+            session_id="${dir%/}"; session_id="${session_id##*/}"
+            # Check matching slot lock — if the lock file references a dead PID, it's orphaned.
+            # Use --fixed-strings to prevent session_id from being interpreted as a regex pattern.
+            slot_lock=$(grep -rlF "$session_id" "${ISOLATED_CONFIG_DIR}/microvm-slots/" 2>/dev/null | head -1)
+            # Session is orphaned if: no FC socket exists for it AND no slot lock references it
+            if [[ ! -S "/tmp/iclaude-${session_id}-fc.sock" ]] && [[ -z "$slot_lock" ]]; then
+                rm -rf "$dir" 2>/dev/null || true
+                cleaned=$((cleaned + 1))
+            fi
+        done
+    fi
+
+    [[ $cleaned -gt 0 ]] && print_info "microVM: cleaned ${cleaned} orphaned session artifact(s)"
 }

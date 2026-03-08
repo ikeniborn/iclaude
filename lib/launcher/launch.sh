@@ -100,6 +100,8 @@ launch_claude() {
 
     # Start microVM if requested (before PII proxy / CCR, as it must wrap everything)
     if [[ "$use_microvm" == "true" ]]; then
+        # Remove stale FC sockets and session dirs from sessions that exited without cleanup
+        cleanup_orphaned_microvm_sessions
         # Start CCR and/or PII proxy on host first so configure_guest_environment()
         # can see their ports when building the guest env file.
         if [[ "$use_router" == "true" ]]; then
