@@ -14,7 +14,7 @@ Commands for testing proxy configuration, checking environment status, and valid
 | `--check-config` | Show configuration mode | `./iclaude.sh --check-config` | Isolated vs shared config |
 | `--check-router` | Show router status | `./iclaude.sh --check-router` | Router version, config, providers |
 | `--check-lsp` | Show LSP server status | `./iclaude.sh --check-lsp` | Installed LSP servers |
-| `--sandbox-check` | Check sandbox availability | `./iclaude.sh --sandbox-check` | Docker/bubblewrap status |
+| `--check-microvm` | Check microVM (Firecracker) status | `./iclaude.sh --check-microvm` | KVM, binaries, networking |
 | `--refresh-token` | Manually refresh OAuth token | `./iclaude.sh --refresh-token` | Launches `claude setup-token` |
 | `bash -n` | Validate bash syntax | `bash -n iclaude.sh` | Syntax errors (if any) |
 

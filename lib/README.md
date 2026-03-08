@@ -77,10 +77,12 @@ lib/
 │   ├── install.sh             # install_isolated_ohmyposh()
 │   └── status.sh              # check_ohmyposh_status()
 │
-├── sandbox/                   # 🔜 Phase 5 - Sandboxing (PLANNED)
-│   ├── detect.sh              # detect_sandbox_platform()
-│   ├── install.sh             # install_sandbox_dependencies()
-│   └── status.sh              # check_sandbox_status()
+├── sandbox/                   # ✅ microVM (Firecracker) isolation
+│   ├── detect.sh              # detect_kvm_support(), detect_microvm_binary(), detect_virtiofsd(), detect_linux_distro()
+│   ├── install.sh             # install_microvm(), check_microvm_dependencies()
+│   ├── status.sh              # check_microvm_status()
+│   ├── microvm.sh             # start_microvm(), stop_microvm(), VM lifecycle
+│   └── guest-init.sh          # PID 1 init script baked into rootfs
 │
 ├── update/                    # 🔜 Phase 8 - Update management (PLANNED)
 │   ├── check.sh               # check_claude_version()

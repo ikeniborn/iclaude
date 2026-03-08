@@ -36,7 +36,7 @@ Host OS kernel
 | **Policy leakage** | Чтение ~/.ssh, ~/.aws, утечка кода в сеть | Hooks (block-secrets, redact-secrets) |
 | **Kernel compromise** | Exploit ядра через tool call (bash, Wasm, native) | OS sandbox / gVisor / microVM |
 
-Текущий iclaude закрывает **policy leakage** через hooks, но **kernel boundary** отсутствует (bubblewrap отключён).
+Текущий iclaude закрывает **policy leakage** через hooks. **Kernel boundary** обеспечивается через microVM (Firecracker).
 
 ---
 
@@ -81,8 +81,7 @@ Host OS kernel
 
 ```
 Policy layer      ✅  block-secrets + redact-secrets → закрыт
-OS boundary       ❌  bubblewrap отключён → открыт
-Kernel isolation  ❌  отсутствует полностью → открыт
+Kernel isolation  ✅  microVM (Firecracker) → закрыт при --sandbox-microvm
 ```
 
 ---
@@ -120,7 +119,7 @@ landrun \
   -- claude "$@"
 ```
 
-**Статус iclaude:** `detect_sandbox_platform()` (`lib/sandbox/detect.sh`) возвращает "linux" как supported. `check_sandbox_dependencies()` (`lib/sandbox/install.sh`) проверяет `bwrap` — нужно добавить проверку Landlock availability.
+**Статус iclaude:** Landlock не реализован. При необходимости добавить `detect_landlock_support()` в `lib/sandbox/detect.sh`.
 
 **Защита:** Policy leakage ✅ | Kernel isolation ❌ (shared kernel)
 
@@ -241,12 +240,12 @@ Host OS (Linux + KVM)
 
 ### Приоритет 1 (практичный, немедленный): Landlock + seccomp
 
-Заменить отключённый bubblewrap. Закрывает policy leakage полностью, существенно сужает syscall attack surface. Ядро остаётся общим — kernel exploit теоретически возможен, но attack surface сокращается на 80%+.
+Закрывает policy leakage полностью, существенно сужает syscall attack surface. Ядро остаётся общим — kernel exploit теоретически возможен, но attack surface сокращается на 80%+.
 
 **Изменения в iclaude:**
 - `lib/sandbox/detect.sh` → добавить `detect_landlock_support()` (проверить `/proc/sys/kernel/landlock_abi`)
 - `lib/sandbox/install.sh` → добавить проверку и инструкцию для Landlock CLI wrapper
-- Заменить `bwrap` вызов в launcher на Landlock-based запуск
+- Launcher: добавить Landlock-based запуск вместо прямого вызова claude
 
 ### Приоритет 2 (сильная защита, приемлемая сложность): gVisor
 
@@ -305,7 +304,7 @@ Claude Code и все tool calls выполняются внутри guest с о
 **Статус реализации:**
 - ✅ **microVM (Firecracker v2)** — реализован, `--sandbox-microvm`
 - ⬜ **gVisor (`runsc`)** — не реализован; userspace kernel, средняя сложность
-- ⬜ **Landlock + seccomp** — не реализован; заменит отключённый bubblewrap, низкая сложность
+- ⬜ **Landlock + seccomp** — не реализован; низкая сложность
 
 **Текущие security hooks остаются актуальными** на всех уровнях — они закрывают policy leakage независимо от наличия kernel boundary.
 
@@ -315,7 +314,7 @@ Claude Code и все tool calls выполняются внутри guest с о
 
 - [docs/MICROVM.md](MICROVM.md) — операционное руководство по microVM (установка, запуск, troubleshooting)
 - [docs/architecture/diagrams/data-flow-microvm-launch.md](architecture/diagrams/data-flow-microvm-launch.md) — архитектурная диаграмма v2
-- [CLAUDE.md](../CLAUDE.md) — sandbox limitations (bubblewrap bug documented)
-- `lib/sandbox/detect.sh` — `detect_sandbox_platform()` → расширить для Landlock + gVisor detection
-- `lib/sandbox/install.sh` — `check_sandbox_dependencies()` → добавить Landlock / runsc / firecracker check
-- `lib/sandbox/status.sh` — `check_sandbox_status()` → добавить tier reporting
+- [CLAUDE.md](../CLAUDE.md) — архитектурные примечания
+- `lib/sandbox/detect.sh` — расширить для Landlock + gVisor detection
+- `lib/sandbox/install.sh` — добавить Landlock / runsc check
+- `lib/sandbox/status.sh` — `check_microvm_status()` → расширить для tier reporting

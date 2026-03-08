@@ -129,27 +129,15 @@ Two-layer protection active during all Claude Code sessions. Configured in `sett
 }
 ```
 
-## Sandbox Limitations
-
-Sandbox (bubblewrap) is **DISABLED BY DEFAULT** (`sandbox.enabled: false`) due to upstream bug.
-
-When enabled, bubblewrap creates 0-byte read-only stubs in `.claude/` of other open projects:
-```
-.claude/settings.json (0 bytes, chmod 444)   .claude/agents (0 bytes, chmod 444)
-```
-Files persist after sandbox exit — no automatic cleanup.
+## Isolation Mechanisms
 
 **Two independent isolation mechanisms:**
 - `CLAUDE_CONFIG_DIR` isolation (always active) → config goes to `.nvm-isolated/.claude-isolated/`
-- Bubblewrap sandbox (disabled) → OS-level, isolates tool calls
+- microVM (Firecracker) — kernel-level isolation via `--sandbox-microvm` (see [docs/MICROVM.md](docs/MICROVM.md))
 
-**Cleanup if sandbox was enabled:**
-```bash
-find /path/to/project/.claude -maxdepth 1 -type f -empty -perm 444 \
-  -exec chmod 644 {} \; -delete
-```
+Note: bubblewrap (bwrap) sandbox was removed in 2026-03 due to an upstream bug where it created 0-byte read-only stub files in `.claude/` of other open projects. microVM is the exclusive OS-level isolation mechanism.
 
-Security hooks work independently of sandbox — see [Security Hooks](#security-hooks-pretooluse).
+Security hooks work independently of isolation — see [Security Hooks](#security-hooks-pretooluse).
 
 ## Important Notes
 
