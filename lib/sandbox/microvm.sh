@@ -84,11 +84,12 @@ _sh_escape_val() {
 # from a configurable subnet (MICRO_VM_NET_SUBNET, default 172.16.0.0/26).
 #
 # Slot model (no per-slot broadcast waste):
-#   Slot N → host IP = base+2N+1, guest IP = base+2N+2, TAP = tap-iclaude[-N]
+#   Slot N → host IP = base+2N+1, guest IP = base+2N+2, TAP = {prefix}-{N+1}
+#   MICRO_VM_NET_TAP_IFACE is the prefix (default: tap-iclaude); actual name = prefix + "-" + slot_number(1-indexed).
 # Example with 172.16.0.0/26 (62 usable hosts → 31 slots):
-#   Slot 0: host=172.16.0.1  guest=172.16.0.2  tap=tap-iclaude
-#   Slot 1: host=172.16.0.3  guest=172.16.0.4  tap=tap-iclaude-1
-#   Slot 2: host=172.16.0.5  guest=172.16.0.6  tap=tap-iclaude-2
+#   Slot 0: host=172.16.0.1  guest=172.16.0.2  tap=tap-iclaude-1
+#   Slot 1: host=172.16.0.3  guest=172.16.0.4  tap=tap-iclaude-2
+#   Slot 2: host=172.16.0.5  guest=172.16.0.6  tap=tap-iclaude-3
 
 # Parse "base/prefix" CIDR into MICROVM_SUBNET_INT and MICROVM_SUBNET_PREFIX.
 _microvm_parse_subnet() {
@@ -181,11 +182,11 @@ _alloc_microvm_slot() {
         MICRO_VM_NET_HOST_IP="$(_microvm_ip_at $((2*slot + 1)))"
         MICRO_VM_NET_GUEST_IP="$(_microvm_ip_at $((2*slot + 2)))"
         MICRO_VM_NET_MASK="$(_microvm_prefix_to_mask "$MICROVM_SUBNET_PREFIX")"
-        if [[ "$slot" -eq 0 ]]; then
-            MICRO_VM_NET_TAP_IFACE="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
-        else
-            MICRO_VM_NET_TAP_IFACE="tap-iclaude-${slot}"
-        fi
+        # MICRO_VM_NET_TAP_IFACE is a prefix; actual name = prefix + "-" + (slot+1) (1-indexed).
+        # This ensures consistent naming (no bare "tap-iclaude") and allows concurrent VMs to use
+        # predictable, unique interface names without manual per-slot configuration.
+        local _tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+        MICRO_VM_NET_TAP_IFACE="${_tap_prefix}-$((slot + 1))"
         export MICRO_VM_SLOT MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_HOST_IP \
                MICRO_VM_NET_GUEST_IP MICRO_VM_NET_MASK
         return 0
@@ -733,6 +734,11 @@ start_microvm() {
     local work_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}"
     local session_dir
     session_dir=$(_setup_microvm_session_dir "$session_id" "$work_dir") || return 1
+    # _setup_microvm_session_dir sets MICRO_VM_SOCKET inside a subshell ($() substitution),
+    # so the global assignment is discarded. Reconstruct the socket path here in parent shell.
+    # Must match the formula in _setup_microvm_session_dir (Unix SUN_LEN limit → use /tmp).
+    MICRO_VM_SOCKET="/tmp/iclaude-${session_id}-fc.sock"
+    export MICRO_VM_SOCKET
 
     # ── Block device images ────────────────────────────────────────────────────
 

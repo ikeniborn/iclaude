@@ -344,11 +344,12 @@ _section "1. Pre-flight checks"
 [[ -f "${ISOLATED_CONFIG_DIR}/bin/rootfs.v2-ready" ]] \
     && _pass "rootfs v2-ready marker"                           || { _fail "rootfs not v2 — run --install-microvm"; exit 1; }
 
-# Verify slot-0 TAP exists (required; slot-1 will be created if missing)
+# Verify slot-0 TAP exists. MICRO_VM_NET_TAP_IFACE is now a prefix; slot 0 → prefix-1.
 SUBNET="${MICRO_VM_NET_SUBNET:-172.16.0.0/26}"
 _microvm_parse_subnet "$SUBNET" 2>/dev/null
 SLOT0_HOST_IP="$(_microvm_ip_at 1 2>/dev/null)"
-SLOT0_TAP="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+_TAP_PREFIX="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+SLOT0_TAP="${_TAP_PREFIX}-1"
 ip link show "$SLOT0_TAP" &>/dev/null \
     && _pass "TAP ${SLOT0_TAP} exists" \
     || { _fail "TAP ${SLOT0_TAP} missing — run: ./iclaude.sh --install-microvm"; exit 1; }

@@ -413,7 +413,9 @@ install_microvm() {
 # Called from install_microvm().
 #######################################
 _setup_microvm_network_or_instruct() {
-	local tap_iface="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+	# MICRO_VM_NET_TAP_IFACE is a prefix; slot-0 (the first TAP set up at install time) = prefix + "-1".
+	local _tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+	local tap_iface="${_tap_prefix}-1"
 
 	# Derive host IP and prefix from MICRO_VM_NET_SUBNET (slot 0 = base+1).
 	# Legacy: fall back to MICRO_VM_NET_HOST_IP if SUBNET not set.
