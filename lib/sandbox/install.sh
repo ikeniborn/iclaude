@@ -740,12 +740,10 @@ _inject_rootfs_guest_init() {
 	local sudoers_tmp; sudoers_tmp=$(mktemp)
 	printf 'iclaude ALL=(ALL) NOPASSWD: ALL\n' > "$sudoers_tmp"
 
-	# Write passwd/shadow/group entries for iclaude user (uid=1000, gid=1000).
-	# These are appended via debugfs write to temporary files and then merged
-	# into the rootfs by the write command (overwrite existing /etc/passwd etc. is
-	# not feasible with debugfs — guest-init.sh performs useradd at first boot as
-	# the authoritative creation; the debugfs write here seeds the files so sshd
-	# can resolve the user before useradd runs on first boot).
+	# NOTE: /etc/passwd is NOT modified here — iclaude user is created via useradd
+	# inside guest-init.sh at first boot (before sshd starts), so sshd always has
+	# the user entry available. authorized_keys are pre-seeded via debugfs so the
+	# .ssh directory survives useradd -M (which skips home directory creation).
 	# NOTE: Ubuntu 22.04 rootfs has /sbin → /usr/sbin as a symlink.
 	# debugfs does NOT follow symlinks when writing, so we must use /usr/sbin directly.
 	# debugfs 'chmod' command is broken (no-op) in some versions — use 'set_inode_field' instead.
