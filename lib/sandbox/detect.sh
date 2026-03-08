@@ -51,25 +51,25 @@ check_distro_microvm_support() {
 	case "$distro" in
 		ubuntu)
 			if [[ "${ver_major:-0}" -ge 22 ]]; then return 0; fi
-			echo "Ubuntu ${ver} не поддерживается (требуется 22.04+)"
+			echo "Ubuntu ${ver} is not supported (requires 22.04+)"
 			return 1
 			;;
 		debian)
 			if [[ "${ver_major:-0}" -ge 10 ]]; then return 0; fi
-			echo "Debian ${ver} не поддерживается (требуется 10+)"
+			echo "Debian ${ver} is not supported (requires 10+)"
 			return 1
 			;;
 		altlinux)
 			if [[ "${ver_major:-0}" -ge 10 ]]; then return 0; fi
-			echo "ALT Linux ${ver} не поддерживается (требуется 10+)"
+			echo "ALT Linux ${ver} is not supported (requires 10+)"
 			return 1
 			;;
 		unknown)
-			# Не блокируем — пользователь мог установить virtiofsd вручную
+			# Do not block — user may have installed virtiofsd manually
 			return 0
 			;;
 		*)
-			# Другие дистрибутивы Linux разрешаем (Fedora, Arch и т.д.)
+			# Allow other Linux distributions (Fedora, Arch, etc.)
 			return 0
 			;;
 	esac
