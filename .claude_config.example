@@ -362,17 +362,18 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_PROXY_PASS=true
 
 # Режим синхронизации рабочего каталога с гостевой VM.
-# Синхронизация выполняется через tar-over-SSH (host→guest перед запуском claude,
-# guest→host после завершения). Секретные файлы всегда исключены из sync:
+# Синхронизация выполняется через tar-over-SSH. Секретные файлы всегда исключены из sync:
 # .claude_config, .iclaude-guest-env.sh, .iclaude-ssh/, .nvm-isolated/, .git/
 #
-# full     — синхронизировать MICRO_VM_WORKSPACE_PATH (или $PWD) ↔ /workspace
-#            двунаправленная синхронизация: изменения в guest сохраняются на хосте
-#            режим по умолчанию — полный доступ к файлам проекта
-#            MICRO_VM_WORKSPACE_PATH переопределяет $PWD как источник workspace
+# full     — двунаправленная синхронизация:
+#            host→guest при запуске, guest→host после завершения.
+#            MICRO_VM_WORKSPACE_PATH (или $PWD) — источник workspace.
+#            Режим по умолчанию.
 #
-# isolated — workspace пустой, синхронизация отсутствует
-#            максимальная изоляция: файлы проекта недоступны в guest
+# isolated — одностороннее копирование:
+#            host→guest при запуске (как full), но без sync-back.
+#            Файлы на хосте остаются неизменными после работы claude.
+#            MICRO_VM_WORKSPACE_PATH (или $PWD) — источник для копирования.
 #
 # По умолчанию: full
 # MICRO_VM_WORKSPACE_MODE=full
@@ -396,7 +397,7 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_ENABLED=true
 # MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
 #
-# # Максимальная изоляция — без доступа к файлам хоста:
+# # Изоляция: файлы копируются в VM, но изменения не возвращаются на хост:
 # MICRO_VM_ENABLED=true
 # MICRO_VM_WORKSPACE_MODE=isolated
 # MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть

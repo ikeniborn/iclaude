@@ -174,11 +174,12 @@ launch_claude() {
         local ssh_tty="-T"
         [[ -t 0 ]] && ssh_tty="-t"
 
-        # Sync workspace host→guest (full/path modes): populate /workspace before claude runs.
+        # Sync workspace host→guest: populate /workspace before claude runs.
         # Uses tar-over-SSH — guest rootfs is minimal and may not have rsync; tar is always present.
-        # 'isolated' mode: guest /workspace stays empty — no project files exposed.
+        # 'full' mode:     bidirectional sync (host→guest at start, guest→host on exit).
+        # 'isolated' mode: one-way copy (host→guest at start only); host files remain unchanged.
         local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
-        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+        if [[ -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
             # Exclude heavyweight dirs and secret files from host→guest sync:
             #   .nvm-isolated/           — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
@@ -232,7 +233,8 @@ launch_claude() {
 
         local exit_code=$?
 
-        # Sync workspace guest→host (full/path modes): persist changes claude made in guest.
+        # Sync workspace guest→host (full mode only): persist changes claude made in guest.
+        # 'isolated' mode: no sync-back — host files remain untouched.
         # Run BEFORE stop_microvm (which kills Firecracker and makes SSH inaccessible).
         if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace ← guest..."
