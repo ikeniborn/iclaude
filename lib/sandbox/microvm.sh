@@ -661,19 +661,27 @@ start_microvm() {
     export MICRO_VM_WORKSPACE_IMG
 
     # ── Resolve workspace mode ─────────────────────────────────────────────────
-    #   full     (default) — sync $PWD to guest /workspace rw; sync back on exit
-    #   path               — sync $MICRO_VM_WORKSPACE_PATH; falls back to $PWD
-    #   isolated           — guest /workspace starts empty; no sync
+    #   full     (default) — sync MICRO_VM_WORKSPACE_PATH (or $PWD) to guest /workspace rw;
+    #                        sync back on exit. MICRO_VM_WORKSPACE_PATH overrides $PWD as source.
+    #   isolated           — guest /workspace starts empty; no sync; files on host untouched.
     local workspace_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
     MICRO_VM_ISOLATED_TMPDIR=""   # reset before case (avoid stale value from previous run)
     case "$workspace_mode" in
         full)
-            MICRO_VM_WORKSPACE_HOSTDIR="$PWD"
+            # MICRO_VM_WORKSPACE_PATH overrides $PWD as workspace source when set.
+            MICRO_VM_WORKSPACE_HOSTDIR="${MICRO_VM_WORKSPACE_PATH:-$PWD}"
+            if [[ -n "${MICRO_VM_WORKSPACE_PATH:-}" && ! -d "$MICRO_VM_WORKSPACE_PATH" ]]; then
+                print_error "microVM: MICRO_VM_WORKSPACE_PATH does not exist: ${MICRO_VM_WORKSPACE_PATH}"
+                rm -rf "$session_dir" 2>/dev/null; return 1
+            fi
             ;;
         path)
+            # Deprecated: 'path' mode was removed. Treating as 'full' with MICRO_VM_WORKSPACE_PATH.
+            print_warning "microVM: MICRO_VM_WORKSPACE_MODE='path' is deprecated — use 'full' with MICRO_VM_WORKSPACE_PATH"
+            workspace_mode="full"
             MICRO_VM_WORKSPACE_HOSTDIR="${MICRO_VM_WORKSPACE_PATH:-$PWD}"
-            if [[ ! -d "$MICRO_VM_WORKSPACE_HOSTDIR" ]]; then
-                print_error "microVM: MICRO_VM_WORKSPACE_PATH does not exist: ${MICRO_VM_WORKSPACE_HOSTDIR}"
+            if [[ -n "${MICRO_VM_WORKSPACE_PATH:-}" && ! -d "$MICRO_VM_WORKSPACE_PATH" ]]; then
+                print_error "microVM: MICRO_VM_WORKSPACE_PATH does not exist: ${MICRO_VM_WORKSPACE_PATH}"
                 rm -rf "$session_dir" 2>/dev/null; return 1
             fi
             ;;
@@ -683,7 +691,7 @@ start_microvm() {
         *)
             print_warning "microVM: unknown MICRO_VM_WORKSPACE_MODE='$workspace_mode' — using 'full'"
             workspace_mode="full"
-            MICRO_VM_WORKSPACE_HOSTDIR="$PWD"
+            MICRO_VM_WORKSPACE_HOSTDIR="${MICRO_VM_WORKSPACE_PATH:-$PWD}"
             ;;
     esac
     export MICRO_VM_WORKSPACE_HOSTDIR MICRO_VM_ISOLATED_TMPDIR
