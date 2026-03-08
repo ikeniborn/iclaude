@@ -221,10 +221,19 @@ launch_claude() {
         # Unset CLAUDECODE so nested claude process doesn't detect parent session
         unset CLAUDECODE
 
+        # Restore local terminal to sane state before the interactive SSH session.
+        # The workspace sync (tar | ssh -T pipeline) may leave the terminal with icrnl disabled
+        # or other non-standard stty settings. SSH copies local terminal settings to the remote PTY
+        # on connect, so a corrupted local state means the remote PTY also has wrong settings —
+        # causing Enter (\r) not to be translated to \n and never reaching claude's UI.
+        [[ -t 0 ]] && stty sane 2>/dev/null || true
+
         # Run claude inside guest as iclaude user (non-root; fixes Enter at 'Trust project?' dialog).
         # PTY flag (-t when stdin is terminal) is critical for interactive prompts.
         # Use '.' instead of 'source': iclaude shell is /bin/sh (dash on Ubuntu), which does not
         # support 'source' as a built-in — only POSIX '.' works.
+        # cd /workspace: must set CWD before starting claude so it treats /workspace as the project
+        # root (not /home/iclaude). Without this the 'Trust project?' dialog shows /home/iclaude.
         # shellcheck disable=SC2086
         ssh $ssh_tty \
             -i "$ssh_key" \
@@ -233,7 +242,7 @@ launch_claude() {
             -o ServerAliveInterval=30 \
             -o LogLevel=ERROR \
             "iclaude@${guest_ip}" \
-            ". /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
+            ". /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; cd /workspace 2>/dev/null || true; /mnt/nvm/npm-global/bin/claude${quoted_args}"
 
         local exit_code=$?
 
