@@ -28,9 +28,12 @@ Host OS (Linux + KVM)
 │   ├── /dev/vdb  (ro)      ← nvm.img (~1GB; Node.js + claude binary; shared across sessions)
 │   └── /dev/vdc  (rw)      ← workspace-SESSION.img (per-session, sparse ext4)
 └── Guest VM
-    ├── iclaude-guest-init  ← PID 1: монтирует vdb→/mnt/nvm, vdc→/workspace, стартует sshd
-    └── claude              ← выполняется ВНУТРИ GUEST (SSH exec от host)
+    ├── iclaude-guest-init  ← PID 1: монтирует vdb→/mnt/nvm, vdc→/workspace, создаёт user iclaude, стартует sshd
+    └── claude              ← выполняется ВНУТРИ GUEST как пользователь iclaude (SSH exec от host)
 ```
+
+**Пользователь внутри guest:** `iclaude` (uid=1000, NOPASSWD sudo). Root SSH отключён (`PermitRootLogin no`).
+Запечён в rootfs при `--install-microvm`; создаётся через `useradd` при первом старте guest-init.
 
 Подробная диаграмма запуска: [docs/architecture/diagrams/data-flow-microvm-launch.md](architecture/diagrams/data-flow-microvm-launch.md)
 
@@ -157,9 +160,9 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 5. **FC config** — JSON: kernel + `init=` + drives (vda/vdb/vdc) + TAP network
 6. **FC spawn** — `firecracker --api-sock ... --config-file vmconfig.json`
 7. **SSH poll** — ожидание готовности sshd в guest (max 30s)
-8. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest
+8. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest (via `iclaude@`)
 9. **tar sync** — host→guest (режимы full/path); исключает `.nvm-isolated/`, `.git/`, secrets
-10. **SSH exec** — `ssh root@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
+10. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
 11. **sync-back** — guest→host после завершения claude (режимы full/path)
 12. **Cleanup** — EXIT-трап: `stop_microvm()`, `_free_microvm_slot()`, `rm session_dir`
 

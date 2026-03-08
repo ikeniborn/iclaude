@@ -206,7 +206,7 @@ launch_claude() {
                     -i "$ssh_key" \
                     "${_ssh_kh_opts[@]}" \
                     -o LogLevel=ERROR \
-                    "root@${guest_ip}" \
+                    "iclaude@${guest_ip}" \
                     'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
                 print_warning "microVM: workspace sync had errors — guest may have incomplete files"
         fi
@@ -216,7 +216,8 @@ launch_claude() {
         # Unset CLAUDECODE so nested claude process doesn't detect parent session
         unset CLAUDECODE
 
-        # Run claude (no exec — allows post-claude sync below to run when claude exits)
+        # Run claude inside guest as iclaude user (non-root; fixes Enter at 'Trust project?' dialog).
+        # PTY flag (-t when stdin is terminal) is critical for interactive prompts.
         # shellcheck disable=SC2086
         ssh $ssh_tty \
             -i "$ssh_key" \
@@ -224,7 +225,7 @@ launch_claude() {
             -o ConnectTimeout=15 \
             -o ServerAliveInterval=30 \
             -o LogLevel=ERROR \
-            "root@${guest_ip}" \
+            "iclaude@${guest_ip}" \
             "source /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
 
         local exit_code=$?
@@ -240,7 +241,7 @@ launch_claude() {
                 -o ServerAliveInterval=5 \
                 -o ServerAliveCountMax=3 \
                 -o LogLevel=ERROR \
-                "root@${guest_ip}" \
+                "iclaude@${guest_ip}" \
                 'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                 | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
                 print_warning "microVM: workspace sync-back had errors — some changes may not persist"
