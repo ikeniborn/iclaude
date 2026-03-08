@@ -237,6 +237,28 @@ if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && [[ -n "${ICLAUDE_PII_ACTIVE_PORT:-
     fi
 fi
 
+# microVM sandbox detection — show ⚡ when running inside Firecracker microVM
+# ICLAUDE_MICROVM_ACTIVE=1 exported by configure_guest_environment() in microvm.sh
+# MICRO_VM_WORKSPACE_MODE: full (bidirectional sync) | isolated (sealed, no sync-back)
+# ICLAUDE_MICROVM_INFO_PATH: host-side txt file with launch params (OSC 8 hover tooltip)
+MICROVM_ICON=""
+if [[ "${ICLAUDE_MICROVM_ACTIVE:-0}" == "1" ]]; then
+    case "${MICRO_VM_WORKSPACE_MODE:-full}" in
+        isolated) _vm_label="⚡🔐" ;;   # workspace sealed — no sync-back to host
+        *)        _vm_label="⚡"    ;;   # full bidirectional sync (default)
+    esac
+    # Wrap in OSC 8 hyperlink → hover shows path, click opens vm-info.txt.
+    # NOTE: no [[ -f ]] check — vm-info.txt lives on the HOST, not accessible
+    # from inside the guest VM where this script runs. The file is guaranteed
+    # to exist (created in start_microvm() before configure_guest_environment).
+    if [[ -n "${ICLAUDE_MICROVM_INFO_PATH:-}" ]]; then
+        _VM_ESC=$'\033'
+        MICROVM_ICON=" | ${_VM_ESC}]8;;file://${ICLAUDE_MICROVM_INFO_PATH}${_VM_ESC}\\${_vm_label}${_VM_ESC}]8;;${_VM_ESC}\\"
+    else
+        MICROVM_ICON=" | ${_vm_label}"
+    fi
+fi
+
 # Rate limit display (Anthropic-only, no router)
 # Fetches async via background curl, reads from 60s TTL cache
 # ICLAUDE_ROUTER_ACTIVE=1 is exported by iclaude.sh when --router is used
@@ -1073,23 +1095,28 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
         # Compact mode: MINIMAL components for 60-149 cols terminals
         # Remove: router, proxy, session link, git info
-        # Keep: tokens, cache, model, cost, rate limit, memory link, pii icon
+        # Keep: tokens, cache, model, cost, rate limit, memory link, pii icon, microvm
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${PII_ICON}${MEMORY_LINK}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${MEMORY_LINK}"
         ;;
 
     minimal)
-        # Minimal mode: только критичное (tokens, cache, model, cost) + PII shield if active
+        # Minimal mode: только критичное (tokens, cache, model, cost) + shields if active
         MODEL_SHORT=$(shorten_model_name "$MODEL")
         _PII_MINIMAL=""
         [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && _PII_MINIMAL=" 🛡"
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${_PII_MINIMAL}"
+        _MICROVM_MINIMAL=""
+        if [[ "${ICLAUDE_MICROVM_ACTIVE:-0}" == "1" ]]; then
+            [[ "${MICRO_VM_WORKSPACE_MODE:-full}" == "isolated" ]] \
+                && _MICROVM_MINIMAL=" ⚡🔐" || _MICROVM_MINIMAL=" ⚡"
+        fi
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${_PII_MINIMAL}${_MICROVM_MINIMAL}"
         ;;
 esac
 
