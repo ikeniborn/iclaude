@@ -524,6 +524,15 @@ configure_guest_environment() {
             echo "export CLAUDE_CODE_ENABLE_TASKS='${tasks_e}'"
         fi
 
+        # microVM sandbox indicator vars for statusline (⚡ icon + hover tooltip)
+        echo "export ICLAUDE_MICROVM_ACTIVE=1"
+        local ws_mode_e; ws_mode_e=$(_sh_escape_val "${MICRO_VM_WORKSPACE_MODE:-full}")
+        echo "export MICRO_VM_WORKSPACE_MODE='${ws_mode_e}'"
+        if [[ -n "${ICLAUDE_MICROVM_INFO_PATH:-}" ]]; then
+            local info_path_e; info_path_e=$(_sh_escape_val "$ICLAUDE_MICROVM_INFO_PATH")
+            echo "export ICLAUDE_MICROVM_INFO_PATH='${info_path_e}'"
+        fi
+
         # PII proxy status vars for statusline
         if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]]; then
             local pii_level_e; pii_level_e=$(_sh_escape_val "${ICLAUDE_PII_MASKING_LEVEL:-standard}")
@@ -825,6 +834,44 @@ start_microvm() {
         return 1
     }
 
+    # ── Generate VM info file for statusline hover tooltip ────────────────────
+    # Written on the HOST (accessible from the host terminal via OSC 8 click).
+    # Path is exported to guest so claude-statusline.sh can build the hyperlink.
+    local vm_info_file="${session_dir}/vm-info.txt"
+    {
+        echo "⚡ iclaude microVM  [ active ]"
+        echo "════════════════════════════════════════"
+        case "$workspace_mode" in
+            full)
+                printf " Workspace  full — %s ↔ /workspace\n" "${MICRO_VM_WORKSPACE_HOSTDIR:-$PWD}"
+                local _sync_int="${MICRO_VM_SYNC_INTERVAL:-0}"
+                if [[ "$_sync_int" =~ ^[0-9]+$ ]] && [[ "$_sync_int" -gt 0 ]]; then
+                    printf " Sync       every %ss (periodic)\n" "$_sync_int"
+                else
+                    printf " Sync       on session exit\n"
+                fi
+                ;;
+            isolated)
+                printf " Workspace  isolated — /workspace ephemeral (no sync-back)\n"
+                ;;
+        esac
+        printf " Memory     %s MB\n" "${MICRO_VM_MEM_MB:-1024}"
+        printf " vCPU       %s\n"   "${MICRO_VM_VCPU:-2}"
+        if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
+            printf " Network    enabled  host %s ↔ guest %s\n" \
+                "${MICRO_VM_NET_HOST_IP:-172.16.0.1}" "${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+        else
+            printf " Network    disabled\n"
+        fi
+        [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && \
+            printf " PII proxy  active — port %s\n" "${ICLAUDE_PII_ACTIVE_PORT:-}"
+        [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && \
+            printf " Router     active\n"
+        echo "════════════════════════════════════════"
+        printf " Started    %s\n" "$(date '+%Y-%m-%d %H:%M:%S')"
+    } > "$vm_info_file"
+    export ICLAUDE_MICROVM_INFO_PATH="$vm_info_file"
+
     # Write guest environment file (pushed to guest via SCP after SSH is ready)
     local env_file="${session_dir}/guest-env.sh"
     configure_guest_environment "$env_file"
@@ -927,7 +974,8 @@ start_microvm() {
     #  2. iptables PREROUTING DNAT — rewrites destination from host TAP IP to 127.0.0.1.
     #
     # Both are scoped to the slot's TAP interface and removed in stop_microvm().
-    if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && [[ -n "${ICLAUDE_PII_ACTIVE_PORT:-}" ]] && \
+    if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && \
+       [[ "${ICLAUDE_PII_ACTIVE_PORT:-}" =~ ^[0-9]+$ ]] && \
        [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]] && \
        [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
        sudo -n true 2>/dev/null; then
