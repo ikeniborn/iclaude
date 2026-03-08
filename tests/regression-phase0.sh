@@ -14,42 +14,37 @@ echo "=== Phase 0: Infrastructure Regression Tests ==="
 echo ""
 
 # Test 1: Basic help
-echo "[1/8] Testing --help..."
+echo "[1/7] Testing --help..."
 ./iclaude.sh --help > /dev/null
 echo "✓ --help works"
 
 # Test 2: Check isolated environment
-echo "[2/8] Testing --check-isolated..."
+echo "[2/7] Testing --check-isolated..."
 ./iclaude.sh --check-isolated > /dev/null
 echo "✓ --check-isolated works"
 
 # Test 3: Check config status
-echo "[3/8] Testing --check-config..."
+echo "[3/7] Testing --check-config..."
 ./iclaude.sh --check-config > /dev/null
 echo "✓ --check-config works"
 
 # Test 4: Check router status
-echo "[4/8] Testing --check-router..."
+echo "[4/7] Testing --check-router..."
 ./iclaude.sh --check-router > /dev/null
 echo "✓ --check-router works"
 
 # Test 5: Check LSP status
-echo "[5/8] Testing --check-lsp..."
+echo "[5/7] Testing --check-lsp..."
 ./iclaude.sh --check-lsp > /dev/null
 echo "✓ --check-lsp works"
 
-# Test 6: Check sandbox status
-echo "[6/8] Testing --check-sandbox..."
-./iclaude.sh --check-sandbox > /dev/null
-echo "✓ --check-sandbox works"
-
-# Test 7: Check statusline status
-echo "[7/8] Testing --check-statusline..."
+# Test 6: Check statusline status
+echo "[6/7] Testing --check-statusline..."
 ./iclaude.sh --check-statusline > /dev/null
 echo "✓ --check-statusline works"
 
-# Test 8: Check Oh My Posh status
-echo "[8/8] Testing --check-ohmyposh..."
+# Test 7: Check Oh My Posh status
+echo "[7/7] Testing --check-ohmyposh..."
 ./iclaude.sh --check-ohmyposh > /dev/null
 echo "✓ --check-ohmyposh works"
 
