@@ -974,5 +974,8 @@ cleanup_orphaned_microvm_sessions() {
         done
     fi
 
-    [[ $cleaned -gt 0 ]] && print_info "microVM: cleaned ${cleaned} orphaned session artifact(s)"
+    if [[ $cleaned -gt 0 ]]; then
+        print_info "microVM: cleaned ${cleaned} orphaned session artifact(s)"
+    fi
+    return 0
 }
