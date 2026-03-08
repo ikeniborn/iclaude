@@ -273,13 +273,14 @@ install_microvm() {
 	local _rootfs="${MICRO_VM_ROOTFS_PATH:-${_bin_dir}/rootfs.ext4}"
 	local _v3_marker="${_rootfs%.ext4}.v3-ready"
 	local _v4_marker="${_rootfs%.ext4}.v4-ready"
+	local _v5_marker="${_rootfs%.ext4}.v5-ready"
 	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 
 	local _nvm_img="${MICRO_VM_NVM_IMG:-${_bin_dir}/nvm.img}"
 
 	if [[ -f "$_rootfs" ]]; then
-		if [[ -f "$_v4_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
-			print_success "microVM already installed and up-to-date (v4)"
+		if [[ -f "$_v5_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
+			print_success "microVM already installed and up-to-date (v5)"
 			print_info "Rootfs: $_rootfs"
 			print_info "NVM image: $_nvm_img"
 			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
@@ -298,13 +299,16 @@ install_microvm() {
 			return 1
 		fi
 
-		# Rootfs exists but v4 not applied — upgrade without re-downloading.
+		# Rootfs exists but v5 not applied — upgrade without re-downloading.
+		# v5 adds: /tmp mounted as tmpfs in guest-init (world-writable, fixes Bash tool access).
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
-		if [[ -f "$_v3_marker" ]]; then
-			print_info "Existing rootfs found — upgrading to v4 (CA bundle for HTTPS)..."
+		if [[ -f "$_v4_marker" ]]; then
+			print_info "Existing rootfs found — upgrading to v5 (fix /tmp permissions for Bash tool)..."
+		elif [[ -f "$_v3_marker" ]]; then
+			print_info "Existing rootfs found — upgrading to v5 (CA bundle + /tmp fix)..."
 		else
-			print_info "Existing rootfs found — upgrading to v4 (jq + DNS + SSH keys + CA bundle)..."
+			print_info "Existing rootfs found — upgrading to v5 (jq + DNS + SSH keys + CA bundle + /tmp fix)..."
 		fi
 		echo ""
 		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
@@ -312,17 +316,17 @@ install_microvm() {
 		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
 		if [[ -f "$_guest_init_src" ]]; then
 			_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
-				|| print_warning "v4 inject failed"
+				|| print_warning "v5 inject failed"
 		else
-			print_warning "guest-init.sh not found at $_guest_init_src — v4 unavailable"
+			print_warning "guest-init.sh not found at $_guest_init_src — v5 unavailable"
 		fi
 		# Only rebuild NVM image if it is missing (rebuild is slow and requires sudo)
 		if [[ ! -f "$_nvm_img" ]]; then
 			_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
 		fi
 		echo ""
-		print_success "microVM v4 upgrade complete"
-		print_info "Verify: debugfs -R 'ls /etc/ssl/certs/ca-certificates.crt' $_rootfs"
+		print_success "microVM v5 upgrade complete"
+		print_info "Verify /tmp writable: ./iclaude.sh --sandbox-microvm (Bash tool should work)"
 		return 0
 	fi
 
@@ -841,11 +845,12 @@ EOF
 		print_warning "CA bundle not found at ${ca_bundle} — HTTPS will fail in guest (install: sudo apt install ca-certificates)"
 	fi
 
-	# Mark v4 ready: rootfs has guest-init (DNS + loopback), jq, SSH keys, sudoers, mount points, CA bundle.
-	# v2-ready and v3-ready kept for backward compatibility with any tooling that checks for them.
+	# Mark v5 ready: rootfs has guest-init (DNS + /tmp tmpfs + loopback), jq, SSH keys, sudoers, mount points, CA bundle.
+	# v2-v4 kept for backward compatibility with any tooling that checks for them.
 	touch "${rootfs%.ext4}.v2-ready"
 	touch "${rootfs%.ext4}.v3-ready"
 	touch "${rootfs%.ext4}.v4-ready"
-	print_success "Guest init injected (rootfs ready for v4)"
+	touch "${rootfs%.ext4}.v5-ready"
+	print_success "Guest init injected (rootfs ready for v5)"
 	return 0
 }

@@ -220,6 +220,31 @@ launch_claude() {
                 print_warning "microVM: workspace sync had errors — guest may have incomplete files"
         fi
 
+        # Periodic background sync (full mode + MICRO_VM_SYNC_INTERVAL > 0).
+        # Runs a background loop that pulls /workspace from guest to host every N seconds
+        # while claude is running, so changes are visible on host without waiting for exit.
+        # Disabled by default (0); enable via MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
+        local _sync_interval="${MICRO_VM_SYNC_INTERVAL:-0}"
+        local _periodic_sync_pid=""
+        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]] && \
+           [[ "$_sync_interval" =~ ^[0-9]+$ ]] && [[ "$_sync_interval" -gt 0 ]]; then
+            (
+                while true; do
+                    sleep "$_sync_interval" || break
+                    # Stop if FC socket is gone (VM no longer running)
+                    [[ -S "${MICRO_VM_SOCKET:-/dev/null}" ]] || break
+                    ssh -T -o BatchMode=yes \
+                        -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 \
+                        -i "$ssh_key" "${_ssh_kh_opts[@]}" -o LogLevel=ERROR \
+                        "iclaude@${guest_ip}" \
+                        'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
+                        | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || true
+                done
+            ) &
+            _periodic_sync_pid=$!
+            print_info "microVM: periodic sync every ${_sync_interval}s (PID ${_periodic_sync_pid})"
+        fi
+
         print_info "microVM: connecting to guest VM via SSH (${guest_ip})..."
         export ICLAUDE_MICROVM_ACTIVE=1
         # Unset CLAUDECODE so nested claude process doesn't detect parent session
@@ -249,6 +274,13 @@ launch_claude() {
             ". /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; cd /workspace 2>/dev/null || true; /mnt/nvm/npm-global/bin/claude${quoted_args}"
 
         local exit_code=$?
+
+        # Stop periodic sync loop (if running)
+        if [[ -n "${_periodic_sync_pid:-}" ]]; then
+            kill "$_periodic_sync_pid" 2>/dev/null || true
+            wait "$_periodic_sync_pid" 2>/dev/null || true
+            _periodic_sync_pid=""
+        fi
 
         # Sync workspace guest→host (full mode only): persist changes claude made in guest.
         # 'isolated' mode: no sync-back — host files remain untouched.
