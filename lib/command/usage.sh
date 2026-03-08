@@ -69,7 +69,7 @@ OPTIONS:
   --check-lsp                       Show LSP server and plugin installation status
   --install-microvm                 Install Firecracker microVM (binary, kernel, rootfs, TAP networking)
                                     Downloads ~72MB to isolated environment (not in git)
-                                    Requires: KVM (/dev/kvm), virtiofsd, iproute2
+                                    Requires: KVM (/dev/kvm), iproute2
   --check-microvm                   Show microVM status (KVM, binaries, networking, configuration)
   --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
                                     Requires prior --install-microvm setup
