@@ -781,7 +781,7 @@ start_microvm() {
             -o ConnectTimeout=1 \
             -o BatchMode=yes \
             -o LogLevel=ERROR \
-            "root@${guest_ip}" \
+            "iclaude@${guest_ip}" \
             'exit 0' 2>/dev/null; then
             ssh_ready=true
             break
@@ -811,12 +811,12 @@ start_microvm() {
         print_info "microVM: SSH host key pinned (${known_hosts_file})"
     fi
 
-    # Push guest environment file to /workspace via SCP
+    # Push guest environment file to /workspace via SCP (iclaude user, workspace is chowned to it)
     scp \
         -i "$ssh_key" \
         "${_ssh_kh_opts[@]}" \
         -o LogLevel=ERROR \
-        "$env_file" "root@${guest_ip}:/workspace/.iclaude-guest-env.sh" 2>/dev/null || \
+        "$env_file" "iclaude@${guest_ip}:/workspace/.iclaude-guest-env.sh" 2>/dev/null || \
         print_warning "microVM: could not push guest env — guest may start without proxy/API config"
 
     # Signal to statusline that microVM is active
