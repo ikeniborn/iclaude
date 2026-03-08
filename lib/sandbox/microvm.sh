@@ -474,10 +474,12 @@ configure_guest_environment() {
         echo "# iclaude microVM guest environment — auto-generated, do not edit"
         echo "export ANTHROPIC_BASE_URL='${api_base_e}'"
         # CLAUDE_CONFIG_DIR: create writable guest config at /workspace/.claude-guest.
-        # Symlinks all subdirs from the RO nvm image; writes a patched settings.json
-        # without skipDangerousModePermissionPrompt (Claude refuses that flag as root).
+        # Symlinks most subdirs from the RO nvm image; COPIES files that claude writes
+        # during a session (.claude.json, .credentials.json, history.jsonl) so that
+        # write attempts don't fail with EPERM on the read-only /dev/vdb mount.
+        # Writes a patched settings.json without skipDangerousModePermissionPrompt.
         # shellcheck disable=SC2016
-        echo 'python3 -c '"'"'import json,pathlib; src=pathlib.Path("/mnt/nvm/.claude-isolated"); dst=pathlib.Path("/workspace/.claude-guest"); dst.mkdir(exist_ok=True); [((dst/i.name).symlink_to(i) if not (dst/i.name).exists() and i.name not in ("projects","settings.json") else None) for i in src.iterdir()]; s=src/"settings.json"; d=json.loads(s.read_text()) if s.exists() else {}; d.pop("skipDangerousModePermissionPrompt",None); (dst/"settings.json").write_text(json.dumps(d,indent=2))'"'"' 2>/dev/null || true'
+        echo 'python3 -c '"'"'import json,pathlib,shutil; src=pathlib.Path("/mnt/nvm/.claude-isolated"); dst=pathlib.Path("/workspace/.claude-guest"); dst.mkdir(exist_ok=True); copy_set={".claude.json",".credentials.json","history.jsonl","stats-cache.json"}; skip_set={"projects","settings.json"}; [(shutil.copy2(i,dst/i.name) if i.name in copy_set and not (dst/i.name).exists() else ((dst/i.name).symlink_to(i) if not (dst/i.name).exists() and i.name not in skip_set else None)) for i in src.iterdir()]; s=src/"settings.json"; d=json.loads(s.read_text()) if s.exists() else {}; d.pop("skipDangerousModePermissionPrompt",None); (dst/"settings.json").write_text(json.dumps(d,indent=2))'"'"' 2>/dev/null || true'
         echo "export CLAUDE_CONFIG_DIR='/workspace/.claude-guest'"
 
         # Proxy settings
@@ -491,10 +493,14 @@ configure_guest_environment() {
                 local http_proxy_e; http_proxy_e=$(_sh_escape_val "$HTTP_PROXY")
                 echo "export HTTP_PROXY='${http_proxy_e}'"
             fi
-            if [[ -n "${NO_PROXY:-}" ]]; then
-                local no_proxy_e; no_proxy_e=$(_sh_escape_val "$NO_PROXY")
-                echo "export NO_PROXY='${no_proxy_e}'"
-            fi
+            # Always add host TAP IP to NO_PROXY so that the PII proxy (http://host_ip:port)
+            # is reached directly without routing through external HTTPS proxy.
+            # Without this undici routes http://172.16.0.1:PORT through HTTP_PROXY →
+            # external proxy cannot reach private TAP address → UND_ERR_SOCKET.
+            local _no_proxy_base="${NO_PROXY:-}"
+            local _no_proxy_guest="${_no_proxy_base:+${_no_proxy_base},}${host_ip}"
+            local no_proxy_e; no_proxy_e=$(_sh_escape_val "$_no_proxy_guest")
+            echo "export NO_PROXY='${no_proxy_e}'"
         fi
 
         # Router config (if active)
@@ -530,8 +536,9 @@ configure_guest_environment() {
         # NVM path inside guest (/dev/vdb mounted at /mnt/nvm by guest-init).
         # printf with single-quoted format prevents host expansion; guest sources
         # the double-quoted assignment so $(ls ...) and ${PATH} expand in the guest.
+        # npm-global/bin must be first so 'claude', 'ccr', and other global tools are found.
         echo "export NVM_DIR='/mnt/nvm'"
-        printf 'export PATH="/mnt/nvm/versions/node/$(ls /mnt/nvm/versions/node 2>/dev/null | head -1)/bin:/workspace/node_modules/.bin:${PATH}"\n'
+        printf 'export PATH="/mnt/nvm/npm-global/bin:/mnt/nvm/versions/node/$(ls /mnt/nvm/versions/node 2>/dev/null | head -1)/bin:/workspace/node_modules/.bin:${PATH}"\n'
     } > "$env_file"
 
     chmod 600 "$env_file"

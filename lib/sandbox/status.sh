@@ -51,15 +51,26 @@ check_microvm_status() {
 	if [[ -f "$rootfs" ]]; then
 		local rootfs_sz
 		rootfs_sz=$(du -h "$rootfs" 2>/dev/null | cut -f1)
-		print_success "rootfs.ext4: $rootfs ($rootfs_sz)"
+		local rootfs_v3="${rootfs%.ext4}.v3-ready"
+		local rootfs_v4="${rootfs%.ext4}.v4-ready"
+		if [[ -f "$rootfs_v4" ]]; then
+			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle]"
+		elif [[ -f "$rootfs_v3" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: missing CA bundle]"
+			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
+		else
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle]"
+			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
+		fi
 	else
 		print_warning "rootfs.ext4: not found ($rootfs)"
 	fi
 	echo ""
 
-	# TAP networking
+	# TAP networking — MICRO_VM_NET_TAP_IFACE is a prefix; slot-0 TAP = prefix + "-1"
 	print_info "TAP Networking:"
-	local tap_iface="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+	local tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+	local tap_iface="${tap_prefix}-1"
 	if ip link show "$tap_iface" &>/dev/null; then
 		local tap_ip
 		tap_ip=$(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}' | head -1)
@@ -101,7 +112,9 @@ check_microvm_status() {
 	detect_kvm_support &>/dev/null || { all_ready=false; missing_items+=("KVM"); }
 	detect_microvm_binary &>/dev/null || { all_ready=false; missing_items+=("firecracker binary"); }
 	[[ -f "${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}" ]] || { all_ready=false; missing_items+=("vmlinux kernel"); }
-	[[ -f "${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
+	local _rootfs_sum="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
+	[[ -f "$_rootfs_sum" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
+	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v4-ready" ]] || { all_ready=false; missing_items+=("rootfs v4 upgrade needed (CA bundle for HTTPS) → ./iclaude.sh --install-microvm"); }
 
 	if [[ "$all_ready" == "true" ]]; then
 		print_success "microVM Ready"
