@@ -251,6 +251,161 @@ _install_virtiofsd_auto() {
 }
 
 #######################################
+# Download Firecracker binary from GitHub releases, extract from tgz, verify.
+# Arguments:
+#   $1 - bin_dir: destination directory for the binary
+#   $2 - arch: target architecture (x86_64 or aarch64)
+#   $3 - fc_version: Firecracker version string (e.g. "v1.11.0")
+#   $4 - sha256: expected SHA-256 hash (empty = skip verification)
+# Returns:
+#   0 - success; binary installed at $bin_dir/firecracker
+#   1 - failure
+#######################################
+_download_firecracker() {
+	local bin_dir="$1"
+	local arch="$2"
+	local fc_version="$3"
+	local sha256="$4"
+
+	local fc_bin="${bin_dir}/firecracker"
+	local fc_url="https://github.com/firecracker-microvm/firecracker/releases/download/${fc_version}/firecracker-${fc_version}-${arch}.tgz"
+
+	print_info "Downloading Firecracker ${fc_version} (${arch})..."
+	echo "  Source: $fc_url"
+	echo ""
+
+	local tmp_tgz="${bin_dir}/firecracker.tgz.tmp"
+	if command -v curl &>/dev/null; then
+		if ! curl -fsSL --progress-bar -o "$tmp_tgz" "$fc_url"; then
+			print_error "Failed to download Firecracker"
+			rm -f "$tmp_tgz"
+			return 1
+		fi
+	elif command -v wget &>/dev/null; then
+		if ! wget -q --show-progress -O "$tmp_tgz" "$fc_url"; then
+			print_error "Failed to download Firecracker"
+			rm -f "$tmp_tgz"
+			return 1
+		fi
+	else
+		print_error "Neither curl nor wget found. Install one of them first."
+		return 1
+	fi
+
+	print_info "Extracting Firecracker binary..."
+	local tmp_dir="${bin_dir}/fc_extract_tmp"
+	mkdir -p "$tmp_dir"
+	if ! tar -xzf "$tmp_tgz" -C "$tmp_dir" 2>/dev/null; then
+		print_error "Failed to extract Firecracker archive"
+		rm -rf "$tmp_tgz" "$tmp_dir"
+		return 1
+	fi
+	rm -f "$tmp_tgz"
+
+	# Find the firecracker binary inside extracted dir
+	local fc_extracted
+	fc_extracted=$(find "$tmp_dir" -name "firecracker-${fc_version}-${arch}" -o -name "firecracker" 2>/dev/null | head -1)
+	if [[ -z "$fc_extracted" ]]; then
+		fc_extracted=$(find "$tmp_dir" -type f -name "firecracker*" 2>/dev/null | head -1)
+	fi
+	if [[ -z "$fc_extracted" ]]; then
+		print_error "firecracker binary not found in archive"
+		rm -rf "$tmp_dir"
+		return 1
+	fi
+
+	cp "$fc_extracted" "$fc_bin"
+	chmod 755 "$fc_bin"
+	rm -rf "$tmp_dir"
+	if ! _verify_sha256 "$fc_bin" "$sha256" "firecracker ${fc_version}"; then
+		rm -f "$fc_bin"
+		return 1
+	fi
+	print_success "Firecracker: $fc_bin"
+}
+
+#######################################
+# Download vmlinux kernel image from Firecracker CI S3 bucket.
+# Arguments:
+#   $1 - kernel_path: destination file path for the kernel
+#   $2 - arch: target architecture (x86_64 or aarch64)
+#   $3 - sha256: expected SHA-256 hash (empty = skip verification)
+# Returns:
+#   0 - success
+#   1 - failure
+#######################################
+_download_vmlinux() {
+	local kernel_path="$1"
+	local arch="$2"
+	local sha256="$3"
+
+	# Kernel: Firecracker CI kernel (ELF vmlinux, works with all Firecracker versions).
+	# Note: Firecracker v1.11.0 does not implement virtiofs backend — block devices used instead.
+	local kernel_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/vmlinux-6.1.102"
+	print_info "Downloading Linux kernel (vmlinux, ~40MB)..."
+	echo "  Source: $kernel_url"
+	echo ""
+
+	if command -v curl &>/dev/null; then
+		if ! curl -fsSL --progress-bar -o "$kernel_path" "$kernel_url"; then
+			print_error "Failed to download vmlinux kernel"
+			return 1
+		fi
+	else
+		if ! wget -q --show-progress -O "$kernel_path" "$kernel_url"; then
+			print_error "Failed to download vmlinux kernel"
+			return 1
+		fi
+	fi
+	chmod 644 "$kernel_path"
+	if ! _verify_sha256 "$kernel_path" "$sha256" "vmlinux kernel"; then
+		rm -f "$kernel_path"
+		return 1
+	fi
+	print_success "Kernel: $kernel_path"
+}
+
+#######################################
+# Download Ubuntu rootfs image from Firecracker CI S3 bucket.
+# Arguments:
+#   $1 - rootfs_path: destination file path for the rootfs image
+#   $2 - arch: target architecture (x86_64 or aarch64)
+#   $3 - sha256: expected SHA-256 hash (empty = skip verification)
+# Returns:
+#   0 - success
+#   1 - failure
+#######################################
+_download_rootfs() {
+	local rootfs_path="$1"
+	local arch="$2"
+	local sha256="$3"
+
+	local rootfs_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/ubuntu-22.04.ext4"
+
+	print_info "Downloading rootfs image (~300MB)..."
+	echo "  Source: $rootfs_url"
+	echo ""
+
+	if command -v curl &>/dev/null; then
+		if ! curl -fsSL --progress-bar -o "$rootfs_path" "$rootfs_url"; then
+			print_error "Failed to download rootfs image"
+			return 1
+		fi
+	else
+		if ! wget -q --show-progress -O "$rootfs_path" "$rootfs_url"; then
+			print_error "Failed to download rootfs image"
+			return 1
+		fi
+	fi
+	chmod 644 "$rootfs_path"
+	if ! _verify_sha256 "$rootfs_path" "$sha256" "rootfs image"; then
+		rm -f "$rootfs_path"
+		return 1
+	fi
+	print_success "Rootfs: $rootfs_path"
+}
+
+#######################################
 # Download and install Firecracker microVM binaries
 # Downloads: firecracker binary, vmlinux kernel, rootfs.ext4
 # All stored in ISOLATED_CONFIG_DIR/bin/ (covered by .gitignore)
@@ -350,122 +505,21 @@ install_microvm() {
 	print_info "Install directory: $bin_dir"
 	echo ""
 
-	# Firecracker version to install
-	local fc_version="v1.11.0"
-	local fc_bin="${bin_dir}/firecracker"
-	local fc_url="https://github.com/firecracker-microvm/firecracker/releases/download/${fc_version}/firecracker-${fc_version}-${arch}.tgz"
 	# Optional SHA-256 hashes — set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256
 	# to verify downloads. Leave empty (default) to skip verification.
 	local fc_sha256="${MICRO_VM_FC_SHA256:-}"
 	local kernel_sha256="${MICRO_VM_KERNEL_SHA256:-}"
 	local rootfs_sha256="${MICRO_VM_ROOTFS_SHA256:-}"
 
-	print_info "Downloading Firecracker ${fc_version} (${arch})..."
-	echo "  Source: $fc_url"
-	echo ""
+	local fc_version="v1.11.0"
+	local fc_bin="${bin_dir}/firecracker"
+	_download_firecracker "$bin_dir" "$arch" "$fc_version" "$fc_sha256" || return 1
 
-	# Download with curl or wget
-	local tmp_tgz="${bin_dir}/firecracker.tgz.tmp"
-	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$tmp_tgz" "$fc_url"; then
-			print_error "Failed to download Firecracker"
-			rm -f "$tmp_tgz"
-			return 1
-		fi
-	elif command -v wget &>/dev/null; then
-		if ! wget -q --show-progress -O "$tmp_tgz" "$fc_url"; then
-			print_error "Failed to download Firecracker"
-			rm -f "$tmp_tgz"
-			return 1
-		fi
-	else
-		print_error "Neither curl nor wget found. Install one of them first."
-		return 1
-	fi
-
-	# Extract firecracker binary from tgz
-	print_info "Extracting Firecracker binary..."
-	local tmp_dir="${bin_dir}/fc_extract_tmp"
-	mkdir -p "$tmp_dir"
-	if ! tar -xzf "$tmp_tgz" -C "$tmp_dir" 2>/dev/null; then
-		print_error "Failed to extract Firecracker archive"
-		rm -rf "$tmp_tgz" "$tmp_dir"
-		return 1
-	fi
-	rm -f "$tmp_tgz"
-
-	# Find the firecracker binary inside extracted dir
-	local fc_extracted
-	fc_extracted=$(find "$tmp_dir" -name "firecracker-${fc_version}-${arch}" -o -name "firecracker" 2>/dev/null | head -1)
-	if [[ -z "$fc_extracted" ]]; then
-		# Fallback: find any executable named firecracker*
-		fc_extracted=$(find "$tmp_dir" -type f -name "firecracker*" 2>/dev/null | head -1)
-	fi
-	if [[ -z "$fc_extracted" ]]; then
-		print_error "firecracker binary not found in archive"
-		rm -rf "$tmp_dir"
-		return 1
-	fi
-
-	cp "$fc_extracted" "$fc_bin"
-	chmod 755 "$fc_bin"
-	rm -rf "$tmp_dir"
-	if ! _verify_sha256 "$fc_bin" "$fc_sha256" "firecracker ${fc_version}"; then
-		rm -f "$fc_bin"
-		return 1
-	fi
-	print_success "Firecracker: $fc_bin"
-
-	# Kernel: Firecracker CI kernel (ELF vmlinux, works with all Firecracker versions).
-	# Note: Firecracker v1.11.0 does not implement virtiofs backend — block devices used instead.
 	local kernel_path="${MICRO_VM_KERNEL_PATH:-${bin_dir}/vmlinux}"
-	local kernel_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/vmlinux-6.1.102"
-	print_info "Downloading Linux kernel (vmlinux, ~40MB)..."
-	echo "  Source: $kernel_url"
-	echo ""
-	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$kernel_path" "$kernel_url"; then
-			print_error "Failed to download vmlinux kernel"
-			return 1
-		fi
-	else
-		if ! wget -q --show-progress -O "$kernel_path" "$kernel_url"; then
-			print_error "Failed to download vmlinux kernel"
-			return 1
-		fi
-	fi
-	chmod 644 "$kernel_path"
-	if ! _verify_sha256 "$kernel_path" "$kernel_sha256" "vmlinux kernel"; then
-		rm -f "$kernel_path"
-		return 1
-	fi
-	print_success "Kernel: $kernel_path"
+	_download_vmlinux "$kernel_path" "$arch" "$kernel_sha256" || return 1
 
-	# Download rootfs (Alpine-based microVM rootfs)
 	local rootfs_path="${MICRO_VM_ROOTFS_PATH:-${bin_dir}/rootfs.ext4}"
-	local rootfs_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/ubuntu-22.04.ext4"
-
-	print_info "Downloading rootfs image (~300MB)..."
-	echo "  Source: $rootfs_url"
-	echo ""
-
-	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$rootfs_path" "$rootfs_url"; then
-			print_error "Failed to download rootfs image"
-			return 1
-		fi
-	else
-		if ! wget -q --show-progress -O "$rootfs_path" "$rootfs_url"; then
-			print_error "Failed to download rootfs image"
-			return 1
-		fi
-	fi
-	chmod 644 "$rootfs_path"
-	if ! _verify_sha256 "$rootfs_path" "$rootfs_sha256" "rootfs image"; then
-		rm -f "$rootfs_path"
-		return 1
-	fi
-	print_success "Rootfs: $rootfs_path"
+	_download_rootfs "$rootfs_path" "$arch" "$rootfs_sha256" || return 1
 
 	# Create working directories
 	local work_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}"

@@ -537,6 +537,150 @@ configure_guest_environment() {
 
 
 #######################################
+# Validate session_id and create the per-session working directory.
+# Sets MICRO_VM_SOCKET global.
+# Arguments:
+#   $1 - session_id: session identifier
+#   $2 - work_dir: base working directory
+# Outputs (stdout):
+#   Full path to created session_dir
+# Returns:
+#   0 - success
+#   1 - failure (invalid id or mkdir failed)
+#######################################
+_setup_microvm_session_dir() {
+    local session_id="$1"
+    local work_dir="$2"
+
+    # Validate session_id: only alphanumeric, dash, underscore allowed.
+    # Prevents path traversal if ICLAUDE_SESSION_ID is set to a malicious value (e.g. "../../../etc").
+    if ! [[ "$session_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        print_error "microVM: invalid session_id '${session_id}' — must contain only [a-zA-Z0-9_-]"
+        return 1
+    fi
+
+    local session_dir="${work_dir}/${session_id}"
+    if ! mkdir -p "$session_dir" || ! chmod 700 "$session_dir"; then
+        print_error "microVM: failed to create session directory: ${session_dir}"
+        return 1
+    fi
+
+    # Unix socket path (108-byte SUN_LEN limit on Linux — use /tmp, not session_dir)
+    MICRO_VM_SOCKET="/tmp/iclaude-${session_id}-fc.sock"
+
+    echo "$session_dir"
+}
+
+#######################################
+# Create a sparse ext4 workspace image for the guest.
+# Arguments:
+#   $1 - ws_img: path for the workspace image file
+#   $2 - ws_size_mb: size in MiB
+#   $3 - session_dir: session directory (for cleanup on failure)
+# Returns:
+#   0 - success
+#   1 - failure
+#######################################
+_create_workspace_image() {
+    local ws_img="$1"
+    local ws_size_mb="${2:-2048}"
+    local session_dir="$3"
+
+    print_info "microVM: creating workspace image (${ws_size_mb}MiB sparse)..."
+    if ! dd if=/dev/zero of="$ws_img" bs=1M count=0 seek="$ws_size_mb" 2>/dev/null; then
+        print_error "microVM: failed to create workspace image at ${ws_img}"
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
+    if ! mkfs.ext4 -F -q "$ws_img" 2>/dev/null; then
+        print_error "microVM: failed to format workspace image (mkfs.ext4)"
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
+}
+
+#######################################
+# Wait for the Firecracker API socket to appear after launch.
+# Arguments:
+#   $1 - pid: Firecracker process PID
+#   $2 - socket: path to the API socket
+#   $3 - session_dir: session directory (for log path and cleanup on failure)
+# Returns:
+#   0 - socket appeared
+#   1 - timeout or process died
+#######################################
+_wait_firecracker_socket() {
+    local pid="$1"
+    local socket="$2"
+    local session_dir="$3"
+
+    local ticks=0
+    while [[ $ticks -lt 40 ]]; do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            print_error "microVM: Firecracker process exited unexpectedly"
+            print_info "microVM: log: ${session_dir}/firecracker.log"
+            rm -rf "$session_dir" 2>/dev/null || true
+            return 1
+        fi
+        [[ -S "$socket" ]] && return 0
+        sleep 0.25
+        ticks=$((ticks + 1))
+    done
+
+    print_error "microVM: Firecracker API socket did not appear within 10s"
+    kill "$pid" 2>/dev/null || true
+    rm -rf "$session_dir" 2>/dev/null || true
+    return 1
+}
+
+#######################################
+# Poll guest SSH until it becomes ready.
+# Arguments:
+#   $1 - guest_ip: IP address of the guest
+#   $2 - ssh_key: path to the SSH private key
+#   $3 - fc_pid: Firecracker PID (checked to detect early exit)
+#   $4 - session_dir: session directory (for log path and cleanup on failure)
+#   Remaining args: SSH known-hosts options array (passed as individual args)
+# Returns:
+#   0 - SSH ready; outputs tick count on stdout
+#   1 - timeout or Firecracker died
+#######################################
+_poll_guest_ssh() {
+    local guest_ip="$1"
+    local ssh_key="$2"
+    local fc_pid="$3"
+    local session_dir="$4"
+    shift 4
+    local -a kh_opts=("$@")
+
+    print_info "microVM: waiting for guest SSH (${guest_ip})..."
+    local ticks=0
+    while [[ $ticks -lt 60 ]]; do   # 60 × 0.5s = 30s
+        if ! kill -0 "$fc_pid" 2>/dev/null; then
+            print_error "microVM: Firecracker exited before guest SSH was ready"
+            print_info "microVM: log: ${session_dir}/firecracker.log"
+            rm -rf "$session_dir" 2>/dev/null; return 1
+        fi
+        if ssh \
+            -i "$ssh_key" \
+            "${kh_opts[@]}" \
+            -o ConnectTimeout=1 \
+            -o BatchMode=yes \
+            -o LogLevel=ERROR \
+            "iclaude@${guest_ip}" \
+            'exit 0' 2>/dev/null; then
+            echo "$ticks"
+            return 0
+        fi
+        sleep 0.5
+        ticks=$((ticks + 1))
+    done
+
+    print_error "microVM: guest SSH did not become ready within 30s"
+    print_info "microVM: log: ${session_dir}/firecracker.log"
+    kill "$fc_pid" 2>/dev/null || true
+    rm -rf "$session_dir" 2>/dev/null; return 1
+}
+
+#######################################
 # Start Firecracker microVM and prepare guest for claude launch.
 # Sets MICRO_VM_PID, MICRO_VM_SOCKET, MICRO_VM_SESSION_OWNED globals.
 # v2 architecture: Claude runs INSIDE guest VM via SSH; block devices for storage.
@@ -571,20 +715,9 @@ start_microvm() {
 
     # Create per-session working directory (mode 700: no world/group access)
     local session_id="${ICLAUDE_SESSION_ID:-$$}"
-    # Validate session_id: only alphanumeric, dash, underscore allowed.
-    # Prevents path traversal if ICLAUDE_SESSION_ID is set to a malicious value (e.g. "../../../etc").
-    if ! [[ "$session_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        print_error "microVM: invalid session_id '${session_id}' — must contain only [a-zA-Z0-9_-]"
-        return 1
-    fi
-    local session_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}/${session_id}"
-    if ! mkdir -p "$session_dir" || ! chmod 700 "$session_dir"; then
-        print_error "microVM: failed to create session directory: ${session_dir}"
-        return 1
-    fi
-
-    # Unix socket path (108-byte SUN_LEN limit on Linux — use /tmp, not session_dir)
-    MICRO_VM_SOCKET="/tmp/iclaude-${session_id}-fc.sock"
+    local work_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}"
+    local session_dir
+    session_dir=$(_setup_microvm_session_dir "$session_id" "$work_dir") || return 1
 
     # ── Block device images ────────────────────────────────────────────────────
 
@@ -659,15 +792,10 @@ start_microvm() {
     # ── Create sparse workspace ext4 image ────────────────────────────────────
     # Content populated via SSH rsync after boot; sparse → minimal host disk usage.
     local ws_size_mb="${MICRO_VM_WORKSPACE_SIZE_MB:-2048}"
-    print_info "microVM: creating workspace image (${ws_size_mb}MiB sparse)..."
-    if ! dd if=/dev/zero of="$ws_img" bs=1M count=0 seek="$ws_size_mb" 2>/dev/null; then
-        print_error "microVM: failed to create workspace image at ${ws_img}"
-        rm -rf "$session_dir" 2>/dev/null; return 1
-    fi
-    if ! mkfs.ext4 -F -q "$ws_img" 2>/dev/null; then
-        print_error "microVM: failed to format workspace image (mkfs.ext4)"
-        rm -rf "$session_dir" 2>/dev/null; return 1
-    fi
+    _create_workspace_image "$ws_img" "$ws_size_mb" "$session_dir" || {
+        MICRO_VM_ROOTFS_PATH="$_rootfs_path_orig"
+        return 1
+    }
 
     # Write guest environment file (pushed to guest via SCP after SSH is ready)
     local env_file="${session_dir}/guest-env.sh"
@@ -710,26 +838,7 @@ start_microvm() {
     export MICRO_VM_PID MICRO_VM_SOCKET MICRO_VM_SESSION_OWNED
     _claim_microvm_slot   # write slot-N.lock with FC PID
 
-    # Wait for Firecracker API socket to appear (max 10s)
-    local ticks=0
-    while [[ $ticks -lt 40 ]]; do
-        if ! kill -0 "$MICRO_VM_PID" 2>/dev/null; then
-            print_error "microVM: Firecracker process exited unexpectedly"
-            print_info "microVM: log: ${session_dir}/firecracker.log"
-            rm -rf "$session_dir" 2>/dev/null || true
-            return 1
-        fi
-        [[ -S "$MICRO_VM_SOCKET" ]] && break
-        sleep 0.25
-        ticks=$((ticks + 1))
-    done
-
-    if [[ ! -S "$MICRO_VM_SOCKET" ]]; then
-        print_error "microVM: Firecracker API socket did not appear within 10s"
-        kill "$MICRO_VM_PID" 2>/dev/null || true
-        rm -rf "$session_dir" 2>/dev/null || true
-        return 1
-    fi
+    _wait_firecracker_socket "$MICRO_VM_PID" "$MICRO_VM_SOCKET" "$session_dir" || return 1
 
     # ── Poll SSH connectivity ──────────────────────────────────────────────────
     # authorized_keys is baked into rootfs at install time (no per-session injection).
@@ -760,37 +869,9 @@ start_microvm() {
         print_warning "microVM: host key not found (${host_key_pub}) — falling back to StrictHostKeyChecking=no (TOFU). Run --install-microvm to pin the host key."
     fi
 
-    print_info "microVM: waiting for guest SSH (${guest_ip})..."
-    local ssh_ready=false
-    ticks=0
-    while [[ $ticks -lt 60 ]]; do   # 60 × 0.5s = 30s
-        if ! kill -0 "$MICRO_VM_PID" 2>/dev/null; then
-            print_error "microVM: Firecracker exited before guest SSH was ready"
-            print_info "microVM: log: ${session_dir}/firecracker.log"
-            rm -rf "$session_dir" 2>/dev/null; return 1
-        fi
-        if ssh \
-            -i "$ssh_key" \
-            "${_ssh_kh_opts[@]}" \
-            -o ConnectTimeout=1 \
-            -o BatchMode=yes \
-            -o LogLevel=ERROR \
-            "iclaude@${guest_ip}" \
-            'exit 0' 2>/dev/null; then
-            ssh_ready=true
-            break
-        fi
-        sleep 0.5
-        ticks=$((ticks + 1))
-    done
-
-    if [[ "$ssh_ready" != "true" ]]; then
-        print_error "microVM: guest SSH did not become ready within 30s"
-        print_info "microVM: log: ${session_dir}/firecracker.log"
-        kill "$MICRO_VM_PID" 2>/dev/null || true
-        rm -rf "$session_dir" 2>/dev/null; return 1
-    fi
-    print_info "microVM: guest SSH ready (${ticks}× 0.5s)"
+    local ssh_ticks
+    ssh_ticks=$(_poll_guest_ssh "$guest_ip" "$ssh_key" "$MICRO_VM_PID" "$session_dir" "${_ssh_kh_opts[@]}") || return 1
+    print_info "microVM: guest SSH ready (${ssh_ticks}× 0.5s)"
 
     # Push guest environment file to /workspace via SCP (iclaude user, workspace is chowned to it)
     scp \
