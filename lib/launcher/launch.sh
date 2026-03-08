@@ -164,11 +164,15 @@ launch_claude() {
         fi
 
         # Build quoted arg list for safe passing through SSH.
-        # Strip --dangerously-skip-permissions: claude refuses it as root, and inside an
-        # isolated guest VM the permission bypass is unnecessary (KVM provides isolation).
+        # Strip flags that must not be forwarded into the guest VM:
+        #   --dangerously-skip-permissions: claude refuses it as root; KVM isolation is the boundary.
+        #   --chrome: Claude-in-Chrome extension runs on the HOST, not inside the VM guest.
+        #             Passing --chrome to the guest causes claude to try to connect to the extension,
+        #             fail (no extension in the VM), and exit immediately after the trust dialog.
         local quoted_args=""
         for arg in "$@"; do
             [[ "$arg" == "--dangerously-skip-permissions" ]] && continue
+            [[ "$arg" == "--chrome" ]] && continue
             quoted_args+=" $(printf '%q' "$arg")"
         done
 
