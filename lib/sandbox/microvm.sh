@@ -718,6 +718,14 @@ start_microvm() {
     # Ensure the allocated TAP interface exists with the correct host IP.
     if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
         _ensure_slot_tap || return 1
+        # Add a /32 host route for the guest IP via this slot's TAP.
+        # Without this, all slots in the same /26 subnet share one subnet route
+        # (e.g. 172.16.0.0/26), and Linux picks arbitrarily between TAPs when
+        # multiple VMs run concurrently — packets to slot-N's guest may arrive at
+        # slot-0's TAP instead. A specific /32 route takes precedence.
+        if [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && sudo -n true 2>/dev/null; then
+            sudo ip route replace "${MICRO_VM_NET_GUEST_IP}/32" dev "${MICRO_VM_NET_TAP_IFACE}" 2>/dev/null || true
+        fi
     fi
 
     # Create per-session working directory (mode 700: no world/group access)
@@ -944,6 +952,12 @@ stop_microvm() {
 
     # Remove Firecracker API socket (in /tmp for short path)
     rm -f "/tmp/iclaude-${session_id}-fc.sock" 2>/dev/null || true
+
+    # Remove /32 host route for the guest IP (added at slot allocation for multi-VM routing).
+    if [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
+       sudo -n true 2>/dev/null; then
+        sudo ip route del "${MICRO_VM_NET_GUEST_IP}/32" dev "${MICRO_VM_NET_TAP_IFACE}" 2>/dev/null || true
+    fi
 
     # Release network slot so it can be reused by another session
     _free_microvm_slot
