@@ -674,7 +674,7 @@ _poll_guest_ssh() {
             -o BatchMode=yes \
             -o LogLevel=ERROR \
             "iclaude@${guest_ip}" \
-            'exit 0' 2>/dev/null; then
+            'exit 0' </dev/null 2>/dev/null; then
             echo "$ticks"
             return 0
         fi
@@ -894,12 +894,16 @@ start_microvm() {
     ssh_ticks=$(_poll_guest_ssh "$guest_ip" "$ssh_key" "$MICRO_VM_PID" "$session_dir" "${_ssh_kh_opts[@]}") || return 1
     print_info "microVM: guest SSH ready (${ssh_ticks}× 0.5s)"
 
-    # Push guest environment file to /workspace via SCP (iclaude user, workspace is chowned to it)
-    scp \
+    # Push guest environment file to /workspace via SCP (iclaude user, workspace is chowned to it).
+    # -q: suppress progress output — SCP progress manipulates the terminal and can corrupt stty
+    # settings before the subsequent interactive SSH session (causing Enter to stop working).
+    # </dev/null: prevent SCP from reading stdin and consuming terminal keystrokes.
+    scp -q \
         -i "$ssh_key" \
         "${_ssh_kh_opts[@]}" \
         -o LogLevel=ERROR \
-        "$env_file" "iclaude@${guest_ip}:/workspace/.iclaude-guest-env.sh" 2>/dev/null || \
+        "$env_file" "iclaude@${guest_ip}:/workspace/.iclaude-guest-env.sh" \
+        </dev/null 2>/dev/null || \
         print_warning "microVM: could not push guest env — guest may start without proxy/API config"
 
     # Signal to statusline that microVM is active
