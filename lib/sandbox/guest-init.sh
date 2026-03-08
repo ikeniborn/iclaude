@@ -44,7 +44,10 @@ fi
 # authorized_keys are pre-seeded in /home/iclaude/.ssh/ by _inject_rootfs_guest_init() at install
 # time; useradd -M avoids overwriting the pre-seeded .ssh directory with an empty home skeleton.
 if ! id iclaude >/dev/null 2>&1; then
-    useradd -M -u 1000 -s /bin/sh -d /home/iclaude iclaude && log "iclaude user created" || log "WARN: useradd failed"
+    # -p '*' sets shadow password to '*' (no password, account NOT locked).
+    # Without this, useradd sets '!' (locked) in shadow, which causes OpenSSH
+    # to reject ALL auth attempts — including publickey — via allowed_user() check.
+    useradd -M -u 1000 -s /bin/sh -d /home/iclaude -p '*' iclaude && log "iclaude user created" || log "WARN: useradd failed"
 fi
 
 # Ensure /home/iclaude/.ssh ownership is correct (uid/gid 1000) so sshd can read authorized_keys.
