@@ -1053,7 +1053,7 @@ cleanup_orphaned_microvm_sessions() {
             session_id="${dir%/}"; session_id="${session_id##*/}"
             # Check matching slot lock — if the lock file references a dead PID, it's orphaned.
             # Use --fixed-strings to prevent session_id from being interpreted as a regex pattern.
-            slot_lock=$(grep -rlF "$session_id" "${ISOLATED_CONFIG_DIR}/microvm-slots/" 2>/dev/null | head -1)
+            slot_lock=$(grep -rlF "$session_id" "${ISOLATED_CONFIG_DIR}/microvm-slots/" 2>/dev/null | head -1 || true)
             # Session is orphaned if: no FC socket exists for it AND no slot lock references it
             if [[ ! -S "/tmp/iclaude-${session_id}-fc.sock" ]] && [[ -z "$slot_lock" ]]; then
                 rm -rf "$dir" 2>/dev/null || true
