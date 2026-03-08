@@ -159,6 +159,8 @@ launch_claude() {
         local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
         if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
             _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${MICRO_VM_KNOWN_HOSTS}")
+        else
+            print_warning "microVM: MICRO_VM_KNOWN_HOSTS not set — falling back to StrictHostKeyChecking=no. Run --install-microvm to enable host key pinning."
         fi
 
         # Build quoted arg list for safe passing through SSH.
@@ -221,6 +223,8 @@ launch_claude() {
 
         # Run claude inside guest as iclaude user (non-root; fixes Enter at 'Trust project?' dialog).
         # PTY flag (-t when stdin is terminal) is critical for interactive prompts.
+        # Use '.' instead of 'source': iclaude shell is /bin/sh (dash on Ubuntu), which does not
+        # support 'source' as a built-in — only POSIX '.' works.
         # shellcheck disable=SC2086
         ssh $ssh_tty \
             -i "$ssh_key" \
@@ -229,7 +233,7 @@ launch_claude() {
             -o ServerAliveInterval=30 \
             -o LogLevel=ERROR \
             "iclaude@${guest_ip}" \
-            "source /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
+            ". /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; /mnt/nvm/npm-global/bin/claude${quoted_args}"
 
         local exit_code=$?
 
