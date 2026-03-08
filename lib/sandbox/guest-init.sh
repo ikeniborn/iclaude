@@ -87,6 +87,20 @@ mkdir -p /run/sshd
 # Note: host polls SSH connectivity directly (no file-based polling needed for readiness).
 log "Guest ready. SSH on 172.16.0.2:22"
 
+# Graceful shutdown handler: sync filesystems and exit PID 1 cleanly on SIGTERM/INT.
+# Triggered by stop_microvm() via SSH: 'sudo kill -TERM 1'
+# sync flushes dirty I/O buffers; remount,ro marks ext4 superblock as clean
+# (clears "needs journal recovery" flag), preventing rootfs corruption on next
+# debugfs -w injection. Exiting PID 1 causes kernel panic → Firecracker exits.
+_graceful_shutdown() {
+    log "Shutdown signal — syncing filesystems..."
+    sync
+    mount -o remount,ro / 2>/dev/null || true
+    log "Rootfs clean. Exiting PID 1."
+    exit 0
+}
+trap _graceful_shutdown TERM INT
+
 # PID 1 must not exit — zombie-reaping loop
 while true; do
     wait

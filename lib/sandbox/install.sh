@@ -286,6 +286,18 @@ install_microvm() {
 			return 0
 		fi
 
+		# Safety check: abort if any Firecracker process is running.
+		# debugfs -w on a rootfs actively mounted by a live VM causes ext4 corruption
+		# (multiply-claimed blocks) because debugfs ignores the kernel VFS cache.
+		local _fc_pids; _fc_pids=$(pgrep -x firecracker 2>/dev/null || true)
+		if [[ -n "$_fc_pids" ]]; then
+			print_error "Active Firecracker process(es) detected (PID: $_fc_pids)"
+			print_error "Stop all microVM sessions before running --install-microvm."
+			print_error "  If using --sandbox-microvm: exit Claude Code, then retry."
+			print_error "  Or manually: kill $_fc_pids"
+			return 1
+		fi
+
 		# Rootfs exists but v4 not applied — upgrade without re-downloading.
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
@@ -686,6 +698,15 @@ _inject_rootfs_guest_init() {
 	if ! command -v debugfs &>/dev/null; then
 		print_error "debugfs not found (install e2fsprogs: sudo apt-get install e2fsprogs)"
 		return 1
+	fi
+
+	# Recover ext4 journal before any debugfs -w operation.
+	# debugfs bypasses the journal entirely — modifying a dirty (uncleanly-unmounted) filesystem
+	# with debugfs causes multiply-claimed block corruption. e2fsck -fy replays the journal and
+	# clears the dirty flag, making it safe for direct debugfs writes.
+	# This happens when a Firecracker VM is SIGKILLed without a clean guest shutdown.
+	if command -v e2fsck &>/dev/null; then
+		e2fsck -fy "$rootfs" &>/dev/null || true
 	fi
 
 	print_info "Injecting guest init into rootfs (via debugfs)..."
