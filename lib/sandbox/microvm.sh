@@ -947,7 +947,32 @@ stop_microvm() {
             &>/dev/null || true
     fi
 
-    # Stop Firecracker VMM
+    # Graceful guest filesystem sync before FC process termination.
+    # SSH into guest: sync flushes kernel I/O buffers; remount,ro marks ext4 superblock
+    # clean (clears the "needs journal recovery" flag); kill -TERM 1 triggers the guest
+    # init's SIGTERM handler which performs a final sync and exits PID 1 cleanly.
+    # This prevents rootfs dirty-state corruption on the next debugfs -w injection.
+    # Failures are non-fatal — SIGTERM/SIGKILL to FC below remains the fallback.
+    if [[ "${MICRO_VM_SESSION_OWNED:-false}" == "true" ]] && \
+       [[ -n "${MICRO_VM_PID:-}" ]] && kill -0 "${MICRO_VM_PID}" 2>/dev/null && \
+       [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && [[ -n "${ISOLATED_CONFIG_DIR:-}" ]]; then
+        local _stop_ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+        if [[ -f "$_stop_ssh_key" ]]; then
+            ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                -o IdentityFile="$_stop_ssh_key" -o IdentitiesOnly=yes \
+                iclaude@"${MICRO_VM_NET_GUEST_IP}" \
+                'sync && mount -o remount,ro / 2>/dev/null; sudo kill -TERM 1 2>/dev/null' \
+                &>/dev/null 2>&1 || true
+            # Wait for FC to exit after guest PID 1 terminates (kernel panic → FC exits)
+            local _grace=0
+            while kill -0 "${MICRO_VM_PID}" 2>/dev/null && [[ $_grace -lt 30 ]]; do
+                sleep 0.1
+                _grace=$((_grace + 1))
+            done
+        fi
+    fi
+
+    # Stop Firecracker VMM (fallback if graceful shutdown above did not terminate FC)
     if [[ "${MICRO_VM_SESSION_OWNED:-false}" == "true" ]] && \
        [[ -n "${MICRO_VM_PID:-}" ]] && kill -0 "${MICRO_VM_PID}" 2>/dev/null; then
         kill "${MICRO_VM_PID}" 2>/dev/null || true
