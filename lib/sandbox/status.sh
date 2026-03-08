@@ -57,16 +57,6 @@ check_microvm_status() {
 	fi
 	echo ""
 
-	# virtiofsd
-	print_info "virtiofsd (workspace mount):"
-	local vfsd
-	if vfsd=$(detect_virtiofsd 2>/dev/null); then
-		print_success "$vfsd"
-	else
-		print_warning "Not found — install: sudo apt-get install virtiofsd"
-	fi
-	echo ""
-
 	# TAP networking
 	print_info "TAP Networking:"
 	local tap_iface="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"

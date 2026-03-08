@@ -3,10 +3,12 @@
 # Provides lifecycle management for running Claude Code inside a Firecracker microVM.
 #
 # Architecture:
-#   Host: iclaude.sh → virtiofsd (FUSE) → firecracker VMM → Guest VM
-#   Guest: claude process → tool calls → /workspace (virtiofs rw) + /mnt/nvm (virtiofs ro)
+#   Host: iclaude.sh → firecracker VMM (KVM) → Guest VM (virtio-blk)
+#   Drives: vda=rootfs (per-session copy, rw), vdb=nvm.img (ro), vdc=workspace.img (rw)
+#   Guest: claude process → tool calls → /workspace (vdc ext4) + /mnt/nvm (vdb ext4 ro)
+#   Connectivity: SSH exec over TAP/NAT; workspace sync via tar-over-SSH
 #
-# Env propagation: virtio-serial channel (not kernel cmdline — 2048 byte limit)
+# Env propagation: SCP of guest-env.sh → /workspace/.iclaude-guest-env.sh before SSH exec
 # Networking: TAP interface (tap-iclaude) with iptables MASQUERADE NAT
 #
 # Note: binaries stored in ISOLATED_CONFIG_DIR/bin/ — covered by .gitignore, not in git.
@@ -524,7 +526,7 @@ configure_guest_environment() {
             echo "export ICLAUDE_PII_ACTIVE_PORT='${pii_port_e}'"
         fi
 
-        # NVM path inside guest (virtiofs mount).
+        # NVM path inside guest (/dev/vdb mounted at /mnt/nvm by guest-init).
         # printf with single-quoted format prevents host expansion; guest sources
         # the double-quoted assignment so $(ls ...) and ${PATH} expand in the guest.
         echo "export NVM_DIR='/mnt/nvm'"
@@ -586,6 +588,10 @@ _create_workspace_image() {
     local ws_size_mb="${2:-2048}"
     local session_dir="$3"
 
+    if ! [[ "$ws_size_mb" =~ ^[0-9]+$ ]] || (( ws_size_mb < 1 || ws_size_mb > 65536 )); then
+        print_error "microVM: MICRO_VM_WORKSPACE_SIZE_MB must be an integer 1–65536, got: ${ws_size_mb}"
+        rm -rf "$session_dir" 2>/dev/null; return 1
+    fi
     print_info "microVM: creating workspace image (${ws_size_mb}MiB sparse)..."
     if ! dd if=/dev/zero of="$ws_img" bs=1M count=0 seek="$ws_size_mb" 2>/dev/null; then
         print_error "microVM: failed to create workspace image at ${ws_img}"
@@ -595,6 +601,7 @@ _create_workspace_image() {
         print_error "microVM: failed to format workspace image (mkfs.ext4)"
         rm -rf "$session_dir" 2>/dev/null; return 1
     fi
+    return 0
 }
 
 #######################################

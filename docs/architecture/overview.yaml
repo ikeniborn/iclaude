@@ -47,7 +47,7 @@ layers:
 
   - id: sandbox
     name: Sandbox Layer
-    description: Process isolation mechanisms — microVM (Firecracker v2) and bubblewrap
+    description: Process isolation mechanisms — microVM (Firecracker v2, virtio-blk+SSH)
     responsibilities:
       - Detect platform and KVM support
       - Install Firecracker VMM, vmlinux kernel, rootfs.ext4, nvm.img

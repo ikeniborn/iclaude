@@ -3,10 +3,9 @@
 # Provides functions for detecting microVM (Firecracker) support
 #
 # microVM (Firecracker) OS support matrix:
-#   Ubuntu 22.04+   — virtiofsd in universe repo (apt-get install virtiofsd)
-#   Debian 11+      — virtiofsd in main repo     (apt-get install virtiofsd)
-#   Debian 10       — virtiofsd NOT in repos; build from source required
-#   ALT Linux 10+   — virtiofsd in Sisyphus/p10  (apt-get install virtiofsd)
+#   Ubuntu 22.04+   — full support
+#   Debian 11+      — full support
+#   ALT Linux 10+   — full support
 #   WSL2            — KVM available if host has nested virt enabled
 #   macOS           — NOT supported (KVM is Linux-only)
 
@@ -127,32 +126,3 @@ detect_microvm_binary() {
 	return 1
 }
 
-#######################################
-# Detect virtiofsd daemon binary
-# Returns:
-#   0 - found
-#   1 - not found
-# Output: path to virtiofsd binary
-#######################################
-detect_virtiofsd() {
-	# Common locations — including iclaude isolated bin (cargo-built for Debian 10)
-	local candidates=(
-		"${ISOLATED_CONFIG_DIR:-}/bin/virtiofsd"
-		"/usr/lib/virtiofsd"
-		"/usr/lib/qemu/virtiofsd"
-		"/usr/libexec/virtiofsd"
-		"/usr/bin/virtiofsd"
-	)
-	for p in "${candidates[@]}"; do
-		if [[ -x "$p" ]]; then
-			echo "$p"
-			return 0
-		fi
-	done
-	# Also check PATH
-	if command -v virtiofsd &>/dev/null; then
-		command -v virtiofsd
-		return 0
-	fi
-	return 1
-}
