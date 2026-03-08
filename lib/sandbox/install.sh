@@ -271,36 +271,46 @@ install_microvm() {
 	# ── Fast-path: check existing install status ────────────────────────────────
 	local _bin_dir="${ISOLATED_CONFIG_DIR}/bin"
 	local _rootfs="${MICRO_VM_ROOTFS_PATH:-${_bin_dir}/rootfs.ext4}"
-	local _v2_marker="${_rootfs%.ext4}.v2-ready"
+	local _v3_marker="${_rootfs%.ext4}.v3-ready"
+	local _v4_marker="${_rootfs%.ext4}.v4-ready"
 	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 
 	local _nvm_img="${MICRO_VM_NVM_IMG:-${_bin_dir}/nvm.img}"
 
 	if [[ -f "$_rootfs" ]]; then
-		if [[ -f "$_v2_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
-			print_success "microVM already installed and up-to-date (v2)"
+		if [[ -f "$_v4_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
+			print_success "microVM already installed and up-to-date (v4)"
 			print_info "Rootfs: $_rootfs"
 			print_info "NVM image: $_nvm_img"
 			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
 			return 0
 		fi
 
-		# Rootfs exists but v2 not applied — upgrade without re-downloading
-		print_info "Existing rootfs found — upgrading to v2 (keygen + inject + NVM image)..."
+		# Rootfs exists but v4 not applied — upgrade without re-downloading.
+		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
+		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
+		if [[ -f "$_v3_marker" ]]; then
+			print_info "Existing rootfs found — upgrading to v4 (CA bundle for HTTPS)..."
+		else
+			print_info "Existing rootfs found — upgrading to v4 (jq + DNS + SSH keys + CA bundle)..."
+		fi
 		echo ""
 		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
 		_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
 		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
 		if [[ -f "$_guest_init_src" ]]; then
 			_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
-				|| print_warning "v2 inject failed"
+				|| print_warning "v4 inject failed"
 		else
-			print_warning "guest-init.sh not found at $_guest_init_src — v2 unavailable"
+			print_warning "guest-init.sh not found at $_guest_init_src — v4 unavailable"
 		fi
-		_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
+		# Only rebuild NVM image if it is missing (rebuild is slow and requires sudo)
+		if [[ ! -f "$_nvm_img" ]]; then
+			_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
+		fi
 		echo ""
-		print_success "microVM v2 upgrade complete"
-		print_info "Verify: debugfs -R 'stat /usr/sbin/iclaude-guest-init' $_rootfs"
+		print_success "microVM v4 upgrade complete"
+		print_info "Verify: debugfs -R 'ls /etc/ssl/certs/ca-certificates.crt' $_rootfs"
 		return 0
 	fi
 
@@ -768,8 +778,42 @@ EOF
 	fi
 	rm -f "$_tmp_hk"
 
-	# Mark v2 ready (marker file alongside rootfs)
+	# Inject jq binary from host into guest rootfs (required by statusline for JSON parsing).
+	# jq is a static binary — safe to copy across matching architectures (host = guest = x86_64/aarch64).
+	local jq_host; jq_host=$(command -v jq 2>/dev/null || true)
+	if [[ -n "$jq_host" && -f "$jq_host" ]]; then
+		debugfs -w "$rootfs" <<EOF 2>/dev/null
+rm /usr/bin/jq
+write ${jq_host} /usr/bin/jq
+set_inode_field /usr/bin/jq mode 0100755
+EOF
+		print_success "jq injected into guest rootfs (/usr/bin/jq)"
+	else
+		print_warning "jq not found on host — statusline requires jq (install: sudo apt install jq, then re-run --install-microvm)"
+	fi
+
+	# Inject CA certificate bundle from host into guest rootfs.
+	# Required for HTTPS connections inside the VM (curl, node, claude CLI).
+	# The Ubuntu 22.04 minimal rootfs may lack ca-certificates package.
+	local ca_bundle="/etc/ssl/certs/ca-certificates.crt"
+	if [[ -f "$ca_bundle" ]]; then
+		debugfs -w "$rootfs" <<EOF 2>/dev/null
+mkdir /etc/ssl
+mkdir /etc/ssl/certs
+rm /etc/ssl/certs/ca-certificates.crt
+write ${ca_bundle} /etc/ssl/certs/ca-certificates.crt
+set_inode_field /etc/ssl/certs/ca-certificates.crt mode 0100644
+EOF
+		print_success "CA bundle injected into guest rootfs (/etc/ssl/certs/ca-certificates.crt)"
+	else
+		print_warning "CA bundle not found at ${ca_bundle} — HTTPS will fail in guest (install: sudo apt install ca-certificates)"
+	fi
+
+	# Mark v4 ready: rootfs has guest-init (DNS + loopback), jq, SSH keys, sudoers, mount points, CA bundle.
+	# v2-ready and v3-ready kept for backward compatibility with any tooling that checks for them.
 	touch "${rootfs%.ext4}.v2-ready"
-	print_success "Guest init injected (rootfs ready for v2)"
+	touch "${rootfs%.ext4}.v3-ready"
+	touch "${rootfs%.ext4}.v4-ready"
+	print_success "Guest init injected (rootfs ready for v4)"
 	return 0
 }

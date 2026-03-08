@@ -23,6 +23,11 @@ mount -t tmpfs tmpfs /run
 # Loopback
 ip link set lo up 2>/dev/null || true
 
+# Configure DNS — kernel ip= cmdline sets up routing but does not write /etc/resolv.conf.
+# Without this, Node.js getaddrinfo() fails with EAI_AGAIN for api.anthropic.com / proxy hostnames.
+printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > /etc/resolv.conf
+log "DNS configured (8.8.8.8, 1.1.1.1)"
+
 # Mount block devices (virtio-blk, no virtiofs needed)
 # /dev/vdb = nvm image (pre-built, contains .nvm-isolated)
 # /dev/vdc = workspace image (per-session, populated via SSH rsync by host)
