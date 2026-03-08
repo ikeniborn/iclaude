@@ -162,12 +162,14 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 | Переменная | По умолчанию | Описание |
 |-----------|-------------|---------|
 | `MICRO_VM_ENABLED` | `false` | Автоматически использовать microVM при каждом запуске |
+| `MICRO_VM_NET_ENABLED` | `true` | TAP-сеть (NAT через хост). `false` — полная изоляция без сети. При `true` гость получает доступ к интернету через хостовый NAT (iptables MASQUERADE). |
 | `MICRO_VM_NET_SUBNET` | `172.16.0.0/26` | Подсеть для IP-пула слотов (до 31 concurrent сессий) |
 | `MICRO_VM_WORKSPACE_MODE` | `full` | Режим синхронизации: `full`, `isolated` |
 | `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
-| `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (newline-separated) |
-| `MICRO_VM_MEM_MB` | `1024` | Объём RAM гостевой ВМ в МБ |
-| `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ |
+| `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (colon-separated) |
+| `MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды). `0` — только при выходе; `30` — каждые 30 с. |
+| `MICRO_VM_MEM_MB` | `1024` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
+| `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ. Значение читается напрямую из `.claude_config` и применяется к конфигурации Firecracker без переопределений. |
 
 ---
 
@@ -258,6 +260,26 @@ sudo ip tuntap add dev tap-iclaude mode tap user $USER
 ```
 
 ---
+
+## Security Notes
+
+### Linux Capabilities внутри guest
+
+Процесс `claude` запускается как `iclaude` (uid=1000) с bounding capability set `000001ffffffffff` (все 41 capabilities). Это ожидаемо: `guest-init` запускается как PID 1 root и не вызывает `capsh --drop` перед созданием пользователя. Capabilities наследуются в bounding set.
+
+**Это приемлемо:** границей безопасности является KVM hypervisor. Capabilities внутри guest не могут распространяться за пределы VM — любой exploit остаётся изолированным в guest kernel. Повышение привилегий внутри VM через SUID-бинари возможно, но не выходит за пределы KVM-изоляции.
+
+Если требуется минимальный capability set (defence in depth), добавьте `capsh --drop=all --user=iclaude --` перед запуском claude в `launch.sh`.
+
+### Сетевой доступ и IPv6
+
+При `MICRO_VM_NET_ENABLED=true` (по умолчанию) гостевая VM получает:
+- IPv4: выход в интернет через NAT/MASQUERADE на хостовом интерфейсе
+- IPv6: kernel автоматически настраивает SLAAC на `eth0` (если хост имеет IPv6 uplink)
+
+**Это ожидаемо и корректно** — claude внутри VM должен обращаться к Anthropic API, npm и прочим сервисам. Доступ в интернет не является уязвимостью: он необходим для функционирования.
+
+Для полной изоляции без сети: `MICRO_VM_NET_ENABLED=false` (тогда API недоступен).
 
 ## Обновление образов
 

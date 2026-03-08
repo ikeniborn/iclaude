@@ -53,13 +53,17 @@ check_microvm_status() {
 		rootfs_sz=$(du -h "$rootfs" 2>/dev/null | cut -f1)
 		local rootfs_v3="${rootfs%.ext4}.v3-ready"
 		local rootfs_v4="${rootfs%.ext4}.v4-ready"
-		if [[ -f "$rootfs_v4" ]]; then
-			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle]"
+		local rootfs_v5="${rootfs%.ext4}.v5-ready"
+		if [[ -f "$rootfs_v5" ]]; then
+			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v5: jq + DNS + CA bundle + /tmp fix]"
+		elif [[ -f "$rootfs_v4" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle — needs upgrade: /tmp not writable]"
+			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		elif [[ -f "$rootfs_v3" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: missing CA bundle]"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: missing CA bundle + /tmp fix]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		else
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle]"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle + /tmp fix]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		fi
 	else
@@ -114,7 +118,7 @@ check_microvm_status() {
 	[[ -f "${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}" ]] || { all_ready=false; missing_items+=("vmlinux kernel"); }
 	local _rootfs_sum="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
 	[[ -f "$_rootfs_sum" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
-	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v4-ready" ]] || { all_ready=false; missing_items+=("rootfs v4 upgrade needed (CA bundle for HTTPS) → ./iclaude.sh --install-microvm"); }
+	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v5-ready" ]] || { all_ready=false; missing_items+=("rootfs v5 upgrade needed (/tmp fix + CA bundle) → ./iclaude.sh --install-microvm"); }
 
 	if [[ "$all_ready" == "true" ]]; then
 		print_success "microVM Ready"

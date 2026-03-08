@@ -15,10 +15,15 @@ log "Starting..."
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev 2>/dev/null || true  # may already be mounted
-mkdir -p /dev/pts /dev/shm /run
+mkdir -p /dev/pts /dev/shm /run /tmp
 mount -t devpts devpts /dev/pts 2>/dev/null || true
 mount -t tmpfs tmpfs /dev/shm
 mount -t tmpfs tmpfs /run
+# /tmp: mount as tmpfs so it is always fresh and world-writable (mode 01777).
+# The rootfs /tmp may have incorrect permissions (0755) from the minimal Ubuntu image;
+# a tmpfs overlay guarantees POSIX-standard sticky world-writable scratch space
+# regardless of inode permissions in the underlying ext4.
+mount -t tmpfs -o mode=1777 tmpfs /tmp
 
 # Loopback
 ip link set lo up 2>/dev/null || true
