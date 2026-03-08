@@ -54,6 +54,45 @@ check_microvm_dependencies() {
 }
 
 #######################################
+# Verify SHA-256 checksum of a downloaded file.
+# If expected hash is empty, verification is skipped (opt-in security).
+# Arguments:
+#   $1 - file: path to file to verify
+#   $2 - expected: expected SHA-256 hex digest (empty = skip)
+#   $3 - label: human-readable name for error messages (optional)
+# Returns:
+#   0 - verification passed (or skipped)
+#   1 - hash mismatch
+#######################################
+_verify_sha256() {
+	local file="$1"
+	local expected="$2"
+	local label="${3:-file}"
+
+	if [[ -z "$expected" ]]; then
+		return 0  # Skip verification if no hash provided
+	fi
+
+	if ! command -v sha256sum &>/dev/null; then
+		print_warning "sha256sum not available — skipping integrity check for ${label}"
+		return 0
+	fi
+
+	local actual
+	actual=$(sha256sum "$file" | cut -d' ' -f1)
+	if [[ "$actual" == "$expected" ]]; then
+		print_info "SHA-256 verified: ${label}"
+		return 0
+	fi
+
+	print_error "SHA-256 mismatch for ${label}:"
+	print_error "  expected: ${expected}"
+	print_error "  actual:   ${actual}"
+	print_error "The download may be corrupted or tampered with."
+	return 1
+}
+
+#######################################
 # Install virtiofsd from source via cargo (for Debian 10 / distros without package)
 # Stores binary in ISOLATED_CONFIG_DIR/bin/virtiofsd (no sudo, gitignored)
 # Returns:
@@ -315,6 +354,11 @@ install_microvm() {
 	local fc_version="v1.11.0"
 	local fc_bin="${bin_dir}/firecracker"
 	local fc_url="https://github.com/firecracker-microvm/firecracker/releases/download/${fc_version}/firecracker-${fc_version}-${arch}.tgz"
+	# Optional SHA-256 hashes — set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256
+	# to verify downloads. Leave empty (default) to skip verification.
+	local fc_sha256="${MICRO_VM_FC_SHA256:-}"
+	local kernel_sha256="${MICRO_VM_KERNEL_SHA256:-}"
+	local rootfs_sha256="${MICRO_VM_ROOTFS_SHA256:-}"
 
 	print_info "Downloading Firecracker ${fc_version} (${arch})..."
 	echo "  Source: $fc_url"
@@ -366,6 +410,10 @@ install_microvm() {
 	cp "$fc_extracted" "$fc_bin"
 	chmod 755 "$fc_bin"
 	rm -rf "$tmp_dir"
+	if ! _verify_sha256 "$fc_bin" "$fc_sha256" "firecracker ${fc_version}"; then
+		rm -f "$fc_bin"
+		return 1
+	fi
 	print_success "Firecracker: $fc_bin"
 
 	# Kernel: Firecracker CI kernel (ELF vmlinux, works with all Firecracker versions).
@@ -387,6 +435,10 @@ install_microvm() {
 		fi
 	fi
 	chmod 644 "$kernel_path"
+	if ! _verify_sha256 "$kernel_path" "$kernel_sha256" "vmlinux kernel"; then
+		rm -f "$kernel_path"
+		return 1
+	fi
 	print_success "Kernel: $kernel_path"
 
 	# Download rootfs (Alpine-based microVM rootfs)
@@ -409,6 +461,10 @@ install_microvm() {
 		fi
 	fi
 	chmod 644 "$rootfs_path"
+	if ! _verify_sha256 "$rootfs_path" "$rootfs_sha256" "rootfs image"; then
+		rm -f "$rootfs_path"
+		return 1
+	fi
 	print_success "Rootfs: $rootfs_path"
 
 	# Create working directories

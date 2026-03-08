@@ -756,6 +756,8 @@ start_microvm() {
         export MICRO_VM_KNOWN_HOSTS="$known_hosts_file"
         _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${known_hosts_file}")
         print_info "microVM: SSH host key pinned (${known_hosts_file})"
+    else
+        print_warning "microVM: host key not found (${host_key_pub}) — falling back to StrictHostKeyChecking=no (TOFU). Run --install-microvm to pin the host key."
     fi
 
     print_info "microVM: waiting for guest SSH (${guest_ip})..."
