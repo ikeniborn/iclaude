@@ -110,17 +110,21 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 Управляет тем, какие файлы синхронизируются между host и guest.
 
 | Режим | `MICRO_VM_WORKSPACE_MODE` | Источник | Host→Guest sync | Guest→Host sync-back |
-|-------|--------------------------|---------|-----------------|----------------------|
+|-------|--------------------------|----------|-----------------|----------------------|
 | `full` (default) | `MICRO_VM_WORKSPACE_PATH` или `$PWD` | ✅ | ✅ |
-| `isolated` | — | guest `/workspace` пустой | ❌ | ❌ |
+| `isolated` | `MICRO_VM_WORKSPACE_PATH` или `$PWD` | ✅ | ❌ |
 
-**`MICRO_VM_WORKSPACE_PATH`** — переопределяет `$PWD` как источник workspace в режиме `full`.
+**`full`** — двунаправленная синхронизация: данные копируются в guest при запуске, изменения возвращаются на хост после завершения.
+
+**`isolated`** — одностороннее копирование: данные копируются в guest при запуске, но изменения **не возвращаются** на хост. Файлы на хосте остаются неизменными. Используется когда нужно дать claude доступ к файлам, но запретить изменение оригиналов.
+
+**`MICRO_VM_WORKSPACE_PATH`** — переопределяет `$PWD` как источник workspace (работает для обоих режимов).
 Если не задан — используется `$PWD` (поведение по умолчанию).
 
 Пример: `MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project` позволяет работать
 с конкретным проектом независимо от текущего каталога.
 
-**Исключения при sync (full):**
+**Исключения при sync (full и isolated):**
 - Host→Guest: `.nvm-isolated/`, `.git/`, `.claude_config`, `.iclaude-guest-env.sh`, `.iclaude-ssh`
 - Guest→Host: `lost+found/`, `.iclaude-guest-env.sh`, `.claude-guest/`
 
@@ -166,9 +170,9 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 6. **FC spawn** — `firecracker --api-sock ... --config-file vmconfig.json`
 7. **SSH poll** — ожидание готовности sshd в guest (max 30s)
 8. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest (via `iclaude@`)
-9. **tar sync** — host→guest (режим `full`; источник: `MICRO_VM_WORKSPACE_PATH` или `$PWD`); исключает `.nvm-isolated/`, `.git/`, secrets
+9. **tar sync** — host→guest (режимы `full` и `isolated`; источник: `MICRO_VM_WORKSPACE_PATH` или `$PWD`); исключает `.nvm-isolated/`, `.git/`, secrets
 10. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
-11. **sync-back** — guest→host после завершения claude (режим `full`)
+11. **sync-back** — guest→host после завершения claude (только режим `full`; `isolated` — без sync-back)
 12. **Cleanup** — EXIT-трап: `stop_microvm()`, `_free_microvm_slot()`, `rm session_dir`
 
 ---

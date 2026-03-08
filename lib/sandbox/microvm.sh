@@ -686,7 +686,12 @@ start_microvm() {
             fi
             ;;
         isolated)
-            MICRO_VM_WORKSPACE_HOSTDIR=""
+            # One-way copy: host→guest at startup; no sync-back. Host files remain unchanged.
+            MICRO_VM_WORKSPACE_HOSTDIR="${MICRO_VM_WORKSPACE_PATH:-$PWD}"
+            if [[ -n "${MICRO_VM_WORKSPACE_PATH:-}" && ! -d "$MICRO_VM_WORKSPACE_PATH" ]]; then
+                print_error "microVM: MICRO_VM_WORKSPACE_PATH does not exist: ${MICRO_VM_WORKSPACE_PATH}"
+                rm -rf "$session_dir" 2>/dev/null; return 1
+            fi
             ;;
         *)
             print_warning "microVM: unknown MICRO_VM_WORKSPACE_MODE='$workspace_mode' — using 'full'"
