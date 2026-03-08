@@ -366,13 +366,10 @@ MICRO_VM_ENABLED=false
 # guest→host после завершения). Секретные файлы всегда исключены из sync:
 # .claude_config, .iclaude-guest-env.sh, .iclaude-ssh/, .nvm-isolated/, .git/
 #
-# full     — синхронизировать $PWD (проект, текущий каталог) ↔ /workspace
+# full     — синхронизировать MICRO_VM_WORKSPACE_PATH (или $PWD) ↔ /workspace
 #            двунаправленная синхронизация: изменения в guest сохраняются на хосте
 #            режим по умолчанию — полный доступ к файлам проекта
-#
-# path     — синхронизировать MICRO_VM_WORKSPACE_PATH ↔ /workspace
-#            если MICRO_VM_WORKSPACE_PATH не задан — используется $PWD (аналог full)
-#            позволяет явно указать конкретный каталог независимо от cwd
+#            MICRO_VM_WORKSPACE_PATH переопределяет $PWD как источник workspace
 #
 # isolated — workspace пустой, синхронизация отсутствует
 #            максимальная изоляция: файлы проекта недоступны в guest
@@ -380,8 +377,10 @@ MICRO_VM_ENABLED=false
 # По умолчанию: full
 # MICRO_VM_WORKSPACE_MODE=full
 
-# Путь к каталогу для монтирования в /workspace (только при MICRO_VM_WORKSPACE_MODE=path).
-# Если не задан — используется $PWD.
+# Источник workspace для режима full.
+# Задаёт директорию, которая синхронизируется в /workspace гостевой VM.
+# Если не задан — используется $PWD (текущий каталог при запуске iclaude.sh).
+# Позволяет работать с конкретным проектом независимо от cwd.
 # Пример: /home/user/projects/my-project
 # MICRO_VM_WORKSPACE_PATH=
 
@@ -393,9 +392,8 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_VCPU=2
 # MICRO_VM_MEM_MB=2048
 #
-# # Конкретный путь вместо текущего каталога:
+# # Конкретный путь как источник workspace (независимо от cwd):
 # MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_MODE=path
 # MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
 #
 # # Максимальная изоляция — без доступа к файлам хоста:
