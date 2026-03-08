@@ -751,15 +751,15 @@ _inject_rootfs_guest_init() {
 	# 0100644 = regular file (010----) + rw-r--r-- (0644)
 	# 0100440 = regular file (010----) + r--r----- (0440) — sudoers required mode
 	debugfs -w "$rootfs" <<EOF 2>/dev/null
-write ${init_src} /usr/sbin/iclaude-guest-init
+write "${init_src}" /usr/sbin/iclaude-guest-init
 set_inode_field /usr/sbin/iclaude-guest-init mode 0100755
-write ${ssh_conf_tmp} /etc/ssh/sshd_config.d/iclaude.conf
+write "${ssh_conf_tmp}" /etc/ssh/sshd_config.d/iclaude.conf
 set_inode_field /etc/ssh/sshd_config.d/iclaude.conf mode 0100644
 mkdir /mnt
 mkdir /mnt/nvm
 mkdir /workspace
 mkdir /etc/sudoers.d
-write ${sudoers_tmp} /etc/sudoers.d/iclaude-vm
+write "${sudoers_tmp}" /etc/sudoers.d/iclaude-vm
 set_inode_field /etc/sudoers.d/iclaude-vm mode 0100440
 EOF
 	local rc=$?
@@ -782,7 +782,7 @@ EOF
 mkdir /home
 mkdir /home/iclaude
 mkdir /home/iclaude/.ssh
-write ${ssh_pubkey} /home/iclaude/.ssh/authorized_keys
+write "${ssh_pubkey}" /home/iclaude/.ssh/authorized_keys
 set_inode_field /home/iclaude/.ssh/authorized_keys mode 0100600
 EOF
 		if debugfs -R 'stat /home/iclaude/.ssh/authorized_keys' "$rootfs" 2>/dev/null | grep -q "Inode:"; then
