@@ -917,6 +917,35 @@ start_microvm() {
     export ICLAUDE_MICROVM_ACTIVE=1
     export ICLAUDE_MICROVM_PID="${MICRO_VM_PID}"
 
+    # DNAT: forward host_ip:PII_PORT → 127.0.0.1:PII_PORT so the guest can reach the PII proxy.
+    # The PII proxy (server.py) binds only to 127.0.0.1; without DNAT the guest's request to
+    # http://172.16.0.1:PORT is refused.
+    #
+    # Two kernel changes required:
+    #  1. route_localnet=1 on the TAP iface — allows DNAT'd packets arriving on a non-loopback
+    #     interface to be forwarded to 127.0.0.1 (Linux treats 127/8 as martian by default).
+    #  2. iptables PREROUTING DNAT — rewrites destination from host TAP IP to 127.0.0.1.
+    #
+    # Both are scoped to the slot's TAP interface and removed in stop_microvm().
+    if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && [[ -n "${ICLAUDE_PII_ACTIVE_PORT:-}" ]] && \
+       [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]] && \
+       [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
+       sudo -n true 2>/dev/null; then
+        # Enable routing of localnet (127/8) packets arriving on the TAP interface
+        sudo sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=1" &>/dev/null || true
+        sudo iptables -t nat -A PREROUTING \
+            -i "${MICRO_VM_NET_TAP_IFACE}" \
+            -d "${MICRO_VM_NET_HOST_IP}" -p tcp --dport "${ICLAUDE_PII_ACTIVE_PORT}" \
+            -j DNAT --to-destination "127.0.0.1:${ICLAUDE_PII_ACTIVE_PORT}" \
+            2>/dev/null || true
+        # INPUT ACCEPT for the DNAT'd connection arriving on the TAP interface
+        sudo iptables -A INPUT \
+            -i "${MICRO_VM_NET_TAP_IFACE}" -p tcp --dport "${ICLAUDE_PII_ACTIVE_PORT}" \
+            -j ACCEPT 2>/dev/null || true
+        export MICRO_VM_PII_DNAT_PORT="${ICLAUDE_PII_ACTIVE_PORT}"
+        print_info "microVM: DNAT ${MICRO_VM_NET_HOST_IP}:${ICLAUDE_PII_ACTIVE_PORT} → 127.0.0.1:${ICLAUDE_PII_ACTIVE_PORT} (PII proxy)"
+    fi
+
     print_success "microVM: Firecracker started (PID ${MICRO_VM_PID}, socket ${MICRO_VM_SOCKET})"
     return 0
 }
@@ -999,6 +1028,21 @@ stop_microvm() {
     if [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
        sudo -n true 2>/dev/null; then
         sudo ip route del "${MICRO_VM_NET_GUEST_IP}/32" dev "${MICRO_VM_NET_TAP_IFACE}" 2>/dev/null || true
+    fi
+
+    # Remove DNAT rule and route_localnet for PII proxy (added in start_microvm when PII proxy is active).
+    if [[ -n "${MICRO_VM_PII_DNAT_PORT:-}" ]] && [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && \
+       [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && sudo -n true 2>/dev/null; then
+        sudo iptables -t nat -D PREROUTING \
+            -i "${MICRO_VM_NET_TAP_IFACE}" \
+            -d "${MICRO_VM_NET_HOST_IP}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
+            -j DNAT --to-destination "127.0.0.1:${MICRO_VM_PII_DNAT_PORT}" \
+            2>/dev/null || true
+        sudo iptables -D INPUT \
+            -i "${MICRO_VM_NET_TAP_IFACE}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
+            -j ACCEPT 2>/dev/null || true
+        sudo sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=0" &>/dev/null || true
+        MICRO_VM_PII_DNAT_PORT=""
     fi
 
     # Release network slot so it can be reused by another session
