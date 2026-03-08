@@ -103,14 +103,37 @@ Host OS (Linux + KVM)
 echo 'MICRO_VM_ENABLED=true' >> .claude_config
 ```
 
+### Workspace: конкретный путь
+
+```bash
+# Работать с проектом из конкретной директории (независимо от cwd)
+MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project ./iclaude.sh --sandbox-microvm
+
+# Или через .claude_config:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+```
+
+### Workspace: isolated режим
+
+```bash
+# Файлы проекта доступны в VM, но изменения НЕ возвращаются на хост
+MICRO_VM_WORKSPACE_MODE=isolated ./iclaude.sh --sandbox-microvm
+
+# С указанием источника:
+MICRO_VM_WORKSPACE_MODE=isolated \
+MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
+./iclaude.sh --sandbox-microvm
+```
+
 ---
 
 ## Workspace режимы
 
 Управляет тем, какие файлы синхронизируются между host и guest.
 
-| Режим | `MICRO_VM_WORKSPACE_MODE` | Источник | Host→Guest sync | Guest→Host sync-back |
-|-------|--------------------------|----------|-----------------|----------------------|
+| `MICRO_VM_WORKSPACE_MODE` | Источник | Host→Guest sync | Guest→Host sync-back |
+|--------------------------|----------|-----------------|----------------------|
 | `full` (default) | `MICRO_VM_WORKSPACE_PATH` или `$PWD` | ✅ | ✅ |
 | `isolated` | `MICRO_VM_WORKSPACE_PATH` или `$PWD` | ✅ | ❌ |
 
@@ -141,7 +164,7 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 | `MICRO_VM_ENABLED` | `false` | Автоматически использовать microVM при каждом запуске |
 | `MICRO_VM_NET_SUBNET` | `172.16.0.0/26` | Подсеть для IP-пула слотов (до 31 concurrent сессий) |
 | `MICRO_VM_WORKSPACE_MODE` | `full` | Режим синхронизации: `full`, `isolated` |
-| `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для режима `full` (по умолчанию: `$PWD`) |
+| `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
 | `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (newline-separated) |
 | `MICRO_VM_MEM_MB` | `1024` | Объём RAM гостевой ВМ в МБ |
 | `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ |
