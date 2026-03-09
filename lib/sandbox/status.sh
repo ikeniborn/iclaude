@@ -81,12 +81,16 @@ check_microvm_status() {
 			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle + /tmp fix + resize]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		fi
-		# Warn if rootfs is too small (< 400MB = not resized yet)
+		# Warn if rootfs is smaller than MICRO_VM_ROOTFS_SIZE_MB (configurable, default 2048MB)
 		local rootfs_bytes; rootfs_bytes=$(stat -c%s "$rootfs" 2>/dev/null || echo 0)
 		local rootfs_mb=$(( rootfs_bytes / 1048576 ))
-		if [[ $rootfs_mb -lt 400 ]]; then
-			print_warning "  ⚠ rootfs size: ${rootfs_mb}MB < 400MB — npm/node writes may fail (ENOSPC)"
-			echo "    → Run: ./iclaude.sh --install-microvm  (resize to 500MB, no re-download)"
+		local _target_mb="${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
+		local _warn_threshold=$(( _target_mb * 80 / 100 ))
+		if [[ $rootfs_mb -lt $_warn_threshold ]]; then
+			print_warning "  ⚠ rootfs size: ${rootfs_mb}MB < ${_target_mb}MB (MICRO_VM_ROOTFS_SIZE_MB) — ENOSPC risk"
+			echo "    → Run: ./iclaude.sh --install-microvm  (resize to ${_target_mb}MB, no re-download)"
+		else
+			print_success "  rootfs size: ${rootfs_mb}MB (MICRO_VM_ROOTFS_SIZE_MB=${_target_mb}MB)"
 		fi
 	else
 		print_warning "rootfs.ext4: not found ($rootfs)"
