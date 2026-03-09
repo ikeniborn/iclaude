@@ -155,6 +155,118 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 
 ---
 
+## Снэпшоты
+
+### Принцип работы
+
+Именованные снэпшоты позволяют сохранить полное состояние VM (память, диски, сеть)
+и восстановить его при следующем запуске — без холодной загрузки ядра.
+
+**Включение:**
+
+```bash
+# .claude_config
+MICRO_VM_SNAPSHOT_ENABLED=true
+```
+
+### UX-сценарий
+
+**При запуске** — если снэпшоты есть, показывается список:
+
+```
+  Available snapshots:
+  1. 2026-03-09_14-30 — "django auth in progress"
+  2. 2026-03-08_11-22 — "npm build debugging"
+  0. Cold boot (new session)
+
+  Choice [0-2]: _
+```
+
+Если снэпшотов нет — холодный старт без вопросов.
+
+**При завершении** — предлагается сохранить:
+
+```
+  Save snapshot? [y/N]: y
+  Description (optional): django auth done, tests passing
+```
+
+При отказе (`n` или Enter) — обычное завершение без снэпшота.
+
+### Хранение снэпшотов
+
+Каждый снэпшот — отдельная директория:
+
+```
+${MICRO_VM_SNAPSHOT_DIR}/        # по умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
+  2026-03-09_14-30_django-auth/
+    vm.snap          # состояние Firecracker (CPU, RAM registers)
+    vm.mem           # дамп оперативной памяти
+    meta.env         # TIMESTAMP, DESCRIPTION, сетевые параметры (SLOT, IP, TAP)
+    rootfs.ext4      # образ гостевого диска
+    workspace.img    # образ рабочего пространства
+  2026-03-08_11-22_npm-build-debugging/
+    ...
+```
+
+**Размер:** rootfs (~500MB sparse) + workspace (~2GB sparse) + vm.mem (`MICRO_VM_MEM_MB` MB).
+При дефолтных 2048 MB RAM ≈ **~2.5 GB на снэпшот** (sparse-файлы занимают меньше реального места).
+
+### Параллельный запуск из одного снэпшота
+
+Несколько сессий могут стартовать из **одного и того же** снэпшота одновременно — каждая
+получает независимую рабочую копию дисков:
+
+```
+snap/rootfs.ext4    ──(cp)──→  session-A/rootfs.ext4   ← FC process A (RW)
+snap/workspace.img  ──(cp)──→  session-A/workspace.img ← FC process A (RW)
+                    ──(cp)──→  session-B/rootfs.ext4   ← FC process B (RW)
+                    ──(cp)──→  session-B/workspace.img ← FC process B (RW)
+```
+
+Снэпшот-файлы остаются неизменными после восстановления.
+
+### Как работает restore (технически)
+
+1. Копирование `rootfs.ext4` и `workspace.img` из снэпшота в `session_dir/`
+2. Запуск Firecracker без `--config-file`
+3. `PUT /snapshot/load` — FC загружает состояние (кратко открывает оригинальные файлы)
+4. `PATCH /drives/rootfs` + `PATCH /drives/workspace` → перенаправление FC на session-копии
+5. `PATCH /vm {"state": "Resumed"}` — гость продолжает выполнение
+6. SSH-опрос готовности гостя
+7. Обновление `guest-env.sh` (прокси, API URL могли измениться)
+
+### Как работает сохранение (технически)
+
+1. `PATCH /vm {"state": "Paused"}` — гость заморожен
+2. Копирование текущих session-дисков в новую директорию снэпшота
+3. `PATCH /drives/rootfs` + `PATCH /drives/workspace` → перенаправление FC в директорию снэпшота
+4. `PUT /snapshot/create` — FC сохраняет vm.snap + vm.mem (пути дисков встроены в снэпшот)
+5. Запись `meta.env` с описанием, временем и сетевыми параметрами
+
+### Ограничения
+
+| Ограничение | Описание |
+|-------------|---------|
+| Привязка к версии FC | Снэпшоты несовместимы между версиями Firecracker. После `--install-microvm` (обновление FC) существующие снэпшоты не загрузятся — автоматический fallback на cold boot |
+| Размер | ~2.5 GB на снэпшот (sparse; реальный размер зависит от заполненности дисков) |
+| Сетевой конфиг | При restore сетевые параметры (IP, TAP) берутся из `meta.env`. Если нужный слот занят другой сессией — может потребоваться cold boot |
+
+### Управление снэпшотами
+
+```bash
+# Проверить количество снэпшотов
+./iclaude.sh --check-microvm
+
+# Посмотреть список директорий
+ls -lh ~/.../microvm-snapshots/
+
+# Удалить конкретный снэпшот вручную
+rm -rf ~/.../microvm-snapshots/2026-03-08_11-22_npm-build-debugging/
+```
+
+---
+
 ## Переменные конфигурации
 
 Добавляются в `.claude_config` (chmod 600, не в git):
@@ -168,8 +280,11 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 | `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
 | `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (colon-separated) |
 | `MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды). `0` — только при выходе; `30` — каждые 30 с. |
-| `MICRO_VM_MEM_MB` | `1024` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
+| `MICRO_VM_MEM_MB` | `2048` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
+| `MICRO_VM_WORKSPACE_SIZE_MB` | `2048` | Размер образа `/workspace` (`/dev/vdc`) в МБ. Диапазон: 1–65536. Sparse-образ — реально занимает только записанное содержимое. |
 | `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ. Значение читается напрямую из `.claude_config` и применяется к конфигурации Firecracker без переопределений. |
+| `MICRO_VM_SNAPSHOT_ENABLED` | `false` | Включить именованные снэпшоты. При запуске показывает список снэпшотов для выбора; при завершении предлагает сохранить |
+| `MICRO_VM_SNAPSHOT_DIR` | `...microvm-snapshots/` | Директория хранения снэпшотов |
 
 ---
 
@@ -187,18 +302,38 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 
 ## Как работает запуск (кратко)
 
+### Cold boot (без снэпшота или `MICRO_VM_SNAPSHOT_ENABLED=false`)
+
 1. **Slot alloc** — уникальная пара IP из пула `MICRO_VM_NET_SUBNET` (host_ip/guest_ip/TAP)
 2. **TAP setup** — `_ensure_slot_tap`: создать TAP-интерфейс если отсутствует
-3. **workspace.img** — sparse ext4 per-session в `session_dir/`
-4. **guest-env.sh** — файл с `HTTPS_PROXY`, `ANTHROPIC_BASE_URL`, `CLAUDE_CONFIG_DIR` для guest
-5. **FC config** — JSON: kernel + `init=` + drives (vda/vdb/vdc) + TAP network
-6. **FC spawn** — `firecracker --api-sock ... --config-file vmconfig.json`
-7. **SSH poll** — ожидание готовности sshd в guest (max 30s)
-8. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest (via `iclaude@`)
-9. **tar sync** — host→guest (режимы `full` и `isolated`; источник: `MICRO_VM_WORKSPACE_PATH` или `$PWD`); исключает `.nvm-isolated/`, `.git/`, secrets
-10. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
-11. **sync-back** — guest→host после завершения claude (только режим `full`; `isolated` — без sync-back)
-12. **Cleanup** — EXIT-трап: `stop_microvm()`, `_free_microvm_slot()`, `rm session_dir`
+3. **rootfs copy** — sparse copy базового rootfs в `session_dir/rootfs.ext4`
+4. **workspace.img** — sparse ext4 per-session в `session_dir/workspace.img`
+5. **guest-env.sh** — файл с `HTTPS_PROXY`, `ANTHROPIC_BASE_URL`, `CLAUDE_CONFIG_DIR` для guest
+6. **FC config** — JSON: kernel + `init=` + drives (vda/vdb/vdc) + TAP network
+7. **FC spawn** — `firecracker --api-sock ... --config-file vmconfig.json`
+8. **SSH poll** — ожидание готовности sshd в guest (max 30s)
+9. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest (via `iclaude@`)
+10. **tar sync** — host→guest (режимы `full` и `isolated`; источник: `MICRO_VM_WORKSPACE_PATH` или `$PWD`); исключает `.nvm-isolated/`, `.git/`, secrets
+11. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
+12. **sync-back** — guest→host после завершения claude (только режим `full`; `isolated` — без sync-back)
+13. **Snapshot prompt** — если `MICRO_VM_SNAPSHOT_ENABLED=true`: `Save snapshot? [y/N]`
+14. **Cleanup** — EXIT-трап: `stop_microvm()`, `_free_microvm_slot()`, `rm session_dir`
+
+### Restore из снэпшота (`MICRO_VM_SNAPSHOT_ENABLED=true`)
+
+1. **Slot alloc** — как при cold boot
+2. **TAP setup** — как при cold boot; затем сетевые параметры переопределяются из `meta.env`
+3. **Snapshot select** — интерактивный выбор из списка; выбор `0` → cold boot
+4. **Drive copy** — `rootfs.ext4` и `workspace.img` из снэпшота копируются в `session_dir/`
+5. **FC spawn** — `firecracker --api-sock ...` (без `--config-file`)
+6. **PUT /snapshot/load** — загрузка состояния VM (mem + CPU state)
+7. **PATCH /drives** — перенаправление FC на session-копии дисков (VM остаётся Paused)
+8. **PATCH /vm Resumed** — гость продолжает выполнение с сохранённого момента
+9. **SSH poll** — ожидание готовности sshd (max 30s)
+10. **SCP env** — обновлённый `guest-env.sh` → guest (прокси/API могли измениться)
+11. **SSH exec** — запуск claude внутри guest
+12. **Snapshot prompt** — при завершении: `Save snapshot? [y/N]`
+13. **Cleanup** — как при cold boot
 
 ---
 
@@ -244,6 +379,25 @@ nvm.img not found: run --install-microvm first
 ```bash
 rm -f /tmp/iclaude-*-fc.sock
 ```
+
+### Снэпшот не загружается (HTTP != 204)
+
+```
+microVM: snapshot load failed (HTTP 400) — try cold boot
+```
+
+Наиболее частая причина — несовместимость версии снэпшота с текущим Firecracker (после `--install-microvm`). Снэпшот привязан к конкретной версии FC.
+
+**Решение:** выбрать `0. Cold boot`. Старые снэпшоты можно удалить вручную:
+
+```bash
+rm -rf .nvm-isolated/.claude-isolated/microvm-snapshots/2026-03-*/
+```
+
+### Список снэпшотов пустой после переустановки
+
+Снэпшоты хранятся в `MICRO_VM_SNAPSHOT_DIR` (по умолчанию внутри `.nvm-isolated/`),
+которая исключена из git. После `git clone` + `--repair-isolated` снэпшоты не восстанавливаются — это ожидаемо.
 
 ### TAP-интерфейс не создаётся
 
