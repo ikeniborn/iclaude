@@ -164,10 +164,6 @@
     "padding": 1
   },
   "language": "Russian",
-  "sandbox": {
-    "enabled": false,
-    "autoAllowBashIfSandboxed": false
-  },
   "alwaysThinkingEnabled": true,
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,

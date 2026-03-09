@@ -53,6 +53,20 @@ qr_codes/
 scripts/.claude_config
 scripts/.claude_proxy_credentials  # Legacy
 
+# microVM guest environment file — written to $PWD at runtime, may contain credentials
+# (HTTPS_PROXY with embedded password, ANTHROPIC_BASE_URL with port info)
+.iclaude-guest-env.sh
+
+# microVM v2 workspace artifacts — per-session, auto-cleaned by stop_microvm()
+.iclaude-ssh/
+.iclaude-guest-ready
+
+# microVM v2 block images — generated at --install-microvm, not committed
+# nvm.img: pre-built NVM snapshot (read-only per-session /dev/vdb)
+# workspace-*.img: per-session workspace (auto-cleaned by stop_microvm)
+.nvm-isolated/.claude-isolated/bin/nvm.img
+.nvm-isolated/.claude-isolated/bin/*.img
+
 # Isolated NVM environment - temporary/cache files only
 .nvm-isolated/.cache/
 .nvm-isolated/.npm/

@@ -66,10 +66,10 @@ Installing and checking LSP servers for code intelligence.
 
 **Key commands:** `--install-lsp [lang...]`, `--check-lsp`
 
-### 7. Sandbox Commands
-Docker/bubblewrap sandbox availability checks.
+### 7. microVM Commands
+Firecracker microVM kernel isolation.
 
-**Key commands:** `--sandbox-check`, `--sandbox-install` (Linux only)
+**Key commands:** `--install-microvm`, `--check-microvm`, `--sandbox-microvm`
 
 ### 8. Loop Mode
 Sequential/parallel task execution with retry logic (experimental).
@@ -90,7 +90,7 @@ Sequential/parallel task execution with retry logic (experimental).
 | Router | `--install-router` | Install Router package |
 | Router | `--router` | Launch via router |
 | LSP | `--install-lsp` | Install LSP servers |
-| Sandbox | `--sandbox-check` | Check sandbox availability |
+| microVM | `--check-microvm` | Check microVM (Firecracker) status |
 | PII Proxy | `--install-pii-proxy` | Install Presidio NLP (idempotent — skips installed components) |
 | PII Proxy | `--install-pii-proxy --force` | Force reinstall all PII proxy components from scratch |
 | PII Proxy | `--check-pii-proxy` | Show venv/model/process status |

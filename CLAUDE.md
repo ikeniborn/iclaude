@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **iclaude** is a bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration. It provides both isolated (portable) and system-wide installation modes, with secure credential storage and automatic environment setup.
 
-Key features: isolated env (`.nvm-isolated/`), proxy management, version locking, OAuth auto-refresh, Claude Code Router, two-layer security hooks, PII proxy (Presidio NLP).
+Key features: isolated env (`.nvm-isolated/`), proxy management, version locking, OAuth auto-refresh, Claude Code Router, two-layer security hooks, PII proxy (Presidio NLP), microVM sandbox (Firecracker, virtio-blk+SSH, full kernel isolation).
 
 See [README.md](README.md) for full feature list.
 
@@ -69,6 +69,9 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
 ./iclaude.sh --pii-proxy              # Launch with PII masking enabled
 ./iclaude.sh --pii-proxy --router     # Combined: PII masking + CCR router
+./iclaude.sh --install-microvm        # Install Firecracker + vmlinux + rootfs + nvm.img (~1.4GB)
+./iclaude.sh --check-microvm          # Check KVM, images, TAP, SSH key status
+./iclaude.sh --sandbox-microvm        # Launch with microVM kernel isolation
 ```
 
 ## Features
@@ -79,6 +82,7 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 | Router Integration (OpenRouter, DeepSeek, Ollama…) | [docs/ROUTER.md](docs/ROUTER.md) |
 | PII Proxy (Presidio NLP, SSE streaming) | [docs/PII_MASKING.md](docs/PII_MASKING.md) |
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
+| microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
 | OAuth Token Management (auto-refresh, ~1yr tokens) | `lib/oauth/token.sh` |
 | Isolated Environment (NVM+Node.js in `.nvm-isolated/`) | `lib/nvm/` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
@@ -125,27 +129,15 @@ Two-layer protection active during all Claude Code sessions. Configured in `sett
 }
 ```
 
-## Sandbox Limitations
-
-Sandbox (bubblewrap) is **DISABLED BY DEFAULT** (`sandbox.enabled: false`) due to upstream bug.
-
-When enabled, bubblewrap creates 0-byte read-only stubs in `.claude/` of other open projects:
-```
-.claude/settings.json (0 bytes, chmod 444)   .claude/agents (0 bytes, chmod 444)
-```
-Files persist after sandbox exit — no automatic cleanup.
+## Isolation Mechanisms
 
 **Two independent isolation mechanisms:**
 - `CLAUDE_CONFIG_DIR` isolation (always active) → config goes to `.nvm-isolated/.claude-isolated/`
-- Bubblewrap sandbox (disabled) → OS-level, isolates tool calls
+- microVM (Firecracker) — kernel-level isolation via `--sandbox-microvm` (see [docs/MICROVM.md](docs/MICROVM.md))
 
-**Cleanup if sandbox was enabled:**
-```bash
-find /path/to/project/.claude -maxdepth 1 -type f -empty -perm 444 \
-  -exec chmod 644 {} \; -delete
-```
+Note: bubblewrap (bwrap) sandbox was removed in 2026-03 due to an upstream bug where it created 0-byte read-only stub files in `.claude/` of other open projects. microVM is the exclusive OS-level isolation mechanism.
 
-Security hooks work independently of sandbox — see [Security Hooks](#security-hooks-pretooluse).
+Security hooks work independently of isolation — see [Security Hooks](#security-hooks-pretooluse).
 
 ## Important Notes
 
@@ -181,13 +173,6 @@ See [docs/plans/README.md](docs/plans/README.md).
 
 For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-commands**
 
-## RFC Documents (Agent Protocol Specifications)
-
-- [RFC-0001: Documentation Standards](docs/RFC-0001-documentation-standards.md)
-- [RFC-0002: Agent Pipeline Protocol](docs/RFC-0002-agent-protocol-spec.md)
-- [RFC-0003: TOON Protocol](docs/RFC-0003-toon-protocol.md)
-- [RFC-0004: Inter-Agent Communication Optimization](docs/RFC-0004-inter-agent-communication.md)
-
 ## Related Skills
 
 - **@skill:iclaude-architecture** — Code architecture and implementation details
@@ -206,3 +191,7 @@ For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-c
 7. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` use `$CLAUDE_CONFIG_DIR` — work in any project, safe to commit
 8. **PII Proxy:** All API traffic masked before Anthropic servers; runs on localhost only (127.0.0.1)
 9. **CCR + Anthropic:** CCR cannot use OAuth token (`sk-ant-oat01-...`); requires real API key (`sk-ant-api03-...`) from `console.anthropic.com`
+
+## Docs for LLM
+
+Use @skill:context-awareness для работы с документацией 

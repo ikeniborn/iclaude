@@ -1,4 +1,3 @@
-#!/bin/bash
 # .claude_config.example — шаблон конфигурации iclaude
 #
 # Использование:
@@ -266,6 +265,214 @@ USE_PII_PROXY=false
 #     Иконка 🛡 в статуслайне становится кликабельной (OSC 8) когда файл существует.
 #     Каталог .claude/pii/ автоматически добавляется в .gitignore проекта.
 # ------------------------------------------------------------
+
+# ============================================================
+#  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
+# ============================================================
+# Запускает Claude Code ВНУТРИ Firecracker guest VM по SSH.
+# Guest kernel изолирован от host kernel — максимальная защита от prompt injection
+# → kernel exploit цепочки. Workspace синхронизируется через tar-over-SSH.
+#
+# Архитектура v2: guest PID 1 (iclaude-guest-init) монтирует блочные устройства:
+#   /dev/vdb → /mnt/nvm    (NVM snapshot, RO — Node.js + claude binary)
+#   /dev/vdc → /workspace  (per-session sparse ext4, RW)
+#
+# Требования:
+#   - KVM поддержка (/dev/kvm): Linux с аппаратной виртуализацией
+#   - Однократная установка: ./iclaude.sh --install-microvm
+#     (скачивает firecracker ~22MB, vmlinux ~20MB, rootfs.ext4 ~30MB,
+#      строит nvm.img ~1GB из .nvm-isolated/ в .nvm-isolated/.claude-isolated/bin/)
+#   - TAP networking: ./iclaude.sh --install-microvm настроит автоматически
+#     (требует sudo для ip tuntap + iptables)
+#
+# Режимы запуска:
+#   solo:     --sandbox-microvm           → claude внутри VM → Anthropic API
+#   combined: --sandbox-microvm --pii-proxy → PII proxy на хосте (TAP IP) → VM → API
+#
+# Статус: ./iclaude.sh --check-microvm
+#
+# true  — автозапуск VM при каждом старте claude (если KVM доступен)
+# false — отключено (можно включить разово: --sandbox-microvm)
+# По умолчанию: false
+MICRO_VM_ENABLED=false
+
+# Backend виртуализации.
+# firecracker — единственный поддерживаемый вариант в текущей версии.
+# По умолчанию: firecracker
+# MICRO_VM_BACKEND=firecracker
+
+# Количество виртуальных CPU для гостя.
+# Диапазон: 1–8. По умолчанию: 2
+# MICRO_VM_VCPU=2
+
+# Объём RAM гостя в MiB.
+# Диапазон: 512–8192. По умолчанию: 2048
+#
+# Claude Code (Node.js) занимает ~600 MB RSS в базовом состоянии;
+# с большими проектами и tool calls потребление может достигать 1.5–2 GB.
+# При нехватке памяти OOM killer завершает процесс без предупреждения (нет swap).
+# Примеры:
+#   1024 — минимально для тестирования, риск OOM при больших проектах
+#   2048 — дефолт; минимум для стабильной работы
+#   4096 — для крупных монорепозиториев и интенсивного использования
+# MICRO_VM_MEM_MB=2048
+
+# Включить TAP networking (доступ к сети из гостя через NAT).
+# Требуется для: Anthropic API, прокси, загрузок внутри VM.
+# false — полностью изолированный гость без сети (максимальная безопасность).
+# По умолчанию: true
+# MICRO_VM_NET_ENABLED=true
+
+# Имя TAP-интерфейса для слота 0 на хосте.
+# При запуске нескольких concurrent сессий: слот 1 → tap-iclaude-1, слот 2 → tap-iclaude-2 и т.д.
+# Изменяйте только при конфликте с существующими интерфейсами.
+# По умолчанию: tap-iclaude
+# MICRO_VM_NET_TAP_IFACE=tap-iclaude
+
+# Пул адресов для гостевых VM в CIDR-нотации.
+# Каждая сессия автоматически получает уникальную пару адресов из этого пула:
+#   Слот 0: хост=base+1 (172.16.0.1), гость=base+2 (172.16.0.2), TAP=tap-iclaude
+#   Слот 1: хост=base+3 (172.16.0.3), гость=base+4 (172.16.0.4), TAP=tap-iclaude-1
+#   ...
+# /26 → 31 concurrent сессии; /28 → 7; /30 → 1.
+# По умолчанию: 172.16.0.0/26
+# MICRO_VM_NET_SUBNET=172.16.0.0/26
+#
+# Использовать снэпшоты для быстрого старта VM.
+# true  — повторный запуск ~125ms (снэпшот восстанавливается)
+# false — каждый запуск холодный ~1-2s (без снэпшота)
+# По умолчанию: false
+# MICRO_VM_SNAPSHOT_ENABLED=false
+
+# Директория для хранения снэпшотов VM.
+# По умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
+# MICRO_VM_SNAPSHOT_DIR=
+
+# Путь к rootfs образу (ext4, Alpine Linux ~30MB).
+# По умолчанию: .nvm-isolated/.claude-isolated/bin/rootfs.ext4
+# Устанавливается автоматически через --install-microvm.
+# MICRO_VM_ROOTFS_PATH=
+
+# Размер rootfs образа в МБ (vda — системный диск гостя: OS, /home, /etc, логи).
+# При запуске --install-microvm rootfs автоматически расширяется до этого значения.
+# При повторном --install-microvm предлагается resize если текущий размер меньше.
+# При старте VM: авто-рост если свободно < 30% (независимо от этой переменной).
+#
+# Скачанный rootfs: ~265MB. Claude Code + OS в использовании: ~350-400MB.
+# Рекомендуемые значения:
+#   500  — минимум для базовой работы (исторический дефолт до v8)
+#   2048 — дефолт; достаточно для крупных проектов и npm-операций
+#   4096 — для интенсивных операций с большими бинарями в rootfs
+#
+# ВАЖНО: workspace файлы (проект) хранятся в /workspace (vdc = workspace.img),
+#        не в rootfs. Для размера workspace используйте MICRO_VM_WORKSPACE_SIZE_MB.
+# По умолчанию: 2048
+# MICRO_VM_ROOTFS_SIZE_MB=2048
+
+# Размер workspace образа в МБ (vdc — диск для /workspace: файлы проекта).
+# Sparse-файл на хосте: реально занимает только фактически использованное место.
+# При каждом запуске создаётся новый per-session образ указанного размера.
+# Рекомендуемые значения:
+#   2048 — дефолт; достаточно для большинства проектов
+#   8192 — для монорепозиториев и проектов с большими артефактами (node_modules, dist)
+#  20480 — для проектов с моделями ML или большими бинарными данными
+# По умолчанию: 2048
+# MICRO_VM_WORKSPACE_SIZE_MB=2048
+
+# Путь к ядру Linux для гостя (vmlinux, ~20MB).
+# По умолчанию: .nvm-isolated/.claude-isolated/bin/vmlinux
+# Устанавливается автоматически через --install-microvm.
+# MICRO_VM_KERNEL_PATH=
+
+# Уровень логирования Firecracker VMM.
+# debug | info | warn | error
+# По умолчанию: warn
+# MICRO_VM_LOG_LEVEL=warn
+
+# Передавать настройки прокси в гостевую VM.
+# true  — PROXY_URL, PROXY_CA пробрасываются в гостя через TAP (host IP в качестве шлюза)
+# false — гость использует прямое соединение
+# По умолчанию: true
+# MICRO_VM_PROXY_PASS=true
+
+# Режим синхронизации рабочего каталога с гостевой VM.
+# Синхронизация выполняется через tar-over-SSH. Секретные файлы всегда исключены из sync:
+# .claude_config, .iclaude-guest-env.sh, .iclaude-ssh/, .nvm-isolated/, .git/
+#
+# full     — двунаправленная синхронизация:
+#            host→guest при запуске, guest→host после завершения.
+#            MICRO_VM_WORKSPACE_PATH (или $PWD) — источник workspace.
+#            Режим по умолчанию.
+#
+# isolated — одностороннее копирование:
+#            host→guest при запуске (как full), но без sync-back.
+#            Файлы на хосте остаются неизменными после работы claude.
+#            MICRO_VM_WORKSPACE_PATH (или $PWD) — источник для копирования.
+#
+# По умолчанию: full
+# MICRO_VM_WORKSPACE_MODE=full
+
+# Источник workspace для режима full.
+# Задаёт директорию, которая синхронизируется в /workspace гостевой VM.
+# Если не задан — используется $PWD (текущий каталог при запуске iclaude.sh).
+# Позволяет работать с конкретным проектом независимо от cwd.
+# Пример: /home/user/projects/my-project
+# MICRO_VM_WORKSPACE_PATH=
+
+# Интервал периодической синхронизации workspace (guest→host) в секундах.
+# Применяется только в режиме full. При значении 0 (по умолчанию) периодическая
+# синхронизация отключена — изменения синхронизируются только после завершения сессии.
+#
+# При ненулевом значении: фоновый процесс каждые N секунд копирует /workspace
+# из guest на хост, делая изменения видимыми на хосте без ожидания выхода из claude.
+#
+# С SSH ControlMaster + rsync (rootfs v7): минимум 2s безопасен (delta sync, overhead ~5ms).
+# Без rsync (rootfs v6, tar-over-SSH): минимум 20-30s (SSH handshake 150-320ms per sync).
+# Рекомендуемые значения:
+#   0  — только при выходе (по умолчанию, без накладных расходов)
+#   5  — каждые 5 секунд (с rsync+ControlMaster, near-realtime sync)
+#   30 — каждые 30 секунд (tar fallback или баланс нагрузки)
+# MICRO_VM_SYNC_INTERVAL=0
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
+# ============================================================
+# # Базовый microVM — монтировать текущий проект (по умолчанию):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_VCPU=2
+# MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
+# MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
+#
+# # Конкретный путь как источник workspace (независимо от cwd):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+#
+# # Изоляция: файлы копируются в VM, но изменения не возвращаются на хост:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_MODE=isolated
+# MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
+#
+# # С быстрым стартом через снэпшоты:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_SNAPSHOT_ENABLED=true
+
+# ============================================================
+#  OAUTH ТОКЕН
+# ============================================================
+# Порог автоматического обновления OAuth токена (в секундах).
+# Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
+#
+# По умолчанию: 604800 (7 дней)
+# Минимальное рекомендуемое значение: 86400 (1 день)
+# Максимальное разумное значение: 2592000 (30 дней)
+#
+# Примеры:
+#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
+#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
+#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
+#
+# Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
+# TOKEN_REFRESH_THRESHOLD=
 
 # ============================================================
 #  ОТЛАДКА

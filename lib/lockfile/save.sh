@@ -7,7 +7,7 @@
 
 #######################################
 # Save isolated environment versions to lockfile
-# Captures: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins, Sandbox, StatusLine, Oh-My-Posh
+# Captures: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins, StatusLine, Oh-My-Posh
 # Returns:
 #   0 - success
 #   1 - error
@@ -55,37 +55,6 @@ save_isolated_lockfile() {
 	local ccr_cmd=$(get_router_path "false")
 	if [[ -n "$ccr_cmd" ]]; then
 		router_version=$("$ccr_cmd" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-	fi
-
-	# Detect sandbox availability
-	local sandbox_available="false"
-	local sandbox_platform=""
-	sandbox_platform=$(detect_sandbox_platform)
-
-	if [[ $? -eq 0 ]]; then
-		# Platform supported, check dependencies
-		if check_sandbox_dependencies &>/dev/null; then
-			sandbox_available="true"
-		fi
-	fi
-
-	# Get dependency versions (Linux/WSL2 only)
-	local sandbox_deps_json="{}"
-	local sandbox_runtime_version="not installed"
-
-	if [[ "$sandbox_available" == "true" && "$sandbox_platform" != "macos" ]]; then
-		local bwrap_version socat_version
-		bwrap_version=$(bwrap --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown")
-		socat_version=$(socat -V 2>&1 | grep "socat version" | grep -oP '\d+\.\d+\.\d+\.\d+' || echo "unknown")
-		sandbox_deps_json="{\"bubblewrap\": \"$bwrap_version\", \"socat\": \"$socat_version\"}"
-
-		# Get sandbox-runtime version
-		sandbox_runtime_version=$(get_sandbox_runtime_version)
-	fi
-
-	local sandbox_installed_at=""
-	if [[ "$sandbox_available" == "true" ]]; then
-		sandbox_installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 	fi
 
 	# Detect LSP servers
@@ -201,11 +170,6 @@ save_isolated_lockfile() {
 		--arg routerVer "$router_version" \
 		--argjson lspServers "$lsp_servers_json" \
 		--argjson lspPlugins "$lsp_plugins_json" \
-		--arg sandboxAvail "$sandbox_available" \
-		--arg sandboxPlat "$sandbox_platform" \
-		--argjson sandboxDeps "$sandbox_deps_json" \
-		--arg sandboxRuntimeVer "$sandbox_runtime_version" \
-		--arg sandboxInstAt "$sandbox_installed_at" \
 		--arg statusEnabled "$statusline_enabled" \
 		--arg statusScript "$statusline_script" \
 		--arg ompVer "$omp_version" \
@@ -219,11 +183,6 @@ save_isolated_lockfile() {
 			routerVersion: $routerVer,
 			lspServers: $lspServers,
 			lspPlugins: $lspPlugins,
-			sandboxAvailable: ($sandboxAvail == "true"),
-			sandboxPlatform: $sandboxPlat,
-			sandboxDependencies: $sandboxDeps,
-			sandboxRuntimeVersion: $sandboxRuntimeVer,
-			sandboxInstalledAt: $sandboxInstAt,
 			statusLineEnabled: ($statusEnabled == "true"),
 			statusLineScript: $statusScript,
 			ohMyPoshVersion: $ompVer,
