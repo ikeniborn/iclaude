@@ -356,8 +356,13 @@ rm /usr/bin/rsync
 write ${_rsync_host} /usr/bin/rsync
 set_inode_field /usr/bin/rsync mode 0100755
 EOF
-				touch "$_v7_marker"
-				print_success "rootfs upgraded to v7 (rsync injected — delta sync enabled)"
+				local _v7_dbg_rc=$?
+				if [[ $_v7_dbg_rc -eq 0 ]]; then
+					touch "$_v7_marker"
+					print_success "rootfs upgraded to v7 (rsync injected — delta sync enabled)"
+				else
+					print_warning "rsync injection failed (debugfs rc=${_v7_dbg_rc}) — v7 marker NOT set, will retry on next --install-microvm"
+				fi
 			else
 				print_warning "rsync not found on host — v7 upgrade skipped (install: sudo apt-get install rsync)"
 				print_warning "Periodic sync will fall back to tar-over-SSH"
