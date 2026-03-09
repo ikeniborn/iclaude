@@ -8,6 +8,13 @@
 #   0 - success
 #######################################
 check_microvm_status() {
+	# Load .claude_config to get actual configured values (not stale shell env vars).
+	# --check-microvm is called directly during arg-parsing, before setup_isolated_nvm()
+	# which is the only place load_claude_config() is normally invoked.
+	if declare -f load_claude_config &>/dev/null && [[ -f "${CREDENTIALS_FILE:-}" ]]; then
+		load_claude_config 2>/dev/null || true
+	fi
+
 	echo ""
 	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	echo "  microVM Sandbox Status (Firecracker)"
@@ -54,17 +61,32 @@ check_microvm_status() {
 		local rootfs_v3="${rootfs%.ext4}.v3-ready"
 		local rootfs_v4="${rootfs%.ext4}.v4-ready"
 		local rootfs_v5="${rootfs%.ext4}.v5-ready"
-		if [[ -f "$rootfs_v5" ]]; then
-			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v5: jq + DNS + CA bundle + /tmp fix]"
+		local rootfs_v6="${rootfs%.ext4}.v6-ready"
+		local rootfs_v7="${rootfs%.ext4}.v7-ready"
+		if [[ -f "$rootfs_v7" ]]; then
+			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v7: + rsync (delta sync via ControlMaster)]"
+		elif [[ -f "$rootfs_v6" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v6: upgrade available → v7 adds rsync delta sync]"
+			echo "  → Run: ./iclaude.sh --install-microvm  (inject rsync, no re-download)"
+		elif [[ -f "$rootfs_v5" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v5: jq + DNS + CA bundle + /tmp fix — needs upgrade: resize to 500MB]"
+			echo "  → Run: ./iclaude.sh --install-microvm  (resize only, no re-download)"
 		elif [[ -f "$rootfs_v4" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle — needs upgrade: /tmp not writable]"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle — needs upgrade: /tmp fix + resize]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		elif [[ -f "$rootfs_v3" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: missing CA bundle + /tmp fix]"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: CA bundle + /tmp fix + resize]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
 		else
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle + /tmp fix]"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle + /tmp fix + resize]"
 			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
+		fi
+		# Warn if rootfs is too small (< 400MB = not resized yet)
+		local rootfs_bytes; rootfs_bytes=$(stat -c%s "$rootfs" 2>/dev/null || echo 0)
+		local rootfs_mb=$(( rootfs_bytes / 1048576 ))
+		if [[ $rootfs_mb -lt 400 ]]; then
+			print_warning "  ⚠ rootfs size: ${rootfs_mb}MB < 400MB — npm/node writes may fail (ENOSPC)"
+			echo "    → Run: ./iclaude.sh --install-microvm  (resize to 500MB, no re-download)"
 		fi
 	else
 		print_warning "rootfs.ext4: not found ($rootfs)"
@@ -89,19 +111,27 @@ check_microvm_status() {
 	print_info "Configuration:"
 	echo "  MICRO_VM_ENABLED:          ${MICRO_VM_ENABLED:-false}"
 	echo "  MICRO_VM_VCPU:             ${MICRO_VM_VCPU:-2}"
-	echo "  MICRO_VM_MEM_MB:           ${MICRO_VM_MEM_MB:-1024}"
+	echo "  MICRO_VM_MEM_MB:           ${MICRO_VM_MEM_MB:-2048}"
 	echo "  MICRO_VM_NET_ENABLED:      ${MICRO_VM_NET_ENABLED:-true}"
 	echo "  MICRO_VM_SNAPSHOT_ENABLED: ${MICRO_VM_SNAPSHOT_ENABLED:-false}"
 	echo "  MICRO_VM_MOUNT_WORKSPACE:  ${MICRO_VM_MOUNT_WORKSPACE:-true}"
 	echo "  MICRO_VM_LOG_LEVEL:        ${MICRO_VM_LOG_LEVEL:-warn}"
 	echo ""
 
+	# Warnings: RAM check
+	local _mem_mb="${MICRO_VM_MEM_MB:-2048}"
+	if [[ $_mem_mb -lt 2048 ]]; then
+		print_warning "⚠ RAM: ${_mem_mb}MB < 2048MB — Claude Code (~600MB RSS) may be killed by OOM"
+		echo "  → Set MICRO_VM_MEM_MB=2048 in .claude_config"
+		echo ""
+	fi
+
 	# Snapshots
 	print_info "Snapshots:"
 	local snap_dir="${MICRO_VM_SNAPSHOT_DIR:-${ISOLATED_CONFIG_DIR}/microvm-snapshots}"
 	if [[ -d "$snap_dir" ]]; then
 		local snap_count
-		snap_count=$(find "$snap_dir" -name "*.snap" 2>/dev/null | wc -l)
+		snap_count=$(find "$snap_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
 		echo "  Directory: $snap_dir"
 		echo "  Snapshots: $snap_count"
 	else
@@ -118,7 +148,7 @@ check_microvm_status() {
 	[[ -f "${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}" ]] || { all_ready=false; missing_items+=("vmlinux kernel"); }
 	local _rootfs_sum="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
 	[[ -f "$_rootfs_sum" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
-	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v5-ready" ]] || { all_ready=false; missing_items+=("rootfs v5 upgrade needed (/tmp fix + CA bundle) → ./iclaude.sh --install-microvm"); }
+	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v7-ready" ]] || { all_ready=false; missing_items+=("rootfs v7 upgrade needed (inject rsync for delta sync) → ./iclaude.sh --install-microvm"); }
 
 	if [[ "$all_ready" == "true" ]]; then
 		print_success "microVM Ready"

@@ -208,6 +208,49 @@ _download_vmlinux() {
 }
 
 #######################################
+# Resize rootfs ext4 image to at least target_mb MB.
+# Uses truncate + e2fsck + resize2fs. No-op if image is already large enough.
+# Arguments:
+#   $1 - rootfs_path: path to rootfs.ext4
+#   $2 - target_mb:   minimum size in MB (e.g. 500)
+# Returns:
+#   0 - success (resized or already large enough)
+#######################################
+_resize_rootfs() {
+	local rootfs_path="$1"
+	local target_mb="${2:-500}"
+
+	if [[ ! -f "$rootfs_path" ]]; then
+		print_error "rootfs not found: $rootfs_path"
+		return 1
+	fi
+
+	local current_bytes; current_bytes=$(stat -c%s "$rootfs_path" 2>/dev/null || echo 0)
+	local current_mb=$(( current_bytes / 1048576 ))
+	if [[ $current_mb -ge $target_mb ]]; then
+		print_success "rootfs already ${current_mb}MB (≥ ${target_mb}MB) — no resize needed"
+		return 0
+	fi
+
+	if ! command -v resize2fs &>/dev/null; then
+		print_warning "resize2fs not found (install e2fsprogs) — rootfs resize skipped"
+		return 0
+	fi
+
+	print_info "Resizing rootfs from ${current_mb}MB to ${target_mb}MB..."
+	truncate -s "${target_mb}M" "$rootfs_path"
+	if command -v e2fsck &>/dev/null; then
+		e2fsck -fy "$rootfs_path" &>/dev/null || true
+	fi
+	if ! resize2fs "$rootfs_path" &>/dev/null; then
+		print_warning "resize2fs failed — rootfs may not have full ${target_mb}MB"
+		return 0
+	fi
+	print_success "rootfs resized to ${target_mb}MB"
+	return 0
+}
+
+#######################################
 # Download Ubuntu rootfs image from Firecracker CI S3 bucket.
 # Arguments:
 #   $1 - rootfs_path: destination file path for the rootfs image
@@ -274,13 +317,15 @@ install_microvm() {
 	local _v3_marker="${_rootfs%.ext4}.v3-ready"
 	local _v4_marker="${_rootfs%.ext4}.v4-ready"
 	local _v5_marker="${_rootfs%.ext4}.v5-ready"
+	local _v6_marker="${_rootfs%.ext4}.v6-ready"
+	local _v7_marker="${_rootfs%.ext4}.v7-ready"
 	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 
 	local _nvm_img="${MICRO_VM_NVM_IMG:-${_bin_dir}/nvm.img}"
 
 	if [[ -f "$_rootfs" ]]; then
-		if [[ -f "$_v5_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
-			print_success "microVM already installed and up-to-date (v5)"
+		if [[ -f "$_v7_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
+			print_success "microVM already installed and up-to-date (v7)"
 			print_info "Rootfs: $_rootfs"
 			print_info "NVM image: $_nvm_img"
 			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
@@ -299,34 +344,70 @@ install_microvm() {
 			return 1
 		fi
 
-		# Rootfs exists but v5 not applied — upgrade without re-downloading.
+		# Fast-path v6→v7: inject rsync for delta sync (ControlMaster + rsync).
+		# Requires rsync on host (sudo apt-get install rsync).
+		if [[ -f "$_v6_marker" && ! -f "$_v7_marker" ]]; then
+			print_info "Existing rootfs found — upgrading to v7 (inject rsync for delta sync)..."
+			local _rsync_host; _rsync_host=$(command -v rsync 2>/dev/null || true)
+			if [[ -n "$_rsync_host" && -f "$_rsync_host" ]]; then
+				e2fsck -fy "$_rootfs" &>/dev/null || true
+				debugfs -w "$_rootfs" <<EOF 2>/dev/null
+rm /usr/bin/rsync
+write ${_rsync_host} /usr/bin/rsync
+set_inode_field /usr/bin/rsync mode 0100755
+EOF
+				touch "$_v7_marker"
+				print_success "rootfs upgraded to v7 (rsync injected — delta sync enabled)"
+			else
+				print_warning "rsync not found on host — v7 upgrade skipped (install: sudo apt-get install rsync)"
+				print_warning "Periodic sync will fall back to tar-over-SSH"
+			fi
+			return 0
+		fi
+
+		# Fast-path v5→v6 upgrade: only resize needed, no re-injection.
+		# v6 adds: rootfs resized to 500MB for headroom (avoids ENOSPC in npm/node on rootfs).
+		if [[ -f "$_v5_marker" && ! -f "$_v6_marker" ]]; then
+			print_info "Existing rootfs found — upgrading to v6 (resize to 500MB for headroom)..."
+			echo ""
+			_resize_rootfs "$_rootfs" 500
+			touch "$_v6_marker"
+			echo ""
+			print_success "microVM v6 upgrade complete"
+			print_info "Verify: ./iclaude.sh --check-microvm"
+			return 0
+		fi
+
+		# Rootfs exists but v5/v6 not applied — upgrade without re-downloading.
+		# v6 adds: rootfs resized to 500MB (avoids ENOSPC for npm/node writes on rootfs).
 		# v5 adds: /tmp mounted as tmpfs in guest-init (world-writable, fixes Bash tool access).
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
 		if [[ -f "$_v4_marker" ]]; then
-			print_info "Existing rootfs found — upgrading to v5 (fix /tmp permissions for Bash tool)..."
+			print_info "Existing rootfs found — upgrading to v6 (fix /tmp permissions + resize)..."
 		elif [[ -f "$_v3_marker" ]]; then
-			print_info "Existing rootfs found — upgrading to v5 (CA bundle + /tmp fix)..."
+			print_info "Existing rootfs found — upgrading to v6 (CA bundle + /tmp fix + resize)..."
 		else
-			print_info "Existing rootfs found — upgrading to v5 (jq + DNS + SSH keys + CA bundle + /tmp fix)..."
+			print_info "Existing rootfs found — upgrading to v6 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize)..."
 		fi
 		echo ""
+		_resize_rootfs "$_rootfs" 500
 		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
 		_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
 		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
 		if [[ -f "$_guest_init_src" ]]; then
 			_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
-				|| print_warning "v5 inject failed"
+				|| print_warning "v6 inject failed"
 		else
-			print_warning "guest-init.sh not found at $_guest_init_src — v5 unavailable"
+			print_warning "guest-init.sh not found at $_guest_init_src — v6 unavailable"
 		fi
 		# Only rebuild NVM image if it is missing (rebuild is slow and requires sudo)
 		if [[ ! -f "$_nvm_img" ]]; then
 			_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
 		fi
 		echo ""
-		print_success "microVM v5 upgrade complete"
-		print_info "Verify /tmp writable: ./iclaude.sh --sandbox-microvm (Bash tool should work)"
+		print_success "microVM v6 upgrade complete"
+		print_info "Verify: ./iclaude.sh --sandbox-microvm (Bash tool + no ENOSPC in npm)"
 		return 0
 	fi
 
@@ -388,6 +469,9 @@ install_microvm() {
 
 	local rootfs_path="${MICRO_VM_ROOTFS_PATH:-${bin_dir}/rootfs.ext4}"
 	_download_rootfs "$rootfs_path" "$arch" "$rootfs_sha256" || return 1
+
+	# Resize rootfs to 500MB for headroom (downloaded image ~265MB used space)
+	_resize_rootfs "$rootfs_path" 500
 
 	# Create working directories
 	local work_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}"
@@ -845,12 +929,33 @@ EOF
 		print_warning "CA bundle not found at ${ca_bundle} — HTTPS will fail in guest (install: sudo apt install ca-certificates)"
 	fi
 
-	# Mark v5 ready: rootfs has guest-init (DNS + /tmp tmpfs + loopback), jq, SSH keys, sudoers, mount points, CA bundle.
-	# v2-v4 kept for backward compatibility with any tooling that checks for them.
+	# Inject rsync binary (enables delta sync via SSH ControlMaster from host).
+	# rsync is a static binary — safe to copy across matching architectures (host = guest = x86_64/aarch64).
+	local rsync_host; rsync_host=$(command -v rsync 2>/dev/null || true)
+	if [[ -n "$rsync_host" && -f "$rsync_host" ]]; then
+		debugfs -w "$rootfs" <<EOF 2>/dev/null
+rm /usr/bin/rsync
+write ${rsync_host} /usr/bin/rsync
+set_inode_field /usr/bin/rsync mode 0100755
+EOF
+		local _rsync_rc=$?
+		if [[ $_rsync_rc -eq 0 ]]; then
+			print_success "rsync injected into guest rootfs (/usr/bin/rsync)"
+		else
+			print_warning "rsync injection failed (debugfs rc=${_rsync_rc}) — delta sync unavailable, tar fallback will be used"
+		fi
+	else
+		print_warning "rsync not found on host — delta sync unavailable (install: sudo apt-get install rsync)"
+	fi
+
+	# Mark v7 ready: rootfs has guest-init + jq + SSH keys + CA bundle + /tmp fix + resize + rsync.
+	# v2-v6 kept for backward compatibility with any tooling that checks for them.
 	touch "${rootfs%.ext4}.v2-ready"
 	touch "${rootfs%.ext4}.v3-ready"
 	touch "${rootfs%.ext4}.v4-ready"
 	touch "${rootfs%.ext4}.v5-ready"
-	print_success "Guest init injected (rootfs ready for v5)"
+	touch "${rootfs%.ext4}.v6-ready"
+	touch "${rootfs%.ext4}.v7-ready"
+	print_success "Guest init injected (rootfs ready for v7)"
 	return 0
 }
