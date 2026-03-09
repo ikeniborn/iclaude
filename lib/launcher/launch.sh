@@ -229,14 +229,17 @@ launch_claude() {
 
         # Build quoted arg list for safe passing through SSH.
         # Strip flags that must not be forwarded into the guest VM:
-        #   --chrome: Claude-in-Chrome extension runs on the HOST, not inside the VM guest.
-        #             Passing --chrome to the guest causes claude to try to connect to the extension,
-        #             fail (no extension in the VM), and exit immediately after the trust dialog.
+        #   --chrome: Claude-in-Chrome extension runs on the HOST. The extension connects to
+        #             Claude Code CLI via a local IPC port; Claude inside the VM cannot reach it
+        #             without SSH reverse port forwarding (future work).
+        #   --ide:    IDE (VS Code / JetBrains) runs on the HOST. Claude inside the VM cannot
+        #             connect to an IDE socket on the host network namespace.
         # Note: --dangerously-skip-permissions IS forwarded — claude runs as uid=1000 (iclaude user),
         #       not root, so it accepts the flag. KVM isolation makes this safe inside the VM.
         local quoted_args=""
         for arg in "$@"; do
             [[ "$arg" == "--chrome" ]] && continue
+            [[ "$arg" == "--ide" ]] && continue
             quoted_args+=" $(printf '%q' "$arg")"
         done
 
