@@ -67,9 +67,14 @@ OPTIONS:
                                     Default: typescript and python
                                     Examples: --install-lsp | --install-lsp python | --install-lsp typescript go
   --check-lsp                       Show LSP server and plugin installation status
-  --sandbox-install                 Install sandbox system dependencies (bubblewrap, socat)
-  --sandbox-check                   Show sandbox availability status and configuration
-  --check-sandbox                   (Alias for --sandbox-check)
+  --install-microvm                 Install Firecracker microVM (binary, kernel, rootfs, TAP networking)
+                                    Downloads ~72MB to isolated environment (not in git)
+                                    Requires: KVM (/dev/kvm), iproute2
+  --check-microvm                   Show microVM status (KVM, binaries, networking, configuration)
+  --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
+                                    Requires prior --install-microvm setup
+                                    Can be combined with --pii-proxy: traffic routed through host TAP IP
+                                    Enable permanently: add MICRO_VM_ENABLED=true to .claude_config
   --no-test                         Skip proxy connectivity test
 
 Oh My Posh Commands:
@@ -213,33 +218,6 @@ PII PROXY (MASKING):
 
   # Combined mode: PII masking + CCR router (chain: claude → PII:9000 → CCR:3456 → providers)
   ./iclaude.sh --pii-proxy --router
-
-SANDBOX INTEGRATION:
-  # Check sandbox availability and requirements
-  ./iclaude.sh --sandbox-check
-
-  # Install system dependencies (Linux/WSL2 only)
-  ./iclaude.sh --sandbox-install
-
-  # macOS users (no installation needed)
-  ./iclaude.sh --sandbox-check  # Shows "Ready" immediately
-
-  Sandboxing provides OS-level isolation:
-    - Filesystem isolation (restrict read/write access)
-    - Network isolation (domain allow/deny lists via proxy)
-    - OS enforcement: macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + @anthropic-ai/sandbox-runtime)
-
-  Configuration:
-    - Enable via /sandbox command inside Claude Code session
-    - Settings stored in settings.json (sandbox section)
-    - Two modes: auto-allow vs regular permissions
-
-  Platform Support:
-    ✓ macOS (native Seatbelt, always available)
-    ✓ Linux (requires bubblewrap + socat + @anthropic-ai/sandbox-runtime)
-    ✓ WSL2 (requires bubblewrap + socat + @anthropic-ai/sandbox-runtime)
-    ✗ WSL1 (not supported, upgrade to WSL2)
-    ✗ Windows native (use WSL2 instead)
 
 PROXY URL FORMAT:
   http://username:password@IP:port

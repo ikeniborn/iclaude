@@ -11,7 +11,7 @@
 | `--cleanup-isolated` | Delete isolated environment | ~10 sec | Preserves lockfile |
 | `--install-router` | Install Router npm package | ~1-2 min | Global npm install |
 | `--install-lsp` | Install LSP servers | ~2-5 min | Default: TS + Python |
-| `--sandbox-install` | Install sandbox dependencies | ~2-3 min | Linux only |
+| `--install-microvm` | Install Firecracker microVM | ~5-10 min | Requires KVM (/dev/kvm) |
 
 ## Detailed Examples
 

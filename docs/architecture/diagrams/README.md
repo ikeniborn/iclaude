@@ -9,6 +9,7 @@
 3. [Поток изолированной установки](#поток-изолированной-установки)
 4. [Поток обновления OAuth токена](#поток-обновления-oauth-токена)
 5. [Поток запуска через Router](#поток-запуска-через-router)
+6. [Поток запуска через microVM (Firecracker)](#поток-запуска-через-microvm-firecracker)
 
 ---
 
@@ -21,6 +22,7 @@
 - 🟠 Core Layer — основная бизнес-логика
 - 🟢 Installation Layer — установка и обновление
 - 🔴 Infrastructure Layer — низкоуровневые операции
+- 🟣 Sandbox Layer — microVM lifecycle, virtiofsd, KVM detection
 - ⚪ External — внешние зависимости
 
 ```mermaid
@@ -85,6 +87,10 @@ graph TD
     DEP_CHECK[dependency-checker<br/>Dependency Checker]
     OUTPUT[output-formatters<br/>Output Formatters]
 
+    %% Sandbox Layer (microVM only)
+    SANDBOX_INSTALL[sandbox-install<br/>microVM Installer]
+    MICROVM_LAUNCH[microvm-launcher<br/>VM Lifecycle]
+
     %% External Dependencies
     CLAUDE_CLI[claude-cli<br/>Claude Code CLI]
     ROUTER_CLI[router-cli<br/>Router CLI]
@@ -92,6 +98,9 @@ graph TD
     GIT_BIN[git-binary<br/>Git Binary]
     CURL_BIN[curl-binary<br/>Curl Binary]
     JQ_BIN[jq-binary<br/>JQ Binary]
+    FC_BIN[firecracker-binary<br/>Firecracker VMM]
+    VFSD_BIN[virtiofsd-binary<br/>virtiofsd]
+    KVM_DEV[kvm-device<br/>/dev/kvm]
 
     %% Dependencies - CLI Layer
     CLI -->|routes to| PROXY
@@ -99,6 +108,7 @@ graph TD
     CLI -->|routes to| VERSION_MGT
     CLI -.->|optional| OAUTH
     CLI -.->|optional| ROUTER
+    CLI -.->|optional| SANDBOX_INSTALL
 
     %% Dependencies - Proxy Management
     PROXY --> VALIDATE
@@ -158,18 +168,28 @@ graph TD
     GIT_PROXY --> GIT_BIN
     CONFIG_MGT --> FILE_OPS
 
+    %% Dependencies - Sandbox Layer
+    SANDBOX_INSTALL --> CURL_BIN
+    SANDBOX_INSTALL --> MICROVM_LAUNCH
+    MICROVM_LAUNCH --> FC_BIN
+    MICROVM_LAUNCH --> VFSD_BIN
+    MICROVM_LAUNCH --> KVM_DEV
+    MICROVM_LAUNCH --> CLAUDE_CLI
+
     %% Layer Styling
     classDef cliLayer fill:#e1f5ff,stroke:#1976d2,stroke-width:2px
     classDef coreLayer fill:#fff4e1,stroke:#f57c00,stroke-width:2px
     classDef installLayer fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
     classDef infraLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef sandboxLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef externalLayer fill:#f0f0f0,stroke:#616161,stroke-width:2px
 
     class CLI,USAGE cliLayer
     class PROXY,VALIDATE,RESOLVE,PARSE,CONFIG_PROXY,TEST_PROXY,ISOLATED,SETUP_NVM,REPAIR,CHECK_STATUS,VERSION_MGT,SAVE_LOCK,INSTALL_LOCK,CONFIG_MGT,SETUP_CONFIG,EXPORT_IMPORT,OAUTH,CHECK_TOKEN,REFRESH_TOKEN,CHECK_EXP,ROUTER,DETECT_ROUTER,GET_ROUTER,CHECK_ROUTER coreLayer
     class NVM_INST,NODE_INST,CLAUDE_INST,ROUTER_INST,UPDATER,CLEANUP,SYMLINK,NVM_DETECT,CLAUDE_PATH,VERSION_DETECT installLayer
     class CRED_STORE,GIT_PROXY,FILE_OPS,JQ_VALID,DEP_CHECK,OUTPUT infraLayer
-    class CLAUDE_CLI,ROUTER_CLI,NVM_BIN,GIT_BIN,CURL_BIN,JQ_BIN externalLayer
+    class SANDBOX_INSTALL,MICROVM_LAUNCH sandboxLayer
+    class CLAUDE_CLI,ROUTER_CLI,NVM_BIN,GIT_BIN,CURL_BIN,JQ_BIN,FC_BIN,VFSD_BIN,KVM_DEV externalLayer
 ```
 
 ---
@@ -408,6 +428,26 @@ graph LR
 
 ---
 
+## Поток запуска через microVM (Firecracker)
+
+Показывает процесс запуска Claude Code с kernel isolation через Firecracker VMM и virtiofs filesystem sharing.
+
+**Архитектура v1 (текущая):** Claude Code выполняется на host процессе с filesystem-изоляцией через virtiofs. Guest kernel запускается внутри Firecracker, изолируя syscall attack surface от host kernel.
+
+**Ключевые этапы:**
+1. Детекция KVM и бинарников
+2. Запуск CCR/PII proxy на host (если заданы)
+3. Запуск virtiofsd (NVM ro + workspace rw)
+4. Генерация guest env файла (chmod 600)
+5. Запуск Firecracker VMM
+6. Polling API socket до готовности
+7. Запуск claude (host) с `unset CLAUDECODE`
+8. Cleanup по EXIT-трапу
+
+Полная диаграмма: [data-flow-microvm-launch.md](data-flow-microvm-launch.md)
+
+---
+
 ## Исходные файлы
 
 Оригинальные Mermaid диаграммы находятся в этой же директории:
@@ -418,6 +458,7 @@ graph LR
 | `data-flow-isolated-installation.mmd` | Поток изолированной установки |
 | `data-flow-oauth-token-refresh.mmd` | Поток обновления OAuth токена |
 | `data-flow-router-launch.mmd` | Поток запуска через Router |
+| `data-flow-microvm-launch.md` | Поток запуска через microVM (Firecracker) — 3 диаграммы: launch flow, filesystem, network |
 
 ## Просмотр диаграмм
 

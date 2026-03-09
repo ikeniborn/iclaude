@@ -104,11 +104,36 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 
 **Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)
 
-### 🛡️ Sandboxing
-- **Платформы** - macOS (Seatbelt), Linux/WSL2 (bubblewrap + socat + srt)
-- **Установка зависимостей** - `./iclaude.sh --sandbox-install`
-- **⚠️ Отключён по умолчанию** - upstream-баг: при активации bubblewrap создаёт 0-байтовые read-only артефакты (`settings.json`, `agents`, `commands`) в `.claude/` других проектов; файлы не удаляются после завершения контейнера
-- **Подробности** - см. раздел "Sandbox Limitations" в [CLAUDE.md](./CLAUDE.md)
+### 🔥 microVM Sandbox (Firecracker)
+
+Kernel isolation через KVM: каждый инструментальный вызов Claude Code работает в гостевой ВМ с **отдельным Linux ядром**, изолированным от хостовой ОС.
+
+- **Kernel isolation** — prompt injection → kernel exploit затрагивает guest kernel, не host
+- **virtio-blk block devices** — `/dev/vdb` = NVM snapshot (RO, Node.js + claude), `/dev/vdc` = per-session workspace (RW, sparse ext4)
+- **SSH exec** — claude выполняется **внутри guest** по SSH; host управляет только lifecycle
+- **tar-over-SSH sync** — двунаправленная синхронизация workspace (full/path/isolated режимы)
+- **IP-пул слотов** — `MICRO_VM_NET_SUBNET=172.16.0.0/26`, до 31 concurrent сессий без конфликтов адресов
+- **OS matrix** — Ubuntu 22+, Debian 10+, ALT Linux 10+, WSL2 (с nested virt)
+
+```bash
+# Установить Firecracker + vmlinux + rootfs + nvm.img (~1.4GB, один раз)
+./iclaude.sh --install-microvm
+
+# Проверить готовность (KVM, образы, TAP, SSH ключ)
+./iclaude.sh --check-microvm
+
+# Запустить с microVM изоляцией
+./iclaude.sh --sandbox-microvm
+
+# Постоянный режим
+echo 'MICRO_VM_ENABLED=true' >> .claude_config
+```
+
+**Архитектура v2:** `Firecracker VMM → guest-init (PID 1) → vdb:/mnt/nvm + vdc:/workspace → sshd → claude (inside guest)`
+
+Полная документация: [docs/MICROVM.md](docs/MICROVM.md)
+
+---
 
 ### 📄 Sphinx Documentation
 - **Per-project** - работает в любом проекте, не только iclaude
@@ -179,6 +204,8 @@ Approval gates после каждого агента — можно остан�
 - **[Claude Config](./docs/CLAUDE_CONFIG.md)** - переменные окружения
 - **[Migration](./docs/MIGRATION.md)** - npm deprecation roadmap
 - **[PII Masking](./docs/PII_MASKING.md)** - маскирование секретов (security hooks)
+- **[microVM Sandbox](./docs/MICROVM.md)** - Firecracker kernel isolation: установка, запуск, troubleshooting
+- **[Sandbox Analysis](./docs/SANDBOX_ANALYSIS.md)** - threat model, выбор уровня изоляции
 
 ### Техническое
 - **[CLAUDE.md](./CLAUDE.md)** - архитектура проекта
@@ -212,10 +239,13 @@ Approval gates после каждого агента — можно остан�
 ./iclaude.sh --check-pii-proxy         # Статус venv, моделей, PID
 ./iclaude.sh --pii-proxy               # Запуск с PII-маскированием
 
+# microVM (Firecracker kernel isolation)
+./iclaude.sh --install-microvm        # Установить Firecracker + образы (~350MB)
+./iclaude.sh --check-microvm          # Проверить KVM, nvm.img, TAP, SSH ключ
+./iclaude.sh --sandbox-microvm        # Запустить с kernel isolation
+
 # Дополнительно
 ./iclaude.sh --install-statusline      # Установить Status Line
-./iclaude.sh --sandbox-install         # Установить sandboxing (Linux/WSL2)
-
 # Oh My Posh (опционально, для красивого status line)
 ./iclaude.sh --install-posh            # Скачать и установить (автоматически)
 ./iclaude.sh --insecure --install-posh # То же, но с корпоративным прокси (TLS)
@@ -354,6 +384,7 @@ export DEEPSEEK_API_KEY="your-key"
 │   ├── router/                         # Claude Code Router
 │   ├── lsp/                            # LSP server management
 │   ├── lockfile/                       # Version locking
+│   ├── sandbox/                        # microVM (Firecracker)
 │   └── ...                             # 16 модулей
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
@@ -383,7 +414,7 @@ export DEEPSEEK_API_KEY="your-key"
 **Опциональные:**
 - `git` - для git-workflow skill
 - `gh` - для pr-automation skill (установить через `gh` пакетный менеджер)
-- `bubblewrap`, `socat` - для sandboxing на Linux/WSL2 (`./iclaude.sh --sandbox-install`)
+- `kvm` (`/dev/kvm`) - для microVM sandbox (`./iclaude.sh --install-microvm`)
 
 ---
 

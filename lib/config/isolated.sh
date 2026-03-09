@@ -89,16 +89,46 @@ load_claude_config() {
     source "$CREDENTIALS_FILE"
 
     # Export Claude Code configuration variables if set
+    [[ -n "${ANTHROPIC_MODEL:-}" ]] && export ANTHROPIC_MODEL
+    [[ -n "${ANTHROPIC_DEFAULT_OPUS_MODEL:-}" ]] && export ANTHROPIC_DEFAULT_OPUS_MODEL
+    [[ -n "${ANTHROPIC_DEFAULT_SONNET_MODEL:-}" ]] && export ANTHROPIC_DEFAULT_SONNET_MODEL
+    [[ -n "${ANTHROPIC_DEFAULT_HAIKU_MODEL:-}" ]] && export ANTHROPIC_DEFAULT_HAIKU_MODEL
+    [[ -n "${CLAUDE_CODE_MODEL:-}" ]] && export CLAUDE_CODE_MODEL
     [[ -n "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}" ]] && export CLAUDE_CODE_MAX_OUTPUT_TOKENS
+    [[ -n "${CLAUDE_CODE_SUBAGENT_MODEL:-}" ]] && export CLAUDE_CODE_SUBAGENT_MODEL
+    [[ -n "${CLAUDE_CODE_EFFORT_LEVEL:-}" ]] && export CLAUDE_CODE_EFFORT_LEVEL
+    [[ -n "${CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING:-}" ]] && export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING
+    [[ -n "${CLAUDE_CODE_DISABLE_1M_CONTEXT:-}" ]] && export CLAUDE_CODE_DISABLE_1M_CONTEXT
+    [[ -n "${CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS:-}" ]] && export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS
     [[ -n "${CLAUDE_CODE_ENABLE_TASKS:-}" ]] && export CLAUDE_CODE_ENABLE_TASKS
     [[ -n "${CLAUDE_CODE_NO_CHROME:-}" ]] && export CLAUDE_CODE_NO_CHROME
-    [[ -n "${CLAUDE_CODE_MODEL:-}" ]] && export CLAUDE_CODE_MODEL
     [[ -n "${CLAUDE_CODE_SESSION_TIMEOUT:-}" ]] && export CLAUDE_CODE_SESSION_TIMEOUT
     [[ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]] && export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
 
     # Export PII proxy configuration so server.py subprocess inherits the values
     [[ -n "${PII_PROXY_MASKING_LEVEL:-}" ]] && export PII_PROXY_MASKING_LEVEL
     [[ -n "${PII_PROXY_ENABLE_FALLBACK:-}" ]] && export PII_PROXY_ENABLE_FALLBACK
+
+    # Export microVM configuration (values from .claude_config override init.sh defaults)
+    [[ -n "${MICRO_VM_ENABLED:-}" ]] && export MICRO_VM_ENABLED
+    [[ -n "${MICRO_VM_BACKEND:-}" ]] && export MICRO_VM_BACKEND
+    [[ -n "${MICRO_VM_VCPU:-}" ]] && export MICRO_VM_VCPU
+    [[ -n "${MICRO_VM_MEM_MB:-}" ]] && export MICRO_VM_MEM_MB
+    [[ -n "${MICRO_VM_NET_ENABLED:-}" ]] && export MICRO_VM_NET_ENABLED
+    [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && export MICRO_VM_NET_TAP_IFACE
+    [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && export MICRO_VM_NET_HOST_IP
+    [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && export MICRO_VM_NET_GUEST_IP
+    [[ -n "${MICRO_VM_SNAPSHOT_ENABLED:-}" ]] && export MICRO_VM_SNAPSHOT_ENABLED
+    [[ -n "${MICRO_VM_SNAPSHOT_DIR:-}" ]] && export MICRO_VM_SNAPSHOT_DIR
+    [[ -n "${MICRO_VM_ROOTFS_PATH:-}" ]] && export MICRO_VM_ROOTFS_PATH
+    [[ -n "${MICRO_VM_KERNEL_PATH:-}" ]] && export MICRO_VM_KERNEL_PATH
+    [[ -n "${MICRO_VM_LOG_LEVEL:-}" ]] && export MICRO_VM_LOG_LEVEL
+    [[ -n "${MICRO_VM_PROXY_PASS:-}" ]] && export MICRO_VM_PROXY_PASS
+    [[ -n "${MICRO_VM_MOUNT_WORKSPACE:-}" ]] && export MICRO_VM_MOUNT_WORKSPACE
+    [[ -n "${MICRO_VM_WORKSPACE_MODE:-}" ]] && export MICRO_VM_WORKSPACE_MODE
+    [[ -n "${MICRO_VM_WORKSPACE_PATH:-}" ]] && export MICRO_VM_WORKSPACE_PATH
+    [[ -n "${MICRO_VM_NET_SUBNET:-}" ]] && export MICRO_VM_NET_SUBNET
+    [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]] && export MICRO_VM_SYNC_EXCLUDE
 
     return 0
 }

@@ -107,17 +107,6 @@
 | `--restore-git-proxy` | Восстановить git proxy из backup |
 | `--refresh-token` | Обновить OAuth токен (~1 year lifetime) |
 
-### 🔒 Sandbox Integration
-
-OS-level изоляция файловой системы и сети для безопасного выполнения.
-
-| Команда | Описание |
-|---------|----------|
-| `--sandbox-check` | Проверка доступности и требований |
-| `--sandbox-install` | Установка системных зависимостей (Linux/WSL2) |
-
-<sub>✅ **Поддержка платформ:** macOS (native Seatbelt), Linux (bubblewrap+socat+sandbox-runtime), WSL2 (bubblewrap+socat+sandbox-runtime)</sub>
-
 ### 🌐 Chrome Integration
 
 Интеграция с Google Chrome для автоматизации браузерных задач.

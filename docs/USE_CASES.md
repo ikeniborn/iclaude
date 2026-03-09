@@ -191,38 +191,33 @@ export DEEPSEEK_API_KEY="your-key-here"
 
 ---
 
-## Use Case 8: Безопасное выполнение с OS-level Sandboxing
+## Use Case 8: Kernel-level Isolation с microVM (Firecracker)
 
-OS-level изоляция файловой системы и сети:
+Claude Code внутри изолированной виртуальной машины — максимальная защита от prompt injection:
 
 ```bash
-# Проверить доступность
-./iclaude.sh --sandbox-check
+# Установить (один раз, ~1.4GB)
+./iclaude.sh --install-microvm
 
-# Установить зависимости (Linux/WSL2)
-./iclaude.sh --sandbox-install
+# Проверить готовность
+./iclaude.sh --check-microvm
 
-# Запустить Claude Code
-./iclaude.sh
+# Запустить с kernel isolation
+./iclaude.sh --sandbox-microvm
 
-# Включить sandbox в сессии: /sandbox
+# С PII-маскированием (рекомендуется)
+./iclaude.sh --sandbox-microvm --pii-proxy
 ```
 
-**Поддержка платформ:**
+**Уровни изоляции:**
 
-| Платформа | Поддержка | Требования |
-|-----------|-----------|------------|
-| macOS | ✅ Native | Нет (встроенный Seatbelt) |
-| Linux | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` |
-| WSL2 | ✅ Full | `bubblewrap`, `socat`, `@anthropic-ai/sandbox-runtime` |
-| WSL1/Windows | ❌ Не поддерживается | Использовать WSL2 |
+| Уровень | Механизм | Статус |
+|---------|----------|--------|
+| Security hooks | block-secrets.py + redact-secrets.py | Всегда активны |
+| CLAUDE_CONFIG_DIR | Изолированный конфиг в `.nvm-isolated/` | Всегда активен |
+| microVM | Firecracker KVM (отдельный Linux kernel) | `--sandbox-microvm` |
 
-**Возможности:**
-- Ограничение доступа к файловой системе
-- Контроль сетевых запросов
-- Allow/deny списки для доменов
-
-**Документация:** https://code.claude.com/docs/en/sandboxing
+**Подробнее:** [docs/MICROVM.md](./MICROVM.md) · [threat model](./SANDBOX_ANALYSIS.md)
 
 ---
 

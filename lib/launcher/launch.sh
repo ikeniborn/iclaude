@@ -43,6 +43,21 @@ launch_claude() {
         use_router=true
     fi
 
+    # microVM sandbox: run Claude inside Firecracker VM (kernel isolation)
+    local use_microvm=false
+    if [[ "${USE_MICRO_VM_FLAG:-false}" == "true" ]]; then
+        if [[ "$skip_isolated" == "true" ]]; then
+            print_error "microVM is not supported in --system mode (isolated environment only)"
+            print_info "Remove --sandbox-microvm or omit --system to use microVM isolation"
+            exit 1
+        elif type detect_microvm &>/dev/null && detect_microvm "$skip_isolated"; then
+            use_microvm=true
+        else
+            print_warning "microVM not available (run: ./iclaude.sh --install-microvm)"
+            print_info "Continuing without microVM isolation..."
+        fi
+    fi
+
     # PII proxy: intercept and mask PII/secrets in Anthropic API traffic
     local use_pii_proxy=false
     if [[ "${USE_PII_PROXY_FLAG:-false}" == "true" ]]; then
@@ -64,7 +79,15 @@ launch_claude() {
     fi
 
     echo ""
-    if [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+    if [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code in microVM + PII masking → CCR router chain..."
+    elif [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]]; then
+        print_info "Launching Claude Code in microVM with PII masking..."
+    elif [[ "$use_microvm" == "true" ]] && [[ "$use_router" == "true" ]]; then
+        print_info "Launching Claude Code in microVM via Router..."
+    elif [[ "$use_microvm" == "true" ]]; then
+        print_info "Launching Claude Code in microVM (Firecracker kernel isolation)..."
+    elif [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code with PII masking → CCR router chain..."
     elif [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code via Router..."
@@ -74,6 +97,330 @@ launch_claude() {
         print_info "Launching Claude Code..."
     fi
     echo ""
+
+    # Start microVM if requested (before PII proxy / CCR, as it must wrap everything)
+    if [[ "$use_microvm" == "true" ]]; then
+        # Remove stale FC sockets and session dirs from sessions that exited without cleanup
+        cleanup_orphaned_microvm_sessions
+        # Start CCR and/or PII proxy on host first so configure_guest_environment()
+        # can see their ports when building the guest env file.
+        if [[ "$use_router" == "true" ]]; then
+            local ccr_cmd
+            ccr_cmd=$(get_router_path "$skip_isolated")
+            if [[ -z "$ccr_cmd" ]]; then
+                print_error "Router enabled but ccr binary not found"
+                print_info "Install with: ./iclaude.sh --install-router"
+                exit 1
+            fi
+            if ! start_ccr_server "$skip_isolated" "$ccr_cmd"; then
+                print_error "CCR router failed to start — aborting"
+                exit 1
+            fi
+        fi
+        if [[ "$use_pii_proxy" == "true" ]]; then
+            if ! start_pii_proxy_server "$skip_isolated"; then
+                print_error "PII proxy failed to start — aborting for safety"
+                [[ "$use_router" == "true" ]] && stop_ccr_server
+                exit 1
+            fi
+            # The proxy listens on 127.0.0.1; guest reaches it via TAP host IP + NAT.
+        fi
+
+        if ! start_microvm "$skip_isolated"; then
+            print_error "microVM failed to start"
+            [[ "$use_pii_proxy" == "true" ]] && stop_pii_proxy_server
+            [[ "$use_router" == "true" ]] && stop_ccr_server
+            exit 1
+        fi
+
+        # SSH ControlMaster socket path — initialized below after ControlMaster setup.
+        # Declared here (empty) so _cm_cleanup trap can reference it safely before initialization.
+        local _ssh_control_socket=""
+        _cm_cleanup() {
+            if [[ -n "${_ssh_control_socket:-}" ]]; then
+                ssh -o "ControlPath=${_ssh_control_socket}" -O exit \
+                    "iclaude@${guest_ip}" 2>/dev/null || true
+                rm -f "${_ssh_control_socket}" 2>/dev/null || true
+            fi
+        }
+
+        # Register cleanup trap for all active components (+ ControlMaster cleanup)
+        if [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
+            trap '_cm_cleanup; stop_microvm; stop_pii_proxy_server; stop_ccr_server' EXIT INT TERM
+        elif [[ "$use_pii_proxy" == "true" ]]; then
+            trap '_cm_cleanup; stop_microvm; stop_pii_proxy_server' EXIT INT TERM
+        elif [[ "$use_router" == "true" ]]; then
+            trap '_cm_cleanup; stop_microvm; stop_ccr_server' EXIT INT TERM
+        else
+            trap '_cm_cleanup; stop_microvm' EXIT
+            trap '_cm_cleanup; stop_microvm; exit 130' INT
+            trap '_cm_cleanup; stop_microvm; exit 143' TERM
+        fi
+
+        # v2: execute claude inside guest VM via SSH
+        local ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+        local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+
+        if [[ ! -f "$ssh_key" ]]; then
+            print_error "microVM SSH key not found: ${ssh_key}"
+            print_info "Re-run: ./iclaude.sh --install-microvm"
+            stop_microvm; exit 1
+        fi
+
+        # Use pinned host key if extracted at install time (set by start_microvm).
+        # Falls back to no verification for installs that predate host key extraction.
+        local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+        if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
+            _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${MICRO_VM_KNOWN_HOSTS}")
+        else
+            print_warning "microVM: MICRO_VM_KNOWN_HOSTS not set — falling back to StrictHostKeyChecking=no. Run --install-microvm to enable host key pinning."
+        fi
+
+        # SSH ControlMaster: persistent mux connection, reduces per-op overhead 200ms→5ms.
+        # Security: ControlPersist=60 auto-closes orphaned connections after 60s.
+        _ssh_control_socket="${MICRO_VM_SOCKET%.sock}-ssh.sock"
+
+        if ssh -M -N -f \
+               -o "ControlPath=${_ssh_control_socket}" \
+               -o "ControlPersist=60" \
+               -o BatchMode=yes -o ConnectTimeout=10 -o LogLevel=ERROR \
+               -i "$ssh_key" "${_ssh_kh_opts[@]}" \
+               "iclaude@${guest_ip}" 2>/dev/null; then
+            print_info "microVM: SSH ControlMaster ready (mux active)"
+        else
+            print_warning "microVM: SSH ControlMaster failed — using direct connections (slower)"
+            _ssh_control_socket=""
+        fi
+
+        # Build rsync -e SSH command strings with all connection options pre-quoted.
+        # Using strings (not arrays) because rsync passes -e value to sh -c for subprocess exec.
+        # Paths with spaces are explicitly single-quoted to prevent word splitting by sh -c.
+        #
+        # _e_ssh_cmd     — primary: uses ControlMaster socket if available (5ms overhead).
+        # _e_ssh_fallback — secondary: direct SSH without ControlMaster (for final sync fallback).
+        local _e_ssh_cmd="ssh -o BatchMode=yes -o LogLevel=ERROR -i '${ssh_key}'"
+        if [[ -n "$_ssh_control_socket" ]]; then
+            _e_ssh_cmd+=" -o ControlPath='${_ssh_control_socket}' -o ControlMaster=no"
+        fi
+        if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
+            _e_ssh_cmd+=" -o StrictHostKeyChecking=yes -o UserKnownHostsFile='${MICRO_VM_KNOWN_HOSTS}'"
+        else
+            _e_ssh_cmd+=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+        fi
+
+        # Fallback e-SSH command: direct connection, no ControlMaster, longer timeouts.
+        local _e_ssh_fallback="ssh -o BatchMode=yes -o LogLevel=ERROR -i '${ssh_key}'"
+        _e_ssh_fallback+=" -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3"
+        if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
+            _e_ssh_fallback+=" -o StrictHostKeyChecking=yes -o UserKnownHostsFile='${MICRO_VM_KNOWN_HOSTS}'"
+        else
+            _e_ssh_fallback+=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+        fi
+
+        # Detect if guest has rsync (v7+ rootfs). Fallback to tar if absent.
+        local _guest_has_rsync=false
+        if ssh -o BatchMode=yes -o LogLevel=ERROR -o ConnectTimeout=5 \
+               ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
+               -i "$ssh_key" "${_ssh_kh_opts[@]}" \
+               "iclaude@${guest_ip}" \
+               'command -v rsync >/dev/null 2>&1' 2>/dev/null; then
+            _guest_has_rsync=true
+        fi
+
+        # Build quoted arg list for safe passing through SSH.
+        # Strip flags that must not be forwarded into the guest VM:
+        #   --chrome: Claude-in-Chrome extension runs on the HOST. The extension connects to
+        #             Claude Code CLI via a local IPC port; Claude inside the VM cannot reach it
+        #             without SSH reverse port forwarding (future work).
+        #   --ide:    IDE (VS Code / JetBrains) runs on the HOST. Claude inside the VM cannot
+        #             connect to an IDE socket on the host network namespace.
+        # Note: --dangerously-skip-permissions IS forwarded — claude runs as uid=1000 (iclaude user),
+        #       not root, so it accepts the flag. KVM isolation makes this safe inside the VM.
+        local quoted_args=""
+        for arg in "$@"; do
+            [[ "$arg" == "--chrome" ]] && continue
+            [[ "$arg" == "--ide" ]] && continue
+            quoted_args+=" $(printf '%q' "$arg")"
+        done
+
+        # Request PTY only when stdin is a terminal (avoid "not a TTY" error in CI)
+        local ssh_tty="-T"
+        [[ -t 0 ]] && ssh_tty="-t"
+
+        # Sync workspace host→guest: populate /workspace before claude runs.
+        # Uses rsync (v7+ rootfs, delta sync) or tar-over-SSH (fallback for older rootfs).
+        # 'full' mode:     bidirectional sync (host→guest at start, guest→host on exit).
+        # 'isolated' mode: one-way copy (host→guest at start only); host files remain unchanged.
+        local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
+        if [[ -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
+            # Exclude heavyweight dirs and secret files from host→guest sync:
+            #   .nvm-isolated/           — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
+            #   .git/                    — git history: large, rarely needed for claude tool calls
+            #   .claude_config           — contains HTTPS_PROXY credentials and API keys
+            #   .claude_proxy_credentials — legacy credentials file
+            #   .iclaude-guest-env.sh    — may exist in PWD from a previous sync-back; never needed
+            #   .iclaude-ssh/            — SSH keys for microVM access
+            # User can add more exclusions via MICRO_VM_SYNC_EXCLUDE (colon-separated paths).
+            local _sync_excludes=(
+                "--exclude=./.nvm-isolated"
+                "--exclude=./.git"
+                "--exclude=./.claude_config"
+                "--exclude=./.claude_proxy_credentials"
+                "--exclude=./.iclaude-guest-env.sh"
+                "--exclude=./.iclaude-ssh"
+            )
+            if [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]]; then
+                local IFS=':'; local _extra
+                for _extra in $MICRO_VM_SYNC_EXCLUDE; do
+                    _sync_excludes+=("--exclude=./${_extra#./}")
+                done
+                unset IFS
+            fi
+            if [[ "$_guest_has_rsync" == "true" ]]; then
+                # Build rsync excludes from _sync_excludes (convert --exclude=./.foo → --exclude=.foo)
+                local _rsync_excludes=()
+                for _excl in "${_sync_excludes[@]}"; do
+                    _rsync_excludes+=("${_excl//--exclude=.\//--exclude=}")
+                done
+                rsync -az --delete "${_rsync_excludes[@]}" \
+                    -e "$_e_ssh_cmd" \
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" \
+                    "iclaude@${guest_ip}:/workspace/" 2>/dev/null || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+            else
+                tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>/dev/null \
+                    | ssh -T \
+                        ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
+                        -i "$ssh_key" "${_ssh_kh_opts[@]}" -o LogLevel=ERROR \
+                        "iclaude@${guest_ip}" \
+                        'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+            fi
+        fi
+
+        # Periodic background sync (full mode + MICRO_VM_SYNC_INTERVAL > 0).
+        # Runs a background loop that pulls /workspace from guest to host every N seconds
+        # while claude is running, so changes are visible on host without waiting for exit.
+        # Disabled by default (0); enable via MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
+        local _sync_interval="${MICRO_VM_SYNC_INTERVAL:-0}"
+        local _periodic_sync_pid=""
+        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]] && \
+           [[ "$_sync_interval" =~ ^[0-9]+$ ]] && [[ "$_sync_interval" -gt 0 ]]; then
+            (
+                local _sync_lock="/tmp/iclaude-${MICRO_VM_SESSION_ID:-$$}-sync.lock"
+                # Capture variables for subshell (arrays not inherited via export)
+                local _sub_e_ssh_cmd="$_e_ssh_cmd"
+                local _sub_guest_has_rsync="$_guest_has_rsync"
+                local _sub_host_dir="$MICRO_VM_WORKSPACE_HOSTDIR"
+                local _sub_guest_ip="$guest_ip"
+                local _sub_ssh_key="$ssh_key"
+                local _sub_kh_opts=("${_ssh_kh_opts[@]}")
+                while true; do
+                    sleep "$_sync_interval" || break
+                    # Stop if FC socket is gone (VM no longer running)
+                    [[ -S "${MICRO_VM_SOCKET:-/dev/null}" ]] || break
+                    # Overlap protection: skip iteration if previous sync still running
+                    [[ -f "$_sync_lock" ]] && continue
+                    touch "$_sync_lock"
+                    if [[ "$_sub_guest_has_rsync" == "true" ]]; then
+                        rsync -az --delete \
+                            --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                            -e "$_sub_e_ssh_cmd" \
+                            "iclaude@${_sub_guest_ip}:/workspace/" \
+                            "${_sub_host_dir}/" 2>/dev/null || true
+                    else
+                        ssh -T -o BatchMode=yes \
+                            -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 \
+                            -i "$_sub_ssh_key" "${_sub_kh_opts[@]}" -o LogLevel=ERROR \
+                            "iclaude@${_sub_guest_ip}" \
+                            'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
+                            | tar -xzf - -C "${_sub_host_dir}" 2>/dev/null || true
+                    fi
+                    rm -f "$_sync_lock"
+                done
+            ) &
+            _periodic_sync_pid=$!
+            print_info "microVM: periodic sync every ${_sync_interval}s via $( [[ "$_guest_has_rsync" == "true" ]] && echo "rsync+ControlMaster" || echo "tar-over-SSH" ) (PID ${_periodic_sync_pid})"
+        fi
+
+        print_info "microVM: connecting to guest VM via SSH (${guest_ip})..."
+        export ICLAUDE_MICROVM_ACTIVE=1
+        # Unset CLAUDECODE so nested claude process doesn't detect parent session
+        unset CLAUDECODE
+
+        # Restore local terminal to sane state before the interactive SSH session.
+        # The workspace sync (tar | ssh -T pipeline) may leave the terminal with icrnl disabled
+        # or other non-standard stty settings. SSH copies local terminal settings to the remote PTY
+        # on connect, so a corrupted local state means the remote PTY also has wrong settings —
+        # causing Enter (\r) not to be translated to \n and never reaching claude's UI.
+        [[ -t 0 ]] && stty sane 2>/dev/null || true
+
+        # Run claude inside guest as iclaude user (non-root; fixes Enter at 'Trust project?' dialog).
+        # PTY flag (-t when stdin is terminal) is critical for interactive prompts.
+        # Use '.' instead of 'source': iclaude shell is /bin/sh (dash on Ubuntu), which does not
+        # support 'source' as a built-in — only POSIX '.' works.
+        # cd /workspace: must set CWD before starting claude so it treats /workspace as the project
+        # root (not /home/iclaude). Without this the 'Trust project?' dialog shows /home/iclaude.
+        # shellcheck disable=SC2086
+        ssh $ssh_tty \
+            -i "$ssh_key" \
+            "${_ssh_kh_opts[@]}" \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=30 \
+            -o LogLevel=ERROR \
+            "iclaude@${guest_ip}" \
+            ". /workspace/.iclaude-guest-env.sh 2>/dev/null; rm -f /workspace/.iclaude-guest-env.sh 2>/dev/null; cd /workspace 2>/dev/null || true; /mnt/nvm/npm-global/bin/claude${quoted_args}"
+
+        local exit_code=$?
+
+        # Stop periodic sync loop (if running)
+        if [[ -n "${_periodic_sync_pid:-}" ]]; then
+            kill "$_periodic_sync_pid" 2>/dev/null || true
+            wait "$_periodic_sync_pid" 2>/dev/null || true
+            _periodic_sync_pid=""
+        fi
+
+        # Sync workspace guest→host (full mode only): persist changes claude made in guest.
+        # 'isolated' mode: no sync-back — host files remain untouched.
+        # Run BEFORE stop_microvm (which kills Firecracker and makes SSH inaccessible).
+        if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_info "microVM: syncing workspace ← guest..."
+            if [[ "$_guest_has_rsync" == "true" ]]; then
+                # Full bidirectional sync (full mode only): --delete propagates guest deletions to host.
+                # Try via ControlMaster first; fallback to direct SSH if master died.
+                rsync -az --delete \
+                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    -e "$_e_ssh_cmd" \
+                    "iclaude@${guest_ip}:/workspace/" \
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
+                rsync -az --delete \
+                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    -e "$_e_ssh_fallback" \
+                    "iclaude@${guest_ip}:/workspace/" \
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
+                print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+            else
+                ssh -T \
+                    ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
+                    -i "$ssh_key" "${_ssh_kh_opts[@]}" \
+                    -o ConnectTimeout=10 \
+                    -o ServerAliveInterval=5 \
+                    -o ServerAliveCountMax=3 \
+                    -o LogLevel=ERROR \
+                    "iclaude@${guest_ip}" \
+                    'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
+                    | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
+                print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+            fi
+        fi
+
+        # Clean up periodic sync lock file if it exists (e.g. after abrupt sync death)
+        rm -f "/tmp/iclaude-${MICRO_VM_SESSION_ID:-$$}-sync.lock" 2>/dev/null || true
+
+        # Traps handle cleanup (stop_microvm, PII proxy, CCR)
+        exit $exit_code
+    fi
 
     # NEW: Router launch path
     if [[ "$use_router" == "true" ]]; then
@@ -269,11 +616,8 @@ launch_claude() {
     fi
 
     # Standard exec path: replace shell process (no cleanup needed)
-    if [[ "$claude_cmd" == *" "* ]]; then
-        eval exec "$claude_cmd" '"$@"'
-    else
-        exec "$claude_cmd" "$@"
-    fi
+    # Double-quoted variable handles spaces in path correctly without eval.
+    exec "$claude_cmd" "$@"
 }
 
 #######################################
