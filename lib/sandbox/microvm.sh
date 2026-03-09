@@ -1030,9 +1030,22 @@ _restore_from_snapshot() {
 
     # 11. Poll guest SSH readiness
     local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+
+    # Build per-session known_hosts — same host key pinning as start_microvm().
+    # MICRO_VM_KNOWN_HOSTS must be exported so launch.sh can use StrictHostKeyChecking=yes.
+    local host_key_pub="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
+    local known_hosts_file="${session_dir}/known_hosts"
+    local _ssh_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+    if [[ -f "$host_key_pub" ]]; then
+        { printf '%s ' "$guest_ip"; cat "$host_key_pub"; } > "$known_hosts_file"
+        chmod 600 "$known_hosts_file"
+        export MICRO_VM_KNOWN_HOSTS="$known_hosts_file"
+        _ssh_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${known_hosts_file}")
+    fi
+
     local ssh_ticks
     ssh_ticks=$(_poll_guest_ssh "$guest_ip" "$ssh_key" "$MICRO_VM_PID" "$_rlog_dir" \
-        "-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null") || {
+        "${_ssh_kh_opts[@]}") || {
         # _poll_guest_ssh already killed FC (on timeout) and removed _rlog_dir
         MICRO_VM_SESSION_OWNED=false
         MICRO_VM_PID=""
@@ -1203,10 +1216,13 @@ start_microvm() {
                 # Re-push guest-env (proxy/PATH may have changed since snapshot was taken)
                 local env_file_snap="${session_dir}/guest-env.sh"
                 configure_guest_environment "$env_file_snap" || true
+                local _scp_kh_opts=("-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+                if [[ -f "${MICRO_VM_KNOWN_HOSTS:-}" ]]; then
+                    _scp_kh_opts=("-o" "StrictHostKeyChecking=yes" "-o" "UserKnownHostsFile=${MICRO_VM_KNOWN_HOSTS}")
+                fi
                 scp -q \
                     -i "$_snap_ssh_key" \
-                    -o StrictHostKeyChecking=no \
-                    -o UserKnownHostsFile=/dev/null \
+                    "${_scp_kh_opts[@]}" \
                     -o LogLevel=ERROR \
                     "$env_file_snap" \
                     "iclaude@${MICRO_VM_NET_GUEST_IP}:/workspace/.iclaude-guest-env.sh" \
