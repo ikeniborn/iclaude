@@ -333,7 +333,7 @@ build_microvm_config() {
     local kernel="${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}"
     local rootfs="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
     local vcpu="${MICRO_VM_VCPU:-2}"
-    local mem="${MICRO_VM_MEM_MB:-1024}"
+    local mem="${MICRO_VM_MEM_MB:-2048}"
     local tap="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
     local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
     local host_ip="${MICRO_VM_NET_HOST_IP:-172.16.0.1}"
@@ -548,6 +548,15 @@ configure_guest_environment() {
         # npm-global/bin must be first so 'claude', 'ccr', and other global tools are found.
         echo "export NVM_DIR='/mnt/nvm'"
         printf 'export PATH="/mnt/nvm/npm-global/bin:/mnt/nvm/versions/node/$(ls /mnt/nvm/versions/node 2>/dev/null | head -1)/bin:/workspace/node_modules/.bin:${PATH}"\n'
+
+        # Redirect npm/node caches to tmpfs — rootfs has limited free space.
+        # NPM_CONFIG_UPDATE_NOTIFIER=false: disable npm update checks inside VM
+        # (updates are managed by the host via --update, not inside the guest).
+        echo "export NPM_CONFIG_CACHE='/tmp/npm-cache'"
+        echo "export NPM_CONFIG_UPDATE_NOTIFIER='false'"
+        echo "export NODE_REPL_HISTORY='/tmp/.node_repl_history'"
+        echo "export XDG_CACHE_HOME='/tmp/xdg-cache'"
+        printf 'export XDG_RUNTIME_DIR="/tmp/runtime-${UID:-1000}"\n'
     } > "$env_file"
 
     chmod 600 "$env_file"
@@ -705,6 +714,437 @@ _poll_guest_ssh() {
 }
 
 #######################################
+# Check ext4 rootfs free space; auto-grow if less than 30% free.
+# Operates on the BASE rootfs before per-session sparse copy is made.
+# Uses tune2fs -l to read filesystem metadata without mounting.
+# If free space < 30%, resizes to ceil(used / 0.7) rounded to next 50MB.
+# Arguments:
+#   $1 - rootfs_path: path to base rootfs.ext4
+# Returns:
+#   0 - OK (enough space or resized)
+#######################################
+_check_and_grow_rootfs() {
+    local rootfs="$1"
+    if [[ ! -f "$rootfs" ]]; then
+        return 0
+    fi
+
+    if ! command -v tune2fs &>/dev/null; then
+        print_warning "microVM: tune2fs not found — rootfs free space check skipped (install e2fsprogs)"
+        return 0
+    fi
+
+    local tune2fs_out; tune2fs_out=$(tune2fs -l "$rootfs" 2>/dev/null) || return 0
+    local block_count free_blocks block_size
+    block_count=$(echo "$tune2fs_out" | awk '/^Block count:/ {print $NF}')
+    free_blocks=$(echo "$tune2fs_out" | awk '/^Free blocks:/ {print $NF}')
+    block_size=$(echo "$tune2fs_out"  | awk '/^Block size:/  {print $NF}')
+
+    # Guard against empty/unexpected tune2fs output
+    if [[ -z "$block_count" || -z "$free_blocks" || -z "$block_size" ]] || \
+       [[ "$block_count" -le 0 ]] 2>/dev/null; then
+        return 0
+    fi
+
+    local free_pct=$(( free_blocks * 100 / block_count ))
+    if [[ $free_pct -ge 30 ]]; then
+        return 0  # Enough headroom — no action needed
+    fi
+
+    # Less than 30% free: grow so that used space occupies ≤70% of new size.
+    # target_mb = ceil(used_mb / 0.7), rounded up to next 50MB for alignment.
+    local used_blocks=$(( block_count - free_blocks ))
+    local total_mb=$(( block_count * block_size / 1048576 ))
+    local used_mb=$(( used_blocks * block_size / 1048576 ))
+    local target_mb=$(( (used_mb * 10 / 7) + 1 ))
+    target_mb=$(( ((target_mb + 49) / 50) * 50 )) || true
+
+    print_warning "microVM: rootfs ${free_pct}% free (${used_mb}/${total_mb}MB) — auto-growing to ${target_mb}MB"
+    _resize_rootfs "$rootfs" "$target_mb"
+}
+
+# ── Named Snapshot functions ───────────────────────────────────────────────────
+
+#######################################
+# Parse snapshot meta.env WITHOUT sourcing it (shell injection prevention).
+# Reads only the known MICRO_VM_SNAP_* variables using grep + string ops.
+# Arguments: $1 - meta.env path
+# Sets MICRO_VM_SNAP_{TIMESTAMP,DESCRIPTION,SLOT,GUEST_IP,HOST_IP,TAP_IFACE,NET_MASK}
+# Returns: 0 on success, 1 if file not found
+#######################################
+_read_snapshot_meta() {
+    local meta_file="$1"
+    [[ -f "$meta_file" ]] || return 1
+    local _var _lval
+    for _var in MICRO_VM_SNAP_TIMESTAMP MICRO_VM_SNAP_DESCRIPTION \
+                MICRO_VM_SNAP_SLOT MICRO_VM_SNAP_GUEST_IP \
+                MICRO_VM_SNAP_HOST_IP MICRO_VM_SNAP_TAP_IFACE \
+                MICRO_VM_SNAP_NET_MASK; do
+        _lval=$(grep -m1 "^${_var}=" "$meta_file" 2>/dev/null || true)
+        _lval="${_lval#*=\"}"   # strip VAR=" prefix
+        _lval="${_lval%\"}"     # strip trailing "
+        # Unescape in safe order: \" and \$ first, then \\ last.
+        # \\ must be last — processing it first would convert \\\" into \"
+        # instead of the correct output: a literal backslash followed by a quote.
+        _lval="${_lval//\\\"/\"}"
+        _lval="${_lval//\\\$/\$}"
+        _lval="${_lval//\\\\/\\}"
+        printf -v "$_var" '%s' "$_lval"
+    done
+}
+
+#######################################
+# List named snapshot directories.
+# Populates global array _MICROVM_SNAP_DIRS (sorted newest-first).
+# Arguments: $1 - snap_dir: root snapshots directory
+#######################################
+_list_snapshots() {
+    local snap_dir="$1"
+    _MICROVM_SNAP_DIRS=()
+    [[ -d "$snap_dir" ]] || return 0
+    local dir
+    while IFS= read -r dir; do
+        [[ -f "${dir}/meta.env" && -f "${dir}/vm.snap" && -f "${dir}/vm.mem" ]] || continue
+        _MICROVM_SNAP_DIRS+=("$dir")
+    done < <(find "$snap_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -r)
+}
+
+#######################################
+# Interactively select a snapshot to restore, or cold boot.
+# Arguments: $1 - snap_dir: root snapshots directory
+# Sets MICRO_VM_SELECTED_SNAP on success.
+# Returns: 0 = snapshot selected, 1 = cold boot (or no snapshots)
+#######################################
+_select_snapshot() {
+    local snap_dir="$1"
+    _list_snapshots "$snap_dir"
+    [[ ${#_MICROVM_SNAP_DIRS[@]} -eq 0 ]] && return 1  # No snapshots → cold boot
+
+    echo ""
+    print_info "Available snapshots:"
+    local i=1
+    local snap_dir_item
+    for snap_dir_item in "${_MICROVM_SNAP_DIRS[@]}"; do
+        # Use safe grep-based parser (no shell execution of meta.env content)
+        local _ts="" _desc=""
+        if _read_snapshot_meta "${snap_dir_item}/meta.env" 2>/dev/null; then
+            _ts="${MICRO_VM_SNAP_TIMESTAMP:-unknown}"
+            _desc="${MICRO_VM_SNAP_DESCRIPTION:-no description}"
+        fi
+        if [[ -n "$_ts" ]]; then
+            printf "  %d. %s — \"%s\"\n" "$i" "$_ts" "$_desc"
+        else
+            printf "  %d. %s\n" "$i" "$(basename "$snap_dir_item")"
+        fi
+        i=$(( i + 1 ))
+    done
+    echo "  0. Cold boot (new session)"
+    echo ""
+
+    local choice
+    read -r -p "  Choice [0-$(( ${#_MICROVM_SNAP_DIRS[@]} ))]: " choice 2>/dev/tty || choice=0
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && \
+       [[ "$choice" -ge 1 ]] && [[ "$choice" -le ${#_MICROVM_SNAP_DIRS[@]} ]]; then
+        MICRO_VM_SELECTED_SNAP="${_MICROVM_SNAP_DIRS[$(( choice - 1 ))]}"
+        export MICRO_VM_SELECTED_SNAP
+        return 0
+    fi
+    MICRO_VM_SELECTED_SNAP=""
+    return 1  # Cold boot
+}
+
+#######################################
+# Restore Firecracker microVM from a named snapshot.
+# Overrides network vars from snapshot meta.env (guest IP baked into FC snapshot).
+# Arguments:
+#   $1 - fc_bin: path to firecracker binary
+#   $2 - snap_snap_dir: snapshot directory (contains vm.snap, vm.mem, meta.env, ...)
+#   $3 - ssh_key: path to SSH private key for polling guest readiness
+# Sets MICRO_VM_PID, MICRO_VM_SNAP_SESSION_DIR, and network vars on success.
+# Returns: 0 on success, 1 on failure (caller should fall back to cold boot)
+#######################################
+_restore_from_snapshot() {
+    local fc_bin="$1" snap_snap_dir="$2" ssh_key="$3" session_dir="$4"
+
+    # 1. Load network config from snapshot metadata (safe grep-based parser, no eval/source)
+    _read_snapshot_meta "${snap_snap_dir}/meta.env" || {
+        print_error "microVM: cannot read snapshot metadata: ${snap_snap_dir}/meta.env"
+        return 1
+    }
+
+    # Validate restored values before use (slot used in lock-file path; IPs in sudo commands)
+    if [[ -n "${MICRO_VM_SNAP_SLOT:-}" ]] && ! _validate_int_range "${MICRO_VM_SNAP_SLOT}" 0 255; then
+        print_error "microVM: snapshot has invalid SLOT: '${MICRO_VM_SNAP_SLOT}'"
+        return 1
+    fi
+    if [[ -n "${MICRO_VM_SNAP_GUEST_IP:-}" ]] && ! _validate_ip "${MICRO_VM_SNAP_GUEST_IP}"; then
+        print_error "microVM: snapshot has invalid GUEST_IP: '${MICRO_VM_SNAP_GUEST_IP}'"
+        return 1
+    fi
+    if [[ -n "${MICRO_VM_SNAP_HOST_IP:-}" ]] && ! _validate_ip "${MICRO_VM_SNAP_HOST_IP}"; then
+        print_error "microVM: snapshot has invalid HOST_IP: '${MICRO_VM_SNAP_HOST_IP}'"
+        return 1
+    fi
+    if [[ -n "${MICRO_VM_SNAP_TAP_IFACE:-}" ]] && ! _validate_iface_name "${MICRO_VM_SNAP_TAP_IFACE}"; then
+        print_error "microVM: snapshot has invalid TAP_IFACE: '${MICRO_VM_SNAP_TAP_IFACE}'"
+        return 1
+    fi
+    if [[ -n "${MICRO_VM_SNAP_NET_MASK:-}" ]] && ! _validate_ip "${MICRO_VM_SNAP_NET_MASK}"; then
+        print_error "microVM: snapshot has invalid NET_MASK: '${MICRO_VM_SNAP_NET_MASK}'"
+        return 1
+    fi
+
+    # Override network vars with snapshot's saved values (guest IP baked into FC state)
+    local _old_guest_ip="${MICRO_VM_NET_GUEST_IP:-}"
+    local _old_tap_iface="${MICRO_VM_NET_TAP_IFACE:-}"
+    local _orig_slot="${MICRO_VM_SLOT:-}"
+    [[ -n "${MICRO_VM_SNAP_SLOT:-}"      ]] && MICRO_VM_SLOT="$MICRO_VM_SNAP_SLOT"
+    [[ -n "${MICRO_VM_SNAP_GUEST_IP:-}"  ]] && MICRO_VM_NET_GUEST_IP="$MICRO_VM_SNAP_GUEST_IP"
+    [[ -n "${MICRO_VM_SNAP_HOST_IP:-}"   ]] && MICRO_VM_NET_HOST_IP="$MICRO_VM_SNAP_HOST_IP"
+    [[ -n "${MICRO_VM_SNAP_TAP_IFACE:-}" ]] && MICRO_VM_NET_TAP_IFACE="$MICRO_VM_SNAP_TAP_IFACE"
+    [[ -n "${MICRO_VM_SNAP_NET_MASK:-}"  ]] && MICRO_VM_NET_MASK="$MICRO_VM_SNAP_NET_MASK"
+    export MICRO_VM_SLOT MICRO_VM_NET_GUEST_IP MICRO_VM_NET_HOST_IP \
+           MICRO_VM_NET_TAP_IFACE MICRO_VM_NET_MASK
+
+    # If slot changed, free the previously allocated slot lock (had "$$-pending").
+    # Without this, the original slot-N.lock remains live (PID is still running) and
+    # is never cleaned up until the process exits — blocking that slot for concurrent VMs.
+    if [[ -n "$_orig_slot" ]] && [[ "$_orig_slot" != "${MICRO_VM_SLOT:-}" ]]; then
+        rm -f "${ISOLATED_CONFIG_DIR}/microvm-slots/slot-${_orig_slot}.lock" 2>/dev/null || true
+    fi
+
+    # Remove old /32 route for the previously allocated slot if different from snapshot
+    if [[ -n "$_old_guest_ip" ]] && [[ "$_old_guest_ip" != "${MICRO_VM_NET_GUEST_IP:-}" ]] && \
+       [[ -n "$_old_tap_iface" ]] && sudo -n true 2>/dev/null; then
+        sudo ip route del "${_old_guest_ip}/32" dev "$_old_tap_iface" 2>/dev/null || true
+    fi
+
+    # 2. Ensure TAP interface is configured for snapshot's network vars
+    if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
+        _ensure_slot_tap || {
+            print_error "microVM: snapshot restore: failed to configure TAP interface"
+            return 1
+        }
+        if [[ -n "${MICRO_VM_NET_GUEST_IP:-}" ]] && sudo -n true 2>/dev/null; then
+            sudo ip route replace "${MICRO_VM_NET_GUEST_IP}/32" dev "${MICRO_VM_NET_TAP_IFACE}" 2>/dev/null || true
+        fi
+    fi
+
+    # 3. Copy snapshot drives to per-session directory BEFORE starting FC.
+    #
+    # FC /snapshot/load embeds drive paths from the snapshot file — it opens them as
+    # block devices. Without per-session copies, two simultaneous restores would have
+    # two FC processes opening the SAME ext4 image read-write → filesystem corruption.
+    #
+    # Flow: copy drives → start FC → snapshot/load (brief open of snap files) →
+    #       PATCH /drives → redirect FC to session copies → resume.
+    # After PATCH /drives the snapshot files are no longer accessed by this session.
+    local _sess_rootfs="${session_dir}/rootfs.ext4"
+    local _sess_ws="${session_dir}/workspace.img"
+    if [[ -f "${snap_snap_dir}/rootfs.ext4" ]]; then
+        if ! cp --sparse=always "${snap_snap_dir}/rootfs.ext4" "$_sess_rootfs" 2>/dev/null; then
+            print_error "microVM: snapshot restore: failed to copy rootfs to session dir"
+            return 1
+        fi
+    fi
+    if [[ -f "${snap_snap_dir}/workspace.img" ]]; then
+        cp --sparse=always "${snap_snap_dir}/workspace.img" "$_sess_ws" 2>/dev/null || true
+    fi
+
+    # 4. Create temp dir for FC log (separate from session_dir to avoid cleanup conflicts)
+    local _rlog_dir
+    _rlog_dir=$(mktemp -d /tmp/iclaude-restore-XXXXXX 2>/dev/null) || \
+        _rlog_dir="/tmp/iclaude-restore-$$"
+    mkdir -p "$_rlog_dir"
+    local fc_log="${_rlog_dir}/firecracker.log"
+    touch "$fc_log"
+
+    # 5. Remove stale socket
+    rm -f "$MICRO_VM_SOCKET" 2>/dev/null || true
+
+    # 6. Launch Firecracker without --config-file (snapshot/load API configures the VM)
+    local fc_log_level="${MICRO_VM_LOG_LEVEL:-warn}"
+    fc_log_level="${fc_log_level^}"
+    "$fc_bin" \
+        --api-sock "$MICRO_VM_SOCKET" \
+        --log-path "$fc_log" \
+        --level "$fc_log_level" \
+        &>/dev/null &
+
+    MICRO_VM_PID=$!
+    MICRO_VM_SESSION_OWNED=true
+    export MICRO_VM_PID MICRO_VM_SESSION_OWNED
+    _claim_microvm_slot
+
+    # 7. Wait for FC API socket
+    _wait_firecracker_socket "$MICRO_VM_PID" "$MICRO_VM_SOCKET" "$_rlog_dir" || {
+        # _wait_firecracker_socket already killed FC and removed _rlog_dir
+        MICRO_VM_SESSION_OWNED=false
+        MICRO_VM_PID=""
+        return 1
+    }
+
+    # 8. Load snapshot via Firecracker API
+    #    FC briefly opens snap_snap_dir/rootfs.ext4 as a block device (read-only access
+    #    during load; no guest writes until Resumed). PATCH /drives below immediately
+    #    redirects FC to the per-session copies before the guest can run.
+    local snap_path_j; snap_path_j=$(_json_escape_str "${snap_snap_dir}/vm.snap")
+    local mem_path_j;  mem_path_j=$(_json_escape_str "${snap_snap_dir}/vm.mem")
+    local http_status
+    http_status=$(curl -s -o /dev/null -w "%{http_code}" --unix-socket "$MICRO_VM_SOCKET" \
+        -X PUT "http://localhost/snapshot/load" \
+        -H "Content-Type: application/json" \
+        -d "{\"snapshot_path\":\"${snap_path_j}\",\"mem_backend\":{\"backend_path\":\"${mem_path_j}\",\"backend_type\":\"File\"},\"enable_diff_snapshots\":false}" \
+        2>/dev/null || echo "000")
+
+    if [[ "$http_status" != "204" ]]; then
+        print_error "microVM: snapshot load failed (HTTP ${http_status}) — try cold boot"
+        kill "$MICRO_VM_PID" 2>/dev/null || true
+        rm -rf "$_rlog_dir" 2>/dev/null || true
+        MICRO_VM_SESSION_OWNED=false
+        MICRO_VM_PID=""
+        return 1
+    fi
+
+    # 9. PATCH /drives → redirect FC from snapshot files to per-session copies.
+    #    VM is in Paused state after /snapshot/load — PATCH /drives is available.
+    #    After this point, snapshot files are no longer held open by this FC instance.
+    if [[ -f "$_sess_rootfs" ]]; then
+        local rfs_j; rfs_j=$(_json_escape_str "$_sess_rootfs")
+        curl -s --unix-socket "$MICRO_VM_SOCKET" \
+            -X PATCH "http://localhost/drives/rootfs" \
+            -H "Content-Type: application/json" \
+            -d "{\"drive_id\":\"rootfs\",\"path_on_host\":\"${rfs_j}\"}" &>/dev/null || true
+    fi
+    if [[ -f "$_sess_ws" ]]; then
+        local ws_j; ws_j=$(_json_escape_str "$_sess_ws")
+        curl -s --unix-socket "$MICRO_VM_SOCKET" \
+            -X PATCH "http://localhost/drives/workspace" \
+            -H "Content-Type: application/json" \
+            -d "{\"drive_id\":\"workspace\",\"path_on_host\":\"${ws_j}\"}" &>/dev/null || true
+    fi
+    MICRO_VM_WORKSPACE_IMG="$_sess_ws"
+    export MICRO_VM_WORKSPACE_IMG
+
+    # 10. Resume VM
+    curl -s --unix-socket "$MICRO_VM_SOCKET" \
+        -X PATCH "http://localhost/vm" \
+        -H "Content-Type: application/json" \
+        -d '{"state": "Resumed"}' &>/dev/null || true
+
+    # 11. Poll guest SSH readiness
+    local guest_ip="${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+    local ssh_ticks
+    ssh_ticks=$(_poll_guest_ssh "$guest_ip" "$ssh_key" "$MICRO_VM_PID" "$_rlog_dir" \
+        "-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null") || {
+        # _poll_guest_ssh already killed FC (on timeout) and removed _rlog_dir
+        MICRO_VM_SESSION_OWNED=false
+        MICRO_VM_PID=""
+        return 1
+    }
+
+    rm -rf "$_rlog_dir" 2>/dev/null || true
+    export MICRO_VM_SNAP_SESSION_DIR="$snap_snap_dir"
+    print_success "microVM: resumed from snapshot '$(basename "$snap_snap_dir")' (SSH ready in ${ssh_ticks}× 0.5s)"
+    return 0
+}
+
+#######################################
+# Create a named snapshot of the running microVM.
+# Pauses VM, copies drives to snapshot dir, calls FC snapshot API, saves metadata.
+# Arguments:
+#   $1 - snap_dir: root snapshots directory
+#   $2 - description: human-readable description (may be empty)
+#######################################
+_create_named_snapshot() {
+    local snap_dir="$1" description="$2"
+
+    # Build snapshot directory name: TIMESTAMP[_slug]
+    local ts; ts=$(date '+%Y-%m-%d_%H-%M' 2>/dev/null || echo "unknown")
+    local slug; slug=$(printf '%s' "$description" | tr -cs 'a-zA-Z0-9_-' '-' | head -c40)
+    # Remove leading/trailing dashes from slug
+    slug="${slug##-}"; slug="${slug%%-}"
+    local snap_name="${ts}${slug:+_${slug}}"
+    local snap_snap_dir="${snap_dir}/${snap_name}"
+    mkdir -p "$snap_snap_dir" || {
+        print_warning "microVM: snapshot: cannot create directory: ${snap_snap_dir}"
+        return 1
+    }
+    chmod 700 "$snap_snap_dir" 2>/dev/null || true
+
+    # 1. Pause VM
+    curl -s --unix-socket "$MICRO_VM_SOCKET" \
+        -X PATCH "http://localhost/vm" \
+        -H "Content-Type: application/json" \
+        -d '{"state": "Paused"}' &>/dev/null || true
+
+    # 2. Copy session drives → snapshot dir (while VM is paused for consistency)
+    local session_rootfs="${MICRO_VM_ROOTFS_PATH:-}"
+    local session_ws="${MICRO_VM_WORKSPACE_IMG:-}"
+    # session_rootfs may still point to base path — use session_dir copy if available
+    local session_id="${ICLAUDE_SESSION_ID:-$$}"
+    local session_dir_rootfs="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}/${session_id}/rootfs.ext4"
+    [[ -f "$session_dir_rootfs" ]] && session_rootfs="$session_dir_rootfs"
+
+    [[ -f "$session_rootfs" ]] && \
+        cp --sparse=always "$session_rootfs" "${snap_snap_dir}/rootfs.ext4" 2>/dev/null || true
+    [[ -f "$session_ws" ]] && \
+        cp --sparse=always "$session_ws" "${snap_snap_dir}/workspace.img" 2>/dev/null || true
+
+    # 3. PATCH /drives to redirect FC to snapshot copies
+    #    (FC snapshot embeds drive paths — redirect before snapshot/create)
+    if [[ -f "${snap_snap_dir}/rootfs.ext4" ]]; then
+        local rfs_j; rfs_j=$(_json_escape_str "${snap_snap_dir}/rootfs.ext4")
+        curl -s --unix-socket "$MICRO_VM_SOCKET" \
+            -X PATCH "http://localhost/drives/rootfs" \
+            -H "Content-Type: application/json" \
+            -d "{\"drive_id\":\"rootfs\",\"path_on_host\":\"${rfs_j}\"}" &>/dev/null || true
+    fi
+    if [[ -f "${snap_snap_dir}/workspace.img" ]]; then
+        local ws_j; ws_j=$(_json_escape_str "${snap_snap_dir}/workspace.img")
+        curl -s --unix-socket "$MICRO_VM_SOCKET" \
+            -X PATCH "http://localhost/drives/workspace" \
+            -H "Content-Type: application/json" \
+            -d "{\"drive_id\":\"workspace\",\"path_on_host\":\"${ws_j}\"}" &>/dev/null || true
+    fi
+
+    # 4. Create FC snapshot (embedded drive paths now point to snap_snap_dir)
+    local snap_path_j; snap_path_j=$(_json_escape_str "${snap_snap_dir}/vm.snap")
+    local mem_path_j;  mem_path_j=$(_json_escape_str "${snap_snap_dir}/vm.mem")
+    local http_status
+    http_status=$(curl -s -o /dev/null -w "%{http_code}" --unix-socket "$MICRO_VM_SOCKET" \
+        -X PUT "http://localhost/snapshot/create" \
+        -H "Content-Type: application/json" \
+        -d "{\"snapshot_type\":\"Full\",\"snapshot_path\":\"${snap_path_j}\",\"mem_file_path\":\"${mem_path_j}\"}" \
+        2>/dev/null || echo "000")
+
+    if [[ "$http_status" == "204" ]]; then
+        # 5. Save metadata alongside snapshot files.
+        # Escape description for embedding in double-quoted shell assignment:
+        # \ → \\, " → \", $ → \$ (prevent expansion when meta.env is sourced)
+        local _safe_desc="$description"
+        _safe_desc="${_safe_desc//\\/\\\\}"
+        _safe_desc="${_safe_desc//\"/\\\"}"
+        _safe_desc="${_safe_desc//\$/\\\$}"
+        {
+            printf 'MICRO_VM_SNAP_TIMESTAMP="%s"\n' "$ts"
+            printf 'MICRO_VM_SNAP_DESCRIPTION="%s"\n' "$_safe_desc"
+            printf 'MICRO_VM_SNAP_SLOT="%s"\n'      "${MICRO_VM_SLOT:-0}"
+            printf 'MICRO_VM_SNAP_GUEST_IP="%s"\n'  "${MICRO_VM_NET_GUEST_IP:-}"
+            printf 'MICRO_VM_SNAP_HOST_IP="%s"\n'   "${MICRO_VM_NET_HOST_IP:-}"
+            printf 'MICRO_VM_SNAP_TAP_IFACE="%s"\n' "${MICRO_VM_NET_TAP_IFACE:-}"
+            printf 'MICRO_VM_SNAP_NET_MASK="%s"\n'  "${MICRO_VM_NET_MASK:-255.255.255.252}"
+        } > "${snap_snap_dir}/meta.env"
+        chmod 600 "${snap_snap_dir}/meta.env" 2>/dev/null || true
+        print_success "microVM: snapshot saved → ${snap_snap_dir}"
+    else
+        rm -rf "$snap_snap_dir" 2>/dev/null || true
+        print_warning "microVM: snapshot save failed (HTTP ${http_status})"
+    fi
+}
+
+#######################################
 # Start Firecracker microVM and prepare guest for claude launch.
 # Sets MICRO_VM_PID, MICRO_VM_SOCKET, MICRO_VM_SESSION_OWNED globals.
 # v2 architecture: Claude runs INSIDE guest VM via SSH; block devices for storage.
@@ -756,6 +1196,56 @@ start_microvm() {
     MICRO_VM_SOCKET="/tmp/iclaude-${session_id}-fc.sock"
     export MICRO_VM_SOCKET
 
+    # ── Snapshot selection (interactive restore, only if MICRO_VM_SNAPSHOT_ENABLED=true) ──
+    MICRO_VM_SELECTED_SNAP=""
+    MICRO_VM_SNAP_SESSION_DIR=""
+    export MICRO_VM_SELECTED_SNAP MICRO_VM_SNAP_SESSION_DIR
+    if [[ "${MICRO_VM_SNAPSHOT_ENABLED:-false}" == "true" ]]; then
+        local snap_dir="${MICRO_VM_SNAPSHOT_DIR:-${ISOLATED_CONFIG_DIR}/microvm-snapshots}"
+        local _snap_ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
+        if _select_snapshot "$snap_dir"; then
+            if _restore_from_snapshot "$fc_bin" "$MICRO_VM_SELECTED_SNAP" "$_snap_ssh_key" "$session_dir"; then
+                # Re-push guest-env (proxy/PATH may have changed since snapshot was taken)
+                local env_file_snap="${session_dir}/guest-env.sh"
+                configure_guest_environment "$env_file_snap" || true
+                scp -q \
+                    -i "$_snap_ssh_key" \
+                    -o StrictHostKeyChecking=no \
+                    -o UserKnownHostsFile=/dev/null \
+                    -o LogLevel=ERROR \
+                    "$env_file_snap" \
+                    "iclaude@${MICRO_VM_NET_GUEST_IP}:/workspace/.iclaude-guest-env.sh" \
+                    </dev/null 2>/dev/null || true
+                # Write vm-info for statusline hover tooltip (snapshot-specific variant)
+                local vm_info_file_snap="${session_dir}/vm-info.txt"
+                {
+                    echo "⚡ iclaude microVM  [ active — snapshot ]"
+                    echo "════════════════════════════════════════"
+                    printf " Snapshot   %s\n" "$(basename "$MICRO_VM_SELECTED_SNAP")"
+                    printf " Memory     %s MB\n" "${MICRO_VM_MEM_MB:-2048}"
+                    printf " vCPU       %s\n"   "${MICRO_VM_VCPU:-2}"
+                    if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then
+                        printf " Network    enabled  host %s ↔ guest %s\n" \
+                            "${MICRO_VM_NET_HOST_IP:-172.16.0.1}" \
+                            "${MICRO_VM_NET_GUEST_IP:-172.16.0.2}"
+                    fi
+                    [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && \
+                        printf " PII proxy  active — port %s\n" "${ICLAUDE_PII_ACTIVE_PORT:-}"
+                    [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && \
+                        printf " Router     active\n"
+                    echo "════════════════════════════════════════"
+                    printf " Restored   %s\n" "$(date '+%Y-%m-%d %H:%M:%S')"
+                } > "$vm_info_file_snap"
+                export ICLAUDE_MICROVM_INFO_PATH="$vm_info_file_snap"
+                # Signal statusline
+                export ICLAUDE_MICROVM_ACTIVE=1
+                export ICLAUDE_MICROVM_PID="${MICRO_VM_PID}"
+                return 0
+            fi
+            print_warning "microVM: snapshot restore failed — falling back to cold boot"
+        fi
+    fi
+
     # ── Block device images ────────────────────────────────────────────────────
 
     # Rootfs: per-session sparse copy of the shared base image.
@@ -765,6 +1255,8 @@ start_microvm() {
     local rootfs_session="${session_dir}/rootfs.ext4"
     # Save original before overriding, so it can be restored after vmconfig is written.
     local _rootfs_path_orig="${MICRO_VM_ROOTFS_PATH:-}"
+    # Auto-grow base rootfs if free space < 30% before making per-session sparse copy.
+    _check_and_grow_rootfs "$rootfs_base"
     if ! cp --sparse=always "$rootfs_base" "$rootfs_session" 2>/dev/null; then
         print_error "microVM: failed to create per-session rootfs copy at ${rootfs_session}"
         rm -rf "$session_dir" 2>/dev/null; return 1
@@ -1003,25 +1495,19 @@ start_microvm() {
 # Called from trap EXIT/INT/TERM.
 #######################################
 stop_microvm() {
-    # Save snapshot before shutdown if enabled
+    # Prompt to save named snapshot if enabled
     if [[ "${MICRO_VM_SNAPSHOT_ENABLED:-false}" == "true" ]] && \
        [[ -n "${MICRO_VM_SOCKET:-}" ]] && [[ -S "${MICRO_VM_SOCKET}" ]]; then
         local snap_dir="${MICRO_VM_SNAPSHOT_DIR:-${ISOLATED_CONFIG_DIR}/microvm-snapshots}"
-        local snap_id="${ICLAUDE_SESSION_ID:-$$}"
         mkdir -p "$snap_dir"
-        # Pause VM before snapshot via Firecracker API
-        curl -s --unix-socket "$MICRO_VM_SOCKET" \
-            -X PATCH "http://localhost/vm" \
-            -H "Content-Type: application/json" \
-            -d '{"state": "Paused"}' &>/dev/null || true
-        # Create snapshot — JSON-escape paths to prevent injection
-        local snap_path_j; snap_path_j=$(_json_escape_str "${snap_dir}/${snap_id}.snap")
-        local mem_path_j; mem_path_j=$(_json_escape_str "${snap_dir}/${snap_id}.mem")
-        curl -s --unix-socket "$MICRO_VM_SOCKET" \
-            -X PUT "http://localhost/snapshot/create" \
-            -H "Content-Type: application/json" \
-            -d "{\"snapshot_type\": \"Full\", \"snapshot_path\": \"${snap_path_j}\", \"mem_file_path\": \"${mem_path_j}\"}" \
-            &>/dev/null || true
+        echo ""
+        local _save_answer
+        read -r -p "  Save snapshot? [y/N]: " _save_answer 2>/dev/tty || _save_answer="n"
+        if [[ "${_save_answer,,}" == "y" || "${_save_answer,,}" == "yes" ]]; then
+            local _description
+            read -r -p "  Description (optional): " _description 2>/dev/tty || _description=""
+            _create_named_snapshot "$snap_dir" "$_description"
+        fi
     fi
 
     # Graceful guest filesystem sync before FC process termination.
