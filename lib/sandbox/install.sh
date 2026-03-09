@@ -218,7 +218,7 @@ _download_vmlinux() {
 #######################################
 _resize_rootfs() {
 	local rootfs_path="$1"
-	local target_mb="${2:-500}"
+	local target_mb="${2:-2048}"
 
 	if [[ ! -f "$rootfs_path" ]]; then
 		print_error "rootfs not found: $rootfs_path"
@@ -325,8 +325,28 @@ install_microvm() {
 
 	if [[ -f "$_rootfs" ]]; then
 		if [[ -f "$_v7_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
+			# Check if actual rootfs size matches MICRO_VM_ROOTFS_SIZE_MB; resize if smaller.
+			local _configured_mb="${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
+			local _actual_bytes; _actual_bytes=$(stat -c%s "$_rootfs" 2>/dev/null || echo 0)
+			local _actual_mb=$(( _actual_bytes / 1048576 ))
+			if [[ $_actual_mb -lt $_configured_mb ]]; then
+				print_warning "Rootfs: ${_actual_mb}MB < MICRO_VM_ROOTFS_SIZE_MB=${_configured_mb}MB"
+				local _confirm
+				read -r -p "  Resize rootfs to ${_configured_mb}MB? [Y/n] " _confirm
+				if [[ -z "$_confirm" || "$_confirm" =~ ^[Yy]$ ]]; then
+					# Guard: debugfs/resize2fs on a live rootfs causes ext4 corruption.
+					local _fc_running; _fc_running=$(pgrep -x firecracker 2>/dev/null || true)
+					if [[ -n "$_fc_running" ]]; then
+						print_error "Cannot resize: Firecracker is running (PID: $(echo "$_fc_running" | tr '\n' ' ' | sed 's/ $//'))."
+						print_error "Stop all microVM sessions first, then retry --install-microvm."
+						return 1
+					fi
+					_resize_rootfs "$_rootfs" "$_configured_mb"
+					_actual_mb="$_configured_mb"
+				fi
+			fi
 			print_success "microVM already installed and up-to-date (v7)"
-			print_info "Rootfs: $_rootfs"
+			print_info "Rootfs: $_rootfs (${_actual_mb}MB)"
 			print_info "NVM image: $_nvm_img"
 			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
 			return 0
@@ -337,11 +357,28 @@ install_microvm() {
 		# (multiply-claimed blocks) because debugfs ignores the kernel VFS cache.
 		local _fc_pids; _fc_pids=$(pgrep -x firecracker 2>/dev/null || true)
 		if [[ -n "$_fc_pids" ]]; then
-			print_error "Active Firecracker process(es) detected (PID: $_fc_pids)"
-			print_error "Stop all microVM sessions before running --install-microvm."
-			print_error "  If using --sandbox-microvm: exit Claude Code, then retry."
-			print_error "  Or manually: kill $_fc_pids"
-			return 1
+			local _fc_pids_line; _fc_pids_line=$(echo "$_fc_pids" | tr '\n' ' ' | sed 's/ $//')
+			print_warning "Active Firecracker process(es) detected (PID: $_fc_pids_line)"
+			print_warning "debugfs -w on a live rootfs can corrupt ext4 (multiply-claimed blocks)."
+			local _confirm
+			read -r -p "  Kill all Firecracker processes and continue installation? [y/N] " _confirm
+			if [[ "$_confirm" =~ ^[Yy]$ ]]; then
+				# shellcheck disable=SC2086
+				kill $_fc_pids 2>/dev/null || true
+				sleep 1
+				local _still; _still=$(pgrep -x firecracker 2>/dev/null || true)
+				if [[ -n "$_still" ]]; then
+					local _still_line; _still_line=$(echo "$_still" | tr '\n' ' ' | sed 's/ $//')
+					print_error "Processes still running (PID: $_still_line). Use 'kill -9 $_still_line' manually, then retry."
+					return 1
+				fi
+				print_info "All Firecracker processes stopped. Continuing installation..."
+			else
+				print_error "Installation cancelled."
+				print_error "  If using --sandbox-microvm: exit Claude Code, then retry."
+				print_error "  Or manually: kill $_fc_pids_line"
+				return 1
+			fi
 		fi
 
 		# Fast-path v6→v7: inject rsync for delta sync (ControlMaster + rsync).
@@ -371,11 +408,11 @@ EOF
 		fi
 
 		# Fast-path v5→v6 upgrade: only resize needed, no re-injection.
-		# v6 adds: rootfs resized to 500MB for headroom (avoids ENOSPC in npm/node on rootfs).
+		# v6 adds: rootfs resized (see MICRO_VM_ROOTFS_SIZE_MB, default 2048MB) for headroom (avoids ENOSPC in npm/node on rootfs).
 		if [[ -f "$_v5_marker" && ! -f "$_v6_marker" ]]; then
 			print_info "Existing rootfs found — upgrading to v6 (resize to 500MB for headroom)..."
 			echo ""
-			_resize_rootfs "$_rootfs" 500
+			_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
 			touch "$_v6_marker"
 			echo ""
 			print_success "microVM v6 upgrade complete"
@@ -384,7 +421,7 @@ EOF
 		fi
 
 		# Rootfs exists but v5/v6 not applied — upgrade without re-downloading.
-		# v6 adds: rootfs resized to 500MB (avoids ENOSPC for npm/node writes on rootfs).
+		# v6 adds: rootfs resized (see MICRO_VM_ROOTFS_SIZE_MB, default 2048MB) for headroom (avoids ENOSPC for npm/node writes on rootfs).
 		# v5 adds: /tmp mounted as tmpfs in guest-init (world-writable, fixes Bash tool access).
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
@@ -396,7 +433,7 @@ EOF
 			print_info "Existing rootfs found — upgrading to v6 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize)..."
 		fi
 		echo ""
-		_resize_rootfs "$_rootfs" 500
+		_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
 		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
 		_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
 		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
@@ -475,8 +512,8 @@ EOF
 	local rootfs_path="${MICRO_VM_ROOTFS_PATH:-${bin_dir}/rootfs.ext4}"
 	_download_rootfs "$rootfs_path" "$arch" "$rootfs_sha256" || return 1
 
-	# Resize rootfs to 500MB for headroom (downloaded image ~265MB used space)
-	_resize_rootfs "$rootfs_path" 500
+	# Resize rootfs to MICRO_VM_ROOTFS_SIZE_MB (default 2048MB) for headroom (downloaded image ~265MB used space)
+	_resize_rootfs "$rootfs_path" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
 
 	# Create working directories
 	local work_dir="${MICRO_VM_WORK_DIR:-${ISOLATED_CONFIG_DIR}/microvm-run}"
