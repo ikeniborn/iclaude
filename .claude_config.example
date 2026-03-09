@@ -393,11 +393,6 @@ MICRO_VM_ENABLED=false
 # Пример: /home/user/projects/my-project
 # MICRO_VM_WORKSPACE_PATH=
 
-# Размер образа /workspace (/dev/vdc) в гостевой VM в МБ.
-# Sparse-образ — реально занимает только записанное содержимое.
-# Диапазон: 1–65536. По умолчанию: 2048.
-# MICRO_VM_WORKSPACE_SIZE_MB=2048
-
 # Интервал периодической синхронизации workspace (guest→host) в секундах.
 # Применяется только в режиме full. При значении 0 (по умолчанию) периодическая
 # синхронизация отключена — изменения синхронизируются только после завершения сессии.
@@ -405,10 +400,12 @@ MICRO_VM_ENABLED=false
 # При ненулевом значении: фоновый процесс каждые N секунд копирует /workspace
 # из guest на хост, делая изменения видимыми на хосте без ожидания выхода из claude.
 #
+# С SSH ControlMaster + rsync (rootfs v7): минимум 2s безопасен (delta sync, overhead ~5ms).
+# Без rsync (rootfs v6, tar-over-SSH): минимум 20-30s (SSH handshake 150-320ms per sync).
 # Рекомендуемые значения:
 #   0  — только при выходе (по умолчанию, без накладных расходов)
-#   30 — каждые 30 секунд (баланс между актуальностью и нагрузкой)
-#   60 — каждую минуту (для крупных проектов с частыми записями)
+#   5  — каждые 5 секунд (с rsync+ControlMaster, near-realtime sync)
+#   30 — каждые 30 секунд (tar fallback или баланс нагрузки)
 # MICRO_VM_SYNC_INTERVAL=0
 
 # ============================================================
@@ -418,7 +415,7 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_ENABLED=true
 # MICRO_VM_VCPU=2
 # MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
-# MICRO_VM_SYNC_INTERVAL=30   # периодическая синхронизация каждые 30 с (опционально)
+# MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
 #
 # # Конкретный путь как источник workspace (независимо от cwd):
 # MICRO_VM_ENABLED=true

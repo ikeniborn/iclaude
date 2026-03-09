@@ -153,6 +153,27 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 
 Дополнительные исключения через `MICRO_VM_SYNC_EXCLUDE` (newline-separated patterns).
 
+### Механизм синхронизации (SSH ControlMaster + rsync)
+
+Начиная с rootfs v7, используется delta-sync через SSH ControlMaster:
+
+| Компонент | Описание |
+|-----------|---------|
+| **SSH ControlMaster** | Одно постоянное TCP-соединение. Все sync-операции проходят через него, overhead ~5ms вместо 150-320ms на handshake |
+| **rsync** | Delta-sync: передаются только изменённые файлы. При малых изменениях объём передачи снижается на 90%+ |
+| **Fallback** | Если rsync недоступен в guest (rootfs v6 или ниже) — автоматический откат на tar-over-SSH |
+| **ControlPersist=60** | Мастер-соединение закрывается автоматически через 60s после последнего использования (защита от orphan при SIGKILL) |
+
+**Минимальный интервал sync:**
+- С rsync+ControlMaster (v7 rootfs): **2 секунды** (рекомендуется 5s)
+- Без rsync (v6 rootfs, tar-over-SSH): **20-30 секунд**
+
+**Обновление до v7:**
+```bash
+./iclaude.sh --install-microvm   # inject rsync, без re-download
+./iclaude.sh --check-microvm     # проверить: [v7: + rsync]
+```
+
 ---
 
 ## Снэпшоты
@@ -279,9 +300,8 @@ rm -rf ~/.../microvm-snapshots/2026-03-08_11-22_npm-build-debugging/
 | `MICRO_VM_WORKSPACE_MODE` | `full` | Режим синхронизации: `full`, `isolated` |
 | `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
 | `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (colon-separated) |
-| `MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды). `0` — только при выходе; `30` — каждые 30 с. |
+| `MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды, только `full` режим). `0` — только при выходе. Минимум 2s (rsync/v7) или 20s (tar/v6). |
 | `MICRO_VM_MEM_MB` | `2048` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
-| `MICRO_VM_WORKSPACE_SIZE_MB` | `2048` | Размер образа `/workspace` (`/dev/vdc`) в МБ. Диапазон: 1–65536. Sparse-образ — реально занимает только записанное содержимое. |
 | `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ. Значение читается напрямую из `.claude_config` и применяется к конфигурации Firecracker без переопределений. |
 | `MICRO_VM_SNAPSHOT_ENABLED` | `false` | Включить именованные снэпшоты. При запуске показывает список снэпшотов для выбора; при завершении предлагает сохранить |
 | `MICRO_VM_SNAPSHOT_DIR` | `...microvm-snapshots/` | Директория хранения снэпшотов |
@@ -292,7 +312,7 @@ rm -rf ~/.../microvm-snapshots/2026-03-08_11-22_npm-build-debugging/
 
 | Комбинация | Статус | Поведение |
 |-----------|--------|-----------|
-| `--sandbox-microvm` | ✅ | virtio-blk + SSH exec + tar sync |
+| `--sandbox-microvm` | ✅ | virtio-blk + SSH ControlMaster + rsync sync (tar fallback при v6 rootfs) |
 | `--sandbox-microvm --router` | ✅ | CCR стартует на host до VM; порт в guest env |
 | `--sandbox-microvm --pii-proxy` | ✅ | PII proxy на host; `ANTHROPIC_BASE_URL=host_ip:PORT` в guest |
 | `--sandbox-microvm --pii-proxy --router` | ✅ | PII → CCR цепочка на host; оба порта в guest env |
@@ -313,9 +333,11 @@ rm -rf ~/.../microvm-snapshots/2026-03-08_11-22_npm-build-debugging/
 7. **FC spawn** — `firecracker --api-sock ... --config-file vmconfig.json`
 8. **SSH poll** — ожидание готовности sshd в guest (max 30s)
 9. **SCP env** — `guest-env.sh` → `/workspace/.iclaude-guest-env.sh` в guest (via `iclaude@`)
-10. **tar sync** — host→guest (режимы `full` и `isolated`; источник: `MICRO_VM_WORKSPACE_PATH` или `$PWD`); исключает `.nvm-isolated/`, `.git/`, secrets
-11. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
-12. **sync-back** — guest→host после завершения claude (только режим `full`; `isolated` — без sync-back)
+10. **ControlMaster** — `ssh -M -N -f -o ControlPersist=60` — постоянное SSH-соединение для всех sync-операций (overhead 5ms вместо 150-320ms)
+11. **rsync detect** — проверка наличия rsync в guest (`command -v rsync`); если отсутствует — fallback на tar
+12. **initial sync** — host→guest: rsync или tar (режимы `full` и `isolated`); исключает `.nvm-isolated/`, `.git/`, secrets
+13. **SSH exec** — `ssh iclaude@guest_ip "source /workspace/.iclaude-guest-env.sh && exec claude"`
+14. **sync-back** — guest→host после завершения claude (только режим `full`): rsync с ControlMaster fallback, или tar; `isolated` — без sync-back
 13. **Snapshot prompt** — если `MICRO_VM_SNAPSHOT_ENABLED=true`: `Save snapshot? [y/N]`
 14. **Cleanup** — EXIT-трап: `stop_microvm()`, `_free_microvm_slot()`, `rm session_dir`
 

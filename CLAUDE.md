@@ -173,13 +173,6 @@ See [docs/plans/README.md](docs/plans/README.md).
 
 For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-commands**
 
-## RFC Documents (Agent Protocol Specifications)
-
-- [RFC-0001: Documentation Standards](docs/RFC-0001-documentation-standards.md)
-- [RFC-0002: Agent Pipeline Protocol](docs/RFC-0002-agent-protocol-spec.md)
-- [RFC-0003: TOON Protocol](docs/RFC-0003-toon-protocol.md)
-- [RFC-0004: Inter-Agent Communication Optimization](docs/RFC-0004-inter-agent-communication.md)
-
 ## Related Skills
 
 - **@skill:iclaude-architecture** — Code architecture and implementation details

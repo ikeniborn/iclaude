@@ -384,17 +384,14 @@ launch_claude() {
         if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace ← guest..."
             if [[ "$_guest_has_rsync" == "true" ]]; then
-                # rsync --delete: deletions in guest propagate to host (true bidirectional sync).
-                # Set MICRO_VM_SYNC_NO_DELETE=true to keep host as superset (no deletions from host).
-                local _rsync_delete_flag="--delete"
-                [[ "${MICRO_VM_SYNC_NO_DELETE:-false}" == "true" ]] && _rsync_delete_flag=""
+                # Full bidirectional sync (full mode only): --delete propagates guest deletions to host.
                 # Try via ControlMaster first; fallback to direct SSH if master died.
-                rsync -az ${_rsync_delete_flag} \
+                rsync -az --delete \
                     --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
                     -e "$_e_ssh_cmd" \
                     "iclaude@${guest_ip}:/workspace/" \
                     "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
-                rsync -az ${_rsync_delete_flag} \
+                rsync -az --delete \
                     --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
                     -e "$_e_ssh_fallback" \
                     "iclaude@${guest_ip}:/workspace/" \

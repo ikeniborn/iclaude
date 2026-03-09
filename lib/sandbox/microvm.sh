@@ -783,12 +783,11 @@ _read_snapshot_meta() {
         _lval=$(grep -m1 "^${_var}=" "$meta_file" 2>/dev/null || true)
         _lval="${_lval#*=\"}"   # strip VAR=" prefix
         _lval="${_lval%\"}"     # strip trailing "
-        # Unescape in safe order: \" and \$ first, then \\ last.
-        # \\ must be last — processing it first would convert \\\" into \"
-        # instead of the correct output: a literal backslash followed by a quote.
-        _lval="${_lval//\\\"/\"}"
-        _lval="${_lval//\\\$/\$}"
-        _lval="${_lval//\\\\/\\}"
+        # Unescape: \\ → \, \" → ", \$ → $
+        local _tmp="${_lval//\\\\/BACKSLASH_PLACEHOLDER}"
+        _tmp="${_tmp//\\\"/\"}"
+        _tmp="${_tmp//\\\$/\$}"
+        _lval="${_tmp//BACKSLASH_PLACEHOLDER/\\}"
         printf -v "$_var" '%s' "$_lval"
     done
 }
@@ -873,11 +872,7 @@ _restore_from_snapshot() {
         return 1
     }
 
-    # Validate restored values before use (slot used in lock-file path; IPs in sudo commands)
-    if [[ -n "${MICRO_VM_SNAP_SLOT:-}" ]] && ! _validate_int_range "${MICRO_VM_SNAP_SLOT}" 0 255; then
-        print_error "microVM: snapshot has invalid SLOT: '${MICRO_VM_SNAP_SLOT}'"
-        return 1
-    fi
+    # Validate restored network values before using in sudo ip commands
     if [[ -n "${MICRO_VM_SNAP_GUEST_IP:-}" ]] && ! _validate_ip "${MICRO_VM_SNAP_GUEST_IP}"; then
         print_error "microVM: snapshot has invalid GUEST_IP: '${MICRO_VM_SNAP_GUEST_IP}'"
         return 1
