@@ -1,0 +1,36 @@
+{
+  "_comment": "Canonical microVM component versions. Update version + sha256 together when upgrading.",
+  "firecracker": {
+    "version": "v1.11.0",
+    "x86_64": {
+      "url": "https://github.com/firecracker-microvm/firecracker/releases/download/v1.11.0/firecracker-v1.11.0-x86_64.tgz",
+      "sha256": "8f0ea0c508d690b288079709830ca6aa037f75cea3dc9ddd48b2aa0ab0b448d5"
+    },
+    "aarch64": {
+      "url": "https://github.com/firecracker-microvm/firecracker/releases/download/v1.11.0/firecracker-v1.11.0-aarch64.tgz",
+      "sha256": ""
+    }
+  },
+  "vmlinux": {
+    "version": "6.1.102",
+    "x86_64": {
+      "url": "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/x86_64/vmlinux-6.1.102",
+      "sha256": "49ba99a5299444ac59dda2efc3569cc2d58a5d72ea6475a6bfc37aa0bf322e54"
+    },
+    "aarch64": {
+      "url": "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/aarch64/vmlinux-6.1.102",
+      "sha256": ""
+    }
+  },
+  "rootfs": {
+    "version": "ubuntu-22.04-v1.10",
+    "x86_64": {
+      "url": "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/x86_64/ubuntu-22.04.ext4",
+      "sha256": "040927105bd01b19e7b02cd5da5a9552b428a7f84bd5ffc22ebfce4ddf258a07"
+    },
+    "aarch64": {
+      "url": "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/aarch64/ubuntu-22.04.ext4",
+      "sha256": ""
+    }
+  }
+}

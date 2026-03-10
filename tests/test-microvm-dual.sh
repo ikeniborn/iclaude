@@ -341,8 +341,9 @@ _section "1. Pre-flight checks"
 [[ -f "$ROOTFS_BASE" ]]   && _pass "rootfs.ext4"                || { _fail "rootfs missing: $ROOTFS_BASE"; exit 1; }
 [[ -f "$NVM_IMG" ]]       && _pass "nvm.img"                    || { _fail "nvm.img missing: $NVM_IMG"; exit 1; }
 [[ -f "$VMLINUX" ]]       && _pass "vmlinux"                    || { _fail "vmlinux missing: $VMLINUX"; exit 1; }
-[[ -f "${ISOLATED_CONFIG_DIR}/bin/rootfs.v2-ready" ]] \
-    && _pass "rootfs v2-ready marker"                           || { _fail "rootfs not v2 — run --install-microvm"; exit 1; }
+_rootfs_state_val=$(cat "${ISOLATED_CONFIG_DIR}/bin/rootfs.state" 2>/dev/null || echo "")
+[[ -n "$_rootfs_state_val" ]] \
+    && _pass "rootfs state marker (${_rootfs_state_val})"       || { _fail "rootfs state unknown — run --install-microvm"; exit 1; }
 
 # Verify slot-0 TAP exists. MICRO_VM_NET_TAP_IFACE is now a prefix; slot 0 → prefix-1.
 SUBNET="${MICRO_VM_NET_SUBNET:-172.16.0.0/26}"
