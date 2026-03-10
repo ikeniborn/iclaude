@@ -382,8 +382,13 @@ build_microvm_config() {
     # NOTE: rootfs may be a per-session sparse copy; the v2-ready marker lives next to
     # the original base image (MICRO_VM_ROOTFS_PATH before session override, or the
     # default base path). Check the base marker explicitly.
-    local rootfs_base_marker="${ISOLATED_CONFIG_DIR}/bin/rootfs.v2-ready"
-    if [[ -f "$rootfs_base_marker" ]]; then
+    local rootfs_base_state
+    rootfs_base_state=$(cat "${ISOLATED_CONFIG_DIR}/bin/rootfs.state" 2>/dev/null || echo "")
+    # Fallback: legacy installations may have v2-ready but no state file yet
+    if [[ -z "$rootfs_base_state" && -f "${ISOLATED_CONFIG_DIR}/bin/rootfs.v2-ready" ]]; then
+        rootfs_base_state="legacy"
+    fi
+    if [[ -n "$rootfs_base_state" ]]; then
         boot_args="${boot_args} init=/usr/sbin/iclaude-guest-init"
     fi
 

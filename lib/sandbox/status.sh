@@ -58,28 +58,21 @@ check_microvm_status() {
 	if [[ -f "$rootfs" ]]; then
 		local rootfs_sz
 		rootfs_sz=$(du -h "$rootfs" 2>/dev/null | cut -f1)
-		local rootfs_v3="${rootfs%.ext4}.v3-ready"
-		local rootfs_v4="${rootfs%.ext4}.v4-ready"
-		local rootfs_v5="${rootfs%.ext4}.v5-ready"
-		local rootfs_v6="${rootfs%.ext4}.v6-ready"
-		local rootfs_v7="${rootfs%.ext4}.v7-ready"
-		if [[ -f "$rootfs_v7" ]]; then
-			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v7: + rsync (delta sync via ControlMaster)]"
-		elif [[ -f "$rootfs_v6" ]]; then
+		local rootfs_state; rootfs_state=$(cat "${rootfs%.ext4}.state" 2>/dev/null || echo "")
+		if [[ "$rootfs_state" == "v7" ]]; then
+			print_success "rootfs.ext4: $rootfs ($rootfs_sz) [v7: guest-init + jq + rsync (delta sync)]"
+		elif [[ "$rootfs_state" == "v6" ]]; then
 			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v6: upgrade available → v7 adds rsync delta sync]"
-			echo "  → Run: ./iclaude.sh --install-microvm  (inject rsync, no re-download)"
-		elif [[ -f "$rootfs_v5" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v5: jq + DNS + CA bundle + /tmp fix — needs upgrade: resize to 500MB]"
-			echo "  → Run: ./iclaude.sh --install-microvm  (resize only, no re-download)"
-		elif [[ -f "$rootfs_v4" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v4: jq + DNS + CA bundle — needs upgrade: /tmp fix + resize]"
-			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
-		elif [[ -f "$rootfs_v3" ]]; then
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v3: jq + DNS — needs upgrade: CA bundle + /tmp fix + resize]"
-			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
+			echo "  → Run: ./iclaude.sh --install-microvm"
+		elif [[ "$rootfs_state" == "v5" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [v5: needs upgrade to v7]"
+			echo "  → Run: ./iclaude.sh --install-microvm"
+		elif [[ "$rootfs_state" == "v4" || "$rootfs_state" == "v3" ]]; then
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [${rootfs_state}: needs upgrade to v7]"
+			echo "  → Run: ./iclaude.sh --install-microvm"
 		else
-			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [needs upgrade: missing jq + DNS + CA bundle + /tmp fix + resize]"
-			echo "  → Run: ./iclaude.sh --install-microvm  (re-injects rootfs, no re-download)"
+			print_warning "rootfs.ext4: $rootfs ($rootfs_sz) [state unknown — needs full upgrade]"
+			echo "  → Run: ./iclaude.sh --install-microvm"
 		fi
 		# Warn if rootfs is smaller than MICRO_VM_ROOTFS_SIZE_MB (configurable, default 2048MB)
 		local rootfs_bytes; rootfs_bytes=$(stat -c%s "$rootfs" 2>/dev/null || echo 0)
@@ -102,9 +95,15 @@ check_microvm_status() {
 	local tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
 	local tap_iface="${tap_prefix}-1"
 	if ip link show "$tap_iface" &>/dev/null; then
-		local tap_ip
-		tap_ip=$(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}' | head -1)
-		print_success "${tap_iface}: up (${tap_ip:-no IP})"
+		local tap_ips
+		mapfile -t tap_ips < <(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}')
+		if [[ ${#tap_ips[@]} -gt 1 ]]; then
+			print_warning "${tap_iface}: up but has ${#tap_ips[@]} IPs — stale addresses present"
+			echo "  IPs: ${tap_ips[*]}"
+			echo "  Fix: sudo ip addr flush dev ${tap_iface} && iclaude --install-microvm"
+		else
+			print_success "${tap_iface}: up (${tap_ips[0]:-no IP})"
+		fi
 	else
 		print_warning "${tap_iface}: not configured"
 		echo "  Run --install-microvm to configure TAP networking"
@@ -152,7 +151,8 @@ check_microvm_status() {
 	[[ -f "${MICRO_VM_KERNEL_PATH:-${ISOLATED_CONFIG_DIR}/bin/vmlinux}" ]] || { all_ready=false; missing_items+=("vmlinux kernel"); }
 	local _rootfs_sum="${MICRO_VM_ROOTFS_PATH:-${ISOLATED_CONFIG_DIR}/bin/rootfs.ext4}"
 	[[ -f "$_rootfs_sum" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
-	[[ ! -f "$_rootfs_sum" || -f "${_rootfs_sum%.ext4}.v7-ready" ]] || { all_ready=false; missing_items+=("rootfs v7 upgrade needed (inject rsync for delta sync) → ./iclaude.sh --install-microvm"); }
+	local _state_val; _state_val=$(cat "${_rootfs_sum%.ext4}.state" 2>/dev/null || echo "")
+	[[ ! -f "$_rootfs_sum" || "$_state_val" == "v7" ]] || { all_ready=false; missing_items+=("rootfs v7 upgrade needed → run --install-microvm"); }
 
 	if [[ "$all_ready" == "true" ]]; then
 		print_success "microVM Ready"
