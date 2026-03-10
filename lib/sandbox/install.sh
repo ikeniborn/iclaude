@@ -228,12 +228,20 @@ _curl_download() {
 	local output="$2"
 	local curl_exit
 
+	# Build proxy args from PROXY_URL / PROXY_CA / PROXY_INSECURE (set by .claude_config)
+	local proxy_args=()
+	if [[ -n "${PROXY_URL:-}" ]]; then
+		proxy_args+=("--proxy" "$PROXY_URL")
+		[[ -n "${PROXY_CA:-}" ]] && proxy_args+=("--proxy-cacert" "$PROXY_CA")
+		[[ "${PROXY_INSECURE:-false}" == "true" ]] && proxy_args+=("--proxy-insecure")
+	fi
+
 	if [[ "${MICRO_VM_INSECURE_DOWNLOAD:-false}" == "true" ]]; then
-		curl -fsSLk --progress-bar -o "$output" "$url"
+		curl -fsSLk --progress-bar "${proxy_args[@]}" -o "$output" "$url"
 		return
 	fi
 
-	curl -fsSL --progress-bar -o "$output" "$url"
+	curl -fsSL --progress-bar "${proxy_args[@]}" -o "$output" "$url"
 	curl_exit=$?
 
 	if [[ $curl_exit -eq 35 ]]; then
@@ -245,7 +253,7 @@ _curl_download() {
 		print_warning "Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
 		echo ""
 		rm -f "$output"
-		curl -fsSLk --progress-bar -o "$output" "$url"
+		curl -fsSLk --progress-bar "${proxy_args[@]}" -o "$output" "$url"
 		return
 	fi
 
