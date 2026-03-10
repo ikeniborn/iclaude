@@ -47,8 +47,8 @@ Host OS (Linux + KVM)
 | Firecracker binary v1.11+ | `detect_microvm_binary()` | Устанавливается через `--install-microvm` |
 | vmlinux kernel image | `$ISOLATED_CONFIG_DIR/bin/vmlinux` | Загружается при установке |
 | rootfs.ext4 (Ubuntu 22.04) | `$ISOLATED_CONFIG_DIR/bin/rootfs.ext4` | Загружается при установке |
-| nvm.img (NVM snapshot, ~1GB) | `$ISOLATED_CONFIG_DIR/bin/nvm.img` | Строится при `--install-microvm` |
-| tap-iclaude TAP-интерфейс | `_ensure_slot_tap()` — авто-создание | Требуется `ip` (iproute2) |
+| nvm.img (NVM snapshot, ~1GB) | `$ISOLATED_CONFIG_DIR/bin/nvm.img` | Строится при `--install-microvm` (требует `sudo`) |
+| tap-iclaude TAP-интерфейс | `_ensure_slot_tap()` — авто-создание | Требуется `ip` (iproute2); создаётся при `--install-microvm` (sudo) |
 | ed25519 SSH-ключ | `$ISOLATED_CONFIG_DIR/ssh/microvm` | Создаётся при установке, запекается в rootfs |
 
 **OS matrix:**
@@ -67,6 +67,10 @@ Host OS (Linux + KVM)
 
 ## Установка
 
+> **Требуется sudo для loop mount.** При сборке NVM-образа (`nvm.img`) скрипт
+> выполняет `sudo mount -o loop` и запросит пароль sudo в интерактивном режиме.
+> Запускайте установку от обычного пользователя — пароль будет запрошен при необходимости:
+
 ```bash
 # Установить Firecracker v1.11 + vmlinux + rootfs + nvm.img (~1.4GB, один раз)
 ./iclaude.sh --install-microvm
@@ -74,6 +78,18 @@ Host OS (Linux + KVM)
 # Проверить готовность всех компонентов
 ./iclaude.sh --check-microvm
 ```
+
+> **TLS-ошибка при загрузке (ALT Linux / старый OpenSSL)?**
+> Если `--install-microvm` завершается с ошибкой `TLS connect error: unsupported algorithm`
+> (характерно для ALT Linux 10 с OpenSSL < 3.x), используйте обходной путь:
+>
+> ```bash
+> MICRO_VM_INSECURE_DOWNLOAD=true ./iclaude.sh --install-microvm
+> ```
+>
+> Скрипт передаёт `-k` (`--insecure`) в curl только для загрузки компонентов microVM.
+> SHA-256 хеши сохраняются в `versions.json` (TOFU) и проверяются при повторных установках.
+> Используйте только в доверенной сети.
 
 `--install-microvm` выполняет:
 1. Загрузка Firecracker v1.11 и vmlinux (GitHub releases)
@@ -422,6 +438,38 @@ rm -rf .nvm-isolated/.claude-isolated/microvm-snapshots/2026-03-*/
 
 Снэпшоты хранятся в `MICRO_VM_SNAPSHOT_DIR` (по умолчанию внутри `.nvm-isolated/`),
 которая исключена из git. После `git clone` + `--repair-isolated` снэпшоты не восстанавливаются — это ожидаемо.
+
+### `/usr/bin/sudo: Отказано в доступе` (ALT Linux)
+
+```
+/usr/bin/sudo: Отказано в доступе
+```
+
+На ALT Linux доступ к `sudo` ограничен группой `wheel`. Если пользователь не состоит в ней,
+бинарный файл `/usr/bin/sudo` недоступен (SUID не срабатывает) — пароль при этом не запрашивается вовсе.
+
+**Решение:** добавить пользователя в группу `wheel` (требует root или существующего sudo-пользователя):
+
+```bash
+su -
+usermod -aG wheel YOUR_USERNAME
+exit
+# Выйти из сессии и войти снова, чтобы группа применилась
+```
+
+Или, если есть доступ к sudo через другого пользователя:
+
+```bash
+sudo usermod -aG wheel $USER
+# Выйти и войти снова (logout/login), затем повторить установку
+./iclaude.sh --install-microvm
+```
+
+После перелогина проверьте доступность sudo:
+
+```bash
+sudo -v   # должен запросить пароль, не вернуть "Отказано в доступе"
+```
 
 ### TAP-интерфейс не создаётся
 

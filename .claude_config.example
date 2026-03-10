@@ -389,6 +389,15 @@ MICRO_VM_ENABLED=false
 # По умолчанию: warn
 # MICRO_VM_LOG_LEVEL=warn
 
+# Отключить проверку TLS-сертификата при загрузке компонентов microVM.
+# Используется как временное решение при ошибке TLS на системах со старым OpenSSL
+# (например, ALT Linux 10 с OpenSSL < 3.x): error:0B09406F:x509 certificate routines:...
+# true  — добавляет -k (--insecure) к curl; SHA-256 верификация через versions.json сохраняется
+# false — стандартная загрузка с проверкой TLS-сертификата (по умолчанию)
+# ВАЖНО: используйте только в доверенной сети. Сразу после установки проверьте versions.json.
+# По умолчанию: false
+# MICRO_VM_INSECURE_DOWNLOAD=false
+
 # Передавать настройки прокси в гостевую VM.
 # true  — PROXY_URL, PROXY_CA пробрасываются в гостя через TAP (host IP в качестве шлюза)
 # false — гость использует прямое соединение
