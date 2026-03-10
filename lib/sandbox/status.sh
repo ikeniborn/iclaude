@@ -95,9 +95,15 @@ check_microvm_status() {
 	local tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
 	local tap_iface="${tap_prefix}-1"
 	if ip link show "$tap_iface" &>/dev/null; then
-		local tap_ip
-		tap_ip=$(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}' | head -1)
-		print_success "${tap_iface}: up (${tap_ip:-no IP})"
+		local tap_ips
+		mapfile -t tap_ips < <(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}')
+		if [[ ${#tap_ips[@]} -gt 1 ]]; then
+			print_warning "${tap_iface}: up but has ${#tap_ips[@]} IPs — stale addresses present"
+			echo "  IPs: ${tap_ips[*]}"
+			echo "  Fix: sudo ip addr flush dev ${tap_iface} && iclaude --install-microvm"
+		else
+			print_success "${tap_iface}: up (${tap_ips[0]:-no IP})"
+		fi
 	else
 		print_warning "${tap_iface}: not configured"
 		echo "  Run --install-microvm to configure TAP networking"

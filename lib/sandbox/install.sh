@@ -527,6 +527,7 @@ install_microvm() {
 		fi
 	fi
 
+	local _skip_upgrade_paths=false
 	if [[ -f "$_rootfs" ]]; then
 		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v7" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
 			# Check if actual rootfs size matches MICRO_VM_ROOTFS_SIZE_MB; resize if smaller.
@@ -552,8 +553,24 @@ install_microvm() {
 			print_success "microVM already installed and up-to-date (v7)"
 			print_info "Rootfs: $_rootfs (${_actual_mb}MB)"
 			print_info "NVM image: $_nvm_img"
-			print_info "To force re-download: rm $_rootfs && ./iclaude.sh --install-microvm"
-			return 0
+			echo ""
+			local _reinstall
+			read -r -p "  Reinstall from scratch? Deletes rootfs + NVM image [y/N] " _reinstall
+			if [[ "$_reinstall" =~ ^[Yy]$ ]]; then
+				local _fc_running; _fc_running=$(pgrep -x firecracker 2>/dev/null || true)
+				if [[ -n "$_fc_running" ]]; then
+					print_error "Cannot reinstall: Firecracker is running (PID: $(echo "$_fc_running" | tr '\n' ' ' | sed 's/ $//'))."
+					print_error "Stop all microVM sessions first, then retry --install-microvm."
+					return 1
+				fi
+				print_info "Removing rootfs and NVM image..."
+				rm -f "$_rootfs" "$_state_file" "$_nvm_img" "${_rootfs%.ext4}".v*-ready 2>/dev/null || true
+				print_info "Re-running installation..."
+				_skip_upgrade_paths=true
+				# Fall through to full install below (files removed, state cleared)
+			else
+				return 0
+			fi
 		fi
 
 		# Safety check: abort if any Firecracker process is running.
@@ -587,7 +604,7 @@ install_microvm() {
 
 		# Fast-path v6→v7: inject rsync for delta sync (ControlMaster + rsync).
 		# Requires rsync on host (sudo apt-get install rsync).
-		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v6" ]]; then
+		if [[ "$_skip_upgrade_paths" != true ]] && [[ "$(cat "$_state_file" 2>/dev/null)" == "v6" ]]; then
 			print_info "Existing rootfs found — upgrading to v7 (inject rsync for delta sync)..."
 			local _rsync_host; _rsync_host=$(command -v rsync 2>/dev/null || true)
 			if [[ -n "$_rsync_host" && -f "$_rsync_host" ]]; then
@@ -613,7 +630,7 @@ EOF
 
 		# Fast-path v5→v6 upgrade: only resize needed, no re-injection.
 		# v6 adds: rootfs resized (see MICRO_VM_ROOTFS_SIZE_MB, default 2048MB) for headroom (avoids ENOSPC in npm/node on rootfs).
-		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v5" ]]; then
+		if [[ "$_skip_upgrade_paths" != true ]] && [[ "$(cat "$_state_file" 2>/dev/null)" == "v5" ]]; then
 			print_info "Existing rootfs found — upgrading to v6 (resize to 500MB for headroom)..."
 			echo ""
 			_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
@@ -629,33 +646,35 @@ EOF
 		# v5 adds: /tmp mounted as tmpfs in guest-init (world-writable, fixes Bash tool access).
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
-		local _cur_state; _cur_state=$(cat "$_state_file" 2>/dev/null || echo "")
-		if [[ "$_cur_state" == "v4" ]]; then
-			print_info "Existing rootfs found — upgrading to v7 (fix /tmp permissions + resize + rsync)..."
-		elif [[ "$_cur_state" == "v3" ]]; then
-			print_info "Existing rootfs found — upgrading to v7 (CA bundle + /tmp fix + resize + rsync)..."
-		else
-			print_info "Existing rootfs found — upgrading to v7 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize + rsync)..."
+		if [[ "$_skip_upgrade_paths" != true ]]; then
+			local _cur_state; _cur_state=$(cat "$_state_file" 2>/dev/null || echo "")
+			if [[ "$_cur_state" == "v4" ]]; then
+				print_info "Existing rootfs found — upgrading to v7 (fix /tmp permissions + resize + rsync)..."
+			elif [[ "$_cur_state" == "v3" ]]; then
+				print_info "Existing rootfs found — upgrading to v7 (CA bundle + /tmp fix + resize + rsync)..."
+			else
+				print_info "Existing rootfs found — upgrading to v7 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize + rsync)..."
+			fi
+			echo ""
+			_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
+			# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
+			_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
+			local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
+			if [[ -f "$_guest_init_src" ]]; then
+				_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
+					|| print_warning "v6 inject failed"
+			else
+				print_warning "guest-init.sh not found at $_guest_init_src — v6 unavailable"
+			fi
+			# Only rebuild NVM image if it is missing (rebuild is slow and requires sudo)
+			if [[ ! -f "$_nvm_img" ]]; then
+				_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
+			fi
+			echo ""
+			print_success "microVM v6 upgrade complete"
+			print_info "Verify: ./iclaude.sh --sandbox-microvm (Bash tool + no ENOSPC in npm)"
+			return 0
 		fi
-		echo ""
-		_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
-		# Key must be generated before inject (inject bakes pubkey into rootfs authorized_keys)
-		_generate_microvm_ssh_key || print_warning "SSH key generation failed — SSH access unavailable"
-		local _guest_init_src="${BASH_SOURCE[0]%/*}/guest-init.sh"
-		if [[ -f "$_guest_init_src" ]]; then
-			_inject_rootfs_guest_init "$_rootfs" "$_guest_init_src" \
-				|| print_warning "v6 inject failed"
-		else
-			print_warning "guest-init.sh not found at $_guest_init_src — v6 unavailable"
-		fi
-		# Only rebuild NVM image if it is missing (rebuild is slow and requires sudo)
-		if [[ ! -f "$_nvm_img" ]]; then
-			_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
-		fi
-		echo ""
-		print_success "microVM v6 upgrade complete"
-		print_info "Verify: ./iclaude.sh --sandbox-microvm (Bash tool + no ENOSPC in npm)"
-		return 0
 	fi
 
 	# Detect architecture
@@ -901,23 +920,26 @@ _setup_microvm_network_or_instruct() {
 
 	# Check if TAP already exists
 	if ip link show "$tap_iface" &>/dev/null; then
-		# Verify IP matches — update if not
-		local tap_ip
-		tap_ip=$(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {split($2,a,"/"); print a[1]; exit}')
-		if [[ "$tap_ip" == "$host_ip" ]]; then
+		# Collect ALL inet addresses on the interface
+		local tap_ips
+		mapfile -t tap_ips < <(ip addr show "$tap_iface" 2>/dev/null | awk '/inet / {print $2}')
+		# Check: exactly one IP and it matches expected
+		if [[ ${#tap_ips[@]} -eq 1 ]] && [[ "${tap_ips[0]}" == "${host_ip}/${prefix}" ]]; then
 			print_success "TAP interface ${tap_iface} already configured (${host_ip}/${prefix})"
 			return 0
 		fi
-		print_warning "TAP ${tap_iface} has IP ${tap_ip:-none}, expected ${host_ip}/${prefix} — updating"
+		local tap_ips_str="${tap_ips[*]:-none}"
+		print_warning "TAP ${tap_iface} has IP(s) [${tap_ips_str}], expected ${host_ip}/${prefix} — updating"
 		if sudo -n true 2>/dev/null; then
-			[[ -n "$tap_ip" ]] && sudo ip addr del "${tap_ip}/${prefix}" dev "$tap_iface" 2>/dev/null || true
+			# Flush ALL addresses to avoid stale IPs accumulating
+			sudo ip addr flush dev "$tap_iface" 2>/dev/null || true
 			sudo ip addr add "${host_ip}/${prefix}" dev "$tap_iface" 2>/dev/null && \
 			sudo ip link set "$tap_iface" up 2>/dev/null && \
 			print_success "TAP ${tap_iface} IP updated → ${host_ip}/${prefix}" || \
 			print_warning "TAP IP update failed — routing may not work"
 		else
 			print_warning "Cannot update TAP IP (sudo unavailable) — routing may fail"
-			print_info "  Fix: sudo ip addr add ${host_ip}/${prefix} dev ${tap_iface}"
+			print_info "  Fix: sudo ip addr flush dev ${tap_iface} && sudo ip addr add ${host_ip}/${prefix} dev ${tap_iface}"
 		fi
 		return 0
 	fi
