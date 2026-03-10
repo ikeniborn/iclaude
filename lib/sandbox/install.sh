@@ -93,12 +93,173 @@ _verify_sha256() {
 }
 
 #######################################
+# Read a value from lib/sandbox/versions.json via jq.
+# Arguments:
+#   $1 - jq expression (e.g. '.firecracker.version')
+# Prints value to stdout (empty string if not found).
+# Returns 1 if versions.json not found or jq unavailable.
+#######################################
+_versions_read() {
+	local expr="$1"
+	local versions_file="${BASH_SOURCE[0]%/*}/versions.json"
+	[[ -f "$versions_file" ]] || return 1
+	jq -r "${expr} // empty" "$versions_file" 2>/dev/null
+}
+
+#######################################
+# Write a SHA-256 hash for a component back into versions.json (TOFU save).
+# Uses atomic write: jq → tmp file → mv.
+# Arguments:
+#   $1 - jq_set_expr: full jq assignment expression, e.g. '.firecracker.x86_64.sha256 = $h'
+#   $2 - hash:        SHA-256 hex string to write
+# Returns:
+#   0 - success
+#   1 - failure (versions.json missing, jq error, or no sha256sum)
+#######################################
+_versions_write_sha256() {
+	local jq_set_expr="$1"
+	local hash="$2"
+	local versions_file="${BASH_SOURCE[0]%/*}/versions.json"
+	[[ -f "$versions_file" ]] || return 1
+	[[ -n "$hash" ]] || return 1
+	local tmp; tmp=$(mktemp "${versions_file}.tmp.XXXXXX")
+	if jq --arg h "$hash" "$jq_set_expr" "$versions_file" > "$tmp" 2>/dev/null; then
+		mv "$tmp" "$versions_file"
+		return 0
+	fi
+	rm -f "$tmp"
+	return 1
+}
+
+#######################################
+# Compute SHA-256 of a file and return hex string.
+# Arguments:
+#   $1 - file: path to file
+# Prints hash to stdout; returns 1 if sha256sum unavailable or file missing.
+#######################################
+_compute_sha256() {
+	local file="$1"
+	[[ -f "$file" ]] || return 1
+	command -v sha256sum &>/dev/null || return 1
+	sha256sum "$file" | cut -d' ' -f1
+}
+
+# Cached privileged user for su fallback (set once per install session by _priv_run)
+_PRIV_RUN_USER=""
+
+#######################################
+# Run a command with root privileges.
+# Tries sudo first; if sudo is inaccessible (e.g., ALT Linux wheel-group restriction),
+# prompts once for a privileged username (default: root) then uses su -c.
+# The chosen username is cached — password is prompted by su on each call.
+#
+# Arguments:
+#   $@ - command and arguments to run as root
+# Returns:
+#   exit code of the executed command
+#######################################
+_priv_run() {
+	if [[ -x /usr/bin/sudo ]]; then
+		sudo "$@"
+		return
+	fi
+
+	# Ask for privileged user once per session; cache in module-level variable
+	if [[ -z "$_PRIV_RUN_USER" ]]; then
+		echo ""
+		print_warning "sudo недоступен (пользователь не в группе wheel)."
+		read -r -p "  Введите имя привилегированного пользователя [root]: " _PRIV_RUN_USER < /dev/tty || true
+		_PRIV_RUN_USER="${_PRIV_RUN_USER:-root}"
+		echo ""
+	fi
+
+	# Write command to a temp script — avoids su -c quoting issues with complex arg lists
+	# (e.g., rsync with many --exclude flags containing special characters).
+	local tmp_sh; tmp_sh=$(mktemp /tmp/.iclaude-priv-XXXXXX)
+	chmod 700 "$tmp_sh"
+
+	# sh-safe single-quote escaping for each argument (POSIX-compatible, works with dash/sh)
+	local cmd="" arg
+	for arg in "$@"; do
+		cmd+="'${arg//\'/\'\\\'\'}' "
+	done
+	# Include standard system PATH — needed when su doesn't start a login shell.
+	# Split printf: $cmd goes as '%s' argument (not in format string) to avoid
+	# format-specifier injection if paths contain '%s', '%n', etc.
+	printf '#!/bin/sh\nPATH=/sbin:/usr/sbin:/bin:/usr/bin\nexec ' > "$tmp_sh"
+	printf '%s\n' "$cmd" >> "$tmp_sh"
+
+	local rc=0
+	# su -c: password prompt goes to /dev/tty (not suppressed by 2>/dev/null at call site)
+	su -c "exec '$tmp_sh'" "$_PRIV_RUN_USER" || rc=$?
+	rm -f "$tmp_sh"
+	return $rc
+}
+
+#######################################
+# Check if a component sidecar .version file matches the desired version.
+# Arguments:
+#   $1 - version_file: path to sidecar .version file
+#   $2 - desired:      expected version string
+# Returns:
+#   0 - file exists and version matches (component is current)
+#   1 - file missing or version differs (re-download needed)
+#######################################
+_component_is_current() {
+	local version_file="$1"
+	local desired="$2"
+	[[ -f "$version_file" ]] && [[ "$(cat "$version_file" 2>/dev/null)" == "$desired" ]]
+}
+
+#######################################
+# Download a file via curl with TLS fallback for old OpenSSL (exit 35).
+# When TLS handshake fails due to unsupported certificate algorithm (common on
+# AltLinux/RHEL with OpenSSL < 3.x), retries with --insecure and warns user.
+# Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS verification unconditionally.
+# Arguments:
+#   $1 - url:    source URL
+#   $2 - output: destination file path
+# Returns:
+#   0 - success
+#   1 - failure
+#######################################
+_curl_download() {
+	local url="$1"
+	local output="$2"
+	local curl_exit
+
+	if [[ "${MICRO_VM_INSECURE_DOWNLOAD:-false}" == "true" ]]; then
+		curl -fsSLk --progress-bar -o "$output" "$url"
+		return
+	fi
+
+	curl -fsSL --progress-bar -o "$output" "$url"
+	curl_exit=$?
+
+	if [[ $curl_exit -eq 35 ]]; then
+		echo ""
+		print_warning "TLS error (exit 35): old OpenSSL does not support certificate algorithm."
+		print_warning "Retrying with --insecure (TLS verification disabled for this download)."
+		print_warning "IMPORTANT: set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256"
+		print_warning "  to verify file integrity — without TLS and SHA-256 downloads are unverified."
+		print_warning "Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
+		echo ""
+		rm -f "$output"
+		curl -fsSLk --progress-bar -o "$output" "$url"
+		return
+	fi
+
+	return $curl_exit
+}
+
+#######################################
 # Download Firecracker binary from GitHub releases, extract from tgz, verify.
 # Arguments:
-#   $1 - bin_dir: destination directory for the binary
-#   $2 - arch: target architecture (x86_64 or aarch64)
+#   $1 - bin_dir:    destination directory for the binary
+#   $2 - arch:       target architecture (x86_64 or aarch64)
 #   $3 - fc_version: Firecracker version string (e.g. "v1.11.0")
-#   $4 - sha256: expected SHA-256 hash (empty = skip verification)
+#   $4 - fc_url:     full download URL for the tgz archive
+#   $5 - sha256:     expected SHA-256 hash (empty = skip verification)
 # Returns:
 #   0 - success; binary installed at $bin_dir/firecracker
 #   1 - failure
@@ -107,10 +268,10 @@ _download_firecracker() {
 	local bin_dir="$1"
 	local arch="$2"
 	local fc_version="$3"
-	local sha256="$4"
+	local fc_url="$4"
+	local sha256="$5"
 
 	local fc_bin="${bin_dir}/firecracker"
-	local fc_url="https://github.com/firecracker-microvm/firecracker/releases/download/${fc_version}/firecracker-${fc_version}-${arch}.tgz"
 
 	print_info "Downloading Firecracker ${fc_version} (${arch})..."
 	echo "  Source: $fc_url"
@@ -118,7 +279,7 @@ _download_firecracker() {
 
 	local tmp_tgz="${bin_dir}/firecracker.tgz.tmp"
 	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$tmp_tgz" "$fc_url"; then
+		if ! _curl_download "$fc_url" "$tmp_tgz"; then
 			print_error "Failed to download Firecracker"
 			rm -f "$tmp_tgz"
 			return 1
@@ -170,32 +331,31 @@ _download_firecracker() {
 # Download vmlinux kernel image from Firecracker CI S3 bucket.
 # Arguments:
 #   $1 - kernel_path: destination file path for the kernel
-#   $2 - arch: target architecture (x86_64 or aarch64)
-#   $3 - sha256: expected SHA-256 hash (empty = skip verification)
+#   $2 - url:         full download URL
+#   $3 - sha256:      expected SHA-256 hash (empty = skip verification)
 # Returns:
 #   0 - success
 #   1 - failure
 #######################################
 _download_vmlinux() {
 	local kernel_path="$1"
-	local arch="$2"
+	local kernel_url="$2"
 	local sha256="$3"
 
-	# Kernel: Firecracker CI kernel (ELF vmlinux, works with all Firecracker versions).
-	# Note: Firecracker v1.11.0 does not implement virtiofs backend — block devices used instead.
-	local kernel_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/vmlinux-6.1.102"
 	print_info "Downloading Linux kernel (vmlinux, ~40MB)..."
 	echo "  Source: $kernel_url"
 	echo ""
 
 	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$kernel_path" "$kernel_url"; then
+		if ! _curl_download "$kernel_url" "$kernel_path"; then
 			print_error "Failed to download vmlinux kernel"
+			rm -f "$kernel_path"
 			return 1
 		fi
 	else
 		if ! wget -q --show-progress -O "$kernel_path" "$kernel_url"; then
 			print_error "Failed to download vmlinux kernel"
+			rm -f "$kernel_path"
 			return 1
 		fi
 	fi
@@ -254,31 +414,31 @@ _resize_rootfs() {
 # Download Ubuntu rootfs image from Firecracker CI S3 bucket.
 # Arguments:
 #   $1 - rootfs_path: destination file path for the rootfs image
-#   $2 - arch: target architecture (x86_64 or aarch64)
-#   $3 - sha256: expected SHA-256 hash (empty = skip verification)
+#   $2 - url:         full download URL
+#   $3 - sha256:      expected SHA-256 hash (empty = skip verification)
 # Returns:
 #   0 - success
 #   1 - failure
 #######################################
 _download_rootfs() {
 	local rootfs_path="$1"
-	local arch="$2"
+	local rootfs_url="$2"
 	local sha256="$3"
-
-	local rootfs_url="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/ubuntu-22.04.ext4"
 
 	print_info "Downloading rootfs image (~300MB)..."
 	echo "  Source: $rootfs_url"
 	echo ""
 
 	if command -v curl &>/dev/null; then
-		if ! curl -fsSL --progress-bar -o "$rootfs_path" "$rootfs_url"; then
+		if ! _curl_download "$rootfs_url" "$rootfs_path"; then
 			print_error "Failed to download rootfs image"
+			rm -f "$rootfs_path"
 			return 1
 		fi
 	else
 		if ! wget -q --show-progress -O "$rootfs_path" "$rootfs_url"; then
 			print_error "Failed to download rootfs image"
+			rm -f "$rootfs_path"
 			return 1
 		fi
 	fi
@@ -314,17 +474,53 @@ install_microvm() {
 	# ── Fast-path: check existing install status ────────────────────────────────
 	local _bin_dir="${ISOLATED_CONFIG_DIR}/bin"
 	local _rootfs="${MICRO_VM_ROOTFS_PATH:-${_bin_dir}/rootfs.ext4}"
-	local _v3_marker="${_rootfs%.ext4}.v3-ready"
-	local _v4_marker="${_rootfs%.ext4}.v4-ready"
-	local _v5_marker="${_rootfs%.ext4}.v5-ready"
-	local _v6_marker="${_rootfs%.ext4}.v6-ready"
-	local _v7_marker="${_rootfs%.ext4}.v7-ready"
+	local _state_file="${_rootfs%.ext4}.state"
 	local _ssh_key="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 
 	local _nvm_img="${MICRO_VM_NVM_IMG:-${_bin_dir}/nvm.img}"
 
+	# Load rootfs version early to detect if re-download is needed (bypasses fast-path if changed).
+	local _desired_rootfs_ver=""
+	if command -v jq &>/dev/null; then
+		local _vf="${BASH_SOURCE[0]%/*}/versions.json"
+		[[ -f "$_vf" ]] && _desired_rootfs_ver=$(jq -r '.rootfs.version // empty' "$_vf" 2>/dev/null) || true
+	fi
+	local _rootfs_ver_file="${_rootfs%.ext4}.version"
+
+	# If rootfs version changed, clear old files to bypass the fast-path and force re-download.
+	if [[ -n "$_desired_rootfs_ver" && -f "$_rootfs" ]] && \
+	   ! { [[ -f "$_rootfs_ver_file" ]] && [[ "$(cat "$_rootfs_ver_file" 2>/dev/null)" == "$_desired_rootfs_ver" ]]; }; then
+		print_info "Rootfs version changed → ${_desired_rootfs_ver}. Removing old rootfs and markers..."
+		rm -f "$_rootfs" "$_rootfs_ver_file"
+		rm -f "${_rootfs%.ext4}".v{2,3,4,5,6,7}-ready "${_rootfs%.ext4}.state"
+	fi
+
+	# One-time migration: convert legacy v2-v7 touch-file markers to rootfs.state.
+	if [[ ! -f "$_state_file" && -f "$_rootfs" ]]; then
+		if [[ -f "${_rootfs%.ext4}.v7-ready" ]]; then
+			printf 'v7' > "$_state_file"
+			rm -f "${_rootfs%.ext4}".v{2,3,4,5,6,7}-ready
+			print_info "Migrated legacy markers → rootfs.state (v7)"
+		elif [[ -f "${_rootfs%.ext4}.v6-ready" ]]; then
+			printf 'v6' > "$_state_file"
+			rm -f "${_rootfs%.ext4}".v{2,3,4,5,6}-ready
+		elif [[ -f "${_rootfs%.ext4}.v5-ready" ]]; then
+			printf 'v5' > "$_state_file"
+			rm -f "${_rootfs%.ext4}".v{2,3,4,5}-ready
+		elif [[ -f "${_rootfs%.ext4}.v4-ready" ]]; then
+			printf 'v4' > "$_state_file"
+			rm -f "${_rootfs%.ext4}".v{2,3,4}-ready
+		elif [[ -f "${_rootfs%.ext4}.v3-ready" ]]; then
+			printf 'v3' > "$_state_file"
+			rm -f "${_rootfs%.ext4}".v{2,3}-ready
+		elif [[ -f "${_rootfs%.ext4}.v2-ready" ]]; then
+			printf 'v2' > "$_state_file"
+			rm -f "${_rootfs%.ext4}.v2-ready"
+		fi
+	fi
+
 	if [[ -f "$_rootfs" ]]; then
-		if [[ -f "$_v7_marker" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
+		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v7" && -f "$_ssh_key" && -f "$_nvm_img" ]]; then
 			# Check if actual rootfs size matches MICRO_VM_ROOTFS_SIZE_MB; resize if smaller.
 			local _configured_mb="${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
 			local _actual_bytes; _actual_bytes=$(stat -c%s "$_rootfs" 2>/dev/null || echo 0)
@@ -383,7 +579,7 @@ install_microvm() {
 
 		# Fast-path v6→v7: inject rsync for delta sync (ControlMaster + rsync).
 		# Requires rsync on host (sudo apt-get install rsync).
-		if [[ -f "$_v6_marker" && ! -f "$_v7_marker" ]]; then
+		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v6" ]]; then
 			print_info "Existing rootfs found — upgrading to v7 (inject rsync for delta sync)..."
 			local _rsync_host; _rsync_host=$(command -v rsync 2>/dev/null || true)
 			if [[ -n "$_rsync_host" && -f "$_rsync_host" ]]; then
@@ -395,10 +591,10 @@ set_inode_field /usr/bin/rsync mode 0100755
 EOF
 				local _v7_dbg_rc=$?
 				if [[ $_v7_dbg_rc -eq 0 ]]; then
-					touch "$_v7_marker"
+					printf 'v7' > "$_state_file"
 					print_success "rootfs upgraded to v7 (rsync injected — delta sync enabled)"
 				else
-					print_warning "rsync injection failed (debugfs rc=${_v7_dbg_rc}) — v7 marker NOT set, will retry on next --install-microvm"
+					print_warning "rsync injection failed (debugfs rc=${_v7_dbg_rc}) — state NOT updated to v7, will retry on next --install-microvm"
 				fi
 			else
 				print_warning "rsync not found on host — v7 upgrade skipped (install: sudo apt-get install rsync)"
@@ -409,11 +605,11 @@ EOF
 
 		# Fast-path v5→v6 upgrade: only resize needed, no re-injection.
 		# v6 adds: rootfs resized (see MICRO_VM_ROOTFS_SIZE_MB, default 2048MB) for headroom (avoids ENOSPC in npm/node on rootfs).
-		if [[ -f "$_v5_marker" && ! -f "$_v6_marker" ]]; then
+		if [[ "$(cat "$_state_file" 2>/dev/null)" == "v5" ]]; then
 			print_info "Existing rootfs found — upgrading to v6 (resize to 500MB for headroom)..."
 			echo ""
 			_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
-			touch "$_v6_marker"
+			printf 'v6' > "$_state_file"
 			echo ""
 			print_success "microVM v6 upgrade complete"
 			print_info "Verify: ./iclaude.sh --check-microvm"
@@ -425,12 +621,13 @@ EOF
 		# v5 adds: /tmp mounted as tmpfs in guest-init (world-writable, fixes Bash tool access).
 		# v4 adds: CA certificate bundle (/etc/ssl/certs/ca-certificates.crt) for HTTPS in guest.
 		# v3 adds: jq binary in guest (/usr/bin/jq for statusline), DNS configuration in guest-init.
-		if [[ -f "$_v4_marker" ]]; then
-			print_info "Existing rootfs found — upgrading to v6 (fix /tmp permissions + resize)..."
-		elif [[ -f "$_v3_marker" ]]; then
-			print_info "Existing rootfs found — upgrading to v6 (CA bundle + /tmp fix + resize)..."
+		local _cur_state; _cur_state=$(cat "$_state_file" 2>/dev/null || echo "")
+		if [[ "$_cur_state" == "v4" ]]; then
+			print_info "Existing rootfs found — upgrading to v7 (fix /tmp permissions + resize + rsync)..."
+		elif [[ "$_cur_state" == "v3" ]]; then
+			print_info "Existing rootfs found — upgrading to v7 (CA bundle + /tmp fix + resize + rsync)..."
 		else
-			print_info "Existing rootfs found — upgrading to v6 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize)..."
+			print_info "Existing rootfs found — upgrading to v7 (jq + DNS + SSH keys + CA bundle + /tmp fix + resize + rsync)..."
 		fi
 		echo ""
 		_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
@@ -496,21 +693,104 @@ EOF
 	print_info "Install directory: $bin_dir"
 	echo ""
 
-	# Optional SHA-256 hashes — set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256
-	# to verify downloads. Leave empty (default) to skip verification.
-	local fc_sha256="${MICRO_VM_FC_SHA256:-}"
-	local kernel_sha256="${MICRO_VM_KERNEL_SHA256:-}"
-	local rootfs_sha256="${MICRO_VM_ROOTFS_SHA256:-}"
+	# Load component versions and URLs from versions.json.
+	# Env vars MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256 override sha256 from file.
+	if ! command -v jq &>/dev/null; then
+		print_error "jq required for --install-microvm (install: sudo apt-get install jq)"
+		return 1
+	fi
+	local fc_version;       fc_version=$(_versions_read '.firecracker.version')
+	local fc_url;           fc_url=$(_versions_read ".firecracker.${arch}.url")
+	local vmlinux_version;  vmlinux_version=$(_versions_read '.vmlinux.version')
+	local vmlinux_url;      vmlinux_url=$(_versions_read ".vmlinux.${arch}.url")
+	local rootfs_version;   rootfs_version=$(_versions_read '.rootfs.version')
+	local rootfs_url;       rootfs_url=$(_versions_read ".rootfs.${arch}.url")
 
-	local fc_version="v1.11.0"
+	# Fallback to hardcoded defaults if versions.json is missing or incomplete
+	fc_version="${fc_version:-v1.11.0}"
+	fc_url="${fc_url:-https://github.com/firecracker-microvm/firecracker/releases/download/v1.11.0/firecracker-v1.11.0-${arch}.tgz}"
+	vmlinux_version="${vmlinux_version:-6.1.102}"
+	vmlinux_url="${vmlinux_url:-https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/vmlinux-6.1.102}"
+	rootfs_version="${rootfs_version:-ubuntu-22.04-v1.10}"
+	rootfs_url="${rootfs_url:-https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.10/${arch}/ubuntu-22.04.ext4}"
+
+	# Read SHA-256 from versions.json separately from env var overrides.
+	# This lets us distinguish "hash came from JSON" vs "hash came from env var" for TOFU logic:
+	# - JSON hash present  → verify after download (no save needed, already in file)
+	# - env var set        → verify after download (user-provided, no save to file)
+	# - both empty         → compute after download and save to versions.json (TOFU)
+	local fc_sha256_json;     fc_sha256_json=$(_versions_read ".firecracker.${arch}.sha256")
+	local kernel_sha256_json; kernel_sha256_json=$(_versions_read ".vmlinux.${arch}.sha256")
+	local rootfs_sha256_json; rootfs_sha256_json=$(_versions_read ".rootfs.${arch}.sha256")
+
+	local fc_sha256="${MICRO_VM_FC_SHA256:-$fc_sha256_json}"
+	local kernel_sha256="${MICRO_VM_KERNEL_SHA256:-$kernel_sha256_json}"
+	local rootfs_sha256="${MICRO_VM_ROOTFS_SHA256:-$rootfs_sha256_json}"
+
+	# TOFU flags: true when hash was absent from both versions.json and env var.
+	# || true: guard against set -e — [[ ]] exits 1 (false) when hashes ARE present,
+	# which would kill the script under iclaude.sh's "set -euo pipefail".
+	local fc_tofu=false;      [[ -z "$fc_sha256_json"     && -z "${MICRO_VM_FC_SHA256:-}"     ]] && fc_tofu=true     || true
+	local vmlinux_tofu=false; [[ -z "$kernel_sha256_json" && -z "${MICRO_VM_KERNEL_SHA256:-}" ]] && vmlinux_tofu=true || true
+	local rootfs_tofu=false;  [[ -z "$rootfs_sha256_json" && -z "${MICRO_VM_ROOTFS_SHA256:-}" ]] && rootfs_tofu=true  || true
+
 	local fc_bin="${bin_dir}/firecracker"
-	_download_firecracker "$bin_dir" "$arch" "$fc_version" "$fc_sha256" || return 1
-
 	local kernel_path="${MICRO_VM_KERNEL_PATH:-${bin_dir}/vmlinux}"
-	_download_vmlinux "$kernel_path" "$arch" "$kernel_sha256" || return 1
-
 	local rootfs_path="${MICRO_VM_ROOTFS_PATH:-${bin_dir}/rootfs.ext4}"
-	_download_rootfs "$rootfs_path" "$arch" "$rootfs_sha256" || return 1
+
+	# Sidecar version files — track which version is currently installed
+	local fc_version_file="${bin_dir}/firecracker.version"
+	local vmlinux_version_file="${bin_dir}/vmlinux.version"
+	local rootfs_version_file="${bin_dir}/rootfs.version"
+
+	# If rootfs version changed, clear old rootfs and all upgrade markers to force full re-download.
+	if [[ -f "$rootfs_path" ]] && ! _component_is_current "$rootfs_version_file" "$rootfs_version"; then
+		print_info "Rootfs version changed → ${rootfs_version}. Removing old rootfs and markers..."
+		rm -f "$rootfs_path" "$rootfs_version_file"
+		rm -f "${rootfs_path%.ext4}".v{2,3,4,5,6,7}-ready "${rootfs_path%.ext4}.state"
+	fi
+
+	# Download Firecracker (skip if already at desired version)
+	if _component_is_current "$fc_version_file" "$fc_version" && [[ -x "$fc_bin" ]]; then
+		print_info "Firecracker ${fc_version} — already installed, skipping download"
+	else
+		_download_firecracker "$bin_dir" "$arch" "$fc_version" "$fc_url" "$fc_sha256" || return 1
+		echo "$fc_version" > "$fc_version_file"
+		if [[ "$fc_tofu" == true ]]; then
+			local _fc_hash; _fc_hash=$(_compute_sha256 "$fc_bin") || true
+			if _versions_write_sha256 ".firecracker.${arch}.sha256 = \$h" "$_fc_hash"; then
+				print_info "SHA-256 saved to versions.json (firecracker ${arch}): ${_fc_hash:0:16}..."
+			fi
+		fi
+	fi
+
+	# Download vmlinux kernel (skip if already at desired version)
+	if _component_is_current "$vmlinux_version_file" "$vmlinux_version" && [[ -f "$kernel_path" ]]; then
+		print_info "vmlinux ${vmlinux_version} — already installed, skipping download"
+	else
+		_download_vmlinux "$kernel_path" "$vmlinux_url" "$kernel_sha256" || return 1
+		echo "$vmlinux_version" > "$vmlinux_version_file"
+		if [[ "$vmlinux_tofu" == true ]]; then
+			local _vmlinux_hash; _vmlinux_hash=$(_compute_sha256 "$kernel_path") || true
+			if _versions_write_sha256 ".vmlinux.${arch}.sha256 = \$h" "$_vmlinux_hash"; then
+				print_info "SHA-256 saved to versions.json (vmlinux ${arch}): ${_vmlinux_hash:0:16}..."
+			fi
+		fi
+	fi
+
+	# Download rootfs (skip if already at desired version)
+	if _component_is_current "$rootfs_version_file" "$rootfs_version" && [[ -f "$rootfs_path" ]]; then
+		print_info "Rootfs ${rootfs_version} — already installed, skipping download"
+	else
+		_download_rootfs "$rootfs_path" "$rootfs_url" "$rootfs_sha256" || return 1
+		echo "$rootfs_version" > "$rootfs_version_file"
+		if [[ "$rootfs_tofu" == true ]]; then
+			local _rootfs_hash; _rootfs_hash=$(_compute_sha256 "$rootfs_path") || true
+			if _versions_write_sha256 ".rootfs.${arch}.sha256 = \$h" "$_rootfs_hash"; then
+				print_info "SHA-256 saved to versions.json (rootfs ${arch}): ${_rootfs_hash:0:16}..."
+			fi
+		fi
+	fi
 
 	# Resize rootfs to MICRO_VM_ROOTFS_SIZE_MB (default 2048MB) for headroom (downloaded image ~265MB used space)
 	_resize_rootfs "$rootfs_path" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
@@ -544,10 +824,17 @@ EOF
 
 	# Build NVM block image (pre-built, attached read-only each session as /dev/vdb → /mnt/nvm)
 	# Replaces per-session virtiofsd: simpler, more reliable, works with FC v1.11.0
-	_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
+	local _nvm_ok=true
+	_create_microvm_nvm_image || { print_warning "NVM block image creation failed — claude unavailable in guest"; _nvm_ok=false; }
 
 	echo ""
-	print_success "microVM installed successfully!"
+	if [[ "$_nvm_ok" == "true" ]]; then
+		print_success "microVM installed successfully!"
+	else
+		print_warning "microVM installed (incomplete): NVM block image missing — claude will not run in guest"
+		echo ""
+		echo "  Re-run: ./iclaude.sh --install-microvm (enter sudo password when prompted)"
+	fi
 	echo ""
 	print_info "Firecracker: $("$fc_bin" --version 2>/dev/null | head -1 || echo "installed")"
 	echo ""
@@ -716,12 +1003,7 @@ _create_microvm_nvm_image() {
 		return 1
 	fi
 
-	# Check sudo access (needed for loop mount)
-	if ! sudo -n true 2>/dev/null; then
-		print_error "microVM: sudo required to create NVM block image (loop mount)"
-		echo "  Grant passwordless sudo then re-run: ./iclaude.sh --install-microvm"
-		return 1
-	fi
+	# Loop mount requires root — sudo will prompt for password if needed.
 
 	# Estimate NVM content size (subtract large host-specific dirs: bin/, projects/, pii-proxy-venv/).
 	# Note: du --exclude=PATTERN does not work reliably with full paths on all GNU versions.
@@ -759,14 +1041,15 @@ _create_microvm_nvm_image() {
 	# Mount and populate via rsync (requires sudo for loop device setup).
 	# Exclude host-specific dirs not needed in guest: microVM binaries, session history,
 	# Python venvs, SSH keys, logs, caches, and other runtime-only data.
+
 	local mnt_tmp; mnt_tmp=$(mktemp -d)
-	if ! sudo mount -o loop "$tmp_img" "$mnt_tmp" 2>/dev/null; then
+	if ! _priv_run mount -o loop "$tmp_img" "$mnt_tmp"; then
 		print_error "microVM: failed to mount NVM image (loop device)"
 		rm -f "$tmp_img"; rmdir "$mnt_tmp" 2>/dev/null; return 1
 	fi
 
 	print_info "microVM: populating NVM image via rsync..."
-	if ! sudo rsync -a --delete \
+	if ! _priv_run rsync -a --delete \
 		--exclude='.claude-isolated/bin/' \
 		--exclude='.claude-isolated/projects/' \
 		--exclude='.claude-isolated/pii-proxy-venv/' \
@@ -794,7 +1077,7 @@ _create_microvm_nvm_image() {
 		print_warning "microVM: rsync had errors — NVM image may be incomplete"
 	fi
 
-	sudo umount "$mnt_tmp" && rmdir "$mnt_tmp" 2>/dev/null || true
+	_priv_run umount "$mnt_tmp" && rmdir "$mnt_tmp" 2>/dev/null || true
 
 	# Atomically replace old image
 	mv "$tmp_img" "$nvm_img"
@@ -990,14 +1273,10 @@ EOF
 		print_warning "rsync not found on host — delta sync unavailable (install: sudo apt-get install rsync)"
 	fi
 
-	# Mark v7 ready: rootfs has guest-init + jq + SSH keys + CA bundle + /tmp fix + resize + rsync.
-	# v2-v6 kept for backward compatibility with any tooling that checks for them.
-	touch "${rootfs%.ext4}.v2-ready"
-	touch "${rootfs%.ext4}.v3-ready"
-	touch "${rootfs%.ext4}.v4-ready"
-	touch "${rootfs%.ext4}.v5-ready"
-	touch "${rootfs%.ext4}.v6-ready"
-	touch "${rootfs%.ext4}.v7-ready"
+	# Write state marker: rootfs has guest-init + jq + SSH keys + CA bundle + /tmp fix + resize + rsync.
+	printf 'v7' > "${rootfs%.ext4}.state"
+	# Remove legacy per-version marker files if present (migration from v2–v7 touch files).
+	rm -f "${rootfs%.ext4}".v{2,3,4,5,6,7}-ready
 	print_success "Guest init injected (rootfs ready for v7)"
 	return 0
 }
