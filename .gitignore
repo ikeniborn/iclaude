@@ -166,7 +166,6 @@ docs/sphinx/_build/
 
 # Claude Code Agent Workspace
 .claude/workspace/
-.claude/tools/
 .claude/plans/
 
 # PII proxy audit logs (auto-added by iclaude PII proxy)

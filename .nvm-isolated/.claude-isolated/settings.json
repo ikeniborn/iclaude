@@ -129,15 +129,6 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/log-tools.py\""
-          }
-        ]
-      },
-      {
         "matcher": ".*",
         "hooks": [
           {
