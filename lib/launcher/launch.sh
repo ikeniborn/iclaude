@@ -725,7 +725,7 @@ except Exception:
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
         --project-dir "${PWD}" \
-        >>"$PII_PROXY_LOG_DIR/server.log" 2>&1 &
+        >/dev/null 2>&1 &
 
     local proxy_pid=$!
     echo "$proxy_pid" > "$PII_PROXY_PID_FILE"
@@ -778,9 +778,8 @@ except Exception:
     export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
     export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
     # Export TOON audit log path so statusline can hyperlink the PII icon
-    export ICLAUDE_PII_LOG_PATH="${PWD}/.claude/pii/$(date +%Y-%m-%d)/${ICLAUDE_SESSION_ID}.toon"
+    export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
-    print_info "PII proxy: audit log → ${ICLAUDE_PII_LOG_PATH}"
     return 0
 }
 
