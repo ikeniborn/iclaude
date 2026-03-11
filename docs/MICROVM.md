@@ -48,7 +48,7 @@ Host OS (Linux + KVM)
 | vmlinux kernel image | `$ISOLATED_CONFIG_DIR/bin/vmlinux` | Загружается при установке |
 | rootfs.ext4 (Ubuntu 22.04) | `$ISOLATED_CONFIG_DIR/bin/rootfs.ext4` | Загружается при установке |
 | nvm.img (NVM snapshot, ~1GB) | `$ISOLATED_CONFIG_DIR/bin/nvm.img` | Строится при `--install-microvm` (требует `sudo`) |
-| tap-iclaude TAP-интерфейс | `_ensure_slot_tap()` — авто-создание | Требуется `ip` (iproute2); создаётся при `--install-microvm` (sudo) |
+| TAP-интерфейс (per-slot) | `_ensure_slot_tap()` — авто-создание | Создаётся при каждом `--sandbox-microvm` (требует `sudo`); удаляется при завершении VM |
 | ed25519 SSH-ключ | `$ISOLATED_CONFIG_DIR/ssh/microvm` | Создаётся при установке, запекается в rootfs |
 
 **OS matrix:**
@@ -67,9 +67,12 @@ Host OS (Linux + KVM)
 
 ## Установка
 
-> **Требуется sudo для loop mount.** При сборке NVM-образа (`nvm.img`) скрипт
-> выполняет `sudo mount -o loop` и запросит пароль sudo в интерактивном режиме.
-> Запускайте установку от обычного пользователя — пароль будет запрошен при необходимости:
+> **Требуется sudo** в двух ситуациях:
+> - **При установке** (`--install-microvm`): `sudo mount -o loop` для сборки `nvm.img`.
+> - **При каждом запуске** (`--sandbox-microvm`): создание и удаление TAP-интерфейса
+>   (`ip tuntap add/del`, `iptables`, `ip route`). TAP удаляется автоматически при завершении VM.
+>
+> Запускайте от обычного пользователя — пароль будет запрошен при необходимости.
 
 ```bash
 # Установить Firecracker v1.11 + vmlinux + rootfs + nvm.img (~1.4GB, один раз)
@@ -96,7 +99,11 @@ Host OS (Linux + KVM)
 2. Загрузка базового rootfs Ubuntu 22.04
 3. Инжект SSH-ключа в rootfs через `debugfs` (static authorized_keys)
 4. Сборка `nvm.img` (1024MB sparse ext4, монтируется как /dev/vdb в guest)
-5. Создание TAP-интерфейса `tap-iclaude`
+5. Настройка сети (sudo): TAP-интерфейс slot-1 (`tap-iclaude-1`), NAT/MASQUERADE, `ip_forward=1`
+
+> **Lifecycle TAP-интерфейса:** `--install-microvm` создаёт TAP (slot 1, `tap-iclaude-1`).
+> При каждом `--sandbox-microvm` TAP пересоздаётся если отсутствует (`_ensure_slot_tap`).
+> **При завершении VM TAP удаляется** (`stop_microvm`). Имя: `{MICRO_VM_NET_TAP_IFACE}-{slot+1}`.
 
 ---
 
@@ -474,15 +481,30 @@ sudo -v   # должен запросить пароль, не вернуть "�
 ### TAP-интерфейс не создаётся
 
 ```
-Failed to create TAP interface tap-iclaude
+microVM: TAP tap-iclaude-1 not found (sudo unavailable to create it)
 ```
 
-Требуются права на создание TAP. Добавить пользователя в группу `netdev`:
+TAP создаётся при каждом запуске `--sandbox-microvm` и требует `sudo`. Если `sudo`
+недоступен без пароля, скрипт выведет команды для ручного выполнения:
 
 ```bash
-sudo usermod -aG netdev $USER
-# или
-sudo ip tuntap add dev tap-iclaude mode tap user $USER
+sudo ip tuntap add dev tap-iclaude-1 mode tap
+sudo ip addr add 172.16.0.1/26 dev tap-iclaude-1
+sudo ip link set tap-iclaude-1 up
+```
+
+Для работы без интерактивного пароля — разрешить конкретные команды через `sudoers`:
+
+```
+# /etc/sudoers.d/iclaude-tap  (редактировать через visudo)
+Cmnd_Alias ICLAUDE_NET = \
+    /usr/sbin/ip tuntap *, \
+    /usr/sbin/ip link *, \
+    /usr/sbin/ip addr *, \
+    /usr/sbin/ip route *, \
+    /usr/sbin/iptables *, \
+    /usr/sbin/sysctl *
+username ALL=(ALL) NOPASSWD: ICLAUDE_NET
 ```
 
 ---
