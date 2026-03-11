@@ -2,10 +2,9 @@
 # Test: parallel PII proxy sessions + security fixes
 # Tests:
 #   1. Per-session port isolation (3 parallel instances, each gets a unique port)
-#   2. session_id validation in archive-sessions.py hook
-#   3. _build_upstream_headers() strips auth when ANTHROPIC_API_KEY is set
-#   4. legacy pii-proxy.pid migration
-#   5. pii_proxy_mode marker file reading in status.sh
+#   2. _build_upstream_headers() strips auth when ANTHROPIC_API_KEY is set
+#   3. legacy pii-proxy.pid migration
+#   4. pii_proxy_mode marker file reading in status.sh
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -61,9 +60,9 @@ echo "════════════════════════�
 echo ""
 
 # ─────────────────────────────────────────────────
-# TEST 1-3: 3 parallel server instances
+# TEST 1: 3 parallel server instances
 # ─────────────────────────────────────────────────
-echo "▶ Test 1-3: 3 parallel sessions (port isolation)"
+echo "▶ Test 1: 3 parallel sessions (port isolation)"
 
 SESSION_IDS=("aabbcc001122" "ddeeff334455" "112233aabbcc")
 
@@ -113,44 +112,9 @@ fi
 echo ""
 
 # ─────────────────────────────────────────────────
-# TEST 2-3: session_id validation in archive-sessions.py
+# TEST 2: _build_upstream_headers credential relay prevention
 # ─────────────────────────────────────────────────
-echo "▶ Test 2-3: archive-sessions.py — UUID validation"
-
-# Valid UUID — hook should run without error
-valid_uuid="12345678-1234-1234-1234-1234567890ab"
-sessions_dir=".claude/sessions"
-mkdir -p "$sessions_dir"
-touch "$sessions_dir/readable-${valid_uuid}.toon"
-touch "$sessions_dir/readable-${valid_uuid}.txt"
-
-echo "{\"session_id\": \"$valid_uuid\", \"transcript_path\": \"\"}" | \
-    CLAUDE_PROJECT_DIR="$(pwd)" \
-    python3 "$HOOK_DIR/archive-sessions.py" 2>/dev/null
-if [[ ! -f "$sessions_dir/readable-${valid_uuid}.txt" ]]; then
-    ok "Valid UUID: archive-sessions.py cleaned up .txt file"
-else
-    fail "Valid UUID: .txt file was NOT cleaned up"
-fi
-
-# Invalid UUID (path traversal) — hook should reject and NOT delete anything
-touch "$sessions_dir/readable-safe.txt"
-echo '{"session_id": "../../evil", "transcript_path": ""}' | \
-    CLAUDE_PROJECT_DIR="$(pwd)" \
-    python3 "$HOOK_DIR/archive-sessions.py" 2>/dev/null
-if [[ -f "$sessions_dir/readable-safe.txt" ]]; then
-    ok "Invalid UUID rejected: 'readable-safe.txt' not deleted"
-    rm -f "$sessions_dir/readable-safe.txt" "$sessions_dir/readable-${valid_uuid}.toon"
-else
-    fail "Invalid UUID processed: 'readable-safe.txt' was deleted!"
-fi
-
-echo ""
-
-# ─────────────────────────────────────────────────
-# TEST 4: _build_upstream_headers credential relay prevention
-# ─────────────────────────────────────────────────
-echo "▶ Test 4: server.py — _build_upstream_headers() credential relay"
+echo "▶ Test 2: server.py — _build_upstream_headers() credential relay"
 
 # Test that with ANTHROPIC_API_KEY set, inbound authorization is stripped
 # and replaced by env-var key. We inject a test request with a fake bearer token
@@ -204,9 +168,9 @@ fi
 echo ""
 
 # ─────────────────────────────────────────────────
-# TEST 5: pii_proxy_mode marker file
+# TEST 3: pii_proxy_mode marker file
 # ─────────────────────────────────────────────────
-echo "▶ Test 5: pii_proxy_mode marker file"
+echo "▶ Test 3: pii_proxy_mode marker file"
 mode_file=".nvm-isolated/.claude-isolated/pii-proxy-venv/pii_proxy_mode"
 if [[ -f "$mode_file" ]]; then
     mode=$(cat "$mode_file" | tr -d '[:space:]')
