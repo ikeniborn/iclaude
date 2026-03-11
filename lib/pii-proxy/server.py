@@ -544,7 +544,10 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
 
     # 100 MB sanity limit: prevents DoS via OOM from huge or negative Content-Length
     _MAX_BODY_BYTES = 100_000_000
