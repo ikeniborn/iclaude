@@ -171,3 +171,6 @@ docs/sphinx/_build/
 
 # PII proxy audit logs (auto-added by iclaude PII proxy)
 .claude/pii/
+
+# Current session pointer (written by statusline for compact-session skill)
+.claude/.current-session
