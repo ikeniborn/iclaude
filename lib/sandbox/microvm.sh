@@ -1595,6 +1595,25 @@ stop_microvm() {
         MICRO_VM_PII_DNAT_PORT=""
     fi
 
+    # Remove FORWARD iptables rules and delete TAP interface.
+    # TAP is created fresh at each launch (_ensure_slot_tap); deleting it prevents stale
+    # interfaces from accumulating when config changes (TAP prefix, subnet, slot count).
+    # sudo is required; if unavailable the TAP persists until reboot (harmless but untidy).
+    if [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
+       [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]] && \
+       ip link show "${MICRO_VM_NET_TAP_IFACE}" &>/dev/null && \
+       sudo -n true 2>/dev/null; then
+        local _tap_out_iface
+        _tap_out_iface=$(ip route 2>/dev/null | awk '/^default/ {print $5; exit}')
+        if [[ -n "$_tap_out_iface" ]] && [[ "$_tap_out_iface" =~ ^[a-zA-Z0-9_-]{1,15}$ ]]; then
+            sudo iptables -D FORWARD -i "${MICRO_VM_NET_TAP_IFACE}" -o "$_tap_out_iface" \
+                -j ACCEPT 2>/dev/null || true
+            sudo iptables -D FORWARD -i "$_tap_out_iface" -o "${MICRO_VM_NET_TAP_IFACE}" \
+                -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+        fi
+        sudo ip link del "${MICRO_VM_NET_TAP_IFACE}" 2>/dev/null || true
+    fi
+
     # Release network slot so it can be reused by another session
     _free_microvm_slot
     MICRO_VM_SLOT=""
@@ -1617,7 +1636,8 @@ setup_microvm_traps() {
 
 #######################################
 # Clean up orphaned microVM artifacts from sessions that exited without cleanup
-# (e.g. SIGKILL, host reboot). Removes stale FC sockets and session directories.
+# (e.g. SIGKILL, host reboot). Removes stale FC sockets, session directories,
+# and orphaned TAP interfaces + iptables FORWARD rules.
 # Safe to call at launch time — only removes artifacts with no live owner process.
 #######################################
 cleanup_orphaned_microvm_sessions() {
@@ -1654,6 +1674,48 @@ cleanup_orphaned_microvm_sessions() {
                 cleaned=$((cleaned + 1))
             fi
         done
+    fi
+
+    # Clean up orphaned TAP interfaces and their iptables FORWARD rules.
+    # Matches interfaces named {prefix}-{N} (N >= 1, 1-indexed slot number).
+    # At call time MICRO_VM_NET_TAP_IFACE holds the prefix (before _alloc_microvm_slot runs).
+    # An interface is orphaned when its slot lock is absent or references a dead PID.
+    if [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]] && sudo -n true 2>/dev/null; then
+        local _tap_prefix="${MICRO_VM_NET_TAP_IFACE:-tap-iclaude}"
+        local _slots_dir="${ISOLATED_CONFIG_DIR}/microvm-slots"
+        local _tap_out_iface _tap _suffix _slot _lock_file _lock_content _lock_pid _tap_orphaned
+        _tap_out_iface=$(ip route 2>/dev/null | awk '/^default/ {print $5; exit}')
+
+        while IFS= read -r _tap; do
+            _suffix="${_tap##*-}"
+            _slot=$(( _suffix - 1 ))
+            _lock_file="${_slots_dir}/slot-${_slot}.lock"
+
+            _tap_orphaned=false
+            if [[ ! -f "$_lock_file" ]]; then
+                _tap_orphaned=true
+            else
+                _lock_content=$(cat "$_lock_file" 2>/dev/null || echo "")
+                _lock_pid="${_lock_content%%-*}"
+                if ! [[ "$_lock_pid" =~ ^[0-9]+$ ]] || ! kill -0 "$_lock_pid" 2>/dev/null; then
+                    _tap_orphaned=true
+                    rm -f "$_lock_file" 2>/dev/null || true
+                fi
+            fi
+
+            if [[ "$_tap_orphaned" == "true" ]]; then
+                if [[ -n "$_tap_out_iface" ]] && [[ "$_tap_out_iface" =~ ^[a-zA-Z0-9_-]{1,15}$ ]]; then
+                    sudo iptables -D FORWARD -i "$_tap" -o "$_tap_out_iface" \
+                        -j ACCEPT 2>/dev/null || true
+                    sudo iptables -D FORWARD -i "$_tap_out_iface" -o "$_tap" \
+                        -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+                fi
+                sudo ip link del "$_tap" 2>/dev/null || true
+                cleaned=$(( cleaned + 1 ))
+            fi
+        done < <(ip link show 2>/dev/null \
+                 | awk -F': ' '/^[0-9]/ {print $2}' \
+                 | grep -E "^${_tap_prefix}-[0-9]+$" 2>/dev/null || true)
     fi
 
     if [[ $cleaned -gt 0 ]]; then
