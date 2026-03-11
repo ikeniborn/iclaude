@@ -724,7 +724,6 @@ except Exception:
         "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
-        --project-dir "${PWD}" \
         >/dev/null 2>&1 &
 
     local proxy_pid=$!
