@@ -172,20 +172,18 @@ _presidio_lock = threading.Lock()
 log = logging.getLogger('pii-proxy')
 
 
-def setup_logging(log_dir: Path) -> None:
+def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
     """Configure 'pii-proxy' logger directly (not root logger) for reliability."""
     log_dir.mkdir(parents=True, exist_ok=True)
     fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    _sid = session_id if re.fullmatch(r'[0-9a-f]{12}', session_id) else 'default'
     file_handler = RotatingFileHandler(
-        log_dir / 'access.log',
+        log_dir / f'{_sid}.log',
         maxBytes=5 * 1024 * 1024,  # 5 MB per file
         backupCount=3,
     )
     file_handler.setFormatter(fmt)
-    stderr_handler = logging.StreamHandler(sys.stderr)
-    stderr_handler.setFormatter(fmt)
     log.addHandler(file_handler)
-    log.addHandler(stderr_handler)
     log.setLevel(logging.INFO)
 
 
@@ -787,7 +785,8 @@ def main() -> None:
     args = parser.parse_args()
 
     log_dir = Path(args.log_dir)
-    setup_logging(log_dir)
+    sid = os.environ.get('ICLAUDE_SESSION_ID', 'default')
+    setup_logging(log_dir, sid)
 
     # Set project directory for TOON audit log and gitignore check
     global PROJECT_DIR
