@@ -19,9 +19,6 @@ launch_claude() {
     # This allows hooks to write to {project}/.claude/tools/ regardless of cwd
     export CLAUDE_PROJECT_DIR="${PWD}"
 
-    # Archive stale sessions from previous runs (Stop hook may not fire on crash)
-    archive_stale_sessions "${CLAUDE_PROJECT_DIR}"
-
     # Ensure .claude/tools/ is excluded from git in the current project
     local gitignore_file="${PWD}/.gitignore"
     local tools_pattern=".claude/tools/"
@@ -618,45 +615,6 @@ launch_claude() {
     # Standard exec path: replace shell process (no cleanup needed)
     # Double-quoted variable handles spaces in path correctly without eval.
     exec "$claude_cmd" "$@"
-}
-
-#######################################
-# Clean up stale session files from the sessions/ root.
-#
-# .toon.tmp.{PID} — internal Claude Code markers per turn; deleted when PID is dead.
-# .toon (0-byte)  — Claude Code finalization marker; deleted (real .toon is in {date}/).
-# .txt / .txt.meta — redundant transcripts created by Claude Code on /exit; deleted.
-#
-# Real session content (.toon with data) is written by the statusline directly into
-# .claude/sessions/{YYYY-MM-DD}/ — no movement or archiving needed here.
-#
-# Arguments:
-#   $1 - project_dir: path to project root (must contain .claude/sessions/)
-#######################################
-archive_stale_sessions() {
-    local project_dir="${1:-}"
-    local sessions_dir="${project_dir}/.claude/sessions"
-    [[ -d "$sessions_dir" ]] || return 0
-
-    # 1. Delete .toon.tmp.{PID} files whose process is dead.
-    # These are internal child-process markers — users don't need them.
-    # Files with alive PIDs are left alone (active turn in progress).
-    while IFS= read -r -d '' f; do
-        local filename
-        filename="$(basename "$f")"
-        local pid="${filename##*.}"
-        [[ "$pid" =~ ^[0-9]+$ ]] || continue
-        if ! kill -0 "$pid" 2>/dev/null; then
-            rm -f "$f" 2>/dev/null || true
-        fi
-    done < <(find "$sessions_dir" -maxdepth 1 -name "readable-*.toon.tmp.*" -print0 2>/dev/null)
-
-    # 2. Delete leftover files from sessions/ root: 0-byte .toon markers,
-    # .txt and .txt.meta transcripts — all redundant when .toon is in {date}/.
-    find "$sessions_dir" -maxdepth 1 \
-        \( -name "readable-*.toon" -o -name "readable-*.txt" -o -name "readable-*.txt.meta" \) \
-        -print0 2>/dev/null \
-        | xargs -0 rm -f 2>/dev/null || true
 }
 
 #######################################

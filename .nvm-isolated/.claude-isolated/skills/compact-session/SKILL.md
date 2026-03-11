@@ -1,7 +1,7 @@
 ---
 name: compact-session
-description: This skill should be used when the user asks to "analyze session", "summarize session", "compact session", "what happened in session", "/compact-session", or provides a path to a .toon session file and wants a summary of what was done.
-version: 1.0.0
+description: This skill should be used when the user asks to "analyze session", "summarize session", "compact session", "what happened in session", "/compact-session", or provides a path to a .jsonl session file and wants a summary of what was done.
+version: 2.0.0
 context: fork
 model: haiku
 allowed-tools: Read
@@ -9,42 +9,69 @@ allowed-tools: Read
 
 # compact-session
 
-Analyze a `.toon` session file and generate a structured Markdown summary of the work done.
+Analyze a Claude Code session JSONL file and generate a structured Markdown summary.
 
-## TOON Format
+## Finding the session file
 
-Session files use the TOON format. The first line is a header:
+If the user provided a path to a `.jsonl` file → use that path directly.
 
+Otherwise → read the file `.claude/.current-session` in the current project directory.
+Its content is an absolute path to the current session's JSONL file.
+Use the Read tool to read `.claude/.current-session`, then read the JSONL file at that path.
+
+## JSONL Format
+
+Each line is an independent JSON object. Parse each line separately.
+
+### User message
+```json
+{"type": "user", "message": {"role": "user", "content": "текст запроса"}, "uuid": "...", "timestamp": "..."}
 ```
-[N]{field1,field2,...}:
+`content` may be a string or an array of blocks.
+
+### Assistant message
+```json
+{"message": {"role": "assistant", "content": [
+  {"type": "thinking", "thinking": "внутренние рассуждения"},
+  {"type": "text", "text": "ответ пользователю"},
+  {"type": "tool_use", "name": "Bash", "input": {"command": "..."}}
+]}, "uuid": "...", "timestamp": "..."}
 ```
 
-Each subsequent row has two leading spaces with comma-separated values. Quoted strings may contain `\n` escape sequences.
+### Tool result (user turn with tool output)
+```json
+{"type": "user", "message": {"role": "user", "content": [
+  {"type": "tool_result", "tool_use_id": "...", "content": "вывод инструмента"}
+]}}
+```
 
-For conversation sessions the columns are `role`, `type`, `content`:
-
-- `role`: `user` | `assistant`
-- `type`: `text` | `thinking` | `tool_use` | `tool_result`
+### Service entries (skip these)
+- `{"type": "file-history-snapshot", ...}` — пропустить
+- Lines with only `parentUuid`, `isSidechain`, `sessionId` (no `message`) — пропустить
 
 ## Noise Filtering
 
-Skip `user,text` rows whose content starts with any of:
+Skip `user` message `content` that starts with:
 `<local-command-caveat>`, `<command-name>`, `<local-command-stdout>`, `<command-message>`
 
-Also skip skill/command body expansions injected into `user,text` — recognisable as long multi-section markdown starting with `## Правила`, `## Алгоритм`, `## Instructions`, or `## Your task`.
+Skip skill/command body injections — long multi-section markdown starting with
+`## Правила`, `## Алгоритм`, `## Instructions`, `## Your task`.
 
-Skip meta-commands in user requests: `/clear`, `/verify`, `/terminal-setup`, `/compact-session`.
+Skip meta-commands: `/clear`, `/verify`, `/terminal-setup`, `/compact-session`.
 
-## Reading assistant rows
+## Reading assistant content
 
-- `assistant,text` — primary source. When a row is a one-liner label (`"Смотрю код:"`, `"Исправляю:"`, `"Проверяю синтаксис:"`) — supplement it with adjacent `assistant,thinking` rows to reconstruct what actually happened.
-- `assistant,thinking` — use actively to fill gaps; summarise the reasoning, never quote verbatim.
+- `text` blocks — primary source
+- `thinking` blocks — use to fill gaps; summarise reasoning, never quote verbatim
+- `tool_use` blocks — identify which tools were used and what was done
+- `tool_result` blocks (in user messages) — use only if essential to understand outcome
 
 ## Output Format
 
-Write the report **in Russian**. Use Markdown with the sections below. One bullet per line. Total ≤ 150 lines.
+Write the report **in Russian**. Use Markdown. Total ≤ 150 lines.
 
-Do not include: file paths to the session file, UUIDs, `.toon` filenames, dates, message counts, or any other meta-information about the file itself. Report only the substance of what was discussed and done.
+Do not include: file paths to the session file, UUIDs, timestamps, message counts,
+or any meta-information about the file itself. Report only what was discussed and done.
 
 ### Цель сессии
 Main goal in one sentence (from first substantive user message).
