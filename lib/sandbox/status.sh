@@ -88,6 +88,14 @@ check_microvm_status() {
 	else
 		print_warning "rootfs.ext4: not found ($rootfs)"
 	fi
+	local nvm_img="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
+	if [[ -f "$nvm_img" ]]; then
+		local nvm_sz; nvm_sz=$(du -h "$nvm_img" 2>/dev/null | cut -f1)
+		print_success "nvm.img: $nvm_img ($nvm_sz)"
+	else
+		print_warning "nvm.img: not found — claude will not run in guest"
+		echo "  → Run: ./iclaude.sh --install-microvm (requires root password)"
+	fi
 	echo ""
 
 	# TAP networking — MICRO_VM_NET_TAP_IFACE is a prefix; slot-0 TAP = prefix + "-1"
@@ -153,12 +161,14 @@ check_microvm_status() {
 	[[ -f "$_rootfs_sum" ]] || { all_ready=false; missing_items+=("rootfs.ext4"); }
 	local _state_val; _state_val=$(cat "${_rootfs_sum%.ext4}.state" 2>/dev/null || echo "")
 	[[ ! -f "$_rootfs_sum" || "$_state_val" == "v7" ]] || { all_ready=false; missing_items+=("rootfs v7 upgrade needed → run --install-microvm"); }
+	local _nvm_img_sum="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
+	[[ -f "$_nvm_img_sum" ]] || { all_ready=false; missing_items+=("nvm.img (NVM block image) → run --install-microvm"); }
 
 	if [[ "$all_ready" == "true" ]]; then
 		print_success "microVM Ready"
 		echo "  ✓ KVM available"
 		echo "  ✓ Firecracker installed"
-		echo "  ✓ Guest images present"
+		echo "  ✓ Guest images present (rootfs + nvm.img)"
 		echo "  ✓ Enable via: ./iclaude.sh --sandbox-microvm"
 		echo "    or add MICRO_VM_ENABLED=true to .claude_config"
 	else
