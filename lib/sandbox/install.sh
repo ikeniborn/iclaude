@@ -144,14 +144,16 @@ _compute_sha256() {
 	sha256sum "$file" | cut -d' ' -f1
 }
 
-# Cached privileged user for su fallback (set once per install session by _priv_run)
+# Cached escalation user for su fallback (set once per install session by _priv_run).
 _PRIV_RUN_USER=""
 
 #######################################
 # Run a command with root privileges.
-# Tries sudo first; if sudo is inaccessible (e.g., ALT Linux wheel-group restriction),
-# prompts once for a privileged username (default: root) then uses su -c.
-# The chosen username is cached — password is prompted by su on each call.
+# Tries sudo first (if current user is in wheel/sudo group); otherwise escalates via su.
+# Supported modes (chosen once per session):
+#   "root"      → su root -c "cmd"          (one prompt: root password)
+#   "<user>"    → su <user> -c "sudo cmd"   (two prompts: user's password + sudo password)
+# sudo inside "su -c" accesses /dev/tty directly, so password prompts work interactively.
 #
 # Arguments:
 #   $@ - command and arguments to run as root
@@ -159,24 +161,54 @@ _PRIV_RUN_USER=""
 #   exit code of the executed command
 #######################################
 _priv_run() {
-	if [[ -x /usr/bin/sudo ]]; then
+	# Already root — run directly (e.g. launched via "sudo bash iclaude.sh").
+	if [[ $(id -u) -eq 0 ]]; then
+		"$@"
+		return
+	fi
+
+	# Use sudo only if the binary exists AND the current user is in wheel/sudo group.
+	# If sudo is installed but user is not in sudoers, "sudo cmd" exits non-zero and the
+	# su fallback below is never reached — so we guard with a group membership check first.
+	if [[ -x /usr/bin/sudo ]] && id -nG 2>/dev/null | grep -qwE 'wheel|sudo'; then
 		sudo "$@"
 		return
 	fi
 
-	# Ask for privileged user once per session; cache in module-level variable
-	if [[ -z "$_PRIV_RUN_USER" ]]; then
+	# No direct sudo — escalate via su. Ask once, cache for subsequent calls.
+	if [[ -z "${_PRIV_RUN_USER:-}" ]]; then
 		echo ""
-		print_warning "sudo недоступен (пользователь не в группе wheel)."
-		read -r -p "  Введите имя привилегированного пользователя [root]: " _PRIV_RUN_USER < /dev/tty || true
-		_PRIV_RUN_USER="${_PRIV_RUN_USER:-root}"
+		print_warning "sudo недоступен для текущего пользователя. Нужна эскалация привилегий."
+		echo "  Варианты:"
+		echo "  • Нажмите Enter или введите 'root'  → su root (один пароль: пароль root)"
+		echo "  • Введите имя sudo-пользователя     → su <user> + sudo (два пароля)"
+		echo ""
+		local _input _valid=false _attempt
+		for _attempt in 1 2 3; do
+			read -r -p "  Пользователь [root]: " _input < /dev/tty || true
+			_input="${_input:-root}"
+			if id "$_input" &>/dev/null 2>&1; then
+				_valid=true
+				break
+			fi
+			print_warning "  Пользователь '$_input' не найден в системе. Попробуйте снова."
+		done
+		if [[ "$_valid" != "true" ]]; then
+			print_error "Не удалось выбрать пользователя для эскалации"
+			return 1
+		fi
+		_PRIV_RUN_USER="$_input"
 		echo ""
 	fi
 
 	# Write command to a temp script — avoids su -c quoting issues with complex arg lists
 	# (e.g., rsync with many --exclude flags containing special characters).
+	# "sh FILE" not "exec FILE": bypasses noexec on /tmp (sh reads file as data, not exec).
+	# Security: mktemp creates file mode 0600 (owner-only). Content is written while 0600.
+	# chmod is applied AFTER write to minimise the window where content is world-readable.
+	# For root path: no chmod needed — root bypasses DAC and reads 0600 files regardless.
+	# For sudo-user path: chmod 644 after write so the escalation user can read the script.
 	local tmp_sh; tmp_sh=$(mktemp /tmp/.iclaude-priv-XXXXXX)
-	chmod 700 "$tmp_sh"
 
 	# sh-safe single-quote escaping for each argument (POSIX-compatible, works with dash/sh)
 	local cmd="" arg
@@ -188,10 +220,25 @@ _priv_run() {
 	# format-specifier injection if paths contain '%s', '%n', etc.
 	printf '#!/bin/sh\nPATH=/sbin:/usr/sbin:/bin:/usr/bin\nexec ' > "$tmp_sh"
 	printf '%s\n' "$cmd" >> "$tmp_sh"
+	# Open to sudo-user AFTER content is written (minimise world-readable window).
+	[[ "$_PRIV_RUN_USER" != "root" ]] && chmod 644 "$tmp_sh"
 
 	local rc=0
-	# su -c: password prompt goes to /dev/tty (not suppressed by 2>/dev/null at call site)
-	su -c "exec '$tmp_sh'" "$_PRIV_RUN_USER" || rc=$?
+	# Unset BASH_ENV/ENV before su: prevents su's bash from sourcing the current user's
+	# .bashrc (may be on a restricted network FS → EACCES warnings).
+	local _saved_bash_env="${BASH_ENV:-}" _saved_env="${ENV:-}"
+	unset BASH_ENV ENV
+	if [[ "$_PRIV_RUN_USER" == "root" ]]; then
+		# Direct root: one password prompt. Root bypasses DAC — no chmod needed.
+		su root -c "sh '$tmp_sh'" || { rc=$?; _PRIV_RUN_USER=""; }
+	else
+		# Sudo-user path: su authenticates as <user>, then sudo elevates to root.
+		# sudo opens /dev/tty directly for password — works inside su -c.
+		# Two prompts: su password (user's Unix/LDAP password) + sudo password.
+		su "$_PRIV_RUN_USER" -c "sudo sh '$tmp_sh'" || { rc=$?; _PRIV_RUN_USER=""; }
+	fi
+	[[ -n "$_saved_bash_env" ]] && export BASH_ENV="$_saved_bash_env"
+	[[ -n "$_saved_env" ]] && export ENV="$_saved_env"
 	rm -f "$tmp_sh"
 	return $rc
 }
@@ -237,7 +284,7 @@ _curl_download() {
 	fi
 
 	if [[ "${MICRO_VM_INSECURE_DOWNLOAD:-false}" == "true" ]]; then
-		curl -fsSLk --progress-bar "${proxy_args[@]}" -o "$output" "$url"
+		curl -fsSLk --proxy-insecure --progress-bar "${proxy_args[@]}" -o "$output" "$url"
 		return
 	fi
 
@@ -246,14 +293,16 @@ _curl_download() {
 
 	if [[ $curl_exit -eq 35 ]]; then
 		echo ""
-		print_warning "TLS error (exit 35): old OpenSSL does not support certificate algorithm."
-		print_warning "Retrying with --insecure (TLS verification disabled for this download)."
+		print_warning "TLS error (exit 35): OpenSSL cannot verify a certificate in the chain."
+		print_warning "Retrying with --insecure --proxy-insecure (TLS verification disabled)."
 		print_warning "IMPORTANT: set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256"
 		print_warning "  to verify file integrity — without TLS and SHA-256 downloads are unverified."
 		print_warning "Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
 		echo ""
 		rm -f "$output"
-		curl -fsSLk --progress-bar "${proxy_args[@]}" -o "$output" "$url"
+		# --proxy-insecure: skip TLS verification for the proxy itself (e.g. ECDSA proxy cert on old OpenSSL).
+		# -k / --insecure: skip TLS verification for the target server.
+		curl -fsSLk --proxy-insecure --progress-bar "${proxy_args[@]}" -o "$output" "$url"
 		return
 	fi
 
@@ -636,7 +685,7 @@ EOF
 			_resize_rootfs "$_rootfs" "${MICRO_VM_ROOTFS_SIZE_MB:-2048}"
 			printf 'v6' > "$_state_file"
 			echo ""
-			print_success "microVM v6 upgrade complete"
+			print_success "microVM v7 upgrade complete"
 			print_info "Verify: ./iclaude.sh --check-microvm"
 			return 0
 		fi
@@ -671,7 +720,7 @@ EOF
 				_create_microvm_nvm_image || print_warning "NVM block image creation failed — claude unavailable in guest"
 			fi
 			echo ""
-			print_success "microVM v6 upgrade complete"
+			print_success "microVM v7 upgrade complete"
 			print_info "Verify: ./iclaude.sh --sandbox-microvm (Bash tool + no ENOSPC in npm)"
 			return 0
 		fi
@@ -786,7 +835,8 @@ EOF
 		if [[ "$fc_tofu" == true ]]; then
 			local _fc_hash; _fc_hash=$(_compute_sha256 "$fc_bin") || true
 			if _versions_write_sha256 ".firecracker.${arch}.sha256 = \$h" "$_fc_hash"; then
-				print_info "SHA-256 saved to versions.json (firecracker ${arch}): ${_fc_hash:0:16}..."
+				print_info "SHA-256 saved to versions.json (firecracker ${arch}): ${_fc_hash}"
+				print_info "  Pin: export MICRO_VM_FC_SHA256=${_fc_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -800,7 +850,8 @@ EOF
 		if [[ "$vmlinux_tofu" == true ]]; then
 			local _vmlinux_hash; _vmlinux_hash=$(_compute_sha256 "$kernel_path") || true
 			if _versions_write_sha256 ".vmlinux.${arch}.sha256 = \$h" "$_vmlinux_hash"; then
-				print_info "SHA-256 saved to versions.json (vmlinux ${arch}): ${_vmlinux_hash:0:16}..."
+				print_info "SHA-256 saved to versions.json (vmlinux ${arch}): ${_vmlinux_hash}"
+				print_info "  Pin: export MICRO_VM_KERNEL_SHA256=${_vmlinux_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -814,7 +865,8 @@ EOF
 		if [[ "$rootfs_tofu" == true ]]; then
 			local _rootfs_hash; _rootfs_hash=$(_compute_sha256 "$rootfs_path") || true
 			if _versions_write_sha256 ".rootfs.${arch}.sha256 = \$h" "$_rootfs_hash"; then
-				print_info "SHA-256 saved to versions.json (rootfs ${arch}): ${_rootfs_hash:0:16}..."
+				print_info "SHA-256 saved to versions.json (rootfs ${arch}): ${_rootfs_hash}"
+				print_info "  Pin: export MICRO_VM_ROOTFS_SHA256=${_rootfs_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -1057,7 +1109,31 @@ _create_microvm_nvm_image() {
 
 	print_info "microVM: creating NVM block image (${nvm_size_mb}MiB from $(basename "$nvm_src"))..."
 
-	local tmp_img="${nvm_img}.tmp"
+	# loop device requires the backing file to be on a local filesystem —
+	# NFS/CIFS/SMB backing files are rejected by the kernel with ELOOP/EPERM.
+	# Detect whether nvm_img lives on a network FS; if so, build tmp_img in /var/tmp (local).
+	local tmp_img
+	local _nvm_fstype; _nvm_fstype=$(df -T "$(dirname "$nvm_img")" 2>/dev/null | awk 'NR==2{print $2}')
+	case "${_nvm_fstype:-}" in
+		nfs*|cifs|smb*|afs|9p|virtiofs|fuse.*)
+			# Network FS detected — find a local directory for the loop-backing file.
+			local _local_dir=""
+			for _d in "/var/tmp" "/tmp"; do
+				local _fst; _fst=$(df -T "$_d" 2>/dev/null | awk 'NR==2{print $2}')
+				case "${_fst:-}" in
+					nfs*|cifs|smb*|afs|9p|virtiofs|fuse.*) continue ;;
+					*) _local_dir="$_d"; break ;;
+				esac
+			done
+			_local_dir="${_local_dir:-/tmp}"
+			tmp_img="${_local_dir}/.iclaude-nvm-$$.img.tmp"
+			print_info "microVM: NVM image target is on network FS (${_nvm_fstype}) — building on local FS (${_local_dir})..."
+			;;
+		*)
+			tmp_img="${nvm_img}.tmp"
+			;;
+	esac
+
 	# Create sparse ext4 image
 	if ! dd if=/dev/zero of="$tmp_img" bs=1M count=0 seek="$nvm_size_mb" 2>/dev/null; then
 		print_error "microVM: failed to create NVM image at ${tmp_img}"
@@ -1068,49 +1144,85 @@ _create_microvm_nvm_image() {
 		rm -f "$tmp_img"; return 1
 	fi
 
-	# Mount and populate via rsync (requires sudo for loop device setup).
+	# Mount and populate via rsync.
+	# Try fuse2fs (no root) first; fall back to sudo/su loop mount.
 	# Exclude host-specific dirs not needed in guest: microVM binaries, session history,
 	# Python venvs, SSH keys, logs, caches, and other runtime-only data.
 
-	local mnt_tmp; mnt_tmp=$(mktemp -d)
-	if ! _priv_run mount -o loop "$tmp_img" "$mnt_tmp"; then
-		print_error "microVM: failed to mount NVM image (loop device)"
-		rm -f "$tmp_img"; rmdir "$mnt_tmp" 2>/dev/null; return 1
+	# Use explicit /tmp path so the mount point is in world-accessible /tmp,
+	# not in $TMPDIR (/tmp/.private/$USER, mode 1700) which root can traverse but is non-standard.
+	local mnt_tmp; mnt_tmp=$(mktemp -d /tmp/.iclaude-mnt-XXXXXX)
+	local _use_fuse=false
+	if command -v fuse2fs &>/dev/null; then
+		print_info "microVM: mounting NVM image via fuse2fs (no root required)..."
+		if fuse2fs "$tmp_img" "$mnt_tmp" -o fakeroot,rw 2>/dev/null; then
+			_use_fuse=true
+		else
+			print_warning "microVM: fuse2fs failed — falling back to privileged mount..."
+		fi
+	fi
+	if [[ "$_use_fuse" == "false" ]]; then
+		if ! _priv_run mount -o loop "$tmp_img" "$mnt_tmp"; then
+			print_error "microVM: failed to mount NVM image (loop device)"
+			rm -f "$tmp_img"; rmdir "$mnt_tmp" 2>/dev/null; return 1
+		fi
+		# Restrict mount point: loop mount exposes ext4 root inode (mode 0755 by default),
+		# making it world-readable. chmod 700 limits access to root only during rsync.
+		_priv_run chmod 700 "$mnt_tmp" 2>/dev/null || true
 	fi
 
 	print_info "microVM: populating NVM image via rsync..."
-	if ! _priv_run rsync -a --delete \
-		--exclude='.claude-isolated/bin/' \
-		--exclude='.claude-isolated/projects/' \
-		--exclude='.claude-isolated/pii-proxy-venv/' \
-		--exclude='.claude-isolated/pii-proxy*' \
-		--exclude='.claude-isolated/debug/' \
-		--exclude='.claude-isolated/file-history/' \
-		--exclude='.claude-isolated/todos/' \
-		--exclude='.claude-isolated/paste-cache/' \
-		--exclude='.claude-isolated/tasks/' \
-		--exclude='.claude-isolated/telemetry/' \
-		--exclude='.claude-isolated/session-env/' \
-		--exclude='.claude-isolated/cache/' \
-		--exclude='.claude-isolated/shell-snapshots/' \
-		--exclude='.claude-isolated/plans/' \
-		--exclude='.claude-isolated/statsig/' \
-		--exclude='.claude-isolated/ssh/' \
-		--exclude='.claude-isolated/chrome/' \
-		--exclude='.claude-isolated/microvm-run/' \
-		--exclude='.claude-isolated/microvm-snapshots/' \
-		--exclude='.claude-isolated/backups/' \
-		--exclude='versions/node/*/include/' \
-		--exclude='versions/node/*/.npm/' \
-		--exclude='.npm/' \
-		"$nvm_src/" "$mnt_tmp/" 2>/dev/null; then
-		print_warning "microVM: rsync had errors — NVM image may be incomplete"
+	local _rsync_excludes=(
+		--exclude='.claude-isolated/bin/'
+		--exclude='.claude-isolated/projects/'
+		--exclude='.claude-isolated/pii-proxy-venv/'
+		--exclude='.claude-isolated/pii-proxy*'
+		--exclude='.claude-isolated/debug/'
+		--exclude='.claude-isolated/file-history/'
+		--exclude='.claude-isolated/todos/'
+		--exclude='.claude-isolated/paste-cache/'
+		--exclude='.claude-isolated/tasks/'
+		--exclude='.claude-isolated/telemetry/'
+		--exclude='.claude-isolated/session-env/'
+		--exclude='.claude-isolated/cache/'
+		--exclude='.claude-isolated/shell-snapshots/'
+		--exclude='.claude-isolated/plans/'
+		--exclude='.claude-isolated/statsig/'
+		--exclude='.claude-isolated/ssh/'
+		--exclude='.claude-isolated/chrome/'
+		--exclude='.claude-isolated/microvm-run/'
+		--exclude='.claude-isolated/microvm-snapshots/'
+		--exclude='.claude-isolated/backups/'
+		--exclude='versions/node/*/include/'
+		--exclude='versions/node/*/.npm/'
+		--exclude='.npm/'
+	)
+	if [[ "$_use_fuse" == "true" ]]; then
+		# fuse2fs with fakeroot: rsync runs as current user, no privilege needed
+		if ! rsync -a --delete --info=progress2 "${_rsync_excludes[@]}" "$nvm_src/" "$mnt_tmp/"; then
+			print_warning "microVM: rsync had errors — NVM image may be incomplete"
+		fi
+		fusermount -u "$mnt_tmp" 2>/dev/null \
+			|| fusermount3 -u "$mnt_tmp" 2>/dev/null \
+			|| true
+	else
+		# Suppress rsync stderr (goes through su/sudo; error noise from shell init is expected).
+		# stdout (--info=progress2) is piped through su and visible to the user.
+		if ! _priv_run rsync -a --delete --info=progress2 "${_rsync_excludes[@]}" "$nvm_src/" "$mnt_tmp/" 2>/dev/null; then
+			print_warning "microVM: rsync had errors — NVM image may be incomplete"
+		fi
+		_priv_run umount "$mnt_tmp" || true
 	fi
+	rmdir "$mnt_tmp" 2>/dev/null || true
 
-	_priv_run umount "$mnt_tmp" && rmdir "$mnt_tmp" 2>/dev/null || true
-
-	# Atomically replace old image
-	mv "$tmp_img" "$nvm_img"
+	# Move completed image to final location (mv handles cross-FS via copy+delete).
+	if [[ "$tmp_img" != "${nvm_img}.tmp" ]]; then
+		print_info "microVM: moving NVM image to final location..."
+	fi
+	if ! mv "$tmp_img" "$nvm_img" 2>/dev/null; then
+		print_error "microVM: failed to move NVM image to ${nvm_img}"
+		rm -f "$tmp_img"; return 1
+	fi
 	chmod 644 "$nvm_img"
 
 	local actual_size; actual_size=$(du -sh "$nvm_img" 2>/dev/null | awk '{print $1}')
@@ -1265,8 +1377,23 @@ EOF
 	# Required for HTTPS connections inside the VM (curl, node, claude CLI).
 	# The Ubuntu 22.04 minimal rootfs may lack ca-certificates package.
 	# mkdir is idempotent in debugfs (no-op if dir already exists).
-	local ca_bundle="/etc/ssl/certs/ca-certificates.crt"
-	if [[ -f "$ca_bundle" ]]; then
+	# Search order covers major distro layouts:
+	#   Debian/Ubuntu  → /etc/ssl/certs/ca-certificates.crt  (pkg: ca-certificates)
+	#   ALT Linux      → /etc/pki/tls/certs/ca-bundle.crt    (pkg: ca-trust)
+	#   RHEL/CentOS    → /etc/pki/tls/certs/ca-bundle.crt    (pkg: ca-certificates)
+	#   openSUSE       → /etc/ssl/ca-bundle.pem               (pkg: ca-certificates)
+	local ca_bundle="" _ca_candidate
+	for _ca_candidate in \
+		/etc/ssl/certs/ca-certificates.crt \
+		/etc/pki/tls/certs/ca-bundle.crt \
+		/etc/ssl/ca-bundle.pem \
+		/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; do
+		if [[ -f "$_ca_candidate" ]]; then
+			ca_bundle="$_ca_candidate"
+			break
+		fi
+	done
+	if [[ -n "$ca_bundle" ]]; then
 		debugfs -w "$rootfs" <<EOF 2>/dev/null
 mkdir /etc/ssl
 mkdir /etc/ssl/certs
@@ -1276,12 +1403,15 @@ set_inode_field /etc/ssl/certs/ca-certificates.crt mode 0100644
 EOF
 		local _ca_rc=$?
 		if [[ $_ca_rc -eq 0 ]]; then
-			print_success "CA bundle injected into guest rootfs (/etc/ssl/certs/ca-certificates.crt)"
+			print_success "CA bundle injected into guest rootfs (source: ${ca_bundle})"
 		else
 			print_warning "CA bundle injection failed (debugfs rc=${_ca_rc}) — HTTPS will fail in guest"
 		fi
 	else
-		print_warning "CA bundle not found at ${ca_bundle} — HTTPS will fail in guest (install: sudo apt install ca-certificates)"
+		print_warning "CA bundle not found on host — HTTPS will fail in guest"
+		print_warning "  Debian/Ubuntu: sudo apt install ca-certificates"
+		print_warning "  ALT Linux:     sudo apt-get install ca-trust"
+		print_warning "  RHEL/Fedora:   sudo dnf install ca-certificates"
 	fi
 
 	# Inject rsync binary (enables delta sync via SSH ControlMaster from host).

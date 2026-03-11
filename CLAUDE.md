@@ -194,4 +194,4 @@ For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-c
 
 ## Docs for LLM
 
-Use @skill:context-awareness для работы с документацией 
+Используй @skill:context-awareness для работы с документацией каждый раз когда требуется информация по проекту.
