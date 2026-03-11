@@ -15,17 +15,6 @@ launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
 
-    # Export project directory for PostToolUse hooks (e.g. log-tools.py)
-    # This allows hooks to write to {project}/.claude/tools/ regardless of cwd
-    export CLAUDE_PROJECT_DIR="${PWD}"
-
-    # Ensure .claude/tools/ is excluded from git in the current project
-    local gitignore_file="${PWD}/.gitignore"
-    local tools_pattern=".claude/tools/"
-    if [[ -f "$gitignore_file" ]] && ! grep -qF "$tools_pattern" "$gitignore_file" 2>/dev/null; then
-        echo "$tools_pattern" >> "$gitignore_file"
-    fi
-
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
