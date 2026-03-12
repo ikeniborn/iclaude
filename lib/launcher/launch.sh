@@ -64,7 +64,6 @@ launch_claude() {
         fi
     fi
 
-    echo ""
     if [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code in microVM + PII masking → CCR router chain..."
     elif [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]]; then

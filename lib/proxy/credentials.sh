@@ -258,7 +258,6 @@ prompt_proxy_url() {
         local saved_no_proxy=$(echo "$saved_credentials" | cut -d'|' -f2)
 
         print_info "Saved proxy found" >&2
-        echo "" >&2
         # Hide password in display
         local display_url=$(echo "$saved_url" | sed -E 's|://([^:]+):([^@]+)@|://\1:****@|')
         echo "  URL: $display_url" >&2
