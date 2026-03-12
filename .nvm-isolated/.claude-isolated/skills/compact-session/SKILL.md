@@ -4,7 +4,7 @@ description: This skill should be used when the user asks to "analyze session", 
 version: 2.0.0
 context: fork
 model: haiku
-allowed-tools: Read
+allowed-tools: Read, Write, Bash
 ---
 
 # compact-session
@@ -98,3 +98,17 @@ For each task — what the assistant actually did:
 One paragraph, 2–4 sentences, in Russian, plain language.
 
 Do not quote large content verbatim. Focus on intent and outcomes.
+
+## Saving the report
+
+After generating the Markdown report, save it to a file in the project's `tmp/` directory:
+
+1. Run `mkdir -p tmp` via Bash to ensure the directory exists.
+2. Run `date +%Y%m%d-%H%M%S` via Bash to get a timestamp.
+3. Write the report to `tmp/compact-session-<timestamp>.md` using the Write tool
+   (absolute path: prepend the result of `pwd` to the filename).
+4. Tell the user the saved path:
+   > "Отчёт сохранён: `tmp/compact-session-<timestamp>.md`"
+
+Use the current working directory (project root where the session was opened).
+Do **not** save to the system `/tmp` — always use the project-local `tmp/` folder.
