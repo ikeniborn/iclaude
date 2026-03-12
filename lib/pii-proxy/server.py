@@ -235,13 +235,27 @@ def init_presidio() -> bool:
             return False
 
 
+def _snippet(value: str, max_len: int = 60) -> str:
+    """Truncate a matched value for debug logging. Keeps first max_len chars."""
+    value = value.replace('\n', '\\n').replace('\r', '\\r')
+    return value[:max_len] + '…' if len(value) > max_len else value
+
+
 def regex_mask(text: str) -> tuple[str, list[str]]:
     """Apply deterministic regex patterns. Returns (masked_text, [found_descriptions])."""
     found: list[str] = []
     for pattern, replacement, description in REDACT_PATTERNS:
+        matches: list[re.Match[str]] = list(pattern.finditer(text)) if LOG_LEVEL == 'debug' else []
         new_text = pattern.sub(replacement, text)
         if new_text != text:
-            found.append(description)
+            if LOG_LEVEL == 'debug' and matches:
+                snippets = ', '.join(
+                    f'"{_snippet(m.group(0))}" → "{_snippet(pattern.sub(replacement, m.group(0)))}"'
+                    for m in matches
+                )
+                found.append(f'{description} ({snippets})')
+            else:
+                found.append(description)
             text = new_text
     return text, found
 
@@ -318,7 +332,13 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         )
         # Also apply regex patterns on top of Presidio output
         masked, regex_found = regex_mask(anonymized.text)
-        entity_types = list({r.entity_type for r in results})
+        if LOG_LEVEL == 'debug':
+            entity_types = [
+                f'{r.entity_type} ("{_snippet(text[r.start:r.end])}" → "[PII_REDACTED]")'
+                for r in results
+            ]
+        else:
+            entity_types = list({r.entity_type for r in results})
         return masked, entity_types + regex_found
     except Exception as exc:
         log.warning('Presidio masking error: %s - using regex fallback', exc)
