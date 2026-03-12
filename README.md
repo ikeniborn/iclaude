@@ -45,7 +45,7 @@ cd claude
 - **Метрики** - token usage, cache, стоимость
 - **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат)
 - **Память** - 🧠 OSC 8 hyperlink на `MEMORY.md` проекта (авто-память Claude Code)
-- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на TOON audit-лог сессии (`.claude/pii/YYYY-MM-DD/{session}.toon`)
+- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на server log сессии (`.nvm-isolated/.claude-isolated/pii-proxy-logs/{session}.log`)
 - **Oh My Posh** - кастомные темы
 
 ### 🕵️ PII Proxy
@@ -76,9 +76,9 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 
 **Архитектура:** `claude → PII proxy (авто-порт 20000–40000) → Anthropic API`
 
-**Метрики в статуслайне:** при активном прокси в статуслайне появляется `🛡 N` — счётчик замаскированных элементов текущей сессии (live, обновляется каждые 30 сек). Иконка кликабельна и открывает TOON audit-лог в каталоге проекта:
+**Метрики в статуслайне:** при активном прокси в статуслайне появляется `🛡 N` — счётчик замаскированных элементов текущей сессии (live, обновляется каждые 30 сек). Иконка кликабельна и открывает server log сессии:
 ```
-.claude/pii/2026-03-06/fea76675eed6.toon   ← авто-добавляется в .gitignore
+.nvm-isolated/.claude-isolated/pii-proxy-logs/fea76675eed6.log
 ```
 
 **Документация:** [docs/PII_MASKING.md](./docs/PII_MASKING.md)

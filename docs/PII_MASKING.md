@@ -1275,47 +1275,28 @@ curl http://127.0.0.1:<PORT>/api/metrics
 | `ICLAUDE_PII_ACTIVE` | `1` | PII proxy запущен и готов |
 | `ICLAUDE_PII_MASKING_LEVEL` | `standard` / `secrets` / `off` | Уровень маскирования |
 | `ICLAUDE_PII_ACTIVE_PORT` | `<port>` | Порт прокси для curl к `/api/metrics` |
-| `ICLAUDE_PII_LOG_PATH` | `{project}/.claude/pii/{date}/{session}.toon` | Путь к TOON audit log текущей сессии |
+| `ICLAUDE_PII_LOG_PATH` | `{pii-proxy-logs}/{session}.log` | Путь к server log текущей сессии |
 
-### TOON Audit Log
+### Server Log
 
-При каждом маскировании PII proxy дописывает JSON-строку в файл-лог сессии:
+PII proxy пишет server log в `$PII_PROXY_LOG_DIR` (`.nvm-isolated/.claude-isolated/pii-proxy-logs/`):
 
 ```
-{project}/.claude/pii/YYYY-MM-DD/{SESSION_ID}.toon
+{pii-proxy-logs}/{SESSION_ID}.log
 ```
 
-**Формат записи** (JSON-lines, одна строка на запрос):
+**Формат записи:**
 
-```json
-{"ts": "2026-03-06T12:14:00+00:00", "count": 3, "types": ["Anthropic/OpenAI/Stripe API key", "JWT token"], "masking_level": "standard"}
+```
+2026-03-06 12:14:00,123 INFO Masked request: 3 sensitive item(s) found
 ```
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `ts` | ISO 8601 | Время запроса (UTC) |
-| `count` | int | Число замаскированных элементов в запросе |
-| `types` | list[str] | Уникальные типы найденных элементов (дедуплицированы) |
-| `masking_level` | str | Уровень маскирования (`off`, `secrets`, `standard`) |
-
-**Запись неблокирующая** — выполняется в daemon-потоке, не влияет на задержку прокси.
-
-**Директория автоматически создаётся** (`mkdir -p`) при первой записи.
-
-**`.claude/pii/` добавляется в `.gitignore`** проекта при старте PII proxy (если ещё не добавлено), чтобы метаданные маскирования не попали в git.
-
-**Иконка 🛡 в статуслайне** становится кликабельной (OSC 8 гиперссылка) после первого замаскированного запроса — открывает TOON log в терминале.
+**Иконка 🛡 в статуслайне** становится кликабельной (OSC 8 гиперссылка) — открывает log-файл сессии в терминале.
 
 **Просмотр лога:**
 
 ```bash
-# Последние записи текущей сессии
-tail -f .claude/pii/$(date +%Y-%m-%d)/*.toon | python3 -c "
-import sys, json
-for line in sys.stdin:
-    d = json.loads(line)
-    print(f\"{d['ts']} | {d['count']} items | {', '.join(d['types'])}\")
-"
+tail -f .nvm-isolated/.claude-isolated/pii-proxy-logs/${ICLAUDE_SESSION_ID}.log
 ```
 
 ---

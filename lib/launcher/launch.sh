@@ -15,20 +15,6 @@ launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
 
-    # Export project directory for PostToolUse hooks (e.g. log-tools.py)
-    # This allows hooks to write to {project}/.claude/tools/ regardless of cwd
-    export CLAUDE_PROJECT_DIR="${PWD}"
-
-    # Archive stale sessions from previous runs (Stop hook may not fire on crash)
-    archive_stale_sessions "${CLAUDE_PROJECT_DIR}"
-
-    # Ensure .claude/tools/ is excluded from git in the current project
-    local gitignore_file="${PWD}/.gitignore"
-    local tools_pattern=".claude/tools/"
-    if [[ -f "$gitignore_file" ]] && ! grep -qF "$tools_pattern" "$gitignore_file" 2>/dev/null; then
-        echo "$tools_pattern" >> "$gitignore_file"
-    fi
-
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
@@ -621,45 +607,6 @@ launch_claude() {
 }
 
 #######################################
-# Clean up stale session files from the sessions/ root.
-#
-# .toon.tmp.{PID} — internal Claude Code markers per turn; deleted when PID is dead.
-# .toon (0-byte)  — Claude Code finalization marker; deleted (real .toon is in {date}/).
-# .txt / .txt.meta — redundant transcripts created by Claude Code on /exit; deleted.
-#
-# Real session content (.toon with data) is written by the statusline directly into
-# .claude/sessions/{YYYY-MM-DD}/ — no movement or archiving needed here.
-#
-# Arguments:
-#   $1 - project_dir: path to project root (must contain .claude/sessions/)
-#######################################
-archive_stale_sessions() {
-    local project_dir="${1:-}"
-    local sessions_dir="${project_dir}/.claude/sessions"
-    [[ -d "$sessions_dir" ]] || return 0
-
-    # 1. Delete .toon.tmp.{PID} files whose process is dead.
-    # These are internal child-process markers — users don't need them.
-    # Files with alive PIDs are left alone (active turn in progress).
-    while IFS= read -r -d '' f; do
-        local filename
-        filename="$(basename "$f")"
-        local pid="${filename##*.}"
-        [[ "$pid" =~ ^[0-9]+$ ]] || continue
-        if ! kill -0 "$pid" 2>/dev/null; then
-            rm -f "$f" 2>/dev/null || true
-        fi
-    done < <(find "$sessions_dir" -maxdepth 1 -name "readable-*.toon.tmp.*" -print0 2>/dev/null)
-
-    # 2. Delete leftover files from sessions/ root: 0-byte .toon markers,
-    # .txt and .txt.meta transcripts — all redundant when .toon is in {date}/.
-    find "$sessions_dir" -maxdepth 1 \
-        \( -name "readable-*.toon" -o -name "readable-*.txt" -o -name "readable-*.txt.meta" \) \
-        -print0 2>/dev/null \
-        | xargs -0 rm -f 2>/dev/null || true
-}
-
-#######################################
 # Cleanup orphaned PII proxy processes from terminated sessions.
 # Removes stale per-session PID and port files when the associated process is gone.
 # Called at the start of start_pii_proxy_server() to keep the log dir tidy.
@@ -766,8 +713,7 @@ except Exception:
         "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
-        --project-dir "${PWD}" \
-        >>"$PII_PROXY_LOG_DIR/server.log" 2>&1 &
+        >/dev/null 2>&1 &
 
     local proxy_pid=$!
     echo "$proxy_pid" > "$PII_PROXY_PID_FILE"
@@ -820,9 +766,8 @@ except Exception:
     export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
     export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
     # Export TOON audit log path so statusline can hyperlink the PII icon
-    export ICLAUDE_PII_LOG_PATH="${PWD}/.claude/pii/$(date +%Y-%m-%d)/${ICLAUDE_SESSION_ID}.toon"
+    export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
-    print_info "PII proxy: audit log → ${ICLAUDE_PII_LOG_PATH}"
     return 0
 }
 

@@ -1119,9 +1119,9 @@ grep -l "search term" .claude-sessions/readable-*.txt
 ## Changelog
 
 ### Phase 2.5 (Current — March 2026)
-- **PII Proxy Icon (🛡)**: shows when `ICLAUDE_PII_ACTIVE=1`; displays live masked-items counter from `/api/metrics` with 30s TTL cache; becomes an OSC 8 hyperlink to the TOON audit log when the file exists
+- **PII Proxy Icon (🛡)**: shows when `ICLAUDE_PII_ACTIVE=1`; displays live masked-items counter from `/api/metrics` with 30s TTL cache; becomes an OSC 8 hyperlink to the server log when the file exists
 - Env vars: `ICLAUDE_PII_ACTIVE`, `ICLAUDE_PII_MASKING_LEVEL`, `ICLAUDE_PII_ACTIVE_PORT`, `ICLAUDE_PII_LOG_PATH` — all exported automatically by `launch.sh`
-- Audit log path: `{project}/.claude/pii/{YYYY-MM-DD}/{session}.toon`; `.claude/pii/` auto-added to project `.gitignore`
+- Log path: `{pii-proxy-logs}/{session}.log` (in `.nvm-isolated/.claude-isolated/pii-proxy-logs/`)
 
 ### Phase 2.4 (March 2026)
 - **Memory Link (🧠)**: new OSC 8 hyperlink to project `MEMORY.md` (auto-memory maintained by Claude Code)
