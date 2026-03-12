@@ -430,7 +430,6 @@ export DEEPSEEK_API_KEY="your-key"
 ## 📝 Файлы и безопасность
 
 **Не в git:**
-- `.claude_proxy_credentials` - прокси credentials (chmod 600)
 - `.nvm-isolated/.claude-isolated/*` - сессии, история, credentials
 
 **В git:**
