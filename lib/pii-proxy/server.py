@@ -383,6 +383,11 @@ def mask_content_block(block: Any) -> tuple[Any, list[str]]:
     return block, []
 
 
+def _prefix(items: list[str], location: str) -> list[str]:
+    """Prefix each found description with field location (used in debug logging)."""
+    return [f'{location}: {d}' for d in items] if LOG_LEVEL == 'debug' else items
+
+
 def mask_request_body(body: dict) -> tuple[dict, list[str]]:
     """Mask PII in system prompt, messages, and tool results."""
     masked_body = dict(body)
@@ -394,29 +399,31 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
         if isinstance(system, str):
             masked, found = presidio_mask(system)
             masked_body['system'] = masked
-            all_found.extend(found)
+            all_found.extend(_prefix(found, 'system'))
         elif isinstance(system, list):
             new_system: list[Any] = []
             for b in system:
                 masked_b, found = mask_content_block(b)
                 new_system.append(masked_b)
-                all_found.extend(found)
+                all_found.extend(_prefix(found, 'system'))
             masked_body['system'] = new_system
 
     # Messages
     if 'messages' in body and isinstance(body['messages'], list):
         new_messages = []
-        for msg in body['messages']:
+        for i, msg in enumerate(body['messages']):
             if not isinstance(msg, dict):
                 new_messages.append(msg)
                 continue
             masked_msg: dict[str, Any] = dict(msg)
+            role = msg.get('role', f'msg[{i}]')
+            loc = f'{role}[{i}]'
 
             # Mask message.name (optional participant label — may contain PII)
             if isinstance(msg.get('name'), str):
                 masked_name, name_found = presidio_mask(msg['name'])
                 masked_msg['name'] = masked_name
-                all_found.extend(name_found)
+                all_found.extend(_prefix(name_found, f'{loc}.name'))
 
             if 'content' not in msg:
                 # Preserve messages without content field (e.g. tool_use-only)
@@ -426,7 +433,7 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
             if isinstance(content, str):
                 masked, found = presidio_mask(content)
                 masked_msg['content'] = masked
-                all_found.extend(found)
+                all_found.extend(_prefix(found, f'{loc}.content'))
             elif isinstance(content, list):
                 new_content: list[Any] = []
                 msg_found: list[str] = []
@@ -435,7 +442,7 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
                     new_content.append(masked_b)
                     msg_found.extend(found)
                 masked_msg['content'] = new_content
-                all_found.extend(msg_found)
+                all_found.extend(_prefix(msg_found, f'{loc}.content'))
             new_messages.append(masked_msg)
         masked_body['messages'] = new_messages
 

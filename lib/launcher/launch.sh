@@ -901,14 +901,6 @@ stop_pii_proxy_server() {
         # Guard against empty vars to avoid accidentally deleting /pii-proxy-*.port
         [[ -n "${PII_PROXY_LOG_DIR:-}" && -n "${ICLAUDE_SESSION_ID:-}" ]] && \
             rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port"
-        # In debug mode: auto-delete session log (contains PII metadata).
-        # Only delete if this session owns the proxy (PII_PROXY_SESSION_OWNED=true).
-        if [[ "${PII_PROXY_SESSION_OWNED:-}" == "true" && \
-              "${PII_PROXY_LOG_LEVEL:-info}" == "debug" && \
-              -n "${PII_PROXY_LOG_DIR:-}" && \
-              -n "${ICLAUDE_SESSION_ID:-}" ]]; then
-            rm -f "${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
-        fi
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
             kill "$pid" 2>/dev/null
             # Wait for clean shutdown (up to 1s), then force-kill
@@ -918,6 +910,16 @@ stop_pii_proxy_server() {
                 waited=$((waited + 1))
             done
             kill -9 "$pid" 2>/dev/null || true
+        fi
+        # In debug mode: auto-delete session log (contains PII metadata).
+        # Deleted AFTER process termination so Python's shutdown log entry
+        # (written on SIGTERM) doesn't recreate the file after deletion.
+        # Only delete if this session owns the proxy (PII_PROXY_SESSION_OWNED=true).
+        if [[ "${PII_PROXY_SESSION_OWNED:-}" == "true" && \
+              "${PII_PROXY_LOG_LEVEL:-info}" == "debug" && \
+              -n "${PII_PROXY_LOG_DIR:-}" && \
+              -n "${ICLAUDE_SESSION_ID:-}" ]]; then
+            rm -f "${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
         fi
     fi
 }
