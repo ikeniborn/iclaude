@@ -79,6 +79,12 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 
 **Архитектура:** `claude → PII proxy (авто-порт 20000–40000) → Anthropic API`
 
+**Уровни маскирования** (`PII_PROXY_MASKING_LEVEL` в `.claude_config`): `standard` (NLP+regex, по умолчанию) / `secrets` (только regex, без latency) / `off` (pass-through).
+
+**Режимы логирования** (`PII_PROXY_LOG_LEVEL`):
+- `info` (по умолчанию) — только счётчик: `Masked request: 3 sensitive item(s) found`
+- `debug` — поле + тип + исходное значение + замена: `user[0].content: credentials in URL ("https://[CREDENTIALS]@corp.ru:8080" → "https://[CREDENTIALS]@")`. Лог **автоматически удаляется** при завершении сессии.
+
 **Метрики в статуслайне:** при активном прокси в статуслайне появляется `🛡 N` — счётчик замаскированных элементов текущей сессии (live, обновляется каждые 30 сек). Иконка кликабельна и открывает server log сессии:
 ```
 .nvm-isolated/.claude-isolated/pii-proxy-logs/fea76675eed6.log

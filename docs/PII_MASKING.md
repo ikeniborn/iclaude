@@ -1240,6 +1240,7 @@ curl http://127.0.0.1:<PORT>/api/metrics
   "masked_items_total": 42,
   "uptime_seconds": 183.5,
   "masking_level": "standard",
+  "log_level": "info",
   "analyzer_ready": true
 }
 ```
@@ -1249,6 +1250,7 @@ curl http://127.0.0.1:<PORT>/api/metrics
 | `masked_items_total` | Суммарное число замаскированных элементов с момента старта |
 | `uptime_seconds` | Время работы прокси в секундах |
 | `masking_level` | Уровень маскирования: `off`, `secrets`, `standard` |
+| `log_level` | Уровень логирования: `info`, `debug` |
 | `analyzer_ready` | Загружен ли Presidio NLP |
 
 ### Отображение в статуслайне
@@ -1276,6 +1278,27 @@ curl http://127.0.0.1:<PORT>/api/metrics
 | `ICLAUDE_PII_MASKING_LEVEL` | `standard` / `secrets` / `off` | Уровень маскирования |
 | `ICLAUDE_PII_ACTIVE_PORT` | `<port>` | Порт прокси для curl к `/api/metrics` |
 | `ICLAUDE_PII_LOG_PATH` | `{pii-proxy-logs}/{session}.log` | Путь к server log текущей сессии |
+| `ICLAUDE_PII_LOG_LEVEL` | `info` / `debug` | Уровень логирования |
+
+### Конфигурация прокси (.claude_config)
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `USE_PII_PROXY` | `false` | Включить прокси автоматически при каждом запуске |
+| `PII_PROXY_MASKING_LEVEL` | `standard` | Уровень маскирования: `off` / `secrets` / `standard` |
+| `PII_PROXY_LOG_LEVEL` | `info` | Уровень логирования: `info` / `debug` |
+| `PII_PROXY_PORT` | `0` (авто) | Фиксированный порт (0 = случайный из диапазона) |
+| `PII_PROXY_PORT_MIN` | `20000` | Нижняя граница диапазона авто-выбора порта |
+| `PII_PROXY_PORT_MAX` | `40000` | Верхняя граница диапазона авто-выбора порта |
+| `PII_PROXY_ENABLE_FALLBACK` | `true` | Regex-fallback если Presidio недоступен |
+
+**Уровни маскирования (`PII_PROXY_MASKING_LEVEL`):**
+
+| Уровень | Что делает | Когда использовать |
+|---------|-----------|-------------------|
+| `standard` | Presidio NLP + regex | Максимальная защита (по умолчанию) |
+| `secrets` | Только regex: API-ключи, токены, пароли | Без NLP, низкая latency |
+| `off` | Без маскирования, трафик проходит насквозь | Только для отладки proxy-цепочки |
 
 ### Server Log
 
@@ -1285,11 +1308,47 @@ PII proxy пишет server log в `$PII_PROXY_LOG_DIR` (`.nvm-isolated/.claude-
 {pii-proxy-logs}/{SESSION_ID}.log
 ```
 
-**Формат записи:**
+Каждая сессия имеет **отдельный лог-файл** (по `ICLAUDE_SESSION_ID`). Параллельные сессии не перезаписывают друг друга.
+
+**Два режима логирования (`PII_PROXY_LOG_LEVEL`):**
+
+#### info (по умолчанию)
+
+Логируется только количество найденных элементов — без метаданных PII:
 
 ```
-2026-03-06 12:14:00,123 INFO Masked request: 3 sensitive item(s) found
+2026-03-12 11:29:51,667 INFO Masked request: 3 sensitive item(s) found
 ```
+
+#### debug
+
+Логируется тип найденного, где в запросе (`system`, `user[N].content`), исходное значение и токен замены:
+
+```
+2026-03-12 12:02:20,891 INFO Masked request: 3 item(s): system: Anthropic/OpenAI/Stripe API key ("sk-ant-api03-AbCdEf…" → "[API_KEY_REDACTED]"), user[0].content: credentials in URL ("https://user:p4ss@proxy.corp.ru:8080/…" → "https://[CREDENTIALS]@proxy.corp.ru:8080/…"), user[0].content: JWT token ("eyJhbGciOiJIUzI1…" → "[JWT_REDACTED]")
+```
+
+Формат каждого элемента: `{поле}: {тип} ("{исходное значение}" → "{замена}")`
+
+Значения обрезаются до 60 символов.
+
+**Включение debug-режима:**
+
+```bash
+# В .claude_config:
+PII_PROXY_LOG_LEVEL=debug
+
+# Или разово:
+./iclaude.sh --pii-proxy  # с PII_PROXY_LOG_LEVEL=debug в .claude_config
+```
+
+При старте в debug-режиме выводится предупреждение:
+
+```
+⚠ PII proxy: DEBUG mode — log contains PII metadata, auto-deleted on exit
+```
+
+**Автоудаление лога в debug-режиме:** при завершении сессии (`EXIT`/`INT`/`TERM`) `stop_pii_proxy_server()` удаляет `{SESSION_ID}.log` — лог содержит чувствительные метаданные и не должен накапливаться на диске.
 
 **Иконка 🛡 в статуслайне** становится кликабельной (OSC 8 гиперссылка) — открывает log-файл сессии в терминале.
 
