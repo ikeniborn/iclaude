@@ -13,11 +13,11 @@ Analyze a Claude Code session JSONL file and generate a structured Markdown summ
 
 ## Finding the session file
 
-If the user provided a path to a `.jsonl` file → use that path directly.
+The user must provide a path to a `.jsonl` session file as an argument.
+The path is available as a clickable 📄 link in the status line (OSC8 hyperlink).
 
-Otherwise → read the file `.claude/.current-session` in the current project directory.
-Its content is an absolute path to the current session's JSONL file.
-Use the Read tool to read `.claude/.current-session`, then read the JSONL file at that path.
+If no path was provided → ask the user to pass it:
+> "Передай путь к файлу сессии (`.jsonl`). Его можно скопировать из 📄 ссылки в строке состояния."
 
 ## JSONL Format
 
