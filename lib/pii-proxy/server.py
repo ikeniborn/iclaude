@@ -7,7 +7,7 @@ scans system prompt + messages[] + tool_results for PII/secrets,
 forwards masked request to ANTHROPIC_UPSTREAM_URL.
 
 Usage:
-    python3 server.py [--port PORT] [--log-dir DIR] [--project-dir DIR]
+    python3 server.py [--port PORT] [--log-dir DIR]
 
 Environment:
     ANTHROPIC_UPSTREAM_URL    - upstream API URL (default: https://api.anthropic.com)
@@ -32,7 +32,6 @@ import random
 import re
 import signal
 import sys
-import datetime
 import threading
 import time
 from pathlib import Path
@@ -159,9 +158,6 @@ _masked_items_total: int = 0
 _masked_items_lock = threading.Lock()
 _server_start_time: float = 0.0  # set in main() after server binds
 
-# Project directory for TOON audit log (set in main() via --project-dir arg)
-PROJECT_DIR: str = ''
-
 # Presidio globals (lazy-loaded, protected by _presidio_lock)
 _analyzer = None
 _anonymizer = None
@@ -172,20 +168,18 @@ _presidio_lock = threading.Lock()
 log = logging.getLogger('pii-proxy')
 
 
-def setup_logging(log_dir: Path) -> None:
+def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
     """Configure 'pii-proxy' logger directly (not root logger) for reliability."""
     log_dir.mkdir(parents=True, exist_ok=True)
     fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    _sid = session_id if re.fullmatch(r'[0-9a-f]{12}', session_id) else 'default'
     file_handler = RotatingFileHandler(
-        log_dir / 'access.log',
+        log_dir / f'{_sid}.log',
         maxBytes=5 * 1024 * 1024,  # 5 MB per file
         backupCount=3,
     )
     file_handler.setFormatter(fmt)
-    stderr_handler = logging.StreamHandler(sys.stderr)
-    stderr_handler.setFormatter(fmt)
     log.addHandler(file_handler)
-    log.addHandler(stderr_handler)
     log.setLevel(logging.INFO)
 
 
@@ -544,7 +538,10 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
 
     # 100 MB sanity limit: prevents DoS via OOM from huge or negative Content-Length
     _MAX_BODY_BYTES = 100_000_000
@@ -609,8 +606,6 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 # Increment global masked items counter (thread-safe)
                 with _masked_items_lock:
                     _masked_items_total += len(found)
-                # Append audit record to per-session TOON log (non-blocking, daemon thread)
-                _write_pii_toon_log(len(found), list(dict.fromkeys(found)))
             out_body = json.dumps(masked_body).encode()
         else:
             out_body = raw_body
@@ -720,76 +715,15 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b'PII-proxy internal error')
 
 
-def _ensure_pii_gitignore(project_dir: str) -> None:
-    """Ensure .claude/pii/ is listed in project .gitignore.
-
-    Appends the entry automatically if the .gitignore exists but does not
-    already contain it.  Silently skips on any filesystem error.
-    """
-    if not project_dir:
-        return
-    try:
-        gitignore = Path(project_dir) / '.gitignore'
-        pattern = '.claude/pii/'
-        if gitignore.is_file():
-            content = gitignore.read_text(encoding='utf-8', errors='replace')
-            if pattern not in content:
-                with gitignore.open('a', encoding='utf-8') as fh:
-                    fh.write(f'\n# PII proxy audit logs (auto-added by iclaude PII proxy)\n{pattern}\n')
-                log.info('Added %s to %s', pattern, gitignore)
-    except Exception as exc:  # noqa: BLE001
-        log.debug('_ensure_pii_gitignore: skipped (%s)', exc)
-
-
-def _write_pii_toon_log(count: int, types: list[str]) -> None:
-    """Append a JSON-line audit record to the session TOON log.
-
-    Path: {PROJECT_DIR}/.claude/pii/{YYYY-MM-DD}/{SESSION_ID}.toon
-    Each call appends one line: {"ts": ISO, "count": N, "types": [...], "masking_level": "..."}
-
-    Runs in a daemon thread to avoid blocking the request handler.
-    Silently swallows all errors — logging must never affect proxy correctness.
-    """
-    def _do_write() -> None:
-        try:
-            if not PROJECT_DIR:
-                return
-            _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
-            session_id = _raw_sid if re.fullmatch(r'[0-9a-f]{12}', _raw_sid) else 'default'
-            date_str = time.strftime('%Y-%m-%d')
-            log_dir = Path(PROJECT_DIR) / '.claude' / 'pii' / date_str
-            log_dir.mkdir(parents=True, exist_ok=True)
-            log_file = log_dir / f'{session_id}.toon'
-            ts = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
-            record = json.dumps({
-                'ts': ts,
-                'count': count,
-                'types': types,
-                'masking_level': MASKING_LEVEL,
-            }, ensure_ascii=False)
-            with log_file.open('a', encoding='utf-8') as fh:
-                fh.write(record + '\n')
-        except Exception as exc:  # noqa: BLE001
-            log.debug('_write_pii_toon_log: skipped (%s)', exc)
-
-    threading.Thread(target=_do_write, daemon=True).start()
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description='PII-Proxy Server')
     parser.add_argument('--port', type=int, default=DEFAULT_PORT)
     parser.add_argument('--log-dir', default=str(LOG_DIR))
-    parser.add_argument('--project-dir', default='',
-                        help='Project root directory for TOON audit log and .gitignore check')
     args = parser.parse_args()
 
     log_dir = Path(args.log_dir)
-    setup_logging(log_dir)
-
-    # Set project directory for TOON audit log and gitignore check
-    global PROJECT_DIR
-    PROJECT_DIR = args.project_dir
-    _ensure_pii_gitignore(PROJECT_DIR)
+    sid = os.environ.get('ICLAUDE_SESSION_ID', 'default')
+    setup_logging(log_dir, sid)
 
     # Port selection strategy:
     #   port == 0  → auto-select a random free port from [PORT_MIN, PORT_MAX]

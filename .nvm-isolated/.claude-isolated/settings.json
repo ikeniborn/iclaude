@@ -129,30 +129,11 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/log-tools.py\""
-          }
-        ]
-      },
-      {
         "matcher": ".*",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/capture-tool-results.py\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/archive-sessions.py\""
           }
         ]
       }
@@ -163,12 +144,12 @@
     "command": "$CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh",
     "padding": 1
   },
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true
+  },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true
-  }
+  "skipDangerousModePermissionPrompt": true
 }
