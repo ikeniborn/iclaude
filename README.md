@@ -42,10 +42,13 @@ cd claude
 - **Локальные модели** - полная приватность через Ollama
 
 ### 🎨 Status Line
-- **Метрики** - token usage, cache, стоимость
-- **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат)
+- **Метрики** - dual context (cumulative billing + active NEW tokens), cache, стоимость, модель
+- **Адаптивный режим** - три ширины: Full (≥130 cols), Compact (110-129), Minimal (<110) — автоматически
+- **Multi-provider** - 🤖 OpenAI/DeepSeek/OpenRouter, 🦙 Ollama (local, $0.00), ✨ Gemini; 30+ моделей в pricing DB
+- **Streaming** - 🔄 индикатор во время генерации; токены накапливаются в реальном времени
+- **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат); append-only (19× быстрее)
 - **Память** - 🧠 OSC 8 hyperlink на `MEMORY.md` проекта (авто-память Claude Code)
-- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на server log сессии (`.nvm-isolated/.claude-isolated/pii-proxy-logs/{session}.log`)
+- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на server log сессии
 - **Oh My Posh** - кастомные темы
 
 ### 🕵️ PII Proxy
@@ -458,4 +461,4 @@ MIT License
 ---
 
 **Версия:** 4.0 (Modular Architecture)
-**Последнее обновление:** 2026-02-25
+**Последнее обновление:** 2026-03-12
