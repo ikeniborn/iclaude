@@ -241,6 +241,13 @@ install_plugins_from_manifest() {
 		return 0
 	fi
 
+	# Ensure CLAUDE_CONFIG_DIR points to isolated config so plugin commands find the marketplace.
+	# During repair/update CLAUDE_CONFIG_DIR is not yet exported (it's set by setup_isolated_config
+	# in the launch flow, not the update flow), so fall back to ISOLATED_CONFIG_DIR.
+	if [[ -z "${CLAUDE_CONFIG_DIR:-}" ]] && [[ -n "${ISOLATED_CONFIG_DIR:-}" ]]; then
+		export CLAUDE_CONFIG_DIR="$ISOLATED_CONFIG_DIR"
+	fi
+
 	# Helper: run claude command (handles both binary and node cli.js paths)
 	_run_claude() {
 		if [[ "$claude_path" =~ ^node\  ]]; then
