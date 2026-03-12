@@ -39,8 +39,8 @@ repair_isolated_environment() {
 	local errors=0
 	local fixed=0
 
-	# Find Node.js version directory
-	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+	# Find Node.js version directory (sorted for deterministic selection, consistent with setup_isolated_nvm)
+	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | LC_ALL=C sort | head -1)
 
 	if [[ -z "$node_version_dir" ]]; then
 		print_error "No Node.js version found in isolated environment"
@@ -158,23 +158,17 @@ create_claude_symlink() {
 
 	local claude_link="$ISOLATED_NVM_DIR/npm-global/bin/claude"
 
-	# Find Claude Code installation
-	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
-
-	if [[ -z "$node_version_dir" ]]; then
-		print_error "  ✗ Node.js version not found"
-		return 1
-	fi
-
-	local claude_target="$node_version_dir/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	# Claude Code is installed via npm with NPM_CONFIG_PREFIX=npm-global, so cli.js lives in
+	# npm-global/lib/node_modules/ — NOT in versions/node/<ver>/lib/node_modules/
+	local claude_target="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
 
 	if [[ ! -f "$claude_target" ]]; then
 		print_warning "  ! Claude Code not installed yet"
 		return 0
 	fi
 
-	# Create symlink (relative path for portability)
-	local relative_target="../../versions/node/$(basename "$node_version_dir")/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	# Relative symlink from npm-global/bin/claude → npm-global/lib/node_modules/...
+	local relative_target="../lib/node_modules/@anthropic-ai/claude-code/cli.js"
 
 	mkdir -p "$(dirname "$claude_link")"
 	rm -f "$claude_link"

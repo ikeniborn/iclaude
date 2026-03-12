@@ -305,10 +305,6 @@ fi
 SESSION_LINK=""
 
 if [[ -n "$SESSION_FILE" ]] && [[ -f "$SESSION_FILE" ]]; then
-    # Write current session path for compact-session skill (no path arg case)
-    if [[ -n "$PROJECT_DIR" ]] && [[ -d "$PROJECT_DIR" ]]; then
-        echo "$SESSION_FILE" > "$PROJECT_DIR/.claude/.current-session" 2>/dev/null
-    fi
     OSC8_ESC=$'\033'
     SESSION_LINK=" | ${OSC8_ESC}]8;;file://${SESSION_FILE}${OSC8_ESC}\\📄${OSC8_ESC}]8;;${OSC8_ESC}\\"
 fi

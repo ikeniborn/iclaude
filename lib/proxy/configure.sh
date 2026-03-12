@@ -66,12 +66,9 @@ configure_proxy_from_url() {
 configure_git_no_proxy() {
     # IMPORTANT: We no longer modify git config globally as it can break other tools
     # Git will automatically use NO_PROXY environment variable if set
-
-    # Just log for information
-    print_info "Git will use NO_PROXY for localhost/127.0.0.1 and git hosting services"
-
     # Note: We keep save_git_proxy_settings call for compatibility with restore function
     # but we don't actually modify git config anymore
+    :
 }
 
 #######################################
