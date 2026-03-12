@@ -103,9 +103,9 @@ jobs:
         id: sandbox_check
         run: |
           echo "🔍 Checking sandbox dependencies..."
-          ./iclaude.sh --sandbox-check
 
-          # Check if sandbox is available in lockfile
+          # Read sandboxAvailable directly from lockfile — no iclaude.sh invocation needed
+          # (avoids interactive proxy prompt in non-TTY CI environment)
           SANDBOX_AVAILABLE=$(jq -r '.sandboxAvailable // false' .nvm-isolated-lockfile.json)
           echo "sandbox_available=$SANDBOX_AVAILABLE" >> $GITHUB_OUTPUT
 
