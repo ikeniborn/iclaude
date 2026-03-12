@@ -454,7 +454,7 @@ export DEEPSEEK_API_KEY="your-key"
 
 ## 📜 Лицензия
 
-MIT License
+[Apache License 2.0](./LICENSE)
 
 ---
 
