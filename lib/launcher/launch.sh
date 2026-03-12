@@ -767,6 +767,7 @@ except Exception:
     # Export TOON audit log path so statusline can hyperlink the PII icon
     export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
+    echo ""
     return 0
 }
 
