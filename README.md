@@ -42,10 +42,13 @@ cd claude
 - **Локальные модели** - полная приватность через Ollama
 
 ### 🎨 Status Line
-- **Метрики** - token usage, cache, стоимость
-- **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат)
+- **Метрики** - dual context (cumulative billing + active NEW tokens), cache, стоимость, модель
+- **Адаптивный режим** - три ширины: Full (≥130 cols), Compact (110-129), Minimal (<110) — автоматически
+- **Multi-provider** - 🤖 OpenAI/DeepSeek/OpenRouter, 🦙 Ollama (local, $0.00), ✨ Gemini; 30+ моделей в pricing DB
+- **Streaming** - 🔄 индикатор во время генерации; токены накапливаются в реальном времени
+- **Сессии** - 📄 OSC 8 hyperlink на читаемую историю диалога (TOON формат); append-only (19× быстрее)
 - **Память** - 🧠 OSC 8 hyperlink на `MEMORY.md` проекта (авто-память Claude Code)
-- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на server log сессии (`.nvm-isolated/.claude-isolated/pii-proxy-logs/{session}.log`)
+- **PII** - 🛡 иконка со счётчиком замаскированных элементов; OSC 8 hyperlink на server log сессии
 - **Oh My Posh** - кастомные темы
 
 ### 🕵️ PII Proxy
@@ -75,6 +78,12 @@ echo 'USE_PII_PROXY=true' >> .claude_config
 ```
 
 **Архитектура:** `claude → PII proxy (авто-порт 20000–40000) → Anthropic API`
+
+**Уровни маскирования** (`PII_PROXY_MASKING_LEVEL` в `.claude_config`): `standard` (NLP+regex, по умолчанию) / `secrets` (только regex, без latency) / `off` (pass-through).
+
+**Режимы логирования** (`PII_PROXY_LOG_LEVEL`):
+- `info` (по умолчанию) — только счётчик: `Masked request: 3 sensitive item(s) found`
+- `debug` — поле + тип + исходное значение + замена: `user[0].content: credentials in URL ("https://[CREDENTIALS]@corp.ru:8080" → "https://[CREDENTIALS]@")`. Лог **автоматически удаляется** при завершении сессии.
 
 **Метрики в статуслайне:** при активном прокси в статуслайне появляется `🛡 N` — счётчик замаскированных элементов текущей сессии (live, обновляется каждые 30 сек). Иконка кликабельна и открывает server log сессии:
 ```
@@ -445,7 +454,7 @@ export DEEPSEEK_API_KEY="your-key"
 
 ## 📜 Лицензия
 
-MIT License
+[Apache License 2.0](./LICENSE)
 
 ---
 
@@ -458,4 +467,4 @@ MIT License
 ---
 
 **Версия:** 4.0 (Modular Architecture)
-**Последнее обновление:** 2026-02-25
+**Последнее обновление:** 2026-03-12

@@ -18,6 +18,10 @@ Environment:
                                   off      - pass content through unmodified (proxy still runs)
                                   secrets  - regex-only: API keys, tokens, credentials
                                   standard - full: Presidio NLP + regex (default)
+    PII_PROXY_LOG_LEVEL       - logging verbosity: info|debug (default: info)
+                                  info     - log count of masked items only (default)
+                                  debug    - log count + entity types/descriptions found (PII metadata);
+                                             log file is auto-deleted on session exit
     ICLAUDE_SESSION_ID        - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
@@ -128,6 +132,13 @@ ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() !=
 _raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower().strip()
 MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
 
+# Log level: controls verbosity of masking log entries.
+#   'info'  - log count of masked items only (default, no PII metadata in logs)
+#   'debug' - log count + entity types/descriptions found (contains PII metadata;
+#             log file is auto-deleted by iclaude.sh on session exit)
+_raw_log_level = os.environ.get('PII_PROXY_LOG_LEVEL', 'info').lower().strip()
+LOG_LEVEL: str = _raw_log_level if _raw_log_level in ('info', 'debug') else 'info'
+
 # ---------------------------------------------------------------------------
 # HTTP session (requests library — handles HTTPS proxies correctly via urllib3,
 # unlike Python's stdlib urllib.request which can't TLS-handshake to the proxy
@@ -181,6 +192,13 @@ def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
     file_handler.setFormatter(fmt)
     log.addHandler(file_handler)
     log.setLevel(logging.INFO)
+    if LOG_LEVEL == 'debug':
+        log_path = log_dir / f'{_sid}.log'
+        log.warning(
+            'DEBUG mode active: this log contains PII metadata (entity types found). '
+            'Log will be auto-deleted by iclaude on session exit. Path: %s',
+            log_path,
+        )
 
 
 def init_presidio() -> bool:
@@ -217,13 +235,27 @@ def init_presidio() -> bool:
             return False
 
 
+def _snippet(value: str, max_len: int = 60) -> str:
+    """Truncate a matched value for debug logging. Keeps first max_len chars."""
+    value = value.replace('\n', '\\n').replace('\r', '\\r')
+    return value[:max_len] + '…' if len(value) > max_len else value
+
+
 def regex_mask(text: str) -> tuple[str, list[str]]:
     """Apply deterministic regex patterns. Returns (masked_text, [found_descriptions])."""
     found: list[str] = []
     for pattern, replacement, description in REDACT_PATTERNS:
+        matches: list[re.Match[str]] = list(pattern.finditer(text)) if LOG_LEVEL == 'debug' else []
         new_text = pattern.sub(replacement, text)
         if new_text != text:
-            found.append(description)
+            if LOG_LEVEL == 'debug' and matches:
+                snippets = ', '.join(
+                    f'"{_snippet(m.group(0))}" → "{_snippet(pattern.sub(replacement, m.group(0)))}"'
+                    for m in matches
+                )
+                found.append(f'{description} ({snippets})')
+            else:
+                found.append(description)
             text = new_text
     return text, found
 
@@ -300,7 +332,13 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         )
         # Also apply regex patterns on top of Presidio output
         masked, regex_found = regex_mask(anonymized.text)
-        entity_types = list({r.entity_type for r in results})
+        if LOG_LEVEL == 'debug':
+            entity_types = [
+                f'{r.entity_type} ("{_snippet(text[r.start:r.end])}" → "[PII_REDACTED]")'
+                for r in results
+            ]
+        else:
+            entity_types = list({r.entity_type for r in results})
         return masked, entity_types + regex_found
     except Exception as exc:
         log.warning('Presidio masking error: %s - using regex fallback', exc)
@@ -365,6 +403,11 @@ def mask_content_block(block: Any) -> tuple[Any, list[str]]:
     return block, []
 
 
+def _prefix(items: list[str], location: str) -> list[str]:
+    """Prefix each found description with field location (used in debug logging)."""
+    return [f'{location}: {d}' for d in items] if LOG_LEVEL == 'debug' else items
+
+
 def mask_request_body(body: dict) -> tuple[dict, list[str]]:
     """Mask PII in system prompt, messages, and tool results."""
     masked_body = dict(body)
@@ -376,29 +419,31 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
         if isinstance(system, str):
             masked, found = presidio_mask(system)
             masked_body['system'] = masked
-            all_found.extend(found)
+            all_found.extend(_prefix(found, 'system'))
         elif isinstance(system, list):
             new_system: list[Any] = []
             for b in system:
                 masked_b, found = mask_content_block(b)
                 new_system.append(masked_b)
-                all_found.extend(found)
+                all_found.extend(_prefix(found, 'system'))
             masked_body['system'] = new_system
 
     # Messages
     if 'messages' in body and isinstance(body['messages'], list):
         new_messages = []
-        for msg in body['messages']:
+        for i, msg in enumerate(body['messages']):
             if not isinstance(msg, dict):
                 new_messages.append(msg)
                 continue
             masked_msg: dict[str, Any] = dict(msg)
+            role = msg.get('role', f'msg[{i}]')
+            loc = f'{role}[{i}]'
 
             # Mask message.name (optional participant label — may contain PII)
             if isinstance(msg.get('name'), str):
                 masked_name, name_found = presidio_mask(msg['name'])
                 masked_msg['name'] = masked_name
-                all_found.extend(name_found)
+                all_found.extend(_prefix(name_found, f'{loc}.name'))
 
             if 'content' not in msg:
                 # Preserve messages without content field (e.g. tool_use-only)
@@ -408,7 +453,7 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
             if isinstance(content, str):
                 masked, found = presidio_mask(content)
                 masked_msg['content'] = masked
-                all_found.extend(found)
+                all_found.extend(_prefix(found, f'{loc}.content'))
             elif isinstance(content, list):
                 new_content: list[Any] = []
                 msg_found: list[str] = []
@@ -417,7 +462,7 @@ def mask_request_body(body: dict) -> tuple[dict, list[str]]:
                     new_content.append(masked_b)
                     msg_found.extend(found)
                 masked_msg['content'] = new_content
-                all_found.extend(msg_found)
+                all_found.extend(_prefix(msg_found, f'{loc}.content'))
             new_messages.append(masked_msg)
         masked_body['messages'] = new_messages
 
@@ -503,6 +548,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             'analyzer_ready': _presidio_ready,
             'fallback_enabled': ENABLE_FALLBACK,
             'masking_level': MASKING_LEVEL,
+            'log_level': LOG_LEVEL,
         }).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -517,6 +563,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             'analyzer_ready': _presidio_ready,
             'fallback_enabled': ENABLE_FALLBACK,
             'masking_level': MASKING_LEVEL,
+            'log_level': LOG_LEVEL,
         }).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -532,6 +579,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             'masked_items_total': masked_total,
             'uptime_seconds': round(uptime, 1),
             'masking_level': MASKING_LEVEL,
+            'log_level': LOG_LEVEL,
             'analyzer_ready': _presidio_ready,
         }).encode()
         self.send_response(200)
@@ -601,8 +649,12 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         if body:
             masked_body, found = mask_request_body(body)
             if found:
-                # Log count only — do NOT log descriptions (metadata leak)
-                log.info('Masked request: %d sensitive item(s) found', len(found))
+                if LOG_LEVEL == 'debug':
+                    # Debug mode: log entity types + regex descriptions (PII metadata)
+                    log.info('Masked request: %d item(s): %s', len(found), ', '.join(found))
+                else:
+                    # Info mode (default): log count only — do NOT log descriptions (metadata leak)
+                    log.info('Masked request: %d sensitive item(s) found', len(found))
                 # Increment global masked items counter (thread-safe)
                 with _masked_items_lock:
                     _masked_items_total += len(found)

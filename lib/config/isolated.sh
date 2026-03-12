@@ -108,6 +108,7 @@ load_claude_config() {
     # Export PII proxy configuration so server.py subprocess inherits the values
     [[ -n "${PII_PROXY_MASKING_LEVEL:-}" ]] && export PII_PROXY_MASKING_LEVEL
     [[ -n "${PII_PROXY_ENABLE_FALLBACK:-}" ]] && export PII_PROXY_ENABLE_FALLBACK
+    [[ -n "${PII_PROXY_LOG_LEVEL:-}" ]] && export PII_PROXY_LOG_LEVEL
 
     # Export microVM configuration (values from .claude_config override init.sh defaults)
     [[ -n "${MICRO_VM_ENABLED:-}" ]] && export MICRO_VM_ENABLED

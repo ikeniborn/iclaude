@@ -64,7 +64,6 @@ launch_claude() {
         fi
     fi
 
-    echo ""
     if [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]] && [[ "$use_router" == "true" ]]; then
         print_info "Launching Claude Code in microVM + PII masking → CCR router chain..."
     elif [[ "$use_microvm" == "true" ]] && [[ "$use_pii_proxy" == "true" ]]; then
@@ -708,8 +707,10 @@ except Exception:
 
     # Start per-session proxy server in background.
     # ICLAUDE_SESSION_ID is passed so server.py names its port file accordingly.
+    # PII_PROXY_LOG_LEVEL is passed so server.py activates debug logging if configured.
     ANTHROPIC_UPSTREAM_URL="$upstream_url" \
     ICLAUDE_SESSION_ID="$ICLAUDE_SESSION_ID" \
+    PII_PROXY_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}" \
         "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
         --port "$PII_PROXY_PORT" \
         --log-dir "$PII_PROXY_LOG_DIR" \
@@ -765,9 +766,14 @@ except Exception:
     export ICLAUDE_PII_ACTIVE=1
     export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
     export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
+    export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
     # Export TOON audit log path so statusline can hyperlink the PII icon
     export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
+    if [[ "${PII_PROXY_LOG_LEVEL:-info}" == "debug" ]]; then
+        print_warning "PII proxy: DEBUG mode — log contains PII metadata, auto-deleted on exit"
+    fi
+    echo ""
     return 0
 }
 
@@ -904,6 +910,16 @@ stop_pii_proxy_server() {
                 waited=$((waited + 1))
             done
             kill -9 "$pid" 2>/dev/null || true
+        fi
+        # In debug mode: auto-delete session log (contains PII metadata).
+        # Deleted AFTER process termination so Python's shutdown log entry
+        # (written on SIGTERM) doesn't recreate the file after deletion.
+        # Only delete if this session owns the proxy (PII_PROXY_SESSION_OWNED=true).
+        if [[ "${PII_PROXY_SESSION_OWNED:-}" == "true" && \
+              "${PII_PROXY_LOG_LEVEL:-info}" == "debug" && \
+              -n "${PII_PROXY_LOG_DIR:-}" && \
+              -n "${ICLAUDE_SESSION_ID:-}" ]]; then
+            rm -f "${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
         fi
     fi
 }
