@@ -109,6 +109,7 @@ load_claude_config() {
     [[ -n "${PII_PROXY_MASKING_LEVEL:-}" ]] && export PII_PROXY_MASKING_LEVEL
     [[ -n "${PII_PROXY_ENABLE_FALLBACK:-}" ]] && export PII_PROXY_ENABLE_FALLBACK
     [[ -n "${PII_PROXY_LOG_LEVEL:-}" ]] && export PII_PROXY_LOG_LEVEL
+    [[ -n "${PII_PROXY_MASK_TOKEN+x}" ]] && export PII_PROXY_MASK_TOKEN
 
     # Export microVM configuration (values from .claude_config override init.sh defaults)
     [[ -n "${MICRO_VM_ENABLED:-}" ]] && export MICRO_VM_ENABLED
