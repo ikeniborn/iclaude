@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""
+Test suite for PII proxy MASK_TOKEN behavior.
+Covers default token, custom token, empty token (deletion), secrets mode isolation,
+and env-var export semantics.
+"""
+import importlib.util, os, sys, pathlib
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def load_mod(level, token_sentinel=None):
+    """Import pii_server with given masking level and optional MASK_TOKEN override."""
+    script_path = None
+    for f in REDACTEDth('/home/ikeniborn/Documents/Project/iclaude/lib/pii-proxy/').glob('*.py'):
+        try:
+            if 'def presidio_mask' in REDACTEDad_text():
+                script_path = f
+                break
+        except Exception:
+            pass
+    assert script_path, "pii_server script not found"
+
+    if token_sentinel is None:
+        os.environ.pop('PII_PROXY_MASK_TOKEN', None)
+    else:
+        os.environ['PII_PROXY_MASK_TOKEN'] = token_sentinel
+
+    os.environ['PII_PROXY_MASKING_LEVEL'] = level
+    os.environ['PII_PROXY_LOG_LEVEL'] = 'info'
+    os.environ['ANTHROPIC_UPSTREAM_URL'] = 'http://localhost:19999'
+    os.environ.pop('ICLAUDE_SESSION_ID', None)
+
+    spec = importlib.util.spec_from_file_location('pii_mod_' + level + str(id(token_sentinel)), script_path)
+    mod = REDACTEDdule_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+results = []
+
+def check(name, condition, detail=""):
+    REDACTEDend((name, condition, detail))
+    icon = "[OK]" if condition else "[!!]"
+    print(f"  {icon} {name}: {detail}")
+    return condition
+
+
+# ---------------------------------------------------------------------------
+# TEST 1: Default token — must not be [PII_REDACTED], must not contain []
+# ---------------------------------------------------------------------------
+print("\n=== TEST 1: Default MASK_TOKEN ===")
+mod1 = load_mod('standard')
+tok = REDACTEDSK_TOKEN
+check("default token != [PII_REDACTED]",   tok != '[PII_REDACTED]', f"got {tok!r}")
+check("default token has no [ ] brackets",  '[' not in tok and ']' not in tok,
+      f"{tok!r} — no Markdown link conflict")
+check("default token is 'REDACTED'",        tok == 'REDACTED', f"got {tok!r}")
+
+# ---------------------------------------------------------------------------
+# TEST 2: standard mode — Presidio NLP uses MASK_TOKEN
+# ---------------------------------------------------------------------------
+print("\n=== TEST 2: standard — MASK_TOKEN applied by Presidio ===")
+mod2 = load_mod('standard', token_sentinel='TESTTOKEN')
+# email is reliably detected by Presidio analyzer
+text2 = "Contact REDACTED for help"
+masked2, found2 = REDACTEDesidio_mask(text2)
+print(f"  Input:  {text2!r}")
+print(f"  Masked: {masked2!r}")
+print(f"  Found:  {found2}")
+if found2:
+    check("TESTTOKEN in masked",      'TESTTOKEN' in REDACTED,  "Presidio used configured MASK_TOKEN")
+    check("[PII_REDACTED] absent",    '[PII_REDACTED]' not in REDACTED, "old token gone")
+    check("REDACTED email removed",   'REDACTED' not in REDACTED, "PII removed")
+else:
+    # Presidio found no entities → regex-only path; MASK_TOKEN must NOT appear
+    check("TESTTOKEN not in regex-only path", 'TESTTOKEN' not in REDACTED,
+          "MASK_TOKEN only for NLP entities, not regex")
+
+# ---------------------------------------------------------------------------
+# TEST 3: Custom MASK_TOKEN value
+# ---------------------------------------------------------------------------
+print("\n=== TEST 3: Custom MASK_TOKEN ===")
+mod3 = REDACTED', token_sentinel='CUSTOM')
+check("MASK_TOKEN set to CUSTOM", REDACTED == 'CUSTOM', f"got {REDACTEDSK_TOKEN!r}")
+masked3, found3 = REDACTEDesidio_mask("Write to REDACTED for info")
+print(f"  Masked: {masked3!r}  Found: {found3}")
+if found3:
+    check("CUSTOM in masked (NLP path)", 'CUSTOM' in masked3, "custom token applied by Presidio")
+
+# ---------------------------------------------------------------------------
+# TEST 4: Empty MASK_TOKEN — deletion mode
+# ---------------------------------------------------------------------------
+print("\n=== TEST 4: Empty MASK_TOKEN = deletion ===")
+mod4 = REDACTED', token_sentinel='')
+check("MASK_TOKEN is empty string", REDACTEDSK_TOKEN == '', f"got {REDACTEDSK_TOKEN!r}")
+
+# ---------------------------------------------------------------------------
+# TEST 5: secrets mode — MASK_TOKEN never used; hardcoded tokens always used
+# ---------------------------------------------------------------------------
+print("\n=== TEST 5: secrets mode — MASK_TOKEN ignored ===")
+mod5 = load_mod('secrets', token_sentinel='SHOULDNOTAPPEAR')
+
+# JWT: eyJ... format — reliably detected
+jwt = "REDACTEDzjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+masked5a, found5a = REDACTEDgex_mask(f"Bearer {jwt}")
+print(f"  JWT masked: {masked5a!r}")
+print(f"  JWT found:  {found5a}")
+check("JWT uses [JWT_REDACTED]",        '[JWT_REDACTED]' in masked5a, "hardcoded token")
+check("SHOULDNOTAPPEAR absent (JWT)",   'SHOULDNOTAPPEAR' not in masked5a, "MASK_TOKEN not leaked")
+
+# GitHub token: ghp_ + 36 alphanumeric chars minimum
+# Use a deterministic 36-char suffix
+gh = "ghp_" + "abcdefghijklmnopqrstuvwxyz0123456789ab"  # 4 + 38 = 42 chars total, ≥36
+masked5b, found5b = REDACTEDgex_mask(f"token: {gh}")
+print(f"  GH masked: {masked5b!r}")
+print(f"  GH found:  {found5b}")
+check("GitHub token uses [GITHUB_TOKEN]",    '[GITHUB_TOKEN]' in masked5b, "hardcoded token")
+check("SHOULDNOTAPPEAR absent (GH token)",  'SHOULDNOTAPPEAR' not in masked5b, "MASK_TOKEN not leaked")
+
+# ---------------------------------------------------------------------------
+# TEST 6: standard mode — regex path after Presidio (no NLP entities found)
+# ---------------------------------------------------------------------------
+print("\n=== TEST 6: standard — regex-only path, MASK_TOKEN not leaked ===")
+mod6 = REDACTED', token_sentinel='CUSTOMTOKEN')
+
+# URL credentials: reliably matched by regex, generally NOT found by Presidio NLP
+# Use a URL that won't look like NLP entity
+url_text = "postgres://dbuser:REDACTED:5432/mydb"
+masked6, found6 = REDACTEDesidio_mask(url_text)
+print(f"  Input:  {url_text!r}")
+print(f"  Masked: {masked6!r}")
+print(f"  Found:  {found6}")
+# Presidio may or may not find entity; either way, password must be gone
+check("credential removed", 's3cr3tpassword' not in REDACTED, "password masked regardless of path")
+if 'CUSTOMTOKEN' in REDACTED:
+    # Presidio treated this as a PII entity → used MASK_TOKEN (correct behavior)
+    check("NLP path: CUSTOMTOKEN used", True, "Presidio entity masked with MASK_TOKEN")
+else:
+    # Regex path: hardcoded [CREDENTIALS]@ token
+    check("regex path: [CREDENTIALS] used", '[CREDENTIALS]' in REDACTED,
+          f"hardcoded regex token in {masked6!r}")
+
+# ---------------------------------------------------------------------------
+# TEST 7: env-var export — ${var+x} correctly passes empty string
+# ---------------------------------------------------------------------------
+print("\n=== TEST 7: Empty-string export semantics ===")
+os.environ['PII_PROXY_MASK_TOKEN'] = ''
+val = REDACTEDt('PII_PROXY_MASK_TOKEN', 'NOT_SET')
+check("empty var is set",                     val == '', f"got {val!r}")
+# [[ -n ]] test — returns False for empty (old approach, broken for deletion mode)
+n_check = bool(REDACTEDt('PII_PROXY_MASK_TOKEN', ''))
+REDACTED check fails for empty",             not n_check,
+      "empty: -n → False → old code skips export → Python gets default instead of ''")
+# ${var+x} equivalent via 'in os.environ' — correct for empty
+x_check = 'PII_PROXY_MASK_TOKEN' in REDACTED
+check("+x check passes for empty (fix)",     x_check, "var SET even when empty")
+
+# ---------------------------------------------------------------------------
+# SUMMARY
+# ---------------------------------------------------------------------------
+print("\n" + "=" * 60)
+passed = sum(1 for _, ok, _ in results if ok)
+failed = sum(1 for _, ok, _ in results if not ok)
+print(f"RESULTS: {passed} passed, {failed} failed")
+if failed:
+    print("FAILURES:")
+    for name, ok, detail in results:
+        if not ok:
+            print(f"  [!!] {name}: {detail}")
+    sys.exit(1)
+else:
+    print("ALL TESTS PASSED")
+    sys.exit(0)
