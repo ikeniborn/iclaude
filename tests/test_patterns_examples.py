@@ -396,7 +396,7 @@ class TestServerRegexMask:
         masked, found = mask(text)
         assert 'secret123' not in masked
         assert '[CREDENTIALS]' in masked
-        assert 'credentials in URL' in found
+        assert any("credentials in URL" in d for d in found)
 
     def test_url_credentials_at_in_password(self, mask):
         """Password containing @ must not leak after masking."""
