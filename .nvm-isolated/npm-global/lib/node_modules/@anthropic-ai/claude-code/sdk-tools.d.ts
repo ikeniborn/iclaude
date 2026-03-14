@@ -110,6 +110,17 @@ export type AgentOutput =
        * Whether the calling agent has Read/Bash tools to check progress
        */
       canReadOutputFile?: boolean;
+    }
+  | {
+      status: "queued_to_running";
+      /**
+       * The ID of the running agent
+       */
+      agentId: string;
+      /**
+       * The prompt that was queued
+       */
+      prompt: string;
     };
 export type FileReadOutput =
   | {
@@ -135,6 +146,10 @@ export type FileReadOutput =
          * Total number of lines in the file
          */
         totalLines: number;
+        /**
+         * True when output was clipped to the byte cap (partial content)
+         */
+        resultWasTruncated?: boolean;
       };
     }
   | {
@@ -279,7 +294,7 @@ export interface AgentInput {
    */
   run_in_background?: boolean;
   /**
-   * Name for the spawned agent
+   * Name for the spawned agent. Makes it addressable via SendMessage({to: name}) while running.
    */
   name?: string;
   /**
