@@ -46,6 +46,7 @@
       "Bash(tree:*)",
       "Bash(cd:*)",
       "Bash(bash -n:*)",
+      "Bash(ssh:*)",
       "Bash(source:*)"
     ],
     "deny": [
@@ -97,7 +98,6 @@
       "Bash(su:*)",
       "Bash(curl:*)",
       "Bash(wget:*)",
-      "Bash(ssh:*)",
       "Bash(scp:*)",
       "Bash(rsync:*)",
       "Bash(nc:*)",
@@ -151,5 +151,6 @@
   "alwaysThinkingEnabled": true,
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus"
 }
