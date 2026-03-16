@@ -20,6 +20,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a0",
       "roundness": {"type": 3},
       "seed": 111111111,
       "version": 1,
@@ -31,7 +32,8 @@
       ],
       "updated": 1700000000000,
       "link": null,
-      "locked": false
+      "locked": false,
+      "hasTextLink": false
     },
     {
       "id": "text-client-01",
@@ -50,6 +52,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a1",
       "roundness": null,
       "seed": 333333333,
       "version": 1,
@@ -59,12 +62,13 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "text": "Client",
+      "rawText": "Client",
       "fontSize": 20,
-      "fontFamily": 1,
+      "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "baseline": 18,
       "containerId": "rect-client-01",
       "originalText": "Client",
       "autoResize": true,
@@ -87,6 +91,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a2",
       "roundness": {"type": 3},
       "seed": 555555555,
       "version": 1,
@@ -99,7 +104,8 @@
       ],
       "updated": 1700000000000,
       "link": null,
-      "locked": false
+      "locked": false,
+      "hasTextLink": false
     },
     {
       "id": "text-api-01",
@@ -118,6 +124,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a3",
       "roundness": null,
       "seed": 777777777,
       "version": 1,
@@ -127,12 +134,13 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "text": "API Gateway",
+      "rawText": "API Gateway",
       "fontSize": 20,
-      "fontFamily": 1,
+      "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "baseline": 18,
       "containerId": "rect-api-01",
       "originalText": "API Gateway",
       "autoResize": true,
@@ -155,6 +163,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a4",
       "roundness": {"type": 3},
       "seed": 101010101,
       "version": 1,
@@ -167,7 +176,8 @@
       ],
       "updated": 1700000000000,
       "link": null,
-      "locked": false
+      "locked": false,
+      "hasTextLink": false
     },
     {
       "id": "text-service-01",
@@ -186,6 +196,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a5",
       "roundness": null,
       "seed": 303030303,
       "version": 1,
@@ -195,12 +206,13 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "text": "Service A",
+      "rawText": "Service A",
       "fontSize": 20,
-      "fontFamily": 1,
+      "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "baseline": 18,
       "containerId": "rect-service-01",
       "originalText": "Service A",
       "autoResize": true,
@@ -223,6 +235,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a6",
       "roundness": {"type": 3},
       "seed": 505050505,
       "version": 1,
@@ -234,7 +247,8 @@
       ],
       "updated": 1700000000000,
       "link": null,
-      "locked": false
+      "locked": false,
+      "hasTextLink": false
     },
     {
       "id": "text-db-01",
@@ -253,6 +267,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a7",
       "roundness": null,
       "seed": 707070707,
       "version": 1,
@@ -262,12 +277,13 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "text": "Database",
+      "rawText": "Database",
       "fontSize": 20,
-      "fontFamily": 1,
+      "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "baseline": 18,
       "containerId": "rect-db-01",
       "originalText": "Database",
       "autoResize": true,
@@ -290,6 +306,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a8",
       "roundness": {"type": 2},
       "seed": 909090909,
       "version": 1,
@@ -299,18 +316,18 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "points": [[0, 0], [80, 0]],
+      "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "rect-client-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [1.04, 0.5]
       },
       "endBinding": {
         "elementId": "rect-api-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [-0.04, 0.5]
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -333,6 +350,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
+      "index": "a9",
       "roundness": {"type": 2},
       "seed": 131313131,
       "version": 1,
@@ -342,18 +360,18 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "points": [[0, 0], [80, -60]],
+      "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "rect-api-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [1.04, 0.5]
       },
       "endBinding": {
         "elementId": "rect-service-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [-0.04, 0.5]
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -376,7 +394,8 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "roundness": {"type": 2},
+      "index": "aA",
+      "roundness": null,
       "seed": 151515151,
       "version": 1,
       "versionNonce": 161616161,
@@ -385,22 +404,26 @@
       "updated": 1700000000000,
       "link": null,
       "locked": false,
+      "hasTextLink": false,
       "points": [[0, 0], [0, 70]],
+      "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "rect-service-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [0.5, 1.04]
       },
       "endBinding": {
         "elementId": "rect-db-01",
-        "focus": 0,
-        "gap": 5,
-        "fixedPoint": null
+        "mode": "orbit",
+        "fixedPoint": [0.5, -0.04]
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true,
+      "fixedSegments": null,
+      "startIsSpecial": null,
+      "endIsSpecial": null,
+      "moveMidPointsWithElement": false
     }
   ],
   "appState": {
