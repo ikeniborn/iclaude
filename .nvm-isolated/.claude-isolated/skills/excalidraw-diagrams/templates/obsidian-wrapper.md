@@ -4,7 +4,9 @@ tags: [excalidraw]
 ---
 ==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==
 
-# Text Elements
+# Excalidraw Data
+
+## Text Elements
 
 <!-- Текстовые элементы для поиска Obsidian (дублируются из JSON) -->
 <!-- Формат: [текст элемента] ^[id элемента] -->
