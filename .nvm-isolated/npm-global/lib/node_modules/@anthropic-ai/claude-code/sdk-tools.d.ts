@@ -110,17 +110,6 @@ export type AgentOutput =
        * Whether the calling agent has Read/Bash tools to check progress
        */
       canReadOutputFile?: boolean;
-    }
-  | {
-      status: "queued_to_running";
-      /**
-       * The ID of the running agent
-       */
-      agentId: string;
-      /**
-       * The prompt that was queued
-       */
-      prompt: string;
     };
 export type FileReadOutput =
   | {
@@ -285,10 +274,6 @@ export interface AgentInput {
    * Optional model override for this agent. Takes precedence over the agent definition's model frontmatter. If omitted, uses the agent definition's model, or inherits from the parent.
    */
   model?: "sonnet" | "opus" | "haiku";
-  /**
-   * Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript.
-   */
-  resume?: string;
   /**
    * Set to true to run this agent in the background. You will be notified when it completes.
    */
