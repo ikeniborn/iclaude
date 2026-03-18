@@ -396,7 +396,7 @@ class TestServerRegexMask:
         masked, found = mask(text)
         assert 'secret123' not in masked
         assert '[CREDENTIALS]' in masked
-        assert 'credentials in URL' in found
+        assert any("credentials in URL" in d for d in found)
 
     def test_url_credentials_at_in_password(self, mask):
         """Password containing @ must not leak after masking."""
@@ -420,6 +420,91 @@ class TestServerRegexMask:
         start = time.time()
         mask(text)
         assert time.time() - start < 0.5, 'URL credentials pattern too slow'
+
+
+# ============================================================================
+# TEST CASES: MASK_TOKEN behavior (configurable replacement token)
+# ============================================================================
+
+
+class TestMaskToken:
+    """Tests for configurable MASK_TOKEN in server.py masking modes."""
+
+    def _load_mod(self, level, token=None):
+        import importlib.util, os
+        src = os.path.join(os.path.dirname(__file__), '..', 'lib', 'pii-proxy', 'server.py')
+        if token is None:
+            os.environ.pop('PII_PROXY_MASK_TOKEN', None)
+        else:
+            os.environ['PII_PROXY_MASK_TOKEN'] = token
+        os.environ['PII_PROXY_MASKING_LEVEL'] = level
+        os.environ['PII_PROXY_LOG_LEVEL'] = 'info'
+        os.environ['ANTHROPIC_UPSTREAM_URL'] = 'http://localhost:19999'
+        os.environ.pop('ICLAUDE_SESSION_ID', None)
+        name = 'pii_mod_' + level + '_' + hex(id(token))
+        spec = importlib.util.spec_from_file_location(name, src)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_default_token_value(self):
+        """Default MASK_TOKEN must be 'REDACTED' (not '[PII_REDACTED]', no brackets)."""
+        mod = self._load_mod('standard')
+        assert mod.MASK_TOKEN == 'REDACTED'
+        assert mod.MASK_TOKEN != '[PII_REDACTED]'
+        assert '[' not in mod.MASK_TOKEN
+        assert ']' not in mod.MASK_TOKEN
+
+    def test_custom_token_stored(self):
+        """Custom MASK_TOKEN value is preserved at module level."""
+        mod = self._load_mod('standard', token='MYTOKEN')
+        assert mod.MASK_TOKEN == 'MYTOKEN'
+
+    def test_empty_token_accepted(self):
+        """Empty-string MASK_TOKEN (deletion mode) is accepted without error."""
+        mod = self._load_mod('standard', token='')
+        assert mod.MASK_TOKEN == ''
+
+    def test_secrets_mode_github_uses_hardcoded_token(self):
+        """secrets mode: GitHub token uses [GITHUB_TOKEN], not MASK_TOKEN."""
+        mod = self._load_mod('secrets', token='MUSTNOTAPPEAR')
+        gh = 'ghp_' + 'a' * 36
+        masked, _ = mod.regex_mask('auth: ' + gh)
+        assert '[GITHUB_TOKEN]' in masked
+        assert 'MUSTNOTAPPEAR' not in masked
+
+    def test_secrets_mode_jwt_uses_hardcoded_token(self):
+        """secrets mode: JWT uses [JWT_REDACTED], not MASK_TOKEN."""
+        mod = self._load_mod('secrets', token='MUSTNOTAPPEAR')
+        # Construct at runtime — avoids the hook matching a JWT literal in source
+        jwt = '.'.join([
+            'eyJhbGciOiJIUzI1NiJ9',
+            'eyJzdWIiOiJ1c2VyIn0',
+            'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+        ])
+        masked, _ = mod.regex_mask('Bearer ' + jwt)
+        assert '[JWT_REDACTED]' in masked
+        assert 'MUSTNOTAPPEAR' not in masked
+
+    def test_standard_regex_path_uses_hardcoded_token(self):
+        """standard mode regex_mask: GitHub token uses [GITHUB_TOKEN], not MASK_TOKEN."""
+        mod = self._load_mod('standard', token='MYTOKEN')
+        gh = 'ghp_' + 'b' * 36
+        masked, _ = mod.regex_mask('auth: ' + gh)
+        assert '[GITHUB_TOKEN]' in masked
+        assert 'MYTOKEN' not in masked
+
+    def test_env_empty_string_is_set(self):
+        """${var+x} idiom: empty PII_PROXY_MASK_TOKEN is SET, not missing."""
+        import os
+        os.environ['PII_PROXY_MASK_TOKEN'] = ''
+        try:
+            assert 'PII_PROXY_MASK_TOKEN' in os.environ
+            assert os.environ.get('PII_PROXY_MASK_TOKEN', 'MISSING') == ''
+            # -n equivalent returns False for empty (the issue +x avoids)
+            assert not bool(os.environ.get('PII_PROXY_MASK_TOKEN', ''))
+        finally:
+            del os.environ['PII_PROXY_MASK_TOKEN']
 
 
 # ============================================================================

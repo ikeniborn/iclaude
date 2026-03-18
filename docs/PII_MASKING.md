@@ -1291,6 +1291,7 @@ curl http://127.0.0.1:<PORT>/api/metrics
 | `PII_PROXY_PORT_MIN` | `20000` | Нижняя граница диапазона авто-выбора порта |
 | `PII_PROXY_PORT_MAX` | `40000` | Верхняя граница диапазона авто-выбора порта |
 | `PII_PROXY_ENABLE_FALLBACK` | `true` | Regex-fallback если Presidio недоступен |
+| `PII_PROXY_MASK_TOKEN` | `REDACTED` | Токен замены PII (пустая строка = удаление без плейсхолдера) |
 
 **Уровни маскирования (`PII_PROXY_MASKING_LEVEL`):**
 

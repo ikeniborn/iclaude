@@ -131,6 +131,7 @@ ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() !=
 #   'standard' - full masking: Presidio NLP + regex (default)
 _raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower().strip()
 MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
+MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
 
 # Log level: controls verbosity of masking log entries.
 #   'info'  - log count of masked items only (default, no PII metadata in logs)
@@ -328,13 +329,13 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         anonymized = _anonymizer.anonymize(
             text=text,
             analyzer_results=results,
-            operators={'DEFAULT': OperatorConfig('replace', {'new_value': '[PII_REDACTED]'})},
+            operators={'DEFAULT': OperatorConfig('replace', {'new_value': MASK_TOKEN})},
         )
         # Also apply regex patterns on top of Presidio output
         masked, regex_found = regex_mask(anonymized.text)
         if LOG_LEVEL == 'debug':
             entity_types = [
-                f'{r.entity_type} ("{_snippet(text[r.start:r.end])}" → "[PII_REDACTED]")'
+                f'{r.entity_type} ("{_snippet(text[r.start:r.end])}" → "{MASK_TOKEN}")'
                 for r in results
             ]
         else:
