@@ -105,35 +105,12 @@
     ],
     "defaultMode": "default"
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Read|Edit|Write|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/block-secrets.py\""
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""
-          }
-        ]
-      }
-    ]
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true
   },
   "statusLine": {
     "type": "command",
-    "command": "$CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh",
-    "padding": 1
-  },
-  "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true
+    "command": "timeout 0.5 $CLAUDE_CONFIG_DIR/scripts/claude-statusline.sh || true"
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,

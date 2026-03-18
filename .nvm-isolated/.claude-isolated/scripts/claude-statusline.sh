@@ -81,6 +81,43 @@ _SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
     read -r PROJECT_DIR
 } <<< "$_SD_PARSED"
 
+# --- Statusline caching (Variant D) ---
+# Возвращает кэшированный вывод мгновенно (<1ms), обновляет в фоне каждые 3с.
+# ICLAUDE_SL_NO_CACHE=1 предотвращает рекурсию в фоновом обновителе.
+_SL_CACHE_FILE="/tmp/iclaude-sl-cache-${SESSION_ID:-unknown}"
+_SL_WRITE_CACHE=0
+if [[ "${ICLAUDE_SL_NO_CACHE:-0}" == "0" ]] && [[ "${SESSION_ID:-unknown}" != "unknown" ]]; then
+    _SL_TTL=3
+    _SL_LOCK="/tmp/iclaude-sl-lock-${SESSION_ID}"
+    if [[ -f "$_SL_CACHE_FILE" ]]; then
+        _SL_CACHED_AT=$(stat -c %Y "$_SL_CACHE_FILE" 2>/dev/null || echo 0)
+        _SL_NOW=$(date +%s)
+        _SL_AGE=$(( _SL_NOW - _SL_CACHED_AT ))
+        if [[ $_SL_AGE -lt $_SL_TTL ]]; then
+            # Кэш свежий — выдаём сразу, запускаем фоновое обновление (если нет лока)
+            cat "$_SL_CACHE_FILE"
+            _SL_LOCK_AGE=999
+            if [[ -f "$_SL_LOCK" ]]; then
+                _SL_LOCK_AT=$(stat -c %Y "$_SL_LOCK" 2>/dev/null || echo 0)
+                _SL_LOCK_AGE=$(( _SL_NOW - _SL_LOCK_AT ))
+            fi
+            if [[ $_SL_LOCK_AGE -gt 5 ]]; then
+                (
+                    exec </dev/null >/dev/null 2>/dev/null
+                    touch "$_SL_LOCK"
+                    ICLAUDE_SL_NO_CACHE=1 timeout 2 bash "$0" <<< "$SESSION_DATA" \
+                        > "${_SL_CACHE_FILE}.tmp" 2>/dev/null \
+                        && mv "${_SL_CACHE_FILE}.tmp" "$_SL_CACHE_FILE" 2>/dev/null
+                    rm -f "$_SL_LOCK" 2>/dev/null
+                ) &
+                disown $! 2>/dev/null
+            fi
+            exit 0
+        fi
+    fi
+    _SL_WRITE_CACHE=1
+fi
+
 # Source provider adapter system (if available)
 PROVIDER_ADAPTER_AVAILABLE=0
 if [[ -f "$SCRIPT_DIR/lib/provider-adapter.sh" ]]; then
@@ -800,4 +837,10 @@ if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
 fi
 
 # Phase 3: Output statusline
+# Записываем в кэш (атомарно: tmp + mv) перед выводом
+if [[ "$_SL_WRITE_CACHE" == "1" ]]; then
+    printf '%s\n' "$STATUS_LINE" > "${_SL_CACHE_FILE}.tmp" 2>/dev/null \
+        && mv "${_SL_CACHE_FILE}.tmp" "$_SL_CACHE_FILE" 2>/dev/null
+fi
+
 printf '%s\n' "$STATUS_LINE"

@@ -3,7 +3,9 @@
   "claudeCodeVersion": "2.1.78",
   "routerVersion": "unknown",
   "lspServers": {
-    "pyright": "1.1.408"
+    "pyright": "1.1.408",
+    "vtsls": "0.3.0",
+    "typescript-language-server": "0.3.0"
   },
   "lspPlugins": {},
   "statusLineEnabled": true,
@@ -11,6 +13,6 @@
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-03-18T04:52:09Z",
+  "installedAt": "2026-03-18T13:29:34Z",
   "nvmVersion": "0.39.7"
 }
