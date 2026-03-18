@@ -151,6 +151,5 @@
   "alwaysThinkingEnabled": true,
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "skipDangerousModePermissionPrompt": true
 }
