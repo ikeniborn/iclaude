@@ -23,6 +23,25 @@ from __future__ import annotations  # Python 3.8+ совместимость д�
 import json
 import re
 import sys
+import time
+
+SECURITY_FLAG_FILE = '/tmp/iclaude-security-event.json'
+FLAG_TTL = 30  # секунд
+
+
+def write_security_flag(event_type: str, detail: str) -> None:
+    """Записывает флаг события безопасности для статус-лайна."""
+    try:
+        payload = {
+            'type': event_type,
+            'detail': detail,
+            'ts': time.time(),
+            'ttl': FLAG_TTL,
+        }
+        with open(SECURITY_FLAG_FILE, 'w') as f:
+            json.dump(payload, f)
+    except OSError:
+        pass
 
 # ---------------------------------------------------------------------------
 # Паттерны обнаружения и замены
@@ -249,11 +268,9 @@ def main() -> None:
 
     # Логируем что нашли (в stderr — видно пользователю, не Claude)
     unique_found = list(dict.fromkeys(found))  # порядок сохранён, дубли убраны
-    print(
-        f'[redact-secrets] {tool}: masked {len(found)} secret(s): '
-        + ', '.join(unique_found),
-        file=sys.stderr,
-    )
+    msg = f'⚠️  Секрет замаскирован в {tool}: {", ".join(unique_found)}'
+    print(msg, file=sys.stderr)
+    write_security_flag('redact', f'{len(found)} secret(s) in {tool}: {", ".join(unique_found)}')
 
     # Возвращаем модифицированные аргументы через toolInputOverride (CC v2.0.10+)
     print(json.dumps({
