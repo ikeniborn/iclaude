@@ -675,8 +675,8 @@ cleanup_stale_session_env() {
     [[ -z "$dir" ]] || [[ ! -d "$session_env_dir" ]] && return 0
 
     local retention="${SESSION_ENV_RETENTION_DAYS:-7}"
-    local long_retention=$(( retention * 4 ))
-    local now cutoff_empty cutoff_full
+    local long_retention now cutoff_empty cutoff_full
+    long_retention=$(( retention * 4 ))
     now=$(date +%s)
     cutoff_empty=$(( now - retention * 86400 ))
     cutoff_full=$(( now - long_retention * 86400 ))
