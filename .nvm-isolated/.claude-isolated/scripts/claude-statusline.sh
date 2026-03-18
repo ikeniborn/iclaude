@@ -50,6 +50,37 @@ if ! command -v jq &>/dev/null; then
     exit 0  # Don't break Claude Code UI
 fi
 
+# ONE-SHOT SESSION_DATA parse — все поля за один вызов jq (вместо 14+ отдельных вызовов)
+# SESSION_ID, SESSION_FILE, PROJECT_DIR доступны сразу для обоих путей (adapter + legacy)
+_SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
+  (has("context_window") | tostring),
+  (.context_window.total_input_tokens // 0 | tostring),
+  (.context_window.total_output_tokens // 0 | tostring),
+  (.model.display_name // .model.id // "Sonnet 4.5"),
+  (.context_window.context_window_size // 200000 | tostring),
+  (.context_window.current_usage.cache_read_input_tokens // 0 | tostring),
+  (.context_window.current_usage.cache_creation_input_tokens // 0 | tostring),
+  (.cost.total_cost_usd // 0 | tostring),
+  (.context_window.used_percentage // 0 | tostring),
+  (.session_id // "unknown"),
+  (.transcript_path // ""),
+  (.workspace.project_dir // .cwd // "")
+' 2>/dev/null)
+{
+    read -r _SD_IS_ANTHROPIC
+    read -r _SD_TOTAL_INPUT
+    read -r _SD_TOTAL_OUTPUT
+    read -r _SD_MODEL
+    read -r _SD_CONTEXT_LIMIT
+    read -r _SD_CACHE_READ
+    read -r _SD_CACHE_CREATION
+    read -r _SD_COST_RAW
+    read -r _SD_USED_PCT
+    read -r SESSION_ID
+    read -r SESSION_FILE
+    read -r PROJECT_DIR
+} <<< "$_SD_PARSED"
+
 # Source provider adapter system (if available)
 PROVIDER_ADAPTER_AVAILABLE=0
 if [[ -f "$SCRIPT_DIR/lib/provider-adapter.sh" ]]; then
@@ -64,50 +95,30 @@ if [[ -f "$SCRIPT_DIR/lib/rate-limit.sh" ]]; then
     RATE_LIMIT_AVAILABLE=1
 fi
 
-# Parse session data using adapter system (if available) or legacy parsing
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]]; then
-    # Use adapter system for multi-provider support
-    if parse_with_adapter "$SESSION_DATA"; then
-        # Adapter system set global variables: TOTAL_INPUT, TOTAL_OUTPUT, etc.
-        # PROVIDER_TYPE is also set for icon display
-        :
-    else
-        # Adapter failed, show awaiting message
+# Parse session data
+# Anthropic fast path: если one-shot parse дал валидные данные — пропускаем весь адаптер.
+# Адаптер нужен только для не-Anthropic провайдеров (Gemini, OpenAI, Ollama via router).
+if [[ "$_SD_IS_ANTHROPIC" == "true" ]]; then
+    # Anthropic fast path — используем pre-parsed значения, пропускаем адаптер
+    TOTAL_INPUT="$_SD_TOTAL_INPUT"
+    TOTAL_OUTPUT="$_SD_TOTAL_OUTPUT"
+    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
+    MODEL="$_SD_MODEL"
+    CONTEXT_LIMIT="$_SD_CONTEXT_LIMIT"
+    CACHE_READ="$_SD_CACHE_READ"
+    CACHE_CREATION="$_SD_CACHE_CREATION"
+    COST=$(printf "%.2f" "$_SD_COST_RAW")
+    PROVIDER_TYPE="anthropic"
+elif [[ "$PROVIDER_ADAPTER_AVAILABLE" == "1" ]]; then
+    # Non-Anthropic provider (Gemini, OpenAI, Ollama via router) — используем адаптер
+    if ! parse_with_adapter "$SESSION_DATA"; then
         echo "[Status line: awaiting session data...]"
         exit 0
     fi
-else
-    # Legacy parsing (Anthropic Claude API format only)
-    # 100% backward compatible with original logic
-    TOTAL_INPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
-    TOTAL_OUTPUT=$(echo "$SESSION_DATA" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
-fi
-
-# Debug: Log detected field names and parsed values
-if [[ "${DEBUG_STATUSLINE:-0}" == "1" ]]; then
-    echo "DEBUG: Detected relevant field names:" >&2
-    echo "$SESSION_DATA" | jq -r 'keys | map(select(test("token|cost|model"; "i"))) | join(", ")' >&2
-    echo "DEBUG: Parsed tokens: INPUT=$TOTAL_INPUT, OUTPUT=$TOTAL_OUTPUT" >&2
-fi
-
-# Validate parsed data (for legacy path only)
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    if [[ -z "$TOTAL_INPUT" ]] || [[ -z "$TOTAL_OUTPUT" ]] || \
-       [[ "$TOTAL_INPUT" == "null" ]] || [[ "$TOTAL_OUTPUT" == "null" ]]; then
-        echo "[Status line: awaiting session data...]"
-        exit 0  # Show message instead of breaking
-    fi
-
-    # Legacy parsing continues (only when adapter system unavailable)
     TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
-    MODEL=$(echo "$SESSION_DATA" | jq -r '.model.display_name // .model.id // "Sonnet 4.5"' 2>/dev/null)
-    CONTEXT_LIMIT=$(echo "$SESSION_DATA" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
-    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
-    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
 else
-    # Adapter system already parsed everything
-    TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
+    echo "[Status line: awaiting session data...]"
+    exit 0
 fi
 
 # Calculate API tokens percentage (billing only, excludes cache reads)
@@ -117,7 +128,7 @@ PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}
 # Parse active context (shows accumulated conversation INCLUDING cache)
 # This represents the TOTAL context window usage for next message
 # Cache is part of this total, shown separately in 📦
-USED_PERCENTAGE=$(echo "$SESSION_DATA" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
+USED_PERCENTAGE="$_SD_USED_PCT"
 
 # Calculate active tokens from used_percentage
 # This shows accumulated context (cache + conversation)
@@ -128,19 +139,8 @@ if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USE
     ACTIVE_PERCENT="$USED_PERCENTAGE"
 fi
 
-# Parse session context (session_id, project_dir, transcript_path)
-# Used by multiple features: smart waiting, session links
-SESSION_ID=$(echo "$SESSION_DATA" | jq -r '.session_id // "unknown"' 2>/dev/null)
-SESSION_FILE=$(echo "$SESSION_DATA" | jq -r '.transcript_path // empty' 2>/dev/null)
-PROJECT_DIR=$(echo "$SESSION_DATA" | jq -r '.workspace.project_dir // .cwd // empty' 2>/dev/null)
-
-# Parse/calculate cache tokens
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    # Legacy: parse cache from Claude API
-    CACHE_READ=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-    CACHE_CREATION=$(echo "$SESSION_DATA" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
-fi
-# Adapter system already set CACHE_READ and CACHE_CREATION
+# SESSION_ID, SESSION_FILE, PROJECT_DIR — уже установлены one-shot parse выше
+# CACHE_READ, CACHE_CREATION — уже установлены one-shot parse (legacy) или адаптером
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
 
 # Format cache display (show only if >0)
@@ -159,10 +159,7 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
 
-# Parse cost (legacy mode only, adapter already set COST)
-if [[ "$PROVIDER_ADAPTER_AVAILABLE" == "0" ]]; then
-    COST=$(printf "%.2f" "$(echo "$SESSION_DATA" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)")
-fi
+# COST — уже установлен one-shot parse (legacy) или адаптером
 
 # Proxy detection (environment variables + fallback)
 # Note: HTTPS_PROXY/HTTP_PROXY may not be set when Claude Code calls this script
@@ -204,9 +201,10 @@ fi
 SECURITY_ICON=""
 _SEC_FLAG="/tmp/iclaude-security-event.json"
 if [[ -f "$_SEC_FLAG" ]]; then
-    _SEC_TS=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(int(d.get('ts',0)))" 2>/dev/null || echo 0)
-    _SEC_TTL=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(d.get('ttl',30))" 2>/dev/null || echo 30)
-    _SEC_TYPE=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(d.get('type',''))" 2>/dev/null || echo "")
+    { read -r _SEC_TS; read -r _SEC_TTL; read -r _SEC_TYPE; } < <(
+        jq -r '(.ts | floor | tostring), (.ttl | tostring), .type' "$_SEC_FLAG" 2>/dev/null
+    )
+    _SEC_TS=${_SEC_TS:-0}; _SEC_TTL=${_SEC_TTL:-30}; _SEC_TYPE=${_SEC_TYPE:-}
     _SEC_NOW=$(date +%s 2>/dev/null || echo 0)
     _SEC_AGE=$(( _SEC_NOW - _SEC_TS ))
     if [[ $_SEC_AGE -lt ${_SEC_TTL:-30} ]]; then
