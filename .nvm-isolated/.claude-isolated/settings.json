@@ -2,7 +2,6 @@
   "cleanupPeriodDays": 7,
   "env": {
     "DISABLE_AUTOUPDATER": "1",
-    "DEBUG_STATUSLINE": "1",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "permissions": {
@@ -123,17 +122,6 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/capture-tool-results.py\""
           }
         ]
       }
