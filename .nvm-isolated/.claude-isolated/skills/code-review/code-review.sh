@@ -18,7 +18,6 @@ source "$LIB_DIR/dependency-graph.sh"
 # Глобальные переменные для результатов
 BLOCKING_ISSUES=()
 WARNINGS=()
-SUGGESTIONS=()
 ARCHITECTURE_AVAILABLE=false
 ARCHITECTURE_GENERATED=false
 
@@ -259,8 +258,6 @@ validate_architecture() {
 generate_output() {
     local blocking_count=${#BLOCKING_ISSUES[@]}
     local warning_count=${#WARNINGS[@]}
-    local suggestion_count=${#SUGGESTIONS[@]}
-
     # Расчет score
     local arch_score=25
     local security_score=25
@@ -298,11 +295,7 @@ generate_output() {
         warnings_json=$(printf '%s\n' "${WARNINGS[@]}" | jq -s '.')
     fi
 
-    # Формирование suggestions array
-    local suggestions_json="[]"
-    if [[ ${#SUGGESTIONS[@]} -gt 0 ]]; then
-        suggestions_json=$(printf '%s\n' "${SUGGESTIONS[@]}" | jq -s '.')
-    fi
+    # Rule D-5: suggestions[] верхнего уровня ЗАПРЕЩЁН — все findings через BLOCKING_ISSUES/WARNINGS
 
     # Генерация итогового JSON
     jq -n \
@@ -310,7 +303,6 @@ generate_output() {
         --argjson passed "$passed" \
         --argjson blocking "$blocking_json" \
         --argjson warnings "$warnings_json" \
-        --argjson suggestions "$suggestions_json" \
         --argjson arch_available "$ARCHITECTURE_AVAILABLE" \
         --argjson arch_generated "$ARCHITECTURE_GENERATED" \
         --argjson arch_score "$arch_score" \
@@ -321,7 +313,6 @@ generate_output() {
                 passed: $passed,
                 blocking_issues: $blocking,
                 warnings: $warnings,
-                suggestions: $suggestions,
                 metrics: {
                     architecture_compliance: {
                         score: $arch_score,
