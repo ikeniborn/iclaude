@@ -248,6 +248,19 @@ USE_PII_PROXY=false
 # По умолчанию: info
 # PII_PROXY_LOG_LEVEL=debug
 
+# Срок хранения лог-файлов PII proxy (в днях).
+# Файлы *.log в pii-proxy-logs/ старше этого порога удаляются при запуске iclaude.
+# access.log и ccr-daemon.log не затрагиваются (агрегирующие, не сессионные).
+# По умолчанию: 7
+# PII_LOG_RETENTION_DAYS=7
+
+# Срок хранения директорий session-env/ (в днях).
+# Claude Code создаёт по одной подпапке на каждую сессию.
+# Пустые папки удаляются через SESSION_ENV_RETENTION_DAYS дней.
+# Непустые папки удаляются через SESSION_ENV_RETENTION_DAYS × 4 дней.
+# По умолчанию: 7 (пустые) / 28 (непустые)
+# SESSION_ENV_RETENTION_DAYS=7
+
 # Токен замены PII при маскировании (режим standard).
 # Подставляется вместо персональных данных, обнаруженных Presidio NLP.
 # По умолчанию: REDACTED (без скобок — не конфликтует с Markdown ссылками)
