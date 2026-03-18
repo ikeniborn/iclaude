@@ -13,6 +13,27 @@ Exit codes:
 
 import sys
 import json
+import os
+import time
+
+
+SECURITY_FLAG_FILE = '/tmp/iclaude-security-event.json'
+FLAG_TTL = 30  # секунд
+
+
+def write_security_flag(event_type: str, detail: str) -> None:
+    """Записывает флаг события безопасности для статус-лайна."""
+    try:
+        payload = {
+            'type': event_type,
+            'detail': detail,
+            'ts': time.time(),
+            'ttl': FLAG_TTL,
+        }
+        with open(SECURITY_FLAG_FILE, 'w') as f:
+            json.dump(payload, f)
+    except OSError:
+        pass
 
 # Директории, исключённые из проверки (хуки не блокируют сами себя)
 EXCLUDE_DIRS = [
@@ -128,11 +149,10 @@ def main() -> None:
         if file_path and not is_excluded(file_path):
             blocked, pattern = is_sensitive_path(file_path)
             if blocked:
-                print(
-                    f"[block-secrets] BLOCKED {tool}: "
-                    f"sensitive path '{pattern}' in: {file_path}",
-                    file=sys.stderr
-                )
+                reason = f"🔒 Доступ заблокирован: чувствительный файл '{pattern}' — {file_path}"
+                print(reason, file=sys.stderr)
+                write_security_flag('block', f"'{pattern}' in {os.path.basename(file_path)}")
+                print(json.dumps({'reason': reason}))
                 sys.exit(2)
 
     # --- Проверка Bash-команд ---
@@ -152,11 +172,10 @@ def main() -> None:
                     if not is_excluded(token):
                         blocked, pattern = is_sensitive_path(token)
                         if blocked:
-                            print(
-                                f"[block-secrets] BLOCKED Bash: "
-                                f"sensitive path '{pattern}' in arg: {token}",
-                                file=sys.stderr
-                            )
+                            reason = f"🔒 Доступ заблокирован: чувствительный путь '{pattern}' в аргументе: {token}"
+                            print(reason, file=sys.stderr)
+                            write_security_flag('block', f"'{pattern}' in bash arg")
+                            print(json.dumps({'reason': reason}))
                             sys.exit(2)
 
     sys.exit(0)
