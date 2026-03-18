@@ -125,6 +125,7 @@ trigger_rate_limit_fetch() {
 
     # Background fetch — fire and forget
     (
+        exec </dev/null >/dev/null 2>/dev/null
         cleanup_rl() {
             rm -f "$lock_file" "/tmp/claude-ratelimit-headers-$$.tmp" 2>/dev/null
         }
