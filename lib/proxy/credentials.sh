@@ -19,7 +19,7 @@
 #######################################
 save_credentials() {
     local proxy_url=$1
-    local no_proxy=${2:-localhost,127.0.0.1,api.anthropic.com,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
+    local no_proxy=${2:-localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org}
 
     # Extract protocol first
     local protocol=$(echo "$proxy_url" | grep -oP '^[^:]+')
@@ -168,7 +168,7 @@ load_credentials() {
     if [[ -z "${PROXY_URL:-}" ]]; then
         # Old format: first line is the URL
         PROXY_URL=$(head -n 1 "$CREDENTIALS_FILE")
-        NO_PROXY="localhost,127.0.0.1,api.anthropic.com,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
+        NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
     # Export loaded credentials to environment
@@ -217,12 +217,7 @@ load_credentials() {
 
     # Set default NO_PROXY if not present (backward compatibility)
     if [[ -z "${NO_PROXY:-}" ]]; then
-        NO_PROXY="localhost,127.0.0.1,api.anthropic.com,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
-    fi
-
-    # Auto-upgrade: ensure api.anthropic.com is in NO_PROXY (prevents SSE stream interruptions)
-    if [[ "${NO_PROXY:-}" != *"api.anthropic.com"* ]]; then
-        NO_PROXY="api.anthropic.com,${NO_PROXY}"
+        NO_PROXY="localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org"
     fi
 
     # Return URL and NO_PROXY (pipe-separated for reliable parsing)
