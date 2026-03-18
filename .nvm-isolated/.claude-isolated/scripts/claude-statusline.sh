@@ -200,6 +200,26 @@ if [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && [[ -f "$CLAUDE_CONFIG_DIR/route
     ROUTER_ICON=" | 🔀 $PROVIDER"
 fi
 
+# Security hook event indicator — 🔒 (block) или ⚠️ (redact), показывается FLAG_TTL секунд
+SECURITY_ICON=""
+_SEC_FLAG="/tmp/iclaude-security-event.json"
+if [[ -f "$_SEC_FLAG" ]]; then
+    _SEC_TS=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(int(d.get('ts',0)))" 2>/dev/null || echo 0)
+    _SEC_TTL=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(d.get('ttl',30))" 2>/dev/null || echo 30)
+    _SEC_TYPE=$(python3 -c "import json; d=json.load(open('$_SEC_FLAG')); print(d.get('type',''))" 2>/dev/null || echo "")
+    _SEC_NOW=$(date +%s 2>/dev/null || echo 0)
+    _SEC_AGE=$(( _SEC_NOW - _SEC_TS ))
+    if [[ $_SEC_AGE -lt ${_SEC_TTL:-30} ]]; then
+        if [[ "$_SEC_TYPE" == "block" ]]; then
+            SECURITY_ICON=" | 🔒"
+        else
+            SECURITY_ICON=" | ⚠️"
+        fi
+    else
+        rm -f "$_SEC_FLAG" 2>/dev/null
+    fi
+fi
+
 # PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)
 # Fetches live masking count from /api/metrics with 30s TTL cache
 PII_ICON=""
@@ -715,7 +735,7 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -723,7 +743,7 @@ case "$DISPLAY_MODE" in
         # Remove: router, proxy, session link, git info
         # Keep: tokens, cache, model, cost, rate limit, memory link, pii icon, microvm
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${MEMORY_LINK}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${SECURITY_ICON}${MEMORY_LINK}"
         ;;
 
     minimal)
@@ -736,7 +756,7 @@ case "$DISPLAY_MODE" in
             [[ "${MICRO_VM_WORKSPACE_MODE:-full}" == "isolated" ]] \
                 && _MICROVM_MINIMAL=" ⚡🔐" || _MICROVM_MINIMAL=" ⚡"
         fi
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${_PII_MINIMAL}${_MICROVM_MINIMAL}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${_PII_MINIMAL}${_MICROVM_MINIMAL}${SECURITY_ICON}"
         ;;
 esac
 
