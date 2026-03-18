@@ -1,6 +1,6 @@
 {
   "nodeVersion": "18.20.8",
-  "claudeCodeVersion": "2.1.78",
+  "claudeCodeVersion": "2.1.74",
   "routerVersion": "unknown",
   "lspServers": {
     "pyright": "1.1.408",
