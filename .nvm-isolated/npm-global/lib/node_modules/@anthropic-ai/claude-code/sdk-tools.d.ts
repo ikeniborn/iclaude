@@ -135,10 +135,6 @@ export type FileReadOutput =
          * Total number of lines in the file
          */
         totalLines: number;
-        /**
-         * True when output was clipped to the byte cap (partial content)
-         */
-        resultWasTruncated?: boolean;
       };
     }
   | {
