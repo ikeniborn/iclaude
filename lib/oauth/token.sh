@@ -90,6 +90,11 @@ check_token_expiration() {
 check_oauth_token() {
     local skip_isolated="${1:-false}"
 
+    # If CLAUDE_CODE_OAUTH_TOKEN is set, Claude Code will use it directly — skip credentials check
+    if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+        return 0
+    fi
+
     # Determine credentials file path
     local credentials_file=""
 
