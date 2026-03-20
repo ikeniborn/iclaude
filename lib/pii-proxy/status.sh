@@ -74,14 +74,36 @@ check_pii_proxy_status() {
         fi
     fi
 
-    # spaCy model — skip check in regex-only mode
+    # spaCy models — skip check in regex-only mode
     if [[ "$pii_mode" != "regex-only" ]]; then
-        if "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
-            print_success "spaCy model: en_core_web_lg"
+        local en_model_file ru_model_file
+        en_model_file=$(cat "$PII_PROXY_VENV/spacy_model_en" 2>/dev/null | tr -d '[:space:]')
+        ru_model_file=$(cat "$PII_PROXY_VENV/spacy_model_ru" 2>/dev/null | tr -d '[:space:]')
+
+        # English model
+        if [[ -n "$en_model_file" ]] && "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('$en_model_file')" 2>/dev/null; then
+            [[ "$en_model_file" == *"_sm" ]] \
+                && print_warning "spaCy model (EN): $en_model_file (reduced accuracy)" \
+                || print_success "spaCy model (EN): $en_model_file"
+        elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
+            print_success "spaCy model (EN): en_core_web_lg"
         elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('en_core_web_sm')" 2>/dev/null; then
-            print_warning "spaCy model: en_core_web_sm (reduced accuracy)"
+            print_warning "spaCy model (EN): en_core_web_sm (reduced accuracy)"
         else
-            print_warning "spaCy model: not found"
+            print_warning "spaCy model (EN): not found"
+        fi
+
+        # Russian model
+        if [[ -n "$ru_model_file" ]] && "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('$ru_model_file')" 2>/dev/null; then
+            [[ "$ru_model_file" == *"_sm" ]] \
+                && print_warning "spaCy model (RU): $ru_model_file (reduced accuracy)" \
+                || print_success "spaCy model (RU): $ru_model_file"
+        elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('ru_core_news_lg')" 2>/dev/null; then
+            print_success "spaCy model (RU): ru_core_news_lg"
+        elif "$PII_PROXY_VENV/bin/python3" -c "import spacy; spacy.load('ru_core_news_sm')" 2>/dev/null; then
+            print_warning "spaCy model (RU): ru_core_news_sm (reduced accuracy)"
+        else
+            print_warning "spaCy model (RU): not found"
         fi
     fi
 
