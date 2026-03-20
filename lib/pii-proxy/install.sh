@@ -258,7 +258,68 @@ _pii_proxy_cascade_install() {
 }
 
 #######################################
-# Download spaCy model (lg preferred, sm fallback)
+# Download one spaCy model: lg preferred, sm fallback.
+# Skips download if lg is already at the latest version.
+# Args:
+#   $1 - language tag (en | ru)
+#   $2 - primary (lg) model name
+#   $3 - fallback (sm) model name
+#   $4 - primary model size in MB
+#   $5 - fallback model size in MB
+#   $6 - action verb ("Downloading" | "Updating")
+# Reads from caller scope: $PII_PROXY_VENV, $proxy_env[]
+# Writes: $PII_PROXY_VENV/spacy_model_$lang
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_download_spacy_model() {
+    local lang="$1" lg_model="$2" sm_model="$3" lg_size="$4" sm_size="$5" action="$6"
+    local pkg_lg="${lg_model//_/-}"
+    local chosen=""
+
+    # Version check: skip if lg model is already at latest version
+    local installed_ver
+    installed_ver=$("$PII_PROXY_VENV/bin/python3" -c "
+import importlib.metadata
+try:
+    print(importlib.metadata.version('$pkg_lg'))
+except Exception:
+    pass" 2>/dev/null)
+
+    if [[ -n "$installed_ver" ]]; then
+        # pip --dry-run: "Requirement already satisfied" → no update available
+        if "$PII_PROXY_VENV/bin/pip3" install \
+            --dry-run --upgrade "$pkg_lg" $(_pip_proxy_args) 2>&1 \
+            | grep -q "Requirement already satisfied"; then
+            print_success "$lg_model already up to date (v${installed_ver})"
+            echo "$lg_model" > "$PII_PROXY_VENV/spacy_model_$lang"
+            return 0
+        fi
+    fi
+
+    # Download / upgrade primary model
+    print_info "$action spaCy $lg_model (~${lg_size}MB)..."
+    if _run_with_progress "$PII_PROXY_VENV" "$lg_size" "$lg_model" \
+        "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download "$lg_model" --upgrade; then
+        chosen="$lg_model"
+    else
+        # Fallback to sm — fresh install only, no --upgrade
+        print_warning "Failed to download $lg_model, trying $sm_model (~${sm_size}MB)..."
+        if _run_with_progress "$PII_PROXY_VENV" "$sm_size" "$sm_model" \
+            "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download "$sm_model"; then
+            chosen="$sm_model"
+            print_warning "Using $sm_model (lower accuracy)"
+        else
+            print_error "Failed to download ${lang^^} spaCy model"
+            return 1
+        fi
+    fi
+
+    echo "$chosen" > "$PII_PROXY_VENV/spacy_model_$lang"
+}
+
+#######################################
+# Download spaCy models: English + Russian (lg preferred, sm fallback)
+# On reinstall: upgrades only if newer version is available on PyPI
 # Returns: 0 on success, 1 on failure
 #######################################
 _pii_proxy_download_model() {
@@ -270,44 +331,12 @@ _pii_proxy_download_model() {
         proxy_env=(env HTTPS_PROXY="$proxy" HTTP_PROXY="$proxy")
     fi
 
-    local en_model="" ru_model=""
+    # Detect reinstall (models already present) for UI messaging
+    local action="Downloading"
+    [[ -f "$PII_PROXY_VENV/spacy_model_en" ]] && action="Updating"
 
-    # English model: lg preferred, sm fallback
-    print_info "Downloading spaCy en_core_web_lg model (~560MB)..."
-    if _run_with_progress "$PII_PROXY_VENV" 560 "en_core_web_lg" \
-        "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_lg; then
-        en_model="en_core_web_lg"
-    else
-        print_warning "Failed to download en_core_web_lg, trying en_core_web_sm (~15MB)..."
-        if _run_with_progress "$PII_PROXY_VENV" 15 "en_core_web_sm" \
-            "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_sm; then
-            en_model="en_core_web_sm"
-            print_warning "Using en_core_web_sm (lower accuracy for English)"
-        else
-            print_error "Failed to download English spaCy model"
-            return 1
-        fi
-    fi
-
-    # Russian model: lg preferred, sm fallback
-    print_info "Downloading spaCy ru_core_news_lg model (~500MB)..."
-    if _run_with_progress "$PII_PROXY_VENV" 500 "ru_core_news_lg" \
-        "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download ru_core_news_lg; then
-        ru_model="ru_core_news_lg"
-    else
-        print_warning "Failed to download ru_core_news_lg, trying ru_core_news_sm (~15MB)..."
-        if _run_with_progress "$PII_PROXY_VENV" 15 "ru_core_news_sm" \
-            "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download ru_core_news_sm; then
-            ru_model="ru_core_news_sm"
-            print_warning "Using ru_core_news_sm (lower accuracy for Russian)"
-        else
-            print_warning "Russian spaCy model unavailable — PII masking will work for English only"
-        fi
-    fi
-
-    # Save model names for server.py to read
-    echo "$en_model" > "$PII_PROXY_VENV/spacy_model_en"
-    [[ -n "$ru_model" ]] && echo "$ru_model" > "$PII_PROXY_VENV/spacy_model_ru"
+    _pii_download_spacy_model en en_core_web_lg en_core_web_sm 560 15 "$action" || return 1
+    _pii_download_spacy_model ru ru_core_news_lg ru_core_news_sm 500 15 "$action" || return 1
 }
 
 #######################################
