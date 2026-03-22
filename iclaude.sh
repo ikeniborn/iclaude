@@ -208,6 +208,7 @@ fi
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
     USE_CHROME=true  # Chrome integration enabled by default
+    NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
     model_value=""  # Model selection (empty = use Claude Code default)
 
@@ -226,6 +227,13 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
+
+        # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
+        _cfg_no_attr=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_no_attr" ]] && NO_ATTRIBUTION_HEADER=true
+        unset _cfg_no_attr
     fi
 
     # Parse arguments
@@ -507,6 +515,10 @@ fi
                 ;;
             --sandbox-microvm)
                 USE_MICRO_VM_FLAG=true
+                shift
+                ;;
+            --no-attribution-header)
+                NO_ATTRIBUTION_HEADER=true
                 shift
                 ;;
             --no-chrome)

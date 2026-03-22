@@ -529,6 +529,12 @@ configure_guest_environment() {
             echo "export CLAUDE_CODE_ENABLE_TASKS='${tasks_e}'"
         fi
 
+        # Attribution header (disable billing hash that breaks KV cache on third-party backends)
+        if [[ -n "${CLAUDE_CODE_ATTRIBUTION_HEADER:-}" ]]; then
+            local attr_e; attr_e=$(_sh_escape_val "$CLAUDE_CODE_ATTRIBUTION_HEADER")
+            echo "export CLAUDE_CODE_ATTRIBUTION_HEADER='${attr_e}'"
+        fi
+
         # microVM sandbox indicator vars for statusline (⚡ icon + hover tooltip)
         echo "export ICLAUDE_MICROVM_ACTIVE=1"
         local ws_mode_e; ws_mode_e=$(_sh_escape_val "${MICRO_VM_WORKSPACE_MODE:-full}")
