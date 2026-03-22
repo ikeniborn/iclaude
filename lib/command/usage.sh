@@ -60,6 +60,8 @@ OPTIONS:
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
   --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
+  --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
+                                    Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL
   --no-chrome                       Disable Chrome integration (enabled by default)
   --model MODEL                     Select Claude model (e.g. claude-opus-4-6, claude-sonnet-4-6, claude-haiku-3-5)
                                     Saved to config and applied on every launch until changed

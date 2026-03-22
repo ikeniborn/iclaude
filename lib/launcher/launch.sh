@@ -32,6 +32,23 @@ launch_claude() {
         use_router=true
     fi
 
+    # Disable x-anthropic-billing-header when routing to third-party backends.
+    # The billing hash (cch=) changes every request and invalidates KV cache on
+    # proxies/routers that treat it as part of the system prompt (Ollama, CCR, Bedrock).
+    # Auto-enabled when --router is active; also enabled by --no-attribution-header flag.
+    # Respects explicit user override: if CLAUDE_CODE_ATTRIBUTION_HEADER is already set
+    # in the environment (e.g. via settings.json env block), leave it unchanged.
+    if [[ "$use_router" == "true" ]] || [[ "${NO_ATTRIBUTION_HEADER:-false}" == "true" ]]; then
+        if [[ -z "${CLAUDE_CODE_ATTRIBUTION_HEADER:-}" ]]; then
+            export CLAUDE_CODE_ATTRIBUTION_HEADER=0
+            if [[ "$use_router" == "true" ]]; then
+                print_info "Attribution header disabled (router mode — prevents KV cache invalidation)"
+            else
+                print_info "Attribution header disabled (--no-attribution-header)"
+            fi
+        fi
+    fi
+
     # microVM sandbox: run Claude inside Firecracker VM (kernel isolation)
     local use_microvm=false
     if [[ "${USE_MICRO_VM_FLAG:-false}" == "true" ]]; then
