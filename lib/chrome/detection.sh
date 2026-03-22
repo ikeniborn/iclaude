@@ -73,7 +73,6 @@ warn_chrome_integration() {
         print_warning "Chrome is not running - browser automation won't work"
         echo ""
         echo "Start Chrome to enable browser automation features"
-        echo "Or run with --no-chrome to skip this warning"
         echo ""
         return 1
     fi
@@ -83,8 +82,6 @@ warn_chrome_integration() {
         echo ""
         echo "Browser automation requires the Chrome extension:"
         echo "  https://chromewebstore.google.com/detail/claude-in-chrome/hgjbefmfenopoenbhdcfhclblnnfifhh"
-        echo ""
-        echo "Or run with --no-chrome to disable browser integration"
         echo ""
         return 1
     fi
