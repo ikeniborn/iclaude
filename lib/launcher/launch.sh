@@ -858,7 +858,7 @@ except Exception:
     export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
     if [[ "${PII_PROXY_LOG_LEVEL:-info}" == "debug" ]]; then
-        print_warning "PII proxy: DEBUG mode — log contains PII metadata, auto-deleted on exit"
+        print_warning "PII proxy: DEBUG mode — log contains PII metadata, preserved after exit: ${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     fi
     echo ""
     return 0
@@ -998,12 +998,13 @@ stop_pii_proxy_server() {
             done
             kill -9 "$pid" 2>/dev/null || true
         fi
-        # In debug mode: auto-delete session log (contains PII metadata).
+        # In info mode: auto-delete session log after process termination.
         # Deleted AFTER process termination so Python's shutdown log entry
         # (written on SIGTERM) doesn't recreate the file after deletion.
+        # In debug mode: log is preserved for inspection.
         # Only delete if this session owns the proxy (PII_PROXY_SESSION_OWNED=true).
         if [[ "${PII_PROXY_SESSION_OWNED:-}" == "true" && \
-              "${PII_PROXY_LOG_LEVEL:-info}" == "debug" && \
+              "${PII_PROXY_LOG_LEVEL:-info}" != "debug" && \
               -n "${PII_PROXY_LOG_DIR:-}" && \
               -n "${ICLAUDE_SESSION_ID:-}" ]]; then
             rm -f "${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
