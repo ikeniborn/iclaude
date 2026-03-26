@@ -63,6 +63,7 @@ export type ToolOutputSchemas =
 export type AgentOutput =
   | {
       agentId: string;
+      agentType?: string;
       content: {
         type: "text";
         text: string;
@@ -315,7 +316,7 @@ export interface BashInput {
    */
   description?: string;
   /**
-   * Set to true to run this command in the background. Use TaskOutput to read the output later.
+   * Set to true to run this command in the background. Use Read to read the output later.
    */
   run_in_background?: boolean;
   /**
@@ -455,7 +456,7 @@ export interface GrepInput {
    */
   type?: string;
   /**
-   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults to 0 (unlimited).
+   * Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults to 250 when unspecified. Pass 0 for unlimited (use sparingly — large result sets waste context).
    */
   head_limit?: number;
   /**
@@ -2215,7 +2216,7 @@ export interface ConfigInput {
 }
 export interface EnterWorktreeInput {
   /**
-   * Optional name for the worktree (letters, digits, dots, underscores, dashes only; max 64 chars). A random name is generated if not provided.
+   * Optional name for the worktree. Each "/"-separated segment may contain only letters, digits, dots, underscores, and dashes; max 64 chars total. A random name is generated if not provided.
    */
   name?: string;
 }
@@ -2286,10 +2287,6 @@ export interface BashOutput {
    * Total size of the output in bytes (set when output is too large for inline)
    */
   persistedOutputSize?: number;
-  /**
-   * Compressed output sent to model when token-saver is active (UI still uses stdout)
-   */
-  tokenSaverOutput?: string;
 }
 export interface ExitPlanModeOutput {
   /**
@@ -2305,6 +2302,10 @@ export interface ExitPlanModeOutput {
    * Whether the Agent tool is available in the current context
    */
   hasTaskTool?: boolean;
+  /**
+   * True when the user edited the plan (CCR web UI or Ctrl+G); determines whether the plan is echoed back in tool_result
+   */
+  planWasEdited?: boolean;
   /**
    * When true, the teammate has sent a plan approval request to the team leader
    */
