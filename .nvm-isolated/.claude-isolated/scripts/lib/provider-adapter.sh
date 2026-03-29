@@ -37,47 +37,29 @@ detect_provider_type() {
     [[ -z "$session_data" ]] && echo "unknown" && return 1
     [[ "$session_data" == "null" ]] && echo "unknown" && return 1
 
-    # Check for Anthropic Claude format
-    # Signature: .context_window.total_input_tokens
-    local has_context_window=$(echo "$session_data" | jq -r 'has("context_window")' 2>/dev/null)
-    local has_total_input=$(echo "$session_data" | jq -r '.context_window.total_input_tokens // empty' 2>/dev/null)
+    # ONE-SHOT detection: определяем провайдера одним вызовом jq
+    local _detect
+    _detect=$(echo "$session_data" | jq -r '
+        if has("context_window") and (.context_window.total_input_tokens != null) then "anthropic"
+        elif has("usageMetadata") then "gemini"
+        elif has("usage") and (.usage.prompt_tokens != null) then
+            (.model // "") | if test("^(llama|mistral|qwen|codellama|deepseek-coder|phi|vicuna|orca|gemma|starcoder|solar|yi)") then "ollama" else "openai" end
+        else "unknown"
+        end
+    ' 2>/dev/null)
 
-    if [[ "$has_context_window" == "true" ]] && [[ -n "$has_total_input" ]]; then
+    if [[ "$_detect" == "anthropic" ]]; then
         echo "anthropic"
         return 0
     fi
-
-    # Check for Google Gemini format
-    # Signature: .usageMetadata
-    local has_usage_metadata=$(echo "$session_data" | jq -r 'has("usageMetadata")' 2>/dev/null)
-
-    if [[ "$has_usage_metadata" == "true" ]]; then
+    if [[ "$_detect" == "gemini" ]]; then
         echo "gemini"
         return 0
     fi
-
-    # Check for OpenAI-compatible format
-    # Signature: .usage.prompt_tokens
-    local has_usage=$(echo "$session_data" | jq -r 'has("usage")' 2>/dev/null)
-    local has_prompt_tokens=$(echo "$session_data" | jq -r '.usage.prompt_tokens // empty' 2>/dev/null)
-
-    if [[ "$has_usage" == "true" ]] && [[ -n "$has_prompt_tokens" ]]; then
-        # Distinguish between OpenAI and Ollama by model name
-        local model_name=$(echo "$session_data" | jq -r '.model // empty' 2>/dev/null)
-
-        # Ollama models: llama*, mistral*, qwen*, codellama*, gemma*, phi*, etc.
-        if [[ "$model_name" =~ ^(llama|mistral|qwen|codellama|deepseek-coder|phi|vicuna|orca|gemma|starcoder|solar|yi) ]]; then
-            echo "ollama"
-            return 0
-        fi
-
-        echo "openai"
-        return 0
-    fi
-
-    # Unknown provider
-    echo "unknown"
-    return 1
+    # openai/ollama/unknown — уже определено jq выше
+    echo "${_detect:-unknown}"
+    [[ "${_detect:-unknown}" != "unknown" ]]
+    return $?
 }
 
 # Get path to provider adapter script
@@ -264,15 +246,28 @@ parse_with_adapter() {
         echo "[DEBUG] Unified data: $unified_data" >&2
     fi
 
-    # Extract values from unified data and set global variables
-    # These variables are used by statusline.sh
-    TOTAL_INPUT=$(echo "$unified_data" | jq -r '.total_input_tokens // 0')
-    TOTAL_OUTPUT=$(echo "$unified_data" | jq -r '.total_output_tokens // 0')
-    CONTEXT_LIMIT=$(echo "$unified_data" | jq -r '.context_limit // 200000')
-    CACHE_READ=$(echo "$unified_data" | jq -r '.cache_read_tokens // 0')
-    CACHE_CREATION=$(echo "$unified_data" | jq -r '.cache_creation_tokens // 0')
-    MODEL=$(echo "$unified_data" | jq -r '.model_name // "Unknown"')
-    COST=$(printf "%.2f" "$(echo "$unified_data" | jq -r '.total_cost_usd // 0')")
+    # ONE-SHOT extract из unified_data — один вызов jq вместо 7
+    local _u_parsed
+    _u_parsed=$(echo "$unified_data" | jq -r '
+        (.total_input_tokens // 0 | tostring),
+        (.total_output_tokens // 0 | tostring),
+        (.context_limit // 200000 | tostring),
+        (.cache_read_tokens // 0 | tostring),
+        (.cache_creation_tokens // 0 | tostring),
+        (.model_name // "Unknown"),
+        (.total_cost_usd // 0 | tostring)
+    ' 2>/dev/null)
+    local _u_cost_raw
+    {
+        read -r TOTAL_INPUT
+        read -r TOTAL_OUTPUT
+        read -r CONTEXT_LIMIT
+        read -r CACHE_READ
+        read -r CACHE_CREATION
+        read -r MODEL
+        read -r _u_cost_raw
+    } <<< "$_u_parsed"
+    COST=$(printf "%.2f" "$_u_cost_raw")
 
     # Export provider type for icon display
     export PROVIDER_TYPE="$provider_type"

@@ -5,6 +5,11 @@ on:
     # Запуск каждый день в 03:00 UTC
     - cron: '0 3 * * *'
   workflow_dispatch: # Позволяет запустить вручную через GitHub UI
+    inputs:
+      branch:
+        description: 'Branch to update'
+        required: false
+        default: 'dev'
 
 jobs:
   check-and-update:
@@ -16,6 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: dev
           fetch-depth: 0 # Полная история для корректного коммита
           token: ${{ secrets.GITHUB_TOKEN }}  # Explicit token for push access
           persist-credentials: true  # Keep credentials for subsequent git operations
@@ -261,7 +267,7 @@ jobs:
           COMMIT_MSG="${COMMIT_MSG} [skip ci]"
 
           git commit -m "$COMMIT_MSG" -m "$COMMIT_DETAILS"
-          git push origin master
+          git push origin dev
 
           echo "✅ Successfully updated and pushed changes"
 

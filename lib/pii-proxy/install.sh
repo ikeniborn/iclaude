@@ -15,15 +15,129 @@ _detect_alt_linux() {
 }
 
 #######################################
+# Resolve proxy URL from environment
+# Outputs: proxy URL string (or empty)
+#######################################
+_resolve_proxy() {
+    echo "${HTTPS_PROXY:-${HTTP_PROXY:-${PROXY_URL:-}}}"
+}
+
+#######################################
+# Build pip --proxy arguments
+# Outputs: --proxy <url> (or empty string)
+#######################################
+_pip_proxy_args() {
+    local proxy
+    proxy=$(_resolve_proxy)
+    if [[ -n "$proxy" ]]; then
+        echo "--proxy" "$proxy"
+    fi
+}
+
+#######################################
+# Run a command in background with a progress bar
+# based on monitoring venv site-packages size growth.
+# Args:
+#   $1 - venv path
+#   $2 - expected size delta in MB
+#   $3 - label text for progress bar
+#   $4.. - command and arguments to run
+# Returns: exit code of the background command
+#######################################
+_run_with_progress() {
+    local venv="$1" expected_mb="$2" label="$3"
+    shift 3
+
+    # Resolve site-packages dir (guard against unmatched glob)
+    local site_dir
+    for site_dir in "$venv"/lib/python3.*/site-packages; do break; done
+    if [[ ! -d "$site_dir" ]]; then
+        # Fallback: run command without progress bar
+        "$@" 2>&1
+        return $?
+    fi
+
+    local base_mb
+    read -r base_mb _ < <(du -sm "$site_dir" 2>/dev/null)
+    base_mb=${base_mb:-0}
+
+    local log_file
+    log_file=$(mktemp /tmp/iclaude-pii-install-XXXXXX.log)
+
+    "$@" > "$log_file" 2>&1 &
+    local pid=$!
+
+    # Cleanup on interrupt: kill bg process, remove log
+    trap 'kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; rm -f "$log_file"; trap - INT TERM; return 130' INT TERM
+
+    local bar_w=40 tick=0 prev_delta=-1
+    local cur_mb delta pct filled bar pulse i
+    while kill -0 "$pid" 2>/dev/null; do
+        read -r cur_mb _ < <(du -sm "$site_dir" 2>/dev/null)
+        cur_mb=${cur_mb:-0}
+        delta=$((cur_mb - base_mb))
+        pct=$((delta * 100 / expected_mb))
+        (( pct > 99 )) && pct=99
+        (( pct < 0 )) && pct=0
+
+        if (( delta == prev_delta )); then
+            # Download/waiting phase: show animated pulse
+            pulse=""
+            for (( i = 0; i < bar_w; i++ )); do
+                case $(( (i + tick) % 4 )) in
+                    0) pulse+="\u2591" ;; 1) pulse+="\u2592" ;;
+                    2) pulse+="\u2593" ;; 3) pulse+="\u2588" ;;
+                esac
+            done
+            printf "\r  %s [${BLUE}%b${NC}] downloading...  " "$label" "$pulse"
+        else
+            # Install phase: show progress bar
+            filled=$((pct * bar_w / 100))
+            bar=""
+            for (( i = 0; i < filled; i++ )); do bar+="\u2588"; done
+            for (( i = filled; i < bar_w; i++ )); do bar+="\u2591"; done
+            printf "\r  %s [${BLUE}%b${NC}] %3d%% (%dMB)   " "$label" "$bar" "$pct" "$delta"
+        fi
+        prev_delta=$delta
+        tick=$((tick + 1))
+        sleep 2
+    done
+
+    wait "$pid"
+    local rc=$?
+    trap - INT TERM
+
+    local final_mb
+    read -r final_mb _ < <(du -sm "$site_dir" 2>/dev/null)
+    final_mb=${final_mb:-0}
+    local final_delta=$((final_mb - base_mb))
+
+    if [[ $rc -eq 0 ]]; then
+        bar=""
+        for (( i = 0; i < bar_w; i++ )); do bar+="\u2588"; done
+        printf "\r  %s [${GREEN}%b${NC}] 100%% (%dMB)\n" "$label" "$bar" "$final_delta"
+    else
+        printf "\n"
+        print_warning "Install log (last 5 lines):"
+        tail -5 "$log_file" | sed 's/^/  /'
+    fi
+
+    rm -f "$log_file"
+    return $rc
+}
+
+#######################################
 # Level 1: Full Presidio install with current spacy
 # Args: $1 - venv path
 # Returns: 0 on success, 1 on failure
 #######################################
 _try_install_presidio_full() {
     local venv="$1"
-    CC=gcc "$venv/bin/python3" -m pip install \
+    # shellcheck disable=SC2046
+    _run_with_progress "$venv" 450 "Presidio + spacy" \
+        env CC=gcc "$venv/bin/python3" -m pip install \
         presidio-analyzer presidio-anonymizer spacy \
-        --prefer-binary --quiet 2>&1
+        --prefer-binary $(_pip_proxy_args)
 }
 
 #######################################
@@ -33,9 +147,11 @@ _try_install_presidio_full() {
 #######################################
 _try_install_presidio_legacy() {
     local venv="$1"
-    CC=gcc "$venv/bin/python3" -m pip install \
+    # shellcheck disable=SC2046
+    _run_with_progress "$venv" 400 "Presidio + spacy (legacy)" \
+        env CC=gcc "$venv/bin/python3" -m pip install \
         presidio-analyzer presidio-anonymizer "spacy>=3.6,<3.8" \
-        --prefer-binary --quiet 2>&1
+        --prefer-binary $(_pip_proxy_args)
 }
 
 #######################################
@@ -45,7 +161,9 @@ _try_install_presidio_legacy() {
 #######################################
 _install_regex_only_mode() {
     local venv="$1"
-    "$venv/bin/python3" -m pip install requests --quiet 2>&1
+    # shellcheck disable=SC2046
+    _run_with_progress "$venv" 5 "requests" \
+        "$venv/bin/python3" -m pip install requests $(_pip_proxy_args)
 }
 
 #######################################
@@ -90,7 +208,8 @@ _pii_proxy_setup_venv() {
     print_success "Virtual environment: $PII_PROXY_VENV"
 
     print_info "Upgrading pip..."
-    if ! "$PII_PROXY_VENV/bin/python3" -m pip install --quiet --upgrade pip; then
+    # shellcheck disable=SC2046
+    if ! "$PII_PROXY_VENV/bin/python3" -m pip install --upgrade pip -q $(_pip_proxy_args) 2>/dev/null; then
         print_warning "pip upgrade failed — continuing with existing version"
     fi
 }
@@ -101,22 +220,19 @@ _pii_proxy_setup_venv() {
 # Returns: 0 on success, 1 if even requests fails
 #######################################
 _pii_proxy_cascade_install() {
-    local _output
-
     # Level 1: Full Presidio with current spacy
-    print_info "Installing presidio-analyzer + presidio-anonymizer + spacy (~100MB)..."
-    if _output=$(_try_install_presidio_full "$PII_PROXY_VENV"); then
+    print_info "Installing presidio-analyzer + presidio-anonymizer + spacy (~450MB)..."
+    if _try_install_presidio_full "$PII_PROXY_VENV"; then
         pii_mode="presidio-full"
         print_success "Presidio installed (full NLP mode)"
     fi
 
     # Level 2: Legacy Presidio with spacy<3.8 (if level 1 failed)
     if [[ -z "$pii_mode" ]]; then
-        print_warning "Full Presidio install failed (blis compilation error)."
+        print_warning "Full Presidio install failed."
         echo "  Trying legacy spacy<3.8 (uses pre-built blis wheels)..."
         echo ""
-        print_info "Installing presidio + spacy>=3.6,<3.8 (legacy mode)..."
-        if _output=$(_try_install_presidio_legacy "$PII_PROXY_VENV"); then
+        if _try_install_presidio_legacy "$PII_PROXY_VENV"; then
             pii_mode="presidio-legacy"
             print_success "Presidio installed (legacy spacy<3.8 mode)"
         fi
@@ -126,8 +242,7 @@ _pii_proxy_cascade_install() {
     if [[ -z "$pii_mode" ]]; then
         print_warning "Legacy Presidio install also failed."
         echo ""
-        print_info "Installing requests (regex-only mode)..."
-        if _output=$(_install_regex_only_mode "$PII_PROXY_VENV"); then
+        if _install_regex_only_mode "$PII_PROXY_VENV"; then
             pii_mode="regex-only"
             echo ""
             print_warning "Presidio (NLP) could not be installed. PII-Proxy will use regex-only mode."
@@ -136,26 +251,92 @@ _pii_proxy_cascade_install() {
             echo "  For full NLP entity detection (persons, emails, phone numbers),"
             echo "  install gcc and retry: sudo apt-get install gcc-c++ && ./iclaude.sh --install-pii-proxy"
         else
-            print_error "Failed to install even requests package: $_output"
+            print_error "Failed to install even requests package."
             return 1
         fi
     fi
 }
 
 #######################################
-# Download spaCy model (lg preferred, sm fallback)
+# Download one spaCy model: lg preferred, sm fallback.
+# Skips download if lg is already at the latest version.
+# Args:
+#   $1 - language tag (en | ru)
+#   $2 - primary (lg) model name
+#   $3 - fallback (sm) model name
+#   $4 - primary model size in MB
+#   $5 - fallback model size in MB
+#   $6 - action verb ("Downloading" | "Updating")
+# Reads from caller scope: $PII_PROXY_VENV, $proxy_env[]
+# Writes: $PII_PROXY_VENV/spacy_model_$lang
+# Returns: 0 on success, 1 on failure
+#######################################
+_pii_download_spacy_model() {
+    local lang="$1" lg_model="$2" sm_model="$3" lg_size="$4" sm_size="$5" action="$6"
+    local pkg_lg="${lg_model//_/-}"
+    local chosen=""
+
+    # Version check: skip if lg model is already at latest version
+    local installed_ver
+    installed_ver=$("$PII_PROXY_VENV/bin/python3" -c "
+import importlib.metadata
+try:
+    print(importlib.metadata.version('$pkg_lg'))
+except Exception:
+    pass" 2>/dev/null)
+
+    if [[ -n "$installed_ver" ]]; then
+        # pip --dry-run: "Requirement already satisfied" → no update available
+        if "$PII_PROXY_VENV/bin/pip3" install \
+            --dry-run --upgrade "$pkg_lg" $(_pip_proxy_args) 2>&1 \
+            | grep -q "Requirement already satisfied"; then
+            print_success "$lg_model already up to date (v${installed_ver})"
+            echo "$lg_model" > "$PII_PROXY_VENV/spacy_model_$lang"
+            return 0
+        fi
+    fi
+
+    # Download / upgrade primary model
+    print_info "$action spaCy $lg_model (~${lg_size}MB)..."
+    if _run_with_progress "$PII_PROXY_VENV" "$lg_size" "$lg_model" \
+        "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download "$lg_model" --upgrade; then
+        chosen="$lg_model"
+    else
+        # Fallback to sm — fresh install only, no --upgrade
+        print_warning "Failed to download $lg_model, trying $sm_model (~${sm_size}MB)..."
+        if _run_with_progress "$PII_PROXY_VENV" "$sm_size" "$sm_model" \
+            "${proxy_env[@]}" "$PII_PROXY_VENV/bin/python3" -m spacy download "$sm_model"; then
+            chosen="$sm_model"
+            print_warning "Using $sm_model (lower accuracy)"
+        else
+            print_error "Failed to download ${lang^^} spaCy model"
+            return 1
+        fi
+    fi
+
+    echo "$chosen" > "$PII_PROXY_VENV/spacy_model_$lang"
+}
+
+#######################################
+# Download spaCy models: English + Russian (lg preferred, sm fallback)
+# On reinstall: upgrades only if newer version is available on PyPI
 # Returns: 0 on success, 1 on failure
 #######################################
 _pii_proxy_download_model() {
-    print_info "Downloading spaCy en_core_web_lg model (~500MB, may take a few minutes)..."
-    if ! "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_lg; then
-        print_warning "Failed to download en_core_web_lg, trying en_core_web_sm (~12MB)..."
-        if ! "$PII_PROXY_VENV/bin/python3" -m spacy download en_core_web_sm; then
-            print_error "Failed to download spaCy model"
-            return 1
-        fi
-        print_warning "Using en_core_web_sm (lower accuracy). Consider: python3 -m spacy download en_core_web_lg"
+    # spacy download uses pip internally; proxy must be in env vars
+    local proxy
+    proxy=$(_resolve_proxy)
+    local proxy_env=()
+    if [[ -n "$proxy" ]]; then
+        proxy_env=(env HTTPS_PROXY="$proxy" HTTP_PROXY="$proxy")
     fi
+
+    # Detect reinstall (models already present) for UI messaging
+    local action="Downloading"
+    [[ -f "$PII_PROXY_VENV/spacy_model_en" ]] && action="Updating"
+
+    _pii_download_spacy_model en en_core_web_lg en_core_web_sm 560 15 "$action" || return 1
+    _pii_download_spacy_model ru ru_core_news_lg ru_core_news_sm 500 15 "$action" || return 1
 }
 
 #######################################

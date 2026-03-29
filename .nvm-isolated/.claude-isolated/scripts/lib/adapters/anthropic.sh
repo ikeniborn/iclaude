@@ -25,37 +25,34 @@ parse_anthropic_data() {
         return 1
     fi
 
-    # Parse token counts (billing tokens, excludes cache reads)
-    # These are the exact same fields as current statusline.sh (lines 55-56)
-    local total_input
-    local total_output
-    total_input=$(echo "$session_data" | jq -r '.context_window.total_input_tokens // 0' 2>/dev/null)
-    total_output=$(echo "$session_data" | jq -r '.context_window.total_output_tokens // 0' 2>/dev/null)
+    # ONE-SHOT parse всех полей за один вызов jq
+    local _parsed
+    _parsed=$(echo "$session_data" | jq -r '
+        (.context_window.total_input_tokens // 0 | tostring),
+        (.context_window.total_output_tokens // 0 | tostring),
+        (.model.display_name // .model.id // "Claude"),
+        (.context_window.context_window_size // 200000 | tostring),
+        (.context_window.current_usage.cache_read_input_tokens // 0 | tostring),
+        (.context_window.current_usage.cache_creation_input_tokens // 0 | tostring),
+        (.cost.total_cost_usd // 0 | tostring)
+    ' 2>/dev/null)
+
+    local total_input total_output model_name context_limit cache_read cache_creation cost
+    {
+        read -r total_input
+        read -r total_output
+        read -r model_name
+        read -r context_limit
+        read -r cache_read
+        read -r cache_creation
+        read -r cost
+    } <<< "$_parsed"
 
     # Validate: check if we got valid data
     if [[ -z "$total_input" ]] || [[ -z "$total_output" ]] || \
        [[ "$total_input" == "null" ]] || [[ "$total_output" == "null" ]]; then
         return 1
     fi
-
-    # Parse model info (line 75 in statusline.sh)
-    local model_name
-    model_name=$(echo "$session_data" | jq -r '.model.display_name // .model.id // "Claude"' 2>/dev/null)
-
-    # Parse context limit (line 78 in statusline.sh)
-    local context_limit
-    context_limit=$(echo "$session_data" | jq -r '.context_window.context_window_size // 200000' 2>/dev/null)
-
-    # Parse cache tokens (lines 99-100 in statusline.sh)
-    local cache_read
-    local cache_creation
-    cache_read=$(echo "$session_data" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0' 2>/dev/null)
-    cache_creation=$(echo "$session_data" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' 2>/dev/null)
-
-    # Parse cost (line 117 in statusline.sh)
-    # Claude API provides pre-calculated cost
-    local cost
-    cost=$(echo "$session_data" | jq -r '.cost.total_cost_usd // 0' 2>/dev/null)
 
     # Create unified data structure
     create_unified_data \
