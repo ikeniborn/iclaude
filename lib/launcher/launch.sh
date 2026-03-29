@@ -23,10 +23,30 @@ launch_claude() {
     # Check OAuth token expiration before launching
     check_oauth_token "$skip_isolated"
 
+    # Background maintenance: prune stale session-env dirs on every launch
+    cleanup_stale_session_env
+
     # NEW: Check if router should be used (only if --router flag is set)
     local use_router=false
     if [[ "$USE_ROUTER_FLAG" == "true" ]] && detect_router "$skip_isolated"; then
         use_router=true
+    fi
+
+    # Disable x-anthropic-billing-header when routing to third-party backends.
+    # The billing hash (cch=) changes every request and invalidates KV cache on
+    # proxies/routers that treat it as part of the system prompt (Ollama, CCR, Bedrock).
+    # Auto-enabled when --router is active; also enabled by --no-attribution-header flag.
+    # Respects explicit user override: if CLAUDE_CODE_ATTRIBUTION_HEADER is already set
+    # in the environment (e.g. via settings.json env block), leave it unchanged.
+    if [[ "$use_router" == "true" ]] || [[ "${NO_ATTRIBUTION_HEADER:-false}" == "true" ]]; then
+        if [[ -z "${CLAUDE_CODE_ATTRIBUTION_HEADER:-}" ]]; then
+            export CLAUDE_CODE_ATTRIBUTION_HEADER=0
+            if [[ "$use_router" == "true" ]]; then
+                print_info "Attribution header disabled (router mode — prevents KV cache invalidation)"
+            else
+                print_info "Attribution header disabled (--no-attribution-header)"
+            fi
+        fi
     fi
 
     # microVM sandbox: run Claude inside Firecracker VM (kernel isolation)
@@ -442,11 +462,15 @@ launch_claude() {
                 export PATH="$ccr_node_bin/bin:$PATH"
                 print_info "CCR: using Node $(basename "$ccr_node_bin") (v20+ required)"
             fi
+            # Also add npm-global/bin so CCR can find the 'claude' binary when spawning it
+            if [[ -d "$ISOLATED_NVM_DIR/npm-global/bin" ]]; then
+                export PATH="$ISOLATED_NVM_DIR/npm-global/bin:$PATH"
+            fi
         fi
 
-        # Show router version
-        local router_version=$("$ccr_cmd" --version 2>/dev/null | head -1 || echo "unknown")
-        if [[ "$router_version" != "unknown" ]]; then
+        # Show router version (CCR uses 'ccr -v' or 'ccr version', not '--version')
+        local router_version=$("$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
+        if [[ -n "$router_version" ]] && [[ "$router_version" != "unknown" ]]; then
             print_info "Router version: $router_version"
         fi
         echo ""
@@ -614,7 +638,7 @@ cleanup_orphaned_pii_proxies() {
     local dir="${ISOLATED_CONFIG_DIR:-}"
     [[ -z "$dir" ]] || [[ ! -d "$dir" ]] && return 0
 
-    local cleaned=0
+    local cleaned_sessions=0
     for pid_file in "$dir"/pii-proxy-*.pid; do
         [[ -f "$pid_file" ]] || continue
         local pid
@@ -625,10 +649,73 @@ cleanup_orphaned_pii_proxies() {
             local sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
             rm -f "$pid_file"
             rm -f "${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}/pii-proxy-${sid}.port"
-            cleaned=$((cleaned + 1))
+            cleaned_sessions=$((cleaned_sessions + 1))
         fi
     done
-    [[ $cleaned -gt 0 ]] && print_info "PII proxy: cleaned $cleaned orphaned session(s)"
+
+    # Rotate session log files older than PII_LOG_RETENTION_DAYS (default: 7 days).
+    # access.log and ccr-daemon.log are persistent aggregates — never rotated here.
+    local log_dir="${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}"
+    local log_retention="${PII_LOG_RETENTION_DAYS:-7}"
+    local cleaned_logs=0
+    if [[ -d "$log_dir" ]]; then
+        local now cutoff log_file fname mtime
+        now=$(date +%s)
+        cutoff=$(( now - log_retention * 86400 ))
+        for log_file in "$log_dir"/*.log; do
+            [[ -f "$log_file" ]] || continue
+            fname="${log_file##*/}"
+            [[ "$fname" == "access.log" || "$fname" == "ccr-daemon.log" ]] && continue
+            mtime=$(stat -c %Y "$log_file" 2>/dev/null) || continue
+            if [[ $mtime -lt $cutoff ]]; then
+                rm -f "$log_file" 2>/dev/null && cleaned_logs=$(( cleaned_logs + 1 ))
+            fi
+        done
+    fi
+
+    [[ $cleaned_sessions -gt 0 ]] && print_info "PII proxy: cleaned $cleaned_sessions orphaned session(s)"
+    [[ $cleaned_logs -gt 0 ]] && print_info "PII proxy: rotated $cleaned_logs log file(s) older than ${log_retention}d"
+    return 0
+}
+
+#######################################
+# Cleanup stale session-env directories left by terminated sessions.
+# Claude Code creates one subdir per session under CLAUDE_CONFIG_DIR/session-env/.
+# Empty dirs older than SESSION_ENV_RETENTION_DAYS (default: 7) are removed.
+# Non-empty dirs older than SESSION_ENV_RETENTION_DAYS × 4 (default: 28) are removed.
+# Safe for concurrent sessions: active dirs have recent mtime.
+# Called once per launch from launch_claude() regardless of mode.
+#######################################
+cleanup_stale_session_env() {
+    local dir="${ISOLATED_CONFIG_DIR:-}"
+    local session_env_dir="${dir}/session-env"
+    [[ -z "$dir" ]] || [[ ! -d "$session_env_dir" ]] && return 0
+
+    local retention="${SESSION_ENV_RETENTION_DAYS:-7}"
+    local long_retention now cutoff_empty cutoff_full
+    long_retention=$(( retention * 4 ))
+    now=$(date +%s)
+    cutoff_empty=$(( now - retention * 86400 ))
+    cutoff_full=$(( now - long_retention * 86400 ))
+
+    local cleaned=0 d mtime
+    for d in "$session_env_dir"/*/; do
+        [[ -d "$d" ]] || continue
+        mtime=$(stat -c %Y "$d" 2>/dev/null) || continue
+        if [[ -z "$(ls -A "$d" 2>/dev/null)" ]]; then
+            # Empty dir: remove after short retention
+            if [[ $mtime -lt $cutoff_empty ]]; then
+                rm -rf "$d" 2>/dev/null && cleaned=$(( cleaned + 1 ))
+            fi
+        else
+            # Non-empty dir: remove after long retention
+            if [[ $mtime -lt $cutoff_full ]]; then
+                rm -rf "$d" 2>/dev/null && cleaned=$(( cleaned + 1 ))
+            fi
+        fi
+    done
+    [[ $cleaned -gt 0 ]] && print_info "session-env: cleaned $cleaned stale session dir(s)"
+    return 0
 }
 
 #######################################
@@ -771,7 +858,7 @@ except Exception:
     export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     print_info "PII proxy: active on :$PII_PROXY_ACTIVE_PORT → $upstream_url (session ${ICLAUDE_SESSION_ID}) [${ICLAUDE_PII_MASKING_LEVEL}]"
     if [[ "${PII_PROXY_LOG_LEVEL:-info}" == "debug" ]]; then
-        print_warning "PII proxy: DEBUG mode — log contains PII metadata, auto-deleted on exit"
+        print_warning "PII proxy: DEBUG mode — log contains PII metadata, preserved after exit: ${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
     fi
     echo ""
     return 0
@@ -911,12 +998,13 @@ stop_pii_proxy_server() {
             done
             kill -9 "$pid" 2>/dev/null || true
         fi
-        # In debug mode: auto-delete session log (contains PII metadata).
+        # In info mode: auto-delete session log after process termination.
         # Deleted AFTER process termination so Python's shutdown log entry
         # (written on SIGTERM) doesn't recreate the file after deletion.
+        # In debug mode: log is preserved for inspection.
         # Only delete if this session owns the proxy (PII_PROXY_SESSION_OWNED=true).
         if [[ "${PII_PROXY_SESSION_OWNED:-}" == "true" && \
-              "${PII_PROXY_LOG_LEVEL:-info}" == "debug" && \
+              "${PII_PROXY_LOG_LEVEL:-info}" != "debug" && \
               -n "${PII_PROXY_LOG_DIR:-}" && \
               -n "${ICLAUDE_SESSION_ID:-}" ]]; then
             rm -f "${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"

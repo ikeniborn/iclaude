@@ -50,7 +50,6 @@
     ],
     "deny": [
       "Read(**/.env)",
-      "Read(**/.env.*)",
       "Read(**/.env.local)",
       "Read(**/secrets/**)",
       "Read(**/.aws/**)",
@@ -73,7 +72,6 @@
       "Read(**/access_token.*)",
       "Read(**/refresh_token.*)",
       "Edit(**/.env)",
-      "Edit(**/.env.*)",
       "Edit(**/.ssh/**)",
       "Edit(**/.aws/**)",
       "Edit(**/secrets/**)",

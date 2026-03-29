@@ -207,7 +207,8 @@ fi
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
-    USE_CHROME=true  # Chrome integration enabled by default
+    USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
+    NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
     model_value=""  # Model selection (empty = use Claude Code default)
 
@@ -226,6 +227,20 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
+
+        # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
+        _cfg_no_attr=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_no_attr" ]] && NO_ATTRIBUTION_HEADER=true
+        unset _cfg_no_attr
+
+        # Match: USE_CHROME=true  USE_CHROME="true"  export USE_CHROME=true
+        _cfg_chrome=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?USE_CHROME[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_chrome" ]] && USE_CHROME=true
+        unset _cfg_chrome
     fi
 
     # Parse arguments
@@ -509,6 +524,14 @@ fi
                 USE_MICRO_VM_FLAG=true
                 shift
                 ;;
+            --no-attribution-header)
+                NO_ATTRIBUTION_HEADER=true
+                shift
+                ;;
+            --chrome)
+                USE_CHROME=true
+                shift
+                ;;
             --no-chrome)
                 USE_CHROME=false
                 shift
@@ -684,9 +707,15 @@ fi
             claude_args+=("--dangerously-skip-permissions")
         fi
 
-        # Add --chrome flag if enabled (default)
+        # Add --chrome flag if explicitly enabled via --chrome and Chrome extension available
         if [[ "$USE_CHROME" == true ]]; then
-            claude_args+=("--chrome")
+            if warn_chrome_integration 2>/dev/null; then
+                claude_args+=("--chrome")
+            else
+                print_info "Chrome integration disabled (extension not detected)"
+                print_info "Launching without browser automation..."
+                echo ""
+            fi
         fi
 
         # Add --model flag if specified
@@ -789,7 +818,7 @@ fi
         claude_args+=("--dangerously-skip-permissions")
     fi
 
-    # Add --chrome flag if enabled (default) and Chrome extension available
+    # Add --chrome flag if explicitly enabled via --chrome and Chrome extension available
     if [[ "$USE_CHROME" == true ]]; then
         # Check if Chrome extension is installed
         if warn_chrome_integration 2>/dev/null; then

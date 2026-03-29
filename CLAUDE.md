@@ -143,7 +143,7 @@ Security hooks work independently of isolation — see [Security Hooks](#securit
 
 ### Chrome Integration
 
-Chrome integration is **ENABLED BY DEFAULT**. Disable: `./iclaude.sh --no-chrome`
+Chrome integration is **DISABLED BY DEFAULT**. Enable: `./iclaude.sh --chrome`
 
 Requirements: Chrome running + Claude in Chrome extension v1.0.36+ + Claude Code CLI v2.0.73+ + paid plan.
 

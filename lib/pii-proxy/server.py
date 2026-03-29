@@ -202,15 +202,55 @@ def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
         )
 
 
+def _detect_spacy_models() -> list[dict[str, str]]:
+    """Detect installed spaCy models from venv marker files or by probing spacy.
+
+    Returns a list of {"lang_code": "xx", "model_name": "xx_..."} dicts.
+    Falls back to probing spacy.util.is_package() if marker files are absent.
+    """
+    models: list[dict[str, str]] = []
+    # Check marker files written by install.sh
+    venv_dir = Path(sys.executable).parent.parent
+    for lang, marker in [('en', 'spacy_model_en'), ('ru', 'spacy_model_ru')]:
+        marker_path = venv_dir / marker
+        if marker_path.is_file():
+            model_name = marker_path.read_text().strip()
+            if model_name:
+                models.append({'lang_code': lang, 'model_name': model_name})
+
+    if models:
+        return models
+
+    # Fallback: probe common model names via spacy
+    try:
+        import spacy.util  # type: ignore[import]
+        for lang, candidates in [
+            ('en', ['en_core_web_lg', 'en_core_web_sm']),
+            ('ru', ['ru_core_news_lg', 'ru_core_news_sm']),
+        ]:
+            for name in candidates:
+                if spacy.util.is_package(name):
+                    models.append({'lang_code': lang, 'model_name': name})
+                    break
+    except Exception:
+        pass
+
+    return models or [{'lang_code': 'en', 'model_name': 'en_core_web_lg'}]
+
+
+# Languages supported by the current Presidio instance (set during init)
+_supported_languages: list[str] = []
+
+
 def init_presidio() -> bool:
-    """Lazy-initialize Presidio NLP engine. Returns True if ready.
+    """Lazy-initialize Presidio NLP engine with all available language models.
 
     Thread-safe: _presidio_lock ensures only one thread initializes Presidio.
     _presidio_failed is checked before lock acquisition to avoid per-request
     lock contention when Presidio is permanently unavailable (e.g. not installed).
     Once failed, never retried — callers fall back to regex masking.
     """
-    global _analyzer, _anonymizer, _presidio_ready, _presidio_failed
+    global _analyzer, _anonymizer, _presidio_ready, _presidio_failed, _supported_languages
     # Fast path: check failure flag without acquiring lock (GIL-safe, flag is
     # set once and never reset — no data race)
     if _presidio_failed:
@@ -222,13 +262,33 @@ def init_presidio() -> bool:
             return False
         try:
             from presidio_analyzer import AnalyzerEngine  # type: ignore[import]
+            from presidio_analyzer.nlp_engine import NlpEngineProvider  # type: ignore[import]
             from presidio_anonymizer import AnonymizerEngine  # type: ignore[import]
-            _analyzer = AnalyzerEngine()
+
+            models = _detect_spacy_models()
+            langs = [m['lang_code'] for m in models]
+
+            provider = NlpEngineProvider(nlp_configuration={
+                'nlp_engine_name': 'spacy',
+                'models': models,
+            })
+            nlp_engine = provider.create_engine()
+
+            _analyzer = AnalyzerEngine(
+                nlp_engine=nlp_engine,
+                supported_languages=langs,
+            )
             _anonymizer = AnonymizerEngine()
-            # Warm up with a test call (spaCy model load happens here)
+            _supported_languages = langs
+
+            # Warm up with test calls (spaCy model load happens here)
             _analyzer.analyze(text='test@example.com', language='en')
+            if 'ru' in langs:
+                _analyzer.analyze(text='Иванов Иван', language='ru')
+
             _presidio_ready = True
-            log.info('Presidio NLP ready')
+            model_info = ', '.join(f"{m['lang_code']}={m['model_name']}" for m in models)
+            log.info('Presidio NLP ready (models: %s)', model_info)
             return True
         except Exception as exc:
             log.warning('Presidio unavailable: %s', exc)
@@ -320,7 +380,10 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         return text, []
     try:
         assert _analyzer is not None
-        results = _analyzer.analyze(text=text, language='en')
+        # Analyze for all supported languages and merge results
+        results = []
+        for lang in _supported_languages:
+            results.extend(_analyzer.analyze(text=text, language=lang))
         if not results:
             # No PII found by Presidio - still apply regex for secrets
             return regex_mask(text)
@@ -547,6 +610,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         body = json.dumps({
             'status': 'ready',
             'analyzer_ready': _presidio_ready,
+            'supported_languages': _supported_languages,
             'fallback_enabled': ENABLE_FALLBACK,
             'masking_level': MASKING_LEVEL,
             'log_level': LOG_LEVEL,
