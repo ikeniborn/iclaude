@@ -1,8 +1,0 @@
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "execution-agent/input.schema.json",
-  "title": "Execution Agent Input",
-  "description": "Входные данные для Execution Agent (= output schema Planning Agent: plan.toon)",
-  "$ref": "../planning-agent/schemas/output.schema.json",
-  "note": "Execution Agent читает plan.toon, структура которого определена в planning-agent/schemas/output.schema.json"
-}
