@@ -70,6 +70,10 @@ repair_isolated_environment() {
 		repair_plugin_paths || errors=$((errors + 1))
 	fi
 
+	# Repair vendor binary permissions (rg loses +x after git update)
+	echo ""
+	repair_vendor_permissions || errors=$((errors + 1))
+
 	# Configure git hooks path
 	echo ""
 	print_info "Checking git hooks configuration..."
@@ -182,6 +186,38 @@ create_claude_symlink() {
 		print_error "  ✗ Failed: claude symlink"
 		return 1
 	fi
+}
+
+#######################################
+# Repair vendor binary permissions
+# git stores binaries without execute bit; after git pull/update rg loses +x,
+# which breaks Claude Code's bundled ripgrep (used to scan commands/*.md etc.)
+# Returns:
+#   0 - success
+#######################################
+repair_vendor_permissions() {
+	local vendor_dir="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor"
+	print_info "Checking vendor binary permissions..."
+
+	if [[ ! -d "$vendor_dir" ]]; then
+		print_warning "  ! vendor dir not found (Claude Code not installed?)"
+		return 0
+	fi
+
+	local fixed=0
+	while IFS= read -r -d '' bin; do
+		if [[ ! -x "$bin" ]]; then
+			chmod +x "$bin"
+			fixed=$((fixed + 1))
+		fi
+	done < <(find "$vendor_dir" \( -name "rg" -o -name "rg.exe" -o -name "*.node" \) -print0 2>/dev/null)
+
+	if [[ $fixed -gt 0 ]]; then
+		print_success "  ✓ Fixed execute bit on $fixed vendor binary(ies)"
+	else
+		print_success "  ✓ Vendor permissions OK"
+	fi
+	return 0
 }
 
 #######################################
