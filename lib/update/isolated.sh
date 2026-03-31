@@ -99,6 +99,11 @@ update_isolated_claude() {
 		echo "  New version:      $new_version"
 		echo ""
 
+		# Restore execute bit on vendor binaries (git strips +x from rg after update)
+		if declare -f repair_vendor_permissions &>/dev/null; then
+			repair_vendor_permissions
+		fi
+
 		# Update lockfile with new version
 		print_info "Updating lockfile..."
 		save_isolated_lockfile
