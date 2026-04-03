@@ -287,7 +287,7 @@ export interface AgentInput {
   /**
    * Permission mode for spawned teammate (e.g., "plan" to require plan approval).
    */
-  mode?: "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
+  mode?: "acceptEdits" | "auto" | "bypassPermissions" | "default" | "dontAsk" | "plan";
   /**
    * Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo.
    */
