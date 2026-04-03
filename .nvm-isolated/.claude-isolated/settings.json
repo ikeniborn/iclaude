@@ -137,5 +137,6 @@
   "alwaysThinkingEnabled": true,
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "autoDreamEnabled": true
 }
