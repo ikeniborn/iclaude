@@ -1,6 +1,6 @@
 {
   "name": "@anthropic-ai/claude-code",
-  "version": "2.1.90",
+  "version": "2.1.91",
   "bin": {
     "claude": "cli.js"
   },
@@ -29,5 +29,11 @@
     "@img/sharp-linuxmusl-x64": "^0.34.2",
     "@img/sharp-win32-arm64": "^0.34.2",
     "@img/sharp-win32-x64": "^0.34.2"
-  }
+  },
+  "files": [
+    "cli.js",
+    "sdk-tools.d.ts",
+    "vendor/ripgrep/",
+    "vendor/audio-capture/"
+  ]
 }
