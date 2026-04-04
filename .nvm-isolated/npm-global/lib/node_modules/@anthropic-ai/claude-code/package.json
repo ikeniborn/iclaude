@@ -1,6 +1,6 @@
 {
   "name": "@anthropic-ai/claude-code",
-  "version": "2.1.91",
+  "version": "2.1.92",
   "bin": {
     "claude": "cli.js"
   },
@@ -34,6 +34,7 @@
     "cli.js",
     "sdk-tools.d.ts",
     "vendor/ripgrep/",
-    "vendor/audio-capture/"
+    "vendor/audio-capture/",
+    "vendor/seccomp/"
   ]
 }
