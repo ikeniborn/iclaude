@@ -78,6 +78,15 @@ export type AgentOutput =
           ephemeral_5m_input_tokens: number;
         } | null;
       };
+      toolStats?: {
+        readCount: number;
+        searchCount: number;
+        bashCount: number;
+        editFileCount: number;
+        linesAdded: number;
+        linesRemoved: number;
+        otherToolCount: number;
+      };
       status: "completed";
       prompt: string;
     }
@@ -2262,7 +2271,7 @@ export interface FileEditOutput {
   /**
    * The original file contents before editing
    */
-  originalFile: string;
+  originalFile: string | null;
   /**
    * Diff patch showing the changes
    */
