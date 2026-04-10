@@ -1,0 +1,25 @@
+{
+  "$comment": "Output template for prompt-verifier skill — adapt mode (extends verify output)",
+  "verification": {
+    "score": "{{score: integer, min 0, max 7}}",
+    "rules_passed": ["{{rule_id: enum R1|R2|R3|R4|R5|R6|R7}}"],
+    "violations": [
+      {
+        "rule": "{{rule_id: enum R1|R2|R3|R4|R5|R6|R7}}",
+        "rule_name": "{{rule_name: string}}",
+        "severity": "{{severity: enum critical|warning|info}}",
+        "fragment": "{{fragment: string}}",
+        "consequence": "{{consequence: string}}",
+        "fix": "{{fix: string}}"
+      }
+    ],
+    "summary": "{{summary: string}}"
+  },
+  "adaptation": {
+    "adapted_document": "{{adapted_document: string, min 20}}",
+    "changes_made": ["{{change: string}}"],
+    "word_count_before": "{{word_count_before: integer, min 1}}",
+    "word_count_after": "{{word_count_after: integer, min 1}}",
+    "reduction_percent": "{{reduction_percent: integer, min 0, max 100}}"
+  }
+}
