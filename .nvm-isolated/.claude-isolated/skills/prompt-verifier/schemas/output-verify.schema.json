@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Auto-generated schema for prompt-verifier output (verify mode)",
+  "type": "object",
+  "properties": {
+    "verification": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "description": "Количество выполненных правил из 7"
+        },
+        "rules_passed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+          }
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "enum": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+              },
+              "rule_name": {"type": "string"},
+              "severity": {
+                "type": "string",
+                "enum": ["critical", "warning", "info"]
+              },
+              "fragment": {
+                "type": "string",
+                "description": "Цитата проблемного фрагмента из оригинала"
+              },
+              "consequence": {
+                "type": "string",
+                "description": "Последствие нарушения для соблюдения агентом"
+              },
+              "fix": {
+                "type": "string",
+                "description": "Конкретное исправление"
+              }
+            },
+            "required": ["rule", "rule_name", "severity", "fragment", "consequence", "fix"]
+          }
+        },
+        "summary": {
+          "type": "string",
+          "description": "Краткое резюме результатов верификации"
+        }
+      },
+      "required": ["score", "rules_passed", "violations", "summary"]
+    }
+  },
+  "required": ["verification"]
+}

@@ -1,0 +1,18 @@
+{
+  "$comment": "Output template for prompt-verifier skill — verify mode",
+  "verification": {
+    "score": "{{score: integer, min 0, max 7}}",
+    "rules_passed": ["{{rule_id: enum R1|R2|R3|R4|R5|R6|R7}}"],
+    "violations": [
+      {
+        "rule": "{{rule_id: enum R1|R2|R3|R4|R5|R6|R7}}",
+        "rule_name": "{{rule_name: string}}",
+        "severity": "{{severity: enum critical|warning|info}}",
+        "fragment": "{{fragment: string}}",
+        "consequence": "{{consequence: string}}",
+        "fix": "{{fix: string}}"
+      }
+    ],
+    "summary": "{{summary: string}}"
+  }
+}
