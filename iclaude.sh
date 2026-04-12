@@ -786,25 +786,23 @@ fi
         exit 0
     fi
 
-    # If proxy test failed, ask user if they want to continue
+    # If proxy test failed, disable proxy and launch without it
     if [[ "$proxy_test_passed" == false ]]; then
         echo ""
-        print_warning "Proxy test failed - Claude Code may not work properly"
+        print_warning "Proxy unavailable - launching without proxy"
         echo ""
-        read -p "Continue anyway? (y/N): " continue_anyway
 
-        if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
-            echo ""
-            print_info "Launch cancelled"
-            echo ""
-            echo "You can try:"
-            echo "  1. Fix proxy configuration and try again"
-            echo "  2. Run without proxy: iclaude --no-proxy"
-            echo "  3. Skip proxy test: iclaude --no-test"
-            echo "  4. Check proxy credentials: iclaude --clear"
-            exit 0
+        # Unset proxy environment variables
+        unset HTTPS_PROXY
+        unset HTTP_PROXY
+        unset NO_PROXY
+
+        # Restore git proxy settings if backup exists
+        if [[ -f "$GIT_BACKUP_FILE" ]]; then
+            restore_git_proxy
         fi
-        echo ""
+
+        no_proxy=true
     fi
 
     # Check OAuth token expiration
