@@ -631,31 +631,74 @@ launch_claude() {
 
 #######################################
 # Cleanup orphaned PII proxy processes from terminated sessions.
-# Removes stale per-session PID and port files when the associated process is gone.
-# Called at the start of start_pii_proxy_server() to keep the log dir tidy.
+# Removes stale per-session PID and port files when the associated process is gone
+# or the PID has been recycled by an unrelated process. Also sweeps dead legacy
+# PID files from the root of ISOLATED_CONFIG_DIR (pre-PII_PROXY_PID_DIR layout);
+# live legacy files are left untouched so their owning sessions can still find
+# them via the exported PII_PROXY_PID_FILE env var on exit.
+# Called at the start of start_pii_proxy_server() to keep the config dir tidy.
 #######################################
 cleanup_orphaned_pii_proxies() {
     local dir="${ISOLATED_CONFIG_DIR:-}"
     [[ -z "$dir" ]] || [[ ! -d "$dir" ]] && return 0
 
+    local pid_dir="${PII_PROXY_PID_DIR:-$dir/pii-proxy-pid}"
+    local log_dir="${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}"
+
+    # Ensure the dedicated PID directory exists before use
+    mkdir -p "$pid_dir" 2>/dev/null
+    chmod 700 "$pid_dir" 2>/dev/null
+
+    # Legacy sweep: pre-PII_PROXY_PID_DIR layouts placed PID files directly at the
+    # root of ISOLATED_CONFIG_DIR as pii-proxy-<SID>.pid. We DO NOT move live legacy
+    # files into $pid_dir — the sessions that wrote them still hold the old path in
+    # their exported PII_PROXY_PID_FILE env var, so relocating would make their
+    # stop_pii_proxy_server trap miss the file on exit and leak the server. Instead
+    # we just drop dead legacy entries here; live ones drain naturally as those
+    # sessions terminate.
+    local legacy_dropped=0
+    for legacy_pid_file in "$dir"/pii-proxy-*.pid; do
+        [[ -f "$legacy_pid_file" ]] || continue
+        local lbn="${legacy_pid_file##*/}"                 # pii-proxy-<SID>.pid
+        local lsid="${lbn#pii-proxy-}"; lsid="${lsid%.pid}"
+        local lpid lalive=false
+        lpid=$(cat "$legacy_pid_file" 2>/dev/null)
+        if [[ -n "$lpid" ]] && kill -0 "$lpid" 2>/dev/null && \
+           ps -p "$lpid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+            lalive=true
+        fi
+        if [[ "$lalive" != "true" ]]; then
+            rm -f "$legacy_pid_file"
+            rm -f "$log_dir/pii-proxy-${lsid}.port"
+            legacy_dropped=$((legacy_dropped + 1))
+        fi
+    done
+    [[ $legacy_dropped -gt 0 ]] && print_info "PII proxy: dropped $legacy_dropped legacy orphan PID file(s)"
+
+    # Sweep new PID directory: remove entries whose process is gone OR whose PID
+    # has been recycled for an unrelated command.
     local cleaned_sessions=0
-    for pid_file in "$dir"/pii-proxy-*.pid; do
+    for pid_file in "$pid_dir"/*.pid; do
         [[ -f "$pid_file" ]] || continue
         local pid
         pid=$(cat "$pid_file" 2>/dev/null)
-        if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
-            # Dead process — extract session ID from filename and remove both files
-            local bn="${pid_file##*/}"                    # pii-proxy-<SID>.pid
-            local sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
+        local alive=false
+        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+            if ps -p "$pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+                alive=true
+            fi
+        fi
+        if [[ "$alive" != "true" ]]; then
+            local bn="${pid_file##*/}"                    # <SID>.pid
+            local sid="${bn%.pid}"
             rm -f "$pid_file"
-            rm -f "${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}/pii-proxy-${sid}.port"
+            rm -f "$log_dir/pii-proxy-${sid}.port"
             cleaned_sessions=$((cleaned_sessions + 1))
         fi
     done
 
     # Rotate session log files older than PII_LOG_RETENTION_DAYS (default: 7 days).
     # access.log and ccr-daemon.log are persistent aggregates — never rotated here.
-    local log_dir="${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}"
     local log_retention="${PII_LOG_RETENTION_DAYS:-7}"
     local cleaned_logs=0
     if [[ -d "$log_dir" ]]; then

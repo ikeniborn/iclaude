@@ -79,7 +79,10 @@ init_environment() {
     PII_PROXY_PORT_MAX="${PII_PROXY_PORT_MAX:-40000}"
     PII_PROXY_VENV="${ISOLATED_CONFIG_DIR}/pii-proxy-venv"
     PII_PROXY_LOG_DIR="${ISOLATED_CONFIG_DIR}/pii-proxy-logs"
-    PII_PROXY_PID_FILE="${ISOLATED_CONFIG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.pid"
+    # Per-session PID files live inside a dedicated directory (not at the root of
+    # ISOLATED_CONFIG_DIR) to keep the config root tidy and simplify rotation.
+    PII_PROXY_PID_DIR="${ISOLATED_CONFIG_DIR}/pii-proxy-pid"
+    PII_PROXY_PID_FILE="${PII_PROXY_PID_DIR}/${ICLAUDE_SESSION_ID}.pid"
     PII_PROXY_SERVER_SCRIPT="${ISOLATED_CONFIG_DIR}/pii-proxy-server.py"
 
     export PII_PROXY_PORT
@@ -87,6 +90,7 @@ init_environment() {
     export PII_PROXY_PORT_MAX
     export PII_PROXY_VENV
     export PII_PROXY_LOG_DIR
+    export PII_PROXY_PID_DIR
     export PII_PROXY_PID_FILE
     export PII_PROXY_SERVER_SCRIPT
 
