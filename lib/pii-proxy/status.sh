@@ -125,17 +125,35 @@ check_pii_proxy_status() {
         echo "  (not created yet)"
     fi
 
-    # Running processes (per-session: scan all pii-proxy-*.pid files)
+    # Running processes (per-session: scan PID files in PII_PROXY_PID_DIR).
+    # Also sweeps legacy pii-proxy-*.pid files from the root of ISOLATED_CONFIG_DIR
+    # so status output reflects both layouts while migration is in flight.
+    # SIDs are deduplicated so a session holding both layouts isn't printed twice.
     echo ""
     local found_running=0
     local found_orphaned=0
-    for pid_file in "${ISOLATED_CONFIG_DIR}"/pii-proxy-*.pid; do
-        [[ -f "$pid_file" ]] || continue
-        local pid bn sid port current_marker
+    local pid_dir="${PII_PROXY_PID_DIR:-${ISOLATED_CONFIG_DIR}/pii-proxy-pid}"
+    local pid_file pid bn sid port current_marker alive
+    # Per-SID dedup set (space-delimited; used only under bash 3 for portability).
+    local seen_sids=" "
+
+    _pii_proxy_status_entry() {
+        local pid_file="$1"
+        [[ -f "$pid_file" ]] || return 0
+        local pid bn sid alive=false port current_marker
         pid=$(cat "$pid_file" 2>/dev/null)
-        bn="${pid_file##*/}"                         # pii-proxy-<SID>.pid
+        bn="${pid_file##*/}"
+        # Both "<SID>.pid" (new layout) and "pii-proxy-<SID>.pid" (legacy) handled.
         sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
+        # Skip if already reported for this SID
+        case "$seen_sids" in *" $sid "*) return 0 ;; esac
+        seen_sids="${seen_sids}${sid} "
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+            if ps -p "$pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+                alive=true
+            fi
+        fi
+        if [[ "$alive" == "true" ]]; then
             port=$(cat "${PII_PROXY_LOG_DIR}/pii-proxy-${sid}.port" 2>/dev/null || echo "")
             current_marker=""
             [[ "${ICLAUDE_SESSION_ID:-}" == "$sid" ]] && current_marker=" ← current session"
@@ -147,9 +165,19 @@ check_pii_proxy_status() {
             found_running=$((found_running + 1))
         else
             rm -f "$pid_file"
+            rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-${sid}.port"
             found_orphaned=$((found_orphaned + 1))
         fi
+    }
+
+    # Scan new layout first so legacy duplicates for the same SID are skipped.
+    for pid_file in "$pid_dir"/*.pid; do
+        _pii_proxy_status_entry "$pid_file"
     done
+    for pid_file in "${ISOLATED_CONFIG_DIR}"/pii-proxy-*.pid; do
+        _pii_proxy_status_entry "$pid_file"
+    done
+    unset -f _pii_proxy_status_entry
     if [[ $found_running -eq 0 ]]; then
         print_info "Server not running"
         echo "  (starts automatically when USE_PII_PROXY=true or --pii-proxy)"
