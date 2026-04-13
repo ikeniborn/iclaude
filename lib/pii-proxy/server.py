@@ -861,7 +861,7 @@ def main() -> None:
     if args.port != 0:
         # Explicit port requested — honour it if free
         try:
-            server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
         except OSError:
             pass  # fall through to range selection below
 
@@ -871,13 +871,13 @@ def main() -> None:
         _n = min(30, _port_max - _port_min + 1)
         for _p in random.sample(range(_port_min, _port_max + 1), _n):
             try:
-                server = http.server.HTTPServer(('127.0.0.1', _p), PIIProxyHandler)
+                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
                 break
             except OSError:
                 continue
         if server is None:
             # Last resort: let OS pick any free port
-            server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
 
     port = server.server_address[1]  # actual port assigned by OS
 
