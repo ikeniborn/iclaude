@@ -156,8 +156,20 @@ def _build_ssl_verify():
     return ca if ca else True
 
 _SSL_VERIFY = _build_ssl_verify()
-_HTTP_SESSION = _requests.Session()
-_HTTP_SESSION.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+
+# Thread-local HTTP sessions: each request-handler thread gets its own Session so
+# concurrent requests don't share mutable state (cookie jar, adapter state).
+# Per-thread connection pooling still applies — urllib3 pools are per-Session.
+_thread_local = threading.local()
+
+
+def _get_http_session() -> _requests.Session:
+    """Return this thread's requests.Session, creating it on first access."""
+    if not hasattr(_thread_local, 'session'):
+        s = _requests.Session()
+        s.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+        _thread_local.session = s
+    return _thread_local.session
 
 # Trusted API key from proxy's own environment.
 # Used to re-inject credentials after stripping inbound auth headers,
@@ -741,7 +753,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
         try:
-            resp = _HTTP_SESSION.request(
+            resp = _get_http_session().request(
                 method='HEAD',
                 url=target,
                 headers=headers,
@@ -777,7 +789,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
         try:
-            with _HTTP_SESSION.request(
+            with _get_http_session().request(
                 method=self.command,
                 url=target,
                 headers=headers,

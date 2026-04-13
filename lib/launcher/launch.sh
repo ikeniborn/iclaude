@@ -813,7 +813,12 @@ except Exception:
     # SID. Doing so would overwrite the parent's PID file, causing the parent to lose
     # track of its proxy (leaked process) and the sub-session to kill the wrong PID on exit.
     # Instead, reuse the parent's proxy: inherit ANTHROPIC_BASE_URL and skip startup.
-    if [[ -f "$PII_PROXY_PID_FILE" ]]; then
+    #
+    # Exception: combined mode (PII+CCR) — this session started a CCR daemon
+    # (CCR_SESSION_OWNED=true) and needs a FRESH PII proxy to chain PII→CCR→providers.
+    # Reusing the parent's proxy would bypass CCR entirely because the parent proxy's
+    # upstream was baked in at its startup and cannot be changed retroactively.
+    if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && [[ -f "$PII_PROXY_PID_FILE" ]]; then
         local _existing_pid
         _existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
         if [[ -n "$_existing_pid" ]] && kill -0 "$_existing_pid" 2>/dev/null && \
