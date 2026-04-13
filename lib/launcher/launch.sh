@@ -807,6 +807,37 @@ except Exception:
 ' "$port" 2>/dev/null
     }
 
+    # Guard: if ICLAUDE_SESSION_ID was inherited from a parent iclaude session (e.g.
+    # when this script is invoked as a subprocess via Claude Code's Bash tool) and that
+    # parent already owns a live PII proxy, we must NOT start a second proxy for the same
+    # SID. Doing so would overwrite the parent's PID file, causing the parent to lose
+    # track of its proxy (leaked process) and the sub-session to kill the wrong PID on exit.
+    # Instead, reuse the parent's proxy: inherit ANTHROPIC_BASE_URL and skip startup.
+    if [[ -f "$PII_PROXY_PID_FILE" ]]; then
+        local _existing_pid
+        _existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
+        if [[ -n "$_existing_pid" ]] && kill -0 "$_existing_pid" 2>/dev/null && \
+           ps -p "$_existing_pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+            # Live proxy found for our SID — reuse it (ANTHROPIC_BASE_URL already set by parent)
+            local _existing_port
+            _existing_port=$(cat "${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port" 2>/dev/null || echo "")
+            if [[ -n "$_existing_port" && "$_existing_port" =~ ^[0-9]+$ ]]; then
+                PII_PROXY_ACTIVE_PORT="$_existing_port"
+                export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_ACTIVE=1
+                export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
+                export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
+                export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
+                export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
+                # Mark as NOT owned by this sub-session so stop_pii_proxy_server won't kill it
+                PII_PROXY_SESSION_OWNED=false
+                print_info "PII proxy: reusing parent session proxy on :$PII_PROXY_ACTIVE_PORT (PID $_existing_pid)"
+                unset -f _pii_proxy_http_health
+                return 0
+            fi
+        fi
+    fi
+
     # Cleanup orphaned proxies from previous (terminated) sessions
     cleanup_orphaned_pii_proxies
 
@@ -829,7 +860,9 @@ except Exception:
     local port_file="${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port"
     local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
 
-    # Remove stale port file from any previous run with the same session ID (paranoia)
+    # Remove stale port file from any previous run with the same session ID (paranoia).
+    # Safe to do only here because the inherited-SID guard above already returned early
+    # if a live proxy owns this port file.
     rm -f "$port_file"
     # BUG-4R4-9: chmod 700 — restrict log dir to current user only
     mkdir -p "$PII_PROXY_LOG_DIR"
@@ -1020,9 +1053,15 @@ stop_ccr_server() {
 
 #######################################
 # Stop PII proxy server (trap cleanup on EXIT/INT/TERM)
-# Each session owns its own proxy process — always safe to kill on exit.
+# Only kills the proxy if this session started it (PII_PROXY_SESSION_OWNED=true).
+# Sub-sessions that reused a parent's proxy set PII_PROXY_SESSION_OWNED=false and
+# must not kill or clean up the shared proxy.
 #######################################
 stop_pii_proxy_server() {
+    # Do not kill proxy started by a parent session (inherited SID reuse path)
+    if [[ "${PII_PROXY_SESSION_OWNED:-}" == "false" ]]; then
+        return 0
+    fi
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
         local pid
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
