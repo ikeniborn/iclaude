@@ -40,7 +40,7 @@ repair_isolated_environment() {
 	local fixed=0
 
 	# Find Node.js version directory (sorted for deterministic selection, consistent with setup_isolated_nvm)
-	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | LC_ALL=C sort | head -1)
+	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | LC_ALL=C sort | tail -1)
 
 	if [[ -z "$node_version_dir" ]]; then
 		print_error "No Node.js version found in isolated environment"

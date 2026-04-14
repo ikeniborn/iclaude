@@ -92,7 +92,7 @@ install_isolated_nvm() {
 #   1 - error
 #######################################
 install_isolated_nodejs() {
-	local node_version=${1:-18}
+	local node_version=${1:-20}
 
 	setup_isolated_nvm
 
