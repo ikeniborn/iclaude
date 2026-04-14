@@ -436,7 +436,19 @@ launch_claude() {
             exit 1
         fi
 
-        # Copy router config to CCR's expected location
+        # Determine CCR home directory: isolated env takes priority over user home.
+        # CCR has no CCR_HOME env var — it reads os.homedir() / process.env.HOME.
+        # We override HOME for the CCR process so all its state (PID file, logs, config)
+        # stays inside the isolated environment instead of ~/.claude-code-router/.
+        local ccr_home=""
+        if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+            ccr_home="$ISOLATED_NVM_DIR/.claude-isolated"
+        else
+            ccr_home="$HOME"
+        fi
+        export CCR_HOME="$ccr_home"
+
+        # Copy router config to CCR's expected location inside isolated home
         local router_config=""
         if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
             router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
@@ -445,8 +457,8 @@ launch_claude() {
         fi
 
         if [[ -f "$router_config" ]]; then
-            mkdir -p "$HOME/.claude-code-router"
-            cp "$router_config" "$HOME/.claude-code-router/config.json"
+            mkdir -p "$ccr_home/.claude-code-router"
+            cp "$router_config" "$ccr_home/.claude-code-router/config.json"
             print_info "Using router config: $router_config"
         fi
 
@@ -469,7 +481,7 @@ launch_claude() {
         fi
 
         # Show router version (CCR uses 'ccr -v' or 'ccr version', not '--version')
-        local router_version=$("$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
+        local router_version=$(HOME="$ccr_home" "$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
         if [[ -n "$router_version" ]] && [[ "$router_version" != "unknown" ]]; then
             print_info "Router version: $router_version"
         fi
@@ -499,8 +511,8 @@ launch_claude() {
             # fall through to native claude launch below (exec disabled for combined mode)
             # (do NOT return here — need to reach claude binary detection below)
         else
-            # Solo router mode: standard exec ccr code path
-            exec "$ccr_cmd" code "$@"
+            # Solo router mode: pass isolated HOME so CCR stores state in isolated env
+            HOME="$ccr_home" exec "$ccr_cmd" code "$@"
         fi
     fi
 
@@ -993,7 +1005,7 @@ start_ccr_server() {
     # Note: PATH must already include node v20+ before this function is called
     # (launch_claude() prepends v20 bin to PATH before invoking start_ccr_server).
     print_info "CCR router: starting daemon on ${CCR_HOST}:${CCR_PORT}..."
-    nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
+    HOME="${CCR_HOME:-$HOME}" nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
     CCR_PID=$!
     CCR_SESSION_OWNED=true
     export CCR_PID CCR_SESSION_OWNED
