@@ -2152,9 +2152,13 @@ export interface ConfigInput {
 }
 export interface EnterWorktreeInput {
   /**
-   * Optional name for the worktree. Each "/"-separated segment may contain only letters, digits, dots, underscores, and dashes; max 64 chars total. A random name is generated if not provided.
+   * Optional name for a new worktree. Each "/"-separated segment may contain only letters, digits, dots, underscores, and dashes; max 64 chars total. A random name is generated if not provided. Mutually exclusive with `path`.
    */
   name?: string;
+  /**
+   * Path to an existing worktree of the current repository to switch into instead of creating a new one. Must appear in `git worktree list` for the current repo. Mutually exclusive with `name`.
+   */
+  path?: string;
 }
 export interface ExitWorktreeInput {
   /**
