@@ -518,61 +518,94 @@ def _prefix(items: list[str], location: str) -> list[str]:
 
 
 def mask_request_body(body: dict) -> tuple[dict, list[str]]:
-    """Mask PII in system prompt, messages, and tool results."""
+    """Mask PII in user messages and assistant tool_use inputs only.
+
+    Masking scope (asymmetric by design):
+      - system field          → SKIPPED: contains Claude Code instructions / CLAUDE.md;
+                                masking distorts model directives and breaks sessions.
+      - role "user"           → MASKED fully: user text input + file contents from
+                                tool_result blocks.
+      - role "assistant" text → SKIPPED: Claude's own prose carries no original user PII.
+      - role "assistant"      → tool_use blocks MASKED via mask_content_block():
+        tool_use input          input fields (new_string, content, etc.) may contain
+                                user-authored text verbatim; structural keys (file_path,
+                                command, pattern…) are already skipped by _TOOL_INPUT_SKIP_KEYS.
+    """
     masked_body = dict(body)
     all_found: list[str] = []
 
-    # System prompt
-    if 'system' in body:
-        system = body['system']
-        if isinstance(system, str):
-            masked, found = presidio_mask(system)
-            masked_body['system'] = masked
-            all_found.extend(_prefix(found, 'system'))
-        elif isinstance(system, list):
-            new_system: list[Any] = []
-            for b in system:
-                masked_b, found = mask_content_block(b)
-                new_system.append(masked_b)
-                all_found.extend(_prefix(found, 'system'))
-            masked_body['system'] = new_system
+    # System prompt — intentionally not masked.
+    # Contains Claude Code wrapper instructions (tools, CLAUDE.md, session setup).
+    # These are trusted, machine-generated, and NLP masking breaks them.
 
-    # Messages
+    # Messages — selective masking by role
     if 'messages' in body and isinstance(body['messages'], list):
         new_messages = []
         for i, msg in enumerate(body['messages']):
             if not isinstance(msg, dict):
                 new_messages.append(msg)
                 continue
-            masked_msg: dict[str, Any] = dict(msg)
-            role = msg.get('role', f'msg[{i}]')
-            loc = f'{role}[{i}]'
+            role = msg.get('role', '')
 
-            # Mask message.name (optional participant label — may contain PII)
-            if isinstance(msg.get('name'), str):
-                masked_name, name_found = presidio_mask(msg['name'])
-                masked_msg['name'] = masked_name
-                all_found.extend(_prefix(name_found, f'{loc}.name'))
+            if role == 'user':
+                # Full masking: user text + tool_result file contents
+                masked_msg: dict[str, Any] = dict(msg)
+                loc = f'user[{i}]'
 
-            if 'content' not in msg:
-                # Preserve messages without content field (e.g. tool_use-only)
+                if isinstance(msg.get('name'), str):
+                    masked_name, name_found = presidio_mask(msg['name'])
+                    masked_msg['name'] = masked_name
+                    all_found.extend(_prefix(name_found, f'{loc}.name'))
+
+                if 'content' not in msg:
+                    new_messages.append(masked_msg)
+                    continue
+                content = msg['content']
+                if isinstance(content, str):
+                    masked, found = presidio_mask(content)
+                    masked_msg['content'] = masked
+                    all_found.extend(_prefix(found, f'{loc}.content'))
+                elif isinstance(content, list):
+                    new_content: list[Any] = []
+                    msg_found: list[str] = []
+                    for b in content:
+                        masked_b, found = mask_content_block(b)
+                        new_content.append(masked_b)
+                        msg_found.extend(found)
+                    masked_msg['content'] = new_content
+                    all_found.extend(_prefix(msg_found, f'{loc}.content'))
                 new_messages.append(masked_msg)
-                continue
-            content = msg['content']
-            if isinstance(content, str):
-                masked, found = presidio_mask(content)
-                masked_msg['content'] = masked
-                all_found.extend(_prefix(found, f'{loc}.content'))
-            elif isinstance(content, list):
-                new_content: list[Any] = []
+
+            elif role == 'assistant':
+                # Partial masking: only tool_use input blocks (may contain user-authored text
+                # verbatim, e.g. new_string in Edit, content in Write).
+                # Assistant prose (text blocks) is not masked — it's Claude's own output.
+                content = msg.get('content')
+                if not isinstance(content, list):
+                    new_messages.append(msg)
+                    continue
+                new_content = []
                 msg_found: list[str] = []
+                changed = False
                 for b in content:
-                    masked_b, found = mask_content_block(b)
-                    new_content.append(masked_b)
-                    msg_found.extend(found)
-                masked_msg['content'] = new_content
-                all_found.extend(_prefix(msg_found, f'{loc}.content'))
-            new_messages.append(masked_msg)
+                    if isinstance(b, dict) and b.get('type') == 'tool_use':
+                        masked_b, found = mask_content_block(b)
+                        new_content.append(masked_b)
+                        msg_found.extend(found)
+                        if found:  # real masking occurred — content actually changed
+                            changed = True
+                    else:
+                        new_content.append(b)  # text block — pass through unchanged
+                if changed:
+                    new_messages.append({**msg, 'content': new_content})
+                    all_found.extend(_prefix(msg_found, f'assistant[{i}].tool_use'))
+                else:
+                    new_messages.append(msg)
+
+            else:
+                # Unknown role — pass through unchanged
+                new_messages.append(msg)
+
         masked_body['messages'] = new_messages
 
     return masked_body, all_found
