@@ -226,12 +226,48 @@ else
     done
 fi
 
-# Router detection — show only when actively routing (ICLAUDE_ROUTER_ACTIVE=1)
-# Set by iclaude.sh when launched with --router flag
+# Router detection — query CCR API for actual routed model info
+# ICLAUDE_ROUTER_ACTIVE=1 is set by iclaude.sh when launched with --router flag
+_CCR_DEFAULT_MODEL=""
 ROUTER_ICON=""
-if [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]] && [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]]; then
-    PROVIDER=$(jq -r '.Router.default // .routing.default // "unknown"' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null)
-    ROUTER_ICON=" | 🔀 $PROVIDER"
+if [[ "${ICLAUDE_ROUTER_ACTIVE:-0}" == "1" ]]; then
+    # Determine CCR API port (default 3456, or from router.json PORT field)
+    _CCR_PORT=3456
+    if [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]]; then
+        _p=$(jq -r '.PORT // empty' "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null || true)
+        [[ "$_p" =~ ^[0-9]+$ ]] && _CCR_PORT="$_p"
+    fi
+
+    # Query CCR /api/config with 30s TTL cache (same pattern as PII metrics)
+    _CCR_API_CACHE="/tmp/iclaude-ccr-api-${SESSION_ID:-default}"
+    _CCR_NOW_TS=$(date +%s)
+    _CCR_API_VALID=0
+    if [[ -f "$_CCR_API_CACHE" ]]; then
+        _CCR_AGE=$(( _CCR_NOW_TS - $(stat -c %Y "$_CCR_API_CACHE" 2>/dev/null || echo 0) ))
+        [[ $_CCR_AGE -lt 30 ]] && _CCR_API_VALID=1
+    fi
+    if [[ "$_CCR_API_VALID" == "1" ]]; then
+        _CCR_CONFIG=$(cat "$_CCR_API_CACHE" 2>/dev/null)
+    else
+        _CCR_CONFIG=$(curl -s --max-time 0.3 "http://127.0.0.1:${_CCR_PORT}/api/config" 2>/dev/null)
+        [[ -n "$_CCR_CONFIG" ]] && printf '%s' "$_CCR_CONFIG" > "$_CCR_API_CACHE"
+    fi
+    if [[ -n "${_CCR_CONFIG:-}" ]]; then
+        _CCR_DEFAULT_MODEL=$(printf '%s' "$_CCR_CONFIG" | \
+            jq -r '.Router.default // empty' 2>/dev/null || true)
+    fi
+
+    if [[ -n "$_CCR_DEFAULT_MODEL" ]]; then
+        # CCR running — model display overridden in format section below
+        ROUTER_ICON=" | 🔀"
+    elif [[ -f "$CLAUDE_CONFIG_DIR/router.json" ]]; then
+        # CCR not running — fallback: read router.json directly
+        _fallback=$(jq -r '.Router.default // .routing.default // ""' \
+            "$CLAUDE_CONFIG_DIR/router.json" 2>/dev/null || true)
+        [[ -n "$_fallback" ]] && ROUTER_ICON=" | 🔀 ${_fallback}" || ROUTER_ICON=" | 🔀"
+    else
+        ROUTER_ICON=" | 🔀"
+    fi
 fi
 
 # Security hook event indicator — 🔒 (block) или ⚠️ (redact), показывается FLAG_TTL секунд
@@ -533,6 +569,33 @@ shorten_router_provider() {
     echo "$provider" | sed 's/^claude-//g'
 }
 
+# CCR model formatting: "provider,model" → emoji + short name
+# Input examples: "ollama,qwen3.5:397b-cloud", "deepseek,deepseek-chat"
+# Output examples: "🦙 qwen3.5", "🔮 deepseek-chat"
+format_ccr_model() {
+    local ccr_model="$1"
+    local provider="${ccr_model%%,*}"
+    local model_name="${ccr_model#*,}"
+    # Remove version/quantization tags (":tag") to keep base name, truncate to 15 chars
+    local short_name="${model_name%%:*}"
+    [[ ${#short_name} -gt 15 ]] && short_name="${short_name:0:15}…"
+    local icon
+    case "$provider" in
+        ollama)          icon="🦙" ;;
+        deepseek)        icon="🔮" ;;
+        openai)          icon="🤖" ;;
+        openrouter)      icon="🌐" ;;
+        anthropic)       icon="" ;;
+        google|gemini)   icon="✨" ;;
+        *)               icon="🔀" ;;
+    esac
+    if [[ -n "$icon" ]]; then
+        printf '%s %s' "$icon" "$short_name"
+    else
+        printf '%s' "$short_name"
+    fi
+}
+
 # Quick transcript stability check (lightweight, no delays)
 # Returns 0 if stable, 1 if recently changed
 # Used on every invocation to detect late system messages
@@ -754,6 +817,12 @@ fi
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
 # Newlines appear during string concatenation, not from variables
 CONTEXT_DISPLAY=$(printf '%s' "$CONTEXT_DISPLAY" | tr -d '\n\r' | tr -s ' ')
+
+# When router active and CCR API returned model info: override MODEL with actual routed model
+# SESSION_DATA.model is always the Claude model name (what CCR proxies as) — not useful in router mode
+if [[ -n "${_CCR_DEFAULT_MODEL:-}" ]]; then
+    MODEL=$(format_ccr_model "$_CCR_DEFAULT_MODEL")
+fi
 
 # Build status line string based on display mode
 # Collect entire string first for atomic output to prevent system message injection
