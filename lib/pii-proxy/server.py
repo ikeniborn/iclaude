@@ -120,6 +120,13 @@ _SYSTEM_REMINDER_RE = re.compile(
     re.DOTALL,
 )
 
+# Known false-positive PERSON entities: product/project names that spaCy's NER
+# incorrectly classifies as human names. These are filtered from Presidio results
+# before anonymization to prevent over-masking of legitimate content.
+_PERSON_ALLOWLIST: frozenset[str] = frozenset({
+    'Claude', 'claude', 'CLAUDE',   # Anthropic product name, not a person
+})
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -446,6 +453,11 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         results = []
         for lang in _supported_languages:
             results.extend(_analyzer.analyze(text=text, language=lang))
+        # Filter false-positive PERSON entities (product names misclassified as humans)
+        results = [
+            r for r in results
+            if not (r.entity_type == 'PERSON' and text[r.start:r.end] in _PERSON_ALLOWLIST)
+        ]
         if not results:
             # No PII found by Presidio - still apply regex for secrets
             return regex_mask(text)
