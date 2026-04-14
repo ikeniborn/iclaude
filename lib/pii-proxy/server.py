@@ -452,7 +452,12 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         # Analyze for all supported languages and merge results
         results = []
         for lang in _supported_languages:
-            results.extend(_analyzer.analyze(text=text, language=lang))
+            # score_threshold=0.8: accept only high-confidence detections.
+            # Default (0.5) causes false positives on short texts and common words
+            # (e.g. "привет" classified as PERSON with ~0.6 confidence by Russian NER).
+            # Real secrets detected via regex below; NLP catches emails, phones, IPs —
+            # all reliably score above 0.8 with enough context.
+            results.extend(_analyzer.analyze(text=text, language=lang, score_threshold=0.8))
         # Filter false-positive PERSON entities (product names misclassified as humans)
         results = [
             r for r in results
