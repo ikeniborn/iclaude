@@ -112,6 +112,14 @@ _TOOL_INPUT_SKIP_KEYS: frozenset[str] = frozenset({
     'glob',           # Grep — file filter expression
 })
 
+# Regex for <system-reminder> blocks injected by Claude Code harness into user messages.
+# These blocks contain trusted machine-generated content (skills list, CLAUDE.md, MEMORY.md)
+# and must NOT be processed by NLP — identical rationale to skipping the `system` field.
+_SYSTEM_REMINDER_RE = re.compile(
+    r'(<system-reminder>[\s\S]*?</system-reminder>)',
+    re.DOTALL,
+)
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -390,9 +398,35 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
     'off'      - return text unchanged (no masking)
     'secrets'  - regex-only masking (API keys, tokens, passwords, credentials)
     'standard' - Presidio NLP + regex; falls back to regex when Presidio unavailable
+
+    <system-reminder> blocks are preserved unchanged in all modes — they contain
+    trusted machine-generated content (Claude Code harness instructions, CLAUDE.md,
+    skills list) injected into user messages, not user-authored PII.
     """
     if MASKING_LEVEL == 'off':
         return text, []
+
+    # Preserve <system-reminder> blocks — trusted harness content injected into user
+    # messages. NLP models incorrectly flag these (e.g. "Claude" as PERSON, dates, IPs).
+    # Rationale mirrors the system-field skip in mask_request_body().
+    if '<system-reminder>' in text:
+        parts = _SYSTEM_REMINDER_RE.split(text)
+        # len(parts) > 1 means at least one complete paired tag was found.
+        # If the tag is unclosed (no matching </system-reminder>), split returns a
+        # single-element list with the original text — fall through to normal masking
+        # to avoid infinite recursion (recursive call would see the same text again).
+        if len(parts) > 1:
+            result_parts: list[str] = []
+            all_found: list[str] = []
+            for part in parts:
+                if part.startswith('<system-reminder>'):
+                    result_parts.append(part)           # pass through unchanged
+                else:
+                    masked, found = presidio_mask(part) # recurse — no full tags in parts
+                    result_parts.append(masked)
+                    all_found.extend(found)
+            return ''.join(result_parts), all_found
+        # Unclosed tag — fall through to normal masking path below
 
     if MASKING_LEVEL == 'secrets':
         masked, found = regex_mask(text)
