@@ -25,7 +25,7 @@ setup_isolated_nvm() {
 	# Найти установленную версию Node.js (раскрыть глоб)
 	# LC_ALL=C sort ensures v18 < v20 deterministically across all filesystems
 	# (find output order is filesystem-dependent — non-deterministic on ext4/CI)
-	local node_version_dir=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | head -1)
+	local node_version_dir=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)
 
 	if [[ -n "$node_version_dir" ]] && [[ -d "$node_version_dir/bin" ]]; then
 		# Add isolated paths to PATH (prepend to prioritize isolated over system)

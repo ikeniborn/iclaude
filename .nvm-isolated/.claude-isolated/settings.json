@@ -103,6 +103,7 @@
     ],
     "defaultMode": "default"
   },
+  "model": "ollama,qwen3.5:397b-cloud",
   "hooks": {
     "PreToolUse": [
       {
