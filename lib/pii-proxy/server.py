@@ -97,6 +97,22 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
 ]
 
 # ---------------------------------------------------------------------------
+# Tool-input keys that are structural pointers, not content — never mask.
+# File paths and search patterns carry no PII; masking them corrupts conversation
+# history (NLP models flag usernames/tokens in paths as PERSON entities).
+# Content fields (content, old_string, new_string) are intentionally absent —
+# they hold actual text that may contain PII and must still be scanned.
+# ---------------------------------------------------------------------------
+_TOOL_INPUT_SKIP_KEYS: frozenset[str] = frozenset({
+    'file_path',      # Read, Write, Edit, NotebookEdit
+    'path',           # Glob, Grep (directory scope)
+    'notebook_path',  # NotebookEdit
+    'command',        # Bash — paths/flags, not user-authored text
+    'pattern',        # Grep — regex search expression
+    'glob',           # Grep — file filter expression
+})
+
+# ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 def _validate_upstream_url(url: str) -> str:
@@ -433,11 +449,28 @@ def mask_content_block(block: Any) -> tuple[Any, list[str]]:
         masked, found = presidio_mask(block.get('text', ''))
         return {**block, 'text': masked}, found
     if block_type == 'tool_use':
-        # Recursively mask PII in tool input (any JSON structure: dict, list, str, nested)
+        # Mask PII in tool input, but skip filesystem path keys — NLP models incorrectly
+        # flag usernames and path tokens (e.g. "ikeniborn", "iclaude") as PERSON entities,
+        # corrupting file paths in conversation history and breaking filesystem navigation.
+        # Only structural path keys are skipped; content fields (content, old_string,
+        # new_string, command, pattern) are still passed through presidio_mask().
         if 'input' not in block or block['input'] is None:
             return block, []
-        masked_input, block_found = _mask_value(block['input'])
-        return {**block, 'input': masked_input}, block_found
+        raw_input = block['input']
+        if not isinstance(raw_input, dict):
+            # Non-dict input (rare): mask as-is
+            masked_input, block_found = _mask_value(raw_input)
+            return {**block, 'input': masked_input}, block_found
+        masked_dict: dict[str, Any] = {}
+        block_found: list[str] = []
+        for k, v in raw_input.items():
+            if k in _TOOL_INPUT_SKIP_KEYS:
+                masked_dict[k] = v  # structural pointer — pass through unchanged
+            else:
+                masked_v, f = _mask_value(v)
+                masked_dict[k] = masked_v
+                block_found.extend(f)
+        return {**block, 'input': masked_dict}, block_found
     if block_type == 'tool_result':
         if 'content' not in block:
             return block, []
