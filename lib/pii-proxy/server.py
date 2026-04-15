@@ -449,15 +449,29 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         return text, []
     try:
         assert _analyzer is not None
-        # Analyze for all supported languages and merge results
+        # NLP entity type allowlist: only pattern-based recognizers with low false-positive rate.
+        # NER-based types (PERSON, LOCATION, ORGANIZATION, DATE_TIME) are excluded:
+        # they misclassify common Russian/Cyrillic words as person names (e.g. "привет",
+        # "Сегодня", "После" → PERSON in both English and Russian models).
+        # Technical secrets (API keys, tokens, passwords) are covered by regex below.
+        _NLP_ENTITIES = [
+            'EMAIL_ADDRESS',    # pattern-based, highly reliable
+            'PHONE_NUMBER',     # pattern-based, reliable
+            'CREDIT_CARD',      # pattern-based (Luhn check), reliable
+            'IBAN_CODE',        # pattern-based, reliable
+            'IP_ADDRESS',       # pattern-based, reliable
+            'URL',              # pattern-based; catches credentials in URLs not covered by regex
+        ]
+        # Use English model only: Russian NER produces the same false positives on Cyrillic
+        # text as the English model, while adding no unique pattern-based recognizer value.
+        _nlp_langs = [l for l in _supported_languages if l == 'en'] or _supported_languages
         results = []
-        for lang in _supported_languages:
-            # score_threshold=0.8: accept only high-confidence detections.
-            # Default (0.5) causes false positives on short texts and common words
-            # (e.g. "привет" classified as PERSON with ~0.6 confidence by Russian NER).
-            # Real secrets detected via regex below; NLP catches emails, phones, IPs —
-            # all reliably score above 0.8 with enough context.
-            results.extend(_analyzer.analyze(text=text, language=lang, score_threshold=0.8))
+        for lang in _nlp_langs:
+            results.extend(_analyzer.analyze(
+                text=text, language=lang,
+                entities=_NLP_ENTITIES,
+                score_threshold=0.8,
+            ))
         # Filter false-positive PERSON entities (product names misclassified as humans)
         results = [
             r for r in results
