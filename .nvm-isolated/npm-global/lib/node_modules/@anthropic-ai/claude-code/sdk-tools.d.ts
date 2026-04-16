@@ -2346,6 +2346,10 @@ export interface FileWriteOutput {
      */
     repository?: string | null;
   };
+  /**
+   * True when the user edited the proposed content in the permission dialog before accepting
+   */
+  userModified?: boolean;
 }
 export interface GlobOutput {
   /**
