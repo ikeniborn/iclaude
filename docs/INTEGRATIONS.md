@@ -330,21 +330,7 @@ flowchart LR
 
 ---
 
-### 9. Sphinx Документация
-
-| Параметр | Значение |
-|----------|----------|
-| Модуль | `lib/docs/` (7 файлов) |
-| Файлов | 7 (init, build, serve, install, bash-parser, resolve, status) |
-| Флаги | `--install-docs`, `--build-docs`, `--serve-docs` |
-| Зависимости | Python 3, `sphinx>=8.0`, `furo`, `myst-parser`, `sphinxcontrib-mermaid` |
-| Статус | **Полная** |
-
-**Особенность:** генерирует `docs/llms.txt` и `docs/llms-full.txt` для AI-агентов.
-
----
-
-### 10. NVM / Node.js (базовая инфраструктура)
+### 9. NVM / Node.js (базовая инфраструктура)
 
 | Параметр | Значение |
 |----------|----------|
@@ -434,15 +420,6 @@ flowchart LR
               statusline для Claude Code UI
 ```
 
-#### ⚠️ Sphinx + llms.txt — избыточность для bash-проекта
-
-```
-Проблема: 7 файлов в lib/docs/ для генерации документации bash-скрипта
-          Sphinx — Python-ориентированный инструмент
-Риск:     Высокая сложность поддержки (bash-parser.sh парсит bash для Sphinx)
-Рекомендация: Рассмотреть замену на mdBook или mkdocs
-              (меньше зависимостей, нативный Markdown)
-```
 
 ### Общие рекомендации по балансу
 

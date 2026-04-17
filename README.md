@@ -144,11 +144,6 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 
 ---
 
-### 📄 Sphinx Documentation
-- **Per-project** - работает в любом проекте, не только iclaude
-- **docs/sphinx/** - изолированная поддиректория, не засоряет `docs/`
-- **API Reference** - автогенерация из `lib/**/*.sh` комментариев
-- **llms.txt** - AI-first индекс документации для LLM-агентов
 
 ### 📚 Skills System
 - **Context Awareness** - автоопределение стека
@@ -269,40 +264,6 @@ Approval gates после каждого агента — можно остан�
 
 ---
 
-## 📄 Sphinx документация
-
-```bash
-# Первый раз: инициализировать Sphinx в проекте
-./iclaude.sh --init-docs               # текущий проект
-./iclaude.sh --init-docs /path/to/proj # другой проект
-
-# Установить Python-зависимости (один раз, в .nvm-isolated/.python-docs/)
-./iclaude.sh --install-docs
-
-# Собрать документацию
-./iclaude.sh --build-docs              # HTML + llms.txt
-./iclaude.sh --build-docs --clean      # с очисткой кэша
-
-# Просмотр в браузере
-./iclaude.sh --serve-docs              # localhost:8000
-./iclaude.sh --serve-docs $(pwd) 9000  # другой порт
-
-# Статус
-./iclaude.sh --check-docs
-```
-
-**Результат:**
-```
-docs/sphinx/
-├── conf.py          ← конфигурация Sphinx
-├── index.md         ← toctree (ссылается на docs/*.md)
-├── api-reference/   ← автогенерация из lib/*.sh
-└── _build/html/
-    ├── index.html   ← HTML сайт
-    └── llms.txt     ← индекс для AI-агентов
-```
-
----
 
 ## 🎯 Quick Start Examples
 
@@ -409,7 +370,7 @@ export DEEPSEEK_API_KEY="your-key"
 │   └── skills/                         # Навыки проекта
 ├── .nvm-isolated-lockfile.json         # Version lockfile
 └── docs/                               # Документация
-    └── sphinx/                         # Sphinx (HTML + llms.txt)
+    └── ...                             # Документация проекта
 ```
 
 ---

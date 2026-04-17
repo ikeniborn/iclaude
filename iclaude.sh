@@ -168,19 +168,6 @@ if [[ -d "$LIB_DIR/command" ]]; then
 fi
 
 #######################################
-# Load Docs modules (Phase 16: Sphinx integration)
-#######################################
-if [[ -d "$LIB_DIR/docs" ]]; then
-    source "${LIB_DIR}/docs/resolve.sh"
-    source "${LIB_DIR}/docs/init.sh"
-    source "${LIB_DIR}/docs/bash-parser.sh"
-    source "${LIB_DIR}/docs/install.sh"
-    source "${LIB_DIR}/docs/build.sh"
-    source "${LIB_DIR}/docs/serve.sh"
-    source "${LIB_DIR}/docs/status.sh"
-fi
-
-#######################################
 # Load Chrome Integration modules
 #######################################
 if [[ -d "$LIB_DIR/chrome" ]]; then
@@ -574,34 +561,6 @@ fi
             --shared-config)
                 use_shared_config=true
                 shift
-                ;;
-            --init-docs)
-                init_project_docs "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --install-docs)
-                install_sphinx_docs
-                exit $?
-                ;;
-            --build-docs)
-                if [[ "${2:-}" == "--clean" ]]; then
-                    build_sphinx_docs "$(pwd)" "--clean"
-                else
-                    build_sphinx_docs "${2:-$(pwd)}" "${3:-}"
-                fi
-                exit $?
-                ;;
-            --serve-docs)
-                if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
-                    serve_sphinx_docs "$(pwd)" "${2:-8000}"
-                else
-                    serve_sphinx_docs "${2:-$(pwd)}" "${3:-8000}"
-                fi
-                exit $?
-                ;;
-            --check-docs)
-                check_docs_status "${2:-$(pwd)}"
-                exit 0
                 ;;
             --check-config)
                 check_config_status

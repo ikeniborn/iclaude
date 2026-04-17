@@ -60,18 +60,6 @@ JavaScript:
 
 См. `@shared:syntax-commands.json` для mapping language → syntax check command.
 
-### 5. Определение документации Sphinx
-
-```
-Пути для проверки:
-- docs/llms.txt        → has_docs: true, читать для ориентации в проекте
-- docs/llms-full.txt   → полный контент документации для LLM контекста
-- docs/sphinx/conf.py  → Sphinx инициализирован
-```
-
-**Если `docs/llms.txt` существует:** прочитай его в начале задачи для понимания структуры проекта.
-**Если `docs/llms-full.txt` существует:** используй для глубокого контекста при сложных задачах.
-
 ## Output
 
 Используй шаблон: `@template:project-context`
@@ -86,8 +74,6 @@ JavaScript:
     "test_framework": "pytest|jest|go test|none",
     "has_prd": true|false,
     "prd_path": "docs/prd/" | null,
-    "has_docs": true|false,
-    "docs_llms_path": "docs/llms.txt" | null,
     "syntax_command": "@shared:syntax-commands[language].syntax",
     "code_style": "pep8|prettier|gofmt|none"
   }
@@ -302,8 +288,6 @@ JavaScript:
 ## Changelog
 
 ### 1.2.0 (2026-02-19)
-- Добавлено: определение Sphinx документации (has_docs, docs_llms_path)
-- Автоматическое чтение docs/llms.txt при наличии
 
 ### 1.1.0 (2026-01-25)
 - Добавлено: 5 примеров (Python FastAPI, TypeScript React, Go with PRD, Bash, multi-language)
