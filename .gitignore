@@ -156,14 +156,6 @@ scripts/.claude_proxy_credentials  # Legacy
 # Test fixtures with mock secrets (not committed)
 tests/fixtures/
 
-# Sphinx documentation build output (generated, not committed)
-# docs/sphinx/_build/ contains HTML/CSS/JS artifacts — not part of LLM context
-docs/_build/
-docs/sphinx/_build/
-
-# Python venv for Sphinx (generated, not committed)
-.nvm-isolated/.python-docs/
-
 # Claude Code Agent Workspace
 .claude/workspace/
 .claude/plans/

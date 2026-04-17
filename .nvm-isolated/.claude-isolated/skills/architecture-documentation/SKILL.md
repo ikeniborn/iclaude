@@ -4,8 +4,8 @@ description: Generate detailed architectural documentation in YAML and TOON form
 user-invocable: true
 context: fork
 # version: 1.4.0
-# tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency, sphinx
-# dependencies: context-awareness, thinking-framework, toon-skill, docs-builder | author: Claude Code Skills Team
+# tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency
+# dependencies: context-awareness, thinking-framework, toon-skill | author: Claude Code Skills Team
 # files: templates: ./templates/*.yaml, templates_toon: ./templates/toon/*.toon.template, converters: ./converters/*.mjs, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, examples_toon: ./examples/toon/*.toon.example
 ---
 
@@ -177,17 +177,7 @@ discovery_patterns[5]{language,search_patterns,entry_points}:
    - TOON token savings (if applicable)
    - Next steps for user
 
-5. **Sphinx integration (if docs/conf.py exists):**
-   Trigger `@skill:docs-builder` to rebuild documentation:
-   ```bash
-   # Check if Sphinx is configured
-   if [[ -f docs/conf.py ]] && [[ -f .nvm-isolated/.python-docs/bin/sphinx-build ]]; then
-       ./iclaude.sh --build-docs
-   fi
-   ```
-   This updates `docs/_build/html/llms.txt` so AI agents see new architecture.
-
-**Output:** Structured JSON + user-friendly summary + Sphinx rebuild (if configured)
+**Output:** Structured JSON + user-friendly summary
 
 ---
 
