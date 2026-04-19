@@ -85,10 +85,6 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/skills/**
 !.nvm-isolated/.claude-isolated/agents/
 !.nvm-isolated/.claude-isolated/agents/**
-!.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v5.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v7.0.md
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
