@@ -146,52 +146,45 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 
 
 ### 📚 Skills System
-- **Context Awareness** - автоопределение стека
-- **LSP Integration** - автоустановка Language Servers
-- **PR Automation** - создание PR + CI/CD мониторинг
-- **Agent Orchestrator** - пайплайн Researcher → Critic → Planner → Executor
 
-### 🤖 Agent System
+Интерактивные навыки Claude Code — ускоряют типовые задачи и автоматизируют рутину. Вызываются через `/<skill-name>` или автоматически, когда подходит по описанию.
 
-Четырёхуровневый пайплайн специализированных суб-агентов:
+**Глобальные** (`.nvm-isolated/.claude-isolated/skills/`):
+
+| Скилл | Назначение |
+|-------|-----------|
+| **context-awareness** | Автоопределение стека проекта, поиск по документации |
+| **architecture-documentation** | Архитектурная документация в YAML/TOON с зависимостями компонентов |
+| **prompt-verifier** | Верификация и адаптация промтов (`CLAUDE.md`, `AGENT.md`, инструкции) |
+| **prd-generator** | PRD с 14 разделами и 5 Mermaid-диаграммами, интерактивно |
+| **skill-generator** | Генератор новых скиллов: templates, schemas, валидация |
+| **agent-builder** | Интерактивное создание Claude Code sub-agents (frontmatter + примеры I/O) |
+| **git-workflow** | Conventional Commits workflow + PR creation |
+| **compact-session** | Анализ и суммаризация `.jsonl` сессий |
+| **toon-skill** | Конвертация JSON ↔ TOON, расчёт token savings |
+
+**Проектные** (`.claude/skills/`) — специфичны для iclaude:
+
+| Скилл | Назначение |
+|-------|-----------|
+| **iclaude-commands** | CLI reference по 8 категориям команд |
+| **iclaude-architecture** | Компоненты `lib/` + критичные функции |
+| **iclaude-best-practices** | Best practices и частые ошибки разработки |
+| **iclaude-validation** | Multi-perspective анализ и validation loop |
+
+Shared-утилиты (frontmatter parser, commit-types DB, markdown-шаблоны) — в `skills/_shared/`.
+
+### 🤖 Sub-Agents
+
+Готовых агентов в комплекте **нет** (папка `.nvm-isolated/.claude-isolated/agents/` пустая). Предыдущий пайплайн Researcher → Critic → Planner → Executor удалён.
+
+Вместо него — скилл **agent-builder** для создания собственных суб-агентов под конкретную задачу:
 
 ```
-Пользователь → Researcher → [Critic] → [Gate] → Planner → [Critic] → [Gate] → Executor → [Critic] → Report
+/agent-builder
 ```
 
-| Агент | Что делает | Файлы |
-|-------|-----------|-------|
-| **Researcher** | Исследует кодовую базу (2 параллельных Explore) | → `research.toon` |
-| **Critic** | Оценивает артефакт (PASS/WARN/RETRY/ABORT) | → `*-critique.toon` |
-| **Planner** | Создаёт пошаговый план на основе research | → `plan.toon` |
-| **Executor** | Вносит изменения в код, валидирует, коммитит | → `report.md` |
-
-**Запуск:**
-```
-/agent-orchestrator <описание задачи>
-```
-
-**Артефакты** хранятся в `.claude/workspace/{session-id}/` (в `.gitignore`).
-Approval gates после каждого агента — можно остановиться на любом этапе.
-
-**Пример 1 — простая задача:**
-```
-/agent-orchestrator Добавить поддержку нового LSP языка
-```
-→ Researcher: находит `lib/command/args.sh`, complexity=minimal
-→ Planner: 2 фазы, 4 шага
-→ Executor: 2 коммита, report.md со статусом COMPLETED
-
-**Пример 2 — сложная задача:**
-```
-/agent-orchestrator Refactor proxy management to use async/await
-```
-→ Researcher: 8 файлов, complexity=complex, риски high
-→ Planner: 4 фазы, approval gate для фаз с риском high
-→ Executor: запрашивает подтверждение перед breaking changes
-
-**Агенты:** `.nvm-isolated/.claude-isolated/agents/`
-**Оркестратор:** `.nvm-isolated/.claude-isolated/skills/agent-orchestrator/SKILL.md`
+Скилл интерактивно запрашивает роль, описание, примеры I/O и генерирует корректный frontmatter, валидируя по официальной схеме Claude Code.
 
 ---
 
@@ -359,15 +352,15 @@ export DEEPSEEK_API_KEY="your-key"
 ├── .nvm-isolated/                      # Изолированная среда (~278MB)
 │   ├── versions/node/                  # Node.js + npm
 │   └── .claude-isolated/               # Конфигурация + skills
-│       ├── skills/                     # Claude Code Skills
-│       ├── agents/                     # Agent pipeline (Researcher, Planner, Executor, Critic)
+│       ├── skills/                     # 9 глобальных скиллов + _shared утилиты
+│       ├── agents/                     # Sub-agents (создаются через /agent-builder)
 │       ├── scripts/                    # Status Line и др.
 │       ├── themes/                     # Oh My Posh темы
 │       └── hooks/                      # PreToolUse/PostToolUse хуки
 │           ├── block-secrets.py        # Блокировка по пути файла
 │           └── redact-secrets.py       # Маскирование содержимого
 ├── .claude/                            # Конфигурация Claude Code
-│   └── skills/                         # Навыки проекта
+│   └── skills/                         # 4 проектных скилла (iclaude-*)
 ├── .nvm-isolated-lockfile.json         # Version lockfile
 └── docs/                               # Документация
     └── ...                             # Документация проекта
@@ -396,8 +389,8 @@ export DEEPSEEK_API_KEY="your-key"
 **В git:**
 - `.nvm-isolated/` - изолированное окружение (опционально)
 - `.nvm-isolated-lockfile.json` - version lockfile
-- `.nvm-isolated/.claude-isolated/skills/` - skills
-- `.nvm-isolated/.claude-isolated/agents/` - agent pipeline
+- `.nvm-isolated/.claude-isolated/skills/` - 9 глобальных скиллов + _shared
+- `.claude/skills/` - 4 проектных скилла (iclaude-*)
 - `.nvm-isolated/.claude-isolated/scripts/` - scripts
 - `.nvm-isolated/.claude-isolated/themes/` - Oh My Posh темы
 - `.nvm-isolated/.claude-isolated/hooks/` - Claude Code хуки
@@ -427,4 +420,4 @@ export DEEPSEEK_API_KEY="your-key"
 ---
 
 **Версия:** 4.0 (Modular Architecture)
-**Последнее обновление:** 2026-03-12
+**Последнее обновление:** 2026-04-21
