@@ -139,7 +139,7 @@ jobs:
           echo "NVM versions available:"
           ls .nvm-isolated/versions/node/ 2>/dev/null || echo "(none)"
           echo "Selected node:"
-          find .nvm-isolated/versions/node -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | head -1
+          find .nvm-isolated/versions/node -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1
           echo "npm-global/bin:"
           ls .nvm-isolated/npm-global/bin/claude 2>/dev/null && echo "(claude symlink exists)" || echo "(claude symlink missing)"
           echo "--- End diagnostic ---"
