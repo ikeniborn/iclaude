@@ -2231,6 +2231,10 @@ export interface BashOutput {
    * Model-facing note listing readFileState entries whose mtime bumped during this command (set when WRITE_COMMAND_MARKERS matches)
    */
   staleReadFileStateHint?: string;
+  /**
+   * Model-facing system-reminder appended when a gh command reports a GitHub API rate-limit error
+   */
+  ghRateLimitHint?: string;
 }
 export interface ExitPlanModeOutput {
   /**

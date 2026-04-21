@@ -244,6 +244,8 @@ jobs:
           # Add all changed @anthropic-ai packages
           git add .nvm-isolated-lockfile.json
           git add .nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/
+          # Add bin/claude symlink (changes target when package format changes, e.g. cli.js → bin/claude.exe)
+          git add .nvm-isolated/npm-global/bin/claude
 
           # Add sandbox-runtime if it exists and was updated
           if [ -d ".nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/sandbox-runtime/" ]; then

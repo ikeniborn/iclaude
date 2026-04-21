@@ -105,10 +105,13 @@ function placeBinary(src, dest) {
         try {
           copyFileSync(src, dest)
         } catch (copyErr) {
-          if (stub)
+          if (stub) {
             try {
               writeFileSync(dest, stub, { mode: 0o755 })
-            } catch {}
+            } catch {
+              // Do nothing
+            }
+          }
           throw copyErr
         }
       }
