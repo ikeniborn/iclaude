@@ -616,10 +616,15 @@ launch_claude() {
         echo ""
     fi
 
+    # Word-split claude_cmd into an array so multi-word commands like
+    # "node /path/cli.js" (legacy pre-v2.1.114 fallback) execute correctly.
+    # Native-binary path is a single word — splits into one-element array.
+    local -a claude_cmd_arr
+    read -ra claude_cmd_arr <<< "$claude_cmd"
+
     # Launch Claude Code
     # When PII proxy is active: cannot use exec — EXIT trap would fire before the
     # new process starts, killing the proxy before claude makes its first API call.
-    # BUG-10: removed eval (double-quoted variables handle spaces in paths correctly)
     if [[ "$use_pii_proxy" == "true" ]]; then
         # Combined mode (PII + router): both servers already started above in router block.
         # Solo PII proxy mode: start proxy now.
@@ -632,13 +637,12 @@ launch_claude() {
             trap 'stop_pii_proxy_server' EXIT INT TERM
         fi
         # In combined mode trap was already set (stop_pii_proxy_server + stop_ccr_server)
-        "$claude_cmd" "$@"
+        "${claude_cmd_arr[@]}" "$@"
         exit $?
     fi
 
     # Standard exec path: replace shell process (no cleanup needed)
-    # Double-quoted variable handles spaces in path correctly without eval.
-    exec "$claude_cmd" "$@"
+    exec "${claude_cmd_arr[@]}" "$@"
 }
 
 #######################################
