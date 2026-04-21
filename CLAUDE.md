@@ -18,6 +18,9 @@ git clone <repo-url> && cd iclaude
 ./iclaude.sh --isolated-install
 ./iclaude.sh
 
+# After git clone on existing install — downloads native binary + repairs symlinks
+./iclaude.sh --repair-isolated
+
 # With proxy
 ./iclaude.sh --proxy https://user:pass@proxy.example.com:8118
 
@@ -34,7 +37,8 @@ git clone <repo-url> && cd iclaude
 ./iclaude.sh                    # Launch with saved settings
 ./iclaude.sh --no-proxy         # Launch without proxy
 ./iclaude.sh --no-chrome        # Launch without Chrome integration
-./iclaude.sh --update           # Update Claude Code
+./iclaude.sh --update           # Update Claude Code (npm + lockfile)
+./iclaude.sh --isolated-update  # Update only the isolated environment
 ```
 
 ### Testing and Validation
@@ -62,7 +66,7 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 
 ```bash
 ./iclaude.sh --install-from-lockfile  # Install from lockfile (exact versions)
-./iclaude.sh --repair-isolated        # Repair symlinks after git clone
+./iclaude.sh --repair-isolated        # Repair symlinks + download native binary if missing
 ./iclaude.sh --cleanup-isolated       # Clean up isolated environment
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
 ./iclaude.sh --check-lsp              # Check LSP server status
@@ -141,6 +145,20 @@ Security hooks work independently of isolation — see [Security Hooks](#securit
 
 ## Important Notes
 
+### Native Binary Format (since v2.1.114)
+
+Claude Code switched from a Node.js script (`cli.js`) to a native binary (`bin/claude.exe`, ~237MB). The binary is excluded from git (exceeds GitHub's 100MB limit) and lives in the optional npm package `@anthropic-ai/claude-code-linux-x64` (nested in `node_modules/`, also gitignored).
+
+**After `git clone`:** run `--repair-isolated` — it runs `npm install` to download the optional platform package and then runs `install.cjs` postinstall to generate `bin/claude.exe`.
+
+**Detection order** (`lib/nvm/detect.sh::get_nvm_claude_path()`):
+1. `$npm_prefix/bin/claude` (symlink → `bin/claude.exe`)
+2. `bin/claude.exe` directly
+3. `cli-wrapper.cjs` via `node` (emergency fallback, prints reinstall warning)
+4. `cli.js` via `node` (legacy, pre-v2.1.114)
+
+**Version detection** (`lib/update/isolated.sh`): reads from `package.json`, not from running the binary.
+
 ### Chrome Integration
 
 Chrome integration is **DISABLED BY DEFAULT**. Enable: `./iclaude.sh --chrome`
@@ -163,13 +181,24 @@ See [docs/plans/README.md](docs/plans/README.md).
 ### Configuration Best Practices
 
 - Use HTTPS proxy (not HTTP) for OAuth compatibility
-- Run `--repair-isolated` after `git clone`
+- Run `--repair-isolated` after `git clone` (downloads native binary)
 - Verify lockfile after `--update`
 - Test proxy with `--test` before launching
 
 ## Code Architecture
 
-**Version 4.0** — modular bash in `lib/` (15 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy).
+**Version 4.0** — modular bash in `lib/` (16 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox).
+
+Modules are sourced in phases inside `iclaude.sh`: Phase 0 (core) → Phase 2–8.1 (feature modules) → Phase 14 (command dispatch). Command parsing/dispatch stubs live in `lib/command/`; the main logic is still in the iclaude.sh body.
+
+**Key variable exports** (set by `lib/core/init.sh` + `lib/nvm/setup.sh`):
+- `ISOLATED_NVM_DIR` — path to `.nvm-isolated/`
+- `ISOLATED_CONFIG_DIR` — path to `.nvm-isolated/.claude-isolated/`
+- `ISOLATED_LOCKFILE` — path to `.nvm-isolated-lockfile.json`
+- `NPM_CONFIG_PREFIX` — set to `$ISOLATED_NVM_DIR/npm-global` by `setup_isolated_nvm()`
+- `CLAUDE_CONFIG_DIR` — exported before Claude launch; used by hooks via `$CLAUDE_CONFIG_DIR`
+
+**Lockfile** (`.nvm-isolated-lockfile.json`) tracks: `nodeVersion`, `claudeCodeVersion`, `routerVersion`, `lspServers` (pyright/vtsls/typescript-language-server), `ohMyPoshVersion`, `statusLineEnabled`, `nvmVersion`.
 
 For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-commands**
 
