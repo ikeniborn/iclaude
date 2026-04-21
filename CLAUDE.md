@@ -99,13 +99,12 @@ bubblewrap (bwrap) was removed (2026-03) because it created 0-byte read-only stu
 
 Claude Code uses a native binary (`bin/claude.exe`, ~237MB) excluded from git (exceeds GitHub 100MB limit).
 
-After `git clone`, run `--repair-isolated` to download the binary via `npm install` + postinstall.
+After `git clone`, run `--repair-isolated` to download the binary via `npm install` + postinstall. Without it, detection falls through to the legacy `cli.js` path, or fails with a clear error.
 
 Detection order (`lib/nvm/detect.sh::get_nvm_claude_path()`):
 1. `$npm_prefix/bin/claude` (symlink)
-2. `bin/claude.exe`
-3. `cli-wrapper.cjs` via `node` (fallback, prints warning)
-4. `cli.js` via `node` (legacy pre-v2.1.114)
+2. `bin/claude.exe` (native binary, v2.1.114+)
+3. `cli.js` via `node` (legacy pre-v2.1.114)
 
 ### Chrome Integration
 
