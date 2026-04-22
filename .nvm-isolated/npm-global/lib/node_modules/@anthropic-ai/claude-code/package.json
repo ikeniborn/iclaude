@@ -1,6 +1,6 @@
 {
   "name": "@anthropic-ai/claude-code",
-  "version": "2.1.116",
+  "version": "2.1.117",
   "bin": {
     "claude": "bin/claude.exe"
   },
@@ -21,14 +21,14 @@
   },
   "dependencies": {},
   "optionalDependencies": {
-    "@anthropic-ai/claude-code-darwin-arm64": "2.1.116",
-    "@anthropic-ai/claude-code-darwin-x64": "2.1.116",
-    "@anthropic-ai/claude-code-linux-x64": "2.1.116",
-    "@anthropic-ai/claude-code-linux-arm64": "2.1.116",
-    "@anthropic-ai/claude-code-linux-x64-musl": "2.1.116",
-    "@anthropic-ai/claude-code-linux-arm64-musl": "2.1.116",
-    "@anthropic-ai/claude-code-win32-x64": "2.1.116",
-    "@anthropic-ai/claude-code-win32-arm64": "2.1.116"
+    "@anthropic-ai/claude-code-darwin-arm64": "2.1.117",
+    "@anthropic-ai/claude-code-darwin-x64": "2.1.117",
+    "@anthropic-ai/claude-code-linux-x64": "2.1.117",
+    "@anthropic-ai/claude-code-linux-arm64": "2.1.117",
+    "@anthropic-ai/claude-code-linux-x64-musl": "2.1.117",
+    "@anthropic-ai/claude-code-linux-arm64-musl": "2.1.117",
+    "@anthropic-ai/claude-code-win32-x64": "2.1.117",
+    "@anthropic-ai/claude-code-win32-arm64": "2.1.117"
   },
   "files": [
     "bin/claude.exe",
