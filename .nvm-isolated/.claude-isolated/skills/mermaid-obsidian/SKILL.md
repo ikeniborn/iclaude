@@ -20,6 +20,8 @@ Obsidian bundles Mermaid 11.4.1. Know these quirks before writing any diagram:
 - **No `\n` in labels**: the `\n` escape sequence does not work in Mermaid/Obsidian — it renders as literal `\n` text. For line breaks in sequence diagram messages use `<br/>` only where supported; in node labels there is no reliable multiline syntax — keep labels on one line.
 - **Reserved keyword `end` in labels**: the word `end` (even inside quoted labels) can confuse the Mermaid 11.4.1 parser and cause a parse error. Replace `end-to-end` with `e2e`, `end state` with `final state`, etc.
 - **Numbered labels `1.`, `2.` etc.**: a digit followed by a dot at the start of a label (`"1. Step one"`) is parsed as a markdown ordered list and causes a parse error. Use `1)` instead — `A["1) Step one"]` — or drop the numbering entirely.
+- **Quotes in mindmap labels cause `&quot;`**: in `mindmap`, wrapping text in `"..."` makes Mermaid HTML-encode the quotes as `&quot;` in the output. Only quote mindmap labels if the text contains `()[]{}` — otherwise write the text bare: `AGENT.md и CLAUDE.md` not `"AGENT.md и CLAUDE.md"`.
+- **Dark text without background is unreadable**: `primaryTextColor` applies to node text, but if a node has no explicit `fill` (e.g. in `timeline` or unstyled mindmap nodes) the text may render dark on a dark background. Always pair a dark theme with explicit `classDef fill` on key nodes, or use `classDef` with both `fill` and `color` to ensure contrast.
 
 ## Theme Initialization
 
@@ -84,6 +86,35 @@ classDef info     fill:#b2dfdb,color:#004d40,stroke:#00897b
 
 Assign classes to nodes: `class NodeA primary` or `class NodeA,NodeB success`.
 For a single node override: `style NodeA fill:#89b4fa,color:#1e1e2e`.
+
+### Semantic coloring in mindmap
+
+Mindmap uses `:::className` inline on each node, then `classDef` at the end of the diagram. Group nodes by domain/semantic meaning, not just visual variety.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#1e1e2e', 'primaryColor': '#313244', 'primaryTextColor': '#cdd6f4', 'primaryBorderColor': '#89b4fa', 'lineColor': '#888888'}}}%%
+mindmap
+  root((System))
+    Config:::config
+      rules
+      conventions
+    Data:::data
+      specs
+      tracker
+    Process:::process
+      boot sequence
+      warmup
+    Templates:::template
+      file paths
+      acceptance criteria
+
+  classDef config   fill:#89b4fa,color:#1e1e2e,stroke:#74c7ec
+  classDef data     fill:#a6e3a1,color:#1e1e2e,stroke:#40a02b
+  classDef process  fill:#f9e2af,color:#1e1e2e,stroke:#df8e1d
+  classDef template fill:#94e2d5,color:#1e1e2e,stroke:#179299
+```
+
+Apply `:::className` only to branch-root nodes (first level under root) — child nodes inherit the context visually through indentation.
 
 ## Diagram Templates
 
@@ -269,4 +300,6 @@ timeline
 | Literal `\n` in label | `\n` not supported in Mermaid/Obsidian | Remove `\n`; keep labels single-line |
 | Parse error на середине диаграммы | Слово `end` в label (`end-to-end`, `end state`) | Заменить: `e2e`, `final state` и т.д. |
 | Parse error при `"1. Label"` | `digit + dot` парсится как markdown list | Использовать `"1) Label"` или убрать нумерацию |
+| `&quot;` вместо кавычек в mindmap | Кавычки `"..."` HTML-энкодятся в mindmap | Убрать кавычки; для `()[]{}` в тексте они нужны |
+| Тёмный текст без фона нечитаем | `primaryTextColor` не применяется к узлам без `fill` | Добавить `classDef` с явным `fill` и `color` |
 | Стрелки не видны на светлой/тёмной теме | `lineColor` слишком тёмный или светлый | Использовать `#888888` (средний тон) |
