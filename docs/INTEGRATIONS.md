@@ -74,7 +74,6 @@ lib/
 ├── ohmyposh/     # Oh-My-Posh промпт
 ├── sandbox/      # microVM (Firecracker): install, launch, status
 ├── proxy/        # HTTP/HTTPS прокси
-├── docs/         # Sphinx документация
 └── nvm/          # NVM / Node.js окружение
 ```
 
@@ -357,7 +356,6 @@ flowchart LR
 | LSP Servers | 4 | 4 | 4 | 3 | **3.8** | 🟠 Высокий |
 | Status Line | 3 | 4 | 4 | 4 | **3.8** | 🟠 Высокий |
 | Router (alt LLM) | 3 | 4 | 4 | 3 | **3.5** | 🟡 Средний |
-| Sphinx Docs | 2 | 3 | 3 | 3 | **2.8** | 🟡 Средний |
 | Oh-My-Posh | 2 | 3 | 3 | 3 | **2.8** | 🟢 Низкий |
 
 ### Легенда критериев
@@ -452,7 +450,6 @@ quadrantChart
     StatusLine: [0.80, 0.75]
     Sandbox: [0.80, 0.75]
     Router: [0.80, 0.65]
-    Sphinx: [0.65, 0.55]
     OhMyPosh: [0.60, 0.40]
     MCP_servers: [0.05, 0.90]
     DockerIntegration: [0.05, 0.75]
