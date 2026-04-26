@@ -131,7 +131,8 @@
     "padding": 1
   },
   "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true
+    "pyright-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
@@ -139,6 +140,5 @@
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "skipDangerousModePermissionPrompt": true
 }
