@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wiki Page Frontmatter",
+  "description": "JSON Schema для frontmatter wiki-страниц llm-wiki",
+  "type": "object",
+  "properties": {
+    "wiki_sources": {
+      "type": "array",
+      "description": "Пути к исходным файлам, из которых извлечена информация (относительно корня репозитория)",
+      "items": {
+        "type": "string",
+        "pattern": "^vaults/"
+      },
+      "minItems": 1
+    },
+    "wiki_updated": {
+      "type": "string",
+      "description": "Дата последнего обновления страницы (YYYY-MM-DD)",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "wiki_status": {
+      "type": "string",
+      "description": "Степень зрелости страницы",
+      "enum": ["stub", "developing", "mature"]
+    },
+    "wiki_type": {
+      "type": "string",
+      "description": "Тип wiki-файла (только для служебных файлов)",
+      "enum": ["page", "index", "log", "schema"]
+    },
+    "tags": {
+      "type": "array",
+      "description": "Теги из tag-hierarchy.json (knowledge-manager/shared/tag-hierarchy.json)",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9/-]*$"
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "description": "Альтернативные названия: аббревиатуры, английские варианты, синонимы",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["wiki_sources", "wiki_updated", "wiki_status"],
+  "additionalProperties": true
+}
