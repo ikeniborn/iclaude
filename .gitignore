@@ -91,6 +91,12 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/hooks/**
 !.nvm-isolated/.claude-isolated/commands/
 !.nvm-isolated/.claude-isolated/commands/**
+!.nvm-isolated/.claude-isolated/plugins/
+!.nvm-isolated/.claude-isolated/plugins/**
+# Exclude plugin cache and marketplace dirs (contain nested git repos, regenerable via install)
+.nvm-isolated/.claude-isolated/plugins/cache/
+.nvm-isolated/.claude-isolated/plugins/marketplaces/
+.nvm-isolated/.claude-isolated/plugins/data/
 !.nvm-isolated/.claude-isolated/CLAUDE.md
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
 .nvm-isolated/.claude-isolated/hooks/__pycache__/

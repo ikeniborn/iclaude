@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLM Wiki Operation Input",
+  "description": "JSON Schema для входных данных всех операций llm-wiki",
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "Тип операции",
+      "enum": ["ingest", "query", "lint", "init"]
+    },
+    "source_path": {
+      "type": "string",
+      "description": "Путь к файлу-источнику (для операций ingest и init)"
+    },
+    "question": {
+      "type": "string",
+      "description": "Вопрос для операции query",
+      "minLength": 5
+    },
+    "section": {
+      "type": "string",
+      "description": "Домен или раздел вики для lint/init. Если не указан — обрабатывается весь vault.",
+      "enum": ["ии", "ростелеком", "базы-данных"]
+    },
+    "options": {
+      "type": "object",
+      "description": "Дополнительные опции операции",
+      "properties": {
+        "save": {
+          "type": "boolean",
+          "description": "Сохранить ответ query как новую wiki-страницу (только для query)",
+          "default": false
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Режим предпросмотра: показать что будет сделано без реальных изменений",
+          "default": false
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Перезаписать существующие страницы (только для init)",
+          "default": false
+        },
+        "batch_size": {
+          "type": "integer",
+          "description": "Количество файлов в одном batch для операции init",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "ingest" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "required": ["source_path"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "init" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "required": ["section"]
+      }
+    }
+  ]
+}

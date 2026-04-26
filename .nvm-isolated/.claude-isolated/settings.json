@@ -132,7 +132,11 @@
   },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
