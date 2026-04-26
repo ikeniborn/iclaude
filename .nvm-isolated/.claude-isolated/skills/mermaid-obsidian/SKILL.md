@@ -18,6 +18,7 @@ Obsidian bundles Mermaid 11.4.1. Know these quirks before writing any diagram:
 - **Live Preview vs Reading Mode**: diagrams sometimes appear as empty boxes in Live Preview — this is an Obsidian rendering bug, not a syntax error. Advise the user to switch to Reading Mode if this happens.
 - **Multibyte characters**: avoid in node IDs; they can break rendering. Put them only in quoted labels.
 - **No `\n` in labels**: the `\n` escape sequence does not work in Mermaid/Obsidian — it renders as literal `\n` text. For line breaks in sequence diagram messages use `<br/>` only where supported; in node labels there is no reliable multiline syntax — keep labels on one line.
+- **Reserved keyword `end` in labels**: the word `end` (even inside quoted labels) can confuse the Mermaid 11.4.1 parser and cause a parse error. Replace `end-to-end` with `e2e`, `end state` with `final state`, etc.
 
 ## Theme Initialization
 
@@ -30,7 +31,7 @@ Always start diagrams with `%%{init}%%`. Use `base` theme for full color control
   'primaryColor': '#313244',
   'primaryTextColor': '#cdd6f4',
   'primaryBorderColor': '#89b4fa',
-  'lineColor': '#6c7086',
+  'lineColor': '#888888',
   'secondaryColor': '#181825',
   'tertiaryColor': '#45475a'
 }}}%%
@@ -43,11 +44,13 @@ Always start diagrams with `%%{init}%%`. Use `base` theme for full color control
   'primaryColor': '#e8e8f0',
   'primaryTextColor': '#333344',
   'primaryBorderColor': '#5c6bc0',
-  'lineColor': '#aaaacc',
+  'lineColor': '#888888',
   'secondaryColor': '#f0f0f8',
   'tertiaryColor': '#e0e0f0'
 }}}%%
 ```
+
+> **`lineColor: '#888888'`** — средний тон, одинаково виден на тёмном и светлом фоне (~4:1 контраст на обоих). Не используй тёмные (`#333`) или светлые (`#ccc`) цвета соединений — они теряются на соответствующих темах.
 
 **Quick dark preset** (simpler, less control):
 ```
@@ -263,3 +266,5 @@ timeline
 | `Undefined` in diagram | Duplicate node IDs | Make all IDs unique |
 | Missing last node | Syntax error earlier in diagram | Check for unclosed quotes/brackets |
 | Literal `\n` in label | `\n` not supported in Mermaid/Obsidian | Remove `\n`; keep labels single-line |
+| Parse error на середине диаграммы | Слово `end` в label (`end-to-end`, `end state`) | Заменить: `e2e`, `final state` и т.д. |
+| Стрелки не видны на светлой/тёмной теме | `lineColor` слишком тёмный или светлый | Использовать `#888888` (средний тон) |
