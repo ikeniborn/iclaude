@@ -52,23 +52,23 @@
     ],
     "context7@claude-plugins-official": [
       {
-        "scope": "local",
+        "scope": "project",
         "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
         "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/context7/d53f6ca4cdb0",
         "version": "d53f6ca4cdb0",
         "installedAt": "2026-03-20T12:05:45.399Z",
-        "lastUpdated": "2026-04-26T18:58:57.303Z",
+        "lastUpdated": "2026-04-26T19:38:55.799Z",
         "gitCommitSha": "d53f6ca4cdb000c671dfdc1c181b021e97c25505"
       }
     ],
     "claude-md-management@claude-plugins-official": [
       {
-        "scope": "local",
+        "scope": "project",
         "projectPath": "/home/ikeniborn/Documents/Project/familyBudget",
         "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/claude-md-management/1.0.0",
         "version": "1.0.0",
         "installedAt": "2026-03-20T12:05:45.399Z",
-        "lastUpdated": "2026-04-26T18:58:57.303Z",
+        "lastUpdated": "2026-04-26T19:38:55.799Z",
         "gitCommitSha": "d53f6ca4cdb000c671dfdc1c181b021e97c25505"
       },
       {
@@ -184,20 +184,11 @@
     ],
     "playwright@claude-plugins-official": [
       {
-        "scope": "project",
-        "projectPath": "/home/ikeniborn/Documents/Project/pac1-tool",
-        "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/playwright/d53f6ca4cdb0",
-        "version": "d53f6ca4cdb0",
-        "installedAt": "2026-04-26T09:03:29.697Z",
-        "lastUpdated": "2026-04-26T09:03:29.697Z",
-        "gitCommitSha": "d53f6ca4cdb000c671dfdc1c181b021e97c25505"
-      },
-      {
         "scope": "user",
         "installPath": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/plugins/cache/claude-plugins-official/playwright/d53f6ca4cdb0",
         "version": "d53f6ca4cdb0",
-        "installedAt": "2026-04-26T19:03:54.261Z",
-        "lastUpdated": "2026-04-26T19:03:54.261Z",
+        "installedAt": "2026-04-26T09:03:29.697Z",
+        "lastUpdated": "2026-04-26T19:38:55.799Z",
         "gitCommitSha": "d53f6ca4cdb000c671dfdc1c181b021e97c25505"
       }
     ],
