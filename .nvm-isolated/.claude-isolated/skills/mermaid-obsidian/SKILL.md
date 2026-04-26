@@ -19,6 +19,7 @@ Obsidian bundles Mermaid 11.4.1. Know these quirks before writing any diagram:
 - **Multibyte characters**: avoid in node IDs; they can break rendering. Put them only in quoted labels.
 - **No `\n` in labels**: the `\n` escape sequence does not work in Mermaid/Obsidian — it renders as literal `\n` text. For line breaks in sequence diagram messages use `<br/>` only where supported; in node labels there is no reliable multiline syntax — keep labels on one line.
 - **Reserved keyword `end` in labels**: the word `end` (even inside quoted labels) can confuse the Mermaid 11.4.1 parser and cause a parse error. Replace `end-to-end` with `e2e`, `end state` with `final state`, etc.
+- **Numbered labels `1.`, `2.` etc.**: a digit followed by a dot at the start of a label (`"1. Step one"`) is parsed as a markdown ordered list and causes a parse error. Use `1)` instead — `A["1) Step one"]` — or drop the numbering entirely.
 
 ## Theme Initialization
 
@@ -267,4 +268,5 @@ timeline
 | Missing last node | Syntax error earlier in diagram | Check for unclosed quotes/brackets |
 | Literal `\n` in label | `\n` not supported in Mermaid/Obsidian | Remove `\n`; keep labels single-line |
 | Parse error на середине диаграммы | Слово `end` в label (`end-to-end`, `end state`) | Заменить: `e2e`, `final state` и т.д. |
+| Parse error при `"1. Label"` | `digit + dot` парсится как markdown list | Использовать `"1) Label"` или убрать нумерацию |
 | Стрелки не видны на светлой/тёмной теме | `lineColor` слишком тёмный или светлый | Использовать `#888888` (средний тон) |
