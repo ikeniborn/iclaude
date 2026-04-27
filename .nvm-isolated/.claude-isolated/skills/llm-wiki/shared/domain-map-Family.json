@@ -1,0 +1,18 @@
+{
+  "vault": "Family",
+  "wiki_root": "vaults/Family/!Wiki",
+  "domains": [
+    {
+      "id": "здоровье",
+      "name": "Здоровье",
+      "wiki_folder": "vaults/Family/!Wiki/здоровье",
+      "source_paths": [
+        "vaults/Family/ИЛЬЯ/Здоровье",
+        "vaults/Family/ОКСАНА/Здоровье"
+      ],
+      "entity_types": [],
+      "tags": [],
+      "language_notes": ""
+    }
+  ]
+}
