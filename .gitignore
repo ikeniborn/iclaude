@@ -100,6 +100,7 @@ scripts/.claude_proxy_credentials  # Legacy
 # Exclude plugin runtime state (contains absolute paths, machine-specific, regenerated on install)
 .nvm-isolated/.claude-isolated/plugins/installed_plugins.json
 .nvm-isolated/.claude-isolated/plugins/known_marketplaces.json
+.nvm-isolated/.claude-isolated/plugins/install-counts-cache.json
 !.nvm-isolated/.claude-isolated/CLAUDE.md
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
 .nvm-isolated/.claude-isolated/hooks/__pycache__/
