@@ -17,14 +17,14 @@
 ```
 Claude читает:
 1. @shared:domain-map.json → wiki_folder для домена "базы-данных"
-2. vaults/Work/!Wiki/schema.md
-3. vaults/Work/!Wiki/index.md → список страниц домена
+2. vaults/Work/.wiki/schema.md
+3. vaults/Work/.wiki/index.md → список страниц домена
 ```
 
 ## Шаг 2: Сбор файлов
 
 ```
-Glob: vaults/Work/!Wiki/базы-данных/**/*.md
+Glob: vaults/Work/.wiki/базы-данных/**/*.md
 
 Найдено 4 файла:
   - базы-данных/субд/clickhouse.md
@@ -111,7 +111,7 @@ Wiki_sources упоминают: 3 файла
 
 ### [FM-001] Отсутствуют wiki_sources
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/субд/greenplum.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/субд/greenplum.md`
 **Детали:** wiki_sources пустой массив
 **Рекомендация:** Запустить `/llm-wiki ingest` для файлов о GreenPlum из
 `vaults/Work/Прочее/Базы данных/` или удалить страницу
@@ -122,19 +122,19 @@ Wiki_sources упоминают: 3 файла
 
 ### [CT-002] Stub-страница без обновлений > 30 дней
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/концепции/партиционирование.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/концепции/партиционирование.md`
 **Детали:** wiki_status=stub, wiki_updated=2026-02-10 (63 дня назад)
 **Рекомендация:** `/llm-wiki ingest "vaults/Work/Прочее/Базы данных/ClickHouse/Партиционирование.md"`
 
 ### [CT-003] Мёртвая WikiLink
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/концепции/партиционирование.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/концепции/партиционирование.md`
 **Детали:** Ссылка [[clickhouse-v24]] — файл не существует
 **Рекомендация:** Удалить ссылку или создать страницу clickhouse-v24.md через ingest
 
 ### [ST-002] Страница не в index.md
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/паттерны-запросов/window-functions.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/паттерны-запросов/window-functions.md`
 **Детали:** Файл существует, но не упомянут в index.md
 **Рекомендация:** Добавить в раздел "Базы данных" в index.md
 
@@ -144,12 +144,12 @@ Wiki_sources упоминают: 3 файла
 
 ### [FM-006] Отсутствуют aliases
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/субд/clickhouse.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/субд/clickhouse.md`
 **Рекомендация:** Добавить aliases: ["CH", "КликХаус", "ClickHouse OLAP"]
 
 ### [CT-004] Orphan-страница
 
-**Файл:** `vaults/Work/!Wiki/базы-данных/паттерны-запросов/window-functions.md`
+**Файл:** `vaults/Work/.wiki/базы-данных/паттерны-запросов/window-functions.md`
 **Детали:** Нет входящих WikiLinks из других страниц вики
 **Рекомендация:** Добавить [[window-functions]] в раздел "Связанные концепции" на странице clickhouse.md
 

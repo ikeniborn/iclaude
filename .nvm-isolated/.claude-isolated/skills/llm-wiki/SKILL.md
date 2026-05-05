@@ -7,7 +7,7 @@ context: fork
 # tags: obsidian, wiki, knowledge-management, llm-wiki, karpathy, ingest
 # dependencies: context-awareness
 # files: rules/*, schemas/*, templates/*
-# changelog: 2.0.0 — локальная wiki в !Wiki/.wiki/, domain-map перенесён из shared/
+# changelog: 2.0.0 — локальная wiki в .wiki/.config/, domain-map перенесён из shared/
 #             1.1.0 — bootstrap: автогенерация entity_types из source_paths
 #             1.0.0 — initial release
 ---
@@ -19,9 +19,9 @@ context: fork
 **Принцип работы:**
 ```
 Raw Sources (неизменны) → ingest → Wiki (синтезируется) → query → Ответы
-<repo>/ИИ/                         <repo>/!Wiki/ии/
-<repo>/Ростелеком/                 <repo>/!Wiki/ростелеком/
-<repo>/Прочее/Базы данных/         <repo>/!Wiki/базы-данных/
+<repo>/ИИ/                         <repo>/.wiki/ии/
+<repo>/Ростелеком/                 <repo>/.wiki/ростелеком/
+<repo>/Прочее/Базы данных/         <repo>/.wiki/базы-данных/
 ```
 
 ## Когда использовать
@@ -54,13 +54,13 @@ Raw Sources (неизменны) → ingest → Wiki (синтезируется
 
 ```
 <repo-root>/
-└── !Wiki/
-    ├── .wiki/                   ← технический каталог (создаётся один раз)
+└── .wiki/
+    ├── .config/                   ← технический каталог (создаётся один раз)
     │   ├── domain-map.json      ← конфигурация доменов
     │   ├── schema.md           ← конвенции (человекочитаемые)
     │   ├── index.md            ← каталог страниц
     │   └── log.md              ← append-only лог операций
-    ├── ии/                      ← домен (прямой потомок !Wiki/)
+    ├── ии/                      ← домен (прямой потомок .wiki/)
     │   ├── агенты/
     │   ├── claude-code/
     │   ├── концепции/
@@ -85,8 +85,8 @@ Raw Sources (неизменны) → ingest → Wiki (синтезируется
 ### Шаг 0.0: Определить пути
 
 ```
-wiki_root = {CWD}/!Wiki
-wiki_dir  = {wiki_root}/.wiki
+wiki_root = {CWD}/.wiki
+wiki_dir  = {wiki_root}/.config
 ```
 
 ### Шаг 0.1: Проверить и создать структуру (только при первом запуске)
@@ -109,7 +109,7 @@ ELSE IF NOT exists {wiki_dir}/:
   → Переместить из {wiki_root}/ в {wiki_dir}/:
       schema.md, index.md, log.md (если существуют)
   → Создать {wiki_dir}/domain-map.json если отсутствует
-  → Сообщить: "Мигрировано: технические файлы перемещены в .wiki/"
+  → Сообщить: "Мигрировано: технические файлы перемещены в .config/"
 ```
 
 **Шаблон пустого domain-map.json:**
@@ -118,7 +118,7 @@ ELSE IF NOT exists {wiki_dir}/:
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "LLM Wiki Domain Map",
   "version": "1.0.0",
-  "wiki_root": "!Wiki",
+  "wiki_root": ".wiki",
   "domains": [],
   "cross_domain_rules": {
     "description": "Правила для сущностей, встречающихся в нескольких доменах",
