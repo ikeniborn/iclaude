@@ -3,11 +3,13 @@ name: llm-wiki
 description: Поддержка компаундируемой базы знаний по паттерну Karpathy — извлечение, синтез и поддержка wiki из raw-источников
 user-invocable: true
 context: fork
-# version: 1.1.0 | updated: 2026-04-27
+# version: 2.0.0 | updated: 2026-05-05
 # tags: obsidian, wiki, knowledge-management, llm-wiki, karpathy, ingest
-# dependencies: context-awareness, knowledge-manager
-# files: rules/*, schemas/*, templates/*, examples/*, shared/domain-map.json
-# changelog: 1.1.0 — bootstrap: автогенерация entity_types из source_paths; 1.0.0 — initial release
+# dependencies: context-awareness
+# files: rules/*, schemas/*, templates/*
+# changelog: 2.0.0 — локальная wiki в !Wiki/.wiki/, domain-map перенесён из shared/
+#             1.1.0 — bootstrap: автогенерация entity_types из source_paths
+#             1.0.0 — initial release
 ---
 
 # LLM Wiki
@@ -17,9 +19,9 @@ context: fork
 **Принцип работы:**
 ```
 Raw Sources (неизменны) → ingest → Wiki (синтезируется) → query → Ответы
-vaults/Work/ИИ/                      vaults/Work/!Wiki/
-vaults/Work/Ростелеком/
-vaults/Work/Прочее/Базы данных/
+<repo>/ИИ/                         <repo>/!Wiki/ии/
+<repo>/Ростелеком/                 <repo>/!Wiki/ростелеком/
+<repo>/Прочее/Базы данных/         <repo>/!Wiki/базы-данных/
 ```
 
 ## Когда использовать
@@ -38,7 +40,7 @@ vaults/Work/Прочее/Базы данных/
 ## Quick Reference
 
 ```bash
-/llm-wiki ingest "vaults/Work/!Daily/2026-04-14 Встреча по СИП.md"
+/llm-wiki ingest "ИИ/2026-04-14 Встреча по агентам.md"
 /llm-wiki query "Какова архитектура потока данных ГП → ЦХД?"
 /llm-wiki query "Что такое SCD2?" --save
 /llm-wiki lint ростелеком
@@ -48,13 +50,105 @@ vaults/Work/Прочее/Базы данных/
 
 ---
 
-## Phase 0: Парсинг аргументов
-
-**Выполнять до Phase 1. Если аргументы неполные или отсутствуют — запросить их через AskUserQuestion.**
+## Структура wiki в репозитории
 
 ```
-ВХОД: аргументы из командной строки (/llm-wiki <args>)
+<repo-root>/
+└── !Wiki/
+    ├── .wiki/                   ← технический каталог (создаётся один раз)
+    │   ├── domain-map.json      ← конфигурация доменов
+    │   ├── schema.md           ← конвенции (человекочитаемые)
+    │   ├── index.md            ← каталог страниц
+    │   └── log.md              ← append-only лог операций
+    ├── ии/                      ← домен (прямой потомок !Wiki/)
+    │   ├── агенты/
+    │   ├── claude-code/
+    │   ├── концепции/
+    │   ├── инструменты/
+    │   ├── паттерны/
+    │   └── промпты/
+    ├── ростелеком/
+    │   ├── архитектура-данных/
+    │   └── системная-архитектура/
+    └── базы-данных/
+        ├── субд/
+        ├── концепции/
+        └── паттерны-запросов/
+```
 
+---
+
+## Phase 0: Определение окружения и парсинг аргументов
+
+**Выполнять первым. Определить пути, проверить/создать структуру, затем разобрать аргументы.**
+
+### Шаг 0.0: Определить пути
+
+```
+wiki_root = {CWD}/!Wiki
+wiki_dir  = {wiki_root}/.wiki
+```
+
+### Шаг 0.1: Проверить и создать структуру (только при первом запуске)
+
+```
+IF NOT exists {wiki_root}/:
+  → Создать {wiki_root}/
+  → Создать {wiki_dir}/
+  → Создать {wiki_dir}/domain-map.json  ← пустой шаблон (см. ниже)
+  → Создать {wiki_dir}/schema.md       ← содержимое из @rules:wiki-conventions.md
+  → Создать {wiki_dir}/index.md        ← пустой индекс (см. ниже)
+  → Создать {wiki_dir}/log.md          ← пустой лог (см. ниже)
+  → Сообщить пользователю:
+      "Создана структура wiki в {wiki_root}/"
+      "Следующий шаг: /llm-wiki bootstrap <domain-id> — настроить домены"
+  → Если текущая операция не init/bootstrap: предложить запустить bootstrap
+
+ELSE IF NOT exists {wiki_dir}/:
+  → Мигрировать: создать {wiki_dir}/
+  → Переместить из {wiki_root}/ в {wiki_dir}/:
+      schema.md, index.md, log.md (если существуют)
+  → Создать {wiki_dir}/domain-map.json если отсутствует
+  → Сообщить: "Мигрировано: технические файлы перемещены в .wiki/"
+```
+
+**Шаблон пустого domain-map.json:**
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLM Wiki Domain Map",
+  "version": "1.0.0",
+  "wiki_root": "!Wiki",
+  "domains": [],
+  "cross_domain_rules": {
+    "description": "Правила для сущностей, встречающихся в нескольких доменах",
+    "rules": []
+  },
+  "special_source_types": {}
+}
+```
+
+**Шаблон пустого index.md:**
+```markdown
+# Wiki Index
+
+<!-- Этот файл обновляется автоматически при ingest/init/query --save -->
+
+## Страницы по доменам
+
+```
+
+**Шаблон пустого log.md:**
+```markdown
+# Wiki Log
+
+<!-- Append-only лог. Новые записи добавляются в конец. -->
+
+```
+
+### Шаг 0.2: Парсинг аргументов
+
+```
 1. Если операция не указана (аргументы пусты):
    → AskUserQuestion:
        Вопрос: "Что вы хотите сделать с LLM Wiki?"
@@ -71,8 +165,8 @@ vaults/Work/Прочее/Базы данных/
 3. Если операция указана без обязательного аргумента или требует подтверждения:
    - ingest без файла   → AskUserQuestion: "Укажите путь к файлу-источнику"
    - query без вопроса  → AskUserQuestion: "Введите ваш вопрос"
-   - init без section   → AskUserQuestion: "Выберите раздел для инициализации"
-                           Варианты: ии | ростелеком | базы-данных
+   - init без section   → AskUserQuestion: "Выберите домен для инициализации"
+                           Варианты: из domain-map.domains[].id
    - bootstrap без domain-id → AskUserQuestion: "Выберите домен для bootstrap"
                                  Варианты: все домены из domain-map у которых entity_types: []
                                  Если таких нет → сообщить "Все домены уже настроены"
@@ -90,14 +184,14 @@ vaults/Work/Прочее/Базы данных/
 ## Phase 1: Инициализация (при каждом вызове)
 
 ```
-1. Читать @shared:domain-map.json
+1. Читать {wiki_dir}/domain-map.json
    → загрузить домены, entity_types, extraction_cues, cross_domain_rules
    Для операции bootstrap: шаги 2 и 3 пропустить — wiki-файлы ещё не существуют для нового домена.
 
-2. Читать vaults/Work/!Wiki/_schema.md
+2. Читать {wiki_dir}/schema.md
    → загрузить конвенции вики
 
-3. Читать vaults/Work/!Wiki/_index.md
+3. Читать {wiki_dir}/index.md
    → получить список существующих wiki-страниц
 
 4. Определить операцию из аргументов пользователя
@@ -117,7 +211,7 @@ vaults/Work/Прочее/Базы данных/
 ВХОД: путь к файлу-источнику
 
 1. Определить домен по пути (сопоставить с domain-map.source_paths)
-   Если !Daily/ → определять домен по содержимому
+   Если источник в !Daily/ или домен не определён → определять по содержимому
 
 2. Прочитать файл через Read tool
 
@@ -133,9 +227,9 @@ vaults/Work/Прочее/Базы данных/
 
 6. Обновить wiki_sources, wiki_updated на созданных/обновлённых страницах
 
-7. APPEND запись в _log.md по @template:log-entry
+7. APPEND запись в {wiki_dir}/log.md по @template:log-entry
 
-8. Обновить _index.md (новые страницы)
+8. Обновить {wiki_dir}/index.md (новые страницы)
 
 ВЫХОД: отчёт (создано N, обновлено M, пропущено K)
 ```
@@ -153,7 +247,7 @@ vaults/Work/Прочее/Базы данных/
 
 1. По ключевым словам определить домен(ы) вопроса
 
-2. Из _index.md найти релевантные страницы
+2. Из {wiki_dir}/index.md найти релевантные страницы
 
 3. Прочитать wiki-страницы (приоритет: mature > developing > stub)
 
@@ -163,10 +257,10 @@ vaults/Work/Прочее/Базы данных/
 
 6. Если --save:
    a. Определить имя страницы (kebab-case из ключевых слов вопроса)
-   b. Определить папку домена
+   b. Определить папку домена: {wiki_root}/{domain-id}/{subfolder}/
    c. Создать страницу по @template:wiki-page
-   d. APPEND в _log.md
-   e. Добавить в _index.md
+   d. APPEND в {wiki_dir}/log.md
+   e. Добавить в {wiki_dir}/index.md
 
 ВЫХОД: ответ + [опционально] путь к сохранённой странице
 ```
@@ -180,14 +274,14 @@ vaults/Work/Прочее/Базы данных/
 **Критерии проверок:** `@rules:lint-criteria.md`
 
 ```
-ВХОД: section (опционально: ии | ростелеком | базы-данных)
+ВХОД: section (опционально: id домена из domain-map)
 
-1. Glob ".md" файлы в !Wiki/{section}/** (или всей вики)
-   Исключить: _index.md, _log.md, _schema.md
+1. Glob ".md" файлы в {wiki_root}/{section}/** (или всей вики)
+   Исключить: {wiki_dir}/index.md, {wiki_dir}/log.md, {wiki_dir}/schema.md
 
 2. Для каждого файла: FM-* проверки (frontmatter)
 3. Батч: CT-003 мёртвые WikiLinks, CT-004 orphan-страницы
-4. ST-* проверки структуры (_index.md vs реальные файлы)
+4. ST-* проверки структуры ({wiki_dir}/index.md vs реальные файлы)
 5. CV-* проверки покрытия (источники без ingest)
 
 ВЫХОД: отчёт по формату @rules:lint-criteria.md#Формат отчёта lint
@@ -200,7 +294,7 @@ vaults/Work/Прочее/Базы данных/
 **Назначение:** Первичная инициализация раздела вики из всего корпуса источников.
 
 ```
-ВХОД: section (обязательно: ии | ростелеком | базы-данных), опция --dry-run
+ВХОД: section (domain-id из domain-map), опция --dry-run
 
 1. Из domain-map получить source_paths домена
 
@@ -214,7 +308,7 @@ vaults/Work/Прочее/Базы данных/
 
 4. Batch обработка по batch_size=10:
    Для каждого файла → выполнить шаги 2-6 из алгоритма ingest
-   После каждого batch → обновить _log.md и _index.md
+   После каждого batch → обновить {wiki_dir}/log.md и {wiki_dir}/index.md
 
 5. Итоговый отчёт + рекомендация запустить lint
 
@@ -232,7 +326,7 @@ vaults/Work/Прочее/Базы данных/
 ```
 ВХОД: domain-id (обязательно), опция --dry-run
 
-1. Загрузить @shared:domain-map.json из @shared
+1. Загрузить {wiki_dir}/domain-map.json
    Найти домен по id
    Если не найден → ошибка: "Домен '{id}' не найден в domain-map"
    Если source_paths пусты → ошибка: "Добавьте source_paths в domain-map перед bootstrap"
@@ -279,7 +373,7 @@ vaults/Work/Прочее/Базы данных/
      → Если entity_types стал пустым → сообщить "Нет типов для сохранения" и предложить только "отменить"
 
 6. Если подтверждено:
-   Прочитать @shared:domain-map.json (Read tool)
+   Прочитать {wiki_dir}/domain-map.json (Read tool)
    Подготовить обновлённый JSON:
      entity_types  ← сгенерированные типы
      tags          ← собранные теги (только если текущее значение [])
@@ -289,20 +383,20 @@ vaults/Work/Прочее/Базы данных/
      В отчёте указать: "Режим --dry-run: файл не обновлён. Для применения запустите без --dry-run."
      Следующий шаг: опустить
    Иначе:
-     Записать обновлённый JSON (Write tool)
+     Записать обновлённый JSON (Write tool) → {wiki_dir}/domain-map.json
 
 ВЫХОД: отчёт
   Проанализировано файлов: {N}
   Создано entity_types: {K}
   Собрано tags: {M}
-  Файл обновлён: @shared:domain-map.json (при --dry-run: "Файл не обновлён (dry-run)")
+  Файл обновлён: {wiki_dir}/domain-map.json (при --dry-run: "Файл не обновлён (dry-run)")
 
   Следующий шаг: /llm-wiki init {domain-id} (при --dry-run: опустить)
 ```
 
-**Важно:** bootstrap не создаёт wiki-страницы. Единственный изменяемый артефакт — `@shared:domain-map.json`. Теги и language_notes обновляются только если были пустыми — существующие значения не перезаписываются без явного подтверждения из Phase 0.
+**Важно:** bootstrap не создаёт wiki-страницы. Единственный изменяемый артефакт — `{wiki_dir}/domain-map.json`. Теги и language_notes обновляются только если были пустыми — существующие значения не перезаписываются без явного подтверждения из Phase 0.
 
-**Phase 3:** `_log.md` и `_index.md` bootstrap не изменяет — проверки Phase 3 для этих файлов не применимы. Единственный артефакт — `@shared:domain-map.json`.
+**Phase 3:** `log.md` и `index.md` bootstrap не изменяет — проверки Phase 3 для этих файлов не применимы. Единственный артефакт — `{wiki_dir}/domain-map.json`.
 
 ---
 
@@ -310,8 +404,8 @@ vaults/Work/Прочее/Базы данных/
 
 После каждой операции:
 
-1. Убедиться что `_log.md` обновлён
-2. Убедиться что `_index.md` актуален (новые страницы добавлены)
+1. Убедиться что `{wiki_dir}/log.md` обновлён
+2. Убедиться что `{wiki_dir}/index.md` актуален (новые страницы добавлены)
 3. Вывести отчёт пользователю
 
 **Формат отчёта (все операции):**
@@ -334,34 +428,9 @@ vaults/Work/Прочее/Базы данных/
 | `@rules:ingest-rules.md` | Алгоритм CREATE/UPDATE/SKIP, разрешение противоречий |
 | `@rules:wiki-conventions.md` | Язык, структура страниц, WikiLinks, frontmatter |
 | `@rules:lint-criteria.md` | Таблица всех проверок FM/CT/ST/CV |
-| `@shared:domain-map.json` | Домены, source_paths, entity_types, extraction_cues |
+| `{wiki_dir}/domain-map.json` | Домены, source_paths, entity_types, extraction_cues |
 | `@template:wiki-page.json` | Шаблон новой wiki-страницы |
-| `@template:log-entry.json` | Шаблон записи в _log.md |
-
----
-
-## Структура wiki в vault
-
-```
-vaults/Work/!Wiki/
-├── _schema.md           ← конвенции (читается при каждой операции)
-├── _index.md            ← каталог с Dataview
-├── _log.md              ← append-only лог
-├── ии/
-│   ├── агенты/
-│   ├── claude-code/
-│   ├── концепции/
-│   ├── инструменты/
-│   ├── паттерны/
-│   └── промпты/
-├── ростелеком/
-│   ├── архитектура-данных/
-│   └── системная-архитектура/
-└── базы-данных/
-    ├── субд/
-    ├── концепции/
-    └── паттерны-запросов/
-```
+| `@template:log-entry.json` | Шаблон записи в log.md |
 
 ---
 

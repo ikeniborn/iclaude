@@ -17,8 +17,8 @@
 ```
 Claude читает:
 1. @shared:domain-map.json → wiki_folder для домена "базы-данных"
-2. vaults/Work/!Wiki/_schema.md
-3. vaults/Work/!Wiki/_index.md → список страниц домена
+2. vaults/Work/!Wiki/schema.md
+3. vaults/Work/!Wiki/index.md → список страниц домена
 ```
 
 ## Шаг 2: Сбор файлов
@@ -78,8 +78,8 @@ WikiLinks: содержит `[[clickhouse-v24]]` → файл не сущест�
 **CT-004 (orphan):**
 - `window-functions.md` — нет входящих ссылок → INFO
 
-**ST-002 (рассинхрон _index.md):**
-- `window-functions.md` добавлен после последнего обновления _index.md → WARNING
+**ST-002 (рассинхрон index.md):**
+- `window-functions.md` добавлен после последнего обновления index.md → WARNING
 
 ## Шаг 5: Покрытие CV-*
 
@@ -132,11 +132,11 @@ Wiki_sources упоминают: 3 файла
 **Детали:** Ссылка [[clickhouse-v24]] — файл не существует
 **Рекомендация:** Удалить ссылку или создать страницу clickhouse-v24.md через ingest
 
-### [ST-002] Страница не в _index.md
+### [ST-002] Страница не в index.md
 
 **Файл:** `vaults/Work/!Wiki/базы-данных/паттерны-запросов/window-functions.md`
-**Детали:** Файл существует, но не упомянут в _index.md
-**Рекомендация:** Добавить в раздел "Базы данных" в _index.md
+**Детали:** Файл существует, но не упомянут в index.md
+**Рекомендация:** Добавить в раздел "Базы данных" в index.md
 
 ---
 
