@@ -549,6 +549,7 @@ CLAUDE_CODE_OAUTH_TOKEN=
 
 # Дополнительные CA-сертификаты для Node.js (корпоративные PKI).
 # Пример: NODE_EXTRA_CA_CERTS=/etc/ssl/certs/corporate-ca.crt
+# Примечание: iclaude автоматически выставляет это значение из PROXY_CA (см. выше).
 # export NODE_EXTRA_CA_CERTS=
 
 # --- Контекст / Память ---
