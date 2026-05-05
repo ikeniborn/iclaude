@@ -19,15 +19,15 @@
 # Адрес прокси-сервера.
 # Форматы:
 #   https://host:port                    — без аутентификации
-#   https://user:password@host:port      — с логином/паролем
-#   http://user:password@host:port       — HTTP прокси (хуже для OAuth)
+#   https://[CREDENTIALS]@host:port      — с логином/паролем
+#   http://[CREDENTIALS]@host:port       — HTTP прокси (хуже для OAuth)
 #
 # HTTPS прокси рекомендуется: сохраняет доменные имена для OAuth/TLS.
 # HTTP прокси не рекомендуется: проблемы с TLS-сертификатами Anthropic.
 # SOCKS5 не поддерживается: вызывает сбой в undici (Node.js HTTP-клиент).
 #
 # По умолчанию: не задан (прокси не используется).
-# Устанавливается через: ./iclaude.sh --proxy https://user:pass@proxy:8118
+# Устанавливается через: ./iclaude.sh --proxy https://[CREDENTIALS]@proxy:8118
 PROXY_URL=
 
 # Отключить проверку TLS-сертификата прокси-сервера.
@@ -144,7 +144,36 @@ CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 #
 # ВАЖНО: включайте только в автоматизированных/доверенных средах.
 # Флаг --no-save в командной строке всегда имеет приоритет над этой переменной.
-# CLAUDE_CODE_SKIP_PERMISSIONS=false
+CLAUDE_CODE_SKIP_PERMISSIONS=false
+
+# ============================================================
+#  OAUTH ТОКЕН
+# ============================================================
+# OAuth токен для аутентификации Claude Code.
+# Получается после авторизации: claude login → "Store this token securely"
+# или через: claude setup-token
+#
+# Если задан — используется вместо .credentials.json для аутентификации.
+# Полезно когда .credentials.json недоступен или для headless-серверов.
+#
+# Формат: sk-ant-oat01-... (OAuth subscription token)
+# По умолчанию: не задан (используется .credentials.json)
+CLAUDE_CODE_OAUTH_TOKEN=
+
+# Порог автоматического обновления OAuth токена (в секундах).
+# Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
+#
+# По умолчанию: 604800 (7 дней)
+# Минимальное рекомендуемое значение: 86400 (1 день)
+# Максимальное разумное значение: 2592000 (30 дней)
+#
+# Примеры:
+#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
+#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
+#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
+#
+# Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
+# TOKEN_REFRESH_THRESHOLD=
 
 # ============================================================
 #  ROUTER: API-КЛЮЧИ LLM-ПРОВАЙДЕРОВ
@@ -165,13 +194,13 @@ CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 # ВАЖНО: OAuth токен подписки (sk-ant-oat01-...) НЕ принимается api.anthropic.com.
 #   CCR требует обычный API ключ. Без него используйте Ollama/DeepSeek/OpenRouter.
 # Получить ключ: https://console.anthropic.com/settings/keys
-# Формат: sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export ANTHROPIC_API_KEY=
 
 # --- DeepSeek ---
 # Используется в router.json.example (провайдер по умолчанию)
 # Получить ключ: https://platform.deepseek.com/api_keys
-# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export DEEPSEEK_API_KEY=
 
 # --- OpenRouter ---
@@ -179,14 +208,14 @@ export DEEPSEEK_API_KEY=
 # Используется в router.json.example
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://openrouter.ai/keys
-# Формат: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export OPENROUTER_API_KEY=
 
 # --- Google Gemini ---
 # Используется в router.json.example (gemini-2.5-pro для длинного контекста)
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://aistudio.google.com/app/apikey
-# Формат: AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [GOOGLE_API_KEY]
 export GOOGLE_API_KEY=
 
 # --- Groq (опционально) ---
@@ -206,7 +235,7 @@ export VOLCENGINE_API_KEY=
 # Китайская платформа: Qwen, DeepSeek, GLM через OpenAI-совместимый API.
 # Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://cloud.siliconflow.cn/account/ak
-# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export SILICONFLOW_API_KEY=
 
 # ============================================================
@@ -372,7 +401,7 @@ MICRO_VM_ENABLED=false
 # /26 → 31 concurrent сессии; /28 → 7; /30 → 1.
 # По умолчанию: 172.16.0.0/26
 # MICRO_VM_NET_SUBNET=172.16.0.0/26
-#
+
 # Использовать снэпшоты для быстрого старта VM.
 # true  — повторный запуск ~125ms (снэпшот восстанавливается)
 # false — каждый запуск холодный ~1-2s (без снэпшота)
@@ -479,57 +508,6 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_SYNC_INTERVAL=0
 
 # ============================================================
-#  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
-# ============================================================
-# # Базовый microVM — монтировать текущий проект (по умолчанию):
-# MICRO_VM_ENABLED=true
-# MICRO_VM_VCPU=2
-# MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
-# MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
-#
-# # Конкретный путь как источник workspace (независимо от cwd):
-# MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
-#
-# # Изоляция: файлы копируются в VM, но изменения не возвращаются на хост:
-# MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_MODE=isolated
-# MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
-#
-# # С быстрым стартом через снэпшоты:
-# MICRO_VM_ENABLED=true
-# MICRO_VM_SNAPSHOT_ENABLED=true
-
-# ============================================================
-#  OAUTH ТОКЕН
-# ============================================================
-# OAuth токен для аутентификации Claude Code.
-# Получается после авторизации: claude login → "Store this token securely"
-# или через: claude setup-token
-#
-# Если задан — используется вместо .credentials.json для аутентификации.
-# Полезно когда .credentials.json недоступен или для headless-серверов.
-#
-# Формат: sk-ant-oat01-... (OAuth subscription token)
-# По умолчанию: не задан (используется .credentials.json)
-CLAUDE_CODE_OAUTH_TOKEN=
-
-# Порог автоматического обновления OAuth токена (в секундах).
-# Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
-#
-# По умолчанию: 604800 (7 дней)
-# Минимальное рекомендуемое значение: 86400 (1 день)
-# Максимальное разумное значение: 2592000 (30 дней)
-#
-# Примеры:
-#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
-#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
-#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
-#
-# Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
-# TOKEN_REFRESH_THRESHOLD=
-
-# ============================================================
 #  ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ CLAUDE CODE
 # ============================================================
 # Переменные Claude Code, используемые при запуске процесса.
@@ -548,8 +526,9 @@ CLAUDE_CODE_OAUTH_TOKEN=
 # export ANTHROPIC_AUTH_TOKEN=
 
 # Дополнительные CA-сертификаты для Node.js (корпоративные PKI).
+# Если используется PROXY_CA — устанавливается автоматически, задавать вручную не нужно.
+# Задайте вручную только если CA нужен без прокси (независимый от PROXY_CA сценарий).
 # Пример: NODE_EXTRA_CA_CERTS=/etc/ssl/certs/corporate-ca.crt
-# Примечание: iclaude автоматически выставляет это значение из PROXY_CA (см. выше).
 # export NODE_EXTRA_CA_CERTS=
 
 # --- Контекст / Память ---
@@ -663,18 +642,18 @@ DEBUG_LAUNCH=
 # ============================================================
 #  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
 # ============================================================
-# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
+# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
 # PROXY_CA=/etc/ssl/company/corporate-ca.crt
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (DeepSeek + Ollama)
 # ============================================================
-# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
+# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
 # PROXY_CA=/etc/ssl/company/corporate-ca.crt
 #
-# export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# export OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# export GOOGLE_API_KEY=AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export DEEPSEEK_API_KEY=[API_KEY_REDACTED]
+# export OPENROUTER_API_KEY=[API_KEY_REDACTED]
+# export GOOGLE_API_KEY=[GOOGLE_API_KEY]
 #
 # CLAUDE_CODE_ENABLE_TASKS=true
 
@@ -686,7 +665,7 @@ DEBUG_LAUNCH=
 #                           "background": "ollama,qwen2.5:7b", ...}}
 # Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
 #
-# export ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export ANTHROPIC_API_KEY=[API_KEY_REDACTED]
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
@@ -705,3 +684,25 @@ DEBUG_LAUNCH=
 # # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
 # # PII_PROXY_PORT_MIN=30000
 # # PII_PROXY_PORT_MAX=35000
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
+# ============================================================
+# # Базовый microVM — монтировать текущий проект (по умолчанию):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_VCPU=2
+# MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
+# MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
+#
+# # Конкретный путь как источник workspace (независимо от cwd):
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+#
+# # Изоляция: файлы копируются в VM, но изменения не возвращаются на хост:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_WORKSPACE_MODE=isolated
+# MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
+#
+# # С быстрым стартом через снэпшоты:
+# MICRO_VM_ENABLED=true
+# MICRO_VM_SNAPSHOT_ENABLED=true
