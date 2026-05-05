@@ -228,6 +228,13 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_chrome" ]] && USE_CHROME=true
         unset _cfg_chrome
+
+        # Match: CLAUDE_CODE_SKIP_PERMISSIONS=true  CLAUDE_CODE_SKIP_PERMISSIONS="true"  export CLAUDE_CODE_SKIP_PERMISSIONS=true
+        _cfg_skip_perm=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_skip_perm" ]] && skip_permissions=true
+        unset _cfg_skip_perm
     fi
 
     # Parse arguments
