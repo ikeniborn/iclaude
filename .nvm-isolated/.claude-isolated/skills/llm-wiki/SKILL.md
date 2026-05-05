@@ -99,8 +99,8 @@ IF NOT exists {wiki_root}/:
   → Создать {wiki_dir}/log.md          ← пустой лог (см. ниже)
   → Сообщить пользователю:
       "Создана структура wiki в {wiki_root}/"
-      "Следующий шаг: /llm-wiki bootstrap <domain-id> — настроить домены"
-  → Если текущая операция не init/bootstrap: предложить запустить bootstrap
+      "Следующий шаг: /llm-wiki init <domain-id> — настроить домены и создать wiki"
+  → Если текущая операция не init: предложить запустить /llm-wiki init <domain-id>
 
 ELSE IF NOT exists {wiki_dir}/:
   → Мигрировать: создать {wiki_dir}/
@@ -155,7 +155,6 @@ ELSE IF NOT exists {wiki_dir}/:
          • query      — задать вопрос по теме
          • lint       — проверить качество wiki
          • init       — первичная инициализация раздела
-         • bootstrap  — сгенерировать entity_types для нового домена
 
 2. Если указан id домена без операции (любой id из domain-map):
    → AskUserQuestion с теми же вариантами, сохранить домен
@@ -165,14 +164,6 @@ ELSE IF NOT exists {wiki_dir}/:
    - query без вопроса  → AskUserQuestion: "Введите ваш вопрос"
    - init без section   → AskUserQuestion: "Выберите домен для инициализации"
                            Варианты: из domain-map.domains[].id
-   - bootstrap без domain-id → AskUserQuestion: "Выберите домен для bootstrap"
-                                 Варианты: все домены из domain-map у которых entity_types: []
-                                 Если таких нет → сообщить "Все домены уже настроены"
-   - bootstrap с domain-id у которого entity_types уже непусты →
-       AskUserQuestion: "Домен «{id}» уже содержит {N} типов сущностей. Перезаписать?"
-       Варианты: да, перезаписать | нет, отменить
-       При отмене — завершить выполнение
-       При --dry-run — пропустить это подтверждение и перейти к Phase 1
 
 4. После получения всех аргументов — перейти к Phase 1
 ```
