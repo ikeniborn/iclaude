@@ -139,6 +139,34 @@ agent: general-purpose
 - **@schema:output-verify** - Валидация выходных данных (verify mode)
 - **@schema:output-adapt** - Валидация выходных данных (adapt mode)
 
+## Wiki Integration
+
+Этот скилл не вызывает `context-awareness` — проверяет wiki напрямую.
+
+### Query (в начале Step 2 — Analyze Against Rules)
+
+```
+IF exists("{CWD}/.wiki/.config/domain-map.json"):
+  Skill(skill="llm-wiki", args='query "паттерны нарушений и best practices форматирования инструкций"')
+
+  Использовать результат для обогащения Step 2:
+  - Если wiki содержит задокументированные нарушения → добавить в анализ
+  - Если wiki содержит принятые стандарты форматирования → учесть при adapt
+  - Если wiki нет данных → продолжить стандартный анализ по R1-R7
+```
+
+### Ingest (после Step 4 — только в режиме adapt)
+
+```
+IF exists("{CWD}/.wiki/.config/domain-map.json") AND mode == "adapt" AND violations_found > 0:
+  Skill(skill="llm-wiki", args='ingest "{verified_file_path}"')
+
+  Результат: wiki накапливает конкретные примеры нарушений и их исправлений —
+  переиспользуются как эталоны при следующих проверках документов.
+```
+
+---
+
 ## Workflow Integration
 
 ### Input Dependencies

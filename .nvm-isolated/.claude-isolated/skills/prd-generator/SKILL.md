@@ -780,6 +780,37 @@ prdGeneration.toon = {
 
 ---
 
+## Wiki Integration
+
+Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized` доступен.
+
+### Query (в Phase 0, после context-awareness)
+
+```
+IF project_context.wiki_initialized == true:
+  Skill(skill="llm-wiki", args='query "Product Requirements Documents и требования к продуктам"')
+
+  Использовать результат для обогащения Phase 1 Questionnaire:
+  - Если найдены похожие PRD → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
+    из накопленных паттернов
+  - Если найдены success metrics → предложить их как варианты для Q5
+  - Если wiki нет данных → продолжить стандартный Questionnaire без изменений
+```
+
+### Ingest (в Phase 7, после успешной валидации)
+
+```
+IF project_context.wiki_initialized == true AND status IN ("success", "partial"):
+  Skill(skill="llm-wiki", args='ingest "docs/prd/01-executive-summary.md"')
+  Skill(skill="llm-wiki", args='ingest "docs/prd/02-goals-and-scope.md"')
+  Skill(skill="llm-wiki", args='ingest "docs/prd/04-target-audience.md"')
+
+  Результат: wiki накапливает знания о бизнес-целях, целевых аудиториях
+  и продуктовых паттернах — переиспользуются в следующих PRD.
+```
+
+---
+
 **Notes:**
 - This skill generates files in user's project directory (`docs/prd/`), NOT in skill directory
 - Skill files (`templates/`, `rules/`, `examples/`) are read-only references
