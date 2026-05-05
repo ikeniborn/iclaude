@@ -175,7 +175,6 @@ ELSE IF NOT exists {wiki_dir}/:
 ```
 1. Читать {wiki_dir}/domain-map.json
    → загрузить домены, entity_types, extraction_cues, cross_domain_rules
-   Для операции bootstrap: шаги 2 и 3 пропустить — wiki-файлы ещё не существуют для нового домена.
 
 2. Читать {wiki_dir}/schema.md
    → загрузить конвенции вики
