@@ -60,6 +60,34 @@ JavaScript:
 
 См. `@shared:syntax-commands.json` для mapping language → syntax check command.
 
+### 5. Wiki Detection
+
+```
+Проверить наличие wiki в корне проекта:
+
+IF exists {CWD}/.wiki/.config/domain-map.json:
+  1. Прочитать {CWD}/.wiki/.config/domain-map.json
+     → извлечь список domains[].id
+  2. Прочитать {CWD}/.wiki/.config/index.md
+     → получить перечень документированных страниц
+  3. Skill(skill="llm-wiki", args='query "ключевые компоненты и архитектура проекта"')
+     → добавить синтезированный контекст как wiki_summary
+  4. Добавить в project_context:
+       wiki_initialized: true
+       wiki_domains: [список id из domain-map]
+       wiki_index_path: ".wiki/.config/index.md"
+       wiki_summary: <результат query или null если wiki пустая>
+
+ELSE:
+  wiki_initialized: false
+  wiki_domains: []
+  wiki_index_path: null
+  wiki_summary: null
+```
+
+**Назначение:** Централизует проверку доступности wiki — downstream-навыки используют
+`project_context.wiki_initialized` вместо самостоятельной проверки файла.
+
 ## Output
 
 Используй шаблон: `@template:project-context`
@@ -75,7 +103,11 @@ JavaScript:
     "has_prd": true|false,
     "prd_path": "docs/prd/" | null,
     "syntax_command": "@shared:syntax-commands[language].syntax",
-    "code_style": "pep8|prettier|gofmt|none"
+    "code_style": "pep8|prettier|gofmt|none",
+    "wiki_initialized": true|false,
+    "wiki_domains": ["domain-id-1", "domain-id-2"],
+    "wiki_index_path": ".wiki/.config/index.md" | null,
+    "wiki_summary": "синтезированный контекст из wiki" | null
   }
 }
 ```
@@ -177,7 +209,7 @@ JavaScript:
 
 ---
 
-### Example 4: Bash Script Project (No Framework)
+### Example 4: Bash Script Project — без wiki
 
 **Project structure:**
 ```
@@ -199,7 +231,49 @@ JavaScript:
     "has_prd": false,
     "prd_path": null,
     "syntax_command": "bash -n",
-    "code_style": "none"
+    "code_style": "none",
+    "wiki_initialized": false,
+    "wiki_domains": [],
+    "wiki_index_path": null,
+    "wiki_summary": null
+  }
+}
+```
+
+---
+
+### Example 4b: Bash Script Project — с инициализированной wiki
+
+**Project structure:**
+```
+/home/user/iclaude/
+├── iclaude.sh
+├── lib/
+│   └── proxy/...
+├── docs/
+│   ├── PROXY.md
+│   └── ROUTER.md
+└── .wiki/
+    └── .config/
+        ├── domain-map.json   ← домен "iclaude"
+        └── index.md          ← 12 документированных страниц
+```
+
+**Detection result:**
+```json
+{
+  "project_context": {
+    "language": "bash",
+    "framework": "none",
+    "test_framework": "pytest",
+    "has_prd": false,
+    "prd_path": null,
+    "syntax_command": "bash -n",
+    "code_style": "none",
+    "wiki_initialized": true,
+    "wiki_domains": ["iclaude"],
+    "wiki_index_path": ".wiki/.config/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, изолированная среда NVM, OAuth-обновление токенов, PII-маскирование. Ключевые компоненты: proxy-mgmt, oauth-handler, pii-proxy, router-integration."
   }
 }
 ```

@@ -574,6 +574,35 @@ console.log(`Savings: ${stats.savedPercent}`); // Expected: 30-60%
 
 ---
 
+## Wiki Integration
+
+Этот скилл получает `project_context` от `context-awareness` (Phase 1 Input).
+
+### Query (перед Phase 1)
+
+```
+IF project_context.wiki_initialized == true:
+  Skill(skill="llm-wiki", args='query "архитектурные паттерны и компоненты проекта"')
+
+  Использовать результат для обогащения Phase 1:
+  - Если известные компоненты уже описаны → уточнить discovery вместо полного scan
+  - Если паттерн определён (layered/hexagonal/...) → использовать как отправную точку
+  - Если в wiki нет ответа → продолжить Phase 1 в стандартном режиме
+```
+
+### Ingest (после Phase 4)
+
+```
+IF project_context.wiki_initialized == true AND status == "success":
+  Skill(skill="llm-wiki", args='ingest "docs/architecture/README.md"')
+
+  Результат: wiki обновляется знаниями о компонентах, зависимостях,
+  архитектурных паттернах — доступны для query в следующих сессиях.
+  Примечание: README.md выбран вместо overview.yaml — llm-wiki индексирует только .md файлы.
+```
+
+---
+
 ## Further Reading
 
 ### Official Documentation
