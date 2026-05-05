@@ -17,8 +17,8 @@
 ```
 Claude читает:
 1. @shared:domain-map.json → находит домен "ростелеком" (путь совпадает с source_paths)
-2. vaults/Work/!Wiki/schema.md → конвенции (язык, структура)
-3. vaults/Work/!Wiki/index.md → список существующих страниц (пустой при первом запуске)
+2. vaults/Work/.wiki/schema.md → конвенции (язык, структура)
+3. vaults/Work/.wiki/index.md → список существующих страниц (пустой при первом запуске)
 ```
 
 ## Шаг 2: Определение домена
@@ -124,8 +124,8 @@ aliases:
 
 **Затронуто страниц:** 2
 
-- СОЗДАНА: `vaults/Work/!Wiki/ростелеком/архитектура-данных/версионирование-scd.md` (stub)
-- СОЗДАНА: `vaults/Work/!Wiki/базы-данных/субд/clickhouse.md` (cross-domain, stub)
+- СОЗДАНА: `vaults/Work/.wiki/ростелеком/архитектура-данных/версионирование-scd.md` (stub)
+- СОЗДАНА: `vaults/Work/.wiki/базы-данных/субд/clickhouse.md` (cross-domain, stub)
 
 ---
 ```
