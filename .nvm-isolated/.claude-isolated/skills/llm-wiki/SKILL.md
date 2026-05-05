@@ -3,11 +3,12 @@ name: llm-wiki
 description: Поддержка компаундируемой базы знаний по паттерну Karpathy — извлечение, синтез и поддержка wiki из raw-источников
 user-invocable: true
 context: fork
-# version: 2.0.0 | updated: 2026-05-05
+# version: 2.1.0 | updated: 2026-05-05
 # tags: obsidian, wiki, knowledge-management, llm-wiki, karpathy, ingest
 # dependencies: context-awareness
 # files: rules/*, schemas/*, templates/*
-# changelog: 2.0.0 — локальная wiki в .wiki/.config/, domain-map перенесён из shared/
+# changelog: 2.1.0 — bootstrap интегрирован в init (автозапуск при пустых entity_types)
+#             2.0.0 — локальная wiki в .wiki/.config/, domain-map перенесён из shared/
 #             1.1.0 — bootstrap: автогенерация entity_types из source_paths
 #             1.0.0 — initial release
 ---
