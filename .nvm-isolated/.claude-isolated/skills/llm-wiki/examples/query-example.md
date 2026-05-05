@@ -16,14 +16,14 @@
 
 ```
 Claude читает:
-1. vaults/Work/!Wiki/_index.md → список существующих страниц
+1. vaults/Work/!Wiki/index.md → список существующих страниц
 2. Определяет домен по ключевым словам: GreenPlum, S3, ClickHouse → "ростелеком" + "базы-данных"
 ```
 
 ## Шаг 2: Поиск релевантных страниц в вики
 
 ```
-Из _index.md находит:
+Из index.md находит:
   - vaults/Work/!Wiki/ростелеком/системная-архитектура/ (пусто пока)
   - vaults/Work/!Wiki/базы-данных/субд/clickhouse.md (status: stub)
 
@@ -102,7 +102,7 @@ aliases:
 - [[clickhouse]]
 ```
 
-## Шаг 6: Обновление _log.md
+## Шаг 6: Обновление log.md
 
 ```markdown
 ## 2026-04-14T14:30:00
