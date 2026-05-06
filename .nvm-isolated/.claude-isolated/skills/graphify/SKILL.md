@@ -89,7 +89,7 @@ The printed value is the resolved output directory. Use this **literal string** 
 ### Step 1 - Ensure graphify is installed
 
 ```bash
-GRAPHIFY_OUT="RESOLVED_GRAPHIFY_OUT"  # ← substitute the literal value from Step 0.5
+export GRAPHIFY_OUT="RESOLVED_GRAPHIFY_OUT"  # ← substitute the literal value from Step 0.5
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
 PYTHON="
 GRAPHIFY_BIN=$(which graphify 2>/dev/null)
@@ -111,7 +111,7 @@ if [ -z "$PYTHON" ]; then PYTHON="python3"; fi
 "$PYTHON" -c "import graphify" 2>/dev/null || "$PYTHON" -m pip install graphifyy -q 2>/dev/null || "$PYTHON" -m pip install graphifyy -q --break-system-packages 2>&1 | tail -3
 # Write interpreter path for all subsequent steps (persists across invocations)
 mkdir -p "${GRAPHIFY_OUT}"
-"$PYTHON" -c "import sys, os; open(os.environ.get('GRAPHIFY_OUT','graphify-out') + '/.graphify_python', 'w').write(sys.executable)"
+"$PYTHON" -c "import sys; open('${GRAPHIFY_OUT}/.graphify_python', 'w').write(sys.executable)"
 # Save scan root so `graphify update` (no args) knows where to look next time
 echo "$(cd INPUT_PATH && pwd)" > "${GRAPHIFY_OUT}/.graphify_root"
 ```
@@ -716,7 +716,7 @@ from graphify.detect import save_manifest
 
 # Save manifest for --update
 detect = json.loads(Path(f'{GOUT}/.graphify_detect.json').read_text())
-save_manifest(detect['files'])
+save_manifest(detect['files'], f'{GOUT}/manifest.json')
 
 # Update cumulative cost tracker
 extract = json.loads(Path(f'{GOUT}/.graphify_extract.json').read_text())
@@ -806,7 +806,7 @@ import sys, json
 from graphify.detect import detect_incremental, save_manifest
 from pathlib import Path
 
-result = detect_incremental(Path('INPUT_PATH'))
+result = detect_incremental(Path('INPUT_PATH'), manifest_path=f'{GOUT}/manifest.json')
 new_total = result.get('new_total', 0)
 print(json.dumps(result, indent=2))
 Path(f'{GOUT}/.graphify_incremental.json').write_text(json.dumps(result))
@@ -889,7 +889,7 @@ print(f'[graphify update] Merged extraction written ({len(merged_out[\"nodes\"])
 # baseline. Without this, deleted files get reported as ghosts again
 # on every subsequent --update until a full rebuild runs.
 from graphify.detect import save_manifest
-save_manifest(incremental['files'])
+save_manifest(incremental['files'], f'{GOUT}/manifest.json')
 print('[graphify update] Manifest saved.')
 " 
 ```
