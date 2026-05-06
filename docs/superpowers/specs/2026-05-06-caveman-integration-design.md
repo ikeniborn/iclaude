@@ -45,13 +45,13 @@ lib/
 # === Caveman token compression (optional) ===
 # Install first: ./iclaude.sh --caveman-install
 # CAVEMAN_ENABLED=true
-# CAVEMAN_INTENSITY=full     # lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra
+# CAVEMAN_DEFAULT_MODE=full     # lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra
 # CAVEMAN_STATUSLINE=true    # badge экономии токенов в статусной строке
 ```
 
 `CAVEMAN_ENABLED` — флаг-метка «установлено пользователем». Caveman активен если установлен (хуки есть в settings.json). Переменная не влияет на рантайм — только на `--caveman-install` (не устанавливать если false) и документирование намерения.
 
-`CAVEMAN_INTENSITY` передаётся хуку через env при старте Claude Code.
+`CAVEMAN_DEFAULT_MODE` — нативная переменная caveman. Приоритет чтения в `caveman-config.js`: `process.env.CAVEMAN_DEFAULT_MODE` → JSON config-файл → дефолт `'full'`. Механизм передачи: `lib/launcher/launch.sh` экспортирует переменную перед `exec claude` если она задана в `.claude_config`. Валидные значения: `off | lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra | commit | review | compress`.
 
 `CAVEMAN_STATUSLINE` — если `true`, при установке добавляет badge в `statusLine`.
 
@@ -78,24 +78,23 @@ check_caveman()     # вывести статус: установлено / ве
 3. Пропатчить `$CLAUDE_CONFIG_DIR/settings.json` (Python inline-скрипт):
    - Добавить в `hooks.SessionStart`: `node "$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js"`
    - Добавить в `hooks.UserPromptSubmit`: `node "$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js"`
-   - Если `CAVEMAN_INTENSITY` != `full` — добавить `env.CAVEMAN_INTENSITY`
    - Если `CAVEMAN_STATUSLINE=true` — append строку `[CAVEMAN] ⛏ $(cat $CLAUDE_CONFIG_DIR/caveman-stats 2>/dev/null)` в конец существующего `statusLine.command` скрипта через wrapper
+   - `CAVEMAN_DEFAULT_MODE` **не** прописывается в settings.json — передаётся через env (см. launcher)
    - Не дублировать записи если уже присутствуют (idempotent)
 4. Сохранить версию: запросить `https://api.github.com/repos/JuliusBrussee/caveman/git/ref/heads/main`, извлечь поле `.object.sha` через `python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'][:12])"`, записать в `$CLAUDE_CONFIG_DIR/caveman-version`
 5. Вывести итог установки
 
 ### Алгоритм `remove_caveman()`
 
-1. Удалить `$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js`
-2. Удалить `$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js`
-3. Убрать записи caveman из `settings.json` (Python inline-скрипт)
-4. Удалить `$CLAUDE_CONFIG_DIR/caveman-version`
+1. Удалить все 4 файла из `$CLAUDE_CONFIG_DIR/hooks/`: `caveman-activate.js`, `caveman-config.js`, `caveman-mode-tracker.js`, `caveman-stats.js`
+2. Убрать записи caveman из `settings.json` (Python inline-скрипт)
+3. Удалить `$CLAUDE_CONFIG_DIR/caveman-version`
 
 ### Алгоритм `check_caveman()`
 
 - Проверить наличие hook-файлов
 - Прочитать `caveman-version`
-- Вывести `CAVEMAN_INTENSITY` из `.claude_config`
+- Вывести `CAVEMAN_DEFAULT_MODE` из `.claude_config`
 - Статус: installed / not installed
 
 ## Интеграция в iclaude.sh
@@ -129,6 +128,15 @@ fi
 
 Документация в `--help` output (аналогично `--install-lsp`).
 
+### lib/launcher/launch.sh — экспорт CAVEMAN_DEFAULT_MODE перед exec:
+
+```bash
+# Caveman intensity — читается хуком caveman-config.js через process.env
+[[ -n "${CAVEMAN_DEFAULT_MODE:-}" ]] && export CAVEMAN_DEFAULT_MODE
+```
+
+Добавить рядом с другими `export ICLAUDE_*` перед `exec "${claude_cmd_arr[@]}"` (строка ~645).
+
 ## Обновление `.claude_config.example`
 
 Добавить блок после существующих опциональных разделов:
@@ -139,7 +147,7 @@ fi
 # Remove:  ./iclaude.sh --caveman-remove
 # Status:  ./iclaude.sh --check-caveman
 # CAVEMAN_ENABLED=true
-# CAVEMAN_INTENSITY=full
+# CAVEMAN_DEFAULT_MODE=full
 # CAVEMAN_STATUSLINE=true
 ```
 
