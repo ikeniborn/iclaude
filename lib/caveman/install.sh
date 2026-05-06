@@ -129,36 +129,46 @@ install_caveman() {
 
     # Patch settings.json (idempotent)
     print_info "Patching settings.json..."
-    python3 - "$settings_file" "$hooks_dir" <<'PYEOF'
-import sys, json
+    python3 - "$settings_file" <<'PYEOF'
+import sys, json, re
 
-settings_file, hooks_dir = sys.argv[1], sys.argv[2]
+settings_file = sys.argv[1]
+
+ACTIVATE_CMD = 'node "$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js"'
+TRACKER_CMD  = 'node "$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js"'
+
+def _is_caveman_cmd(cmd):
+    return bool(re.search(r'caveman-activate\.js|caveman-mode-tracker\.js', cmd or ''))
+
+def already_has_caveman(hook_list, pattern_fn):
+    return any(
+        any(pattern_fn(h.get('command', '')) for h in entry.get('hooks', []))
+        for entry in hook_list
+    )
+
+def remove_caveman_entries(hook_list):
+    return [
+        e for e in hook_list
+        if not any(_is_caveman_cmd(h.get('command', '')) for h in e.get('hooks', []))
+    ]
+
+def make_entry(cmd, msg):
+    return {"hooks": [{"type": "command", "command": cmd,
+                        "timeout": 5, "statusMessage": msg}]}
 
 with open(settings_file) as f:
     s = json.load(f)
 
 hooks = s.setdefault('hooks', {})
 
-activate_cmd  = f'node "{hooks_dir}/caveman-activate.js"'
-tracker_cmd   = f'node "{hooks_dir}/caveman-mode-tracker.js"'
+# Remove all existing caveman entries (any path form) then add canonical form
+session = remove_caveman_entries(hooks.get('SessionStart', []))
+session.append(make_entry(ACTIVATE_CMD, "Loading caveman mode..."))
+hooks['SessionStart'] = session
 
-def already_has(hook_list, cmd):
-    return any(
-        any(h.get('command') == cmd for h in entry.get('hooks', []))
-        for entry in hook_list
-    )
-
-def make_entry(cmd, msg):
-    return {"hooks": [{"type": "command", "command": cmd,
-                        "timeout": 5, "statusMessage": msg}]}
-
-session = hooks.setdefault('SessionStart', [])
-if not already_has(session, activate_cmd):
-    session.append(make_entry(activate_cmd, "Loading caveman mode..."))
-
-prompt = hooks.setdefault('UserPromptSubmit', [])
-if not already_has(prompt, tracker_cmd):
-    prompt.append(make_entry(tracker_cmd, "Tracking caveman mode..."))
+prompt = remove_caveman_entries(hooks.get('UserPromptSubmit', []))
+prompt.append(make_entry(TRACKER_CMD, "Tracking caveman mode..."))
+hooks['UserPromptSubmit'] = prompt
 
 with open(settings_file, 'w') as f:
     json.dump(s, f, indent=2, ensure_ascii=False)
@@ -208,14 +218,13 @@ remove_caveman() {
 
     if [[ -f "$settings_file" ]]; then
         print_info "Cleaning settings.json..."
-        python3 - "$settings_file" "$hooks_dir" <<'PYEOF'
-import sys, json
+        python3 - "$settings_file" <<'PYEOF'
+import sys, json, re
 
-settings_file, hooks_dir = sys.argv[1], sys.argv[2]
-caveman_cmds = {
-    f'node "{hooks_dir}/caveman-activate.js"',
-    f'node "{hooks_dir}/caveman-mode-tracker.js"',
-}
+settings_file = sys.argv[1]
+
+def _is_caveman_cmd(cmd):
+    return bool(re.search(r'caveman-activate\.js|caveman-mode-tracker\.js', cmd or ''))
 
 with open(settings_file) as f:
     s = json.load(f)
@@ -226,7 +235,7 @@ for event in ('SessionStart', 'UserPromptSubmit'):
         continue
     hooks[event] = [
         e for e in hooks[event]
-        if not any(h.get('command') in caveman_cmds for h in e.get('hooks', []))
+        if not any(_is_caveman_cmd(h.get('command', '')) for h in e.get('hooks', []))
     ]
     if not hooks[event]:
         del hooks[event]
