@@ -1,6 +1,6 @@
 #!/bin/bash
 # Graphify installation module
-# Provides: install_graphify(), _graphify_rebuild_graph()
+# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_install_command()
 
 #######################################
 # Resolve proxy URL from environment
