@@ -616,6 +616,10 @@ launch_claude() {
         echo ""
     fi
 
+    # Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_MODE) and statusline
+    [[ -n "${CAVEMAN_DEFAULT_MODE:-}" ]] && export CAVEMAN_DEFAULT_MODE
+    [[ -n "${CAVEMAN_STATUSLINE:-}" ]] && export CAVEMAN_STATUSLINE
+
     # Word-split claude_cmd into an array so multi-word commands like
     # "node /path/cli.js" (legacy pre-v2.1.114 fallback) execute correctly.
     # Native-binary path is a single word — splits into one-element array.
