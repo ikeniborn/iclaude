@@ -6,6 +6,8 @@
 
 **Architecture:** Additive edits to 4 SKILL.md files. No new abstractions. `graphify-context` already exports `fresh` in its output schema — only context-awareness needs to propagate it. Then each downstream skill gets a `IF graph_initialized` block modelled on its existing `IF wiki_initialized` block.
 
+**Known constraint:** Current graphify does not write `built_at_commit` into `GRAPH_REPORT.md`. `graphify-context` therefore returns `fresh` as a string `"unknown—..."` instead of a boolean. context-awareness must normalize this: propagate `graph_fresh: false` only when `graph_context.fresh === false` (explicit boolean false); propagate `graph_fresh: null` otherwise. Downstream skills warn only when `graph_fresh === false`, not when `null`.
+
 **Tech Stack:** Markdown SKILL.md files. Verification via `grep`. No build step.
 
 ---
@@ -44,8 +46,10 @@ Replace with:
        graph_god_nodes: [из graph_context.god_nodes]
        graph_communities: graph_context.communities
        graph_summary: graph_context.graph_summary
-       graph_fresh: graph_context.fresh
+       graph_fresh: graph_context.fresh если typeof === boolean, иначе null
 ```
+
+Note: graphify currently does not write `built_at_commit` to GRAPH_REPORT.md, so `graph_context.fresh` arrives as a string `"unknown—..."`. Normalize to `null` in that case — do NOT propagate the raw string.
 
 - [ ] **Step 2: Verify propagation block**
 
@@ -69,7 +73,7 @@ Current block:
 Replace with:
 ```json
     "graph_initialized": true|false,
-    "graph_fresh": true|false,
+    "graph_fresh": true|false|null,
     "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
     "graph_communities": 0,
     "graph_summary": "структурный контекст из knowledge graph" | null
@@ -88,7 +92,7 @@ Current block:
 Replace with:
 ```json
     "graph_initialized": true,
-    "graph_fresh": true,
+    "graph_fresh": null,
     "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
     "graph_communities": 8,
     "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
@@ -128,7 +132,7 @@ Replace with:
 - Check out the current project state first (files, docs, recent commits)
 - If `project_context.graph_initialized` is true: use the graph for structural context.
   - **Always (passive):** Note god nodes as likely integration touch points — list them in your Step 1 summary as "Key components: [god nodes]"
-  - **If graph is stale** (`graph_fresh: false`): warn the user — "Graph may be stale — run `/graphify --update` for accurate results" — then continue; stale graph > no graph.
+  - **If graph is explicitly stale** (`graph_fresh === false`, boolean): warn the user — "Graph may be stale — run `/graphify --update` for accurate results" — then continue; stale graph > no graph. If `graph_fresh === null` (staleness unknown — graphify didn't write commit hash), skip the warning.
   - **If the brainstorm topic names a god node** (case-insensitive, whole-word match): call `Skill("graphify-context", args='explain "<ComponentName>"')` and include the result in Step 1 context.
   - **Else if the topic involves integration/dependencies/architecture** (keywords: integrate, depend, connect, affect, impact, extend, add to): call `Skill("graphify-context", args='query "<topic>" --budget 1000')` and include the result in Step 1 context.
   - Only one active Skill call per Step 1 — explain takes priority over query.
@@ -182,8 +186,9 @@ IF project_context.graph_initialized == true:
   - graph_god_nodes → использовать как "Core Components" в arch diagram (самые связанные узлы)
   - graph_communities → использовать как модульную структуру (community label → module name)
   - graph_summary → использовать как structural overview paragraph в Phase 1 discovery
-  IF NOT project_context.graph_fresh:
+  IF project_context.graph_fresh === false:
     Добавить NOTE в output: "Architecture graph may be stale — run /graphify --update"
+  # graph_fresh === null означает неизвестно (graphify не пишет commit hash) — не предупреждать
 ```
 
 - [ ] **Step 2: Verify insertion**
@@ -233,8 +238,9 @@ IF project_context.graph_initialized == true:
   - graph_god_nodes → вставить как "Ключевые компоненты системы" (с числом рёбер)
   - graph_summary → вставить как структурный обзор архитектуры
   - graph_communities → упомянуть количество модулей/сообществ
-  IF NOT project_context.graph_fresh:
+  IF project_context.graph_fresh === false:
     Добавить NOTE: "Данные о графе могут быть устаревшими — запусти /graphify --update"
+  # graph_fresh === null означает неизвестно — не предупреждать
 ```
 
 - [ ] **Step 2: Verify insertion**
