@@ -203,6 +203,7 @@ fi
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
+    USE_GRAPHIFY_FLAG=false
     USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
     NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
@@ -223,6 +224,28 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
+
+        # Match: GRAPHIFY_OUTPUT_DIR=/some/path
+        _cfg_graphify_out=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
+            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
+        if [[ -n "$_cfg_graphify_out" ]]; then
+            GRAPHIFY_OUTPUT_DIR=$(echo "$_cfg_graphify_out" | \
+                sed 's/.*GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_OUTPUT_DIR
+        fi
+        unset _cfg_graphify_out
+
+        # Match: GRAPHIFY_EXTRA_ARGS="--no-video"
+        _cfg_graphify_args=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_EXTRA_ARGS[[:space:]]*=" \
+            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
+        if [[ -n "$_cfg_graphify_args" ]]; then
+            GRAPHIFY_EXTRA_ARGS=$(echo "$_cfg_graphify_args" | \
+                sed 's/.*GRAPHIFY_EXTRA_ARGS[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_EXTRA_ARGS
+        fi
+        unset _cfg_graphify_args
 
         # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
         _cfg_no_attr=$(grep -E \
