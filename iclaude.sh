@@ -232,7 +232,7 @@ fi
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
 
-        # Match: GRAPHIFY_OUT=.graphify (also GRAPHIFY_OUTPUT_DIR for backward compat)
+        # Match: GRAPHIFY_OUT=.graphify
         _cfg_graphify_out=$(grep -E \
             "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUT[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
             "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
