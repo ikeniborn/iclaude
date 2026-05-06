@@ -4,7 +4,7 @@
 
 **Goal:** Добавить в iclaude поддержку caveman — установщик JS-хуков для сжатия токенов (~65–75%) в изолированную среду `$CLAUDE_CONFIG_DIR`, минуя стандартный `~/.claude/`.
 
-**Architecture:** Новый модуль `lib/caveman/install.sh` с тремя функциями (`install_caveman`, `remove_caveman`, `check_caveman`). Загружается в Phase 2-8 iclaude.sh. Три флага диспетчера (`--caveman-install`, `--caveman-remove`, `--check-caveman`) в Phase 14. Переменная `CAVEMAN_DEFAULT_MODE` из `.claude_config` экспортируется в `lib/launcher/launch.sh` перед `exec claude` — хук читает её через `process.env`.
+**Architecture:** Новый модуль `lib/caveman/install.sh` с тремя функциями (`install_caveman`, `remove_caveman`, `check_caveman`). Загружается в Phase 2-8 iclaude.sh. Три флага диспетчера (`--caveman-install`, `--caveman-remove`, `--check-caveman`) в Phase 14. Переменные `CAVEMAN_DEFAULT_MODE` и `CAVEMAN_STATUSLINE` из `.claude_config` экспортируются в `lib/launcher/launch.sh` перед `exec claude`. Badge `⛏` читает `~/.claude/.caveman-statusline-suffix` (туда пишет caveman-stats.js) и встраивается в `claude-statusline.sh` по паттерну SECURITY_ICON/PII_ICON.
 
 **Tech Stack:** bash, Python 3 (inline скрипт для патча JSON), curl (скачивание хуков), git ls-remote (версионирование)
 
@@ -16,9 +16,10 @@
 |---|---|---|
 | Создать | `lib/caveman/install.sh` | Новый модуль: 3 функции |
 | Изменить | `iclaude.sh` | +Phase 2-8 loader блок + 3 case-ветки в Phase 14 |
-| Изменить | `lib/launcher/launch.sh` | +1 строка export перед exec |
-| Изменить | `lib/command/usage.sh` | +2 строки help-текста |
+| Изменить | `lib/launcher/launch.sh` | +2 строки export перед exec (`CAVEMAN_DEFAULT_MODE` + `CAVEMAN_STATUSLINE`) |
+| Изменить | `lib/command/usage.sh` | +3 строки help-текста |
 | Изменить | `.claude_config.example` | +блок caveman в конец |
+| Изменить | `.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh` | +CAVEMAN_ICON блок + включение в STATUS_LINE |
 
 ---
 
@@ -265,7 +266,7 @@ git commit -m "feat(caveman): добавить lib/caveman/install.sh с install
 
 - [ ] **Step 2.1: Добавить загрузчик модуля в Phase 2-8**
 
-В `iclaude.sh` после строки 115 (`fi` конец LSP-блока) вставить:
+В `iclaude.sh` найти якорный комментарий `# Load statusline modules (Phase 8.2)` и вставить перед ним новый блок:
 
 ```bash
 
@@ -279,7 +280,7 @@ fi
 
 - [ ] **Step 2.2: Добавить dispatch-ветки в Phase 14**
 
-В `iclaude.sh` после строки 516 (`;;` конец --check-microvm) вставить:
+В `iclaude.sh` найти якорный блок `--check-microvm)` и вставить сразу после его закрывающего `;;`:
 
 ```bash
             --caveman-install)
@@ -328,22 +329,22 @@ git commit -m "feat(caveman): добавить --caveman-install/remove/check в
 **Files:**
 - Modify: `lib/launcher/launch.sh` (~строка 618, перед `read -ra claude_cmd_arr`)
 
-- [ ] **Step 3.1: Добавить export CAVEMAN_DEFAULT_MODE**
+- [ ] **Step 3.1: Добавить export CAVEMAN_DEFAULT_MODE и CAVEMAN_STATUSLINE**
 
-В `lib/launcher/launch.sh` после строки ~617 (конец debug-блока `fi`) и перед строкой `local -a claude_cmd_arr` (строка ~622) вставить:
+В `lib/launcher/launch.sh` найти якорную строку `# Word-split claude_cmd into an array` и вставить перед ней:
 
 ```bash
-    # Caveman: pass mode to caveman-config.js hook via process.env
+    # Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_MODE) and statusline
     [[ -n "${CAVEMAN_DEFAULT_MODE:-}" ]] && export CAVEMAN_DEFAULT_MODE
+    [[ -n "${CAVEMAN_STATUSLINE:-}" ]] && export CAVEMAN_STATUSLINE
 ```
 
 Итоговый контекст должен выглядеть так:
 
 ```bash
-    fi
-
-    # Caveman: pass mode to caveman-config.js hook via process.env
+    # Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_MODE) and statusline
     [[ -n "${CAVEMAN_DEFAULT_MODE:-}" ]] && export CAVEMAN_DEFAULT_MODE
+    [[ -n "${CAVEMAN_STATUSLINE:-}" ]] && export CAVEMAN_STATUSLINE
 
     # Word-split claude_cmd into an array so multi-word commands like
     # "node /path/cli.js" (legacy pre-v2.1.114 fallback) execute correctly.
@@ -430,23 +431,98 @@ git commit -m "feat(caveman): добавить help-текст и .claude_config
 
 ---
 
-## Task 5: End-to-end тестирование
+## Task 5: Добавить caveman badge в claude-statusline.sh
+
+**Files:**
+- Modify: `.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh`
+
+**Контекст:** caveman-stats.js пишет суффикс `⛏ 5.2k` в `~/.claude/.caveman-statusline-suffix`. Statusline-скрипт читает этот файл и показывает badge если `CAVEMAN_STATUSLINE=true` экспортирована из launcher. Паттерн идентичен `SECURITY_ICON` и `PII_ICON`.
+
+- [ ] **Step 5.1: Добавить блок CAVEMAN_ICON после блока SECURITY_ICON**
+
+В файле `.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh` найти якорную строку:
+```bash
+# PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)
+```
+И вставить перед ней новый блок:
+
+```bash
+# Caveman badge — show ⛏ with savings when CAVEMAN_STATUSLINE is set
+# caveman-stats.js writes ~/.claude/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
+CAVEMAN_ICON=""
+if [[ "${CAVEMAN_STATUSLINE:-}" == "true" ]] || [[ "${CAVEMAN_STATUSLINE:-}" == "1" ]]; then
+    _CAVEMAN_SUFFIX_FILE="${HOME}/.claude/.caveman-statusline-suffix"
+    if [[ -f "$_CAVEMAN_SUFFIX_FILE" ]]; then
+        _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_SUFFIX_FILE" 2>/dev/null | tr -d '\n\r')
+        [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
+    elif [[ -f "$CLAUDE_CONFIG_DIR/caveman-version" ]]; then
+        CAVEMAN_ICON=" | ⛏"
+    fi
+fi
+
+```
+
+- [ ] **Step 5.2: Добавить `${CAVEMAN_ICON}` в STATUS_LINE assembly**
+
+В том же файле найти `case "$DISPLAY_MODE" in` блок и добавить `${CAVEMAN_ICON}` в строки `full` и `compact` после `${SECURITY_ICON}`:
+
+Было (full):
+```bash
+STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+```
+
+Стало (full):
+```bash
+STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+```
+
+Было (compact):
+```bash
+STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${SECURITY_ICON}${MEMORY_LINK}"
+```
+
+Стало (compact):
+```bash
+STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${MEMORY_LINK}"
+```
+
+*(minimal mode не обновляем — там только критичные метрики)*
+
+- [ ] **Step 5.3: Проверить синтаксис**
+
+```bash
+bash -n .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
+```
+
+Ожидаемый вывод: пустой (exit 0).
+
+- [ ] **Step 5.4: Коммит**
+
+```bash
+git add .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
+git commit -m "feat(caveman): добавить badge ⛏ в статусную строку"
+```
+
+---
+
+## Task 6: End-to-end тестирование
 
 **Files:** нет изменений — только проверка
 
-- [ ] **Step 5.1: Синтаксис всех изменённых файлов**
+- [ ] **Step 6.1: Синтаксис всех изменённых файлов**
 
 ```bash
 bash -n iclaude.sh && \
 bash -n lib/caveman/install.sh && \
 bash -n lib/launcher/launch.sh && \
-bash -n lib/command/usage.sh
+bash -n lib/command/usage.sh && \
+bash -n .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
 echo "Syntax OK: $?"
 ```
 
 Ожидаемый вывод: `Syntax OK: 0`
 
-- [ ] **Step 5.2: --check-caveman до установки**
+- [ ] **Step 6.2: --check-caveman до установки**
 
 ```bash
 ./iclaude.sh --check-caveman
@@ -458,7 +534,7 @@ Status:  NOT INSTALLED (4 files missing)
 Run:     ./iclaude.sh --caveman-install
 ```
 
-- [ ] **Step 5.3: Запустить установку**
+- [ ] **Step 6.3: Запустить установку**
 
 ```bash
 ./iclaude.sh --caveman-install
@@ -477,7 +553,7 @@ Fetching version...
 caveman installed (sha: <12-char-sha>)
 ```
 
-- [ ] **Step 5.4: Проверить наличие файлов**
+- [ ] **Step 6.4: Проверить наличие файлов**
 
 ```bash
 ls -la .nvm-isolated/.claude-isolated/hooks/caveman-*.js
@@ -485,7 +561,7 @@ ls -la .nvm-isolated/.claude-isolated/hooks/caveman-*.js
 
 Ожидаемый вывод: 4 файла — `caveman-activate.js`, `caveman-config.js`, `caveman-mode-tracker.js`, `caveman-stats.js`
 
-- [ ] **Step 5.5: Проверить settings.json — хуки добавлены**
+- [ ] **Step 6.5: Проверить settings.json — хуки добавлены**
 
 ```bash
 python3 -c "
@@ -512,7 +588,7 @@ UserPromptSubmit entries: 1
   UserPromptSubmit cmd: node ".../hooks/caveman-mode-tracker.js"
 ```
 
-- [ ] **Step 5.6: Проверить что ~/.claude/settings.json НЕ изменён**
+- [ ] **Step 6.6: Проверить что ~/.claude/settings.json НЕ изменён**
 
 ```bash
 python3 -c "
@@ -533,7 +609,7 @@ else:
 Ожидаемый вывод: `~/.claude/settings.json не содержит caveman хуков — OK`  
 (или "не существует")
 
-- [ ] **Step 5.7: --check-caveman после установки**
+- [ ] **Step 6.7: --check-caveman после установки**
 
 ```bash
 ./iclaude.sh --check-caveman
@@ -546,7 +622,7 @@ Version: <sha>
 Mode:    full (default)
 ```
 
-- [ ] **Step 5.8: Тест idempotency — повторная установка**
+- [ ] **Step 6.8: Тест idempotency — повторная установка**
 
 ```bash
 ./iclaude.sh --caveman-install
@@ -567,7 +643,7 @@ print('UserPromptSubmit entries:', len(h.get('UserPromptSubmit', [])))
 
 Ожидаемый вывод: каждый счётчик остаётся `1` (не `2`).
 
-- [ ] **Step 5.9: Тест удаления**
+- [ ] **Step 6.9: Тест удаления**
 
 ```bash
 ./iclaude.sh --caveman-remove
@@ -597,9 +673,11 @@ SessionStart: REMOVED — OK
 UserPromptSubmit: REMOVED — OK
 ```
 
-- [ ] **Step 5.10: Финальный коммит (если тесты прошли)**
+- [ ] **Step 6.10: Финальный коммит (если тесты прошли)**
 
 ```bash
-git add -p  # убедиться что нет лишних изменений
+git add lib/caveman/install.sh iclaude.sh lib/launcher/launch.sh \
+        lib/command/usage.sh .claude_config.example \
+        .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
 git commit -m "test(caveman): end-to-end verified — install/remove/check/idempotency OK"
 ```
