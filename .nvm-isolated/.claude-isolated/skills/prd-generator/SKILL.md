@@ -797,6 +797,16 @@ IF project_context.wiki_initialized == true:
   - Если wiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
+IF project_context.graph_initialized == true:
+  В раздел "Architecture / Technical Context" PRD:
+  - graph_god_nodes → вставить как "Ключевые компоненты системы" (с числом рёбер)
+  - graph_summary → вставить как структурный обзор архитектуры
+  - graph_communities → упомянуть количество модулей/сообществ
+  IF project_context.graph_fresh === false:
+    Добавить NOTE: "Данные о графе могут быть устаревшими — запусти /graphify --update"
+  # graph_fresh === null означает неизвестно — не предупреждать
+```
+
 ### Ingest (в Phase 7, после успешной валидации)
 
 ```
