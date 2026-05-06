@@ -103,8 +103,10 @@ install_graphify() {
     local proxy
     proxy=$(_graphify_resolve_proxy)
     local proxy_env=()
+    local curl_proxy_args=()
     if [[ -n "$proxy" ]]; then
         proxy_env=(env UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
+        curl_proxy_args=(-x "$proxy")
     fi
 
     # Step 1: Find or install uv (isolated preferred, system fallback)
@@ -114,7 +116,7 @@ install_graphify() {
         print_info "Installing uv to ${ISOLATED_NVM_DIR}/bin/ ..."
         if ! "${proxy_env[@]}" \
             env INSTALLER_NO_MODIFY_PATH=1 UV_INSTALL_DIR="${ISOLATED_NVM_DIR}/bin" \
-            sh -c "$(curl -LsSf https://astral.sh/uv/install.sh)"; then
+            sh -c "$(curl -LsSf "${curl_proxy_args[@]}" https://astral.sh/uv/install.sh)"; then
             print_error "uv installer script failed (check network/TLS/proxy)"
             return 1
         fi
