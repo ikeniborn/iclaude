@@ -692,6 +692,11 @@ fi
         echo ""
     fi
 
+    # Rebuild graphify knowledge graph if --graphify flag is set
+    if [[ "$USE_GRAPHIFY_FLAG" == true ]]; then
+        _graphify_rebuild_graph || print_warning "Graph rebuild failed — continuing without updated graph"
+    fi
+
     # Configure isolated config if needed
     # Priority:
     # 1. If --isolated-config is set, use isolated config
