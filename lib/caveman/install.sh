@@ -36,7 +36,7 @@ check_caveman() {
         [[ -f "$version_file" ]] && echo "  Version: $(cat "$version_file")"
     else
         echo "  Status:  NOT INSTALLED ($missing files missing)"
-        echo "  Run:     ./iclaude.sh --caveman-install"
+        echo "  Run:     ./iclaude.sh --install-caveman"
     fi
 
     local mode="${CAVEMAN_DEFAULT_MODE:-full (default)}"
