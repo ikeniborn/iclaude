@@ -14,13 +14,15 @@ check_graphify_status() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 
-    # uv binary
-    if [[ -x "$GRAPHIFY_UV_BIN" ]]; then
+    # uv binary (isolated preferred, system fallback)
+    local uv_bin
+    uv_bin=$(_graphify_resolve_uv)
+    if [[ -n "$uv_bin" ]]; then
         local uv_ver
-        uv_ver=$("$GRAPHIFY_UV_BIN" --version 2>/dev/null || echo "unknown")
-        print_success "uv: $GRAPHIFY_UV_BIN ($uv_ver)"
+        uv_ver=$("$uv_bin" --version 2>/dev/null || echo "unknown")
+        print_success "uv: $uv_bin ($uv_ver)"
     else
-        print_warning "uv: not found at $GRAPHIFY_UV_BIN"
+        print_warning "uv: not found (isolated: $GRAPHIFY_UV_BIN, system: not in PATH)"
         echo "  Run: ./iclaude.sh --install-graphify"
         echo ""
         return 0

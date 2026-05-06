@@ -1,6 +1,6 @@
 #!/bin/bash
 # Graphify installation module
-# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_install_command()
+# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_resolve_uv(), _graphify_install_command()
 
 #######################################
 # Resolve proxy URL from environment
@@ -8,6 +8,18 @@
 #######################################
 _graphify_resolve_proxy() {
     echo "${HTTPS_PROXY:-${HTTP_PROXY:-${PROXY_URL:-}}}"
+}
+
+#######################################
+# Resolve uv binary: prefer isolated path, fall back to system PATH.
+# Outputs: path to uv binary, or empty string if not found
+#######################################
+_graphify_resolve_uv() {
+    if [[ -x "$GRAPHIFY_UV_BIN" ]]; then
+        echo "$GRAPHIFY_UV_BIN"
+    elif command -v uv &>/dev/null; then
+        command -v uv
+    fi
 }
 
 #######################################
@@ -20,6 +32,9 @@ _graphify_rebuild_graph() {
         print_error "graphify not installed. Run: ./iclaude.sh --install-graphify"
         return 1
     fi
+
+    local uv_bin
+    uv_bin=$(_graphify_resolve_uv)
 
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
@@ -54,12 +69,12 @@ _graphify_rebuild_graph() {
 
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         "${proxy_env[@]}" \
-        "$GRAPHIFY_UV_BIN" tool run graphify "${graphify_args[@]}"
+        "$uv_bin" tool run graphify "${graphify_args[@]}"
 }
 
 #######################################
 # Install graphify in isolated environment.
-# Installs uv, then graphifyy via uv tool install.
+# Installs uv (isolated preferred, system fallback), then graphifyy via uv tool install.
 # Args: [--force] — remove existing tool dir before install
 # Returns: 0 on success, 1 on failure
 #######################################
@@ -92,20 +107,27 @@ install_graphify() {
         proxy_env=(env UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
     fi
 
-    # Step 1: Install uv if missing
-    if [[ ! -x "$GRAPHIFY_UV_BIN" ]]; then
+    # Step 1: Find or install uv (isolated preferred, system fallback)
+    local uv_bin
+    uv_bin=$(_graphify_resolve_uv)
+    if [[ -z "$uv_bin" ]]; then
         print_info "Installing uv to ${ISOLATED_NVM_DIR}/bin/ ..."
         if ! "${proxy_env[@]}" \
             env INSTALLER_NO_MODIFY_PATH=1 UV_INSTALL_DIR="${ISOLATED_NVM_DIR}/bin" \
             sh -c "$(curl -LsSf https://astral.sh/uv/install.sh)"; then
-            print_error "Failed to install uv"
+            print_error "uv installer script failed (check network/TLS/proxy)"
             return 1
         fi
-        print_success "uv installed: $GRAPHIFY_UV_BIN"
+        uv_bin=$(_graphify_resolve_uv)
+        if [[ -z "$uv_bin" ]]; then
+            print_error "uv not found after install — TLS or network issue likely. Check proxy settings."
+            return 1
+        fi
+        print_success "uv installed: $uv_bin"
     else
         local uv_ver
-        uv_ver=$("$GRAPHIFY_UV_BIN" --version 2>/dev/null || echo "unknown")
-        print_success "uv already present ($uv_ver)"
+        uv_ver=$("$uv_bin" --version 2>/dev/null || echo "unknown")
+        print_success "uv found: $uv_bin ($uv_ver)"
     fi
 
     # Step 2: Install graphifyy via uv tool
@@ -113,7 +135,7 @@ install_graphify() {
     if ! UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         UV_PYTHON_INSTALL_DIR="$GRAPHIFY_PYTHON_DIR" \
         "${proxy_env[@]}" \
-        "$GRAPHIFY_UV_BIN" tool install graphifyy --python 3.12; then
+        "$uv_bin" tool install graphifyy --python 3.12; then
         print_error "Failed to install graphifyy"
         return 1
     fi
@@ -122,7 +144,7 @@ install_graphify() {
     # Step 3: graphify install (Claude Code skill setup)
     print_info "Setting up Claude Code skill ..."
     if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        "$GRAPHIFY_UV_BIN" tool run graphify install 2>/dev/null; then
+        "$uv_bin" tool run graphify install 2>/dev/null; then
         print_success "Claude Code skill configured"
     else
         print_warning "graphify install returned non-zero (skill setup optional — continuing)"
