@@ -106,6 +106,15 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
 fi
 
 #######################################
+# Load Graphify modules
+#######################################
+if [[ -d "$LIB_DIR/graphify" ]]; then
+    source "${LIB_DIR}/graphify/detect.sh"
+    source "${LIB_DIR}/graphify/install.sh"
+    source "${LIB_DIR}/graphify/status.sh"
+fi
+
+#######################################
 # Load LSP modules (Phase 8.1)
 #######################################
 if [[ -d "$LIB_DIR/lsp" ]]; then
