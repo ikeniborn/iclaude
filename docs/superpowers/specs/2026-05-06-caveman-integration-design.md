@@ -81,7 +81,7 @@ check_caveman()     # вывести статус: установлено / ве
    - Если `CAVEMAN_STATUSLINE=true` — append строку `[CAVEMAN] ⛏ $(cat $CLAUDE_CONFIG_DIR/caveman-stats 2>/dev/null)` в конец существующего `statusLine.command` скрипта через wrapper
    - `CAVEMAN_DEFAULT_MODE` **не** прописывается в settings.json — передаётся через env (см. launcher)
    - Не дублировать записи если уже присутствуют (idempotent)
-4. Сохранить версию: запросить `https://api.github.com/repos/JuliusBrussee/caveman/git/ref/heads/main`, извлечь поле `.object.sha` через `python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'][:12])"`, записать в `$CLAUDE_CONFIG_DIR/caveman-version`
+4. Сохранить версию: `git ls-remote https://github.com/JuliusBrussee/caveman.git main | cut -f1 | cut -c1-12` → записать в `$CLAUDE_CONFIG_DIR/caveman-version`. Без rate limit (в отличие от GitHub REST API, лимит 60 req/час)
 5. Вывести итог установки
 
 ### Алгоритм `remove_caveman()`
