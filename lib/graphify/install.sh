@@ -21,13 +21,21 @@ _graphify_rebuild_graph() {
         return 1
     fi
 
+    local project_root
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+
     local output_dir
     if [[ -n "$GRAPHIFY_OUTPUT_DIR" ]]; then
-        output_dir="$GRAPHIFY_OUTPUT_DIR"
+        if [[ "$GRAPHIFY_OUTPUT_DIR" = /* ]]; then
+            output_dir="$GRAPHIFY_OUTPUT_DIR"
+        else
+            output_dir="${project_root}/${GRAPHIFY_OUTPUT_DIR}"
+        fi
     else
-        output_dir=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+        output_dir="$project_root"
     fi
 
+    mkdir -p "$output_dir"
     print_info "Building knowledge graph → $output_dir"
 
     # Build args array to handle extra args safely
@@ -129,61 +137,49 @@ install_graphify() {
     print_info "Next steps:"
     print_info "  Status:           ./iclaude.sh --check-graphify"
     print_info "  Build graph:      ./iclaude.sh --graphify"
-    print_info "  Manual rebuild:   .nvm-isolated/.claude-isolated/commands/graphify"
+    print_info "  In Claude Code:   /graphify-update (slash command)"
     echo ""
     return 0
 }
 
 #######################################
-# Create commands/graphify standalone script.
+# Create commands/graphify-update.md Claude Code slash command.
+# Invoked as /graphify-update inside a Claude Code session.
 # Returns: 0 on success, 1 on failure
 #######################################
 _graphify_install_command() {
     local commands_dir="${ISOLATED_CONFIG_DIR}/commands"
-    local cmd_path="${commands_dir}/graphify"
+    local cmd_path="${commands_dir}/graphify-update.md"
 
     mkdir -p "$commands_dir"
 
-    cat > "$cmd_path" << 'GRAPHIFFY_SCRIPT'
-#!/usr/bin/env bash
-# commands/graphify — ручная пересборка graphify-графа (без запуска claude).
-# Использует GRAPHIFY_OUTPUT_DIR, GRAPHIFY_EXTRA_ARGS из .claude_config или окружения.
+    # Write markdown slash command for Claude Code (/graphify-update)
+    # Triple backticks inside heredoc are literal — no bash interpretation needed.
+    cat > "$cmd_path" << 'GRAPHIFY_MD'
+---
+description: Rebuild graphify knowledge graph for the current project
+---
 
-ICLAUDE_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+Rebuild the graphify knowledge graph for the current project. Run the following bash command and report the result:
 
-# Загрузить пользовательские переменные из .claude_config (если есть)
-[[ -f "$ICLAUDE_DIR/.claude_config" ]] && source "$ICLAUDE_DIR/.claude_config"
-
-GRAPHIFY_TOOL_DIR="${ICLAUDE_DIR}/.nvm-isolated/.claude-isolated/graphify"
-GRAPHIFY_UV_BIN="${ICLAUDE_DIR}/.nvm-isolated/bin/uv"
-
-if [[ ! -x "$GRAPHIFY_UV_BIN" ]] || [[ ! -x "${GRAPHIFY_TOOL_DIR}/bin/graphify" ]]; then
-    echo "ERROR: graphify not installed. Run: ./iclaude.sh --install-graphify" >&2
-    exit 1
-fi
-
-# Определить output_dir
+```bash
+_gfy_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 if [[ -n "${GRAPHIFY_OUTPUT_DIR:-}" ]]; then
-    output_dir="$GRAPHIFY_OUTPUT_DIR"
+    if [[ "${GRAPHIFY_OUTPUT_DIR}" = /* ]]; then
+        _gfy_out="${GRAPHIFY_OUTPUT_DIR}"
+    else
+        _gfy_out="${_gfy_root}/${GRAPHIFY_OUTPUT_DIR}"
+    fi
 else
-    output_dir=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+    _gfy_out="${_gfy_root}"
 fi
+mkdir -p "$_gfy_out"
+UV_TOOL_DIR="${GRAPHIFY_TOOL_DIR}" "${GRAPHIFY_UV_BIN}" tool run graphify . \
+    --output-dir "$_gfy_out" ${GRAPHIFY_EXTRA_ARGS:+${GRAPHIFY_EXTRA_ARGS}}
+```
 
-# Build args array
-args=(".")
-[[ -n "$output_dir" ]] && args+=("--output-dir" "$output_dir")
-[[ -n "${GRAPHIFY_EXTRA_ARGS:-}" ]] && read -ra _extra <<< "$GRAPHIFY_EXTRA_ARGS" && args+=("${_extra[@]}")
+After the command completes, report: success or failure, output directory path, and briefly what was analyzed.
+GRAPHIFY_MD
 
-# Proxy support
-proxy_env=()
-_proxy="${HTTPS_PROXY:-${HTTP_PROXY:-${PROXY_URL:-}}}"
-[[ -n "$_proxy" ]] && proxy_env=(env UV_HTTP_PROXY="$_proxy" UV_HTTPS_PROXY="$_proxy")
-
-UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-    "${proxy_env[@]}" \
-    "$GRAPHIFY_UV_BIN" tool run graphify "${args[@]}"
-GRAPHIFFY_SCRIPT
-
-    chmod +x "$cmd_path"
-    print_success "Command created: $cmd_path"
+    print_success "Slash command created: /graphify-update ($cmd_path)"
 }

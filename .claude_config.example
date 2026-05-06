@@ -339,11 +339,14 @@ USE_PII_PROXY=false
 # Установка:         ./iclaude.sh --install-graphify
 # Статус:            ./iclaude.sh --check-graphify
 # Запуск с графом:   ./iclaude.sh --graphify
-# Ручная пересборка: .nvm-isolated/.claude-isolated/commands/graphify
+# В Claude Code: /graphify-update (slash command)
 #
 # Папка для graph.html, GRAPH_REPORT.md, graph.json.
 # Если не задана — используется корень git-репозитория ($PWD если не git-репо).
-# Пример: GRAPHIFY_OUTPUT_DIR=/home/user/graphs/my-project
+# Относительный путь резолвится от корня репозитория (например .graphify → <repo>/.graphify/).
+# Абсолютный путь используется как есть.
+# Пример (относительный): GRAPHIFY_OUTPUT_DIR=.graphify
+# Пример (абсолютный):    GRAPHIFY_OUTPUT_DIR=/home/user/graphs/my-project
 # GRAPHIFY_OUTPUT_DIR=
 
 # Дополнительные аргументы к `graphify .` (через пробел).
