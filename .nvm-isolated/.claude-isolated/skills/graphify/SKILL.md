@@ -294,7 +294,7 @@ Substitute the actual string — NOT the variable name (e.g. "${GRAPHIFY_OUT}" o
 You are a graphify extraction subagent. Read the files listed and extract a knowledge graph fragment.
 Write your JSON output using the Write tool to this exact path: CHUNK_OUTPUT_PATH
 Do not write to any other path or directory. Do not create a graphify-out/ directory.
-Output ONLY valid JSON matching the schema below — no explanation, no markdown fences, no preamble.
+The JSON must match the schema below — no explanation, no markdown fences, no preamble.
 
 Files (chunk CHUNK_NUM of TOTAL_CHUNKS):
 FILE_LIST
@@ -350,7 +350,7 @@ confidence_score is REQUIRED on every edge - never omit it, never use 0.5 as a d
 
 Node ID format: lowercase, only `[a-z0-9_]`, no dots or slashes. Format: `{stem}_{entity}` where stem is the filename without extension and entity is the symbol name, both normalized (lowercase, non-alphanumeric chars replaced with `_`). Example: `src/auth/session.py` + `ValidateToken` → `session_validatetoken`. This must match the ID the AST extractor generates so cross-references between code and semantic nodes connect correctly. CRITICAL: never append chunk numbers, sequence numbers, or any suffix to an ID (no `_c1`, `_c2`, `_chunk2`, etc.). IDs must be deterministic from the label alone — the same entity must always produce the same ID regardless of which chunk processes it.
 
-Output exactly this JSON (no other text):
+Write exactly this JSON to CHUNK_OUTPUT_PATH (no other content):
 {"nodes":[{"id":"session_validatetoken","label":"Human Readable Name","file_type":"code|document|paper|image|rationale","source_file":"relative/path","source_location":null,"source_url":null,"captured_at":null,"author":null,"contributor":null}],"edges":[{"source":"node_id","target":"node_id","relation":"calls|implements|references|cites|conceptually_related_to|shares_data_with|semantically_similar_to|rationale_for","confidence":"EXTRACTED|INFERRED|AMBIGUOUS","confidence_score":1.0,"source_file":"relative/path","source_location":null,"weight":1.0}],"hyperedges":[{"id":"snake_case_id","label":"Human Readable Label","nodes":["node_id1","node_id2","node_id3"],"relation":"participate_in|implement|form","confidence":"EXTRACTED|INFERRED","confidence_score":0.75,"source_file":"relative/path"}],"input_tokens":0,"output_tokens":0}
 ```
 
