@@ -120,7 +120,7 @@ install_graphify() {
         print_warning "graphify install returned non-zero (skill setup optional — continuing)"
     fi
 
-    # Step 4: Create commands/graphiffy
+    # Step 4: Create commands/graphify
     _graphify_install_command || return 1
 
     echo ""
@@ -129,24 +129,24 @@ install_graphify() {
     print_info "Next steps:"
     print_info "  Status:           ./iclaude.sh --check-graphify"
     print_info "  Build graph:      ./iclaude.sh --graphify"
-    print_info "  Manual rebuild:   .nvm-isolated/.claude-isolated/commands/graphiffy"
+    print_info "  Manual rebuild:   .nvm-isolated/.claude-isolated/commands/graphify"
     echo ""
     return 0
 }
 
 #######################################
-# Create commands/graphiffy standalone script.
+# Create commands/graphify standalone script.
 # Returns: 0 on success, 1 on failure
 #######################################
 _graphify_install_command() {
     local commands_dir="${ISOLATED_CONFIG_DIR}/commands"
-    local cmd_path="${commands_dir}/graphiffy"
+    local cmd_path="${commands_dir}/graphify"
 
     mkdir -p "$commands_dir"
 
     cat > "$cmd_path" << 'GRAPHIFFY_SCRIPT'
 #!/usr/bin/env bash
-# commands/graphiffy — ручная пересборка graphify-графа (без запуска claude).
+# commands/graphify — ручная пересборка graphify-графа (без запуска claude).
 # Использует GRAPHIFY_OUTPUT_DIR, GRAPHIFY_EXTRA_ARGS из .claude_config или окружения.
 
 ICLAUDE_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
