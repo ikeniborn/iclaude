@@ -60,17 +60,57 @@ JavaScript:
 
 См. `@shared:syntax-commands.json` для mapping language → syntax check command.
 
-### 5. Определение документации Sphinx
+### 5. Wiki Detection
 
 ```
-Пути для проверки:
-- docs/llms.txt        → has_docs: true, читать для ориентации в проекте
-- docs/llms-full.txt   → полный контент документации для LLM контекста
-- docs/sphinx/conf.py  → Sphinx инициализирован
+Проверить наличие wiki в корне проекта:
+
+IF exists {CWD}/.wiki/.config/domain-map.json:
+  1. Прочитать {CWD}/.wiki/.config/domain-map.json
+     → извлечь список domains[].id
+  2. Прочитать {CWD}/.wiki/.config/index.md
+     → получить перечень документированных страниц
+  3. Skill(skill="llm-wiki", args='query "ключевые компоненты и архитектура проекта"')
+     → добавить синтезированный контекст как wiki_summary
+  4. Добавить в project_context:
+       wiki_initialized: true
+       wiki_domains: [список id из domain-map]
+       wiki_index_path: ".wiki/.config/index.md"
+       wiki_summary: <результат query или null если wiki пустая>
+
+ELSE:
+  wiki_initialized: false
+  wiki_domains: []
+  wiki_index_path: null
+  wiki_summary: null
 ```
 
-**Если `docs/llms.txt` существует:** прочитай его в начале задачи для понимания структуры проекта.
-**Если `docs/llms-full.txt` существует:** используй для глубокого контекста при сложных задачах.
+**Назначение:** Централизует проверку доступности wiki — downstream-навыки используют
+`project_context.wiki_initialized` вместо самостоятельной проверки файла.
+
+### 6. Graph Detection
+
+```
+Проверить наличие knowledge graph в корне проекта:
+
+IF exists {CWD}/.graphify/GRAPH_REPORT.md:
+  Skill(skill="graphify-context")
+  → добавить результат в project_context:
+       graph_initialized: true
+       graph_god_nodes: [из graph_context.god_nodes]
+       graph_communities: graph_context.communities
+       graph_summary: graph_context.graph_summary
+
+ELSE:
+  graph_initialized: false
+  graph_god_nodes: []
+  graph_communities: 0
+  graph_summary: null
+```
+
+**Назначение:** Централизует проверку графа — brainstorming и другие навыки используют
+`project_context.graph_initialized` вместо самостоятельной проверки файлов.
+Дополняет wiki: wiki даёт синтезированную прозу, граф — структурные связи.
 
 ## Output
 
@@ -86,10 +126,16 @@ JavaScript:
     "test_framework": "pytest|jest|go test|none",
     "has_prd": true|false,
     "prd_path": "docs/prd/" | null,
-    "has_docs": true|false,
-    "docs_llms_path": "docs/llms.txt" | null,
     "syntax_command": "@shared:syntax-commands[language].syntax",
-    "code_style": "pep8|prettier|gofmt|none"
+    "code_style": "pep8|prettier|gofmt|none",
+    "wiki_initialized": true|false,
+    "wiki_domains": ["domain-id-1", "domain-id-2"],
+    "wiki_index_path": ".wiki/.config/index.md" | null,
+    "wiki_summary": "синтезированный контекст из wiki" | null,
+    "graph_initialized": true|false,
+    "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
+    "graph_communities": 0,
+    "graph_summary": "структурный контекст из knowledge graph" | null
   }
 }
 ```
@@ -191,7 +237,7 @@ JavaScript:
 
 ---
 
-### Example 4: Bash Script Project (No Framework)
+### Example 4: Bash Script Project — без wiki
 
 **Project structure:**
 ```
@@ -213,7 +259,92 @@ JavaScript:
     "has_prd": false,
     "prd_path": null,
     "syntax_command": "bash -n",
-    "code_style": "none"
+    "code_style": "none",
+    "wiki_initialized": false,
+    "wiki_domains": [],
+    "wiki_index_path": null,
+    "wiki_summary": null
+  }
+}
+```
+
+---
+
+### Example 4b: Bash Script Project — с инициализированной wiki
+
+**Project structure:**
+```
+/home/user/iclaude/
+├── iclaude.sh
+├── lib/
+│   └── proxy/...
+├── docs/
+│   ├── PROXY.md
+│   └── ROUTER.md
+└── .wiki/
+    └── .config/
+        ├── domain-map.json   ← домен "iclaude"
+        └── index.md          ← 12 документированных страниц
+```
+
+**Detection result:**
+```json
+{
+  "project_context": {
+    "language": "bash",
+    "framework": "none",
+    "test_framework": "pytest",
+    "has_prd": false,
+    "prd_path": null,
+    "syntax_command": "bash -n",
+    "code_style": "none",
+    "wiki_initialized": true,
+    "wiki_domains": ["iclaude"],
+    "wiki_index_path": ".wiki/.config/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, изолированная среда NVM, OAuth-обновление токенов, PII-маскирование. Ключевые компоненты: proxy-mgmt, oauth-handler, pii-proxy, router-integration."
+  }
+}
+```
+
+---
+
+### Example 4c: Bash Script Project — с wiki и knowledge graph
+
+**Project structure:**
+```
+/home/user/iclaude/
+├── iclaude.sh
+├── lib/
+├── docs/
+├── .wiki/
+│   └── .config/
+│       ├── domain-map.json   ← домен "iclaude"
+│       └── index.md
+└── .graphify/
+    ├── graph.json            ← 167 nodes · 244 edges
+    ├── GRAPH_REPORT.md       ← god nodes + communities
+    └── cache/ast/
+```
+
+**Detection result:**
+```json
+{
+  "project_context": {
+    "language": "bash",
+    "framework": "none",
+    "test_framework": "pytest",
+    "has_prd": false,
+    "prd_path": null,
+    "syntax_command": "bash -n",
+    "code_style": "none",
+    "wiki_initialized": true,
+    "wiki_domains": ["iclaude"],
+    "wiki_index_path": ".wiki/.config/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, NVM, OAuth, PII-маскирование.",
+    "graph_initialized": true,
+    "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
+    "graph_communities": 8,
+    "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
   }
 }
 ```
@@ -302,8 +433,6 @@ JavaScript:
 ## Changelog
 
 ### 1.2.0 (2026-02-19)
-- Добавлено: определение Sphinx документации (has_docs, docs_llms_path)
-- Автоматическое чтение docs/llms.txt при наличии
 
 ### 1.1.0 (2026-01-25)
 - Добавлено: 5 примеров (Python FastAPI, TypeScript React, Go with PRD, Bash, multi-language)

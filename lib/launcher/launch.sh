@@ -11,9 +11,37 @@
 # Returns:
 #   Does not return (uses exec)
 #######################################
+######################################
+# Sync GRAPHIFY_OUT to settings.json env block so Claude Code's bash tool
+# subshells always inherit the configured value.
+# Without this, ${GRAPHIFY_OUT:-graphify-out} in skill bash blocks falls back
+# to "graphify-out" in fresh bash tool calls that don't inherit exported vars.
+#######################################
+_sync_graphify_env_to_settings() {
+    local settings_file="${ISOLATED_CONFIG_DIR:-}/settings.json"
+    [[ -f "$settings_file" ]] || return 0
+    [[ -z "${GRAPHIFY_OUT:-}" ]] && return 0
+    python3 - "$settings_file" "$GRAPHIFY_OUT" <<'PYEOF'
+import sys, json
+settings_file, graphify_out = sys.argv[1], sys.argv[2]
+with open(settings_file) as f:
+    s = json.load(f)
+env = s.setdefault('env', {})
+if env.get('GRAPHIFY_OUT') == graphify_out:
+    sys.exit(0)
+env['GRAPHIFY_OUT'] = graphify_out
+with open(settings_file, 'w') as f:
+    json.dump(s, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+PYEOF
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
+
+    # Sync GRAPHIFY_OUT into settings.json env block before launch
+    _sync_graphify_env_to_settings
 
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
@@ -436,7 +464,19 @@ launch_claude() {
             exit 1
         fi
 
-        # Copy router config to CCR's expected location
+        # Determine CCR home directory: isolated env takes priority over user home.
+        # CCR has no CCR_HOME env var — it reads os.homedir() / process.env.HOME.
+        # We override HOME for the CCR process so all its state (PID file, logs, config)
+        # stays inside the isolated environment instead of ~/.claude-code-router/.
+        local ccr_home=""
+        if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
+            ccr_home="$ISOLATED_NVM_DIR/.claude-isolated"
+        else
+            ccr_home="$HOME"
+        fi
+        export CCR_HOME="$ccr_home"
+
+        # Copy router config to CCR's expected location inside isolated home
         local router_config=""
         if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
             router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
@@ -445,8 +485,8 @@ launch_claude() {
         fi
 
         if [[ -f "$router_config" ]]; then
-            mkdir -p "$HOME/.claude-code-router"
-            cp "$router_config" "$HOME/.claude-code-router/config.json"
+            mkdir -p "$ccr_home/.claude-code-router"
+            cp "$router_config" "$ccr_home/.claude-code-router/config.json"
             print_info "Using router config: $router_config"
         fi
 
@@ -469,7 +509,7 @@ launch_claude() {
         fi
 
         # Show router version (CCR uses 'ccr -v' or 'ccr version', not '--version')
-        local router_version=$("$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
+        local router_version=$(HOME="$ccr_home" "$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
         if [[ -n "$router_version" ]] && [[ "$router_version" != "unknown" ]]; then
             print_info "Router version: $router_version"
         fi
@@ -499,8 +539,8 @@ launch_claude() {
             # fall through to native claude launch below (exec disabled for combined mode)
             # (do NOT return here — need to reach claude binary detection below)
         else
-            # Solo router mode: standard exec ccr code path
-            exec "$ccr_cmd" code "$@"
+            # Solo router mode: pass isolated HOME so CCR stores state in isolated env
+            HOME="$ccr_home" exec "$ccr_cmd" code "$@"
         fi
     fi
 
@@ -604,10 +644,19 @@ launch_claude() {
         echo ""
     fi
 
+    # Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_MODE) and statusline
+    [[ -n "${CAVEMAN_DEFAULT_MODE:-}" ]] && export CAVEMAN_DEFAULT_MODE
+    [[ -n "${CAVEMAN_STATUSLINE:-}" ]] && export CAVEMAN_STATUSLINE
+
+    # Word-split claude_cmd into an array so multi-word commands like
+    # "node /path/cli.js" (legacy pre-v2.1.114 fallback) execute correctly.
+    # Native-binary path is a single word — splits into one-element array.
+    local -a claude_cmd_arr
+    read -ra claude_cmd_arr <<< "$claude_cmd"
+
     # Launch Claude Code
     # When PII proxy is active: cannot use exec — EXIT trap would fire before the
     # new process starts, killing the proxy before claude makes its first API call.
-    # BUG-10: removed eval (double-quoted variables handle spaces in paths correctly)
     if [[ "$use_pii_proxy" == "true" ]]; then
         # Combined mode (PII + router): both servers already started above in router block.
         # Solo PII proxy mode: start proxy now.
@@ -620,42 +669,84 @@ launch_claude() {
             trap 'stop_pii_proxy_server' EXIT INT TERM
         fi
         # In combined mode trap was already set (stop_pii_proxy_server + stop_ccr_server)
-        "$claude_cmd" "$@"
+        "${claude_cmd_arr[@]}" "$@"
         exit $?
     fi
 
     # Standard exec path: replace shell process (no cleanup needed)
-    # Double-quoted variable handles spaces in path correctly without eval.
-    exec "$claude_cmd" "$@"
+    exec "${claude_cmd_arr[@]}" "$@"
 }
 
 #######################################
 # Cleanup orphaned PII proxy processes from terminated sessions.
-# Removes stale per-session PID and port files when the associated process is gone.
-# Called at the start of start_pii_proxy_server() to keep the log dir tidy.
+# Removes stale per-session PID and port files when the associated process is gone
+# or the PID has been recycled by an unrelated process. Also sweeps dead legacy
+# PID files from the root of ISOLATED_CONFIG_DIR (pre-PII_PROXY_PID_DIR layout);
+# live legacy files are left untouched so their owning sessions can still find
+# them via the exported PII_PROXY_PID_FILE env var on exit.
+# Called at the start of start_pii_proxy_server() to keep the config dir tidy.
 #######################################
 cleanup_orphaned_pii_proxies() {
     local dir="${ISOLATED_CONFIG_DIR:-}"
     [[ -z "$dir" ]] || [[ ! -d "$dir" ]] && return 0
 
+    local pid_dir="${PII_PROXY_PID_DIR:-$dir/pii-proxy-pid}"
+    local log_dir="${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}"
+
+    # Ensure the dedicated PID directory exists before use
+    mkdir -p "$pid_dir" 2>/dev/null
+    chmod 700 "$pid_dir" 2>/dev/null
+
+    # Legacy sweep: pre-PII_PROXY_PID_DIR layouts placed PID files directly at the
+    # root of ISOLATED_CONFIG_DIR as pii-proxy-<SID>.pid. We DO NOT move live legacy
+    # files into $pid_dir — the sessions that wrote them still hold the old path in
+    # their exported PII_PROXY_PID_FILE env var, so relocating would make their
+    # stop_pii_proxy_server trap miss the file on exit and leak the server. Instead
+    # we just drop dead legacy entries here; live ones drain naturally as those
+    # sessions terminate.
+    local legacy_dropped=0
+    for legacy_pid_file in "$dir"/pii-proxy-*.pid; do
+        [[ -f "$legacy_pid_file" ]] || continue
+        local lbn="${legacy_pid_file##*/}"                 # pii-proxy-<SID>.pid
+        local lsid="${lbn#pii-proxy-}"; lsid="${lsid%.pid}"
+        local lpid lalive=false
+        lpid=$(cat "$legacy_pid_file" 2>/dev/null)
+        if [[ -n "$lpid" ]] && kill -0 "$lpid" 2>/dev/null && \
+           ps -p "$lpid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+            lalive=true
+        fi
+        if [[ "$lalive" != "true" ]]; then
+            rm -f "$legacy_pid_file"
+            rm -f "$log_dir/pii-proxy-${lsid}.port"
+            legacy_dropped=$((legacy_dropped + 1))
+        fi
+    done
+    [[ $legacy_dropped -gt 0 ]] && print_info "PII proxy: dropped $legacy_dropped legacy orphan PID file(s)"
+
+    # Sweep new PID directory: remove entries whose process is gone OR whose PID
+    # has been recycled for an unrelated command.
     local cleaned_sessions=0
-    for pid_file in "$dir"/pii-proxy-*.pid; do
+    for pid_file in "$pid_dir"/*.pid; do
         [[ -f "$pid_file" ]] || continue
         local pid
         pid=$(cat "$pid_file" 2>/dev/null)
-        if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
-            # Dead process — extract session ID from filename and remove both files
-            local bn="${pid_file##*/}"                    # pii-proxy-<SID>.pid
-            local sid="${bn#pii-proxy-}"; sid="${sid%.pid}"
+        local alive=false
+        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+            if ps -p "$pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+                alive=true
+            fi
+        fi
+        if [[ "$alive" != "true" ]]; then
+            local bn="${pid_file##*/}"                    # <SID>.pid
+            local sid="${bn%.pid}"
             rm -f "$pid_file"
-            rm -f "${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}/pii-proxy-${sid}.port"
+            rm -f "$log_dir/pii-proxy-${sid}.port"
             cleaned_sessions=$((cleaned_sessions + 1))
         fi
     done
 
     # Rotate session log files older than PII_LOG_RETENTION_DAYS (default: 7 days).
     # access.log and ccr-daemon.log are persistent aggregates — never rotated here.
-    local log_dir="${PII_PROXY_LOG_DIR:-$dir/pii-proxy-logs}"
     local log_retention="${PII_LOG_RETENTION_DAYS:-7}"
     local cleaned_logs=0
     if [[ -d "$log_dir" ]]; then
@@ -764,6 +855,42 @@ except Exception:
 ' "$port" 2>/dev/null
     }
 
+    # Guard: if ICLAUDE_SESSION_ID was inherited from a parent iclaude session (e.g.
+    # when this script is invoked as a subprocess via Claude Code's Bash tool) and that
+    # parent already owns a live PII proxy, we must NOT start a second proxy for the same
+    # SID. Doing so would overwrite the parent's PID file, causing the parent to lose
+    # track of its proxy (leaked process) and the sub-session to kill the wrong PID on exit.
+    # Instead, reuse the parent's proxy: inherit ANTHROPIC_BASE_URL and skip startup.
+    #
+    # Exception: combined mode (PII+CCR) — this session started a CCR daemon
+    # (CCR_SESSION_OWNED=true) and needs a FRESH PII proxy to chain PII→CCR→providers.
+    # Reusing the parent's proxy would bypass CCR entirely because the parent proxy's
+    # upstream was baked in at its startup and cannot be changed retroactively.
+    if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && [[ -f "$PII_PROXY_PID_FILE" ]]; then
+        local _existing_pid
+        _existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
+        if [[ -n "$_existing_pid" ]] && kill -0 "$_existing_pid" 2>/dev/null && \
+           ps -p "$_existing_pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+            # Live proxy found for our SID — reuse it (ANTHROPIC_BASE_URL already set by parent)
+            local _existing_port
+            _existing_port=$(cat "${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port" 2>/dev/null || echo "")
+            if [[ -n "$_existing_port" && "$_existing_port" =~ ^[0-9]+$ ]]; then
+                PII_PROXY_ACTIVE_PORT="$_existing_port"
+                export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_ACTIVE=1
+                export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
+                export ICLAUDE_PII_ACTIVE_PORT="${PII_PROXY_ACTIVE_PORT}"
+                export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
+                export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/${ICLAUDE_SESSION_ID}.log"
+                # Mark as NOT owned by this sub-session so stop_pii_proxy_server won't kill it
+                PII_PROXY_SESSION_OWNED=false
+                print_info "PII proxy: reusing parent session proxy on :$PII_PROXY_ACTIVE_PORT (PID $_existing_pid)"
+                unset -f _pii_proxy_http_health
+                return 0
+            fi
+        fi
+    fi
+
     # Cleanup orphaned proxies from previous (terminated) sessions
     cleanup_orphaned_pii_proxies
 
@@ -786,7 +913,9 @@ except Exception:
     local port_file="${PII_PROXY_LOG_DIR}/pii-proxy-${ICLAUDE_SESSION_ID}.port"
     local upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
 
-    # Remove stale port file from any previous run with the same session ID (paranoia)
+    # Remove stale port file from any previous run with the same session ID (paranoia).
+    # Safe to do only here because the inherited-SID guard above already returned early
+    # if a live proxy owns this port file.
     rm -f "$port_file"
     # BUG-4R4-9: chmod 700 — restrict log dir to current user only
     mkdir -p "$PII_PROXY_LOG_DIR"
@@ -912,7 +1041,7 @@ start_ccr_server() {
     # Note: PATH must already include node v20+ before this function is called
     # (launch_claude() prepends v20 bin to PATH before invoking start_ccr_server).
     print_info "CCR router: starting daemon on ${CCR_HOST}:${CCR_PORT}..."
-    nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
+    HOME="${CCR_HOME:-$HOME}" nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
     CCR_PID=$!
     CCR_SESSION_OWNED=true
     export CCR_PID CCR_SESSION_OWNED
@@ -977,9 +1106,15 @@ stop_ccr_server() {
 
 #######################################
 # Stop PII proxy server (trap cleanup on EXIT/INT/TERM)
-# Each session owns its own proxy process — always safe to kill on exit.
+# Only kills the proxy if this session started it (PII_PROXY_SESSION_OWNED=true).
+# Sub-sessions that reused a parent's proxy set PII_PROXY_SESSION_OWNED=false and
+# must not kill or clean up the shared proxy.
 #######################################
 stop_pii_proxy_server() {
+    # Do not kill proxy started by a parent session (inherited SID reuse path)
+    if [[ "${PII_PROXY_SESSION_OWNED:-}" == "false" ]]; then
+        return 0
+    fi
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
         local pid
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)

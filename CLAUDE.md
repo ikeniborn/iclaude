@@ -4,46 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**iclaude** is a bash-based wrapper script for launching Claude Code with automatic HTTP/HTTPS proxy configuration. It provides both isolated (portable) and system-wide installation modes, with secure credential storage and automatic environment setup.
+**iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), and Graphify knowledge graph.
 
-Key features: isolated env (`.nvm-isolated/`), proxy management, version locking, OAuth auto-refresh, Claude Code Router, two-layer security hooks, PII proxy (Presidio NLP), microVM sandbox (Firecracker, virtio-blk+SSH, full kernel isolation).
+Key paths: `.nvm-isolated/` (isolated env), `lib/` (16 bash modules), `docs/` (feature docs).
 
-See [README.md](README.md) for full feature list.
+See [README.md](README.md) for the full feature list.
 
-## Quick Start
+## Commands
 
-```bash
-# Clone and install
-git clone <repo-url> && cd iclaude
-./iclaude.sh --isolated-install
-./iclaude.sh
-
-# With proxy
-./iclaude.sh --proxy https://user:pass@proxy.example.com:8118
-
-# With router (alternative LLM providers)
-./iclaude.sh --install-router
-./iclaude.sh --router
-```
-
-## Development Workflow
-
-### Daily Commands
+### Daily
 
 ```bash
 ./iclaude.sh                    # Launch with saved settings
 ./iclaude.sh --no-proxy         # Launch without proxy
-./iclaude.sh --no-chrome        # Launch without Chrome integration
-./iclaude.sh --update           # Update Claude Code
+./iclaude.sh --update           # Update Claude Code (npm + lockfile)
 ```
 
-### Testing and Validation
+### Testing
 
 ```bash
 ./iclaude.sh --test             # Test proxy configuration
 ./iclaude.sh --check-isolated   # Check isolated environment status
-./iclaude.sh --check-config     # Check configuration status
-./iclaude.sh --refresh-token    # Refresh OAuth token manually
 bash -n iclaude.sh              # Validate script syntax
 
 # Security hooks test suite (28 tests)
@@ -52,25 +33,18 @@ python3 -m pytest tests/test_patterns_examples.py -v
 # Test block-secrets hook (should print "BLOCKED" and exit 2)
 echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
   | python3 .nvm-isolated/.claude-isolated/hooks/block-secrets.py; echo "exit: $?"
-
-# Test redact-secrets hook (should return toolInputOverride with masked content)
-echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVabcdef"}}' \
-  | python3 .nvm-isolated/.claude-isolated/hooks/redact-secrets.py
 ```
 
-### Installation Management
+### Installation
 
 ```bash
-./iclaude.sh --install-from-lockfile  # Install from lockfile (exact versions)
-./iclaude.sh --repair-isolated        # Repair symlinks after git clone
-./iclaude.sh --cleanup-isolated       # Clean up isolated environment
+./iclaude.sh --isolated-install       # First-time install
+./iclaude.sh --repair-isolated        # After git clone: download native binary + repair symlinks
+./iclaude.sh --install-from-lockfile  # Install exact versions from lockfile
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
-./iclaude.sh --check-lsp              # Check LSP server status
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
-./iclaude.sh --pii-proxy              # Launch with PII masking enabled
-./iclaude.sh --pii-proxy --router     # Combined: PII masking + CCR router
-./iclaude.sh --install-microvm        # Install Firecracker + vmlinux + rootfs + nvm.img (~1.4GB)
-./iclaude.sh --check-microvm          # Check KVM, images, TAP, SSH key status
+./iclaude.sh --install-graphify       # Install Graphify (uv + Python 3.12 + graphifyy)
+./iclaude.sh --install-microvm        # Install Firecracker (~1.4GB)
 ./iclaude.sh --sandbox-microvm        # Launch with microVM kernel isolation
 ```
 
@@ -79,86 +53,84 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.txt","content":"key=s
 | Feature | Docs |
 |---------|------|
 | Proxy Management (HTTPS/HTTP, CA certs) | [docs/PROXY.md](docs/PROXY.md) |
-| Router Integration (OpenRouter, DeepSeek, Ollama…) | [docs/ROUTER.md](docs/ROUTER.md) |
+| Router Integration (OpenRouter, DeepSeek, Ollama) | [docs/ROUTER.md](docs/ROUTER.md) |
 | PII Proxy (Presidio NLP, SSE streaming) | [docs/PII_MASKING.md](docs/PII_MASKING.md) |
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
 | microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
-| OAuth Token Management (auto-refresh, ~1yr tokens) | `lib/oauth/token.sh` |
-| Isolated Environment (NVM+Node.js in `.nvm-isolated/`) | `lib/nvm/` |
+| Graphify Knowledge Graph (uv, Python 3.12, graphifyy) | `lib/graphify/` |
+| OAuth Token Management | `lib/oauth/token.sh` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
-| LSP Integration | @skill:lsp-integration |
-| Migration Roadmap (npm → native installer) | [docs/MIGRATION.md](docs/MIGRATION.md) |
 
 ## Security Hooks (PreToolUse)
 
-Two-layer protection active during all Claude Code sessions. Configured in `settings.json` via `$CLAUDE_CONFIG_DIR` (exported by iclaude.sh, portable across machines and projects).
+Two-layer protection. Configured in `settings.json` via `$CLAUDE_CONFIG_DIR`.
 
-**Layer 1: `block-secrets.py`** — File path blocker (exit 2 = block tool)
+**Layer 1: `block-secrets.py`** — blocks file access (exit 2)
 
 | Pattern | Action |
 |---------|--------|
-| `.env`, `.env.local`, `.env.production` | Blocked |
-| `.pem`, `.key`, `.p12`, `.pfx` | Blocked |
+| `.env`, `.pem`, `.key`, `.p12`, `.pfx` | Blocked |
 | `.ssh/`, `.gnupg/` | Blocked |
-| `.env.example`, `.env.sample`, `.env.template` | Allowed |
+| `.env.example`, `.env.sample` | Allowed |
 | `.nvm-isolated/.claude-isolated/hooks/` | Allowed (self-exclusion) |
 
-**Layer 2: `redact-secrets.py`** — Content redactor (`toolInputOverride`)
+**Layer 2: `redact-secrets.py`** — redacts content (`toolInputOverride`)
 
 | Pattern | Replacement |
 |---------|-------------|
-| Anthropic/OpenAI keys (`sk-ant-...`, `sk-proj-...`) | `[ANTHROPIC_API_KEY]` |
-| AWS Access Key (`AKIA[0-9A-Z]{16}`) | `[AWS_ACCESS_KEY_ID]` |
-| GitHub tokens (`ghp_`, `github_pat_`) | `[GITHUB_TOKEN]` |
-| JWT tokens (`eyJ...`) | `[JWT_REDACTED]` |
-| URL credentials (`scheme://user:pass@host`) | `[CREDENTIALS_REDACTED]` |
-| Password assignments | `[PASSWORD_REDACTED]` |
-| `.env` variables (`VAR_WITH_KEY=value{20+}`) | `[ENV_VAR_REDACTED]` |
+| `sk-ant-...`, `sk-proj-...` | `[ANTHROPIC_API_KEY]` |
+| `AKIA[0-9A-Z]{16}` | `[AWS_ACCESS_KEY_ID]` |
+| `ghp_`, `github_pat_` | `[GITHUB_TOKEN]` |
+| `eyJ...` (JWT) | `[JWT_REDACTED]` |
+| `scheme://[CREDENTIALS]@host` | `[CREDENTIALS_REDACTED]` |
+| `.env` vars (`KEY=value{20+}`) | `[ENV_VAR_REDACTED]` |
 | PEM private keys | `[PRIVATE_KEY_REDACTED]` |
 
-**Note:** `Edit.old_string` is NOT redacted (search pattern — masking would break Edit).
-
-```json
-{
-  "hooks": { "PreToolUse": [
-    {"matcher": "Read|Edit|Write|MultiEdit|Bash",
-     "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/block-secrets.py\""}]},
-    {"matcher": "Write|Edit|MultiEdit|Bash",
-     "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""}]}
-  ]}
-}
-```
+`Edit.old_string` is NOT redacted — it is a search pattern; masking would break the Edit tool.
 
 ## Isolation Mechanisms
 
-**Two independent isolation mechanisms:**
-- `CLAUDE_CONFIG_DIR` isolation (always active) → config goes to `.nvm-isolated/.claude-isolated/`
-- microVM (Firecracker) — kernel-level isolation via `--sandbox-microvm` (see [docs/MICROVM.md](docs/MICROVM.md))
+- `CLAUDE_CONFIG_DIR` isolation (always active) — config in `.nvm-isolated/.claude-isolated/`
+- microVM (Firecracker) — kernel-level isolation via `--sandbox-microvm`
 
-Note: bubblewrap (bwrap) sandbox was removed in 2026-03 due to an upstream bug where it created 0-byte read-only stub files in `.claude/` of other open projects. microVM is the exclusive OS-level isolation mechanism.
+bubblewrap (bwrap) was removed (2026-03) because it created 0-byte read-only stub files in `.claude/` of other open projects.
 
-Security hooks work independently of isolation — see [Security Hooks](#security-hooks-pretooluse).
+## Notes
 
-## Important Notes
+### Native Binary (since v2.1.114)
+
+Claude Code uses a native binary (`bin/claude.exe`, ~237MB) excluded from git (exceeds GitHub 100MB limit).
+
+After `git clone`, run `--repair-isolated` to download the binary via `npm install` + postinstall. Without it, detection falls through to the legacy `cli.js` path, or fails with a clear error.
+
+Detection order (`lib/nvm/detect.sh::get_nvm_claude_path()`):
+1. `$npm_prefix/bin/claude` (symlink)
+2. `bin/claude.exe` (native binary, v2.1.114+)
+3. `cli.js` via `node` (legacy pre-v2.1.114)
 
 ### Chrome Integration
 
-Chrome integration is **DISABLED BY DEFAULT**. Enable: `./iclaude.sh --chrome`
+DISABLED BY DEFAULT — requires paid plan + Chrome extension v1.0.36+ + Claude Code CLI v2.0.73+; enabling without these causes startup errors.
 
-Requirements: Chrome running + Claude in Chrome extension v1.0.36+ + Claude Code CLI v2.0.73+ + paid plan.
+```bash
+./iclaude.sh --chrome    # Enable Chrome integration
+./iclaude.sh --no-chrome # Disable explicitly
+```
 
 ### Tasks System
 
-Tasks system is **ENABLED BY DEFAULT** via `CLAUDE_CODE_ENABLE_TASKS=true`.
-Disable: `CLAUDE_CODE_ENABLE_TASKS=false ./iclaude.sh`
+ENABLED BY DEFAULT. Disable only if the tasks UI conflicts with your workflow:
 
-### Plan Directory Configuration
+```bash
+CLAUDE_CODE_ENABLE_TASKS=false ./iclaude.sh
+```
 
-Plans saved to `docs/plans/` (local, versioned) via `.claude/settings.json`:
+### Plans Directory
+
+Plans saved to `docs/plans/` via `.claude/settings.json`:
 ```json
 { "plansDirectory": "docs/plans" }
 ```
-See [docs/plans/README.md](docs/plans/README.md).
 
 ### Configuration Best Practices
 
@@ -167,31 +139,33 @@ See [docs/plans/README.md](docs/plans/README.md).
 - Verify lockfile after `--update`
 - Test proxy with `--test` before launching
 
-## Code Architecture
+## Architecture
 
-**Version 4.0** — modular bash in `lib/` (15 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy).
+**Version 4.0** — modular bash in `lib/` (17 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify).
 
-For implementation details: **@skill:iclaude-architecture** | **@skill:iclaude-commands**
+Source order: Phase 0 (core) → Phase 2–8.1 (feature modules) → Phase 14 (command dispatch).
 
-## Related Skills
+Key exports (set by `lib/core/init.sh` + `lib/nvm/setup.sh`):
+- `ISOLATED_NVM_DIR` — `.nvm-isolated/`
+- `CLAUDE_CONFIG_DIR` — exported before Claude launch; used by hooks
+- `NPM_CONFIG_PREFIX` — `$ISOLATED_NVM_DIR/npm-global`
 
-- **@skill:iclaude-architecture** — Code architecture and implementation details
-- **@skill:iclaude-commands** — Command reference and usage examples
-- **@skill:lsp-integration** — Language Server Protocol integration
-- **@skill:git-workflow** — Git commit message generation and PR creation
+When modifying `lib/` modules, invoke **@skill:iclaude-architecture** first.
 
 ## Security Considerations
 
-1. **Credential Storage:** `.claude_config` uses chmod 600; never committed to git
-2. **Configuration Template:** `.claude_config.example` — safe template; copy → `.claude_config` and fill secrets
-3. **HTTPS Proxy:** Prefer `--proxy-ca` over `--proxy-insecure`
-4. **Proxy Trust:** Only trusted proxy servers (MitM risk with `undici` ProxyAgent)
-5. **TLS Verification:** `undici` does not verify target server certs when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
-6. **Router API Keys:** Store in `.claude_config` as `export DEEPSEEK_API_KEY=...`; referenced in `router.json` via `${VAR}` placeholders
-7. **Security Hooks:** `block-secrets.py` + `redact-secrets.py` use `$CLAUDE_CONFIG_DIR` — work in any project, safe to commit
-8. **PII Proxy:** All API traffic masked before Anthropic servers; runs on localhost only (127.0.0.1)
-9. **CCR + Anthropic:** CCR cannot use OAuth token (`sk-ant-oat01-...`); requires real API key (`sk-ant-api03-...`) from `console.anthropic.com`
+1. `.claude_config` — chmod 600, never committed; use `.claude_config.example` as template
+2. Prefer `--proxy-ca` over `--proxy-insecure`
+3. `undici` does not verify target server certs when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
+4. Router API keys: store in `.claude_config` as `export DEEPSEEK_API_KEY=...`
+5. PII Proxy runs on localhost only (127.0.0.1)
+6. CCR requires real API key (`sk-ant-api03-...`), not OAuth token (`sk-ant-oat01-...`)
 
-## Docs for LLM
+## Skills
 
-Используй @skill:context-awareness для работы с документацией каждый раз когда требуется информация по проекту.
+Before answering questions about this project, invoke **@skill:context-awareness** to load relevant docs.
+
+- **@skill:iclaude-architecture** — implementation details of `lib/` modules
+- **@skill:iclaude-commands** — CLI command reference
+- **@skill:lsp-integration** — LSP integration
+- **@skill:git-workflow** — commit messages and PR creation

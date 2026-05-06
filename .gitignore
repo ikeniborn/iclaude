@@ -1,6 +1,9 @@
 # Working directory (should not be in repository)
 /opt/vless/
 
+# Graphify generated output
+graphify-out/
+
 # Python cache (global)
 __pycache__/
 *.pyc
@@ -85,16 +88,23 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/skills/**
 !.nvm-isolated/.claude-isolated/agents/
 !.nvm-isolated/.claude-isolated/agents/**
-!.nvm-isolated/.claude-isolated/task-lite-template-v4.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v5.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v6.0.md
-!.nvm-isolated/.claude-isolated/task-lite-template-v7.0.md
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**
 !.nvm-isolated/.claude-isolated/commands/
 !.nvm-isolated/.claude-isolated/commands/**
+!.nvm-isolated/.claude-isolated/plugins/
+!.nvm-isolated/.claude-isolated/plugins/**
+# Exclude plugin cache and marketplace dirs (contain nested git repos, regenerable via install)
+.nvm-isolated/.claude-isolated/plugins/cache/
+.nvm-isolated/.claude-isolated/plugins/marketplaces/
+.nvm-isolated/.claude-isolated/plugins/data/
+# Exclude plugin runtime state (contains absolute paths, machine-specific, regenerated on install)
+.nvm-isolated/.claude-isolated/plugins/installed_plugins.json
+.nvm-isolated/.claude-isolated/plugins/known_marketplaces.json
+.nvm-isolated/.claude-isolated/plugins/install-counts-cache.json
+!.nvm-isolated/.claude-isolated/CLAUDE.md
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
 .nvm-isolated/.claude-isolated/hooks/__pycache__/
 .nvm-isolated/.claude-isolated/hooks/**/*.pyc
@@ -129,6 +139,9 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/
 !.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/**
 
+# Exclude large binaries exceeding GitHub's 100MB limit
+.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe
+
 # Keep only package structure
 !.nvm-isolated/npm-global/lib/.gitkeep
 
@@ -155,14 +168,6 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Test fixtures with mock secrets (not committed)
 tests/fixtures/
-
-# Sphinx documentation build output (generated, not committed)
-# docs/sphinx/_build/ contains HTML/CSS/JS artifacts — not part of LLM context
-docs/_build/
-docs/sphinx/_build/
-
-# Python venv for Sphinx (generated, not committed)
-.nvm-isolated/.python-docs/
 
 # Claude Code Agent Workspace
 .claude/workspace/

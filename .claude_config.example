@@ -19,15 +19,15 @@
 # Адрес прокси-сервера.
 # Форматы:
 #   https://host:port                    — без аутентификации
-#   https://user:password@host:port      — с логином/паролем
-#   http://user:password@host:port       — HTTP прокси (хуже для OAuth)
+#   https://[CREDENTIALS]@host:port      — с логином/паролем
+#   http://[CREDENTIALS]@host:port       — HTTP прокси (хуже для OAuth)
 #
 # HTTPS прокси рекомендуется: сохраняет доменные имена для OAuth/TLS.
 # HTTP прокси не рекомендуется: проблемы с TLS-сертификатами Anthropic.
 # SOCKS5 не поддерживается: вызывает сбой в undici (Node.js HTTP-клиент).
 #
 # По умолчанию: не задан (прокси не используется).
-# Устанавливается через: ./iclaude.sh --proxy https://user:pass@proxy:8118
+# Устанавливается через: ./iclaude.sh --proxy https://[CREDENTIALS]@proxy:8118
 PROXY_URL=
 
 # Отключить проверку TLS-сертификата прокси-сервера.
@@ -138,6 +138,43 @@ CLAUDE_CODE_DISABLE_1M_CONTEXT=
 # По умолчанию: не задан (experimental betas включены)
 CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 
+# Разрешить Claude Code пропускать подтверждение опасных операций (bypass permissions).
+# true  — передаёт --dangerously-skip-permissions при запуске (аналог флага --no-save)
+# false — безопасный режим (по умолчанию, подтверждение требуется)
+#
+# ВАЖНО: включайте только в автоматизированных/доверенных средах.
+# Флаг --no-save в командной строке всегда имеет приоритет над этой переменной.
+CLAUDE_CODE_SKIP_PERMISSIONS=false
+
+# ============================================================
+#  OAUTH ТОКЕН
+# ============================================================
+# OAuth токен для аутентификации Claude Code.
+# Получается после авторизации: claude login → "Store this token securely"
+# или через: claude setup-token
+#
+# Если задан — используется вместо .credentials.json для аутентификации.
+# Полезно когда .credentials.json недоступен или для headless-серверов.
+#
+# Формат: sk-ant-oat01-... (OAuth subscription token)
+# По умолчанию: не задан (используется .credentials.json)
+CLAUDE_CODE_OAUTH_TOKEN=
+
+# Порог автоматического обновления OAuth токена (в секундах).
+# Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
+#
+# По умолчанию: 604800 (7 дней)
+# Минимальное рекомендуемое значение: 86400 (1 день)
+# Максимальное разумное значение: 2592000 (30 дней)
+#
+# Примеры:
+#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
+#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
+#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
+#
+# Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
+# TOKEN_REFRESH_THRESHOLD=
+
 # ============================================================
 #  ROUTER: API-КЛЮЧИ LLM-ПРОВАЙДЕРОВ
 # ============================================================
@@ -157,13 +194,13 @@ CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 # ВАЖНО: OAuth токен подписки (sk-ant-oat01-...) НЕ принимается api.anthropic.com.
 #   CCR требует обычный API ключ. Без него используйте Ollama/DeepSeek/OpenRouter.
 # Получить ключ: https://console.anthropic.com/settings/keys
-# Формат: sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export ANTHROPIC_API_KEY=
 
 # --- DeepSeek ---
 # Используется в router.json.example (провайдер по умолчанию)
 # Получить ключ: https://platform.deepseek.com/api_keys
-# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export DEEPSEEK_API_KEY=
 
 # --- OpenRouter ---
@@ -171,14 +208,14 @@ export DEEPSEEK_API_KEY=
 # Используется в router.json.example
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://openrouter.ai/keys
-# Формат: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export OPENROUTER_API_KEY=
 
 # --- Google Gemini ---
 # Используется в router.json.example (gemini-2.5-pro для длинного контекста)
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://aistudio.google.com/app/apikey
-# Формат: AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [GOOGLE_API_KEY]
 export GOOGLE_API_KEY=
 
 # --- Groq (опционально) ---
@@ -198,7 +235,7 @@ export VOLCENGINE_API_KEY=
 # Китайская платформа: Qwen, DeepSeek, GLM через OpenAI-совместимый API.
 # Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://cloud.siliconflow.cn/account/ak
-# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Формат: [API_KEY_REDACTED]
 export SILICONFLOW_API_KEY=
 
 # ============================================================
@@ -294,6 +331,50 @@ USE_PII_PROXY=false
 # ------------------------------------------------------------
 
 # ============================================================
+#  GRAPHIFY (граф знаний кодовой базы)
+# ============================================================
+# Graphify строит queryable-граф из кода, документов, схем.
+# Используется как Claude Code skill (/graphify query "...").
+#
+# Установка:         ./iclaude.sh --install-graphify
+# Статус:            ./iclaude.sh --check-graphify
+# Запуск с графом:   ./iclaude.sh --graphify
+# В Claude Code: /graphify-update (slash command)
+#
+# Директория вывода графа (graphifyy library + /graphify skill).
+# Относительный путь: <project_root>/<GRAPHIFY_OUT>/
+# Абсолютный путь: записывается напрямую.
+# По умолчанию: graphify-out
+# Пример: GRAPHIFY_OUT=.graphify
+# GRAPHIFY_OUT=
+
+# Дополнительные аргументы к `graphify update` (через пробел).
+# Пример: --force (перезаписать даже если нод стало меньше)
+# GRAPHIFY_EXTRA_ARGS=
+
+# --- Семантическая экстракция: бэкенд LLM ---
+# Без ключей graphify использует Claude субагентов (по умолчанию, дороже).
+# Приоритет: kimi > ollama > claude субагенты.
+
+# Moonshot Kimi K2.6 — в 3x дешевле Claude, граф богаче.
+# Установка: pip install 'graphifyy[kimi]'
+# Получить ключ: https://platform.moonshot.cn
+# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export MOONSHOT_API_KEY=
+
+# Ollama — локальная модель (бесплатно, без интернета).
+# Требует: запущенный Ollama (https://ollama.com) + нужная модель скачана.
+# OLLAMA_BASE_URL задаёт endpoint; без него Ollama-бэкенд не активируется.
+#
+# Примеры моделей:
+#   kimi-k2.6:cloud  — Kimi через Ollama (облачная версия, требует интернет)
+#   qwen2.5-coder:14b — локальная, хорошо следует JSON-инструкциям
+#   qwen2.5-coder:7b  — быстрее, меньше памяти (дефолт graphify)
+#
+# export OLLAMA_BASE_URL=http://localhost:11434/v1
+# export OLLAMA_MODEL=kimi-k2.6:cloud
+
+# ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================
 # Запускает Claude Code ВНУТРИ Firecracker guest VM по SSH.
@@ -364,7 +445,7 @@ MICRO_VM_ENABLED=false
 # /26 → 31 concurrent сессии; /28 → 7; /30 → 1.
 # По умолчанию: 172.16.0.0/26
 # MICRO_VM_NET_SUBNET=172.16.0.0/26
-#
+
 # Использовать снэпшоты для быстрого старта VM.
 # true  — повторный запуск ~125ms (снэпшот восстанавливается)
 # false — каждый запуск холодный ~1-2s (без снэпшота)
@@ -471,6 +552,184 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_SYNC_INTERVAL=0
 
 # ============================================================
+#  ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ CLAUDE CODE
+# ============================================================
+# Переменные Claude Code, используемые при запуске процесса.
+# Все переменные передаются в окружение Claude Code автоматически
+# при старте через iclaude.sh.
+
+# --- API / Сеть ---
+
+# Переопределить endpoint API Anthropic (кастомный gateway, локальный прокси).
+# По умолчанию: https://api.anthropic.com
+# Пример: ANTHROPIC_BASE_URL=http://localhost:8080/proxy/anthropic
+# export ANTHROPIC_BASE_URL=
+
+# Альтернативный токен аутентификации для корпоративных AI-gateway.
+# Используется когда gateway не принимает стандартный ANTHROPIC_API_KEY.
+# export ANTHROPIC_AUTH_TOKEN=
+
+# Дополнительные CA-сертификаты для Node.js (корпоративные PKI).
+# Если используется PROXY_CA — устанавливается автоматически, задавать вручную не нужно.
+# Задайте вручную только если CA нужен без прокси (независимый от PROXY_CA сценарий).
+# Пример: NODE_EXTRA_CA_CERTS=/etc/ssl/certs/corporate-ca.crt
+# export NODE_EXTRA_CA_CERTS=
+
+# --- Контекст / Память ---
+
+# Лимит контекстного окна в токенах.
+# По умолчанию: максимум модели (200K для claude-sonnet-4-6).
+# Уменьшите для экономии или при работе с ограниченными провайдерами.
+# CLAUDE_CODE_MAX_CONTEXT_TOKENS=
+
+# Отключить автоматическую память (сохранение контекста между сессиями).
+# 1 — отключить (каждая сессия начинается с чистого листа)
+# CLAUDE_CODE_DISABLE_AUTO_MEMORY=
+
+# Переопределить размер окна для авто-компакции контекста.
+# По умолчанию: зависит от модели (обычно 80% от MAX_CONTEXT_TOKENS).
+# CLAUDE_CODE_AUTO_COMPACT_WINDOW=
+
+# Порог авто-компакции в % заполнения контекста (0–100).
+# По умолчанию: ~95. Уменьшите если компакция происходит слишком поздно.
+# CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=
+
+# --- Производительность ---
+
+# Максимальное число параллельных вызовов инструментов.
+# По умолчанию: 10. Уменьшите при проблемах с rate-limit провайдера.
+# CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY=
+
+# Лимит вывода Bash-инструмента в символах.
+# По умолчанию: 30000. Увеличьте для длинных логов.
+# BASH_MAX_OUTPUT_LENGTH=
+
+# Лимит токенов при чтении файлов (Read tool).
+# По умолчанию: зависит от модели. Уменьшите для сокращения расхода токенов.
+# CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS=
+
+# Бюджет токенов при extended thinking (работает только с DISABLE_ADAPTIVE_THINKING=1).
+# По умолчанию: 10000. Используйте с Opus/Sonnet 4.6 в режиме фиксированного бюджета.
+# MAX_THINKING_TOKENS=
+
+# --- Дисплей / UI ---
+
+# Скрыть рабочую директорию в логотипе при запуске.
+# 1 — скрыть (полезно в shared/demo окружениях)
+# CLAUDE_CODE_HIDE_CWD=
+
+# Компактный режим вывода (сокращённые сообщения).
+# 1 — включить
+# CLAUDE_CODE_BRIEF=
+
+# Множитель скорости прокрутки терминала (float, 0.1–20).
+# По умолчанию: 3 в Windows Terminal, 1 иначе.
+# CLAUDE_CODE_SCROLL_SPEED=
+
+# Сохранять truecolor под tmux (предотвращает деградацию до 256 цветов).
+# 1 — включить
+# CLAUDE_CODE_TMUX_TRUECOLOR=
+
+# Уменьшить мерцание при перерисовке терминала.
+# 1 — включить (рекомендуется при мерцании в slow terminal)
+# CLAUDE_CODE_NO_FLICKER=
+
+# Отключить захват мыши в терминале.
+# 1 — отключить (если мышь мешает выделению текста в терминале)
+# CLAUDE_CODE_DISABLE_MOUSE=
+
+# --- Сессия ---
+
+# Порог (в минутах) для предложения возобновить предыдущую сессию при запуске.
+# По умолчанию: 5. 0 — никогда не предлагать.
+# CLAUDE_CODE_RESUME_THRESHOLD_MINUTES=
+
+# Автоматически возобновлять прерванный ход без запроса подтверждения.
+# 1 — включить (удобно в автоматизированных сценариях)
+# CLAUDE_CODE_RESUME_INTERRUPTED_TURN=
+
+# --- Провайдеры (Bedrock / Vertex) ---
+
+# Использовать AWS Bedrock вместо Anthropic API.
+# 1 — включить (требует настройки AWS credentials)
+# CLAUDE_CODE_USE_BEDROCK=
+
+# Использовать Google Vertex AI вместо Anthropic API.
+# 1 — включить (требует настройки GCP credentials)
+# CLAUDE_CODE_USE_VERTEX=
+
+# Tier сервиса AWS Bedrock.
+# default  — стандартный tier
+# flex     — гибкий tier (pay-per-token, без резервирования)
+# priority — приоритетный tier (зарезервированные ресурсы)
+# ANTHROPIC_BEDROCK_SERVICE_TIER=default
+
+# --- Прочее ---
+
+# Отключить весь нецелевой трафик (телеметрия, аналитика, ping).
+# 1 — отключить (рекомендуется в air-gapped средах)
+# CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=
+
+# Управление заголовком атрибуции (x-anthropic-attribution).
+# 0 — отключить заголовок (ускоряет локальные/прокси модели, сохраняет KV-кэш)
+# По умолчанию: 1 (заголовок отправляется)
+# CLAUDE_CODE_ATTRIBUTION_HEADER=
+
+# ============================================================
+#  ОТЛАДКА
+# ============================================================
+# Включить подробный вывод при запуске claude в launch.sh.
+# 1 — показывать: путь к бинарю, аргументы, переменные окружения
+# (оставить пустым для отключения)
+DEBUG_LAUNCH=
+
+# ============================================================
+#  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
+# ============================================================
+# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
+# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (DeepSeek + Ollama)
+# ============================================================
+# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
+# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+#
+# export DEEPSEEK_API_KEY=[API_KEY_REDACTED]
+# export OPENROUTER_API_KEY=[API_KEY_REDACTED]
+# export GOOGLE_API_KEY=[GOOGLE_API_KEY]
+#
+# CLAUDE_CODE_ENABLE_TASKS=true
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (Anthropic + Ollama)
+# ============================================================
+# Роутинг: main/think/longContext → Anthropic, background → Ollama
+# router.json: {"Router": {"default": "anthropic,claude-sonnet-4-6",
+#                           "background": "ollama,qwen2.5:7b", ...}}
+# Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
+#
+# export ANTHROPIC_API_KEY=[API_KEY_REDACTED]
+
+# ============================================================
+#  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
+# ============================================================
+# USE_PII_PROXY=true
+# # При первом использовании установить: ./iclaude.sh --install-pii-proxy
+# #
+# # Уровень маскирования (по умолчанию: standard — Presidio NLP + regex):
+# # PII_PROXY_MASKING_LEVEL=standard   # полное (NLP + regex) — максимальная защита
+# # PII_PROXY_MASKING_LEVEL=secrets    # только regex — быстро, без NLP
+# # PII_PROXY_MASKING_LEVEL=off        # без маскирования (только для отладки)
+# #
+# # Уровень логирования (по умолчанию: info — только счётчик):
+# # PII_PROXY_LOG_LEVEL=debug          # debug: типы найденных сущностей (авто-удаление лога)
+# #
+# # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
+# # PII_PROXY_PORT_MIN=30000
+# # PII_PROXY_PORT_MAX=35000
+
+# ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
 # ============================================================
 # # Базовый microVM — монтировать текущий проект (по умолчанию):
@@ -493,84 +752,15 @@ MICRO_VM_ENABLED=false
 # MICRO_VM_SNAPSHOT_ENABLED=true
 
 # ============================================================
-#  OAUTH ТОКЕН
+#  CAVEMAN: TOKEN COMPRESSION (~65-75% output token savings)
 # ============================================================
-# OAuth токен для аутентификации Claude Code.
-# Получается после авторизации: claude login → "Store this token securely"
-# или через: claude setup-token
+# Install first: ./iclaude.sh --caveman-install
+# Remove:        ./iclaude.sh --caveman-remove
+# Status:        ./iclaude.sh --check-caveman
 #
-# Если задан — используется вместо .credentials.json для аутентификации.
-# Полезно когда .credentials.json недоступен или для headless-серверов.
+# # Mode (default: full). Reads from process.env.CAVEMAN_DEFAULT_MODE in hook.
+# # off | lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra
+# CAVEMAN_DEFAULT_MODE=full
 #
-# Формат: sk-ant-oat01-... (OAuth subscription token)
-# По умолчанию: не задан (используется .credentials.json)
-CLAUDE_CODE_OAUTH_TOKEN=
-
-# Порог автоматического обновления OAuth токена (в секундах).
-# Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
-#
-# По умолчанию: 604800 (7 дней)
-# Минимальное рекомендуемое значение: 86400 (1 день)
-# Максимальное разумное значение: 2592000 (30 дней)
-#
-# Примеры:
-#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
-#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
-#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
-#
-# Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
-# TOKEN_REFRESH_THRESHOLD=
-
-# ============================================================
-#  ОТЛАДКА
-# ============================================================
-# Включить подробный вывод при запуске claude в launch.sh.
-# 1 — показывать: путь к бинарю, аргументы, переменные окружения
-# (оставить пустым для отключения)
-DEBUG_LAUNCH=
-
-# ============================================================
-#  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
-# ============================================================
-# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
-# PROXY_CA=/etc/ssl/company/corporate-ca.crt
-
-# ============================================================
-#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (DeepSeek + Ollama)
-# ============================================================
-# PROXY_URL=https://myuser:mypassword@proxy.company.com:8118
-# PROXY_CA=/etc/ssl/company/corporate-ca.crt
-#
-# export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# export OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# export GOOGLE_API_KEY=AIzaSy-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-#
-# CLAUDE_CODE_ENABLE_TASKS=true
-
-# ============================================================
-#  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (Anthropic + Ollama)
-# ============================================================
-# Роутинг: main/think/longContext → Anthropic, background → Ollama
-# router.json: {"Router": {"default": "anthropic,claude-sonnet-4-6",
-#                           "background": "ollama,qwen2.5:7b", ...}}
-# Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
-#
-# export ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# ============================================================
-#  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
-# ============================================================
-# USE_PII_PROXY=true
-# # При первом использовании установить: ./iclaude.sh --install-pii-proxy
-# #
-# # Уровень маскирования (по умолчанию: standard — Presidio NLP + regex):
-# # PII_PROXY_MASKING_LEVEL=standard   # полное (NLP + regex) — максимальная защита
-# # PII_PROXY_MASKING_LEVEL=secrets    # только regex — быстро, без NLP
-# # PII_PROXY_MASKING_LEVEL=off        # без маскирования (только для отладки)
-# #
-# # Уровень логирования (по умолчанию: info — только счётчик):
-# # PII_PROXY_LOG_LEVEL=debug          # debug: типы найденных сущностей (авто-удаление лога)
-# #
-# # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
-# # PII_PROXY_PORT_MIN=30000
-# # PII_PROXY_PORT_MAX=35000
+# # Show token savings badge in status line (default: false):
+# CAVEMAN_STATUSLINE=true

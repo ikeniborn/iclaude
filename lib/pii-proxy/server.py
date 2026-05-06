@@ -97,6 +97,37 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
 ]
 
 # ---------------------------------------------------------------------------
+# Tool-input keys that are structural pointers, not content — never mask.
+# File paths and search patterns carry no PII; masking them corrupts conversation
+# history (NLP models flag usernames/tokens in paths as PERSON entities).
+# Content fields (content, old_string, new_string) are intentionally absent —
+# they hold actual text that may contain PII and must still be scanned.
+# ---------------------------------------------------------------------------
+_TOOL_INPUT_SKIP_KEYS: frozenset[str] = frozenset({
+    'file_path',      # Read, Write, Edit, NotebookEdit
+    'path',           # Glob, Grep (directory scope)
+    'notebook_path',  # NotebookEdit
+    'command',        # Bash — paths/flags, not user-authored text
+    'pattern',        # Grep — regex search expression
+    'glob',           # Grep — file filter expression
+})
+
+# Regex for <system-reminder> blocks injected by Claude Code harness into user messages.
+# These blocks contain trusted machine-generated content (skills list, CLAUDE.md, MEMORY.md)
+# and must NOT be processed by NLP — identical rationale to skipping the `system` field.
+_SYSTEM_REMINDER_RE = re.compile(
+    r'(<system-reminder>[\s\S]*?</system-reminder>)',
+    re.DOTALL,
+)
+
+# Known false-positive PERSON entities: product/project names that spaCy's NER
+# incorrectly classifies as human names. These are filtered from Presidio results
+# before anonymization to prevent over-masking of legitimate content.
+_PERSON_ALLOWLIST: frozenset[str] = frozenset({
+    'Claude', 'claude', 'CLAUDE',   # Anthropic product name, not a person
+})
+
+# ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 def _validate_upstream_url(url: str) -> str:
@@ -156,8 +187,20 @@ def _build_ssl_verify():
     return ca if ca else True
 
 _SSL_VERIFY = _build_ssl_verify()
-_HTTP_SESSION = _requests.Session()
-_HTTP_SESSION.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+
+# Thread-local HTTP sessions: each request-handler thread gets its own Session so
+# concurrent requests don't share mutable state (cookie jar, adapter state).
+# Per-thread connection pooling still applies — urllib3 pools are per-Session.
+_thread_local = threading.local()
+
+
+def _get_http_session() -> _requests.Session:
+    """Return this thread's requests.Session, creating it on first access."""
+    if not hasattr(_thread_local, 'session'):
+        s = _requests.Session()
+        s.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+        _thread_local.session = s
+    return _thread_local.session
 
 # Trusted API key from proxy's own environment.
 # Used to re-inject credentials after stripping inbound auth headers,
@@ -362,9 +405,35 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
     'off'      - return text unchanged (no masking)
     'secrets'  - regex-only masking (API keys, tokens, passwords, credentials)
     'standard' - Presidio NLP + regex; falls back to regex when Presidio unavailable
+
+    <system-reminder> blocks are preserved unchanged in all modes — they contain
+    trusted machine-generated content (Claude Code harness instructions, CLAUDE.md,
+    skills list) injected into user messages, not user-authored PII.
     """
     if MASKING_LEVEL == 'off':
         return text, []
+
+    # Preserve <system-reminder> blocks — trusted harness content injected into user
+    # messages. NLP models incorrectly flag these (e.g. "Claude" as PERSON, dates, IPs).
+    # Rationale mirrors the system-field skip in mask_request_body().
+    if '<system-reminder>' in text:
+        parts = _SYSTEM_REMINDER_RE.split(text)
+        # len(parts) > 1 means at least one complete paired tag was found.
+        # If the tag is unclosed (no matching </system-reminder>), split returns a
+        # single-element list with the original text — fall through to normal masking
+        # to avoid infinite recursion (recursive call would see the same text again).
+        if len(parts) > 1:
+            result_parts: list[str] = []
+            all_found: list[str] = []
+            for part in parts:
+                if part.startswith('<system-reminder>'):
+                    result_parts.append(part)           # pass through unchanged
+                else:
+                    masked, found = presidio_mask(part) # recurse — no full tags in parts
+                    result_parts.append(masked)
+                    all_found.extend(found)
+            return ''.join(result_parts), all_found
+        # Unclosed tag — fall through to normal masking path below
 
     if MASKING_LEVEL == 'secrets':
         masked, found = regex_mask(text)
@@ -380,10 +449,34 @@ def presidio_mask(text: str) -> tuple[str, list[str]]:
         return text, []
     try:
         assert _analyzer is not None
-        # Analyze for all supported languages and merge results
+        # NLP entity type allowlist: only pattern-based recognizers with low false-positive rate.
+        # NER-based types (PERSON, LOCATION, ORGANIZATION, DATE_TIME) are excluded:
+        # they misclassify common Russian/Cyrillic words as person names (e.g. "привет",
+        # "Сегодня", "После" → PERSON in both English and Russian models).
+        # Technical secrets (API keys, tokens, passwords) are covered by regex below.
+        _NLP_ENTITIES = [
+            'EMAIL_ADDRESS',    # pattern-based, highly reliable
+            'PHONE_NUMBER',     # pattern-based, reliable
+            'CREDIT_CARD',      # pattern-based (Luhn check), reliable
+            'IBAN_CODE',        # pattern-based, reliable
+            'IP_ADDRESS',       # pattern-based, reliable
+            'URL',              # pattern-based; catches credentials in URLs not covered by regex
+        ]
+        # Use English model only: Russian NER produces the same false positives on Cyrillic
+        # text as the English model, while adding no unique pattern-based recognizer value.
+        _nlp_langs = [l for l in _supported_languages if l == 'en'] or _supported_languages
         results = []
-        for lang in _supported_languages:
-            results.extend(_analyzer.analyze(text=text, language=lang))
+        for lang in _nlp_langs:
+            results.extend(_analyzer.analyze(
+                text=text, language=lang,
+                entities=_NLP_ENTITIES,
+                score_threshold=0.8,
+            ))
+        # Filter false-positive PERSON entities (product names misclassified as humans)
+        results = [
+            r for r in results
+            if not (r.entity_type == 'PERSON' and text[r.start:r.end] in _PERSON_ALLOWLIST)
+        ]
         if not results:
             # No PII found by Presidio - still apply regex for secrets
             return regex_mask(text)
@@ -421,11 +514,28 @@ def mask_content_block(block: Any) -> tuple[Any, list[str]]:
         masked, found = presidio_mask(block.get('text', ''))
         return {**block, 'text': masked}, found
     if block_type == 'tool_use':
-        # Recursively mask PII in tool input (any JSON structure: dict, list, str, nested)
+        # Mask PII in tool input, but skip filesystem path keys — NLP models incorrectly
+        # flag usernames and path tokens (e.g. "ikeniborn", "iclaude") as PERSON entities,
+        # corrupting file paths in conversation history and breaking filesystem navigation.
+        # Only structural path keys are skipped; content fields (content, old_string,
+        # new_string, command, pattern) are still passed through presidio_mask().
         if 'input' not in block or block['input'] is None:
             return block, []
-        masked_input, block_found = _mask_value(block['input'])
-        return {**block, 'input': masked_input}, block_found
+        raw_input = block['input']
+        if not isinstance(raw_input, dict):
+            # Non-dict input (rare): mask as-is
+            masked_input, block_found = _mask_value(raw_input)
+            return {**block, 'input': masked_input}, block_found
+        masked_dict: dict[str, Any] = {}
+        block_found: list[str] = []
+        for k, v in raw_input.items():
+            if k in _TOOL_INPUT_SKIP_KEYS:
+                masked_dict[k] = v  # structural pointer — pass through unchanged
+            else:
+                masked_v, f = _mask_value(v)
+                masked_dict[k] = masked_v
+                block_found.extend(f)
+        return {**block, 'input': masked_dict}, block_found
     if block_type == 'tool_result':
         if 'content' not in block:
             return block, []
@@ -473,61 +583,94 @@ def _prefix(items: list[str], location: str) -> list[str]:
 
 
 def mask_request_body(body: dict) -> tuple[dict, list[str]]:
-    """Mask PII in system prompt, messages, and tool results."""
+    """Mask PII in user messages and assistant tool_use inputs only.
+
+    Masking scope (asymmetric by design):
+      - system field          → SKIPPED: contains Claude Code instructions / CLAUDE.md;
+                                masking distorts model directives and breaks sessions.
+      - role "user"           → MASKED fully: user text input + file contents from
+                                tool_result blocks.
+      - role "assistant" text → SKIPPED: Claude's own prose carries no original user PII.
+      - role "assistant"      → tool_use blocks MASKED via mask_content_block():
+        tool_use input          input fields (new_string, content, etc.) may contain
+                                user-authored text verbatim; structural keys (file_path,
+                                command, pattern…) are already skipped by _TOOL_INPUT_SKIP_KEYS.
+    """
     masked_body = dict(body)
     all_found: list[str] = []
 
-    # System prompt
-    if 'system' in body:
-        system = body['system']
-        if isinstance(system, str):
-            masked, found = presidio_mask(system)
-            masked_body['system'] = masked
-            all_found.extend(_prefix(found, 'system'))
-        elif isinstance(system, list):
-            new_system: list[Any] = []
-            for b in system:
-                masked_b, found = mask_content_block(b)
-                new_system.append(masked_b)
-                all_found.extend(_prefix(found, 'system'))
-            masked_body['system'] = new_system
+    # System prompt — intentionally not masked.
+    # Contains Claude Code wrapper instructions (tools, CLAUDE.md, session setup).
+    # These are trusted, machine-generated, and NLP masking breaks them.
 
-    # Messages
+    # Messages — selective masking by role
     if 'messages' in body and isinstance(body['messages'], list):
         new_messages = []
         for i, msg in enumerate(body['messages']):
             if not isinstance(msg, dict):
                 new_messages.append(msg)
                 continue
-            masked_msg: dict[str, Any] = dict(msg)
-            role = msg.get('role', f'msg[{i}]')
-            loc = f'{role}[{i}]'
+            role = msg.get('role', '')
 
-            # Mask message.name (optional participant label — may contain PII)
-            if isinstance(msg.get('name'), str):
-                masked_name, name_found = presidio_mask(msg['name'])
-                masked_msg['name'] = masked_name
-                all_found.extend(_prefix(name_found, f'{loc}.name'))
+            if role == 'user':
+                # Full masking: user text + tool_result file contents
+                masked_msg: dict[str, Any] = dict(msg)
+                loc = f'user[{i}]'
 
-            if 'content' not in msg:
-                # Preserve messages without content field (e.g. tool_use-only)
+                if isinstance(msg.get('name'), str):
+                    masked_name, name_found = presidio_mask(msg['name'])
+                    masked_msg['name'] = masked_name
+                    all_found.extend(_prefix(name_found, f'{loc}.name'))
+
+                if 'content' not in msg:
+                    new_messages.append(masked_msg)
+                    continue
+                content = msg['content']
+                if isinstance(content, str):
+                    masked, found = presidio_mask(content)
+                    masked_msg['content'] = masked
+                    all_found.extend(_prefix(found, f'{loc}.content'))
+                elif isinstance(content, list):
+                    new_content: list[Any] = []
+                    msg_found: list[str] = []
+                    for b in content:
+                        masked_b, found = mask_content_block(b)
+                        new_content.append(masked_b)
+                        msg_found.extend(found)
+                    masked_msg['content'] = new_content
+                    all_found.extend(_prefix(msg_found, f'{loc}.content'))
                 new_messages.append(masked_msg)
-                continue
-            content = msg['content']
-            if isinstance(content, str):
-                masked, found = presidio_mask(content)
-                masked_msg['content'] = masked
-                all_found.extend(_prefix(found, f'{loc}.content'))
-            elif isinstance(content, list):
-                new_content: list[Any] = []
+
+            elif role == 'assistant':
+                # Partial masking: only tool_use input blocks (may contain user-authored text
+                # verbatim, e.g. new_string in Edit, content in Write).
+                # Assistant prose (text blocks) is not masked — it's Claude's own output.
+                content = msg.get('content')
+                if not isinstance(content, list):
+                    new_messages.append(msg)
+                    continue
+                new_content = []
                 msg_found: list[str] = []
+                changed = False
                 for b in content:
-                    masked_b, found = mask_content_block(b)
-                    new_content.append(masked_b)
-                    msg_found.extend(found)
-                masked_msg['content'] = new_content
-                all_found.extend(_prefix(msg_found, f'{loc}.content'))
-            new_messages.append(masked_msg)
+                    if isinstance(b, dict) and b.get('type') == 'tool_use':
+                        masked_b, found = mask_content_block(b)
+                        new_content.append(masked_b)
+                        msg_found.extend(found)
+                        if found:  # real masking occurred — content actually changed
+                            changed = True
+                    else:
+                        new_content.append(b)  # text block — pass through unchanged
+                if changed:
+                    new_messages.append({**msg, 'content': new_content})
+                    all_found.extend(_prefix(msg_found, f'assistant[{i}].tool_use'))
+                else:
+                    new_messages.append(msg)
+
+            else:
+                # Unknown role — pass through unchanged
+                new_messages.append(msg)
+
         masked_body['messages'] = new_messages
 
     return masked_body, all_found
@@ -741,7 +884,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
         try:
-            resp = _HTTP_SESSION.request(
+            resp = _get_http_session().request(
                 method='HEAD',
                 url=target,
                 headers=headers,
@@ -777,7 +920,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
         try:
-            with _HTTP_SESSION.request(
+            with _get_http_session().request(
                 method=self.command,
                 url=target,
                 headers=headers,
@@ -861,7 +1004,7 @@ def main() -> None:
     if args.port != 0:
         # Explicit port requested — honour it if free
         try:
-            server = http.server.HTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
         except OSError:
             pass  # fall through to range selection below
 
@@ -871,13 +1014,13 @@ def main() -> None:
         _n = min(30, _port_max - _port_min + 1)
         for _p in random.sample(range(_port_min, _port_max + 1), _n):
             try:
-                server = http.server.HTTPServer(('127.0.0.1', _p), PIIProxyHandler)
+                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
                 break
             except OSError:
                 continue
         if server is None:
             # Last resort: let OS pick any free port
-            server = http.server.HTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
 
     port = server.server_address[1]  # actual port assigned by OS
 

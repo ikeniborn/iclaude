@@ -4,8 +4,8 @@ description: Generate detailed architectural documentation in YAML and TOON form
 user-invocable: true
 context: fork
 # version: 1.4.0
-# tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency, sphinx
-# dependencies: context-awareness, thinking-framework, toon-skill, docs-builder | author: Claude Code Skills Team
+# tags: documentation, architecture, yaml, toon, dependencies, graph, token-efficiency
+# dependencies: context-awareness, thinking-framework, toon-skill | author: Claude Code Skills Team
 # files: templates: ./templates/*.yaml, templates_toon: ./templates/toon/*.toon.template, converters: ./converters/*.mjs, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, examples_toon: ./examples/toon/*.toon.example
 ---
 
@@ -177,17 +177,7 @@ discovery_patterns[5]{language,search_patterns,entry_points}:
    - TOON token savings (if applicable)
    - Next steps for user
 
-5. **Sphinx integration (if docs/conf.py exists):**
-   Trigger `@skill:docs-builder` to rebuild documentation:
-   ```bash
-   # Check if Sphinx is configured
-   if [[ -f docs/conf.py ]] && [[ -f .nvm-isolated/.python-docs/bin/sphinx-build ]]; then
-       ./iclaude.sh --build-docs
-   fi
-   ```
-   This updates `docs/_build/html/llms.txt` so AI agents see new architecture.
-
-**Output:** Structured JSON + user-friendly summary + Sphinx rebuild (if configured)
+**Output:** Structured JSON + user-friendly summary
 
 ---
 
@@ -581,6 +571,35 @@ console.log(`Savings: ${stats.savedPercent}`); // Expected: 30-60%
 - Array too small (< 5 elements) → Use JSON
 - Deeply nested structure (> 3 levels) → TOON not optimal
 - Irregular schema → TOON requires consistent structure
+
+---
+
+## Wiki Integration
+
+Этот скилл получает `project_context` от `context-awareness` (Phase 1 Input).
+
+### Query (перед Phase 1)
+
+```
+IF project_context.wiki_initialized == true:
+  Skill(skill="llm-wiki", args='query "архитектурные паттерны и компоненты проекта"')
+
+  Использовать результат для обогащения Phase 1:
+  - Если известные компоненты уже описаны → уточнить discovery вместо полного scan
+  - Если паттерн определён (layered/hexagonal/...) → использовать как отправную точку
+  - Если в wiki нет ответа → продолжить Phase 1 в стандартном режиме
+```
+
+### Ingest (после Phase 4)
+
+```
+IF project_context.wiki_initialized == true AND status == "success":
+  Skill(skill="llm-wiki", args='ingest "docs/architecture/README.md"')
+
+  Результат: wiki обновляется знаниями о компонентах, зависимостях,
+  архитектурных паттернах — доступны для query в следующих сессиях.
+  Примечание: README.md выбран вместо overview.yaml — llm-wiki индексирует только .md файлы.
+```
 
 ---
 

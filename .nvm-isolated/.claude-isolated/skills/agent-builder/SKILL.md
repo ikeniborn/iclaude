@@ -573,6 +573,34 @@ lib/context/sessions.sh|high|Session management
 
 Подробно: `./rules/agent-best-practices.md` §11-13
 
+## Wiki Integration
+
+Этот скилл не вызывает `context-awareness`, поэтому проверяет wiki напрямую.
+
+### Query (перед началом Questionnaire)
+
+```
+IF exists("{CWD}/.wiki/.config/domain-map.json"):
+  Skill(skill="llm-wiki", args='query "паттерны и спецификации Claude Code агентов"')
+
+  Использовать результат для обогащения Questionnaire:
+  - Если найдены похожие агенты → предложить их description/tools как starting point
+  - Если найдены рекомендованные model/permissionMode для данного типа → предзаполнить
+  - Если wiki нет данных → продолжить стандартный Questionnaire без изменений
+```
+
+### Ingest (после успешной валидации — Сигнал завершения)
+
+```
+IF exists("{CWD}/.wiki/.config/domain-map.json") AND validation_passed:
+  Skill(skill="llm-wiki", args='ingest "{target_directory}/{agent_name}/AGENT.md"')
+
+  Результат: wiki накапливает спецификации агентов — name, description, tools,
+  permissionMode — переиспользуются как паттерны при создании следующих агентов.
+```
+
+---
+
 ## Связанные ресурсы
 
 - **@skill:agent-orchestrator** — запуск агентов через оркестратор

@@ -46,10 +46,29 @@
       }
     },
     {
+      "_comment_ollama": "Ollama local — трансформер не нужен (OpenAI-compatible API нативно).",
+      "_comment_ollama_params": "num_ctx и temperature задаются через Modelfile, не через CCR (sampling transformer не передаёт num_ctx). Пример Modelfile: FROM qwen2.5-coder:7b / PARAMETER num_ctx 65536 / PARAMETER temperature 0.2 / PARAMETER top_p 0.9 / PARAMETER top_k 40 — затем: ollama create qwen2.5-coder-tuned -f Modelfile",
       "name": "ollama",
       "api_base_url": "http://localhost:11434/v1/chat/completions",
       "api_key": "ollama",
-      "models": ["qwen2.5-coder:7b", "llama3.1:8b"]
+      "models": ["qwen2.5-coder-tuned", "llama3.1-tuned"]
+    },
+    {
+      "_comment_ollama_cloud": "Ollama Cloud — крупные модели на серверах Ollama. Требуют: ollama signin. num_ctx управляется серверной стороной.",
+      "name": "ollama-cloud",
+      "api_base_url": "http://localhost:11434/v1/chat/completions",
+      "api_key": "ollama",
+      "models": ["qwen3.5:397b-cloud", "qwen3-coder-next:cloud", "qwen3-vl:235b-cloud"],
+      "transformer": {
+        "use": [
+          ["sampling", { "temperature": 0.2, "top_p": 0.9, "top_k": 40 }]
+        ],
+        "qwen3-vl:235b-cloud": {
+          "use": [
+            ["sampling", { "temperature": 0.5, "top_p": 0.95 }]
+          ]
+        }
+      }
     },
     {
       "name": "gemini",
@@ -70,5 +89,15 @@
     "longContextThreshold": 60000,
     "webSearch": "openrouter,perplexity/sonar-online",
     "image": "openrouter,anthropic/claude-3.5-sonnet"
+  },
+
+  "_comment_ollama_cloud_router": "Пример Router для Ollama Cloud (замените секции выше при необходимости)",
+  "_Router_ollama_cloud_example": {
+    "default": "ollama-cloud,qwen3.5:397b-cloud",
+    "background": "ollama-cloud,qwen3-coder-next:cloud",
+    "think": "ollama-cloud,qwen3.5:397b-cloud",
+    "longContext": "ollama-cloud,qwen3.5:397b-cloud",
+    "longContextThreshold": 60000,
+    "image": "ollama-cloud,qwen3-vl:235b-cloud"
   }
 }

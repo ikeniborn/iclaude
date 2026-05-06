@@ -60,6 +60,12 @@ OPTIONS:
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
   --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
+  --install-graphify                Install graphify knowledge graph tool (uv + Python 3.12 + graphifyy)
+                                    Creates /graphify-update slash command for Claude Code
+  --install-graphify --force        Force reinstall (removes existing graphify tool dir)
+  --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
+  --graphify                        Rebuild knowledge graph before launching claude
+                                    Output: GRAPHIFY_OUT or graphify-out/ (default)
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
                                     Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL
   --chrome                          Enable Chrome browser integration (disabled by default)
@@ -74,6 +80,9 @@ OPTIONS:
                                     Downloads ~72MB to isolated environment (not in git)
                                     Requires: KVM (/dev/kvm), iproute2
   --check-microvm                   Show microVM status (KVM, binaries, networking, configuration)
+  --install-caveman                 Install caveman token-compression hooks (downloads 4 JS files to hooks/)
+  --uninstall-caveman               Remove caveman hooks and clean settings.json
+  --check-caveman                   Show caveman installation status and active mode
   --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
                                     Requires prior --install-microvm setup
                                     Can be combined with --pii-proxy: traffic routed through host TAP IP

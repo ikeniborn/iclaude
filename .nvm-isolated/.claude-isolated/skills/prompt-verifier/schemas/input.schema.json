@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Auto-generated schema for prompt-verifier input template",
+  "type": "object",
+  "properties": {
+    "prompt_verification": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Текст промта/инструкций для верификации. Можно передать вместо file_path."
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Путь к файлу с инструкциями. Если указан — file_path приоритетнее content."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["verify", "adapt"],
+          "default": "adapt",
+          "description": "verify = только отчёт о нарушениях; adapt = отчёт + переписанный документ"
+        },
+        "rules_focus": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+          },
+          "description": "Ограничить проверку конкретными правилами. Пусто = все 7 правил."
+        }
+      },
+      "required": ["mode"],
+      "anyOf": [
+        {"required": ["content"]},
+        {"required": ["file_path"]}
+      ]
+    }
+  },
+  "required": ["prompt_verification"]
+}
