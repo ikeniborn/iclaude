@@ -517,6 +517,27 @@ fi
                 USE_ROUTER_FLAG=true
                 shift
                 ;;
+            --graphify)
+                USE_GRAPHIFY_FLAG=true
+                shift
+                ;;
+            --install-graphify)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-graphify"
+                    echo ""
+                    echo "Graphify is only available in isolated environment"
+                    exit 1
+                fi
+                _gfy_install_force=""
+                [[ "${2:-}" == "--force" ]] && { _gfy_install_force="--force"; shift; }
+                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                install_graphify "$_gfy_install_force"
+                exit $?
+                ;;
+            --check-graphify)
+                check_graphify_status
+                exit 0
+                ;;
             --pii-proxy)
                 USE_PII_PROXY_FLAG=true
                 shift
