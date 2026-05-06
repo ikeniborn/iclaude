@@ -331,6 +331,26 @@ USE_PII_PROXY=false
 # ------------------------------------------------------------
 
 # ============================================================
+#  GRAPHIFY (граф знаний кодовой базы)
+# ============================================================
+# Graphify строит queryable-граф из кода, документов, схем.
+# Используется как Claude Code skill (/graphify query "...").
+#
+# Установка:         ./iclaude.sh --install-graphify
+# Статус:            ./iclaude.sh --check-graphify
+# Запуск с графом:   ./iclaude.sh --graphify
+# Ручная пересборка: .nvm-isolated/.claude-isolated/commands/graphiffy
+#
+# Папка для graph.html, GRAPH_REPORT.md, graph.json.
+# Если не задана — используется корень git-репозитория ($PWD если не git-репо).
+# Пример: GRAPHIFY_OUTPUT_DIR=/home/user/graphs/my-project
+# GRAPHIFY_OUTPUT_DIR=
+
+# Дополнительные аргументы к `graphify .` (через пробел).
+# Пример: --no-video (пропустить видеофайлы), --no-office (без .docx/.xlsx)
+# GRAPHIFY_EXTRA_ARGS=
+
+# ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================
 # Запускает Claude Code ВНУТРИ Firecracker guest VM по SSH.
@@ -706,3 +726,17 @@ DEBUG_LAUNCH=
 # # С быстрым стартом через снэпшоты:
 # MICRO_VM_ENABLED=true
 # MICRO_VM_SNAPSHOT_ENABLED=true
+
+# ============================================================
+#  CAVEMAN: TOKEN COMPRESSION (~65-75% output token savings)
+# ============================================================
+# Install first: ./iclaude.sh --caveman-install
+# Remove:        ./iclaude.sh --caveman-remove
+# Status:        ./iclaude.sh --check-caveman
+#
+# # Mode (default: full). Reads from process.env.CAVEMAN_DEFAULT_MODE in hook.
+# # off | lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra
+# CAVEMAN_DEFAULT_MODE=full
+#
+# # Show token savings badge in status line (default: false):
+# CAVEMAN_STATUSLINE=true
