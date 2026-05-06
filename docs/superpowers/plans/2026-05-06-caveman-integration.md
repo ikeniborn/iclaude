@@ -266,12 +266,12 @@ git commit -m "feat(caveman): добавить lib/caveman/install.sh с install
 
 - [ ] **Step 2.1: Добавить загрузчик модуля в Phase 2-8**
 
-В `iclaude.sh` найти якорный комментарий `# Load statusline modules (Phase 8.2)` и вставить перед ним новый блок:
+В `iclaude.sh` найти якорный блок `# Load Oh-My-Posh modules (Phase 8.3)` и вставить новый блок ПОСЛЕ его закрывающего `fi`:
 
 ```bash
 
 #######################################
-# Load Caveman modules (Phase 8.3)
+# Load Caveman modules (Phase 8.4)
 #######################################
 if [[ -d "$LIB_DIR/caveman" ]]; then
     source "${LIB_DIR}/caveman/install.sh"
