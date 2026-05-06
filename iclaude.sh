@@ -106,6 +106,15 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
 fi
 
 #######################################
+# Load Graphify modules (Phase 8.0)
+#######################################
+if [[ -d "$LIB_DIR/graphify" ]]; then
+    source "${LIB_DIR}/graphify/detect.sh"
+    source "${LIB_DIR}/graphify/install.sh"
+    source "${LIB_DIR}/graphify/status.sh"
+fi
+
+#######################################
 # Load LSP modules (Phase 8.1)
 #######################################
 if [[ -d "$LIB_DIR/lsp" ]]; then
@@ -130,6 +139,13 @@ if [[ -d "$LIB_DIR/ohmyposh" ]]; then
     source "${LIB_DIR}/ohmyposh/detect.sh"
     source "${LIB_DIR}/ohmyposh/install.sh"
     source "${LIB_DIR}/ohmyposh/status.sh"
+fi
+
+#######################################
+# Load Caveman modules (Phase 8.4)
+#######################################
+if [[ -d "$LIB_DIR/caveman" ]]; then
+    source "${LIB_DIR}/caveman/install.sh"
 fi
 
 #######################################
@@ -168,19 +184,6 @@ if [[ -d "$LIB_DIR/command" ]]; then
 fi
 
 #######################################
-# Load Docs modules (Phase 16: Sphinx integration)
-#######################################
-if [[ -d "$LIB_DIR/docs" ]]; then
-    source "${LIB_DIR}/docs/resolve.sh"
-    source "${LIB_DIR}/docs/init.sh"
-    source "${LIB_DIR}/docs/bash-parser.sh"
-    source "${LIB_DIR}/docs/install.sh"
-    source "${LIB_DIR}/docs/build.sh"
-    source "${LIB_DIR}/docs/serve.sh"
-    source "${LIB_DIR}/docs/status.sh"
-fi
-
-#######################################
 # Load Chrome Integration modules
 #######################################
 if [[ -d "$LIB_DIR/chrome" ]]; then
@@ -207,6 +210,7 @@ fi
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
+    USE_GRAPHIFY_FLAG=false
     USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
     NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
@@ -228,6 +232,28 @@ fi
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
 
+        # Match: GRAPHIFY_OUT=.graphify
+        _cfg_graphify_out=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUT[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
+            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
+        if [[ -n "$_cfg_graphify_out" ]]; then
+            GRAPHIFY_OUT=$(echo "$_cfg_graphify_out" | \
+                sed 's/.*GRAPHIFY_OUT[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_OUT
+        fi
+        unset _cfg_graphify_out
+
+        # Match: GRAPHIFY_EXTRA_ARGS="--no-video"
+        _cfg_graphify_args=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_EXTRA_ARGS[[:space:]]*=" \
+            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
+        if [[ -n "$_cfg_graphify_args" ]]; then
+            GRAPHIFY_EXTRA_ARGS=$(echo "$_cfg_graphify_args" | \
+                sed 's/.*GRAPHIFY_EXTRA_ARGS[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_EXTRA_ARGS
+        fi
+        unset _cfg_graphify_args
+
         # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
         _cfg_no_attr=$(grep -E \
             "^[[:space:]]*(export[[:space:]]+)?NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
@@ -241,7 +267,17 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_chrome" ]] && USE_CHROME=true
         unset _cfg_chrome
+
+        # Match: CLAUDE_CODE_SKIP_PERMISSIONS=true  CLAUDE_CODE_SKIP_PERMISSIONS="true"  export CLAUDE_CODE_SKIP_PERMISSIONS=true
+        _cfg_skip_perm=$(grep -E \
+            "^[[:space:]]*(export[[:space:]]+)?CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "$CREDENTIALS_FILE" 2>/dev/null || true)
+        [[ -n "$_cfg_skip_perm" ]] && skip_permissions=true
+        unset _cfg_skip_perm
     fi
+
+    GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
+    export GRAPHIFY_OUT
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -484,6 +520,31 @@ fi
                 USE_ROUTER_FLAG=true
                 shift
                 ;;
+            --graphify)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--graphify is only available in isolated environment"
+                    exit 1
+                fi
+                USE_GRAPHIFY_FLAG=true
+                shift
+                ;;
+            --install-graphify)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-graphify"
+                    echo ""
+                    echo "Graphify is only available in isolated environment"
+                    exit 1
+                fi
+                _gfy_install_force=""
+                [[ "${2:-}" == "--force" ]] && { _gfy_install_force="--force"; shift; }
+                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                install_graphify "$_gfy_install_force"
+                exit $?
+                ;;
+            --check-graphify)
+                check_graphify_status
+                exit 0
+                ;;
             --pii-proxy)
                 USE_PII_PROXY_FLAG=true
                 shift
@@ -518,6 +579,33 @@ fi
                 ;;
             --check-microvm)
                 check_microvm_status
+                exit 0
+                ;;
+            --install-caveman)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --install-caveman"
+                    echo ""
+                    echo "caveman is only available in isolated environment"
+                    exit 1
+                fi
+                setup_isolated_config
+                # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
+                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                install_caveman
+                exit $?
+                ;;
+            --uninstall-caveman)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --uninstall-caveman"
+                    exit 1
+                fi
+                setup_isolated_config
+                remove_caveman
+                exit $?
+                ;;
+            --check-caveman)
+                setup_isolated_config
+                check_caveman
                 exit 0
                 ;;
             --sandbox-microvm)
@@ -575,34 +663,6 @@ fi
                 use_shared_config=true
                 shift
                 ;;
-            --init-docs)
-                init_project_docs "${2:-$(pwd)}"
-                exit $?
-                ;;
-            --install-docs)
-                install_sphinx_docs
-                exit $?
-                ;;
-            --build-docs)
-                if [[ "${2:-}" == "--clean" ]]; then
-                    build_sphinx_docs "$(pwd)" "--clean"
-                else
-                    build_sphinx_docs "${2:-$(pwd)}" "${3:-}"
-                fi
-                exit $?
-                ;;
-            --serve-docs)
-                if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
-                    serve_sphinx_docs "$(pwd)" "${2:-8000}"
-                else
-                    serve_sphinx_docs "${2:-$(pwd)}" "${3:-8000}"
-                fi
-                exit $?
-                ;;
-            --check-docs)
-                check_docs_status "${2:-$(pwd)}"
-                exit 0
-                ;;
             --check-config)
                 check_config_status
                 exit 0
@@ -642,6 +702,11 @@ fi
         print_info "Combined mode detected: PII proxy + CCR router chain will be activated"
         print_info "Traffic chain: claude → PII proxy(:${PII_PROXY_PORT:-9000}) → CCR(:${CCR_PORT:-3456}) → providers"
         echo ""
+    fi
+
+    # Rebuild graphify knowledge graph if --graphify flag is set
+    if [[ "$USE_GRAPHIFY_FLAG" == true ]]; then
+        _graphify_rebuild_graph || print_warning "Graph rebuild failed — continuing without updated graph"
     fi
 
     # Configure isolated config if needed
@@ -786,25 +851,23 @@ fi
         exit 0
     fi
 
-    # If proxy test failed, ask user if they want to continue
+    # If proxy test failed, disable proxy and launch without it
     if [[ "$proxy_test_passed" == false ]]; then
         echo ""
-        print_warning "Proxy test failed - Claude Code may not work properly"
+        print_warning "Proxy unavailable - launching without proxy"
         echo ""
-        read -p "Continue anyway? (y/N): " continue_anyway
 
-        if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
-            echo ""
-            print_info "Launch cancelled"
-            echo ""
-            echo "You can try:"
-            echo "  1. Fix proxy configuration and try again"
-            echo "  2. Run without proxy: iclaude --no-proxy"
-            echo "  3. Skip proxy test: iclaude --no-test"
-            echo "  4. Check proxy credentials: iclaude --clear"
-            exit 0
+        # Unset proxy environment variables
+        unset HTTPS_PROXY
+        unset HTTP_PROXY
+        unset NO_PROXY
+
+        # Restore git proxy settings if backup exists
+        if [[ -f "$GIT_BACKUP_FILE" ]]; then
+            restore_git_proxy
         fi
-        echo ""
+
+        no_proxy=true
     fi
 
     # Check OAuth token expiration

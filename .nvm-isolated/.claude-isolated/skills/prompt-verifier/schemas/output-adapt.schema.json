@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Auto-generated schema for prompt-verifier output (adapt mode)",
+  "allOf": [
+    {"$ref": "output-verify.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "adaptation": {
+          "type": "object",
+          "properties": {
+            "adapted_document": {
+              "type": "string",
+              "minLength": 20,
+              "description": "Полный переработанный документ с применёнными правилами"
+            },
+            "changes_made": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Список конкретных изменений, внесённых при адаптации"
+            },
+            "word_count_before": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "word_count_after": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "reduction_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Процент сокращения объёма текста"
+            }
+          },
+          "required": ["adapted_document", "changes_made", "word_count_before", "word_count_after", "reduction_percent"]
+        }
+      },
+      "required": ["adaptation"]
+    }
+  ]
+}

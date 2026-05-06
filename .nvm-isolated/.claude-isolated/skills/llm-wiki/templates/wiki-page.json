@@ -1,0 +1,17 @@
+{
+  "description": "Шаблон новой wiki-страницы. Плейсхолдеры в формате {{имя: тип}}",
+  "frontmatter": {
+    "wiki_sources": "{{source_path: string — путь к исходному файлу}}",
+    "wiki_updated": "{{date: string — YYYY-MM-DD}}",
+    "wiki_status": "stub",
+    "tags": ["{{tag: string — из tag-hierarchy.json}}"],
+    "aliases": ["{{alias: string, optional — альтернативное название}}"]
+  },
+  "content_template": "---\nwiki_sources:\n  - \"{{source_path}}\"\nwiki_updated: {{date}}\nwiki_status: stub\ntags:\n  - {{tag}}\naliases:\n  - \"{{alias, optional}}\"\n---\n\n# {{title: русское название сущности}}\n\n{{definition: 1-3 предложения — что это такое и зачем нужно}}\n\n## Основные характеристики\n\n{{main_content: ключевые свойства, параметры, особенности}}\n\n## Связанные концепции\n\n- [[{{related_page_1: существующая wiki-страница}}]]\n",
+  "notes": [
+    "wiki_status всегда 'stub' при создании",
+    "Добавлять только существующие WikiLinks (проверить _index.md)",
+    "definition — вводный абзац без заголовка, сразу после H1",
+    "Не создавать пустые разделы"
+  ]
+}

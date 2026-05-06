@@ -88,9 +88,15 @@ get_nvm_claude_path() {
 				fi
 			fi
 
-			# If binaries not found, try to find cli.js in node_modules (including temp folders)
+			# If binaries not found, try to find binary in node_modules (including temp folders)
 			if [[ -d "$nvm_lib" ]]; then
-				# Try standard claude-code folder first
+				# Try native binary (new format since v2.1.114)
+				if [[ -x "$nvm_lib/claude-code/bin/claude.exe" ]]; then
+					echo "$nvm_lib/claude-code/bin/claude.exe"
+					return 0
+				fi
+
+				# Try standard claude-code folder first (legacy format)
 				if [[ -f "$nvm_lib/claude-code/cli.js" ]]; then
 					echo "node $nvm_lib/claude-code/cli.js"
 					return 0
@@ -124,10 +130,16 @@ get_nvm_claude_path() {
 			fi
 		fi
 
-		# If binaries not found, try to find cli.js in node_modules
+		# If binaries not found, try to find binary in node_modules
 		local npm_lib="$npm_prefix/lib/node_modules/@anthropic-ai"
 		if [[ -d "$npm_lib" ]]; then
-			# Try standard claude-code folder first
+			# Try native binary (new format since v2.1.114)
+			if [[ -x "$npm_lib/claude-code/bin/claude.exe" ]]; then
+				echo "$npm_lib/claude-code/bin/claude.exe"
+				return 0
+			fi
+
+			# Try standard claude-code folder first (legacy format)
 			if [[ -f "$npm_lib/claude-code/cli.js" ]]; then
 				echo "node $npm_lib/claude-code/cli.js"
 				return 0

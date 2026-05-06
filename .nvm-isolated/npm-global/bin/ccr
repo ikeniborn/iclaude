@@ -1,1 +1,8 @@
-../lib/node_modules/@musistudio/claude-code-router/dist/cli.js
+#!/bin/bash
+# npm-global/bin/ → npm-global/ → .nvm-isolated/
+_NVM_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+_NODE=$(find "$_NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)/bin/node
+_CCR="$(dirname "$0")/../lib/node_modules/@musistudio/claude-code-router/dist/cli.js"
+# Use CCR_HOME from env (set by iclaude launch.sh) or fall back to isolated .claude-isolated/
+_CCR_HOME="${CCR_HOME:-$_NVM_DIR/.claude-isolated}"
+HOME="$_CCR_HOME" exec "$_NODE" "$_CCR" "$@"

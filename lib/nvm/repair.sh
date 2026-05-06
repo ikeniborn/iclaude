@@ -40,7 +40,7 @@ repair_isolated_environment() {
 	local fixed=0
 
 	# Find Node.js version directory (sorted for deterministic selection, consistent with setup_isolated_nvm)
-	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | LC_ALL=C sort | head -1)
+	local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | LC_ALL=C sort | tail -1)
 
 	if [[ -z "$node_version_dir" ]]; then
 		print_error "No Node.js version found in isolated environment"
@@ -69,6 +69,10 @@ repair_isolated_environment() {
 	if declare -f repair_plugin_paths &>/dev/null; then
 		repair_plugin_paths || errors=$((errors + 1))
 	fi
+
+	# Repair vendor binary permissions (rg loses +x after git update)
+	echo ""
+	repair_vendor_permissions || errors=$((errors + 1))
 
 	# Configure git hooks path
 	echo ""
@@ -157,18 +161,39 @@ create_claude_symlink() {
 	print_info "Checking Claude Code symlink..."
 
 	local claude_link="$ISOLATED_NVM_DIR/npm-global/bin/claude"
+	local claude_pkg_dir="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code"
+	local claude_bin="$claude_pkg_dir/bin/claude.exe"
+	local install_script="$claude_pkg_dir/install.cjs"
 
-	# Claude Code is installed via npm with NPM_CONFIG_PREFIX=npm-global, so cli.js lives in
-	# npm-global/lib/node_modules/ — NOT in versions/node/<ver>/lib/node_modules/
-	local claude_target="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
-
-	if [[ ! -f "$claude_target" ]]; then
+	if [[ ! -f "$claude_pkg_dir/package.json" ]]; then
 		print_warning "  ! Claude Code not installed yet"
 		return 0
 	fi
 
-	# Relative symlink from npm-global/bin/claude → npm-global/lib/node_modules/...
-	local relative_target="../lib/node_modules/@anthropic-ai/claude-code/cli.js"
+	# Binary is excluded from git (>100MB). Try to regenerate via postinstall.
+	if [[ ! -f "$claude_bin" ]] && [[ -f "$install_script" ]]; then
+		print_info "  Running postinstall to restore claude binary..."
+		(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
+	fi
+
+	# If still missing, optional platform package not installed — fetch via npm
+	if [[ ! -f "$claude_bin" ]]; then
+		if command -v npm &>/dev/null; then
+			print_info "  Fetching optional dependencies via npm install..."
+			npm install -g @anthropic-ai/claude-code 2>&1 | tail -3 || true
+			# Re-run postinstall now that optional dep is available
+			if [[ -f "$install_script" ]]; then
+				(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
+			fi
+		fi
+	fi
+
+	if [[ ! -f "$claude_bin" ]]; then
+		print_error "  ✗ Native binary not found. Run: ./iclaude.sh --update"
+		return 1
+	fi
+
+	local relative_target="../lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
 
 	mkdir -p "$(dirname "$claude_link")"
 	rm -f "$claude_link"
@@ -182,6 +207,39 @@ create_claude_symlink() {
 		print_error "  ✗ Failed: claude symlink"
 		return 1
 	fi
+}
+
+#######################################
+# Repair vendor binary permissions
+# git stores binaries without execute bit; after git pull/update rg loses +x,
+# which breaks Claude Code's bundled ripgrep (used to scan commands/*.md etc.)
+# Returns:
+#   0 - success
+#######################################
+repair_vendor_permissions() {
+	local vendor_dir="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor"
+	print_info "Checking vendor binary permissions..."
+
+	if [[ ! -d "$vendor_dir" ]]; then
+		# vendor/ was removed in v2.1.114+ (native binary bundles rg internally)
+		print_success "  ✓ Vendor dir not present (native binary format, no action needed)"
+		return 0
+	fi
+
+	local fixed=0
+	while IFS= read -r -d '' bin; do
+		if [[ ! -x "$bin" ]]; then
+			chmod +x "$bin"
+			fixed=$((fixed + 1))
+		fi
+	done < <(find "$vendor_dir" \( -name "rg" -o -name "rg.exe" -o -name "*.node" \) -print0 2>/dev/null)
+
+	if [[ $fixed -gt 0 ]]; then
+		print_success "  ✓ Fixed execute bit on $fixed vendor binary(ies)"
+	else
+		print_success "  ✓ Vendor permissions OK"
+	fi
+	return 0
 }
 
 #######################################

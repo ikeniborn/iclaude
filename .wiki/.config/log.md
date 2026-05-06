@@ -1,0 +1,31 @@
+# Wiki Log
+
+<!-- Append-only лог. Новые записи добавляются в конец. -->
+
+## 2026-05-06T00:00:00
+
+**Операция:** init
+**Домен:** документация
+
+**Затронуто страниц:** 15
+
+- СОЗДАНА: `документация/функции/прокси.md` (developing) — источники: PROXY.md, CONFIGURATION.md, USE_CASES.md
+- СОЗДАНА: `документация/функции/маршрутизатор-ccr.md` (developing) — источники: ROUTER.md, USE_CASES.md, CONFIGURATION.md
+- СОЗДАНА: `документация/функции/pii-прокси.md` (developing) — источники: PII_MASKING.md, CONFIGURATION.md, TELEMETRY.md
+- СОЗДАНА: `документация/функции/статуслайн.md` (developing) — источники: STATUSLINE.md, CONFIGURATION.md
+- СОЗДАНА: `документация/функции/microvm-firecracker.md` (developing) — источники: MICROVM.md, USE_CASES.md, CONFIGURATION.md
+- СОЗДАНА: `документация/команды/обзор-команд.md` (developing) — источники: CONFIGURATION.md, USE_CASES.md, QUICK_CONFIG.md
+- СОЗДАНА: `документация/конфигурация/claude-config.md` (developing) — источники: CONFIGURATION.md, QUICK_CONFIG.md, MICROVM.md, PII_MASKING.md
+- СОЗДАНА: `документация/интеграции/ollama.md` (developing) — источники: ROUTER.md, PII_MASKING.md, STATUSLINE.md
+- СОЗДАНА: `документация/интеграции/deepseek.md` (stub) — источники: ROUTER.md, STATUSLINE.md
+- СОЗДАНА: `документация/интеграции/presidio.md` (stub) — источники: PII_MASKING.md
+- СОЗДАНА: `документация/безопасность/блокировка-секретов.md` (developing) — источники: PII_MASKING.md, TELEMETRY.md
+- СОЗДАНА: `документация/безопасность/маскирование-содержимого.md` (developing) — источники: PII_MASKING.md
+- СОЗДАНА: `документация/архитектура/модульная-структура.md` (developing) — источники: CONFIGURATION.md, STATUSLINE.md, MICROVM.md, ROUTER.md
+- СОЗДАНА: `документация/архитектура/статуслайн-адаптеры.md` (stub) — источники: STATUSLINE.md
+- СОЗДАНА: `документация/архитектура/телеметрия.md` (stub) — источники: TELEMETRY.md
+
+**Примечание:** Bootstrap-анализ выполнен: прочитаны все 28 .md файлов из docs/. Entity_types определены и записаны в domain-map.json. Пропущены: docs/architecture/diagrams/ (Mermaid), docs/superpowers/plans/, docs/superpowers/specs/ (планы разработки, не документация функций).
+
+---
+

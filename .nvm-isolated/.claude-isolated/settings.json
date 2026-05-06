@@ -2,7 +2,8 @@
   "cleanupPeriodDays": 7,
   "env": {
     "DISABLE_AUTOUPDATER": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "GRAPHIFY_OUT": ".graphify"
   },
   "permissions": {
     "allow": [
@@ -123,6 +124,30 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading caveman mode..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js\"",
+            "timeout": 5,
+            "statusMessage": "Tracking caveman mode..."
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -131,11 +156,17 @@
     "padding": 1
   },
   "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true
+    "pyright-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
+  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }

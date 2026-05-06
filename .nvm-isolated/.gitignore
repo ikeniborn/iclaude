@@ -15,6 +15,9 @@ node_modules/
 !versions/node/*/lib/node_modules/
 # Allow npm's internal node_modules (including dependencies like graceful-fs)
 !versions/node/*/lib/node_modules/*/node_modules/
+# Allow nested node_modules for minipass@3 compatibility shims
+# (minipass-pipeline, minipass-flush, etc. require minipass@^3 but npm bundles minipass@7)
+!versions/node/*/lib/node_modules/*/node_modules/*/node_modules/
 # Allow globally installed npm packages (including Claude Code)
 !npm-global/lib/node_modules/
 npm-debug.log

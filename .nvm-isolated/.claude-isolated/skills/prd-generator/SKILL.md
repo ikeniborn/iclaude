@@ -4,8 +4,8 @@ description: Автоматизированное создание Product Requi
 user-invocable: true
 context: fork
 # version: 1.3.0
-# tags: documentation, prd, product-management, mermaid, interactive, ai-generation, toon, sphinx
-# dependencies: thinking-framework, context-awareness, validation-framework, toon-skill, docs-builder | author: iclaude Skills Team
+# tags: documentation, prd, product-management, mermaid, interactive, ai-generation, toon
+# dependencies: thinking-framework, context-awareness, validation-framework, toon-skill | author: iclaude Skills Team
 # files: templates: ./templates/*.json, schemas: ./schemas/*.schema.json, examples: ./examples/*.md, rules: ./rules/*.md
 ---
 
@@ -17,7 +17,6 @@ context: fork
 
 Создание comprehensive PRD документации в каталоге `docs/prd/` проекта. Скилл генерирует 14 разделов + 5 Mermaid диаграмм на основе интерактивного сбора требований.
 
-После создания PRD автоматически вызывает `@skill:docs-builder` для включения PRD в Sphinx документацию и обновления `llms.txt` для AI агентов.
 
 ## Когда использовать
 
@@ -614,7 +613,6 @@ See `templates/prd-output.json` for full schema
 2. Render Mermaid: Use GitHub or VS Code extension
 3. Customize: Add specific details, refine personas
 4. Share: Send link to stakeholders
-5. Build Sphinx docs: `./iclaude.sh --build-docs` (if Sphinx configured)
 ```
 
 **Exit conditions:**
@@ -622,7 +620,6 @@ See `templates/prd-output.json` for full schema
 - ✓ JSON output generated
 - ✓ Markdown summary generated
 - ✓ Files written to disk
-- ✓ Sphinx rebuild triggered if docs/conf.py exists (via `@skill:docs-builder`)
 
 ---
 
@@ -780,6 +777,37 @@ prdGeneration.toon = {
 
 - **toon-skill** - TOON API ([../toon-skill/SKILL.md](../toon-skill/SKILL.md))
 - **TOON-PATTERNS.md** - Integration patterns ([../_shared/TOON-PATTERNS.md](../_shared/TOON-PATTERNS.md))
+
+---
+
+## Wiki Integration
+
+Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized` доступен.
+
+### Query (в Phase 0, после context-awareness)
+
+```
+IF project_context.wiki_initialized == true:
+  Skill(skill="llm-wiki", args='query "Product Requirements Documents и требования к продуктам"')
+
+  Использовать результат для обогащения Phase 1 Questionnaire:
+  - Если найдены похожие PRD → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
+    из накопленных паттернов
+  - Если найдены success metrics → предложить их как варианты для Q5
+  - Если wiki нет данных → продолжить стандартный Questionnaire без изменений
+```
+
+### Ingest (в Phase 7, после успешной валидации)
+
+```
+IF project_context.wiki_initialized == true AND status IN ("success", "partial"):
+  Skill(skill="llm-wiki", args='ingest "docs/prd/01-executive-summary.md"')
+  Skill(skill="llm-wiki", args='ingest "docs/prd/02-goals-and-scope.md"')
+  Skill(skill="llm-wiki", args='ingest "docs/prd/04-target-audience.md"')
+
+  Результат: wiki накапливает знания о бизнес-целях, целевых аудиториях
+  и продуктовых паттернах — переиспользуются в следующих PRD.
+```
 
 ---
 

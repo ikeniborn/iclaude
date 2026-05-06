@@ -38,9 +38,9 @@ update_isolated_claude() {
 
 	# Get current version before update
 	local current_version=""
-	local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
-	if [[ -f "$claude_cli" ]]; then
-		current_version=$(node "$claude_cli" --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+	local claude_pkg="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
+	if [[ -f "$claude_pkg" ]]; then
+		current_version=$(grep -oP '(?<="version":\s")[^"]+' "$claude_pkg" 2>/dev/null || echo "unknown")
 		print_info "Current version: $current_version"
 		echo ""
 	else
@@ -88,8 +88,8 @@ update_isolated_claude() {
 
 		# Get new version
 		local new_version=""
-		if [[ -f "$claude_cli" ]]; then
-			new_version=$(node "$claude_cli" --version 2>/dev/null | head -n 1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+		if [[ -f "$claude_pkg" ]]; then
+			new_version=$(grep -oP '(?<="version":\s")[^"]+' "$claude_pkg" 2>/dev/null || echo "unknown")
 		fi
 
 		echo ""
@@ -98,6 +98,11 @@ update_isolated_claude() {
 		echo "  Previous version: $current_version"
 		echo "  New version:      $new_version"
 		echo ""
+
+		# Restore execute bit on vendor binaries (git strips +x from rg after update)
+		if declare -f repair_vendor_permissions &>/dev/null; then
+			repair_vendor_permissions
+		fi
 
 		# Update lockfile with new version
 		print_info "Updating lockfile..."

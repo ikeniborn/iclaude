@@ -1,0 +1,9 @@
+{
+  "$comment": "Input template for prompt-verifier skill",
+  "prompt_verification": {
+    "content": "{{content: string, min 20}}",
+    "file_path": "{{file_path: string, optional}}",
+    "mode": "{{mode: enum verify|adapt}}",
+    "rules_focus": ["{{rule: enum R1|R2|R3|R4|R5|R6|R7, optional}}"]
+  }
+}
