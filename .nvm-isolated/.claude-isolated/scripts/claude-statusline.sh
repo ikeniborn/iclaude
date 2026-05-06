@@ -291,6 +291,19 @@ if [[ -f "$_SEC_FLAG" ]]; then
     fi
 fi
 
+# Caveman badge — show ⛏ with savings when CAVEMAN_STATUSLINE is set
+# caveman-stats.js writes ~/.claude/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
+CAVEMAN_ICON=""
+if [[ "${CAVEMAN_STATUSLINE:-}" == "true" ]] || [[ "${CAVEMAN_STATUSLINE:-}" == "1" ]]; then
+    _CAVEMAN_SUFFIX_FILE="${HOME}/.claude/.caveman-statusline-suffix"
+    if [[ -f "$_CAVEMAN_SUFFIX_FILE" ]]; then
+        _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_SUFFIX_FILE" 2>/dev/null | tr -d '\n\r')
+        [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
+    elif [[ -f "$CLAUDE_CONFIG_DIR/caveman-version" ]]; then
+        CAVEMAN_ICON=" | ⛏"
+    fi
+fi
+
 # PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)
 # Fetches live masking count from /api/metrics with 30s TTL cache
 PII_ICON=""
@@ -839,7 +852,7 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
@@ -847,7 +860,7 @@ case "$DISPLAY_MODE" in
         # Remove: router, proxy, session link, git info
         # Keep: tokens, cache, model, cost, rate limit, memory link, pii icon, microvm
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${SECURITY_ICON}${MEMORY_LINK}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${RL_DISPLAY}${MICROVM_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${MEMORY_LINK}"
         ;;
 
     minimal)
