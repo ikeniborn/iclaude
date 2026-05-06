@@ -805,7 +805,6 @@ IF project_context.graph_initialized == true:
   IF project_context.graph_fresh === false:
     Добавить NOTE: "Данные о графе могут быть устаревшими — запусти /graphify --update"
   # graph_fresh === null означает неизвестно — не предупреждать
-```
 
 ### Ingest (в Phase 7, после успешной валидации)
 
