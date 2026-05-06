@@ -61,10 +61,9 @@ check_graphify_status() {
         print_info "Tool dir: $GRAPHIFY_TOOL_DIR (not created yet)"
     fi
 
-    # Graph output dir (GRAPHIFY_OUT env var = GRAPHIFY_OUTPUT_DIR, default: graphify-out/)
     local git_root
     git_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
-    local out_name="${GRAPHIFY_OUTPUT_DIR:-graphify-out}"
+    local out_name="${GRAPHIFY_OUT:-graphify-out}"
     print_info "Graph output: ${git_root}/${out_name}/"
 
     echo ""

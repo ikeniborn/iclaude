@@ -79,7 +79,7 @@ Graphify clones into `~/.graphify/repos/<owner>/<repo>` and reuses existing clon
 ### Step 1 - Ensure graphify is installed
 
 ```bash
-GRAPHIFY_OUT="${GRAPHIFY_OUT:-${GRAPHIFY_OUTPUT_DIR:-graphify-out}}"
+GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
 PYTHON="
 GRAPHIFY_BIN=$(which graphify 2>/dev/null)

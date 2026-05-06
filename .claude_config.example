@@ -341,13 +341,12 @@ USE_PII_PROXY=false
 # Запуск с графом:   ./iclaude.sh --graphify
 # В Claude Code: /graphify-update (slash command)
 #
-# Директория вывода графа. Транслируется в GRAPHIFY_OUT для библиотеки graphifyy
-# и для всех команд /graphify в Claude Code.
-# Относительный путь: <project_root>/<GRAPHIFY_OUTPUT_DIR>/
+# Директория вывода графа (graphifyy library + /graphify skill).
+# Относительный путь: <project_root>/<GRAPHIFY_OUT>/
 # Абсолютный путь: записывается напрямую.
 # По умолчанию: graphify-out
-# Пример: GRAPHIFY_OUTPUT_DIR=.graphify
-# GRAPHIFY_OUTPUT_DIR=
+# Пример: GRAPHIFY_OUT=.graphify
+# GRAPHIFY_OUT=
 
 # Дополнительные аргументы к `graphify update` (через пробел).
 # Пример: --force (перезаписать даже если нод стало меньше)

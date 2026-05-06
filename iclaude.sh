@@ -232,14 +232,14 @@ fi
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
 
-        # Match: GRAPHIFY_OUTPUT_DIR=/some/path
+        # Match: GRAPHIFY_OUT=.graphify (also GRAPHIFY_OUTPUT_DIR for backward compat)
         _cfg_graphify_out=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
+            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUT[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
             "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
         if [[ -n "$_cfg_graphify_out" ]]; then
-            GRAPHIFY_OUTPUT_DIR=$(echo "$_cfg_graphify_out" | \
-                sed 's/.*GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
-            export GRAPHIFY_OUTPUT_DIR
+            GRAPHIFY_OUT=$(echo "$_cfg_graphify_out" | \
+                sed 's/.*GRAPHIFY_OUT[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_OUT
         fi
         unset _cfg_graphify_out
 
@@ -276,8 +276,7 @@ fi
         unset _cfg_skip_perm
     fi
 
-    # graphifyy reads GRAPHIFY_OUT (not GRAPHIFY_OUTPUT_DIR) — set after config is loaded
-    GRAPHIFY_OUT="${GRAPHIFY_OUTPUT_DIR:-${GRAPHIFY_OUT:-graphify-out}}"
+    GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
     export GRAPHIFY_OUT
 
     # Parse arguments
