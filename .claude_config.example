@@ -352,6 +352,28 @@ USE_PII_PROXY=false
 # Пример: --force (перезаписать даже если нод стало меньше)
 # GRAPHIFY_EXTRA_ARGS=
 
+# --- Семантическая экстракция: бэкенд LLM ---
+# Без ключей graphify использует Claude субагентов (по умолчанию, дороже).
+# Приоритет: kimi > ollama > claude субагенты.
+
+# Moonshot Kimi K2.6 — в 3x дешевле Claude, граф богаче.
+# Установка: pip install 'graphifyy[kimi]'
+# Получить ключ: https://platform.moonshot.cn
+# Формат: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export MOONSHOT_API_KEY=
+
+# Ollama — локальная модель (бесплатно, без интернета).
+# Требует: запущенный Ollama (https://ollama.com) + нужная модель скачана.
+# OLLAMA_BASE_URL задаёт endpoint; без него Ollama-бэкенд не активируется.
+#
+# Примеры моделей:
+#   kimi-k2.6:cloud  — Kimi через Ollama (облачная версия, требует интернет)
+#   qwen2.5-coder:14b — локальная, хорошо следует JSON-инструкциям
+#   qwen2.5-coder:7b  — быстрее, меньше памяти (дефолт graphify)
+#
+# export OLLAMA_BASE_URL=http://localhost:11434/v1
+# export OLLAMA_MODEL=kimi-k2.6:cloud
+
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================
