@@ -106,7 +106,7 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
 fi
 
 #######################################
-# Load Graphify modules
+# Load Graphify modules (Phase 8.0)
 #######################################
 if [[ -d "$LIB_DIR/graphify" ]]; then
     source "${LIB_DIR}/graphify/detect.sh"
@@ -518,6 +518,10 @@ fi
                 shift
                 ;;
             --graphify)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--graphify is only available in isolated environment"
+                    exit 1
+                fi
                 USE_GRAPHIFY_FLAG=true
                 shift
                 ;;
