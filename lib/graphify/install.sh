@@ -133,6 +133,7 @@ install_graphify() {
             print_error "Failed to extract uv binary"
             return 1
         fi
+        mkdir -p "${ISOLATED_NVM_DIR}/bin"
         mv "$_uv_tmp/uv" "${ISOLATED_NVM_DIR}/bin/uv"
         chmod +x "${ISOLATED_NVM_DIR}/bin/uv"
         rm -rf "$_uv_tmp"
