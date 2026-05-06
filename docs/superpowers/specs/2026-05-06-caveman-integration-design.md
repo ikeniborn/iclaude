@@ -6,7 +6,7 @@
 
 ## Контекст
 
-[caveman](https://github.com/JuliusBrussee/caveman) — Claude Code плагин, сокращающий использование токенов на ~65–75% через сжатый стиль ответов модели. Устанавливает два JS-хука (`SessionStart`, `UserPromptSubmit`) и записи в `settings.json`.
+[caveman](https://github.com/JuliusBrussee/caveman) — Claude Code плагин, сокращающий использование токенов на ~65–75% через сжатый стиль ответов модели. Устанавливает четыре файла в `hooks/` (`caveman-activate.js`, `caveman-config.js`, `caveman-mode-tracker.js`, `caveman-stats.js`) и записи в `settings.json`.
 
 **Проблема изоляции:** iclaude использует собственный `CLAUDE_CONFIG_DIR` → `.nvm-isolated/.claude-isolated/`. Стандартный установщик caveman патчит `~/.claude/settings.json`, что несовместимо с изоляцией iclaude.
 
@@ -27,8 +27,10 @@ lib/
     └── install.sh    # публичные функции: install / remove / check
 
 .nvm-isolated/.claude-isolated/hooks/
-├── caveman-activate.js      ← скачивается при установке
-└── caveman-mode-tracker.js  ← скачивается при установке
+├── caveman-activate.js      ← скачивается при установке (SessionStart хук)
+├── caveman-config.js        ← скачивается при установке (shared dependency)
+├── caveman-mode-tracker.js  ← скачивается при установке (UserPromptSubmit хук)
+└── caveman-stats.js         ← скачивается при установке (stats, нужен mode-tracker)
 ```
 
 ### Изменяемые файлы
@@ -66,10 +68,13 @@ check_caveman()     # вывести статус: установлено / ве
 ### Алгоритм `install_caveman()`
 
 1. Проверить `curl` доступность
-2. Скачать с GitHub raw:
-   - `https://raw.githubusercontent.com/JuliusBrussee/caveman/main/hooks/caveman-activate.js`
-   - `https://raw.githubusercontent.com/JuliusBrussee/caveman/main/hooks/caveman-mode-tracker.js`
-   - Целевая директория: `$CLAUDE_CONFIG_DIR/hooks/`
+2. Скачать с GitHub raw (все 4 файла в `$CLAUDE_CONFIG_DIR/hooks/`):
+   - `caveman-activate.js` — SessionStart хук
+   - `caveman-config.js` — **обязательная зависимость** activate и tracker (`require('./caveman-config')`)
+   - `caveman-mode-tracker.js` — UserPromptSubmit хук
+   - `caveman-stats.js` — динамически запускается mode-tracker (без него tracker упадёт)
+
+   Base URL: `https://raw.githubusercontent.com/JuliusBrussee/caveman/main/hooks/`
 3. Пропатчить `$CLAUDE_CONFIG_DIR/settings.json` (Python inline-скрипт):
    - Добавить в `hooks.SessionStart`: `node "$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js"`
    - Добавить в `hooks.UserPromptSubmit`: `node "$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js"`
@@ -93,21 +98,30 @@ check_caveman()     # вывести статус: установлено / ве
 - Вывести `CAVEMAN_INTENSITY` из `.claude_config`
 - Статус: installed / not installed
 
-## Интеграция в iclaude.sh (Phase 14)
+## Интеграция в iclaude.sh
+
+### Phase 2-8 (module loader) — добавить блок:
+
+```bash
+if [[ -d "$LIB_DIR/caveman" ]]; then
+    source "${LIB_DIR}/caveman/install.sh"
+fi
+```
+
+Паттерн соответствует существующим модулям (`lib/lsp/`, `lib/pii-proxy/`, `lib/router/` и др.).
+
+### Phase 14 (command dispatch) — добавить case-ветки:
 
 ```bash
 --caveman-install)
-    source "$LIB_DIR/caveman/install.sh"
     install_caveman
     exit 0
     ;;
 --caveman-remove)
-    source "$LIB_DIR/caveman/install.sh"
     remove_caveman
     exit 0
     ;;
 --check-caveman)
-    source "$LIB_DIR/caveman/install.sh"
     check_caveman
     exit 0
     ;;
