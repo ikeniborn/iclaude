@@ -164,12 +164,14 @@ skills/llm-wiki/rules/readers/
 
 ```
 было: Glob "**/*.md" по source_paths, исключить *.excalidraw.md
-стало: Glob "**/*" по source_paths
-       Фильтр: оставить только файлы с расширениями из domain-map.source_types (ключи объекта)
-       Исключить: *.excalidraw.md, node_modules/, __pycache__/, .git/
+стало:
+  1. Прочитать ключи domain-map.source_types → extensions = [".md", ".py", ".ts", ...]
+  2. Построить паттерн: "**/*.{md,py,ts,...}" (из extensions без точки, через запятую)
+  3. Glob построенным паттерном по source_paths
+  4. Исключить: *.excalidraw.md, node_modules/, __pycache__/, .git/
 ```
 
-Так добавление нового языка в `source_types` автоматически включает его в поиск — без правки glob-паттерна.
+Добавление нового расширения в `source_types` автоматически включает его в glob — паттерн строится из конфига каждый раз, не хардкодится.
 
 Bootstrap-анализ (шаг б) читает все найденные файлы. При анализе код-файлов — применять reader для данного расширения для понимания структуры, а не искать `#теги из frontmatter` (которых в коде нет).
 
