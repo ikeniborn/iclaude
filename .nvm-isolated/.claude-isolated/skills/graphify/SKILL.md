@@ -204,10 +204,49 @@ After transcription:
 
 This step has two parts: **structural extraction** (deterministic, free) and **semantic extraction** (LLM, costs tokens).
 
-**Before dispatching subagents:** check whether `MOONSHOT_API_KEY` is set. If it is NOT set, print this one-liner to the user:
-> Tip: set `MOONSHOT_API_KEY` to use Kimi K2.6 for semantic extraction — 3x cheaper, richer graphs (`pip install 'graphifyy[kimi]'`).
+**Before dispatching subagents:** check which direct LLM backend is available (priority: kimi > ollama):
 
-Print it once, then continue. If `MOONSHOT_API_KEY` IS set, use `graphify.llm.extract_corpus_parallel(files, backend="kimi")` for semantic extraction instead of dispatching Claude subagents.
+```python
+import os
+if os.environ.get("MOONSHOT_API_KEY"):
+    _backend = "kimi"
+elif os.environ.get("OLLAMA_BASE_URL"):
+    _backend = "ollama"
+else:
+    _backend = None
+```
+
+If `_backend` is `None`, print this tip once, then continue with Claude subagents:
+> Tip: set `MOONSHOT_API_KEY` (Kimi K2.6, 3x cheaper) or `OLLAMA_BASE_URL` + `OLLAMA_MODEL` (local Ollama) for direct semantic extraction — richer graphs, no Claude subagents needed (`pip install 'graphifyy[kimi]'`).
+
+If `_backend` is set (`"kimi"` or `"ollama"`), use direct extraction instead of dispatching Claude subagents:
+
+```bash
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -c "
+import os as _os; GOUT = _os.environ.get('GRAPHIFY_OUT', 'graphify-out')
+import json
+from pathlib import Path
+from graphify.llm import extract_corpus_parallel
+
+uncached = Path(f'{GOUT}/.graphify_uncached.txt').read_text().splitlines()
+files = [Path(f) for f in uncached if f.strip()]
+
+import os
+if os.environ.get('MOONSHOT_API_KEY'):
+    backend = 'kimi'
+elif os.environ.get('OLLAMA_BASE_URL'):
+    backend = 'ollama'
+else:
+    raise RuntimeError('No backend available')
+
+print(f'[graphify] direct extraction via {backend} ({len(files)} files)')
+result = extract_corpus_parallel(files, backend=backend, root=Path('.'))
+Path(f'{GOUT}/.graphify_semantic_new.json').write_text(json.dumps(result, indent=2))
+print(f'Extraction complete: {len(result[\"nodes\"])} nodes, {len(result[\"edges\"])} edges, {result[\"input_tokens\"]:,} in / {result[\"output_tokens\"]:,} out tokens')
+"
+```
+
+Skip Steps B1–B3 (subagent dispatch) entirely when direct extraction is used — results are already in `.graphify_semantic_new.json`. Proceed directly to saving cache and merging into `.graphify_semantic.json`.
 
 **Run Part A (AST) and Part B (semantic) in parallel. Dispatch all semantic subagents AND start AST extraction in the same message. Both can run simultaneously since they operate on different file types. Merge results in Part C as before.**
 
