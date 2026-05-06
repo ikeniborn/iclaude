@@ -97,23 +97,23 @@ import json
 
 class TokenManager:
     """Manages OAuth token lifecycle: load, refresh, save.
-    
+
     Tokens are stored in .credentials.json with 5-minute refresh threshold.
     """
-    
+
     def __init__(self, credentials_path: Path):
         self.credentials_path = credentials_path
-    
+
     def is_expired(self, threshold_minutes: int = 5) -> bool:
         """Check if token expires within threshold_minutes."""
         ...
-    
+
     def refresh(self) -> str:
         """Refresh OAuth token and save to credentials file.
-        
+
         Returns:
             New access token string.
-        
+
         Raises:
             TokenRefreshError: If refresh request fails.
         """
@@ -123,7 +123,7 @@ class TokenManager:
 **Выход** (`.wiki/функции/oauth/token-manager.md`):
 ```markdown
 ---
-wiki_sources: ["lib/oauth/token.py"]
+wiki_sources: ["[[lib/oauth/token.py]]"]
 wiki_updated: 2026-05-06
 wiki_status: stub
 ---

@@ -77,13 +77,13 @@ Exported переменные — wiki-страница только если �
 # Applies proxy, NVM path, and CLAUDE_CONFIG_DIR before exec.
 launch_claude() {
   local claude_path="$1"
-  
+
   export CLAUDE_CONFIG_DIR="$ISOLATED_NVM_DIR/.claude-isolated"
-  
+
   if [[ -n "$PROXY_URL" ]]; then
     setup_proxy
   fi
-  
+
   exec "$claude_path" "${CLAUDE_ARGS[@]}"
 }
 ```
@@ -91,7 +91,7 @@ launch_claude() {
 **Выход** (`.wiki/архитектура/функции/launch-claude.md`):
 ```markdown
 ---
-wiki_sources: ["lib/launcher/launch.sh"]
+wiki_sources: ["[[lib/launcher/launch.sh]]"]
 wiki_updated: 2026-05-06
 wiki_status: stub
 ---

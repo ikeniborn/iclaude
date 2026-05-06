@@ -1,7 +1,7 @@
 {
   "description": "Шаблон новой wiki-страницы. Плейсхолдеры в формате {{имя: тип}}",
   "frontmatter": {
-    "wiki_sources": ["{{source_path: string — путь к исходному файлу}}"],
+    "wiki_sources": "{{source_path: string — путь к исходному файлу}}",
     "wiki_updated": "{{date: string — YYYY-MM-DD}}",
     "wiki_status": "stub",
     "tags": ["{{tag: string — из tag-hierarchy.json}}"],

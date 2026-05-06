@@ -104,7 +104,7 @@ export function имя(param: Тип): ВозвращаемыйТип
 ```typescript
 /** HTTP client for Claude Code Router with retry logic. */
 export class RouterClient {
-  /** 
+  /**
    * Send a chat completion request.
    * @param model - Target model identifier
    * @param messages - Conversation history
@@ -125,7 +125,7 @@ export enum RouterModel {
 **Выход** (`.wiki/функции/интеграции/router-client.md`):
 ```markdown
 ---
-wiki_sources: ["src/router/client.ts"]
+wiki_sources: ["[[src/router/client.ts]]"]
 wiki_updated: 2026-05-06
 wiki_status: stub
 ---

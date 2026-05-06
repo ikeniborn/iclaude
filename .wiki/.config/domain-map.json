@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLM Wiki Domain Map",
+  "version": "1.0.0",
+  "wiki_root": ".wiki",
+  "domains": [
+    {
+      "id": "документация",
+      "name": "Документация iclaude",
+      "description": "Документация по функциям, командам, конфигурации и архитектуре iclaude — bash-обёртки для запуска Claude Code",
+      "source_paths": ["docs/"],
+      "wiki_subfolder": "документация",
+      "tags": ["iclaude", "documentation"],
+      "language_notes": "Основной язык: русский. Технические термины (CLI, API, OAuth, KVM, PII, NLP, SSH, TAP, JWT) — не переводить. Имена систем: Claude Code, Firecracker, Presidio, PasteGuard — оригинальное написание.",
+      "entity_types": [
+        {
+          "type": "функция",
+          "description": "Крупная функциональность iclaude: прокси, маршрутизатор, PII-маскирование, microVM, статуслайн, OAuth",
+          "extraction_cues": ["прокси", "proxy", "router", "маршрутизатор", "PII", "microVM", "Firecracker", "statusline", "статуслайн", "OAuth", "токен", "изоляция", "sandbox", "streaming"],
+          "min_mentions_for_page": 3,
+          "wiki_subfolder": "документация/функции"
+        },
+        {
+          "type": "команда",
+          "description": "CLI-флаги и команды iclaude.sh (--proxy, --router, --install-*, --check-*, --update и т.д.)",
+          "extraction_cues": ["--proxy", "--router", "--install", "--check", "--update", "--repair", "--sandbox", "--pii-proxy", "--no-proxy", "--system", "iclaude.sh", "флаг", "команда"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/команды"
+        },
+        {
+          "type": "конфигурационная-переменная",
+          "description": "Переменные окружения и настройки (.claude_config, settings.json): PROXY_URL, MICRO_VM_*, PII_PROXY_*, CLAUDE_CODE_*",
+          "extraction_cues": ["PROXY_URL", "MICRO_VM_", "PII_PROXY_", "CLAUDE_CODE_", "USE_PII_PROXY", "MICRO_VM_ENABLED", "settings.json", ".claude_config", "переменная", "конфиг", "export"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/конфигурация"
+        },
+        {
+          "type": "интеграция",
+          "description": "Внешние системы и провайдеры: DeepSeek, Ollama, OpenRouter, PasteGuard, Presidio, oh-my-posh, GitHub Actions",
+          "extraction_cues": ["DeepSeek", "Ollama", "OpenRouter", "Gemini", "PasteGuard", "Presidio", "oh-my-posh", "LiteLLM", "GitHub Actions", "Docker", "npm", "провайдер", "интеграция"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/интеграции"
+        },
+        {
+          "type": "механизм-безопасности",
+          "description": "Хуки, паттерны блокировки, изоляция конфигурации: block-secrets.py, redact-secrets.py, CLAUDE_CONFIG_DIR",
+          "extraction_cues": ["block-secrets", "redact-secrets", "hook", "хук", "PreToolUse", "CLAUDE_CONFIG_DIR", "изоляция", "блокировка", "маскирование", "exit 2", "toolInputOverride", "безопасность"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/безопасность"
+        },
+        {
+          "type": "архитектурный-компонент",
+          "description": "Модули lib/, ключевые скрипты, адаптеры: lib/launcher/, lib/proxy/, lib/router/, claude-statusline.sh, guest-init",
+          "extraction_cues": ["lib/", "launcher", "launch.sh", "init.sh", "adapter", "адаптер", "модуль", "iclaude-guest-init", "claude-statusline", "provider-adapter", "pricing-lookup", "module"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/архитектура"
+        }
+      ]
+    }
+  ],
+  "cross_domain_rules": {
+    "description": "Правила для сущностей, встречающихся в нескольких доменах",
+    "rules": []
+  },
+  "special_source_types": {},
+  "source_types": {
+    ".md": {
+      "reader": "markdown",
+      "extract": ["narrative", "frontmatter", "code_blocks", "headings"],
+      "rules_file": "rules/readers/markdown.md"
+    },
+    ".py": {
+      "reader": "python",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/python.md"
+    },
+    ".ts": {
+      "reader": "typescript",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/typescript.md"
+    },
+    ".tsx": {
+      "reader": "typescript",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/typescript.md"
+    },
+    ".js": {
+      "reader": "javascript",
+      "extract": ["public_api", "docstrings", "imports"],
+      "rules_file": "rules/readers/javascript.md"
+    },
+    ".mjs": {
+      "reader": "javascript",
+      "extract": ["public_api", "docstrings", "imports"],
+      "rules_file": "rules/readers/javascript.md"
+    },
+    ".sh": {
+      "reader": "bash",
+      "extract": ["functions", "flags", "exports", "comments"],
+      "rules_file": "rules/readers/bash.md"
+    }
+  }
+}

@@ -51,7 +51,7 @@ exports.validateProxy = function(url) {
 **Выход** (`.wiki/функции/proxy/validate-proxy.md`):
 ```markdown
 ---
-wiki_sources: ["lib/proxy/manager.js"]
+wiki_sources: ["[[lib/proxy/manager.js]]"]
 wiki_updated: 2026-05-06
 wiki_status: stub
 ---

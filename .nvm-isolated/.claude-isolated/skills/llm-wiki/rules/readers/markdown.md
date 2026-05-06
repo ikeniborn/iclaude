@@ -66,7 +66,7 @@ tags: [база-данных, аналитика]
 **Выход** (`.wiki/ростелеком/субд/clickhouse.md`):
 ```markdown
 ---
-wiki_sources: ["ростелеком/HLD/ClickHouse-архитектура.md"]
+wiki_sources: ["[[ростелеком/HLD/ClickHouse-архитектура.md]]"]
 wiki_updated: 2026-05-06
 wiki_status: stub
 tags: [база-данных, аналитика]
