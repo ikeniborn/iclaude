@@ -39,24 +39,26 @@ _graphify_rebuild_graph() {
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
-    print_info "Building knowledge graph → ${project_root}/graphify-out/"
+    local out_label="${GRAPHIFY_OUTPUT_DIR:-graphify-out}"
+    print_info "Building knowledge graph → ${project_root}/${out_label}/"
 
     # Build args: "update <project_root>" [extra_args...]
-    # Note: graphify update always writes to <path>/graphify-out/ — GRAPHIFY_OUTPUT_DIR not used here.
     local -a graphify_args=("update" "$project_root")
     # Split GRAPHIFY_EXTRA_ARGS on whitespace (intentional word splitting for flag list)
     # shellcheck disable=SC2086
     [[ -n "$GRAPHIFY_EXTRA_ARGS" ]] && read -ra _extra <<< "$GRAPHIFY_EXTRA_ARGS" && graphify_args+=("${_extra[@]}")
 
+    # Build env args for single env(1) call: GRAPHIFY_OUT + proxy vars
+    local -a env_args=()
+    [[ -n "$GRAPHIFY_OUTPUT_DIR" ]] && env_args+=(GRAPHIFY_OUT="$GRAPHIFY_OUTPUT_DIR")
     local proxy
     proxy=$(_graphify_resolve_proxy)
-    local proxy_env=()
     if [[ -n "$proxy" ]]; then
-        proxy_env=(env HTTP_PROXY="$proxy" HTTPS_PROXY="$proxy")
+        env_args+=(UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
     fi
 
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        "${proxy_env[@]}" \
+        env "${env_args[@]}" \
         "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
 }
 
@@ -195,11 +197,13 @@ Rebuild the graphify knowledge graph for the current project. Run the following 
 
 \`\`\`bash
 _gfy_root=\$(git rev-parse --show-toplevel 2>/dev/null || echo "\$PWD")
-UV_TOOL_DIR="${_tool_dir}" "${_uv_bin}" tool run --from graphifyy graphify \\
+_gfy_out_env=()
+[[ -n "\${GRAPHIFY_OUTPUT_DIR:-}" ]] && _gfy_out_env=(GRAPHIFY_OUT="\${GRAPHIFY_OUTPUT_DIR}")
+UV_TOOL_DIR="${_tool_dir}" "\${_gfy_out_env[@]}" "${_uv_bin}" tool run --from graphifyy graphify \\
     update "\${_gfy_root}" \${GRAPHIFY_EXTRA_ARGS:+\${GRAPHIFY_EXTRA_ARGS}}
 \`\`\`
 
-After the command completes, report: success or failure, output directory (\`<project_root>/graphify-out/\`), and briefly what was analyzed.
+After the command completes, report: success or failure, output directory, and briefly what was analyzed.
 GRAPHIFY_MD
 
     print_success "Slash command created: /graphify-update ($cmd_path)"
