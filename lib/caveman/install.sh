@@ -65,8 +65,12 @@ install_caveman() {
 
     # Load proxy credentials (PROXY_URL / PROXY_CA / PROXY_INSECURE from .claude_config)
     [[ -f "${CREDENTIALS_FILE:-}" ]] && source "$CREDENTIALS_FILE"
+    # Export HTTPS_PROXY so python3 urllib picks it up automatically (fallback path)
+    if [[ -n "${PROXY_URL:-}" ]] && [[ -z "${HTTPS_PROXY:-}" ]]; then
+        export HTTPS_PROXY="$PROXY_URL"
+    fi
 
-    # Build proxy args — mirrors pattern in lib/sandbox/install.sh::_curl_download()
+    # Build curl proxy args — mirrors pattern in lib/sandbox/install.sh::_curl_download()
     local _proxy_args=()
     local _eff_proxy="${PROXY_URL:-${HTTPS_PROXY:-}}"
     if [[ -n "$_eff_proxy" ]]; then
@@ -77,23 +81,51 @@ install_caveman() {
         [[ "${PROXY_INSECURE:-false}" == "true" ]] && _proxy_args+=("--proxy-insecure")
     fi
 
-    # Download 4 hook files; retry with -k on TLS algorithm error (exit 35, common on ALT Linux)
+    # Download hook files via curl (fast path) or git clone fallback.
+    # Strategy: curl with proxy → on exit 35 (ALT Linux TLS algorithm issue, ECDSA cert
+    # unsupported by OpenSSL on ALT Linux) fall back to GIT_SSL_NO_VERIFY=1 git clone
+    # which works through corporate MITM proxy even when TLS cert algorithm is unsupported.
+    # Use `|| _exit=$?` — compatible with set -euo pipefail.
     print_info "Downloading caveman hook files..."
+    local _dest _exit _url _clone_dir
+    local _all_curl_ok=true
     for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
+        _dest="$hooks_dir/$f"
+        _url="$_CAVEMAN_HOOKS_BASE/$f"
+        _exit=0
+        curl -fsSL "${_proxy_args[@]}" -o "$_dest" "$_url" 2>/dev/null || _exit=$?
+        if [[ $_exit -eq 35 ]]; then
+            _all_curl_ok=false
+            break
+        elif [[ $_exit -ne 0 ]]; then
+            print_error "Failed to download $f (curl exit $_exit)"
+            return 1
+        fi
         print_info "  $f"
-        local _dest="$hooks_dir/$f"
-        if ! curl -fsSL "${_proxy_args[@]}" -o "$_dest" "$_CAVEMAN_HOOKS_BASE/$f"; then
-            local _exit=$?
-            if [[ $_exit -eq 35 ]]; then
-                print_warning "TLS error (exit 35) — retrying with --insecure"
-                curl -fsSLk --proxy-insecure "${_proxy_args[@]}" -o "$_dest" \
-                    "$_CAVEMAN_HOOKS_BASE/$f" || { print_error "Failed to download $f"; return 1; }
-            else
-                print_error "Failed to download $f"
+    done
+
+    if [[ "$_all_curl_ok" == false ]]; then
+        print_warning "curl TLS error (exit 35) — falling back to git clone with GIT_SSL_NO_VERIFY=1"
+        _clone_dir=$(mktemp -d)
+        _exit=0
+        GIT_SSL_NO_VERIFY=1 git clone --quiet --depth=1 \
+            https://github.com/JuliusBrussee/caveman.git "$_clone_dir" 2>&1 || _exit=$?
+        if [[ $_exit -ne 0 ]]; then
+            rm -rf "$_clone_dir"
+            print_error "git clone failed (exit $_exit)"
+            return 1
+        fi
+        for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
+            if [[ ! -f "$_clone_dir/hooks/$f" ]]; then
+                rm -rf "$_clone_dir"
+                print_error "File not found in clone: hooks/$f"
                 return 1
             fi
-        fi
-    done
+            cp "$_clone_dir/hooks/$f" "$hooks_dir/$f"
+            print_info "  $f"
+        done
+        rm -rf "$_clone_dir"
+    fi
 
     # Patch settings.json (idempotent)
     print_info "Patching settings.json..."
