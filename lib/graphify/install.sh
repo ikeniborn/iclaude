@@ -39,9 +39,10 @@ _graphify_rebuild_graph() {
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
-    print_info "Building knowledge graph in $project_root/graphify-out/"
+    print_info "Building knowledge graph → ${project_root}/graphify-out/"
 
     # Build args: "update <project_root>" [extra_args...]
+    # Note: graphify update always writes to <path>/graphify-out/ — GRAPHIFY_OUTPUT_DIR not used here.
     local -a graphify_args=("update" "$project_root")
     # Split GRAPHIFY_EXTRA_ARGS on whitespace (intentional word splitting for flag list)
     # shellcheck disable=SC2086
@@ -181,22 +182,24 @@ _graphify_install_command() {
 
     mkdir -p "$commands_dir"
 
-    # Write markdown slash command for Claude Code (/graphify-update)
-    # Triple backticks inside heredoc are literal — no bash interpretation needed.
-    cat > "$cmd_path" << 'GRAPHIFY_MD'
+    # Write markdown slash command for Claude Code (/graphify-update).
+    # Embed real paths so command works without iclaude env vars.
+    local _uv_bin="$GRAPHIFY_UV_BIN"
+    local _tool_dir="$GRAPHIFY_TOOL_DIR"
+    cat > "$cmd_path" << GRAPHIFY_MD
 ---
 description: Rebuild graphify knowledge graph for the current project
 ---
 
 Rebuild the graphify knowledge graph for the current project. Run the following bash command and report the result:
 
-```bash
-_gfy_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
-UV_TOOL_DIR="${GRAPHIFY_TOOL_DIR}" "${GRAPHIFY_UV_BIN}" tool run --from graphifyy graphify \
-    update "${_gfy_root}" ${GRAPHIFY_EXTRA_ARGS:+${GRAPHIFY_EXTRA_ARGS}}
-```
+\`\`\`bash
+_gfy_root=\$(git rev-parse --show-toplevel 2>/dev/null || echo "\$PWD")
+UV_TOOL_DIR="${_tool_dir}" "${_uv_bin}" tool run --from graphifyy graphify \\
+    update "\${_gfy_root}" \${GRAPHIFY_EXTRA_ARGS:+\${GRAPHIFY_EXTRA_ARGS}}
+\`\`\`
 
-After the command completes, report: success or failure, output directory (`<project_root>/graphify-out/`), and briefly what was analyzed.
+After the command completes, report: success or failure, output directory (\`<project_root>/graphify-out/\`), and briefly what was analyzed.
 GRAPHIFY_MD
 
     print_success "Slash command created: /graphify-update ($cmd_path)"

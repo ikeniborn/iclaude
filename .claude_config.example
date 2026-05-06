@@ -341,14 +341,13 @@ USE_PII_PROXY=false
 # Запуск с графом:   ./iclaude.sh --graphify
 # В Claude Code: /graphify-update (slash command)
 #
-# Папка для graph.html, GRAPH_REPORT.md, graph.json.
-# Если не задана — используется корень git-репозитория ($PWD если не git-репо).
-# Относительный путь резолвится от корня репозитория (например .graphify → <repo>/.graphify/).
-# Пример: GRAPHIFY_OUTPUT_DIR=.graphify
+# Не используется в graphify v0.7.7: команда `graphify update <path>` всегда пишет
+# граф в <project_root>/graphify-out/ и не поддерживает произвольный output-dir.
+# Переменная зарезервирована для совместимости с будущими версиями.
 # GRAPHIFY_OUTPUT_DIR=
 
-# Дополнительные аргументы к `graphify .` (через пробел).
-# Пример: --no-video (пропустить видеофайлы), --no-office (без .docx/.xlsx)
+# Дополнительные аргументы к `graphify update` (через пробел).
+# Пример: --force (перезаписать даже если нод стало меньше)
 # GRAPHIFY_EXTRA_ARGS=
 
 # ============================================================
