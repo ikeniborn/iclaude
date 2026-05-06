@@ -144,19 +144,18 @@ check_graphify_status() {
     local graphify_bin="${GRAPHIFY_TOOL_DIR}/bin/graphify"
     if [[ -x "$graphify_bin" ]]; then
         local gfy_ver
-        gfy_ver=$(UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-            "$GRAPHIFY_UV_BIN" tool run graphify --version 2>/dev/null || echo "unknown")
+        gfy_ver=$("$graphify_bin" --version 2>/dev/null || echo "unknown")
         print_success "graphifyy: $graphify_bin ($gfy_ver)"
     else
         print_warning "graphifyy: not installed"
         echo "  Run: ./iclaude.sh --install-graphify"
     fi
 
-    # Python version
-    local py_ver
-    py_ver=$(UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        "$GRAPHIFY_UV_BIN" run --python 3.12 python3 --version 2>/dev/null || echo "unknown")
-    if [[ "$py_ver" != "unknown" ]]; then
+    # Python version (read from installed path — no network, no download)
+    local py_bin py_ver
+    py_bin=$(find "$GRAPHIFY_PYTHON_DIR" -name "python3.12" -maxdepth 4 -type f 2>/dev/null | head -1 || true)
+    if [[ -n "$py_bin" ]]; then
+        py_ver=$("$py_bin" --version 2>/dev/null || echo "unknown")
         print_success "Python: $py_ver"
     else
         print_warning "Python 3.12: not yet downloaded (installed on first --install-graphify)"
@@ -504,7 +503,9 @@ git commit -m "feat(graphify): load lib/graphify/ modules in iclaude.sh"
             "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
             "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
         if [[ -n "$_cfg_graphify_out" ]]; then
-            eval "$_cfg_graphify_out" 2>/dev/null || true
+            GRAPHIFY_OUTPUT_DIR=$(echo "$_cfg_graphify_out" | \
+                sed 's/.*GRAPHIFY_OUTPUT_DIR[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_OUTPUT_DIR
         fi
         unset _cfg_graphify_out
 
@@ -513,7 +514,9 @@ git commit -m "feat(graphify): load lib/graphify/ modules in iclaude.sh"
             "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_EXTRA_ARGS[[:space:]]*=" \
             "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
         if [[ -n "$_cfg_graphify_args" ]]; then
-            eval "$_cfg_graphify_args" 2>/dev/null || true
+            GRAPHIFY_EXTRA_ARGS=$(echo "$_cfg_graphify_args" | \
+                sed 's/.*GRAPHIFY_EXTRA_ARGS[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
+            export GRAPHIFY_EXTRA_ARGS
         fi
         unset _cfg_graphify_args
 ```
@@ -631,7 +634,10 @@ bash -n iclaude.sh
 ```bash
 # Имитировать USE_GRAPHIFY_FLAG без установленного graphify — функция должна вернуть 1 (warning, не crash)
 bash -c '
+set -euo pipefail
+SCRIPT_DIR="$(pwd)"
 source lib/core/init.sh
+init_environment
 source lib/graphify/detect.sh
 source lib/graphify/install.sh
 source lib/core/logging.sh
@@ -853,8 +859,7 @@ python3 -m pytest tests/test_patterns_examples.py -v --tb=short 2>&1 | tail -10
 - [ ] **Step 4: Финальный коммит**
 
 ```bash
-git add -p   # убедиться, что нет случайных изменений
-git status   # всё должно быть чисто
+git status   # убедиться, что нет случайных неотслеживаемых изменений
 ```
 
 ---
