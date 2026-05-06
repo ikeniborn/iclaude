@@ -51,7 +51,7 @@ _graphify_rebuild_graph() {
     proxy=$(_graphify_resolve_proxy)
     local proxy_env=()
     if [[ -n "$proxy" ]]; then
-        proxy_env=(env UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
+        proxy_env=(env HTTP_PROXY="$proxy" HTTPS_PROXY="$proxy")
     fi
 
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
@@ -92,7 +92,7 @@ install_graphify() {
     local proxy_env=()
     local curl_proxy_args=()
     if [[ -n "$proxy" ]]; then
-        proxy_env=(env UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
+        proxy_env=(env HTTP_PROXY="$proxy" HTTPS_PROXY="$proxy")
         curl_proxy_args=(-x "$proxy")
         # When HTTPS_PROXY is set in env and proxy uses EC cert (P-384/E7),
         # OpenSSL 1.1.1 fails to parse the cert without -k even with --proxy-insecure.
