@@ -183,6 +183,10 @@ with open(settings_file, 'w') as f:
 
 print("settings.json cleaned")
 PYEOF
+        if [[ $? -ne 0 ]]; then
+            print_error "Failed to clean settings.json"
+            return 1
+        fi
     fi
 
     rm -f "$config_dir/caveman-version"
