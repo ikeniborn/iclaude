@@ -291,15 +291,15 @@ if [[ -f "$_SEC_FLAG" ]]; then
     fi
 fi
 
-# Caveman badge — show ⛏ with savings when CAVEMAN_STATUSLINE is set
-# caveman-stats.js writes ~/.claude/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
+# Caveman badge — show ⛏ when .caveman-active exists in $CLAUDE_CONFIG_DIR
+# caveman-stats.js writes $CLAUDE_CONFIG_DIR/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
 CAVEMAN_ICON=""
-if [[ "${CAVEMAN_STATUSLINE:-}" == "true" ]] || [[ "${CAVEMAN_STATUSLINE:-}" == "1" ]]; then
-    _CAVEMAN_SUFFIX_FILE="${HOME}/.claude/.caveman-statusline-suffix"
+if [[ -f "$CLAUDE_CONFIG_DIR/.caveman-active" ]]; then
+    _CAVEMAN_SUFFIX_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix"
     if [[ -f "$_CAVEMAN_SUFFIX_FILE" ]]; then
         _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_SUFFIX_FILE" 2>/dev/null | tr -d '\n\r')
         [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
-    elif [[ -f "$CLAUDE_CONFIG_DIR/caveman-version" ]]; then
+    else
         CAVEMAN_ICON=" | ⛏"
     fi
 fi
