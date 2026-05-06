@@ -1,6 +1,9 @@
 # Working directory (should not be in repository)
 /opt/vless/
 
+# Graphify generated output
+graphify-out/
+
 # Python cache (global)
 __pycache__/
 *.pyc
