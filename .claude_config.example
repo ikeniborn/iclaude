@@ -339,7 +339,7 @@ USE_PII_PROXY=false
 # Установка:         ./iclaude.sh --install-graphify
 # Статус:            ./iclaude.sh --check-graphify
 # Запуск с графом:   ./iclaude.sh --graphify
-# Ручная пересборка: .nvm-isolated/.claude-isolated/commands/graphiffy
+# Ручная пересборка: .nvm-isolated/.claude-isolated/commands/graphify
 #
 # Папка для graph.html, GRAPH_REPORT.md, graph.json.
 # Если не задана — используется корень git-репозитория ($PWD если не git-репо).
