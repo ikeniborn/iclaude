@@ -56,7 +56,11 @@
 
 Для каждого `entity_type` домена:
 1. Читать полный текст источника
-2. Искать сущности по `extraction_cues` (ключевые слова и паттерны)
+2. Искать сущности по `extraction_cues` и синтаксическим паттернам загруженного
+   reader'а (@rules:readers/{reader}.md из Source Type Resolution):
+   - .md: narrative/frontmatter/headings/code_blocks
+   - .py/.ts/.js: public_api/docstrings/types/imports
+   - .sh: functions/flags/exports/comments
 3. Для каждой найденной сущности определить:
    - Каноническое имя (например: "ClickHouse", не "кликхаус")
    - Тип (`entity_type`)

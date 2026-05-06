@@ -3,11 +3,12 @@ name: llm-wiki
 description: Поддержка компаундируемой базы знаний по паттерну Karpathy — извлечение, синтез и поддержка wiki из raw-источников
 user-invocable: true
 context: fork
-# version: 2.1.0 | updated: 2026-05-05
+# version: 2.2.0 | updated: 2026-05-06
 # tags: obsidian, wiki, knowledge-management, llm-wiki, karpathy, ingest
 # dependencies: context-awareness
 # files: rules/*, schemas/*, templates/*
-# changelog: 2.1.0 — bootstrap интегрирован в init (автозапуск при пустых entity_types)
+# changelog: 2.2.0 — multi-language sources: .py, .ts, .tsx, .js, .mjs, .sh через source_types + readers
+#             2.1.0 — bootstrap интегрирован в init (автозапуск при пустых entity_types)
 #             2.0.0 — локальная wiki в .wiki/.config/, domain-map перенесён из shared/
 #             1.1.0 — bootstrap: автогенерация entity_types из source_paths
 #             1.0.0 — initial release
@@ -140,7 +141,17 @@ ELSE IF NOT exists {wiki_dir}/:
       "extract": ["public_api", "docstrings", "types", "imports"],
       "rules_file": "rules/readers/typescript.md"
     },
+    ".tsx": {
+      "reader": "typescript",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/typescript.md"
+    },
     ".js": {
+      "reader": "javascript",
+      "extract": ["public_api", "docstrings", "imports"],
+      "rules_file": "rules/readers/javascript.md"
+    },
+    ".mjs": {
       "reader": "javascript",
       "extract": ["public_api", "docstrings", "imports"],
       "rules_file": "rules/readers/javascript.md"
