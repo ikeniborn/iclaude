@@ -9,5 +9,5 @@
 #######################################
 detect_graphify() {
     { [[ -x "$GRAPHIFY_UV_BIN" ]] || command -v uv &>/dev/null; } || return 1
-    [[ -x "${GRAPHIFY_TOOL_DIR}/bin/graphify" ]]
+    [[ -x "${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify" ]]
 }

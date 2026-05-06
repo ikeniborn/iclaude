@@ -29,7 +29,7 @@ check_graphify_status() {
     fi
 
     # graphify binary
-    local graphify_bin="${GRAPHIFY_TOOL_DIR}/bin/graphify"
+    local graphify_bin="${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify"
     if [[ -x "$graphify_bin" ]]; then
         local gfy_ver
         gfy_ver=$("$graphify_bin" --version 2>/dev/null || echo "unknown")

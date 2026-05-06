@@ -39,23 +39,10 @@ _graphify_rebuild_graph() {
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
-    local output_dir
-    if [[ -n "$GRAPHIFY_OUTPUT_DIR" ]]; then
-        if [[ "$GRAPHIFY_OUTPUT_DIR" = /* ]]; then
-            output_dir="$GRAPHIFY_OUTPUT_DIR"
-        else
-            output_dir="${project_root}/${GRAPHIFY_OUTPUT_DIR}"
-        fi
-    else
-        output_dir="$project_root"
-    fi
+    print_info "Building knowledge graph in $project_root/graphify-out/"
 
-    mkdir -p "$output_dir"
-    print_info "Building knowledge graph → $output_dir"
-
-    # Build args array to handle extra args safely
-    local -a graphify_args=(".")
-    [[ -n "$output_dir" ]] && graphify_args+=("--output-dir" "$output_dir")
+    # Build args: "update <project_root>" [extra_args...]
+    local -a graphify_args=("update" "$project_root")
     # Split GRAPHIFY_EXTRA_ARGS on whitespace (intentional word splitting for flag list)
     # shellcheck disable=SC2086
     [[ -n "$GRAPHIFY_EXTRA_ARGS" ]] && read -ra _extra <<< "$GRAPHIFY_EXTRA_ARGS" && graphify_args+=("${_extra[@]}")
@@ -69,7 +56,7 @@ _graphify_rebuild_graph() {
 
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         "${proxy_env[@]}" \
-        "$uv_bin" tool run graphify "${graphify_args[@]}"
+        "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
 }
 
 #######################################
@@ -163,7 +150,7 @@ install_graphify() {
     # Step 3: graphify install (Claude Code skill setup)
     print_info "Setting up Claude Code skill ..."
     if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        "$uv_bin" tool run graphify install 2>/dev/null; then
+        "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
         print_success "Claude Code skill configured"
     else
         print_warning "graphify install returned non-zero (skill setup optional — continuing)"
@@ -205,21 +192,11 @@ Rebuild the graphify knowledge graph for the current project. Run the following 
 
 ```bash
 _gfy_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
-if [[ -n "${GRAPHIFY_OUTPUT_DIR:-}" ]]; then
-    if [[ "${GRAPHIFY_OUTPUT_DIR}" = /* ]]; then
-        _gfy_out="${GRAPHIFY_OUTPUT_DIR}"
-    else
-        _gfy_out="${_gfy_root}/${GRAPHIFY_OUTPUT_DIR}"
-    fi
-else
-    _gfy_out="${_gfy_root}"
-fi
-mkdir -p "$_gfy_out"
-UV_TOOL_DIR="${GRAPHIFY_TOOL_DIR}" "${GRAPHIFY_UV_BIN}" tool run graphify . \
-    --output-dir "$_gfy_out" ${GRAPHIFY_EXTRA_ARGS:+${GRAPHIFY_EXTRA_ARGS}}
+UV_TOOL_DIR="${GRAPHIFY_TOOL_DIR}" "${GRAPHIFY_UV_BIN}" tool run --from graphifyy graphify \
+    update "${_gfy_root}" ${GRAPHIFY_EXTRA_ARGS:+${GRAPHIFY_EXTRA_ARGS}}
 ```
 
-After the command completes, report: success or failure, output directory path, and briefly what was analyzed.
+After the command completes, report: success or failure, output directory (`<project_root>/graphify-out/`), and briefly what was analyzed.
 GRAPHIFY_MD
 
     print_success "Slash command created: /graphify-update ($cmd_path)"
