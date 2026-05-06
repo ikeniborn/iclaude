@@ -153,6 +153,7 @@ install_graphify() {
     # Step 3: graphify install (Claude Code skill setup)
     print_info "Setting up Claude Code skill ..."
     if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+        CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
         "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
         print_success "Claude Code skill configured"
     else
