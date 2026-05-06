@@ -142,6 +142,13 @@ if [[ -d "$LIB_DIR/ohmyposh" ]]; then
 fi
 
 #######################################
+# Load Caveman modules (Phase 8.4)
+#######################################
+if [[ -d "$LIB_DIR/caveman" ]]; then
+    source "${LIB_DIR}/caveman/install.sh"
+fi
+
+#######################################
 # Load Sandbox modules (Phase 9.1)
 #######################################
 if [[ -d "$LIB_DIR/sandbox" ]]; then
@@ -544,6 +551,28 @@ fi
                 ;;
             --check-microvm)
                 check_microvm_status
+                exit 0
+                ;;
+            --caveman-install)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --caveman-install"
+                    echo ""
+                    echo "caveman is only available in isolated environment"
+                    exit 1
+                fi
+                install_caveman
+                exit $?
+                ;;
+            --caveman-remove)
+                if [[ "$use_system" == true ]]; then
+                    print_error "--system cannot be used with --caveman-remove"
+                    exit 1
+                fi
+                remove_caveman
+                exit $?
+                ;;
+            --check-caveman)
+                check_caveman
                 exit 0
                 ;;
             --sandbox-microvm)
