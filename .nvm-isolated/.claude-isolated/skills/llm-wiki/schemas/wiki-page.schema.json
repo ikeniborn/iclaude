@@ -6,10 +6,9 @@
   "properties": {
     "wiki_sources": {
       "type": "array",
-      "description": "Пути к исходным файлам, из которых извлечена информация (относительно корня репозитория)",
+      "description": "Пути к исходным файлам, из которых извлечена информация (относительно корня репозитория). Может быть любой каталог из domain-map.source_paths.",
       "items": {
-        "type": "string",
-        "pattern": "^vaults/"
+        "type": "string"
       },
       "minItems": 1
     },
