@@ -31,9 +31,9 @@ check_graphify_status() {
     if [[ -x "$graphify_bin" ]]; then
         local gfy_ver
         gfy_ver=$("$graphify_bin" --version 2>/dev/null || echo "unknown")
-        print_success "graphifyy: $graphify_bin ($gfy_ver)"
+        print_success "graphify: $graphify_bin ($gfy_ver)"
     else
-        print_warning "graphifyy: not installed"
+        print_warning "graphify: not installed"
         echo "  Run: ./iclaude.sh --install-graphify"
     fi
 
