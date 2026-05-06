@@ -578,27 +578,30 @@ fi
                 check_microvm_status
                 exit 0
                 ;;
-            --caveman-install)
+            --install-caveman)
                 if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --caveman-install"
+                    print_error "--system cannot be used with --install-caveman"
                     echo ""
                     echo "caveman is only available in isolated environment"
                     exit 1
                 fi
+                setup_isolated_config
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
                 [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
                 install_caveman
                 exit $?
                 ;;
-            --caveman-remove)
+            --uninstall-caveman)
                 if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --caveman-remove"
+                    print_error "--system cannot be used with --uninstall-caveman"
                     exit 1
                 fi
+                setup_isolated_config
                 remove_caveman
                 exit $?
                 ;;
             --check-caveman)
+                setup_isolated_config
                 check_caveman
                 exit 0
                 ;;

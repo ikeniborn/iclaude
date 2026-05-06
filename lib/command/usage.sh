@@ -80,8 +80,8 @@ OPTIONS:
                                     Downloads ~72MB to isolated environment (not in git)
                                     Requires: KVM (/dev/kvm), iproute2
   --check-microvm                   Show microVM status (KVM, binaries, networking, configuration)
-  --caveman-install                 Install caveman token-compression hooks (downloads 4 JS files to hooks/)
-  --caveman-remove                  Remove caveman hooks and clean settings.json
+  --install-caveman                 Install caveman token-compression hooks (downloads 4 JS files to hooks/)
+  --uninstall-caveman               Remove caveman hooks and clean settings.json
   --check-caveman                   Show caveman installation status and active mode
   --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
                                     Requires prior --install-microvm setup
