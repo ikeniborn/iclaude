@@ -100,6 +100,7 @@ IF exists {CWD}/.graphify/GRAPH_REPORT.md:
        graph_god_nodes: [из graph_context.god_nodes]
        graph_communities: graph_context.communities
        graph_summary: graph_context.graph_summary
+       graph_fresh: graph_context.fresh если typeof === boolean, иначе null
 
 ELSE:
   graph_initialized: false
@@ -133,6 +134,7 @@ ELSE:
     "wiki_index_path": ".wiki/.config/index.md" | null,
     "wiki_summary": "синтезированный контекст из wiki" | null,
     "graph_initialized": true|false,
+    "graph_fresh": true|false|null,
     "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
     "graph_communities": 0,
     "graph_summary": "структурный контекст из knowledge graph" | null
@@ -342,6 +344,7 @@ ELSE:
     "wiki_index_path": ".wiki/.config/index.md",
     "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, NVM, OAuth, PII-маскирование.",
     "graph_initialized": true,
+    "graph_fresh": null,
     "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
     "graph_communities": 8,
     "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
