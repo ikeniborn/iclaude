@@ -344,9 +344,7 @@ USE_PII_PROXY=false
 # Папка для graph.html, GRAPH_REPORT.md, graph.json.
 # Если не задана — используется корень git-репозитория ($PWD если не git-репо).
 # Относительный путь резолвится от корня репозитория (например .graphify → <repo>/.graphify/).
-# Абсолютный путь используется как есть.
-# Пример (относительный): GRAPHIFY_OUTPUT_DIR=.graphify
-# Пример (абсолютный):    GRAPHIFY_OUTPUT_DIR=/home/user/graphs/my-project
+# Пример: GRAPHIFY_OUTPUT_DIR=.graphify
 # GRAPHIFY_OUTPUT_DIR=
 
 # Дополнительные аргументы к `graphify .` (через пробел).
