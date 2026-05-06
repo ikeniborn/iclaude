@@ -276,6 +276,10 @@ fi
         unset _cfg_skip_perm
     fi
 
+    # graphifyy reads GRAPHIFY_OUT (not GRAPHIFY_OUTPUT_DIR) — set after config is loaded
+    GRAPHIFY_OUT="${GRAPHIFY_OUTPUT_DIR:-${GRAPHIFY_OUT:-graphify-out}}"
+    export GRAPHIFY_OUT
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
