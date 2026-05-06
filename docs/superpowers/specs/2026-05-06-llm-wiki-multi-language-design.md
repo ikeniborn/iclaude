@@ -164,20 +164,18 @@ skills/llm-wiki/rules/readers/
 
 ```
 было: Glob "**/*.md" по source_paths, исключить *.excalidraw.md
-стало: Glob "**/*.{md,py,ts,js,sh}" по source_paths
-       Фильтр: только расширения из domain-map.source_types
+стало: Glob "**/*" по source_paths
+       Фильтр: оставить только файлы с расширениями из domain-map.source_types (ключи объекта)
        Исключить: *.excalidraw.md, node_modules/, __pycache__/, .git/
 ```
+
+Так добавление нового языка в `source_types` автоматически включает его в поиск — без правки glob-паттерна.
 
 Bootstrap-анализ (шаг б) читает все найденные файлы. При анализе код-файлов — применять reader для данного расширения для понимания структуры, а не искать `#теги из frontmatter` (которых в коде нет).
 
 **Phase 2, операция `lint` (шаг CV-*)**:
 
-```
-CV-* проверки: учитывать source_paths для всех поддерживаемых типов
-было: только .md файлы в source_paths
-стало: все файлы из source_types
-```
+Алгоритм `lint-criteria.md` шаг 5 уже читает: "Glob по source_paths каждого домена" без фильтра по расширению. Изменений в `lint-criteria.md` не требуется — CV-* проверки автоматически охватят код-файлы после появления их путей в `wiki_sources` ingested страниц.
 
 ### `ingest-rules.md`
 
@@ -258,3 +256,4 @@ Fallback для неизвестных расширений: обработат�
 - Парсинг AST не используется — только LLM-чтение по правилам
 - `domain_source_types` (override per-domain) не реализуется в v1
 - Бинарные файлы (`.pyc`, `.whl`) — всегда SKIP
+- `wiki-page.schema.json` содержит pattern `^vaults/` для `wiki_sources` — пути к коду вне `vaults/` технически нарушают схему. Схема не принудительна (LLM читает как reference), но при необходимости паттерн можно ослабить до `^.+` в отдельном PR.
