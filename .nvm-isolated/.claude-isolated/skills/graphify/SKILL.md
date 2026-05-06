@@ -288,7 +288,7 @@ All three in one message. Not three separate messages.
 Each subagent receives this exact prompt (substitute FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_OUTPUT_PATH).
 CHUNK_OUTPUT_PATH = the literal value of GRAPHIFY_OUT + "/.graphify_chunk_" + zero-padded chunk number + ".json"
 Example: if GRAPHIFY_OUT=".graphify" and chunk is 2 of 5 → CHUNK_OUTPUT_PATH = ".graphify/.graphify_chunk_02.json"
-Substitute the actual string — NOT the variable name "${GRAPHIFY_OUT}".
+Substitute the actual string — NOT the variable name (e.g. "${GRAPHIFY_OUT}" or "$GRAPHIFY_OUT").
 
 ```
 You are a graphify extraction subagent. Read the files listed and extract a knowledge graph fragment.
