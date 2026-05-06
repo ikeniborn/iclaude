@@ -11,9 +11,37 @@
 # Returns:
 #   Does not return (uses exec)
 #######################################
+######################################
+# Sync GRAPHIFY_OUT to settings.json env block so Claude Code's bash tool
+# subshells always inherit the configured value.
+# Without this, ${GRAPHIFY_OUT:-graphify-out} in skill bash blocks falls back
+# to "graphify-out" in fresh bash tool calls that don't inherit exported vars.
+#######################################
+_sync_graphify_env_to_settings() {
+    local settings_file="${ISOLATED_CONFIG_DIR:-}/settings.json"
+    [[ -f "$settings_file" ]] || return 0
+    [[ -z "${GRAPHIFY_OUT:-}" ]] && return 0
+    python3 - "$settings_file" "$GRAPHIFY_OUT" <<'PYEOF'
+import sys, json
+settings_file, graphify_out = sys.argv[1], sys.argv[2]
+with open(settings_file) as f:
+    s = json.load(f)
+env = s.setdefault('env', {})
+if env.get('GRAPHIFY_OUT') == graphify_out:
+    sys.exit(0)
+env['GRAPHIFY_OUT'] = graphify_out
+with open(settings_file, 'w') as f:
+    json.dump(s, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+PYEOF
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
+
+    # Sync GRAPHIFY_OUT into settings.json env block before launch
+    _sync_graphify_env_to_settings
 
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
