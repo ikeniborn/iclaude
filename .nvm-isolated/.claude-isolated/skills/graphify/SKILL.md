@@ -76,10 +76,20 @@ graphify merge-graphs \
 
 Graphify clones into `~/.graphify/repos/<owner>/<repo>` and reuses existing clones on repeat runs. Each node in the merged graph carries a `repo` attribute so you can filter by origin.
 
+### Step 0.5 - Resolve output directory
+
+**Run this in its own bash call before anything else:**
+
+```bash
+echo "${GRAPHIFY_OUT:-graphify-out}"
+```
+
+The printed value is the resolved output directory. Use this **literal string** in every bash command that follows — do NOT write `GRAPHIFY_OUT="graphify-out"` and do NOT write `${GRAPHIFY_OUT}`. If the output is `.graphify`, write `.graphify` everywhere. If the output is `graphify-out`, write `graphify-out` everywhere.
+
 ### Step 1 - Ensure graphify is installed
 
 ```bash
-GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
+GRAPHIFY_OUT="RESOLVED_GRAPHIFY_OUT"  # ← substitute the literal value from Step 0.5
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
 PYTHON="
 GRAPHIFY_BIN=$(which graphify 2>/dev/null)
