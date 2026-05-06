@@ -61,14 +61,10 @@ check_graphify_status() {
         print_info "Tool dir: $GRAPHIFY_TOOL_DIR (not created yet)"
     fi
 
-    # Output dir
-    if [[ -n "$GRAPHIFY_OUTPUT_DIR" ]]; then
-        print_info "Output dir: $GRAPHIFY_OUTPUT_DIR (from GRAPHIFY_OUTPUT_DIR)"
-    else
-        local git_root
-        git_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "(not a git repo — will use \$PWD)")
-        print_info "Output dir: $git_root (git root, default)"
-    fi
+    # Graph output: graphify update always writes to <project_root>/graphify-out/
+    local git_root
+    git_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+    print_info "Graph output: ${git_root}/graphify-out/"
 
     echo ""
     return 0
