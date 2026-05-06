@@ -88,6 +88,30 @@ ELSE:
 **Назначение:** Централизует проверку доступности wiki — downstream-навыки используют
 `project_context.wiki_initialized` вместо самостоятельной проверки файла.
 
+### 6. Graph Detection
+
+```
+Проверить наличие knowledge graph в корне проекта:
+
+IF exists {CWD}/.graphify/GRAPH_REPORT.md:
+  Skill(skill="graphify-context")
+  → добавить результат в project_context:
+       graph_initialized: true
+       graph_god_nodes: [из graph_context.god_nodes]
+       graph_communities: graph_context.communities
+       graph_summary: graph_context.graph_summary
+
+ELSE:
+  graph_initialized: false
+  graph_god_nodes: []
+  graph_communities: 0
+  graph_summary: null
+```
+
+**Назначение:** Централизует проверку графа — brainstorming и другие навыки используют
+`project_context.graph_initialized` вместо самостоятельной проверки файлов.
+Дополняет wiki: wiki даёт синтезированную прозу, граф — структурные связи.
+
 ## Output
 
 Используй шаблон: `@template:project-context`
@@ -107,7 +131,11 @@ ELSE:
     "wiki_initialized": true|false,
     "wiki_domains": ["domain-id-1", "domain-id-2"],
     "wiki_index_path": ".wiki/.config/index.md" | null,
-    "wiki_summary": "синтезированный контекст из wiki" | null
+    "wiki_summary": "синтезированный контекст из wiki" | null,
+    "graph_initialized": true|false,
+    "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
+    "graph_communities": 0,
+    "graph_summary": "структурный контекст из knowledge graph" | null
   }
 }
 ```
@@ -274,6 +302,49 @@ ELSE:
     "wiki_domains": ["iclaude"],
     "wiki_index_path": ".wiki/.config/index.md",
     "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, изолированная среда NVM, OAuth-обновление токенов, PII-маскирование. Ключевые компоненты: proxy-mgmt, oauth-handler, pii-proxy, router-integration."
+  }
+}
+```
+
+---
+
+### Example 4c: Bash Script Project — с wiki и knowledge graph
+
+**Project structure:**
+```
+/home/user/iclaude/
+├── iclaude.sh
+├── lib/
+├── docs/
+├── .wiki/
+│   └── .config/
+│       ├── domain-map.json   ← домен "iclaude"
+│       └── index.md
+└── .graphify/
+    ├── graph.json            ← 167 nodes · 244 edges
+    ├── GRAPH_REPORT.md       ← god nodes + communities
+    └── cache/ast/
+```
+
+**Detection result:**
+```json
+{
+  "project_context": {
+    "language": "bash",
+    "framework": "none",
+    "test_framework": "pytest",
+    "has_prd": false,
+    "prd_path": null,
+    "syntax_command": "bash -n",
+    "code_style": "none",
+    "wiki_initialized": true,
+    "wiki_domains": ["iclaude"],
+    "wiki_index_path": ".wiki/.config/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, NVM, OAuth, PII-маскирование.",
+    "graph_initialized": true,
+    "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
+    "graph_communities": 8,
+    "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
   }
 }
 ```
