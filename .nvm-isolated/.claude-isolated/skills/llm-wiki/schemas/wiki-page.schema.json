@@ -41,6 +41,22 @@
       "items": {
         "type": "string"
       }
+    },
+    "wiki_outgoing_links": {
+      "type": "array",
+      "description": "WikiLinks на другие страницы wiki в синтаксисе [[имя-страницы]]. Obsidian включает их в граф как исходящие рёбра.",
+      "items": {
+        "type": "string",
+        "pattern": "^\\[\\[.+\\]\\]$"
+      }
+    },
+    "wiki_external_links": {
+      "type": "array",
+      "description": "Внешние URL-ссылки (http/https). Не формируют граф Obsidian — только справочные ресурсы.",
+      "items": {
+        "type": "string",
+        "pattern": "^https?://.+"
+      }
     }
   },
   "required": ["wiki_sources", "wiki_updated", "wiki_status"],
