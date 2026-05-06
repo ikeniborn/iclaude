@@ -38,7 +38,7 @@ Glob: vaults/Work/.wiki/базы-данных/**/*.md
 ### clickhouse.md — проверки FM-*
 
 ```yaml
-wiki_sources: ["vaults/Work/Ростелеком/...Best Practices...md"]  # FM-001 ✓
+wiki_sources: ["[[vaults/Work/Ростелеком/...Best Practices...md]]"]  # FM-001 ✓
 wiki_updated: "2026-04-14"                                         # FM-002 ✓
 wiki_status: "stub"                                                # FM-003 ✓
 tags: ["database", "database/name/clickhouse"]                     # FM-004 ✓
@@ -58,7 +58,7 @@ wiki_status: "stub"
 ### партиционирование.md
 
 ```yaml
-wiki_sources: ["vaults/Work/Прочее/Базы данных/ClickHouse/Партиционирование.md"]  # FM-005: проверить
+wiki_sources: ["[[vaults/Work/Прочее/Базы данных/ClickHouse/Партиционирование.md]]"]  # FM-005: проверить
 wiki_updated: "2026-02-10"   # 63 дня назад, status=stub → CT-002 WARNING
 wiki_status: "stub"
 ```
