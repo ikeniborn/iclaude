@@ -107,19 +107,35 @@ install_graphify() {
     if [[ -n "$proxy" ]]; then
         proxy_env=(env UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
         curl_proxy_args=(-x "$proxy")
+        # When HTTPS_PROXY is set in env and proxy uses EC cert (P-384/E7),
+        # OpenSSL 1.1.1 fails to parse the cert without -k even with --proxy-insecure.
+        # Both flags are required for the bootstrap curl download.
+        if [[ "$proxy" == https://* ]]; then
+            curl_proxy_args+=(--proxy-insecure -k)
+        fi
     fi
 
     # Step 1: Find or install uv (isolated preferred, system fallback)
     local uv_bin
     uv_bin=$(_graphify_resolve_uv)
     if [[ -z "$uv_bin" ]]; then
-        print_info "Installing uv to ${ISOLATED_NVM_DIR}/bin/ ..."
-        if ! "${proxy_env[@]}" \
-            env INSTALLER_NO_MODIFY_PATH=1 UV_INSTALL_DIR="${ISOLATED_NVM_DIR}/bin" \
-            sh -c "$(curl -LsSf "${curl_proxy_args[@]}" https://astral.sh/uv/install.sh)"; then
-            print_error "uv installer script failed (check network/TLS/proxy)"
+        print_info "Downloading uv binary to ${ISOLATED_NVM_DIR}/bin/ ..."
+        local _uv_url="https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz"
+        local _uv_tmp
+        _uv_tmp=$(mktemp -d)
+        if ! curl -fsSL "${curl_proxy_args[@]}" -o "$_uv_tmp/uv.tar.gz" "$_uv_url"; then
+            rm -rf "$_uv_tmp"
+            print_error "Failed to download uv binary (check network/TLS/proxy)"
             return 1
         fi
+        if ! tar -xzf "$_uv_tmp/uv.tar.gz" -C "$_uv_tmp" --strip-components=1 --wildcards '*/uv' 2>/dev/null; then
+            rm -rf "$_uv_tmp"
+            print_error "Failed to extract uv binary"
+            return 1
+        fi
+        mv "$_uv_tmp/uv" "${ISOLATED_NVM_DIR}/bin/uv"
+        chmod +x "${ISOLATED_NVM_DIR}/bin/uv"
+        rm -rf "$_uv_tmp"
         uv_bin=$(_graphify_resolve_uv)
         if [[ -z "$uv_bin" ]]; then
             print_error "uv not found after install — TLS or network issue likely. Check proxy settings."
