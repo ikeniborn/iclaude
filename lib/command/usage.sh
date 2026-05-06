@@ -65,7 +65,7 @@ OPTIONS:
   --install-graphify --force        Force reinstall (removes existing graphify tool dir)
   --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
   --graphify                        Rebuild knowledge graph before launching claude
-                                    Output: GRAPHIFY_OUTPUT_DIR or git root (default)
+                                    Output: GRAPHIFY_OUT or graphify-out/ (default)
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
                                     Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL
   --chrome                          Enable Chrome browser integration (disabled by default)

@@ -39,7 +39,7 @@ _graphify_rebuild_graph() {
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
-    local out_label="${GRAPHIFY_OUTPUT_DIR:-graphify-out}"
+    local out_label="${GRAPHIFY_OUT:-graphify-out}"
     print_info "Building knowledge graph → ${project_root}/${out_label}/"
 
     # Build args: "update <project_root>" [extra_args...]
@@ -50,7 +50,7 @@ _graphify_rebuild_graph() {
 
     # Build env args for single env(1) call: GRAPHIFY_OUT + proxy vars
     local -a env_args=()
-    [[ -n "$GRAPHIFY_OUTPUT_DIR" ]] && env_args+=(GRAPHIFY_OUT="$GRAPHIFY_OUTPUT_DIR")
+    [[ -n "$GRAPHIFY_OUT" ]] && env_args+=(GRAPHIFY_OUT="$GRAPHIFY_OUT")
     local proxy
     proxy=$(_graphify_resolve_proxy)
     if [[ -n "$proxy" ]]; then
@@ -199,7 +199,7 @@ Rebuild the graphify knowledge graph for the current project. Run the following 
 \`\`\`bash
 _gfy_root=\$(git rev-parse --show-toplevel 2>/dev/null || echo "\$PWD")
 _gfy_out_env=()
-[[ -n "\${GRAPHIFY_OUTPUT_DIR:-}" ]] && _gfy_out_env=(GRAPHIFY_OUT="\${GRAPHIFY_OUTPUT_DIR}")
+[[ -n "\${GRAPHIFY_OUT:-}" ]] && _gfy_out_env=(GRAPHIFY_OUT="\${GRAPHIFY_OUT}")
 UV_TOOL_DIR="${_tool_dir}" "\${_gfy_out_env[@]}" "${_uv_bin}" tool run --from graphifyy graphify \\
     update "\${_gfy_root}" \${GRAPHIFY_EXTRA_ARGS:+\${GRAPHIFY_EXTRA_ARGS}}
 \`\`\`
