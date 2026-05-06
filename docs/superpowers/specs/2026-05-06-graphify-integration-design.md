@@ -51,7 +51,7 @@ export GRAPHIFY_OUTPUT_DIR GRAPHIFY_EXTRA_ARGS
 
 | Флаг | Поведение |
 |------|-----------|
-| `--install-graphify` | Установить uv + Python 3.12 + graphifyy; создать `commands/rebuild-graph` |
+| `--install-graphify` | Установить uv + Python 3.12 + graphifyy; создать `commands/graphiffy` |
 | `--install-graphify --force` | Переустановить полностью |
 | `--check-graphify` | Показать статус: uv, graphifyy, версия, пути |
 | `--graphify` | Пересобрать граф (`graphify .`) перед запуском claude |
@@ -71,12 +71,12 @@ fi
 install_graphify():
   1. Проверить ISOLATED_NVM_DIR (isolated env должна быть установлена)
   2. Если uv не найден в GRAPHIFY_UV_BIN:
-       curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=<ISOLATED_NVM_DIR>/bin sh
+       curl -LsSf https://astral.sh/uv/install.sh | INSTALLER_NO_MODIFY_PATH=1 UV_INSTALL_DIR="${ISOLATED_NVM_DIR}/bin" sh
   3. UV_TOOL_DIR=$GRAPHIFY_TOOL_DIR UV_PYTHON_INSTALL_DIR=$GRAPHIFY_PYTHON_DIR \
        uv tool install graphifyy --python 3.12
   4. graphify install  (создаёт Claude Code skill/slash-command)
   5. Создать commands/graphiffy (chmod +x)
-  6. Вывести "next steps": --graphify, rebuild-graph
+  6. Вывести "next steps": --graphify, commands/graphiffy
 ```
 
 Флаг `--force`: удаляет `GRAPHIFY_TOOL_DIR` перед установкой.
@@ -88,9 +88,7 @@ Proxy: если задан `PROXY_URL`, передавать через `UV_HTTP
 ```bash
 detect_graphify():
   [[ -x "$GRAPHIFY_UV_BIN" ]] || return 1
-  local bin
-  bin=$(UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" "$GRAPHIFY_UV_BIN" tool run --with graphifyy graphify --version 2>/dev/null)
-  [[ -n "$bin" ]]
+  [[ -x "${GRAPHIFY_TOOL_DIR}/bin/graphify" ]]
 ```
 
 ## `lib/graphify/status.sh`
@@ -122,9 +120,15 @@ _graphify_rebuild_graph():
      else
          output_dir=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
      fi
-  3. UV_TOOL_DIR=$GRAPHIFY_TOOL_DIR <uv tool run graphify> . \
-       ${output_dir:+--output-dir "$output_dir"} $GRAPHIFY_EXTRA_ARGS
+  3. UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+       "$GRAPHIFY_UV_BIN" tool run graphify . \
+       ${output_dir:+--output-dir "$output_dir"} \
+       ${GRAPHIFY_EXTRA_ARGS:+$GRAPHIFY_EXTRA_ARGS}
 ```
+
+> Примечание реализации: `--output-dir` — предположительный флаг graphify; уточнить через `graphify --help` при реализации. Если флаг отсутствует — заменить на `(cd "$output_dir" && "$GRAPHIFY_UV_BIN" tool run graphify .)`.
+>
+> `GRAPHIFY_EXTRA_ARGS` в bash-реализации лучше объявлять как array (`GRAPHIFY_EXTRA_ARGS_ARR`), чтобы корректно обрабатывать флаги с пробелами.
 
 Ошибка при пересборке — предупреждение, claude всё равно запускается (аналогично PII proxy).
 
@@ -134,19 +138,29 @@ _graphify_rebuild_graph():
 
 ```bash
 #!/usr/bin/env bash
-# commands/graphiffy — отдельный процесс пересборки graphify-графа.
-# Читает .claude_config из директории iclaude.
-# Использует: GRAPHIFY_OUTPUT_DIR, GRAPHIFY_EXTRA_ARGS
+# commands/graphiffy — ручная пересборка graphify-графа (без запуска claude).
+# Использует: GRAPHIFY_OUTPUT_DIR, GRAPHIFY_EXTRA_ARGS (из окружения или .claude_config)
 
-ICLAUDE_DIR="$(cd "$(dirname "$0")/../../../.." && pwd)"
-source "$ICLAUDE_DIR/iclaude.sh" --_internal-init-only 2>/dev/null || true
+ICLAUDE_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 
-# ... или напрямую без iclaude.sh:
-UV_TOOL_DIR="$ICLAUDE_DIR/.nvm-isolated/.claude-isolated/graphify" \
-  "$ICLAUDE_DIR/.nvm-isolated/bin/uv" tool run graphify . ...
+# Загрузить пользовательские переменные из .claude_config (если есть)
+[[ -f "$ICLAUDE_DIR/.claude_config" ]] && source "$ICLAUDE_DIR/.claude_config"
+
+GRAPHIFY_TOOL_DIR="${ICLAUDE_DIR}/.nvm-isolated/.claude-isolated/graphify"
+GRAPHIFY_UV_BIN="${ICLAUDE_DIR}/.nvm-isolated/bin/uv"
+
+# Определить output_dir
+if [[ -n "${GRAPHIFY_OUTPUT_DIR:-}" ]]; then
+    output_dir="$GRAPHIFY_OUTPUT_DIR"
+else
+    output_dir=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+fi
+
+UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+  "$GRAPHIFY_UV_BIN" tool run graphify . \
+  ${output_dir:+--output-dir "$output_dir"} \
+  ${GRAPHIFY_EXTRA_ARGS:+$GRAPHIFY_EXTRA_ARGS}
 ```
-
-> **Замечание:** точный механизм инициализации переменных (через `iclaude.sh --_internal-init-only` или напрямую хардкодом путей) уточняется при реализации. Предпочтительно — без зависимости от iclaude.sh.
 
 ## `.claude_config.example` — новая секция
 
