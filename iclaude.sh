@@ -585,6 +585,8 @@ fi
                     echo "caveman is only available in isolated environment"
                     exit 1
                 fi
+                # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
+                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
                 install_caveman
                 exit $?
                 ;;
