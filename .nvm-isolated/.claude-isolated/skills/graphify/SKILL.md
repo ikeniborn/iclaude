@@ -285,11 +285,16 @@ Concrete example for 3 chunks:
 ```
 All three in one message. Not three separate messages.
 
-Each subagent receives this exact prompt (substitute FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, and DEEP_MODE):
+Each subagent receives this exact prompt (substitute FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_OUTPUT_PATH).
+CHUNK_OUTPUT_PATH = the literal value of GRAPHIFY_OUT + "/.graphify_chunk_" + zero-padded chunk number + ".json"
+Example: if GRAPHIFY_OUT=".graphify" and chunk is 2 of 5 → CHUNK_OUTPUT_PATH = ".graphify/.graphify_chunk_02.json"
+Substitute the actual string — NOT the variable name "${GRAPHIFY_OUT}".
 
 ```
 You are a graphify extraction subagent. Read the files listed and extract a knowledge graph fragment.
-Output ONLY valid JSON matching the schema below - no explanation, no markdown fences, no preamble.
+Write your JSON output using the Write tool to this exact path: CHUNK_OUTPUT_PATH
+Do not write to any other path or directory. Do not create a graphify-out/ directory.
+Output ONLY valid JSON matching the schema below — no explanation, no markdown fences, no preamble.
 
 Files (chunk CHUNK_NUM of TOTAL_CHUNKS):
 FILE_LIST
