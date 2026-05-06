@@ -63,13 +63,35 @@ install_caveman() {
         return 1
     fi
 
-    # Download 4 hook files
+    # Load proxy credentials (PROXY_URL / PROXY_CA / PROXY_INSECURE from .claude_config)
+    [[ -f "${CREDENTIALS_FILE:-}" ]] && source "$CREDENTIALS_FILE"
+
+    # Build proxy args — mirrors pattern in lib/sandbox/install.sh::_curl_download()
+    local _proxy_args=()
+    local _eff_proxy="${PROXY_URL:-${HTTPS_PROXY:-}}"
+    if [[ -n "$_eff_proxy" ]]; then
+        _proxy_args+=("--proxy" "$_eff_proxy")
+        if [[ -n "${PROXY_CA:-}" ]] && [[ -f "$PROXY_CA" ]]; then
+            _proxy_args+=("--proxy-cacert" "$PROXY_CA" "--cacert" "$PROXY_CA")
+        fi
+        [[ "${PROXY_INSECURE:-false}" == "true" ]] && _proxy_args+=("--proxy-insecure")
+    fi
+
+    # Download 4 hook files; retry with -k on TLS algorithm error (exit 35, common on ALT Linux)
     print_info "Downloading caveman hook files..."
     for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
         print_info "  $f"
-        if ! curl -fsSL "$_CAVEMAN_HOOKS_BASE/$f" -o "$hooks_dir/$f"; then
-            print_error "Failed to download $f"
-            return 1
+        local _dest="$hooks_dir/$f"
+        if ! curl -fsSL "${_proxy_args[@]}" -o "$_dest" "$_CAVEMAN_HOOKS_BASE/$f"; then
+            local _exit=$?
+            if [[ $_exit -eq 35 ]]; then
+                print_warning "TLS error (exit 35) — retrying with --insecure"
+                curl -fsSLk --proxy-insecure "${_proxy_args[@]}" -o "$_dest" \
+                    "$_CAVEMAN_HOOKS_BASE/$f" || { print_error "Failed to download $f"; return 1; }
+            else
+                print_error "Failed to download $f"
+                return 1
+            fi
         fi
     done
 
