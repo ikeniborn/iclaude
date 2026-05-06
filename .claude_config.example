@@ -341,9 +341,12 @@ USE_PII_PROXY=false
 # Запуск с графом:   ./iclaude.sh --graphify
 # В Claude Code: /graphify-update (slash command)
 #
-# Не используется в graphify v0.7.7: команда `graphify update <path>` всегда пишет
-# граф в <project_root>/graphify-out/ и не поддерживает произвольный output-dir.
-# Переменная зарезервирована для совместимости с будущими версиями.
+# Имя поддиректории для графа внутри корня репозитория.
+# Транслируется в env GRAPHIFY_OUT при запуске graphify update.
+# Относительный путь: <project_root>/<GRAPHIFY_OUTPUT_DIR>/
+# Абсолютный путь: записывается напрямую.
+# По умолчанию: graphify-out/
+# Пример: GRAPHIFY_OUTPUT_DIR=.graphify
 # GRAPHIFY_OUTPUT_DIR=
 
 # Дополнительные аргументы к `graphify update` (через пробел).
