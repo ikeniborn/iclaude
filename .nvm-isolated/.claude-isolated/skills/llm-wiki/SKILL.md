@@ -123,7 +123,34 @@ ELSE IF NOT exists {wiki_dir}/:
     "description": "Правила для сущностей, встречающихся в нескольких доменах",
     "rules": []
   },
-  "special_source_types": {}
+  "special_source_types": {},
+  "source_types": {
+    ".md": {
+      "reader": "markdown",
+      "extract": ["narrative", "frontmatter", "code_blocks", "headings"],
+      "rules_file": "rules/readers/markdown.md"
+    },
+    ".py": {
+      "reader": "python",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/python.md"
+    },
+    ".ts": {
+      "reader": "typescript",
+      "extract": ["public_api", "docstrings", "types", "imports"],
+      "rules_file": "rules/readers/typescript.md"
+    },
+    ".js": {
+      "reader": "javascript",
+      "extract": ["public_api", "docstrings", "imports"],
+      "rules_file": "rules/readers/javascript.md"
+    },
+    ".sh": {
+      "reader": "bash",
+      "extract": ["functions", "flags", "exports", "comments"],
+      "rules_file": "rules/readers/bash.md"
+    }
+  }
 }
 ```
 
@@ -212,6 +239,13 @@ ELSE IF NOT exists {wiki_dir}/:
           Варианты: продолжить без извлечения сущностей | отменить
       Если продолжить: выполнить только шаги 2, 7, 8 (без шагов 3, 4, 5 — нет entity_types для извлечения)
       Если отменить: завершить
+
+1.5. Source Type Resolution:
+     a. ext = lowercase расширение файла
+     b. Найти ext в domain-map.source_types
+     c. Если найдено → загрузить @rules:readers/{source_types[ext].reader}.md
+     d. Если не найдено → AskUserQuestion: plain text | пропустить
+     (Детали: @rules:ingest-rules.md#source-type-resolution)
 
 2. Прочитать файл через Read tool
 
@@ -304,15 +338,22 @@ ELSE IF NOT exists {wiki_dir}/:
       → Выполнить bootstrap-анализ:
 
       [bootstrap-анализ]
-      а) Glob "**/*.md" по source_paths, исключить *.excalidraw.md
+      а) Построить glob-паттерн из ключей domain-map.source_types:
+         extensions = ключи source_types без точки (["md","py","ts","js","sh"])
+         pattern = "**/*.{" + extensions.join(",") + "}"
+         Glob {pattern} по source_paths
+         Исключить: *.excalidraw.md, node_modules/, __pycache__/, .git/
          Если 0 файлов → ошибка: "Файлы не найдены в source_paths"
          Если файлов ≥ 50 → AskUserQuestion:
            "Найдено {N} файлов. Анализ займёт много токенов. Продолжить?"
            Варианты: да, продолжить | нет, отменить
 
       б) Прочитать ВСЕ найденные файлы (Read tool)
-         Собрать: #теги из frontmatter и тела, заголовки H1/H2/H3,
-                  повторяющиеся именованные существительные и ключевые понятия
+         Для .md файлов: собрать #теги из frontmatter, заголовки H1/H2/H3,
+                         повторяющиеся именованные существительные
+         Для кода (.py/.ts/.js/.sh): применить соответствующий @rules:readers/*.md,
+                         собрать публичные функции/классы/типы как кандидатов entity_types
+         Во всех случаях: искать повторяющиеся понятия ≥ 3 упоминаний
 
       в) Сгенерировать черновик entity_types — 3–7 типов:
          - type: короткий id в kebab-case
@@ -350,9 +391,13 @@ ELSE IF NOT exists {wiki_dir}/:
     ELSE (entity_types непусты):
       → Продолжить как обычно
 
-2. Получить список .md файлов:
+2. Получить список файлов:
    IF $source_files_list уже собран (после bootstrap-анализа) → использовать его
-   ELSE → Glob "**/*.md" по source_paths, исключить *.excalidraw.md
+   ELSE:
+     extensions = ключи domain-map.source_types без точки
+     pattern = "**/*.{" + extensions.join(",") + "}"
+     Glob {pattern} по source_paths
+     Исключить: *.excalidraw.md, node_modules/, __pycache__/, .git/
 
 3. Приоритизировать:
    - HLD-документы (path содержит "HLD") → первыми
