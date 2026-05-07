@@ -268,3 +268,92 @@ Net: −202 строки, −2 hooks, −100% per-Bash overhead, +3 patch фай
 - `.gitignore` (cache/ast/ остаётся в git для shared cache)
 - `graph.json`, `GRAPH_REPORT.md` — уже portable
 - Layer 2 SKILL.md hardcodes — отдельная задача
+
+## Upstream contribution
+
+Vendored patches — временное решение. Долгосрочно проблема решается в upstream.
+
+**Repository:** [safishamsi/graphify](https://github.com/safishamsi/graphify)
+
+### Issue (создать первым)
+
+**Title:** `Absolute paths in manifest.json, .graphify_root, and cache/ast/*.json break git-based portability`
+
+**Body (черновик):**
+
+```markdown
+## Problem
+
+When `.graphify/` (or custom `GRAPHIFY_OUT/`) is committed to git for
+incremental cache sharing across machines/CI, three artifacts contain
+absolute paths and break on clone to a different filesystem location:
+
+1. `manifest.json` — keys are absolute (`/home/alice/proj/foo.py`)
+   → `detect_incremental` cache miss → full rebuild
+2. `.graphify_root` — absolute project path
+   → `graphify update` (no args) fails on a different machine
+3. `cache/ast/*.json` — `source_file` field is absolute
+   → not directly fatal but pollutes diffs and leaks user paths
+
+`graph.json` is already correctly relativized via
+`watch._relativize_source_files`, demonstrating the intent.
+
+## Reproduce
+
+```bash
+mkdir /tmp/p && cd /tmp/p && git init -q && echo "def f(): pass" > a.py
+graphify update .
+head -3 graphify-out/manifest.json
+# {"keys": "/tmp/p/a.py" — absolute}
+cat graphify-out/.graphify_root
+# /tmp/p — absolute
+```
+
+## Proposed fix
+
+Three small changes that mirror the existing `_relativize_source_files`
+approach already in `watch.py`:
+
+1. `detect.save_manifest` — relativize absolute keys against CWD
+   (skip paths outside via `os.path.relpath` ".." check)
+2. `watch._rebuild_code:133` — write `str(watch_path)` instead of
+   `str(watch_root)` so user-provided `.` is preserved
+3. `cache.save_cached` — walk `result["nodes"]` + `result["edges"]`,
+   relativize `source_file` against `root` before serialization
+
+All three are backwards compatible (relative paths already work in
+all consumer code paths — `Path(f).stat()`, opaque-string usage).
+
+## Workaround we're using
+
+Vendored patches applied post-`uv tool install` —
+[lib/graphify/patches/](https://github.com/<our-repo>/lib/graphify/patches/).
+
+Happy to submit a PR once issue is triaged.
+```
+
+### Pull Request (после triage maintainer)
+
+После reaction maintainer на issue:
+
+- Fork `safishamsi/graphify`
+- Branch: `fix/portable-paths`
+- Commits: один на каждый из трёх patch points (atomic, легче review)
+- Tests: добавить unit-тесты `test_save_manifest_relativizes_keys`, `test_save_cached_relativizes_source_file`, `test_graphify_root_preserves_relative` в upstream test suite
+- Link issue в PR description
+
+### Когда merged
+
+- Pin `graphifyy>=X.Y.Z` (версия с fix) в lockfile
+- Удалить `lib/graphify/patches/` + `apply_patches.sh`
+- Удалить вызов из `lib/graphify/install.sh`
+- Удалить `tests/test_graphify_patches.py` (перешли в upstream)
+- Net упрощение: ещё −150 строк к нашим −202
+
+### Tracking
+
+| Этап | Marker | TODO |
+|---|---|---|
+| Issue создан | `lib/graphify/UPSTREAM_ISSUE.md` содержит ссылку | Implementation plan task |
+| PR submitted | Update `UPSTREAM_ISSUE.md` с PR link | Implementation plan task |
+| PR merged + released | Trigger removal cycle | Future cleanup task |
