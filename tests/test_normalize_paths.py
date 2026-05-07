@@ -217,6 +217,51 @@ class TestHookFilter:
             np_mod.main()
         assert exc.value.code == 0
 
+    @pytest.mark.parametrize("command,should_skip", [
+        ("git add .graphify/", True),
+        ("cd .graphify && ls", True),
+        ("cat .graphify/manifest.json", True),
+        ("mv .graphify foo", True),
+        ("graphify update .", False),
+        ("./graphify update", False),
+        ("which graphify", False),
+        ("/usr/bin/graphify", False),
+        ("uv tool run --from graphifyy graphify update", False),
+    ])
+    def test_dotgraphify_path_does_not_trigger_hook(
+        self, monkeypatch, tmp_path, command, should_skip
+    ):
+        """Regression: hook must skip commands operating on .graphify/ as path,
+        but trigger on graphify CLI invocation."""
+        hook_input = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
+        monkeypatch.setattr("sys.stdin", __import__("io").StringIO(hook_input))
+        monkeypatch.setattr("sys.argv", ["normalize-paths.py", "rel2abs"])
+
+        called = {"normalize_manifest": False}
+
+        def fake_normalize(*args, **kwargs):
+            called["normalize_manifest"] = True
+
+        monkeypatch.setattr(np_mod, "normalize_manifest", fake_normalize)
+        monkeypatch.setattr(np_mod, "normalize_root", lambda *a, **k: None)
+        monkeypatch.setattr(np_mod, "normalize_cache", lambda *a, **k: None)
+        monkeypatch.setattr(np_mod, "get_project_root", lambda gout: PROJECT_ROOT)
+
+        gout = tmp_path / ".graphify"
+        gout.mkdir()
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("GRAPHIFY_OUT", ".graphify")
+
+        try:
+            np_mod.main()
+        except SystemExit:
+            pass
+
+        if should_skip:
+            assert not called["normalize_manifest"], f"hook should skip: {command}"
+        else:
+            assert called["normalize_manifest"], f"hook should run: {command}"
+
     def test_empty_stdin_direct_call_runs(self, tmp_gout, monkeypatch):
         """Прямой вызов (пустой stdin) — нормализация выполняется."""
         monkeypatch.setattr("sys.stdin", __import__("io").StringIO(""))
