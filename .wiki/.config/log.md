@@ -93,3 +93,15 @@
 - ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` — добавлены секции «Сохранение локальных правок SKILL.md при reinstall» и «Symlink graphify в isolated bin/»; в wiki_sources добавлены `lib/graphify/detect.sh`, `lib/graphify/status.sh`; aliases дополнены (`SKILL.md preservation`, `graphify symlink`)
 - Источники коммитов: c9a50e9 (preserve SKILL.md customizations), c3cd7ba (save upstream as .new), 967084b (--force not overwrite SKILL.md), 54d6915 (graphify symlink to isolated bin)
 - Ключевые находки: `graphify install` запускается в `mktemp -d` при reinstall для diff с локальным SKILL.md; `which graphify` нужен для определения uv-managed Python 3.12 через shebang
+
+## 2026-05-07T17:45:00
+
+**Операция:** ingest (update)
+**Домен:** документация
+**Тема:** PII shared-proxy detach от master PG/session
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/функции/pii-прокси.md` (developing) — добавлен раздел «Detach от process group мастера (fix 2026-05-07)» с описанием проблемы, idiom-fix (`setsid` + `</dev/null`), таблицей сценариев и регрессионным тестом; в wiki_sources добавлены spec/plan/launch.sh/test; aliases дополнены (`shared proxy detach`, `setsid pii`)
+- Источники коммитов: fb744b81 (regression test), 33d05a73 (restore inline comments), e52fc28f (fix launch.sh shared-start)
+- Ключевые находки: `disown` НЕ создаёт новую сессию/PG — нужен `setsid`; reference-counting layer не меняется и остаётся единственным триггером shutdown; assertion A теста ловит revert через grep, assertion B верифицирует detach реально работает на ядре через `ps -o sid=`
