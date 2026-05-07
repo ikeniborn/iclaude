@@ -41,8 +41,11 @@ _patch_graphify_watch() {
 
     # Idempotent: only patch when the unpatched line is present
     if grep -qF 'save_manifest(detected["files"])' "$watch_py"; then
-        sed -i 's|save_manifest(detected\["files"\])|save_manifest(detected["files"], manifest_path=str(out / "manifest.json"))|' "$watch_py"
-        print_info "Patched graphify watch.py: save_manifest now uses explicit manifest_path"
+        if sed -i 's|save_manifest(detected\["files"\])|save_manifest(detected["files"], manifest_path=str(out / "manifest.json"))|' "$watch_py"; then
+            print_info "Patched graphify watch.py: save_manifest now uses explicit manifest_path"
+        else
+            print_warning "Failed to patch graphify watch.py (sed error — check permissions)"
+        fi
     fi
 }
 
