@@ -88,10 +88,6 @@ _graphify_rebuild_graph() {
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         env "${env_args[@]}" \
         "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
-
-    if [[ -n "$CLAUDE_CONFIG_DIR" && -f "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" ]]; then
-        python3 "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" abs2rel < /dev/null
-    fi
 }
 
 #######################################
@@ -182,6 +178,11 @@ install_graphify() {
     fi
     print_success "graphifyy installed"
     _patch_graphify_watch
+
+    # Apply iclaude portability patches (relative paths in manifest/root/cache)
+    if [[ -f "$LIB_DIR/graphify/apply_patches.sh" ]]; then
+        bash "$LIB_DIR/graphify/apply_patches.sh"
+    fi
 
     # Step 2.5: Symlink graphify binary into isolated bin/ so `which graphify` resolves correctly.
     # SKILL.md detects graphify by reading its shebang — which points to the uv-managed Python 3.12.
