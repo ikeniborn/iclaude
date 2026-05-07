@@ -22,7 +22,7 @@ Three skill files reference the graphify output directory as a hardcoded literal
 
 - `lib/graphify/install.sh`, `lib/graphify/status.sh`, `iclaude.sh` — all use `${GRAPHIFY_OUT}`
 - Python blocks in `graphify/SKILL.md` — use `os.environ.get('GRAPHIFY_OUT', 'graphify-out')`
-- `settings.json` — sets `GRAPHIFY_OUT=".graphify"` (correct, single source of truth)
+- `settings.json` `env.GRAPHIFY_OUT` — dynamically synced by `_sync_graphify_env_to_settings()` in `lib/launcher/launch.sh` before each Claude Code launch; NOT a hardcode
 - `.gitignore` — contains `graphify-out/` (default path only; `.graphify/` is intentionally in git)
 
 ---
@@ -34,7 +34,7 @@ Three skill files reference the graphify output directory as a hardcoded literal
 Before any path check in skill files, resolve GRAPHIFY_OUT to a local variable:
 
 ```bash
-GOUT=$(echo "${GRAPHIFY_OUT:-.graphify}")
+GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 ```
 
 Use `{GOUT}` in all subsequent path references within the skill. (`{GOUT}` is pseudocode in skill instruction prose — Claude resolves it by running the bash line above.)
@@ -55,7 +55,7 @@ Remove hardcoded path reference.
 ## Step 0: Resolve graph output dir
 
 ```bash
-GOUT=$(echo "${GRAPHIFY_OUT:-.graphify}")
+GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 ```
 Use `{GOUT}` in all path checks below.
 ```
@@ -84,7 +84,7 @@ Use `{GOUT}` in all path checks below.
 
 After the opening paragraph, before the IF block, add:
 ```
-Сначала resolve выходную директорию: `GOUT=$(echo "${GRAPHIFY_OUT:-.graphify}")`
+Сначала resolve выходную директорию: `GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")`
 ```
 
 **Change 2b** — IF condition (line 96):  
