@@ -61,7 +61,7 @@ Run (from project root, requires pii-proxy venv installed):
 LOG_DIR=$(mktemp -d)
 ICLAUDE_SESSION_ID=shared \
 ANTHROPIC_UPSTREAM_URL=https://api.anthropic.com \
-  .nvm-isolated/pii-proxy-venv/bin/python3 lib/pii-proxy/server.py \
+  .nvm-isolated/.claude-isolated/pii-proxy-venv/bin/python3 lib/pii-proxy/server.py \
   --port 0 --log-dir "$LOG_DIR" &
 PROXY_PID=$!
 sleep 3
@@ -316,11 +316,12 @@ export PII_PROXY_PORT=0
 export PII_PROXY_MASKING_LEVEL=standard
 export PII_PROXY_LOG_LEVEL=info
 export PII_PROXY_SERVER_SCRIPT="$(pwd)/lib/pii-proxy/server.py"
-export PII_PROXY_VENV="$(pwd)/.nvm-isolated/pii-proxy-venv"
+export PII_PROXY_VENV="$(pwd)/.nvm-isolated/.claude-isolated/pii-proxy-venv"
 
 mkdir -p "$PII_PROXY_PID_DIR" "$PII_PROXY_LOG_DIR"
 
-# Source the launcher module
+# Source required modules
+source lib/core/logging.sh
 source lib/pii-proxy/detect.sh
 source lib/launcher/launch.sh
 
