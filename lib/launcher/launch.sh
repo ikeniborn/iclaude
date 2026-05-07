@@ -921,6 +921,137 @@ except Exception:
         fi
     fi
 
+    # Shared proxy mode (non-CCR only): attach to existing shared proxy or start one.
+    # All clean-PII sessions share one Python process to avoid loading Presidio NLP
+    # multiple times. A flock on shared.lock serializes start/stop decisions.
+    # CCR sessions (CCR_SESSION_OWNED=true) bypass this and start a per-session proxy.
+    if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]]; then
+        local _shared_lock="${PII_PROXY_PID_DIR}/shared.lock"
+        local _shared_pid_file="${PII_PROXY_PID_DIR}/shared.pid"
+        local _shared_port_file="${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
+        # Capture upstream before subshell (subshells cannot set parent vars)
+        local _upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+        # Temp file to pass port out of the flock subshell (subshells cannot set parent vars)
+        local _shared_result="${PII_PROXY_PID_DIR}/shared-attach-${ICLAUDE_SESSION_ID}.tmp"
+        rm -f "$_shared_result"
+        mkdir -p "$PII_PROXY_PID_DIR"
+        chmod 700 "$PII_PROXY_PID_DIR"
+
+        (
+            flock -x 9
+            _sweep_dead_pii_consumers
+
+            # Check if shared proxy is alive
+            local _spid _sport _salive=false
+            _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+            if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null && \
+               ps -p "$_spid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+                _sport=$(cat "$_shared_port_file" 2>/dev/null || true)
+                [[ "$_sport" =~ ^[0-9]+$ ]] && _salive=true
+            fi
+
+            if [[ "$_salive" == "true" ]]; then
+                # Attach to existing shared proxy
+                _register_pii_consumer
+                echo "attach:${_sport}" > "$_shared_result"
+            else
+                # Start new shared proxy
+                rm -f "$_shared_pid_file" "$_shared_port_file"
+                local _upstream="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+                mkdir -p "$PII_PROXY_LOG_DIR"
+                chmod 700 "$PII_PROXY_LOG_DIR"
+
+                ANTHROPIC_UPSTREAM_URL="$_upstream" \
+                ICLAUDE_SESSION_ID="shared" \
+                PII_PROXY_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}" \
+                    "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
+                    --port "$PII_PROXY_PORT" \
+                    --log-dir "$PII_PROXY_LOG_DIR" \
+                    >/dev/null 2>&1 9>&- &
+
+                local _proxy_pid=$!
+                disown "$_proxy_pid" 2>/dev/null || true
+                echo "$_proxy_pid" > "$_shared_pid_file"
+
+                # Poll for port file then HTTP health (max 15s, 0.5s intervals)
+                local _max=30 _tick=0 _health=false _port=""
+                while [[ $_tick -lt $_max ]]; do
+                    if ! kill -0 "$_proxy_pid" 2>/dev/null; then
+                        echo "fail:process_exited" > "$_shared_result"
+                        rm -f "$_shared_pid_file"
+                        exit 1
+                    fi
+                    if [[ -f "$_shared_port_file" ]]; then
+                        _port=$(cat "$_shared_port_file" 2>/dev/null || true)
+                        if [[ "$_port" =~ ^[0-9]+$ ]]; then
+                            if (: >/dev/tcp/127.0.0.1/"$_port") 2>/dev/null; then
+                                if _pii_proxy_http_health "$_port"; then
+                                    _health=true
+                                    break
+                                fi
+                            fi
+                        fi
+                    fi
+                    sleep 0.5
+                    _tick=$((_tick + 1))
+                done
+
+                if [[ "$_health" != "true" ]]; then
+                    kill "$_proxy_pid" 2>/dev/null || true
+                    rm -f "$_shared_pid_file" "$_shared_port_file"
+                    echo "fail:timeout" > "$_shared_result"
+                    exit 1
+                fi
+
+                _register_pii_consumer
+                echo "start:${_port}" > "$_shared_result"
+            fi
+        ) 9>"$_shared_lock"
+
+        # Process result from flock subshell
+        local _result _mode _port
+        if [[ -f "$_shared_result" ]]; then
+            _result=$(cat "$_shared_result" 2>/dev/null || true)
+            rm -f "$_shared_result"
+        else
+            _result="fail:no_result"
+        fi
+        _mode="${_result%%:*}"
+        _port="${_result#*:}"
+
+        case "$_mode" in
+            attach|start)
+                if [[ ! "$_port" =~ ^[0-9]+$ ]]; then
+                    print_warning "PII proxy: shared proxy returned invalid port"
+                    unset -f _pii_proxy_http_health
+                    return 1
+                fi
+                PII_PROXY_ACTIVE_PORT="$_port"
+                PII_PROXY_SESSION_OWNED=shared
+                export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_ACTIVE=1
+                export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
+                export ICLAUDE_PII_ACTIVE_PORT="$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
+                export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/shared.log"
+                if [[ "$_mode" == "attach" ]]; then
+                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT"
+                else
+                    print_info "PII proxy: shared proxy started on :$PII_PROXY_ACTIVE_PORT → $_upstream_url [${PII_PROXY_MASKING_LEVEL:-standard}]"
+                fi
+                unset -f _pii_proxy_http_health
+                echo ""
+                return 0
+                ;;
+            *)
+                print_warning "PII proxy: shared proxy failed to start (${_result})"
+                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                unset -f _pii_proxy_http_health
+                return 1
+                ;;
+        esac
+    fi
+
     # Cleanup orphaned proxies from previous (terminated) sessions
     cleanup_orphaned_pii_proxies
 
