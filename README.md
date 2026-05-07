@@ -254,6 +254,50 @@ Claude Code может читать, изменять и выполнять фа
 | `CLAUDE_CODE_NO_CHROME` | false | Отключить Chrome |
 | `CLAUDE_CODE_MODEL` | claude-4-5-sonnet | Модель |
 
+### Граф знаний проекта (Graphify)
+
+Строит knowledge graph по исходному коду и документации через [graphifyy](https://pypi.org/project/graphifyy/). Используется skill `/graphify` для архитектурных запросов и автоматически подтягивается в `superpowers:brainstorming`.
+
+```bash
+./iclaude.sh --install-graphify    # Установка (uv + graphifyy + skill, ~250MB)
+./iclaude.sh --graphify            # Перестроить граф перед запуском Claude Code
+./iclaude.sh --check-graphify      # Статус: версии, пути, размер
+```
+
+**Конфигурация (`.claude_config`):**
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `GRAPHIFY_OUT` | `graphify-out` | Имя выходного каталога графа |
+| `GRAPHIFY_EXTRA_ARGS` | (пусто) | Доп. флаги `graphify update`, например `--no-video` |
+
+Изоляция: `uv` и Python 3.12 в `.nvm-isolated/.claude-isolated/graphify/`. Четыре idempotent-патча (`lib/graphify/patches/`) делают пути в манифесте относительными — граф переносится между машинами через git.
+
+Подробнее: [docs/functions/GRAPHIFY.md](docs/functions/GRAPHIFY.md).
+
+### Сжатие токенов (Caveman)
+
+Сокращает использование output-токенов на ~65–75% через [caveman](https://github.com/JuliusBrussee/caveman) — компрессивный стиль ответов модели (drop articles/filler/pleasantries). Не затрагивает код, коммиты, security warnings, error quotes.
+
+```bash
+./iclaude.sh --install-caveman      # Скачать 4 хука + патчить settings.json
+./iclaude.sh --check-caveman        # Статус: установка, версия, режим
+./iclaude.sh --uninstall-caveman    # Удалить
+```
+
+**Конфигурация (`.claude_config`):**
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `CAVEMAN_DEFAULT_MODE` | `full` | `off` / `lite` / `full` / `ultra` / `wenyan-*` / `commit` / `review` / `compress` |
+| `CAVEMAN_STATUSLINE` | `false` | Badge экономии токенов в статусной строке |
+
+В сессии: `/caveman lite|full|ultra` для переключения, `stop caveman` для выхода.
+
+**Изоляция:** хуки ставятся только в `$CLAUDE_CONFIG_DIR/hooks/` — `~/.claude/` не затрагивается.
+
+Подробнее: [docs/functions/CAVEMAN.md](docs/functions/CAVEMAN.md).
+
 ### Обновление и диагностика
 
 ```bash
@@ -343,6 +387,8 @@ iclaude.sh
 | PII-маскирование | `docs/functions/PII_MASKING.md` |
 | Статуслайн | `docs/functions/STATUSLINE.md` |
 | microVM | `docs/functions/MICROVM.md` |
+| Граф знаний (Graphify) | `docs/functions/GRAPHIFY.md` |
+| Сжатие токенов (Caveman) | `docs/functions/CAVEMAN.md` |
 | Все команды | `docs/functions/CONFIGURATION.md` |
 | Примеры сценариев | `docs/functions/USE_CASES.md` |
 | Телеметрия | `docs/functions/TELEMETRY.md` |
