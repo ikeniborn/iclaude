@@ -1276,6 +1276,40 @@ stop_pii_proxy_server() {
     if [[ "${PII_PROXY_SESSION_OWNED:-}" == "false" ]]; then
         return 0
     fi
+
+    # Shared proxy: deregister this session; kill proxy only if no consumers remain
+    if [[ "${PII_PROXY_SESSION_OWNED:-}" == "shared" ]]; then
+        local _shared_lock="${PII_PROXY_PID_DIR}/shared.lock"
+        local _shared_pid_file="${PII_PROXY_PID_DIR}/shared.pid"
+        mkdir -p "$PII_PROXY_PID_DIR"
+        (
+            flock -x 9
+            rm -f "${PII_PROXY_PID_DIR}/consumers/${ICLAUDE_SESSION_ID}.pid"
+            _sweep_dead_pii_consumers
+            local _count
+            _count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
+            if [[ "$_count" -eq 0 ]]; then
+                local _spid
+                _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+                if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null; then
+                    kill "$_spid" 2>/dev/null || true
+                    local _waited=0
+                    while kill -0 "$_spid" 2>/dev/null && [[ $_waited -lt 10 ]]; do
+                        sleep 0.1
+                        _waited=$((_waited + 1))
+                    done
+                    kill -9 "$_spid" 2>/dev/null || true
+                fi
+                rm -f "$_shared_pid_file"
+                rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
+                if [[ "${PII_PROXY_LOG_LEVEL:-info}" != "debug" ]]; then
+                    rm -f "${PII_PROXY_LOG_DIR}/shared.log"
+                fi
+            fi
+        ) 9>"$_shared_lock"
+        return 0
+    fi
+
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
         local pid
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
