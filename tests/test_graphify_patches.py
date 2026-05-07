@@ -48,20 +48,20 @@ class TestApplyPatchesBasic:
 
 class TestIdempotency:
     def test_applied_marker_prevents_reapply(self, fake_pkg):
-        """Если marker в файле — patch не применяется повторно."""
-        # Подложим vendored-like содержимое, совпадающее с патчами
+        """Idempotent: после первого apply повторный — no-op."""
+        # Подложим vendored-like содержимое (могут быть уже патченые)
         _seed_real_targets(fake_pkg)
 
-        # Первый apply: применяется
+        # Первый apply: applied=3 (если seed был unpatched) или skipped=3 (если уже patched).
         r1 = run_apply(fake_pkg)
         assert r1.returncode == 0
-        assert "applied=3" in r1.stdout
+        assert "failed=0" in r1.stdout
 
-        # Marker должен присутствовать
+        # После первого apply marker должен присутствовать во всех файлах
         for f in ("detect.py", "watch.py", "cache.py"):
             assert "ICLAUDE-PATCHED-v1" in (fake_pkg / f).read_text()
 
-        # Второй apply: skip (idempotent)
+        # Второй apply: всегда skipped=3, applied=0 (idempotent)
         r2 = run_apply(fake_pkg)
         assert r2.returncode == 0
         assert "skipped=3" in r2.stdout
