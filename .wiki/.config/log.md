@@ -29,3 +29,17 @@
 
 ---
 
+## 2026-05-07T00:00:00
+
+**Операция:** update (ingest/virtual-source)
+**Домен:** документация
+**Тема:** graphify-integration
+
+**Затронуто страниц:** 1
+
+- СОЗДАНА: `документация/архитектура/graphify-интеграция.md` (developing) — источник: commit-note/graphify-integration-2026-05-07 + skill-файлы
+
+**Содержание изменения:** Skill-файлы graphify-context/SKILL.md, context-awareness/SKILL.md, graphify/SKILL.md более не содержат хардкода `.graphify/` в path-check инструкциях. Добавлен Step 0 (`GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")`) перед проверками пути в graphify-context и context-awareness. Паттерн соответствует существующему Step 0.5 в graphify/SKILL.md. Синхронизация GRAPHIFY_OUT в settings.json выполняется `_sync_graphify_env_to_settings()` в lib/launcher/launch.sh перед каждым запуском. Оставшиеся `.graphify/` ссылки: только `~/.graphify/repos/` (глобальный кэш клонов, корректно) и Example 4c в context-awareness (проектно-специфичный конфиг с комментарием).
+
+---
+
