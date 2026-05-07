@@ -6,6 +6,9 @@ wiki_sources:
   - ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md"
   - "lib/launcher/launch.sh"
   - "lib/graphify/install.sh"
+  - ".nvm-isolated/.claude-isolated/hooks/normalize-paths.py"
+  - ".nvm-isolated/.claude-isolated/settings.json"
+  - "tests/test_normalize_paths.py"
 wiki_updated: 2026-05-07
 wiki_status: developing
 wiki_outgoing_links:
@@ -23,6 +26,10 @@ aliases:
   - "watch.py"
   - "save-result"
   - "_patch_graphify_watch"
+  - "normalize-paths"
+  - "abs2rel"
+  - "rel2abs"
+  - ".graphify_root"
 ---
 
 # Graphify-интеграция iclaude
@@ -141,6 +148,52 @@ _patch_graphify_watch() {
 - После `uv tool install` в `install_graphify()` — один раз при установке
 - В начале `_graphify_rebuild_graph()` — защитно перед каждым rebuild
 
+## Хук normalize-paths: портативность путей abs↔rel
+
+### Проблема
+
+`graphifyy` сохраняет в `manifest.json`, `cache/ast/*.json` и `.graphify_root` **абсолютные пути** проекта (`/home/.../iclaude/...`). Это ломает совместное использование графа между разработчиками: каждый коммит в `.graphify/` содержит локальные пути одного хоста.
+
+### Решение: двунаправленная нормализация через PreToolUse/PostToolUse hooks
+
+Добавлен хук `.nvm-isolated/.claude-isolated/hooks/normalize-paths.py` с двумя режимами:
+
+| Режим | Когда | Что делает |
+|-------|-------|-----------|
+| `rel2abs` | PreToolUse Bash (перед `graphify ...`) | относительные пути → абсолютные (нужно graphifyy runtime) |
+| `abs2rel` | PostToolUse Bash (после `graphify ...`) | абсолютные пути → относительные (для коммита в git) |
+
+### Регистрация в settings.json
+
+```json
+"PreToolUse": [
+  { "matcher": "Bash",
+    "hooks": [{"type":"command",
+      "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py\" rel2abs"}] }
+],
+"PostToolUse": [
+  { "matcher": "Bash",
+    "hooks": [{"type":"command",
+      "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py\" abs2rel"}] }
+]
+```
+
+Хук фильтрует по `tool_name == "Bash"` и regex `\bgraphify\b` в команде — не запускается для прочих Bash-вызовов.
+
+### Что нормализуется
+
+1. `manifest.json` — ключи (пути файлов)
+2. `.graphify_root` — содержимое заменяется на `.` (abs2rel) или `{project_root}` (rel2abs)
+3. `cache/ast/*.json` — поле `source_file` в `nodes[]` и `edges[]`. Параллельная обработка через `ThreadPoolExecutor`.
+
+### `get_project_root()` — источник истины
+
+Для `abs2rel` корневой путь читается из `.graphify_root` (точнее, чем git rev-parse, так как может отличаться от текущего CWD). Если файла нет или он содержит относительный путь — fallback на `git rev-parse --show-toplevel`, затем `Path.cwd()`.
+
+### Тесты
+
+`tests/test_normalize_paths.py` — unit-тесты abs↔rel конверсии для manifest/root/cache.
+
 ## Архитектура skill-слоя
 
 ```
@@ -176,5 +229,9 @@ GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 - `lib/graphify/install.sh` — функции `install_graphify()`, `_graphify_rebuild_graph()`, `_patch_graphify_watch()`
 - `lib/graphify/detect.sh`, `lib/graphify/status.sh` — дополнительные модули graphify
 - `lib/launcher/launch.sh` → `_sync_graphify_env_to_settings()` — синхронизация GRAPHIFY_OUT в settings.json
+- `.nvm-isolated/.claude-isolated/hooks/normalize-paths.py` — abs↔rel нормализация manifest/root/cache
+- `.nvm-isolated/.claude-isolated/settings.json` — регистрация PreToolUse (rel2abs) / PostToolUse (abs2rel) хуков
+- `tests/test_normalize_paths.py` — unit-тесты нормализации путей
 - `.graphify/` — директория вывода graphify для проекта iclaude
+- `.graphify/.graphify_root` — сохранённый абсолютный корень проекта (источник истины для abs2rel)
 - `~/.graphify/repos/` — глобальный кэш клонированных GitHub-репозиториев
