@@ -960,7 +960,7 @@ Replace `QUESTION` with the user's actual question. Answer using **only** what t
 After writing the answer, save it back into the graph so it improves future queries:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "QUESTION" --answer "ANSWER" --type query --nodes NODE1 NODE2
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "QUESTION" --answer "ANSWER" --type query --nodes NODE1 NODE2 --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 Replace `QUESTION` with the question, `ANSWER` with your full answer text, `SOURCE_NODES` with the list of node labels you cited. This closes the feedback loop: the next `--update` will extract this Q&A as a node in the graph.
@@ -980,7 +980,7 @@ Replace `NODE_A` and `NODE_B` with the actual concept names. Then explain the pa
 After writing the explanation, save it back:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Path from NODE_A to NODE_B" --answer "ANSWER" --type path_query --nodes NODE_A NODE_B
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Path from NODE_A to NODE_B" --answer "ANSWER" --type path_query --nodes NODE_A NODE_B --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 ---
@@ -998,7 +998,7 @@ Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sent
 After writing the explanation, save it back:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Explain NODE_NAME" --answer "ANSWER" --type explain --nodes NODE_NAME
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Explain NODE_NAME" --answer "ANSWER" --type explain --nodes NODE_NAME --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 ---
