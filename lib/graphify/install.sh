@@ -150,6 +150,16 @@ install_graphify() {
     fi
     print_success "graphifyy installed"
 
+    # Step 2.5: Symlink graphify binary into isolated bin/ so `which graphify` resolves correctly.
+    # SKILL.md detects graphify by reading its shebang — which points to the uv-managed Python 3.12.
+    # Without this symlink, `which graphify` returns empty → skill falls back to system python3 (3.9).
+    local graphify_bin_src="${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify"
+    local graphify_bin_dst="${ISOLATED_NVM_DIR}/bin/graphify"
+    if [[ -x "$graphify_bin_src" ]]; then
+        ln -sf "$graphify_bin_src" "$graphify_bin_dst"
+        print_success "graphify symlink: $graphify_bin_dst"
+    fi
+
     # Step 3: graphify install (Claude Code skill setup)
     print_info "Setting up Claude Code skill ..."
     if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
