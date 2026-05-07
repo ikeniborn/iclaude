@@ -90,11 +90,15 @@ ELSE:
 
 ### 6. Graph Detection
 
+Сначала resolve выходную директорию:
+
+```bash
+GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 ```
+
 Проверить наличие knowledge graph в корне проекта:
 
-Сначала resolve выходную директорию: GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
-
+```
 IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
   Skill(skill="graphify-context")
   → добавить результат в project_context:
@@ -324,7 +328,7 @@ ELSE:
 │   └── .config/
 │       ├── domain-map.json   ← домен "iclaude"
 │       └── index.md
-└── .graphify/
+└── .graphify/                ← GRAPHIFY_OUT=.graphify for this project
     ├── graph.json            ← 167 nodes · 244 edges
     ├── GRAPH_REPORT.md       ← god nodes + communities
     └── cache/ast/
