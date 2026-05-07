@@ -47,7 +47,7 @@
 |------------|--------------|----------|
 | `CAVEMAN_ENABLED` | (не задана) | Метка «установлено пользователем» — на рантайм не влияет |
 | `CAVEMAN_DEFAULT_MODE` | `full` | Режим компрессии (см. ниже) |
-| `CAVEMAN_STATUSLINE` | `false` | Badge экономии токенов в статусной строке |
+| `CAVEMAN_STATUSLINE` | `false` | Badge `⛏` в статусной строке. Счётчик токенов (`⛏ 5.2k`) обновляется только при ручном `/caveman-stats` |
 
 `CAVEMAN_DEFAULT_MODE` экспортируется в окружение Claude Code из `lib/launcher/launch.sh`. Приоритет чтения хуками: `process.env.CAVEMAN_DEFAULT_MODE` → JSON config → дефолт `full`.
 
