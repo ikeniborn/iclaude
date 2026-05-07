@@ -23,6 +23,30 @@ _graphify_resolve_uv() {
 }
 
 #######################################
+# Patch graphify watch.py to pass explicit manifest_path to save_manifest.
+# Idempotent — no-op if already patched or file not found.
+# Upstream bug: watch._rebuild_code() calls save_manifest(detected["files"])
+# without manifest_path, falling through to hardcoded "graphify-out/manifest.json".
+#######################################
+_patch_graphify_watch() {
+    local uv_bin
+    uv_bin=$(_graphify_resolve_uv)
+    [[ -z "$uv_bin" ]] && return 0
+
+    local watch_py
+    watch_py=$(UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+        "$uv_bin" tool run --from graphifyy python3 \
+        -c "import graphify.watch; print(graphify.watch.__file__)" 2>/dev/null || echo "")
+    [[ -z "$watch_py" || ! -f "$watch_py" ]] && return 0
+
+    # Idempotent: only patch when the unpatched line is present
+    if grep -qF 'save_manifest(detected["files"])' "$watch_py"; then
+        sed -i 's|save_manifest(detected\["files"\])|save_manifest(detected["files"], manifest_path=str(out / "manifest.json"))|' "$watch_py"
+        print_info "Patched graphify watch.py: save_manifest now uses explicit manifest_path"
+    fi
+}
+
+#######################################
 # Rebuild knowledge graph for current project.
 # Called by --graphify flag before launching claude.
 # Returns: 0 on success, 1 on failure
@@ -32,6 +56,7 @@ _graphify_rebuild_graph() {
         print_error "graphify not installed. Run: ./iclaude.sh --install-graphify"
         return 1
     fi
+    _patch_graphify_watch
 
     local uv_bin
     uv_bin=$(_graphify_resolve_uv)
@@ -149,6 +174,7 @@ install_graphify() {
         return 1
     fi
     print_success "graphifyy installed"
+    _patch_graphify_watch
 
     # Step 2.5: Symlink graphify binary into isolated bin/ so `which graphify` resolves correctly.
     # SKILL.md detects graphify by reading its shebang — which points to the uv-managed Python 3.12.
