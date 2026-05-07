@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1993 nodes · 2099 edges · 160 communities (152 shown, 8 thin omitted)
+- 1993 nodes · 2099 edges · 159 communities (150 shown, 9 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d09548f7`
+- Built from commit: `9c091b5c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -174,7 +174,6 @@
 - [[_COMMUNITY_Community 156|Community 156]]
 - [[_COMMUNITY_Community 157|Community 157]]
 - [[_COMMUNITY_Community 158|Community 158]]
-- [[_COMMUNITY_Community 159|Community 159]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `iclaude.sh (main entry point)` - 24 edges
@@ -191,19 +190,19 @@
 ## Surprising Connections (you probably didn't know these)
 - `SecretDetector (regex pattern engine in tests)` --conceptually_related_to--> `redact-secrets.py (PreToolUse Layer 2)`  [INFERRED]
   tests/test_patterns_examples.py → CLAUDE.md
-- `lib/launcher/launch.sh` --references--> `iclaude.sh (main entry point)`  [INFERRED]
-  docs/superpowers/plans/2026-05-06-caveman-integration.md → CLAUDE.md
 - `PII Masking Documentation` --references--> `lib/pii-proxy/server.py (PII proxy server with regex_mask)`  [EXTRACTED]
   docs/functions/PII_MASKING.md → tests/test_patterns_examples.py
 - `claude-statusline.sh Script` --references--> `lib/pii-proxy/server.py (PII proxy server with regex_mask)`  [EXTRACTED]
   docs/functions/STATUSLINE.md → tests/test_patterns_examples.py
 - `iclaude lib Modular Architecture` --references--> `PIIProxyHandler`  [INFERRED]
   lib/README.md → lib/pii-proxy/server.py
+- `Claude Code Router (CCR) Server` --references--> `iclaude.sh (main entry point)`  [EXTRACTED]
+  docs/functions/ROUTER.md → CLAUDE.md
 
 ## Hyperedges (group relationships)
 - **PII Masking Pipeline** — server_presidomask, server_regexmask, server_initpresidio [EXTRACTED 0.95]
 
-## Communities (160 total, 8 thin omitted)
+## Communities (159 total, 9 thin omitted)
 
 ### Community 0 - "Secret Pattern Tests"
 Cohesion: 0.07
@@ -218,12 +217,12 @@ Cohesion: 0.05
 Nodes (41): Файловая карта, code:block1 (| Создал новый домен, нужно настроить entity_types автоматич), code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL), code:block11 (Для операции bootstrap: шаги 2 и 3 пропустить — wiki-файлы е), code:block12 (1. Читать {wiki_dir}/domain-map.json), code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL), code:block14 (### Операция: bootstrap <domain-id>), code:block15 (---) (+33 more)
 
 ### Community 3 - "PII Proxy NLP Engine"
-Cohesion: 0.07
-Nodes (25): Apply all patterns and return redacted text + found patterns, Test cases for patterns that SHOULD be detected and redacted, Stripe secret keys should be redacted, Stripe test keys should be redacted, Apply all patterns and return redacted text + found patterns, HuggingFace tokens should be redacted, Groq API keys should be redacted, Test cases for patterns that SHOULD be detected and redacted (+17 more)
-
-### Community 4 - "Router & Configuration"
 Cohesion: 0.05
 Nodes (39): code:python (_sid = session_id if re.fullmatch(r'[0-9a-f]{12}', session_i), code:bash (git add lib/launcher/launch.sh), code:bash (# Shared proxy mode (non-CCR only): attach to existing share), code:bash (bash -n lib/launcher/launch.sh), code:bash (# Set up required env vars (replace paths with actual values), code:bash (git add lib/launcher/launch.sh), code:bash (stop_pii_proxy_server() {), code:bash (# Shared proxy: deregister this session; kill proxy only if ) (+31 more)
+
+### Community 4 - "Router & Configuration"
+Cohesion: 0.07
+Nodes (23): Apply all patterns and return redacted text + found patterns, Test cases for patterns that SHOULD be detected and redacted, Google AI Studio keys should be redacted, Stripe test keys should be redacted, Apply all patterns and return redacted text + found patterns, Test cases for patterns that SHOULD be detected and redacted, AWS Access Key IDs should be redacted, Google AI Studio keys should be redacted (+15 more)
 
 ### Community 5 - "Security Hooks"
 Cohesion: 0.05
@@ -327,11 +326,11 @@ Nodes (13): Test cases for patterns that SHOULD NOT be redacted (false positive 
 
 ### Community 30 - "Community 30"
 Cohesion: 0.11
-Nodes (17): Architecture, code:python (# Correctly computes out = watch_path / _GRAPHIFY_OUT = watc), code:python (_MANIFEST_PATH = "graphify-out/manifest.json"), code:block3 (graphify-context/SKILL.md Phase 0), code:python (# watch.py line 148 — BEFORE:), code:bash (./iclaude.sh                        # launch session), Component A: Auto-patch in `lib/graphify/install.sh`, Component B: Upstream PR to `graphifyy` (+9 more)
+Nodes (12): Long hex strings that are not obviously secrets, Empty string should not crash, String with 'None' should not crash, Unicode characters should be handled gracefully, Text with multiple different secret types should redact all, Long hex strings that are not obviously secrets, Empty string should not crash, String with 'None' should not crash (+4 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.11
-Nodes (18): Сигнатура, Параметры, Переменные окружения, Вызывает, code:block28, code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:markdown (# Правила операции ingest), code:block31 (+10 more)
+Nodes (17): Architecture, code:python (# Correctly computes out = watch_path / _GRAPHIFY_OUT = watc), code:python (_MANIFEST_PATH = "graphify-out/manifest.json"), code:block3 (graphify-context/SKILL.md Phase 0), code:python (# watch.py line 148 — BEFORE:), code:bash (./iclaude.sh                        # launch session), Component A: Auto-patch in `lib/graphify/install.sh`, Component B: Upstream PR to `graphifyy` (+9 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.11
@@ -350,48 +349,48 @@ Cohesion: 0.13
 Nodes (18): iclaude lib Modular Architecture, Asymmetric Masking Design, _build_upstream_headers, _detect_spacy_models, _forward, _get_http_session, init_presidio, mask_content_block (+10 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.12
-Nodes (17): 1. Microsoft Presidio (standalone), 2. LiteLLM (LLM-прокси с базовой безопасностью), 3. Scrubadub (Python-библиотека), Альтернативные решения, 4. Mitmproxy + Python-скрипт, 5. Claude Code Hooks (нативный подход — ОБНОВЛЕНО v2.0.10+), 6. AWS Comprehend / Google DLP, code:python (# Скрипт-обёртка вместо PasteGuard) (+9 more)
+Cohesion: 0.14
+Nodes (18): lib/caveman/install.sh, Caveman Integration Implementation Plan, Caveman Module (lib/caveman/), Caveman Token Compression (~65-75%), CLAUDE_CONFIG_DIR (.nvm-isolated/.claude-isolated/), .claude_config (user configuration, chmod 600), claude-statusline.sh (scripts), iclaude.sh (main entry point) (+10 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.12
-Nodes (17): Метрики и статуслайн, Отображение в статуслайне, Конфигурация прокси (.claude_config), code:bash (curl http://127.0.0.1:<PORT>/api/metrics), code:json ({), code:block41 (↓ 42.3k ↑ 5.1k ≈85% [cache: 1.2k] | Sonnet 4.5 | $0.023 | 🔀 ), code:block42 ({pii-proxy-logs}/{SESSION_ID}.log), code:block43 (2026-03-12 11:29:51,667 INFO Masked request: 3 sensitive ite) (+9 more)
+Nodes (17): 1. Microsoft Presidio (standalone), 2. LiteLLM (LLM-прокси с базовой безопасностью), 3. Scrubadub (Python-библиотека), Альтернативные решения, 4. Mitmproxy + Python-скрипт, 5. Claude Code Hooks (нативный подход — ОБНОВЛЕНО v2.0.10+), 6. AWS Comprehend / Google DLP, code:python (# Скрипт-обёртка вместо PasteGuard) (+9 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.12
-Nodes (17): Adding New Providers, Architecture, Backward Compatibility, code:bash (# Anthropic Claude format), code:block2 (Σ 2K | DeepSeek | $0.00 🤖 | 🔀 provider | ...), code:block3 (Session JSON → Provider Detection → Adapter → Unified Format), code:bash (# Configure Router with DeepSeek), code:bash (# Status line shows zero cost:) (+9 more)
+Nodes (17): Метрики и статуслайн, Отображение в статуслайне, Конфигурация прокси (.claude_config), code:bash (curl http://127.0.0.1:<PORT>/api/metrics), code:json ({), code:block41 (↓ 42.3k ↑ 5.1k ≈85% [cache: 1.2k] | Sonnet 4.5 | $0.023 | 🔀 ), code:block42 ({pii-proxy-logs}/{SESSION_ID}.log), code:block43 (2026-03-12 11:29:51,667 INFO Masked request: 3 sensitive ite) (+9 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.12
-Nodes (15): Affected files, Approach: Step 0 — Resolve GRAPHIFY_OUT (consistent with graphify/SKILL.md Step 0.5 pattern), Changes, code:bash (GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")), code:block2 (## Step 0: Resolve graph output dir), code:block3 (Use `{GOUT}` in all path checks below.), code:block4 (Сначала resolve выходную директорию: `GOUT=$(echo "${GRAPHIF), Design (+7 more)
+Nodes (17): Adding New Providers, Architecture, Backward Compatibility, code:bash (# Anthropic Claude format), code:block2 (Σ 2K | DeepSeek | $0.00 🤖 | 🔀 provider | ...), code:block3 (Session JSON → Provider Detection → Adapter → Unified Format), code:bash (# Configure Router with DeepSeek), code:bash (# Status line shows zero cost:) (+9 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.12
-Nodes (15): Требования, Переменные конфигурации, Совместимость режимов, Обновление образов, Связанные документы, Установка, code:block1 (Host OS (Linux + KVM)), code:bash (# Установить Firecracker v1.11 + vmlinux + rootfs + nvm.img ) (+7 more)
+Nodes (15): Affected files, Approach: Step 0 — Resolve GRAPHIFY_OUT (consistent with graphify/SKILL.md Step 0.5 pattern), Changes, code:bash (GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")), code:block2 (## Step 0: Resolve graph output dir), code:block3 (Use `{GOUT}` in all path checks below.), code:block4 (Сначала resolve выходную директорию: `GOUT=$(echo "${GRAPHIF), Design (+7 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.12
-Nodes (16): Список снэпшотов пустой после переустановки, code:block13 (microVM not available: /dev/kvm missing or not readable), code:block14 (Timeout waiting for SSH (30s). Guest may have failed to boot), code:bash (rm -f /tmp/iclaude-*-fc.sock), code:block18 (microVM: snapshot load failed (HTTP 400) — try cold boot), code:bash (rm -rf .nvm-isolated/.claude-isolated/microvm-snapshots/2026), code:block20 (/usr/bin/sudo: Отказано в доступе), code:bash (su -) (+8 more)
+Nodes (15): Требования, Переменные конфигурации, Совместимость режимов, Обновление образов, Связанные документы, Установка, code:block1 (Host OS (Linux + KVM)), code:bash (# Установить Firecracker v1.11 + vmlinux + rootfs + nvm.img ) (+7 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.16
-Nodes (16): CLAUDE_CODE_SKIP_PERMISSIONS Variable, CLAUDE_CONFIG_DIR (.nvm-isolated/.claude-isolated/), .claude_config.example, .claude_config (user configuration, chmod 600), Graphify Integration Implementation Plan, iclaude.sh (main entry point), lib/command (CLI Argument Parsing), lib/command/usage.sh (+8 more)
-
-### Community 43 - "Community 43"
 Cohesion: 0.13
 Nodes (11): Performance tests to detect potential ReDoS issues, PEM key with maximum allowed content should complete quickly, Malformed PEM (no END marker) should not cause timeout, Long URLs with credentials should process quickly, Text with many matches should process efficiently, Performance tests to detect potential ReDoS issues, PEM key with maximum allowed content should complete quickly, Malformed PEM (no END marker) should not cause timeout (+3 more)
 
-### Community 44 - "Community 44"
+### Community 43 - "Community 43"
 Cohesion: 0.13
 Nodes (14): Поддерживаемые провайдеры, Совместимость с прокси, Проверка статуса, Поток данных, Диаграмма, Конфигурационные файлы, Подстановка переменных окружения, code:mermaid (graph LR) (+6 more)
 
-### Community 45 - "Community 45"
+### Community 44 - "Community 44"
 Cohesion: 0.13
 Nodes (14): Граф зависимостей компонентов, Поток настройки прокси, Поток изолированной установки, Исходные файлы, Просмотр диаграмм, code:mermaid (graph TD), code:mermaid (graph LR), code:mermaid (graph TD) (+6 more)
 
-### Community 46 - "Community 46"
+### Community 45 - "Community 45"
 Cohesion: 0.13
 Nodes (15): Снэпшоты, Принцип работы, Хранение снэпшотов, Параллельный запуск из одного снэпшота, Как работает сохранение (технически), Ограничения, Управление снэпшотами, code:block10 (${MICRO_VM_SNAPSHOT_DIR}/        # по умолчанию: .nvm-isolat) (+7 more)
+
+### Community 46 - "Community 46"
+Cohesion: 0.13
+Nodes (15): Диагностика, Команды, Типичные проблемы, Агент не попадает в нужный слот, Конфиг не подхватывается CCR, `--check-router` показывает пустые провайдеры, code:bash (# Статус Router), code:yaml (model: haiku           # ✅ корректный алиас) (+7 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.24
@@ -407,15 +406,15 @@ Nodes (13): Значения, Флаги, Особенности, Applies proxy,
 
 ### Community 50 - "Community 50"
 Cohesion: 0.14
-Nodes (13): Глобально (для всех проектов), Для конкретного проекта, Быстрая проверка, Использование, Приоритеты, Документация, code:bash (# Изолированная среда), code:bash (# Проектная (в git)) (+5 more)
+Nodes (14): Список снэпшотов пустой после переустановки, code:block13 (microVM not available: /dev/kvm missing or not readable), code:block14 (Timeout waiting for SSH (30s). Guest may have failed to boot), code:block15 (nvm.img not found: run --install-microvm first), code:bash (./iclaude.sh --install-microvm), code:bash (rm -f /tmp/iclaude-*-fc.sock), code:block18 (microVM: snapshot load failed (HTTP 400) — try cold boot), code:bash (rm -rf .nvm-isolated/.claude-isolated/microvm-snapshots/2026) (+6 more)
 
 ### Community 51 - "Community 51"
 Cohesion: 0.14
-Nodes (13): 1. validate_dependency() Replacements, 2. get_lockfile_field() Replacements, Changes Made, code:bash (./tests/regression-phase0.sh), Commits, Decision: Defer Aggressive Optimization, Lessons Learned, Next Phase: Proxy Module (Week 3) 🔥 (+5 more)
+Nodes (13): Глобально (для всех проектов), Для конкретного проекта, Быстрая проверка, Использование, Приоритеты, Документация, code:bash (# Изолированная среда), code:bash (# Проектная (в git)) (+5 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.15
-Nodes (9): Empty string should not crash, String with 'None' should not crash, Unicode characters should be handled gracefully, Text with multiple different secret types should redact all, Empty string should not crash, String with 'None' should not crash, Unicode characters should be handled gracefully, Text with multiple different secret types should redact all (+1 more)
+Cohesion: 0.14
+Nodes (13): 1. validate_dependency() Replacements, 2. get_lockfile_field() Replacements, Changes Made, code:bash (./tests/regression-phase0.sh), Commits, Decision: Defer Aggressive Optimization, Lessons Learned, Next Phase: Proxy Module (Week 3) 🔥 (+5 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.15
@@ -426,44 +425,44 @@ Cohesion: 0.15
 Nodes (12): Affected files, Change 1 — Step B2: subagent prompt template, Change 2 — Step B3: dispatch note, code:python (GOUT = os.environ.get('GRAPHIFY_OUT', 'graphify-out')), code:block2 (Save your JSON output using the Write tool to this exact pat), code:block3 (Save your JSON output using the Write tool to this exact pat), code:block4 (Note: substitute the actual value of GRAPHIFY_OUT (e.g. ".gr), Design (+4 more)
 
 ### Community 55 - "Community 55"
+Cohesion: 0.15
+Nodes (13): Сигнатура, Параметры, Переменные окружения, Вызывает, code:block28, code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:markdown (# Правила операции ingest), code:block31 (+5 more)
+
+### Community 56 - "Community 56"
 Cohesion: 0.22
 Nodes (13): caveman (Claude Code token compression plugin), block-secrets.py (PreToolUse Layer 1), redact-secrets.py (PreToolUse Layer 2), PII_PROXY_MASK_TOKEN (configurable masking token), lib/pii-proxy/server.py (PII proxy server with regex_mask), Prometheus + Grafana Monitoring Stack, SecretDetector (regex pattern engine in tests), settings.json (Claude Code configuration) (+5 more)
 
-### Community 56 - "Community 56"
-Cohesion: 0.17
-Nodes (12): Cache and Billing, code:block5 (Input: 100K tokens × $3.00/1M = $0.30), code:block6 (Input: 100K tokens × $3.00/1M = $0.30), code:block7 (Cache read: 98K × $0.30/1M = $0.03 (90% discount!)), code:block8 (💳 250K | 📊 100K (50%) | 📦 98K | Sonnet 4.5 | $2.45), code:bash (# Parse cache tokens from session data), Example Cost Calculation, How Anthropic Prompt Caching Works (+4 more)
-
 ### Community 57 - "Community 57"
-Cohesion: 0.17
-Nodes (12): Неправильные токены после /clear, code:bash (cat .nvm-isolated/.claude-isolated/settings.json | jq '.stat), code:bash (echo '{"context_window":{"total_input_tokens":1000,"total_ou), code:bash (.nvm-isolated/npm-global/bin/jq --version), code:bash (# Test OSC 8 in terminal), code:bash (command -v jq || echo "jq not found"), code:bash (ls -la tmp/), code:bash (DEBUG_STATUSLINE=1 ./iclaude.sh) (+4 more)
+Cohesion: 0.18
+Nodes (13): CLAUDE_CODE_SKIP_PERMISSIONS Variable, .claude_config.example, CHUNK_OUTPUT_PATH Substitution, Graphify Chunk Path Fix Plan, lib/graphify/detect.sh, graphifyy PyPI Package, lib/graphify/install.sh, Graphify Integration Implementation Plan (+5 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.17
-Nodes (11): Claude Code Version, Dependencies, Future Enhancements (v3.0), Key Features, Optional, Overview, Phase 1 (2026-01-10), Phase 2 (2026-02-12) 🆕 (+3 more)
+Nodes (12): Cache and Billing, code:block5 (Input: 100K tokens × $3.00/1M = $0.30), code:block6 (Input: 100K tokens × $3.00/1M = $0.30), code:block7 (Cache read: 98K × $0.30/1M = $0.03 (90% discount!)), code:block8 (💳 250K | 📊 100K (50%) | 📦 98K | Sonnet 4.5 | $2.45), code:bash (# Parse cache tokens from session data), Example Cost Calculation, How Anthropic Prompt Caching Works (+4 more)
 
 ### Community 59 - "Community 59"
 Cohesion: 0.17
-Nodes (11): Ключевые этапы, Совместимость с другими режимами, Требования, code:mermaid (graph TD), code:mermaid (graph LR), code:mermaid (graph LR), Диаграмма: изоляция filesystem через virtio-blk, Диаграмма: сетевой стек и IP-пул слотов (+3 more)
+Nodes (12): Неправильные токены после /clear, code:bash (# Test OSC 8 in terminal), code:bash (command -v jq || echo "jq not found"), code:bash (ls -la tmp/), code:bash (DEBUG_STATUSLINE=1 ./iclaude.sh), code:bash (git rev-parse --is-inside-work-tree), code:bash (# Increase timeout in claude-statusline.sh:165), code:bash (jq empty .nvm-isolated/.claude-isolated/themes/claude-status) (+4 more)
 
 ### Community 60 - "Community 60"
 Cohesion: 0.17
-Nodes (11): Цель, Файлы, затрагиваемые изменениями, Семантика, Часть 1 — Переменная CLAUDE_CODE_SKIP_PERMISSIONS, Новые переменные (~25 штук), Изменения в коде, Часть 2 — Расширение .claude_config.example, Расположение в файле (+3 more)
+Nodes (11): Claude Code Version, Dependencies, Future Enhancements (v3.0), Key Features, Optional, Overview, Phase 1 (2026-01-10), Phase 2 (2026-02-12) 🆕 (+3 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.17
-Nodes (12): Типичные проблемы, Агент не попадает в нужный слот, Конфиг не подхватывается CCR, `--check-router` показывает пустые провайдеры, code:yaml (model: haiku           # ✅ корректный алиас), code:bash (systemctl status ollama), code:json ({ "API_TIMEOUT_MS": 1200000 }), code:bash (cat ~/.claude-code-router/config.json) (+4 more)
+Nodes (11): Ключевые этапы, Совместимость с другими режимами, Требования, code:mermaid (graph TD), code:mermaid (graph LR), code:mermaid (graph LR), Диаграмма: изоляция filesystem через virtio-blk, Диаграмма: сетевой стек и IP-пул слотов (+3 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.18
-Nodes (10): Поток настройки прокси, Диаграмма, Ключевые этапы, Особенности обработки протоколов, Переменные окружения, Тестовые запросы, code:mermaid (graph LR), code:bash (HTTPS_PROXY="https://user:pass@proxy:port") (+2 more)
+Cohesion: 0.17
+Nodes (11): Цель, Файлы, затрагиваемые изменениями, Семантика, Часть 1 — Переменная CLAUDE_CODE_SKIP_PERMISSIONS, Новые переменные (~25 штук), Изменения в коде, Часть 2 — Расширение .claude_config.example, Расположение в файле (+3 more)
 
 ### Community 63 - "Community 63"
 Cohesion: 0.18
-Nodes (11): Технический стек, Конфигурация, Концепция, Два режима работы, Что маскирует, code:block2 (Клиент (Claude Code)), code:yaml (# config.yaml), Анализ PasteGuard (+3 more)
+Nodes (10): Поток настройки прокси, Диаграмма, Ключевые этапы, Особенности обработки протоколов, Переменные окружения, Тестовые запросы, code:mermaid (graph LR), code:bash (HTTPS_PROXY="https://user:pass@proxy:port") (+2 more)
 
 ### Community 64 - "Community 64"
 Cohesion: 0.18
-Nodes (10): Claude Statusline Documentation, code:block26 (112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1), Dependencies, Display Format, Example Output, Format Notes, License, Optional (+2 more)
+Nodes (11): Технический стек, Конфигурация, Концепция, Два режима работы, Что маскирует, code:block2 (Клиент (Claude Code)), code:yaml (# config.yaml), Анализ PasteGuard (+3 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.2
@@ -487,47 +486,47 @@ Nodes (10): Рекомендации, Стратегия по уровням з�
 
 ### Community 70 - "Community 70"
 Cohesion: 0.2
-Nodes (10): Встроенные трансформеры, code:json ({), code:json ({), code:json ({), code:json ({), code:json ({), code:json ({), Custom Transformer плагины (+2 more)
+Nodes (9): Содержание, Поддерживаемые слоты, Динамическое переключение модели, Важно: схема конфига (CCR v2.0.0), Claude Code Router: конфигурация и маршрутизация, code:block1 (1. ./iclaude.sh --router), code:block13 (/model provider_name,model_name), Как iclaude использует Router (+1 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.2
-Nodes (10): 1. Context Usage, 2. Cache Tokens, 3. Model Name, 4. Cost, 5. Proxy Indicator, 6. Router Indicator, 7. Session Link, 8. Memory Link (+2 more)
+Nodes (10): Встроенные трансформеры, code:json ({), code:json ({), code:json ({), code:json ({), code:json ({), code:json ({), Custom Transformer плагины (+2 more)
 
 ### Community 72 - "Community 72"
 Cohesion: 0.2
 Nodes (10): Cache metrics incorrect after /compact, code:bash (# Check if jq parse error is the issue), Debug log not created, Git info missing, High memory usage, Incorrect token counts, Session icon 📄 not showing in other projects, Session link not clickable (+2 more)
 
 ### Community 73 - "Community 73"
-Cohesion: 0.22
-Nodes (9): Назначение, Поля/Атрибуты, Методы, Зависимости, code:block11, code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:markdown (# Reader: TypeScript), Task 3: typescript.md и javascript.md readers (+1 more)
+Cohesion: 0.2
+Nodes (10): 1. Context Usage, 2. Cache Tokens, 3. Model Name, 4. Cost, 5. Proxy Indicator, 6. Router Indicator, 7. Session Link, 8. Memory Link (+2 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.22
-Nodes (9): code:bash (# PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set ), code:bash (# Caveman badge — show ⛏ with savings when CAVEMAN_STATUSLIN), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISP), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISP), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${M), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${M), code:bash (bash -n .nvm-isolated/.claude-isolated/scripts/claude-status), code:bash (git add .nvm-isolated/.claude-isolated/scripts/claude-status) (+1 more)
+Nodes (9): Назначение, Поля/Атрибуты, Методы, Зависимости, code:block11, code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:markdown (# Reader: TypeScript), Task 3: typescript.md и javascript.md readers (+1 more)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.22
-Nodes (8): Содержание, Диагностика, Команды, Важно: схема конфига (CCR v2.0.0), Claude Code Router: конфигурация и маршрутизация, code:block1 (1. ./iclaude.sh --router), code:bash (# Статус Router), Как iclaude использует Router
+Nodes (8): Карта файлов, Итог, code:bash (# Graphify (Knowledge Graph)), code:bash (bash -n lib/core/init.sh), code:bash (git add lib/core/init.sh), code:bash (./iclaude.sh --install-graphify          # установить), Graphify Integration Implementation Plan, Task 1: Переменные в `lib/core/init.sh`
 
 ### Community 76 - "Community 76"
 Cohesion: 0.22
-Nodes (9): Advanced Usage, code:bash (# Line 120-180: Token calculation logic), code:bash (# Install oh-my-posh), code:bash (# Get current session ID), code:bash (# Each session creates unique readable file), Custom Status Line Format, Integration with oh-my-posh, Parallel Session Management (+1 more)
+Nodes (9): code:bash (# PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set ), code:bash (# Caveman badge — show ⛏ with savings when CAVEMAN_STATUSLIN), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISP), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISP), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${M), code:bash (STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${M), code:bash (bash -n .nvm-isolated/.claude-isolated/scripts/claude-status), code:bash (git add .nvm-isolated/.claude-isolated/scripts/claude-status) (+1 more)
 
 ### Community 77 - "Community 77"
-Cohesion: 0.28
-Nodes (9): CHUNK_OUTPUT_PATH Substitution, Graphify Chunk Path Fix Plan, lib/graphify/detect.sh, graphifyy PyPI Package, lib/graphify/install.sh, Graphify Module (lib/graphify/), graphify SKILL.md, lib/graphify/status.sh (+1 more)
+Cohesion: 0.22
+Nodes (9): Advanced Usage, code:bash (# Line 120-180: Token calculation logic), code:bash (# Install oh-my-posh), code:bash (# Get current session ID), code:bash (# Each session creates unique readable file), Custom Status Line Format, Integration with oh-my-posh, Parallel Session Management (+1 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.25
-Nodes (9): iclaude Configuration Reference, Proxy Configuration Documentation, Statusline Adaptive Display Modes, Claude Statusline Documentation, Statusline Provider Adapters (anthropic/openai/ollama/gemini), claude-statusline.sh Script, Statusline Session Link (OSC 8 hyperlink), Statusline Streaming Mode Support (+1 more)
-
-### Community 79 - "Community 79"
 Cohesion: 0.22
 Nodes (9): CCR Router Slots (default/background/think/longContext), Claude Code Router (CCR) Server, CCR Transformers (deepseek/gemini/openrouter...), microVM Sandbox (Firecracker) Documentation, microVM Snapshots, microVM Workspace Modes (full/isolated), Ollama Local LLM Integration, Claude Code Router Documentation (+1 more)
 
+### Community 79 - "Community 79"
+Cohesion: 0.25
+Nodes (9): iclaude Configuration Reference, Proxy Configuration Documentation, Statusline Adaptive Display Modes, Claude Statusline Documentation, Statusline Provider Adapters (anthropic/openai/ollama/gemini), claude-statusline.sh Script, Statusline Session Link (OSC 8 hyperlink), Statusline Streaming Mode Support (+1 more)
+
 ### Community 80 - "Community 80"
 Cohesion: 0.25
-Nodes (8): Сигнатура, Параметры, Возвращает, code:block22, code:bash (git add \), code:markdown (# Reader: Bash), Task 4: bash.md reader, validateProxy
+Nodes (8): code:bash (ls .nvm-isolated/.claude-isolated/skills/llm-wiki/rules/read), code:bash (grep -n 'Glob "\*\*/\*\.md"' .nvm-isolated/.claude-isolated/), code:bash (grep -c '"source_types"' .nvm-isolated/.claude-isolated/skil), code:bash (grep -c "1\.5\." .nvm-isolated/.claude-isolated/skills/llm-w), code:bash (grep -c "Source Type Resolution" .nvm-isolated/.claude-isola), code:bash (bash -n .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:bash (git status), Task 9: Финальная проверка целостности
 
 ### Community 81 - "Community 81"
 Cohesion: 0.25
@@ -535,15 +534,15 @@ Nodes (8): Основные характеристики, Связанные к�
 
 ### Community 82 - "Community 82"
 Cohesion: 0.25
-Nodes (8): Методы, Зависимости, Сигнатура, code:block18, code:markdown (# Reader: JavaScript), code:block20, code:block21, RouterClient
+Nodes (8): Сигнатура, Параметры, Возвращает, code:block22, code:bash (git add \), code:markdown (# Reader: Bash), Task 4: bash.md reader, validateProxy
 
 ### Community 83 - "Community 83"
 Cohesion: 0.25
-Nodes (8): code:bash (ls .nvm-isolated/.claude-isolated/skills/llm-wiki/rules/read), code:bash (grep -n 'Glob "\*\*/\*\.md"' .nvm-isolated/.claude-isolated/), code:bash (grep -c '"source_types"' .nvm-isolated/.claude-isolated/skil), code:bash (grep -c "1\.5\." .nvm-isolated/.claude-isolated/skills/llm-w), code:bash (grep -c "Source Type Resolution" .nvm-isolated/.claude-isola), code:bash (bash -n .nvm-isolated/.claude-isolated/skills/llm-wiki/rules), code:bash (git status), Task 9: Финальная проверка целостности
+Nodes (8): Методы, Зависимости, Сигнатура, code:block18, code:markdown (# Reader: JavaScript), code:block20, code:block21, RouterClient
 
 ### Community 84 - "Community 84"
 Cohesion: 0.25
-Nodes (7): Карта файлов, Caveman Integration Implementation Plan, code:bash (git add iclaude.sh), code:bash, code:bash (--caveman-install)), code:bash (bash -n iclaude.sh), Task 2: Подключить модуль в iclaude.sh (Phase 2-8 + Phase 14)
+Nodes (7): Карта файлов, Caveman Integration Implementation Plan, code:bash (--caveman-install                 Install caveman token-comp), code:bash, code:bash (bash -n iclaude.sh && bash -n lib/command/usage.sh), code:bash (git add lib/command/usage.sh .claude_config.example), Task 4: Обновить usage.sh и .claude_config.example
 
 ### Community 85 - "Community 85"
 Cohesion: 0.25
@@ -551,11 +550,11 @@ Nodes (7): Содержание, Дополнительные ресурсы, С
 
 ### Community 86 - "Community 86"
 Cohesion: 0.25
-Nodes (8): Установка, Выбор модели, Активация background → Ollama, code:bash (# Установить Ollama), code:json ({), code:json ("Router": {), Внешние модели через Ollama, Конфигурация в router.json
+Nodes (8): Сценарии завершения, Ручная очистка, Архитектура процессов, Жизненный цикл CCR-сервера, code:block2 (iclaude.sh), code:block3 (ccr code запускается  → rC(): счётчик +1  (/tmp/claude-code-), code:bash (# Через CLI), Автоматическая остановка через reference counting
 
 ### Community 87 - "Community 87"
 Cohesion: 0.25
-Nodes (8): Сценарии завершения, Ручная очистка, Архитектура процессов, Жизненный цикл CCR-сервера, code:block2 (iclaude.sh), code:block3 (ccr code запускается  → rC(): счётчик +1  (/tmp/claude-code-), code:bash (# Через CLI), Автоматическая остановка через reference counting
+Nodes (8): Установка, Выбор модели, Активация background → Ollama, code:bash (# Установить Ollama), code:json ({), code:json ("Router": {), Внешние модели через Ollama, Конфигурация в router.json
 
 ### Community 88 - "Community 88"
 Cohesion: 0.25
@@ -579,19 +578,19 @@ Nodes (7): code:block39 (а) Glob "**/*.md" по source_paths, исключит�
 
 ### Community 93 - "Community 93"
 Cohesion: 0.29
-Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Возвращает, Использует, code:block14
+Nodes (7): {имя-класса}, Назначение, Поля/Атрибуты, Методы, Зависимости, code:block10, code:block9
 
 ### Community 94 - "Community 94"
 Cohesion: 0.29
-Nodes (7): {имя-класса}, Назначение, Поля/Атрибуты, Методы, Зависимости, code:block10, code:block9
+Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Переменные окружения, Вызывает, code:block25
 
 ### Community 95 - "Community 95"
 Cohesion: 0.29
-Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Возвращает, Использует, code:block8
+Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Возвращает, Использует, code:block14
 
 ### Community 96 - "Community 96"
 Cohesion: 0.29
-Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Переменные окружения, Вызывает, code:block25
+Nodes (7): {имя-функции}, Сигнатура, Описание, Параметры, Возвращает, Использует, code:block8
 
 ### Community 97 - "Community 97"
 Cohesion: 0.29
@@ -623,19 +622,19 @@ Nodes (7): CCR-SUBAGENT-MODEL — per-request override, code:block15 (AGENT.md (
 
 ### Community 104 - "Community 104"
 Cohesion: 0.29
-Nodes (7): code:block39 ([Status line: jq not found - install jq for session stats]), code:block40 ([Status line: awaiting session data...]), Error Handling, Git Timeout, Invalid or Missing Data, Missing jq, Null Values After /clear
+Nodes (7): claude-show-cache.sh, code:bash (# View cached summary (after /compact)), code:bash (# List all readable sessions), Features, Helper Scripts, Usage Examples, Viewing Readable Sessions
 
 ### Community 105 - "Community 105"
 Cohesion: 0.29
-Nodes (7): claude-show-cache.sh, code:bash (# View cached summary (after /compact)), code:bash (# List all readable sessions), Features, Helper Scripts, Usage Examples, Viewing Readable Sessions
+Nodes (6): Claude Statusline Documentation, Dependencies, License, Optional, Related Documentation, Required
 
 ### Community 106 - "Community 106"
-Cohesion: 0.38
-Nodes (7): architecture-documentation SKILL.md, brainstorming SKILL.md, Context Awareness Graph Integration Plan, context-awareness SKILL.md, graph_fresh Propagation, graphify-context Skill, prd-generator SKILL.md
+Cohesion: 0.29
+Nodes (7): code:block39 ([Status line: jq not found - install jq for session stats]), code:block40 ([Status line: awaiting session data...]), Error Handling, Git Timeout, Invalid or Missing Data, Missing jq, Null Values After /clear
 
 ### Community 107 - "Community 107"
-Cohesion: 0.33
-Nodes (6): code:json ({), code:block4 (💳 112K | 📊 50K (25%) | 📦 79K | Sonnet 4.5 | $1.06 | 🌐 | 🔀pro), Data Flow, Input (STDIN from Claude Code), Output (STDOUT to Claude Code), Processing Pipeline
+Cohesion: 0.38
+Nodes (7): architecture-documentation SKILL.md, brainstorming SKILL.md, Context Awareness Graph Integration Plan, context-awareness SKILL.md, graph_fresh Propagation, graphify-context Skill, prd-generator SKILL.md
 
 ### Community 108 - "Community 108"
 Cohesion: 0.33
@@ -643,43 +642,43 @@ Nodes (6): code:bash (# Test cache hit), Execution Time, Memory Usage, mtime Cac
 
 ### Community 109 - "Community 109"
 Cohesion: 0.33
-Nodes (6): code:bash (bash -n iclaude.sh && \), code:bash (python3 -m pytest tests/test_patterns_examples.py -v --tb=sh), code:bash (./iclaude.sh --help | grep -E "graphify|graphiffy"), code:block53 (--install-graphify                Install graphify knowledge), code:bash (git status   # убедиться, что нет случайных неотслеживаемых ), Task 12: Финальная проверка синтаксиса и smoke-тест
+Nodes (6): code:json ({), code:block4 (💳 112K | 📊 50K (25%) | 📦 79K | Sonnet 4.5 | $1.06 | 🌐 | 🔀pro), Data Flow, Input (STDIN from Claude Code), Output (STDOUT to Claude Code), Processing Pipeline
 
 ### Community 110 - "Community 110"
 Cohesion: 0.33
-Nodes (6): code:bash (if [[ "$USE_PII_PROXY_FLAG" == "true" ]] && [[ "$USE_ROUTER_), code:bash (# Rebuild graphify knowledge graph if --graphify flag is set), code:bash (bash -n iclaude.sh), code:bash (# Имитировать USE_GRAPHIFY_FLAG без установленного graphify ), code:bash (git add iclaude.sh), Task 8: Вызов `_graphify_rebuild_graph` в потоке запуска
+Nodes (6): code:bash (bash -n iclaude.sh && \), code:bash (python3 -m pytest tests/test_patterns_examples.py -v --tb=sh), code:bash (./iclaude.sh --help | grep -E "graphify|graphiffy"), code:block53 (--install-graphify                Install graphify knowledge), code:bash (git status   # убедиться, что нет случайных неотслеживаемых ), Task 12: Финальная проверка синтаксиса и smoke-тест
 
 ### Community 111 - "Community 111"
 Cohesion: 0.33
-Nodes (6): code:bash (# Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_), code:bash (# Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_), code:bash (bash -n lib/launcher/launch.sh), code:bash (bash -n iclaude.sh), code:bash (git add lib/launcher/launch.sh), Task 3: Экспортировать CAVEMAN_DEFAULT_MODE в lib/launcher/launch.sh
+Nodes (6): code:bash (if [[ "$USE_PII_PROXY_FLAG" == "true" ]] && [[ "$USE_ROUTER_), code:bash (# Rebuild graphify knowledge graph if --graphify flag is set), code:bash (bash -n iclaude.sh), code:bash (# Имитировать USE_GRAPHIFY_FLAG без установленного graphify ), code:bash (git add iclaude.sh), Task 8: Вызов `_graphify_rebuild_graph` в потоке запуска
 
 ### Community 112 - "Community 112"
 Cohesion: 0.33
-Nodes (6): Запуск, code:bash (# Разово с microVM изоляцией), code:bash (# Работать с проектом из конкретной директории (независимо о), code:bash (# Файлы проекта доступны в VM, но изменения НЕ возвращаются ), Workspace: конкретный путь, Workspace: isolated режим
+Nodes (6): code:bash (# Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_), code:bash (# Caveman: pass config to hook (process.env.CAVEMAN_DEFAULT_), code:bash (bash -n lib/launcher/launch.sh), code:bash (bash -n iclaude.sh), code:bash (git add lib/launcher/launch.sh), Task 3: Экспортировать CAVEMAN_DEFAULT_MODE в lib/launcher/launch.sh
 
 ### Community 113 - "Community 113"
 Cohesion: 0.33
-Nodes (6): Известные проблемы и ограничения, 1. Маскирование системных промптов (ложные срабатывания), 2. Потеря контекста при маскировании кода, 3. Latency, 4. Русский язык, 5. Streaming responses
+Nodes (6): Запуск, code:bash (# Разово с microVM изоляцией), code:bash (# Работать с проектом из конкретной директории (независимо о), code:bash (# Файлы проекта доступны в VM, но изменения НЕ возвращаются ), Workspace: конкретный путь, Workspace: isolated режим
 
 ### Community 114 - "Community 114"
 Cohesion: 0.33
-Nodes (6): Проверки по шагам, Вывод при повторном запуске (всё актуально), Принудительная переустановка, code:block36 (✓ Python 3.11: OK), code:bash (./iclaude.sh --install-pii-proxy --force), Идемпотентная установка PII Proxy
+Nodes (6): Известные проблемы и ограничения, 1. Маскирование системных промптов (ложные срабатывания), 2. Потеря контекста при маскировании кода, 3. Latency, 4. Русский язык, 5. Streaming responses
 
 ### Community 115 - "Community 115"
 Cohesion: 0.33
-Nodes (6): Automatic Configuration, code:json ({), code:bash (DEBUG_STATUSLINE=1), Configuration, Debug Mode, Setup Instructions
+Nodes (6): Проверки по шагам, Вывод при повторном запуске (всё актуально), Принудительная переустановка, code:block36 (✓ Python 3.11: OK), code:bash (./iclaude.sh --install-pii-proxy --force), Идемпотентная установка PII Proxy
 
 ### Community 116 - "Community 116"
 Cohesion: 0.33
-Nodes (6): Phase 2: Proxy Module Extraction Summary, lib/proxy/configure.sh, lib/proxy/credentials.sh, lib/proxy/git.sh, lib/proxy/ Module, lib/proxy/validate.sh
+Nodes (6): Automatic Configuration, code:json ({), code:bash (DEBUG_STATUSLINE=1), Configuration, Debug Mode, Setup Instructions
 
 ### Community 117 - "Community 117"
-Cohesion: 0.33
-Nodes (6): lib/caveman/install.sh, Caveman Integration Implementation Plan, Caveman Module (lib/caveman/), Caveman Token Compression (~65-75%), claude-statusline.sh (scripts), lib/launcher/launch.sh
-
-### Community 118 - "Community 118"
 Cohesion: 0.4
 Nodes (6): block-secrets.py PreToolUse Hook, lib/pii-proxy/server.py (PII Proxy, Presidio NLP), PasteGuard PII Proxy, PII Masking Documentation, Microsoft Presidio NLP (PII masking), redact-secrets.py PreToolUse Hook
+
+### Community 118 - "Community 118"
+Cohesion: 0.33
+Nodes (6): Phase 2: Proxy Module Extraction Summary, lib/proxy/configure.sh, lib/proxy/credentials.sh, lib/proxy/git.sh, lib/proxy/ Module, lib/proxy/validate.sh
 
 ### Community 119 - "Community 119"
 Cohesion: 0.4
@@ -687,11 +686,11 @@ Nodes (3): Visa credit cards should be redacted, Visa credit cards should be red
 
 ### Community 120 - "Community 120"
 Cohesion: 0.4
-Nodes (3): Long hex strings that are not obviously secrets, Long hex strings that are not obviously secrets, Partial patterns should not be redacted if incomplete
+Nodes (5): Architecture, code:block1 (┌───────────────────────────────────────────────────────────), code:block2 (User Action: Click on 📄), Component Diagram, Session Link Flow (Phase 2)
 
 ### Community 121 - "Community 121"
 Cohesion: 0.4
-Nodes (5): Architecture, code:block1 (┌───────────────────────────────────────────────────────────), code:block2 (User Action: Click on 📄), Component Diagram, Session Link Flow (Phase 2)
+Nodes (5): code:block35 (Если отменить: завершить), code:block36 (Если отменить: завершить), code:bash (# Убедиться что шаги идут в правильном порядке), code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL), Task 6: Обновить SKILL.md — ingest (Step 1.5)
 
 ### Community 122 - "Community 122"
 Cohesion: 0.4
@@ -699,7 +698,7 @@ Nodes (5): {Название сущности}, Основные характе�
 
 ### Community 123 - "Community 123"
 Cohesion: 0.4
-Nodes (5): code:block35 (Если отменить: завершить), code:block36 (Если отменить: завершить), code:bash (# Убедиться что шаги идут в правильном порядке), code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL), Task 6: Обновить SKILL.md — ingest (Step 1.5)
+Nodes (5): code:json ("special_source_types": {}), code:json ("special_source_types": {},), code:bash (# Извлечь шаблон и валидировать), code:bash (git add .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL), Task 8: Обновить SKILL.md — Phase 0 (шаблон domain-map)
 
 ### Community 124 - "Community 124"
 Cohesion: 0.4
@@ -711,11 +710,11 @@ Nodes (5): code:bash (--pii-proxy)), code:bash (--graphify)), code:bash (bash -n
 
 ### Community 126 - "Community 126"
 Cohesion: 0.4
-Nodes (4): Карта файлов, Итог, code:bash (./iclaude.sh --install-graphify          # установить), Graphify Integration Implementation Plan
+Nodes (5): code:bash (git add iclaude.sh), code:bash, code:bash (--caveman-install)), code:bash (bash -n iclaude.sh), Task 2: Подключить модуль в iclaude.sh (Phase 2-8 + Phase 14)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.4
-Nodes (5): code:bash (--caveman-install                 Install caveman token-comp), code:bash, code:bash (bash -n iclaude.sh && bash -n lib/command/usage.sh), code:bash (git add lib/command/usage.sh .claude_config.example), Task 4: Обновить usage.sh и .claude_config.example
+Nodes (5): code:block20 (/usr/bin/sudo: Отказано в доступе), code:bash (su -), code:bash (sudo usermod -aG wheel $USER), code:bash (sudo -v   # должен запросить пароль, не вернуть "Отказано в ), `/usr/bin/sudo: Отказано в доступе` (ALT Linux)
 
 ### Community 128 - "Community 128"
 Cohesion: 0.4
@@ -727,7 +726,7 @@ Nodes (5): Матрица решений, Архитектура предлаг�
 
 ### Community 130 - "Community 130"
 Cohesion: 0.4
-Nodes (5): Параметры верхнего уровня, Два типа логов, Переменные окружения в значениях, code:json ({), PROXY_URL
+Nodes (5): Конфигурация, Формат файла, code:json ({), code:javascript (// custom-router.js), Custom Router
 
 ### Community 131 - "Community 131"
 Cohesion: 0.4
@@ -735,7 +734,7 @@ Nodes (5): Текущая конфигурация агентов пайплай
 
 ### Community 132 - "Community 132"
 Cohesion: 0.4
-Nodes (5): Конфигурация, Формат файла, code:json ({), code:javascript (// custom-router.js), Custom Router
+Nodes (5): Параметры верхнего уровня, Два типа логов, Переменные окружения в значениях, code:json ({), PROXY_URL
 
 ### Community 133 - "Community 133"
 Cohesion: 0.4
@@ -749,13 +748,17 @@ Nodes (5): graphifyy PyPI package (Knowledge Graph builder), lib/graphify (Knowl
 Cohesion: 0.5
 Nodes (5): Claude Code CLI (@anthropic-ai/claude-code), Diagram: Isolated Installation Data Flow, lib/launcher (Claude Code Launch Module), lib/nvm (Isolated NVM Environment), .nvm-isolated-lockfile.json (Version Lockfile)
 
-### Community 137 - "Community 137"
+### Community 136 - "Community 136"
 Cohesion: 0.5
 Nodes (4): Code, Documentation, External, References
 
+### Community 137 - "Community 137"
+Cohesion: 0.5
+Nodes (4): code:bash (cat .nvm-isolated/.claude-isolated/settings.json | jq '.stat), code:bash (echo '{"context_window":{"total_input_tokens":1000,"total_ou), code:bash (.nvm-isolated/npm-global/bin/jq --version), Status line не отображается
+
 ### Community 138 - "Community 138"
 Cohesion: 0.5
-Nodes (4): code:bash (git rev-parse --is-inside-work-tree), code:bash (# Increase timeout in claude-statusline.sh:165), code:bash (jq empty .nvm-isolated/.claude-isolated/themes/claude-status), Git info не отображается
+Nodes (4): Карта файлов, code:markdown (# Reader: Markdown), LLM Wiki — Multi-Language Source Support Implementation Plan, Task 1: markdown.md reader — зафиксировать текущее поведение
 
 ### Community 139 - "Community 139"
 Cohesion: 0.5
@@ -763,69 +766,57 @@ Nodes (4): {имя-типа}, Поля, Используется в, code:block1
 
 ### Community 140 - "Community 140"
 Cohesion: 0.5
-Nodes (4): Карта файлов, code:markdown (# Reader: Markdown), LLM Wiki — Multi-Language Source Support Implementation Plan, Task 1: markdown.md reader — зафиксировать текущее поведение
+Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/install.sh), code:bash (git add lib/graphify/install.sh), Task 4: `lib/graphify/install.sh`
 
 ### Community 141 - "Community 141"
 Cohesion: 0.5
-Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/install.sh), code:bash (git add lib/graphify/install.sh), Task 4: `lib/graphify/install.sh`
+Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/status.sh), code:bash (git add lib/graphify/status.sh), Task 3: `lib/graphify/status.sh`
 
 ### Community 142 - "Community 142"
 Cohesion: 0.5
-Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/detect.sh), code:bash (git add lib/graphify/detect.sh), Task 2: `lib/graphify/detect.sh`
+Nodes (4): code:bash (# ==========================================================), code:bash (# ==========================================================), code:bash (git add .claude_config.example), Task 10: Секция GRAPHIFY в `.claude_config.example`
 
 ### Community 143 - "Community 143"
 Cohesion: 0.5
-Nodes (4): code:bash (# ==========================================================), code:bash (# ==========================================================), code:bash (git add .claude_config.example), Task 10: Секция GRAPHIFY в `.claude_config.example`
+Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/detect.sh), code:bash (git add lib/graphify/detect.sh), Task 2: `lib/graphify/detect.sh`
 
 ### Community 144 - "Community 144"
 Cohesion: 0.5
-Nodes (4): code:bash (#!/bin/bash), code:bash (bash -n lib/graphify/status.sh), code:bash (git add lib/graphify/status.sh), Task 3: `lib/graphify/status.sh`
+Nodes (4): code:block24 (microVM: TAP tap-iclaude-1 not found (sudo unavailable to cr), code:bash (sudo ip tuntap add dev tap-iclaude-1 mode tap), code:block26 (# /etc/sudoers.d/iclaude-tap  (редактировать через visudo)), TAP-интерфейс не создаётся
 
 ### Community 145 - "Community 145"
 Cohesion: 0.5
-Nodes (4): code:bash (# Graphify (Knowledge Graph)), code:bash (bash -n lib/core/init.sh), code:bash (git add lib/core/init.sh), Task 1: Переменные в `lib/core/init.sh`
+Nodes (4): Поля провайдера, Формат ссылки на провайдера, code:json ("Router": {), Providers — провайдеры моделей
 
 ### Community 146 - "Community 146"
 Cohesion: 0.5
-Nodes (4): code:block24 (microVM: TAP tap-iclaude-1 not found (sudo unavailable to cr), code:bash (sudo ip tuntap add dev tap-iclaude-1 mode tap), code:block26 (# /etc/sudoers.d/iclaude-tap  (редактировать через visudo)), TAP-интерфейс не создаётся
+Nodes (4): code:block26 (112,762 total | 50,000 active (25%) [cache]79K Sonnet 4.5 $1), Display Format, Example Output, Format Notes
 
 ### Community 147 - "Community 147"
-Cohesion: 0.5
-Nodes (4): Поля провайдера, Формат ссылки на провайдера, code:json ("Router": {), Providers — провайдеры моделей
-
-### Community 148 - "Community 148"
-Cohesion: 0.5
-Nodes (4): Поддерживаемые слоты, Динамическое переключение модели, code:block13 (/model provider_name,model_name), Router — слоты маршрутизации
-
-### Community 149 - "Community 149"
 Cohesion: 0.5
 Nodes (4): Append-Only Optimization, Memory Footprint, Performance Considerations, Terminal Rendering
 
 ### Community 153 - "Community 153"
 Cohesion: 0.67
-Nodes (3): code:bash (./iclaude.sh --install-microvm   # inject rsync, без re-down), Механизм синхронизации (SSH ControlMaster + rsync), Workspace режимы
+Nodes (3): Как работает запуск (кратко), Cold boot (без снэпшота или `MICRO_VM_SNAPSHOT_ENABLED=false`), Restore из снэпшота (`MICRO_VM_SNAPSHOT_ENABLED=true`)
 
 ### Community 154 - "Community 154"
 Cohesion: 0.67
-Nodes (3): code:block15 (nvm.img not found: run --install-microvm first), code:bash (./iclaude.sh --install-microvm), nvm.img отсутствует
-
-### Community 155 - "Community 155"
-Cohesion: 0.67
-Nodes (3): Как работает запуск (кратко), Cold boot (без снэпшота или `MICRO_VM_SNAPSHOT_ENABLED=false`), Restore из снэпшота (`MICRO_VM_SNAPSHOT_ENABLED=true`)
+Nodes (3): code:bash (./iclaude.sh --install-microvm   # inject rsync, без re-down), Механизм синхронизации (SSH ControlMaster + rsync), Workspace режимы
 
 ## Knowledge Gaps
 - **1203 isolated node(s):** `Запускает хук и возвращает (stdout, stderr).`, `Возвращает маскированное содержимое или None если не изменено.`, `Утверждает что контент ДОЛЖЕН быть замаскирован с указанным плейсхолдером.`, `Утверждает что контент НЕ должен быть изменён хуком.`, `Документирует ПРОПУЩЕННЫЙ секрет (false negative — дыра в защите).` (+1198 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Claude Statusline Documentation` connect `Community 64` to `Community 133`, `Community 38`, `Community 71`, `Proxy & Masking Logic`, `Community 104`, `Community 105`, `Community 72`, `Community 76`, `Community 115`, `Community 21`, `Community 149`, `Community 88`?**
+- **Why does `Claude Statusline Documentation` connect `Community 105` to `Community 133`, `Proxy & Masking Logic`, `Community 39`, `Community 104`, `Community 73`, `Community 106`, `Community 72`, `Community 77`, `Community 146`, `Community 147`, `Community 116`, `Community 21`, `Community 88`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `Маскирование персональных данных в iclaude: PasteGuard и альтернативы` connect `Community 85` to `Community 128`, `Community 129`, `Community 34`, `Community 36`, `Community 69`, `Community 100`, `Community 101`, `Community 37`, `Community 113`, `Community 114`, `Community 63`?**
+- **Why does `Маскирование персональных данных в iclaude: PasteGuard и альтернативы` connect `Community 85` to `Community 64`, `Community 128`, `Community 34`, `Community 129`, `Community 100`, `Community 37`, `Community 69`, `Community 101`, `Community 38`, `Community 114`, `Community 115`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `🔄 Streaming Mode Support (NEW - Week 2)` connect `Proxy & Masking Logic` to `Community 64`?**
+- **Why does `🔄 Streaming Mode Support (NEW - Week 2)` connect `Proxy & Masking Logic` to `Community 105`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **What connects `Запускает хук и возвращает (stdout, stderr).`, `Возвращает маскированное содержимое или None если не изменено.`, `Утверждает что контент ДОЛЖЕН быть замаскирован с указанным плейсхолдером.` to the rest of the system?**
   _1203 weakly-connected nodes found - possible documentation gaps or missing edges._
