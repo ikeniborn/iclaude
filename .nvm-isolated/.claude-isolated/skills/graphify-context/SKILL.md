@@ -80,19 +80,19 @@ GRAPH_REPORT.md содержит готовый структурный обзо�
 
 ```bash
 # Широкий обзор компонентов (BFS)
-graphify query "What are the core components and how do they connect?" --budget 1200
+graphify query "What are the core components and how do they connect?" --budget 1200 --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Трассировка конкретного пути (DFS)
-graphify query "How does <entry_point> reach <target>?" --dfs --budget 1000
+graphify query "How does <entry_point> reach <target>?" --dfs --budget 1000 --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Связь между двумя конкретными узлами
-graphify path "ComponentA" "ComponentB"
+graphify path "ComponentA" "ComponentB" --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Полный контекст одного узла
-graphify explain "ClassName"
+graphify explain "ClassName" --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Любой вопрос по архитектуре
-graphify query "<вопрос от пользователя>" --budget 1500
+graphify query "<вопрос от пользователя>" --budget 1500 --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 **Выбор режима:**
