@@ -61,6 +61,38 @@ PROJECT_ROOT = Path("/home/alice/projects/myproject")
 OTHER_ROOT = Path("/home/bob/repos/myproject")
 
 
+class TestGetProjectRoot:
+    def test_reads_abs_path_from_graphify_root(self, tmp_gout, tmp_path):
+        (tmp_gout / ".graphify_root").write_text(str(tmp_path))
+
+        result = np_mod.get_project_root(tmp_gout)
+
+        assert result == tmp_path
+
+    def test_ignores_dot_in_graphify_root(self, tmp_gout, monkeypatch):
+        (tmp_gout / ".graphify_root").write_text(".")
+        # git rev-parse вернёт что-то — мокаем
+        monkeypatch.setattr(
+            "subprocess.check_output",
+            lambda *a, **kw: "/home/alice/project\n"
+        )
+
+        result = np_mod.get_project_root(tmp_gout)
+
+        assert result == Path("/home/alice/project")
+
+    def test_fallback_to_cwd_without_git(self, tmp_gout, monkeypatch):
+        import subprocess as sp
+        monkeypatch.setattr(
+            "subprocess.check_output",
+            lambda *a, **kw: (_ for _ in ()).throw(sp.CalledProcessError(128, "git"))
+        )
+
+        result = np_mod.get_project_root(tmp_gout)
+
+        assert result == Path.cwd()
+
+
 class TestNormalizeManifest:
     def test_abs2rel_converts_keys(self, tmp_gout):
         manifest = {
@@ -293,7 +325,14 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 
-def get_project_root() -> Path:
+def get_project_root(gout: Path) -> Path:
+    # abs2rel: читаем сохранённый путь из .graphify_root (самый точный источник)
+    root_file = gout / ".graphify_root"
+    if root_file.exists():
+        content = root_file.read_text(encoding="utf-8").strip()
+        if content and content.startswith("/") and Path(content).exists():
+            return Path(content)
+    # rel2abs / fallback: git rev-parse или CWD
     try:
         root = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"],
@@ -412,12 +451,22 @@ def main() -> None:
         if not re.search(r"\bgraphify\b", command):
             sys.exit(0)
 
-    project_root = get_project_root()
+    # Определяем gout через git/CWD (project_root нужен ещё до чтения .graphify_root)
     graphify_out = os.environ.get("GRAPHIFY_OUT", "graphify-out")
-    gout = project_root / graphify_out
+    try:
+        git_root = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        gout = Path(git_root) / graphify_out
+    except Exception:
+        gout = Path.cwd() / graphify_out
 
     if not gout.exists():
         sys.exit(0)
+
+    # get_project_root читает .graphify_root для abs2rel (точнее git)
+    project_root = get_project_root(gout)
 
     normalize_manifest(gout, project_root, mode)
     normalize_root(gout, project_root, mode)
