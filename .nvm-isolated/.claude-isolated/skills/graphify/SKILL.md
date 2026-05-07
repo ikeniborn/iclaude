@@ -91,7 +91,7 @@ The printed value is the resolved output directory. Use this **literal string** 
 ```bash
 export GRAPHIFY_OUT="RESOLVED_GRAPHIFY_OUT"  # ← substitute the literal value from Step 0.5
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
-PYTHON="
+PYTHON=""
 GRAPHIFY_BIN=$(which graphify 2>/dev/null)
 # 1. uv tool installs — most reliable on modern Mac/Linux
 if [ -z "$PYTHON" ] && command -v uv >/dev/null 2>&1; then
