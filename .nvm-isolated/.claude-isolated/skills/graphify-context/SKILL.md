@@ -1,6 +1,6 @@
 ---
 name: graphify-context
-description: Use when exploring project architecture, component relationships, or codebase structure — especially at brainstorming Step 1 or when the user asks how parts of the system connect. Reads .graphify/ knowledge graph without rebuilding it.
+description: Use when exploring project architecture, component relationships, or codebase structure — especially at brainstorming Step 1 or when the user asks how parts of the system connect. Reads project knowledge graph (path from GRAPHIFY_OUT) without rebuilding it.
 user-invocable: true
 context: fork
 # version: 1.1.0
