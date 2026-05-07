@@ -227,7 +227,7 @@ def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
     """Configure 'pii-proxy' logger directly (not root logger) for reliability."""
     log_dir.mkdir(parents=True, exist_ok=True)
     fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    _sid = session_id if re.fullmatch(r'[0-9a-f]{12}', session_id) else 'default'
+    _sid = session_id if (re.fullmatch(r'[0-9a-f]{12}', session_id) or session_id == 'shared') else 'default'
     file_handler = RotatingFileHandler(
         log_dir / f'{_sid}.log',
         maxBytes=5 * 1024 * 1024,  # 5 MB per file
@@ -1029,7 +1029,7 @@ def main() -> None:
     # race where session-2 could overwrite session-1's file before session-1 read it).
     # Validate session_id to hex-only (12 chars) to prevent path traversal via env variable.
     _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
-    session_id = _raw_sid if re.fullmatch(r'[0-9a-f]{12}', _raw_sid) else 'default'
+    session_id = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
     port_file = log_dir / f'pii-proxy-{session_id}.port'
     port_file.write_text(str(port))
 
