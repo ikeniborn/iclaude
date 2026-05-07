@@ -88,6 +88,10 @@ _graphify_rebuild_graph() {
     UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         env "${env_args[@]}" \
         "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
+
+    if [[ -n "$CLAUDE_CONFIG_DIR" && -f "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" ]]; then
+        python3 "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" abs2rel < /dev/null
+    fi
 }
 
 #######################################
