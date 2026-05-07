@@ -11,7 +11,24 @@ MARKER="ICLAUDE-PATCHED-v1"
 if [[ -n "${GRAPHIFY_PKG_OVERRIDE:-}" ]]; then
     GRAPHIFY_PKG="$GRAPHIFY_PKG_OVERRIDE"
 else
-    GRAPHIFY_PKG="${ISOLATED_NVM_DIR:-}/.claude-isolated/graphify/graphifyy/lib/python3.12/site-packages/graphify"
+    # Primary: ask the installed tool dir Python (avoids uv-cache resolution issues)
+    _TOOL_PYTHON="${ISOLATED_NVM_DIR:-}/.claude-isolated/graphify/graphifyy/bin/python3"
+    if [[ -x "$_TOOL_PYTHON" ]]; then
+        GRAPHIFY_PKG="$("$_TOOL_PYTHON" -c 'import graphify, os; print(os.path.dirname(graphify.__file__))' 2>/dev/null)"
+    fi
+    # Fallback: ask uv tool run (may use a different cache env)
+    if [[ -z "${GRAPHIFY_PKG:-}" ]]; then
+        _UV_BIN="${ISOLATED_NVM_DIR:-}/bin/uv"
+        _GRAPHIFY_TOOL_DIR="${ISOLATED_NVM_DIR:-}/.claude-isolated/graphify"
+        if [[ -x "$_UV_BIN" ]]; then
+            GRAPHIFY_PKG="$(UV_TOOL_DIR="$_GRAPHIFY_TOOL_DIR" "$_UV_BIN" tool run --from graphifyy python3 -c \
+                'import graphify, os; print(os.path.dirname(graphify.__file__))' 2>/dev/null)"
+        fi
+    fi
+    # Final fallback: hardcoded path
+    if [[ -z "${GRAPHIFY_PKG:-}" ]]; then
+        GRAPHIFY_PKG="${ISOLATED_NVM_DIR:-}/.claude-isolated/graphify/graphifyy/lib/python3.12/site-packages/graphify"
+    fi
 fi
 
 PATCHES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/patches"

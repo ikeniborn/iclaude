@@ -1,194 +1,210 @@
 {
-  "tests/test-quality-analysis.py": {
-    "mtime": 1772170808.5866745,
-    "hash": "58179966131de0aaf1244d4ec120612a"
-  },
-  "tests/test_patterns_examples.py": {
-    "mtime": 1778138018.5525806,
-    "hash": "5db2917613c2526dd27460c3299dd722"
-  },
-  "tests/test_normalize_paths.py": {
-    "mtime": 1778153464.1785576,
-    "hash": "7306f5d7a6e6b20d6b85effa5b0abf33"
-  },
   "lib/pii-proxy/server.py": {
-    "mtime": 1778153955.7555006,
+    "mtime": 1778159397.3306575,
     "hash": "50e988c993c594633536ff1db989d893"
   },
+  "tests/test-quality-analysis.py": {
+    "mtime": 1774809683.5223594,
+    "hash": "58179966131de0aaf1244d4ec120612a"
+  },
+  "tests/test_graphify_patches.py": {
+    "mtime": 1778173902.7945316,
+    "hash": "60a68bbd01da23389defb4bbb88b35b0"
+  },
+  "tests/test_patterns_examples.py": {
+    "mtime": 1778159397.330814,
+    "hash": "5db2917613c2526dd27460c3299dd722"
+  },
   "CLAUDE.md": {
-    "mtime": 1778059533.0075138,
+    "mtime": 1778100314.828211,
     "hash": "05edb81a42b62f4ea6e565e9f3e9ca39"
   },
   "README.md": {
-    "mtime": 1778132068.9558718,
+    "mtime": 1778100314.8284054,
     "hash": "4422f7ec89d6e788133005dc85688e2b"
   },
-  "docs/architecture/statusline-architecture.md": {
-    "mtime": 1771305511.568218,
-    "hash": "63de80a27ae809c932e49912993001f7"
+  "lib/README.md": {
+    "mtime": 1774809683.5182161,
+    "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
   },
   "docs/architecture/overview.yaml": {
-    "mtime": 1773122527.0196202,
+    "mtime": 1774809683.515068,
     "hash": "bae4ee01dd2e44b508206762f6d03c38"
   },
+  "docs/architecture/statusline-architecture.md": {
+    "mtime": 1774809683.515068,
+    "hash": "63de80a27ae809c932e49912993001f7"
+  },
+  "docs/architecture/diagrams/data-flow-router-launch.md": {
+    "mtime": 1774809683.515068,
+    "hash": "58e7e71dedfd9cf76607a86fc6fc0738"
+  },
+  "docs/architecture/diagrams/data-flow-microvm-launch.md": {
+    "mtime": 1774809683.515068,
+    "hash": "e6021c258d55d0f8a97f695050918ee4"
+  },
   "docs/architecture/diagrams/data-flow-isolated-installation.md": {
-    "mtime": 1768887642.1132438,
+    "mtime": 1774809683.515068,
     "hash": "02d8335bcbb95f1df9f895fe3dee880b"
   },
   "docs/architecture/diagrams/data-flow-proxy-configuration.md": {
-    "mtime": 1768887642.1142437,
+    "mtime": 1774809683.515068,
     "hash": "f65c71b088bcd34cd7ce4d23234558de"
   },
-  "docs/architecture/diagrams/data-flow-router-launch.md": {
-    "mtime": 1768887642.1142437,
-    "hash": "58e7e71dedfd9cf76607a86fc6fc0738"
-  },
   "docs/architecture/diagrams/README.md": {
-    "mtime": 1773122527.0196202,
+    "mtime": 1774809683.513919,
     "hash": "daf4faf893a8abb11abff42c754de7e8"
   },
-  "docs/architecture/diagrams/data-flow-microvm-launch.md": {
-    "mtime": 1773122527.0196202,
-    "hash": "e6021c258d55d0f8a97f695050918ee4"
+  "docs/superpowers/specs/2026-05-07-pii-shared-detach-design.md": {
+    "mtime": 1778162932.786613,
+    "hash": "ea90a2ca4e3f978d6fba6a0637bc9137"
   },
-  "docs/superpowers/specs/2026-04-29-verify-dialogue-design.md": {
-    "mtime": 1777459379.3706203,
-    "hash": "763e6e5906066881ce81a0051eb8d9cf"
+  "docs/superpowers/specs/2026-05-07-graphify-hardcode-audit-design.md": {
+    "mtime": 1778159397.3299572,
+    "hash": "723f9b5f92a0d6d06b2cf5457597818f"
+  },
+  "docs/superpowers/specs/2026-05-07-pii-shared-server-design.md": {
+    "mtime": 1778159397.3300693,
+    "hash": "84b286a25dbdbe4528101b3116c7dd46"
+  },
+  "docs/superpowers/specs/2026-05-07-graphify-manifest-path-bug-design.md": {
+    "mtime": 1778159397.3299918,
+    "hash": "6b34e8dcafcc9306276304a6bad981cb"
+  },
+  "docs/superpowers/specs/2026-05-06-graphify-integration-design.md": {
+    "mtime": 1778100314.829992,
+    "hash": "d0f52a8ea126b7ef0445c93b4b7ad88d"
   },
   "docs/superpowers/specs/2026-05-05-skip-permissions-config-design.md": {
-    "mtime": 1778045369.1604478,
+    "mtime": 1778100314.829992,
     "hash": "7fbb96c1e80e99fdc788d5d73e4ea4e7"
   },
   "docs/superpowers/specs/2026-05-06-llm-wiki-multi-language-design.md": {
-    "mtime": 1778045369.1604478,
+    "mtime": 1778100314.829992,
     "hash": "4e3f32ed4327ab029d937ed04c9dfd5a"
   },
-  "docs/superpowers/specs/2026-05-06-graphify-integration-design.md": {
-    "mtime": 1778059531.989487,
-    "hash": "d0f52a8ea126b7ef0445c93b4b7ad88d"
-  },
-  "docs/superpowers/specs/2026-05-06-caveman-integration-design.md": {
-    "mtime": 1778059532.1194904,
-    "hash": "799d2464283b473b3a7b56e2bbb77237"
-  },
   "docs/superpowers/specs/2026-05-06-graphify-chunk-path-fix-design.md": {
-    "mtime": 1778132068.9558718,
+    "mtime": 1778100314.829992,
     "hash": "2dc4e32044c66f0c20a928a93b6eb8d7"
   },
-  "docs/superpowers/specs/2026-05-07-context-awareness-graph-integration-design.md": {
-    "mtime": 1778132068.9558718,
-    "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
-  },
-  "docs/superpowers/specs/2026-05-07-graphify-hardcode-audit-design.md": {
-    "mtime": 1778142566.5401065,
-    "hash": "723f9b5f92a0d6d06b2cf5457597818f"
-  },
-  "docs/superpowers/specs/2026-05-07-graphify-manifest-path-bug-design.md": {
-    "mtime": 1778148823.0424562,
-    "hash": "6b34e8dcafcc9306276304a6bad981cb"
-  },
   "docs/superpowers/specs/2026-05-07-graphify-portability-design.md": {
-    "mtime": 1778149183.8749382,
+    "mtime": 1778159397.3300302,
     "hash": "153a2d8a88d7f69c17727143415d779d"
   },
-  "docs/superpowers/specs/2026-05-07-pii-shared-server-design.md": {
-    "mtime": 1778152584.3363938,
-    "hash": "84b286a25dbdbe4528101b3116c7dd46"
+  "docs/superpowers/specs/2026-04-29-verify-dialogue-design.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "763e6e5906066881ce81a0051eb8d9cf"
   },
-  "docs/superpowers/plans/2026-04-29-verify-dialogue.md": {
-    "mtime": 1777459379.4126213,
-    "hash": "f0979ea599b03d20e39fba1c235aad26"
+  "docs/superpowers/specs/2026-05-07-context-awareness-graph-integration-design.md": {
+    "mtime": 1778101889.7161865,
+    "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
   },
-  "docs/superpowers/plans/2026-05-05-llm-wiki-merge-bootstrap.md": {
-    "mtime": 1778045369.1594477,
-    "hash": "93a2aa549daebc80f6f491b4e80a7306"
+  "docs/superpowers/specs/2026-05-06-caveman-integration-design.md": {
+    "mtime": 1778100314.829992,
+    "hash": "799d2464283b473b3a7b56e2bbb77237"
   },
-  "docs/superpowers/plans/2026-05-05-skip-permissions-config.md": {
-    "mtime": 1778045369.1594477,
-    "hash": "1bc1176e31a2901412806094c7a62234"
+  "docs/superpowers/specs/2026-05-07-graphify-c3-patch-graphifyy-design.md": {
+    "mtime": 1778162623.1972325,
+    "hash": "9fd6fe306cb2c2da2df3ea0f31f5ff4a"
   },
-  "docs/superpowers/plans/2026-05-06-llm-wiki-multi-language.md": {
-    "mtime": 1778045369.1604478,
-    "hash": "c75b2d566c843e8e6b50157597d70673"
+  "docs/superpowers/plans/2026-05-07-graphify-c3-patch-graphifyy.md": {
+    "mtime": 1778164132.1478004,
+    "hash": "d0df59e0ad028dba2c008e9839a51abd"
   },
   "docs/superpowers/plans/2026-05-06-graphify-integration.md": {
-    "mtime": 1778059532.216493,
+    "mtime": 1778100314.8294332,
     "hash": "5793047e8e29548d42ca91b21029d89b"
   },
-  "docs/superpowers/plans/2026-05-06-caveman-integration.md": {
-    "mtime": 1778059532.4164982,
-    "hash": "872011fc14b96eb87be8343e156c7447"
-  },
-  "docs/superpowers/plans/2026-05-06-graphify-chunk-path-fix.md": {
-    "mtime": 1778132068.9558718,
-    "hash": "1899023b072a37b902b01d711345393f"
-  },
-  "docs/superpowers/plans/2026-05-07-context-awareness-graph-integration.md": {
-    "mtime": 1778132068.9558718,
-    "hash": "204b101ec0ee44d2fecebe5d284016e4"
+  "docs/superpowers/plans/2026-05-05-skip-permissions-config.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "1bc1176e31a2901412806094c7a62234"
   },
   "docs/superpowers/plans/2026-05-07-graphify-hardcode-fix.md": {
-    "mtime": 1778142541.3284435,
+    "mtime": 1778159397.3297255,
     "hash": "aa3cccd36f6126ab21d05c9c5559b526"
   },
-  "docs/superpowers/plans/2026-05-07-graphify-manifest-path-bug.md": {
-    "mtime": 1778149292.429791,
-    "hash": "f8293a313ee230db16d92e0088b3a86e"
-  },
   "docs/superpowers/plans/2026-05-07-graphify-portability-plan.md": {
-    "mtime": 1778152728.1041784,
+    "mtime": 1778159397.3298483,
     "hash": "96da818af7e6a1fb63a915674980ee1a"
   },
   "docs/superpowers/plans/2026-05-07-pii-shared-server.md": {
-    "mtime": 1778153525.528173,
+    "mtime": 1778159397.3299158,
     "hash": "f1111462110363c0288fd668732b0157"
   },
-  "docs/functions/CONFIGURATION.md": {
-    "mtime": 1778045369.1574476,
-    "hash": "d9c508847034c67bcd9be5589efc052e"
+  "docs/superpowers/plans/2026-05-06-llm-wiki-multi-language.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "c75b2d566c843e8e6b50157597d70673"
   },
-  "docs/functions/MICROVM.md": {
-    "mtime": 1778045369.1584477,
-    "hash": "2ff6bdf86557bd4346208eb23f656769"
+  "docs/superpowers/plans/2026-05-07-pii-shared-detach.md": {
+    "mtime": 1778164256.297408,
+    "hash": "94a9a90a8e4ece54e152c1f182f29ec8"
   },
-  "docs/functions/PII_MASKING.md": {
-    "mtime": 1778045369.1584477,
-    "hash": "68d16553443f6f84b68b7bcad6821ed2"
+  "docs/superpowers/plans/2026-05-07-context-awareness-graph-integration.md": {
+    "mtime": 1778102321.9954126,
+    "hash": "204b101ec0ee44d2fecebe5d284016e4"
   },
-  "docs/functions/PROXY.md": {
-    "mtime": 1778045369.1584477,
-    "hash": "5d65e4c39a42b672de888d7e1f35d8e7"
+  "docs/superpowers/plans/2026-05-07-graphify-manifest-path-bug.md": {
+    "mtime": 1778159397.32978,
+    "hash": "f8293a313ee230db16d92e0088b3a86e"
   },
-  "docs/functions/QUICK_CONFIG.md": {
-    "mtime": 1778045369.1584477,
-    "hash": "6d16480233ccfd0af42248949ba22bf6"
+  "docs/superpowers/plans/2026-05-05-llm-wiki-merge-bootstrap.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "93a2aa549daebc80f6f491b4e80a7306"
+  },
+  "docs/superpowers/plans/2026-05-06-caveman-integration.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "872011fc14b96eb87be8343e156c7447"
+  },
+  "docs/superpowers/plans/2026-05-06-graphify-chunk-path-fix.md": {
+    "mtime": 1778100314.8294332,
+    "hash": "1899023b072a37b902b01d711345393f"
+  },
+  "docs/superpowers/plans/2026-04-29-verify-dialogue.md": {
+    "mtime": 1778100314.8293583,
+    "hash": "f0979ea599b03d20e39fba1c235aad26"
   },
   "docs/functions/ROUTER.md": {
-    "mtime": 1778045369.1594477,
+    "mtime": 1778100314.8286858,
     "hash": "be25341ccb0b5b1985640bbe3ba86483"
   },
-  "docs/functions/STATUSLINE.md": {
-    "mtime": 1778045369.1594477,
-    "hash": "a34903b147d801ac9fccb050d7ccf3b6"
+  "docs/functions/PROXY.md": {
+    "mtime": 1778100314.8286858,
+    "hash": "5d65e4c39a42b672de888d7e1f35d8e7"
   },
   "docs/functions/TELEMETRY.md": {
-    "mtime": 1778045369.1594477,
+    "mtime": 1778100314.8286858,
     "hash": "421f9d5b1e0a898fe935c653bfd69f8b"
   },
+  "docs/functions/QUICK_CONFIG.md": {
+    "mtime": 1778100314.8286858,
+    "hash": "6d16480233ccfd0af42248949ba22bf6"
+  },
   "docs/functions/USE_CASES.md": {
-    "mtime": 1778045369.1594477,
+    "mtime": 1778100314.8286858,
     "hash": "53eeecff456a3686d39caf0956f52c5f"
   },
-  "tests/phase1-summary.md": {
-    "mtime": 1771305511.5902183,
-    "hash": "ae691c9c25a68ec35079d2e7aaa541a6"
+  "docs/functions/CONFIGURATION.md": {
+    "mtime": 1778100314.8284054,
+    "hash": "d9c508847034c67bcd9be5589efc052e"
+  },
+  "docs/functions/STATUSLINE.md": {
+    "mtime": 1778100314.8286858,
+    "hash": "a34903b147d801ac9fccb050d7ccf3b6"
+  },
+  "docs/functions/PII_MASKING.md": {
+    "mtime": 1778100314.8286858,
+    "hash": "68d16553443f6f84b68b7bcad6821ed2"
+  },
+  "docs/functions/MICROVM.md": {
+    "mtime": 1778100314.8286858,
+    "hash": "2ff6bdf86557bd4346208eb23f656769"
   },
   "tests/phase2-summary.md": {
-    "mtime": 1771305511.5912182,
+    "mtime": 1774809683.5223594,
     "hash": "df7a5ad636f9cf621d62bcfd46848ad1"
   },
-  "lib/README.md": {
-    "mtime": 1773122527.02062,
-    "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
+  "tests/phase1-summary.md": {
+    "mtime": 1774809683.522159,
+    "hash": "ae691c9c25a68ec35079d2e7aaa541a6"
   }
 }
