@@ -54,7 +54,7 @@ mkdir -p lib/graphify/patches
 ```patch
 --- a/detect.py
 +++ b/detect.py
-@@ -758,11 +758,18 @@ def load_manifest(manifest_path: str = _MANIFEST_PATH) -> dict:
+@@ -760,11 +760,19 @@ def save_manifest(files: dict[str, list[str]], manifest_path: str = _MANIFEST_PATH) -> None:
  def save_manifest(files: dict[str, list[str]], manifest_path: str = _MANIFEST_PATH) -> None:
      """Save current file mtimes + content hashes for change detection on --update."""
      manifest: dict[str, dict] = {}
@@ -99,7 +99,7 @@ mkdir -p lib/graphify/patches
 ```patch
 --- a/cache.py
 +++ b/cache.py
-@@ -118,6 +118,16 @@ def save_cached(path: Path, result: dict, root: Path = Path("."), kind: str = "a
+@@ -118,5 +118,17 @@ def save_cached(path: Path, result: dict, root: Path = Path("."), kind: str = "ast") -> None:
      p = Path(path)
      if not p.is_file():
          return
@@ -465,7 +465,7 @@ class TestPortabilityE2E:
             env={**os.environ, "GRAPHIFY_OUT": "graphify-out"}, check=True
         )
 
-        import json, glob
+        import json
         cache_files = list((tmp_path / "graphify-out" / "cache" / "ast").glob("*.json"))
         if not cache_files:
             pytest.skip("no cache files generated — graphify may have inlined")
@@ -509,9 +509,15 @@ git commit -m "test(graphify): add E2E portability tests (manifest/root/cache)"
 **Files:**
 - Modify: `lib/graphify/install.sh`
 
-- [ ] **Step 1: Добавить вызов apply_patches.sh после `_patch_graphify_watch` (Step 2 install_graphify)**
+- [ ] **Step 1: Добавить вызов apply_patches.sh после `_patch_graphify_watch` (line 184 install_graphify)**
 
-В функции `install_graphify()`, после строки `_patch_graphify_watch` (line 184), добавить:
+Использовать Edit tool с уникальным контекстом (sed-вставка хрупка из-за нескольких вызовов `_patch_graphify_watch`). Прочитать `lib/graphify/install.sh` вокруг line 184, найти точное место в `install_graphify()`, заменить:
+
+```bash
+    _patch_graphify_watch
+```
+
+на:
 
 ```bash
     _patch_graphify_watch
@@ -522,25 +528,11 @@ git commit -m "test(graphify): add E2E portability tests (manifest/root/cache)"
     fi
 ```
 
-Edit:
-
-```bash
-sed -i '/^    _patch_graphify_watch$/{
-    /Step 2/!b
-    a\
-\
-    # Apply iclaude portability patches (relative paths in manifest/root/cache)\
-    if [[ -f "$LIB_DIR/graphify/apply_patches.sh" ]]; then\
-        bash "$LIB_DIR/graphify/apply_patches.sh"\
-    fi
-}' lib/graphify/install.sh
-```
-
-(Если sed-вставка некорректна — отредактировать руками через Edit tool.)
+Если `_patch_graphify_watch` встречается несколько раз — расширить контекст Edit (включить 3-5 строк до/после) для уникальности.
 
 - [ ] **Step 2: Удалить normalize-paths вызов в `_graphify_rebuild_graph` (lines 92-94)**
 
-Edit `lib/graphify/install.sh`:
+Прочитать `lib/graphify/install.sh` вокруг lines 88-96 для уникального контекста (несколько `}` в файле). Edit с захватом окружающих строк функции `_graphify_rebuild_graph`:
 
 old:
 ```bash
@@ -554,6 +546,8 @@ new:
 ```bash
 }
 ```
+
+При неуникальности `}` — добавить предшествующую строку (например `print_success ...`) в old/new для якоря.
 
 - [ ] **Step 3: Validate bash syntax**
 
@@ -827,15 +821,15 @@ git commit -m "chore(graphify): rebuild .graphify with relative paths via patche
 5. Update [docs/superpowers/specs/2026-05-07-graphify-c3-patch-graphifyy-design.md](../../docs/superpowers/specs/2026-05-07-graphify-c3-patch-graphifyy-design.md) status
 ```
 
-- [ ] **Step 2: Submit issue (manual через GitHub UI или gh CLI)**
+- [ ] **Step 2: Submit issue**
+
+Открыть в браузере и заполнить вручную из `UPSTREAM_ISSUE.md`:
 
 ```bash
-gh issue create --repo safishamsi/graphify \
-    --title "Absolute paths in manifest.json, .graphify_root, and cache/ast/*.json break git-based portability" \
-    --body-file <(sed -n '/^**Body:**/,/^## PR/{/^**Body:**/d;/^## PR/d;s/^> //;p}' lib/graphify/UPSTREAM_ISSUE.md)
+gh issue create --repo safishamsi/graphify --web
 ```
 
-(Пометка: команда выше — best-effort. Альтернатива — скопировать в GitHub UI вручную.)
+(sed-extraction из markdown с `**bold**` ненадёжна — конфликт со звёздочками. Лучше копипаст из tracker файла.)
 
 - [ ] **Step 3: Update tracker с issue link**
 
