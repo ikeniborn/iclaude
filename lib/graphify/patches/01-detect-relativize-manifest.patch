@@ -1,0 +1,23 @@
+--- a/detect.py
++++ b/detect.py
+@@ -760,11 +760,19 @@ def save_manifest(files: dict[str, list[str]], manifest_path: str = _MANIFEST_PATH) -> None:
+ def save_manifest(files: dict[str, list[str]], manifest_path: str = _MANIFEST_PATH) -> None:
+     """Save current file mtimes + content hashes for change detection on --update."""
+     manifest: dict[str, dict] = {}
++    # ICLAUDE-PATCHED-v1: relativize keys vs CWD for git portability
++    import os as _os
++    _cwd = Path.cwd().resolve()
+     for file_list in files.values():
+         for f in file_list:
+             try:
+                 p = Path(f)
+-                manifest[f] = {"mtime": p.stat().st_mtime, "hash": _md5_file(p)}
++                key = f
++                if p.is_absolute():
++                    rel = _os.path.relpath(f, _cwd)
++                    if not rel.startswith(".."):
++                        key = rel
++                manifest[key] = {"mtime": p.stat().st_mtime, "hash": _md5_file(p)}
+             except OSError:
+                 pass  # file deleted between detect() and manifest write - skip it
+     Path(manifest_path).parent.mkdir(parents=True, exist_ok=True)
