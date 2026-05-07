@@ -117,3 +117,19 @@
 - ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (mature) — источник `lib/graphify/UPSTREAM_ISSUE.md` заменён на `docs/functions/UPSTREAM_ISSUE.md` (файл перемещён без изменения содержания); обновлена ссылка-трекер в секции «Upstream issues и PR»; добавлено поле `wiki_relocations` в frontmatter
 
 **Контекст:** файл-трекер upstream issues #756/#777/#722 перемещён из `lib/graphify/` в `docs/functions/`. Содержание совпадает с уже задокументированным в wiki — новых сущностей не извлечено. Обновлены только ссылки на источник.
+
+## 2026-05-07T23:59:00
+
+**Операция:** ingest
+**Домен:** документация
+**Тема:** добавление функций graphify и caveman
+
+**Затронуто страниц:** 2
+
+- СОЗДАНА: `документация/функции/graphify.md` (developing) — feature-страница graphify (зачем, архитектура `lib/graphify/`, флаги `--install-graphify`/`--graphify`/`--check-graphify`, конфигурация `GRAPHIFY_OUT`/`GRAPHIFY_EXTRA_ARGS`, 4 патча портативности, SKILL.md preservation, диагностика). Источник: `docs/functions/GRAPHIFY.md`. Outgoing link на существующую `[[graphify-интеграция]]` (архитектурные детали runtime-нормализации не дублируются).
+- СОЗДАНА: `документация/функции/caveman.md` (developing) — feature-страница caveman (token compression hooks, изоляция от `~/.claude/`, флаги `--install-caveman`/`--check-caveman`/`--uninstall-caveman`, конфигурация `CAVEMAN_DEFAULT_MODE`/`CAVEMAN_STATUSLINE`, режимы off/lite/full/ultra/wenyan-*/commit/review/compress, auto-clarity, диагностика). Источник: `docs/functions/CAVEMAN.md`. Полностью новая сущность — wiki-страниц про caveman не было.
+
+**Ключевые находки:**
+- graphify-интеграция (архитектура) и graphify (функция) — два дополняющих документа: feature-страница описывает CLI/конфиг/4 патча, архитектурная — runtime-механизмы (`_sync_graphify_env_to_settings`, `normalize-paths.py` abs↔rel, `_patch_graphify_watch`).
+- Caveman несовместим с `--system`: только изолированная среда. `CAVEMAN_DEFAULT_MODE` приоритет: env → JSON → дефолт `full`.
+- Auto-clarity у caveman автоматически отключает компрессию для security warnings, irreversible actions (`git push`, `rm -rf`, `drop table`), multi-step sequences.
