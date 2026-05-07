@@ -144,7 +144,7 @@ install_graphify() {
     if ! UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         UV_PYTHON_INSTALL_DIR="$GRAPHIFY_PYTHON_DIR" \
         "${proxy_env[@]}" \
-        "$uv_bin" tool install graphifyy --python 3.12; then
+        "$uv_bin" tool install graphifyy --python 3.12 ${force:+--force}; then
         print_error "Failed to install graphifyy"
         return 1
     fi
@@ -160,10 +160,12 @@ install_graphify() {
         print_success "graphify symlink: $graphify_bin_dst"
     fi
 
-    # Step 3: graphify install (Claude Code skill setup) — only on first install or --force.
-    # `graphify install` overwrites SKILL.md with upstream, losing local customizations.
+    # Step 3: graphify install (Claude Code skill setup).
+    # SKILL.md is never overwritten automatically — local customizations are always preserved.
+    # On first install (no SKILL.md): run graphify install normally.
+    # On reinstall (SKILL.md exists): run into temp dir, compare, save .new if upstream differs.
     local skill_md="${CLAUDE_CONFIG_DIR}/skills/graphify/SKILL.md"
-    if [[ "$force" == true ]] || [[ ! -f "$skill_md" ]]; then
+    if [[ ! -f "$skill_md" ]]; then
         print_info "Setting up Claude Code skill ..."
         if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
             CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
@@ -173,8 +175,8 @@ install_graphify() {
             print_warning "graphify install returned non-zero (skill setup optional — continuing)"
         fi
     else
+        [[ "$force" == true ]] && print_warning "--force does not overwrite SKILL.md (preserving local customizations)"
         print_success "Claude Code skill already configured (preserving local customizations)"
-        # Extract upstream SKILL.md into a temp dir, compare, save .new if different
         local tmp_dir
         tmp_dir=$(mktemp -d)
         if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
