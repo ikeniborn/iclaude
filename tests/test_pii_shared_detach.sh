@@ -18,6 +18,9 @@ PYTHON_BIN="${PII_TEST_PYTHON:-$REPO_ROOT/.nvm-isolated/.claude-isolated/pii-pro
 # ---------------------------------------------------------------------------
 # Assertion A — static
 # ---------------------------------------------------------------------------
+# Locate the shared-start branch (between line containing 'Start new shared
+# proxy' comment and the matching closing-brace block). We grep for the exact
+# tokens of the post-fix idiom inside the file.
 if ! grep -qE 'setsid[[:space:]]+"\$python_bin"[[:space:]]+"\$PII_PROXY_SERVER_SCRIPT"' "$LAUNCH_SH"; then
     echo "FAIL[A]: launch.sh does not contain 'setsid \"\$python_bin\" \"\$PII_PROXY_SERVER_SCRIPT\"' — fix missing or reverted"
     exit 1
@@ -50,6 +53,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Synthetic master: a bash subshell in its own session that starts the proxy
+# via the exact post-fix idiom from launch.sh:964-970.
 fake_master() {
     ANTHROPIC_UPSTREAM_URL="https://api.anthropic.com" \
     ICLAUDE_SESSION_ID="shared" \
@@ -61,12 +66,15 @@ fake_master() {
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$3/proxy.pid"
-    sleep 30
+    sleep 30  # keep master alive so we can signal its PG
 }
 
+# `setsid bash -c ...` => master is in its own session, PGID == its PID
 setsid bash -c "$(declare -f fake_master); fake_master '$PYTHON_BIN' '$SERVER_SCRIPT' '$LOG_DIR'" &
 MASTER_PID=$!
 
+# Wait for proxy to bind and write the port file (server.py writes
+# pii-proxy-shared.port after binding)
 for _ in $(seq 1 40); do
     [[ -f "$LOG_DIR/pii-proxy-shared.port" ]] && break
     sleep 0.25
@@ -84,6 +92,8 @@ if ! kill -0 "$PROXY_PID" 2>/dev/null; then
     exit 1
 fi
 
+# Sanity: confirm proxy is in a different session from the master.
+# `ps -o sid=` prints the session ID. They must differ.
 master_sid=$(ps -o sid= -p "$MASTER_PID" 2>/dev/null | tr -d ' ')
 proxy_sid=$(ps -o sid= -p "$PROXY_PID" 2>/dev/null | tr -d ' ')
 if [[ -z "$master_sid" || -z "$proxy_sid" || "$master_sid" == "$proxy_sid" ]]; then
@@ -92,6 +102,7 @@ if [[ -z "$master_sid" || -z "$proxy_sid" || "$master_sid" == "$proxy_sid" ]]; t
 fi
 echo "INFO: master sid=$master_sid proxy sid=$proxy_sid (distinct)"
 
+# Deliver SIGHUP to the master's whole PG. Negative PID = PG.
 kill -HUP -"$MASTER_PID" 2>/dev/null
 sleep 1
 
