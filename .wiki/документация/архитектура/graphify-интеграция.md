@@ -6,6 +6,8 @@ wiki_sources:
   - ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md"
   - "lib/launcher/launch.sh"
   - "lib/graphify/install.sh"
+  - "lib/graphify/detect.sh"
+  - "lib/graphify/status.sh"
   - ".nvm-isolated/.claude-isolated/hooks/normalize-paths.py"
   - ".nvm-isolated/.claude-isolated/settings.json"
   - "tests/test_normalize_paths.py"
@@ -30,6 +32,9 @@ aliases:
   - "abs2rel"
   - "rel2abs"
   - ".graphify_root"
+  - "SKILL.md preservation"
+  - "skill_md.new"
+  - "graphify symlink"
 ---
 
 # Graphify-интеграция iclaude
@@ -220,6 +225,30 @@ fi
 | PreToolUse hook (Bash + `graphify`) | rel2abs | перед пользовательским `graphify ...` (нужен runtime) |
 | PostToolUse hook (Bash + `graphify`) | abs2rel | после пользовательского `graphify ...` |
 | `install.sh::_graphify_rebuild_graph` | abs2rel | после автоматического rebuild через `uv tool run` |
+
+## Сохранение локальных правок SKILL.md при reinstall
+
+`SKILL.md` графифая никогда не перезаписывается автоматически — даже при `--force`. Логика в `install_graphify()` (Step 3, `lib/graphify/install.sh`):
+
+| Состояние | Действие |
+|-----------|---------|
+| `SKILL.md` отсутствует (первая установка) | `graphify install` запускается напрямую в `$CLAUDE_CONFIG_DIR/skills/graphify/` |
+| `SKILL.md` существует | `graphify install` запускается в `mktemp -d`; upstream-версия сравнивается через `diff -q` |
+| upstream отличается от локального | копия сохраняется как `${skill_md}.new`, печатается warning с командой review |
+| upstream совпадает с локальным | `.new` не создаётся |
+| `--force` передан | warning: «`--force` does not overwrite SKILL.md» — флаг применяется только к `uv tool install`, не к skill-файлу |
+
+Это позволяет сохранять кастомизации skill-а (например, Step 0 с резолвом `GRAPHIFY_OUT`) между обновлениями `graphifyy`.
+
+## Symlink graphify в isolated bin/
+
+Step 2.5 в `install_graphify()` создаёт симлинк:
+
+```bash
+${ISOLATED_NVM_DIR}/bin/graphify -> ${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify
+```
+
+**Зачем:** `SKILL.md` детектирует graphify через `which graphify` и читает shebang найденного бинаря — он указывает на uv-managed Python 3.12. Без симлинка `which graphify` возвращает пусто → skill откатывается на системный `python3` (3.9), что ломает работу graphifyy (требует 3.12+).
 
 ## Архитектура skill-слоя
 
