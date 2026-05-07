@@ -964,10 +964,10 @@ except Exception:
                 ANTHROPIC_UPSTREAM_URL="$_upstream" \
                 ICLAUDE_SESSION_ID="shared" \
                 PII_PROXY_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}" \
-                    "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
+                    setsid "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
                     --port "$PII_PROXY_PORT" \
                     --log-dir "$PII_PROXY_LOG_DIR" \
-                    >/dev/null 2>&1 9>&- &
+                    </dev/null >/dev/null 2>&1 9>&- &
 
                 local _proxy_pid=$!
                 disown "$_proxy_pid" 2>/dev/null || true
