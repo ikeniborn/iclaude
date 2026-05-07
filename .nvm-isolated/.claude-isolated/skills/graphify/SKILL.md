@@ -951,8 +951,8 @@ Two traversal modes - choose based on the question:
 | DFS | `--dfs` | "How does X reach Y?" - trace a specific chain or dependency path |
 
 ```bash
-graphify query "QUESTION"
-# or: graphify query "QUESTION" --dfs --budget 3000
+graphify query "QUESTION" --graph "${GRAPHIFY_OUT}/graph.json"
+# or: graphify query "QUESTION" --dfs --budget 3000 --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `QUESTION` with the user's actual question. Answer using **only** what the graph output contains. Quote `source_location` when citing a specific fact. If the graph lacks enough information, say so - do not hallucinate edges.
@@ -972,7 +972,7 @@ Replace `QUESTION` with the question, `ANSWER` with your full answer text, `SOUR
 Find the shortest path between two named concepts in the graph.
 
 ```bash
-graphify path "NODE_A" "NODE_B"
+graphify path "NODE_A" "NODE_B" --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `NODE_A` and `NODE_B` with the actual concept names. Then explain the path in plain language - what each hop means, why it's significant.
@@ -990,7 +990,7 @@ $(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Pa
 Give a plain-language explanation of a single node - everything connected to it.
 
 ```bash
-graphify explain "NODE_NAME"
+graphify explain "NODE_NAME" --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sentence explanation of what this node is, what it connects to, and why those connections are significant. Use the source locations as citations.

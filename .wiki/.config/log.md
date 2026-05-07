@@ -43,3 +43,20 @@
 
 ---
 
+## 2026-05-07T14:30:00
+
+**Операция:** update (ingest)
+**Домен:** документация
+**Тема:** graphify-интеграция — явные пути CLI и патч watch.py
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (developing) — источники: lib/graphify/install.sh, skills/graphify/SKILL.md, skills/graphify-context/SKILL.md
+
+**Содержание изменения:**
+1. `graphify-context/SKILL.md`: все CLI-вызовы (`query`, `path`, `explain`) теперь передают явный `--graph "${GRAPHIFY_OUT}/graph.json"`. Ранее использовался хардкод `graphify-out/graph.json` в CLI-бинаре при нестандартном GRAPHIFY_OUT.
+2. `graphify/SKILL.md`: все `save-result` вызовы теперь передают явный `--memory-dir "${GRAPHIFY_OUT}/memory"`. Ранее дефолтный путь создавал паразитный `graphify-out/` при GRAPHIFY_OUT != graphify-out.
+3. `lib/graphify/install.sh`: добавлена `_patch_graphify_watch()` — идемпотентный патч upstream-бага в `graphifyy.watch._rebuild_code()` (save_manifest без manifest_path). Вызывается после `uv install` и перед каждым `_graphify_rebuild_graph()`. При ошибке sed — предупреждение вместо молчаливого игнорирования.
+
+---
+
