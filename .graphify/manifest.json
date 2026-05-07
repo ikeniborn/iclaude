@@ -1,242 +1,158 @@
 {
-  "/home/ikeniborn/Documents/Project/iclaude/lib/pii-proxy/server.py": {
-    "mtime": 1776225407.4011357,
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/tests/test-quality-analysis.py": {
+    "mtime": 1772170808.5866745,
+    "hash": "58179966131de0aaf1244d4ec120612a"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/tests/test_patterns_examples.py": {
+    "mtime": 1773843664.038181,
+    "hash": "434ee5d7b463abcbe45a819868c54898"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/lib/pii-proxy/server.py": {
+    "mtime": 1776231239.9516697,
     "hash": "1c2fc17ee077770dfcbea144167880c6"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
-    "mtime": 1778068281.1457272,
-    "hash": "0a77df0018325d52608c362754786451"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/CLAUDE.md": {
+    "mtime": 1778059533.0075138,
+    "hash": "05edb81a42b62f4ea6e565e9f3e9ca39"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
-    "mtime": 1778068283.6420288,
-    "hash": "2c88a17ff88451629d3edafe474cfff0"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/README.md": {
+    "mtime": 1778132068.9558718,
+    "hash": "4422f7ec89d6e788133005dc85688e2b"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
-    "mtime": 1778068281.9474585,
-    "hash": "a0166a65e117ec9ddcec646e481e5185"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/statusline-architecture.md": {
+    "mtime": 1771305511.568218,
+    "hash": "63de80a27ae809c932e49912993001f7"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
-    "mtime": 1778068282.7174757,
-    "hash": "4946e31570eac0b8fe763d429978dbdc"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/overview.yaml": {
+    "mtime": 1773122527.0196202,
+    "hash": "bae4ee01dd2e44b508206762f6d03c38"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
-    "mtime": 1774809682.7465634,
-    "hash": "1fc257caf781382ca9164aeac282531d"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/diagrams/data-flow-isolated-installation.md": {
+    "mtime": 1768887642.1132438,
+    "hash": "02d8335bcbb95f1df9f895fe3dee880b"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/skill-md-integration.test.mjs": {
-    "mtime": 1774809682.7469864,
-    "hash": "de542dd0bab35d19b554228890334dc2"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/diagrams/data-flow-proxy-configuration.md": {
+    "mtime": 1768887642.1142437,
+    "hash": "f65c71b088bcd34cd7ce4d23234558de"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/end-to-end.test.mjs": {
-    "mtime": 1774809682.7466476,
-    "hash": "2f8f523e3b9ba865402a3b3754e24cf7"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/diagrams/data-flow-router-launch.md": {
+    "mtime": 1768887642.1142437,
+    "hash": "58e7e71dedfd9cf76607a86fc6fc0738"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/round-trip.test.mjs": {
-    "mtime": 1774809682.7469864,
-    "hash": "c252354b79d718f40b9f7ca6bd0ed0b0"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/diagrams/README.md": {
+    "mtime": 1773122527.0196202,
+    "hash": "daf4faf893a8abb11abff42c754de7e8"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/toon-converter.mjs": {
-    "mtime": 1774809682.737833,
-    "hash": "6363ca2310af4502ad88b4a84b8001db"
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/architecture/diagrams/data-flow-microvm-launch.md": {
+    "mtime": 1773122527.0196202,
+    "hash": "e6021c258d55d0f8a97f695050918ee4"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/lib/README.md": {
-    "mtime": 1774809683.5182161,
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-04-29-verify-dialogue-design.md": {
+    "mtime": 1777459379.3706203,
+    "hash": "763e6e5906066881ce81a0051eb8d9cf"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-05-skip-permissions-config-design.md": {
+    "mtime": 1778045369.1604478,
+    "hash": "7fbb96c1e80e99fdc788d5d73e4ea4e7"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-06-llm-wiki-multi-language-design.md": {
+    "mtime": 1778045369.1604478,
+    "hash": "4e3f32ed4327ab029d937ed04c9dfd5a"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-06-graphify-integration-design.md": {
+    "mtime": 1778059531.989487,
+    "hash": "d0f52a8ea126b7ef0445c93b4b7ad88d"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-06-caveman-integration-design.md": {
+    "mtime": 1778059532.1194904,
+    "hash": "799d2464283b473b3a7b56e2bbb77237"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-06-graphify-chunk-path-fix-design.md": {
+    "mtime": 1778132068.9558718,
+    "hash": "2dc4e32044c66f0c20a928a93b6eb8d7"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-07-context-awareness-graph-integration-design.md": {
+    "mtime": 1778132068.9558718,
+    "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-04-29-verify-dialogue.md": {
+    "mtime": 1777459379.4126213,
+    "hash": "f0979ea599b03d20e39fba1c235aad26"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-05-llm-wiki-merge-bootstrap.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "93a2aa549daebc80f6f491b4e80a7306"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-05-skip-permissions-config.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "1bc1176e31a2901412806094c7a62234"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-06-llm-wiki-multi-language.md": {
+    "mtime": 1778045369.1604478,
+    "hash": "c75b2d566c843e8e6b50157597d70673"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-06-graphify-integration.md": {
+    "mtime": 1778059532.216493,
+    "hash": "5793047e8e29548d42ca91b21029d89b"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-06-caveman-integration.md": {
+    "mtime": 1778059532.4164982,
+    "hash": "872011fc14b96eb87be8343e156c7447"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-06-graphify-chunk-path-fix.md": {
+    "mtime": 1778132068.9558718,
+    "hash": "1899023b072a37b902b01d711345393f"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-context-awareness-graph-integration.md": {
+    "mtime": 1778132068.9558718,
+    "hash": "204b101ec0ee44d2fecebe5d284016e4"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/CONFIGURATION.md": {
+    "mtime": 1778045369.1574476,
+    "hash": "d9c508847034c67bcd9be5589efc052e"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/MICROVM.md": {
+    "mtime": 1778045369.1584477,
+    "hash": "2ff6bdf86557bd4346208eb23f656769"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/PII_MASKING.md": {
+    "mtime": 1778045369.1584477,
+    "hash": "68d16553443f6f84b68b7bcad6821ed2"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/PROXY.md": {
+    "mtime": 1778045369.1584477,
+    "hash": "5d65e4c39a42b672de888d7e1f35d8e7"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/QUICK_CONFIG.md": {
+    "mtime": 1778045369.1584477,
+    "hash": "6d16480233ccfd0af42248949ba22bf6"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/ROUTER.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "be25341ccb0b5b1985640bbe3ba86483"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/STATUSLINE.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "a34903b147d801ac9fccb050d7ccf3b6"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/TELEMETRY.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "421f9d5b1e0a898fe935c653bfd69f8b"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/USE_CASES.md": {
+    "mtime": 1778045369.1594477,
+    "hash": "53eeecff456a3686d39caf0956f52c5f"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/tests/phase1-summary.md": {
+    "mtime": 1771305511.5902183,
+    "hash": "ae691c9c25a68ec35079d2e7aaa541a6"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/tests/phase2-summary.md": {
+    "mtime": 1771305511.5912182,
+    "hash": "df7a5ad636f9cf621d62bcfd46848ad1"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/lib/README.md": {
+    "mtime": 1773122527.02062,
     "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/mermaid-obsidian/SKILL.md": {
-    "mtime": 1777239602.0228732,
-    "hash": "d3f32059f00b4c168d90ced4f7046c7c"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md": {
-    "mtime": 1774809682.742253,
-    "hash": "bb7d8ecf3fb0fdff17e6b0dba7e16991"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/templates/task-summary.txt": {
-    "mtime": 1773925646.7405686,
-    "hash": "fd8364ab86c819f6680d051495c7a0f4"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/examples/basic-usage.md": {
-    "mtime": 1774809682.742253,
-    "hash": "7db6cbebd209c9bc701a409284937fb9"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
-    "mtime": 1778064529.3891912,
-    "hash": "d56e89dfab8d722a2a6248f2e628e541"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
-    "mtime": 1774809682.7444031,
-    "hash": "946dd5445b812652910b91bc85c75886"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/prd-best-practices.md": {
-    "mtime": 1774809682.744604,
-    "hash": "33d14ffd7884e488d5ff62c260223215"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/markdown-guidelines.md": {
-    "mtime": 1774809682.7444031,
-    "hash": "b81d657b57e8753e9a70baa3b55afe5c"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/mermaid-diagrams.md": {
-    "mtime": 1774809682.744604,
-    "hash": "8dee0e4fc936c7ac68b26bae1f70dcbb"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
-    "mtime": 1774809682.7395995,
-    "hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
-    "mtime": 1778098304.6393585,
-    "hash": "c0fa0b54d70ae1bf1f5e116fb6f2a757"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "ac8320339f253084a4545c217c18cf14"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/frontmatter-parser.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "b026e1f235b9839f9a76670029a28932"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/YAML-WORKFLOW-README.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "75aca0a1da510db72b9ddaabfc0bfc69"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
-    "mtime": 1778069623.619094,
-    "hash": "8b9b512c9c1a3d3bf069e5fa665ca923"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
-    "mtime": 1774809682.7400665,
-    "hash": "1610dbaf0d7228dc25f9feed05963e1a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/SKILL.md": {
-    "mtime": 1774809682.7463157,
-    "hash": "219aaabc16d0c61234da7c5b5fb9e033"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/README.md": {
-    "mtime": 1774809682.7464967,
-    "hash": "43b8e7820bd96291d3c9e9de2cabe7f5"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/examples/integration-guide.md": {
-    "mtime": 1774809682.7466476,
-    "hash": "90236fdfe4a4e00418ceea51da87ddc6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
-    "mtime": 1778064529.389488,
-    "hash": "e56fcce922e26d07d353c69bb2a57686"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
-    "mtime": 1775820723.9417357,
-    "hash": "b66c1d5c4a9a0906961414f2392ed2ea"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/agent-instructions.md": {
-    "mtime": 1775820723.9415886,
-    "hash": "c06a27e5f355d2e74cf2bc41c2386f83"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/basic-claude-md.md": {
-    "mtime": 1775820723.941662,
-    "hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
-    "mtime": 1775820723.9417896,
-    "hash": "33a3f524663a8f636e6799674cf06db6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md": {
-    "mtime": 1778042255.9213483,
-    "hash": "2b52b12815f3c00a6c47474ddf71b4fa"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/query-example.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "4180292664c864765dbb61c8199111d7"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/lint-example.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "37df9b0c27d43db03a6353d2a7fb1cc8"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/ingest-example.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "9c06fd7dbd3be3e045e6b38c0943a764"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/ingest-rules.md": {
-    "mtime": 1778042940.7971823,
-    "hash": "432b69206540abe5562c701bf4a0832a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/wiki-conventions.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "3c93ac3458eadea7f3a34bcb374aec64"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/lint-criteria.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "27dc9bd33a440d23c7b88ffcae15ce81"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/javascript.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "1d93ffed9352dd4055f755886303bbc2"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/python.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "b409d74b05310cc46c2c7a7d03f457cf"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/bash.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "6b6d29125dc924d29eedf87654d6ba26"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/markdown.md": {
-    "mtime": 1778097848.735736,
-    "hash": "ab3492d680e08780443dbc4ad2d3dcc0"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/typescript.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "6d40884e06133a1495c514e2374a411b"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
-    "mtime": 1778069623.6191401,
-    "hash": "4bb0ea6c16153de752d0aa843943d398"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
-    "mtime": 1778064529.388488,
-    "hash": "c9aee8dd9af5f26b8e4198e7d737086c"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
-    "mtime": 1774809682.7368128,
-    "hash": "55c91eb6886ec5ae5bc0a2a1390e07a4"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/minimal-agent.md": {
-    "mtime": 1774809682.736916,
-    "hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/rules/agent-best-practices.md": {
-    "mtime": 1774809682.736916,
-    "hash": "b74b7478e194f9717f9862ca328f7fe7"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
-    "mtime": 1778064529.388488,
-    "hash": "84ec96ec15a1665a66eb175cfb4e7a6b"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
-    "mtime": 1774809682.7377477,
-    "hash": "c739c2c6d5fe6739503858a58aa7c9b3"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/dependency-graph.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "96635e8dc64a1ea54f8a5b5454fffc93"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/README.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "34a5025631c3872f782c2406a2f46db1"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/architecture-full.yaml": {
-    "mtime": 1773925646.7355509,
-    "hash": "5cdf497641efddd4dc01591a0b79aecc"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/TOON-INTEGRATION-GUIDE.md": {
-    "mtime": 1774809682.737833,
-    "hash": "6357eb5f13251a7c239c8a4c45e27d22"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md": {
-    "mtime": 1774809682.738172,
-    "hash": "74750531946911f943d9e9bee490132a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "0151836c9fb7bc3c1ba74ef4bcb123b8"
   }
 }
