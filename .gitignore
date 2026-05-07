@@ -175,4 +175,4 @@ tests/fixtures/
 
 # PII proxy audit logs (auto-added by iclaude PII proxy)
 .claude/pii/
-
+.superpowers
