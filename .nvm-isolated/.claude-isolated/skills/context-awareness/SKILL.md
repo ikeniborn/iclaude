@@ -93,7 +93,9 @@ ELSE:
 ```
 Проверить наличие knowledge graph в корне проекта:
 
-IF exists {CWD}/.graphify/GRAPH_REPORT.md:
+Сначала resolve выходную директорию: GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
+
+IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
   Skill(skill="graphify-context")
   → добавить результат в project_context:
        graph_initialized: true
