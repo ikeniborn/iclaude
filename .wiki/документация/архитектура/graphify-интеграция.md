@@ -1,6 +1,11 @@
 ---
 wiki_sources:
   - "virtual:commit-note/graphify-integration-2026-05-07"
+  - "docs/functions/UPSTREAM_ISSUE.md"
+  - "https://github.com/safishamsi/graphify/issues/756"
+  - "https://github.com/safishamsi/graphify/pull/758"
+  - "https://github.com/safishamsi/graphify/issues/722"
+  - "https://github.com/safishamsi/graphify/issues/777"
   - ".nvm-isolated/.claude-isolated/skills/graphify/SKILL.md"
   - ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md"
   - ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md"
@@ -13,6 +18,8 @@ wiki_sources:
   - "tests/test_normalize_paths.py"
 wiki_updated: 2026-05-07
 wiki_status: mature
+wiki_relocations:
+  - "lib/graphify/UPSTREAM_ISSUE.md → docs/functions/UPSTREAM_ISSUE.md (2026-05-07)"
 wiki_outgoing_links:
   - "[[модульная-структура|Модульная структура (lib/)]]"
   - "[[claude-config|Конфигурационный файл (.claude_config)]]"
@@ -279,6 +286,25 @@ GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 ```
 
 `echo` используется намеренно — субоболочка выполняет подстановку переменной и возвращает конкретную строку, которая затем используется литерально во всех путях. Это делает поведение предсказуемым независимо от того, задан ли `GRAPHIFY_OUT` в environment или нет.
+
+## Upstream issues и PR в safishamsi/graphify
+
+Трекер: [`docs/functions/UPSTREAM_ISSUE.md`](../../../docs/functions/UPSTREAM_ISSUE.md).
+
+### Поданные issue от iclaude (ikeniborn)
+
+| # | Заголовок | Состояние | Резолюция |
+|---|-----------|-----------|-----------|
+| [#756](https://github.com/safishamsi/graphify/issues/756) | bug: query/path/explain commands ignore `GRAPHIFY_OUT` env var, hardcode `graphify-out/graph.json` | CLOSED (completed, 2026-05-07) | Исправлено upstream PR [#758](https://github.com/safishamsi/graphify/pull/758) (`nyldn`), merged в ветку `v7` 2026-05-07T09:28:46Z. Дефолтный путь теперь `${GRAPHIFY_OUT}/graph.json`; явный `--graph` по-прежнему перекрывает дефолт. Добавлены subprocess-тесты для `query`/`path`/`explain` с нестандартным output dir. |
+| [#777](https://github.com/safishamsi/graphify/issues/777) | bug: absolute paths in `manifest.json`, `.graphify_root`, `cache/ast/*.json` break git-shared `graphify-out/` across machines | OPEN (submitted 2026-05-07) | Подана отдельным bug-репортом со ссылкой на #722. Покрывает 3 артефакта (включая `cache/ast/*.json`, не покрытый #722). Предложен PR с 3 атомарными патчами в `detect.py::save_manifest` / `watch.py::_rebuild_code` / `cache.py::save_cached` + 3 теста. Локальный обходной путь — хук `normalize-paths.py` (abs↔rel) + shim `_patch_graphify_watch`. После merge — cleanup-цикл: удалить хук и shim. |
+
+После релиза `graphifyy` с PR #758 локальный обходной путь — явный `--graph "${GRAPHIFY_OUT}/graph.json"` в `graphify-context/SKILL.md` (см. секцию «graphify-context/SKILL.md: --graph flag») — становится избыточным; оставлен как defense-in-depth для пользователей со старыми версиями.
+
+### Связанные upstream issue (других авторов)
+
+| # | Заголовок | Состояние | Связь |
+|---|-----------|-----------|-------|
+| [#722](https://github.com/safishamsi/graphify/issues/722) | Question — manifest.json absolute paths + missing `graphify-out/.gitignore`: intended or oversight? | OPEN | Покрывает только `manifest.json` + `.gitignore` guidance, форма «question». Не покрывает `cache/ast/*.json` `source_file` и не предлагает fix. На неё ссылается #777 для консолидации триажа. |
 
 ## Связанные компоненты
 

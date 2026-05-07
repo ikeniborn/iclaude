@@ -105,3 +105,15 @@
 - ОБНОВЛЕНА: `документация/функции/pii-прокси.md` (developing) — добавлен раздел «Detach от process group мастера (fix 2026-05-07)» с описанием проблемы, idiom-fix (`setsid` + `</dev/null`), таблицей сценариев и регрессионным тестом; в wiki_sources добавлены spec/plan/launch.sh/test; aliases дополнены (`shared proxy detach`, `setsid pii`)
 - Источники коммитов: fb744b81 (regression test), 33d05a73 (restore inline comments), e52fc28f (fix launch.sh shared-start)
 - Ключевые находки: `disown` НЕ создаёт новую сессию/PG — нужен `setsid`; reference-counting layer не меняется и остаётся единственным триггером shutdown; assertion A теста ловит revert через grep, assertion B верифицирует detach реально работает на ядре через `ps -o sid=`
+
+## 2026-05-07T20:35:00
+
+**Операция:** ingest (update)
+**Домен:** документация
+**Тема:** перемещение трекера upstream issues
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (mature) — источник `lib/graphify/UPSTREAM_ISSUE.md` заменён на `docs/functions/UPSTREAM_ISSUE.md` (файл перемещён без изменения содержания); обновлена ссылка-трекер в секции «Upstream issues и PR»; добавлено поле `wiki_relocations` в frontmatter
+
+**Контекст:** файл-трекер upstream issues #756/#777/#722 перемещён из `lib/graphify/` в `docs/functions/`. Содержание совпадает с уже задокументированным в wiki — новых сущностей не извлечено. Обновлены только ссылки на источник.
