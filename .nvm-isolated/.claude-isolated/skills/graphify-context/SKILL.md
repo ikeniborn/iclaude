@@ -39,11 +39,19 @@ Skill(skill="graphify-context", args='explain "ClassName"')
 С `query "..."` → Phase 0 + targeted `graphify query "<вопрос>"`.
 С `path A B` / `explain X` → Phase 0 + соответствующий graphify CLI вызов.
 
+## Step 0: Resolve graph output dir
+
+```bash
+GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
+```
+
+Use `{GOUT}` as the graph directory in all path checks below. (`{GOUT}` is pseudocode — substitute the printed value literally.)
+
 ## Phase 0: Определение наличия графа
 
 ```
-IF exists {CWD}/.graphify/GRAPH_REPORT.md:
-  1. Прочитать GRAPH_REPORT.md
+IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
+  1. Прочитать {GOUT}/GRAPH_REPORT.md
      → извлечь: god_nodes (топ-5), communities (N), suggested_questions
   2. Проверить свежесть:
      built_at_commit из GRAPH_REPORT.md == `git rev-parse HEAD`?
@@ -113,7 +121,7 @@ graphify query "<вопрос от пользователя>" --budget 1500
 context-awareness вызывает этот навык в Phase 6 (аналогично тому, как Phase 5 вызывает llm-wiki):
 
 ```
-IF exists {CWD}/.graphify/GRAPH_REPORT.md:
+IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
   Skill(skill="graphify-context")
   → добавить результат в project_context:
        graph_initialized: true
@@ -145,12 +153,12 @@ graphify query "What are the module integration points in lib/?" --budget 1200
 graphify path "PIIProxyHandler" "TestShouldRedact"
 
 # При обзоре архитектуры целиком
-# → просто читать .graphify/GRAPH_REPORT.md, не вызывать CLI
+# → просто читать {GOUT}/GRAPH_REPORT.md, не вызывать CLI
 ```
 
 ## Когда НЕ использовать
 
-- Граф отсутствует (`.graphify/` нет) — нечего запрашивать
+- Граф отсутствует (`{GOUT}/` нет) — нечего запрашивать
 - Проект < 20 файлов — граф добавит шум, не ценность
 - Нужно ПЕРЕСТРОИТЬ граф — используй `/graphify` или `graphify-update`
 - Вопрос не об архитектуре, а о бизнес-логике — используй `llm-wiki query`
