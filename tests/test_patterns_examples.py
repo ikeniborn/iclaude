@@ -29,10 +29,10 @@ class SecretDetector:
 
     def __init__(self):
         self.patterns: List[Tuple[re.Pattern, str, str]] = [
-            # Anthropic / OpenAI API keys
+            # Anthropic / OpenAI / совместимые SDK ключи (sk-..., sk-ant-..., sk-proj-..., sk-or-v1-...)
             (
-                re.compile(r'\bsk-(?:ant-api03-|ant-|proj-)?[A-Za-z0-9\-_]{20,}'),
-                '[ANTHROPIC_API_KEY]',
+                re.compile(r'\bsk-(?:ant-api03-|ant-|proj-|or-v1-)?[A-Za-z0-9\-_]{20,}'),
+                '[API_KEY_REDACTED]',
                 'Anthropic/OpenAI API key',
             ),
             # Google AI Studio
@@ -41,39 +41,39 @@ class SecretDetector:
                 '[GOOGLE_API_KEY]',
                 'Google AI Studio API key',
             ),
-            # Stripe API keys
+            # Stripe API keys (sk_live_, sk_test_, pk_live_, pk_test_)
             (
                 re.compile(r'\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{20,}\b'),
                 '[STRIPE_API_KEY]',
                 'Stripe API key',
             ),
-            # HuggingFace token
+            # HuggingFace User Access Token (hf_...)
             (
                 re.compile(r'\bhf_[A-Za-z0-9_]{30,}\b'),
                 '[HUGGINGFACE_TOKEN]',
-                'HuggingFace User Access Token',
+                'HuggingFace token',
             ),
-            # OpenRouter API Key
-            (
-                re.compile(r'\bsk-or-[A-Za-z0-9\-_]{50,}\b'),
-                '[OPENROUTER_API_KEY]',
-                'OpenRouter API key',
-            ),
-            # Groq API Key
+            # Groq API Key (gsk_...)
             (
                 re.compile(r'\bgsk_[A-Za-z0-9\-_]{50,}\b'),
                 '[GROQ_API_KEY]',
                 'Groq API key',
             ),
-            # GitHub tokens
+            # GitHub tokens классические (ghp_, gho_, ghu_, ghs_, ghr_)
             (
                 re.compile(r'\bgh[pousr]_[A-Za-z0-9_]{36,}\b'),
                 '[GITHUB_TOKEN]',
                 'GitHub token',
             ),
-            # JWT tokens
+            # GitHub fine-grained PAT (github_pat_...) — введён в 2022
             (
-                re.compile(r'\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\b'),
+                re.compile(r'\bgithub_pat_[A-Za-z0-9_]{82,}\b'),
+                '[GITHUB_TOKEN]',
+                'GitHub fine-grained PAT',
+            ),
+            # JWT tokens (3rd сегмент опциональный — unsigned JWT имеет пустой)
+            (
+                re.compile(r'\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*'),
                 '[JWT_REDACTED]',
                 'JWT token',
             ),
@@ -83,12 +83,21 @@ class SecretDetector:
                 '[AWS_ACCESS_KEY_ID]',
                 'AWS Access Key ID',
             ),
-            # PEM private key (with length limit to prevent ReDoS)
+            # AWS Secret Access Key
             (
                 re.compile(
-                    r'-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'
-                    r'[\s\S]{0,5000}?'
-                    r'-----END (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'
+                    r'(?i)((?:aws[_\-]?secret[_\-]?(?:access[_\-]?)?key|AWS_SECRET_ACCESS_KEY)'
+                    r'\s*[=:]\s*)["\']?[A-Za-z0-9/+]{40}["\']?'
+                ),
+                r'\1[AWS_SECRET_KEY_REDACTED]',
+                'AWS Secret Access Key',
+            ),
+            # Приватные ключи PEM (RSA, EC, DSA, OPENSSH, ENCRYPTED, PGP)
+            (
+                re.compile(
+                    r'-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'
+                    r'[\s\S]*?'
+                    r'-----END (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'
                 ),
                 '[PRIVATE_KEY_REDACTED]',
                 'PEM private key block',
@@ -98,6 +107,44 @@ class SecretDetector:
                 re.compile(r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b'),
                 '[CARD_NUMBER_REDACTED]',
                 'credit card number',
+            ),
+            # Credentials в URL (scheme://user:pass@host)
+            (
+                re.compile(r'([a-zA-Z][a-zA-Z0-9+\-.]*://)[^:@\s/]+:[^@\s/]+@'),
+                r'\1[CREDENTIALS]@',
+                'credentials in URL',
+            ),
+            # Пароли в конфигах: password = "...", password: value
+            (
+                re.compile(
+                    r'(?i)((?:password|passwd|pwd|db_pass|pgpassword)\s*[=:]\s*)'
+                    r'(?!\$\{)'
+                    r'(?:["\']([^"\']{8,})["\']|([^\s#\n"\'$]{8,}))'
+                ),
+                r'\1"[PASSWORD_REDACTED]"',
+                'password in config',
+            ),
+            # Generic secret/token/api_key в assignments
+            (
+                re.compile(
+                    r'(?i)((?:secret|api[_\-]?key|access[_\-]?token|auth[_\-]?token)'
+                    r'\s*[=:]\s*)["\']([A-Za-z0-9\-_./+=]{16,})["\']'
+                ),
+                r'\1"[SECRET_REDACTED]"',
+                'generic secret/token in config',
+            ),
+            # .env-формат: [export] VARNAME=значение (значение ≥20 символов)
+            (
+                re.compile(
+                    r'(?m)^((?:export\s+)?[A-Z][A-Z0-9_]*'
+                    r'(?:SECRET|TOKEN|KEY|PASSWORD|PASSWD|PWD|PASS|APIKEY)'
+                    r'[A-Z0-9_]*\s*=\s*)'
+                    r'(?!["\']?\$\{)'
+                    r'(?!["\']?\[)'
+                    r'([^\s#\n]{20,})'
+                ),
+                r'\1[REDACTED]',
+                '.env secret variable',
             ),
         ]
 
@@ -127,7 +174,7 @@ class TestShouldRedact:
         """Anthropic API keys should be redacted"""
         text = "export ANTHROPIC_API_KEY=sk-ant-api03-v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p"
         redacted, found = detector.redact_text(text)
-        assert "[ANTHROPIC_API_KEY]" in redacted
+        assert "[API_KEY_REDACTED]" in redacted
         assert "Anthropic/OpenAI API key" in found
 
     def test_google_ai_studio_key(self, detector):
@@ -194,6 +241,68 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3
 -----END PRIVATE KEY-----"""
         redacted, found = detector.redact_text(text)
         assert "[PRIVATE_KEY_REDACTED]" in redacted
+
+    def test_aws_secret_key(self, detector):
+        """AWS Secret Access Keys should be redacted"""
+        key = "A" * 40
+        text = f"AWS_SECRET_ACCESS_KEY={key}"
+        redacted, found = detector.redact_text(text)
+        assert "[AWS_SECRET_KEY_REDACTED]" in redacted
+        assert "AWS Secret Access Key" in found
+
+    def test_url_credentials(self, detector):
+        """Credentials in URLs should be redacted"""
+        text = "db = postgres://admin:s3cr3tP4ss@db.example.com:5432/mydb"
+        redacted, found = detector.redact_text(text)
+        assert "[CREDENTIALS]" in redacted
+        assert "admin" not in redacted
+        assert "credentials in URL" in found
+
+    def test_password_in_config(self, detector):
+        """Passwords in config files should be redacted"""
+        text = 'password = "myS3cretPassw0rd123"'
+        redacted, found = detector.redact_text(text)
+        assert "[PASSWORD_REDACTED]" in redacted
+        assert "myS3cretPassw0rd123" not in redacted
+        assert "password in config" in found
+
+    def test_generic_secret_in_config(self, detector):
+        """Generic secret assignments should be redacted"""
+        text = 'secret = "my-super-secret-value-1234567890"'
+        redacted, found = detector.redact_text(text)
+        assert "[SECRET_REDACTED]" in redacted
+        assert "my-super-secret-value" not in redacted
+        assert "generic secret/token in config" in found
+
+    def test_dotenv_secret_variable(self, detector):
+        """Long .env secret variables should be redacted"""
+        text = "MYAPP_SECRET=my_long_secret_value_here_1234567890abcdef"
+        redacted, found = detector.redact_text(text)
+        assert "[REDACTED]" in redacted
+        assert "my_long_secret_value" not in redacted
+        assert ".env secret variable" in found
+
+    def test_google_ai_studio_key_real(self, detector):
+        """Google AI Studio keys should be redacted"""
+        key = "AIzaSy" + "A" * 32
+        redacted, found = detector.redact_text(f"key = {key}")
+        assert "[GOOGLE_API_KEY]" in redacted
+        assert "Google AI Studio API key" in found
+
+    def test_groq_api_key_real(self, detector):
+        """Groq API keys should be redacted"""
+        key = "gsk_" + "A" * 52
+        redacted, found = detector.redact_text(f"GROQ_API_KEY={key}")
+        assert "[GROQ_API_KEY]" in redacted
+        assert "Groq API key" in found
+
+    def test_huggingface_token_real(self, detector):
+        """HuggingFace tokens should be redacted"""
+        key = "hf_" + "A" * 32
+        redacted, found = detector.redact_text(f"token = {key}")
+        assert "[HUGGINGFACE_TOKEN]" in redacted
+        assert "HuggingFace token" in found
+
 
 
 # ============================================================================
@@ -353,7 +462,7 @@ class TestEdgeCases:
         """Unicode characters should be handled gracefully"""
         text = "token = 'sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVabcdef' # файл описание"
         redacted, found = detector.redact_text(text)
-        assert "[ANTHROPIC_API_KEY]" in redacted
+        assert "[API_KEY_REDACTED]" in redacted
 
     def test_multiple_secrets_in_text(self, detector):
         """Text with multiple different secret types should redact all"""

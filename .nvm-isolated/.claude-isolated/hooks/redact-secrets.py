@@ -50,11 +50,11 @@ def write_security_flag(event_type: str, detail: str) -> None:
 # Порядок важен: более специфичные паттерны идут раньше общих.
 # ---------------------------------------------------------------------------
 REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
-    # Anthropic / OpenAI / Stripe / совместимые SDK ключи (sk-..., sk-ant-..., sk-proj-...)
+    # Anthropic / OpenAI / совместимые SDK ключи (sk-..., sk-ant-..., sk-proj-..., sk-or-v1-...)
     (
         re.compile(r'\bsk-(?:ant-api03-|ant-|proj-|or-v1-)?[A-Za-z0-9\-_]{20,}'),
         '[API_KEY_REDACTED]',
-        'Anthropic/OpenAI/Stripe API key',
+        'Anthropic/OpenAI API key',
     ),
     # AWS Access Key ID
     (
@@ -94,6 +94,30 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
         re.compile(r'\bgithub_pat_[A-Za-z0-9_]{82,}\b'),
         '[GITHUB_TOKEN]',
         'GitHub fine-grained PAT',
+    ),
+    # Google AI Studio API key (AIzaSy...)
+    (
+        re.compile(r'\bAIzaSy[A-Za-z0-9_-]{32}\b'),
+        '[GOOGLE_API_KEY]',
+        'Google AI Studio API key',
+    ),
+    # Stripe API keys (sk_live_, sk_test_, pk_live_, pk_test_)
+    (
+        re.compile(r'\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{20,}\b'),
+        '[STRIPE_API_KEY]',
+        'Stripe API key',
+    ),
+    # HuggingFace User Access Token (hf_...)
+    (
+        re.compile(r'\bhf_[A-Za-z0-9_]{30,}\b'),
+        '[HUGGINGFACE_TOKEN]',
+        'HuggingFace token',
+    ),
+    # Groq API key (gsk_...)
+    (
+        re.compile(r'\bgsk_[A-Za-z0-9\-_]{50,}\b'),
+        '[GROQ_API_KEY]',
+        'Groq API key',
     ),
     # Credentials в URL (scheme://user:pass@host) — любая схема с авторизацией
     # Покрывает: https, ftp, postgresql, mysql, mongodb, redis, amqp, smtp, ldap и др.
