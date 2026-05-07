@@ -3,7 +3,7 @@ wiki_sources:
   - "docs/functions/PII_MASKING.md"
   - "docs/functions/CONFIGURATION.md"
   - "docs/functions/TELEMETRY.md"
-wiki_updated: 2026-05-06
+wiki_updated: 2026-05-07
 wiki_status: developing
 wiki_outgoing_links:
   - "[[presidio|Microsoft Presidio]]"
@@ -86,6 +86,50 @@ Claude Code → PreToolUse
 Лог-файл сессии: `.nvm-isolated/.claude-isolated/pii-proxy-logs/{SESSION_ID}.log`
 
 В режиме `debug` логируется тип PII, расположение в запросе и исходное значение. Debug-лог автоудаляется при завершении сессии (содержит чувствительные метаданные).
+
+## Общий прокси для нескольких сессий (shared mode)
+
+Один процесс PII-прокси разделяется между параллельными iclaude-сессиями с маскированием — экономит ~300–500 МБ Presidio NLP на каждый дополнительный запуск.
+
+### Активация
+
+Shared mode включается автоматически, когда PII-прокси запускается без CCR (`CCR_SESSION_OWNED != true`). Сессия с CCR продолжает поднимать собственный per-session прокси.
+
+### Состояния `PII_PROXY_SESSION_OWNED`
+
+| Значение | Семантика |
+|----------|-----------|
+| `true`   | Сессия владеет своим прокси (CCR-режим) — останавливает по выходу |
+| `shared` | Подключена к общему прокси — снимает регистрацию, гасит процесс только если она последняя |
+| `false`  | Подпроцесс/наследник — ничего не делает |
+
+### Архитектура файлов
+
+```
+.nvm-isolated/.claude-isolated/pii-proxy-pid/
+  ├── shared.lock              flock(2) — атомарность start/stop
+  ├── shared.pid               PID общего сервера
+  └── consumers/
+      ├── {SID-1}.pid          PID bash-сессии-потребителя
+      └── {SID-2}.pid
+```
+
+Сервер запускается с `ICLAUDE_SESSION_ID=shared` (sentinel — обрабатывается наравне с 12-hex SID в `server.py`).
+
+### Жизненный цикл
+
+1. **Старт:** `flock -x 9` на `shared.lock` → если `shared.pid` жив, переиспользуем; иначе spawn нового сервера (`9>&-` закрывает fd блокировки в child, `disown` подавляет «Killed» при reaping).
+2. **Регистрация потребителя:** `_register_pii_consumer` пишет PID в `consumers/${ICLAUDE_SESSION_ID}.pid`.
+3. **Sweep:** `_sweep_dead_pii_consumers` чистит файлы потребителей с мёртвыми PID до проверки счётчика.
+4. **Остановка:** `flock -x 9` → удаляем свой consumer-pid, sweep, считаем `consumers/*.pid`. Если `count == 0` — TERM серверу, ждём, KILL fallback, удаляем `shared.pid` + порт-файл.
+
+### Просмотр состояния
+
+```bash
+./iclaude.sh --status-pii-proxy
+```
+
+В разделе `Shared proxy:` показывает PID/порт общего сервера и список активных consumer-сессий с их bash-PID.
 
 ## Идемпотентная установка
 
