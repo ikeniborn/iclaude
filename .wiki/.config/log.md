@@ -71,3 +71,14 @@
 - ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (developing) — добавлен раздел «Хук normalize-paths: портативность путей abs↔rel»; источники: `hooks/normalize-paths.py`, `settings.json` (commit 802fa66), `tests/test_normalize_paths.py`
 
 **Контекст:** новые коммиты ed852cc, 802fa66, fec5c8f, 6f7980b, 29bb859 — feature normalize-paths hook для abs↔rel портативности `.graphify/` между разработчиками.
+
+## 2026-05-07T16:10:00
+
+**Операция:** refresh (ingest from commits)
+**Домен:** документация
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` — добавлена секция «Дополнительная точка вызова: после auto-rebuild в install.sh» + сводная таблица точек нормализации; статус developing → mature
+- Источники коммитов: 802fa66 (settings.json hooks), bc37604 (install.sh wiring), d736cab (нормализованные пути в .graphify/)
+- Ключевые находки: normalize-paths имеет 3 точки вызова (Pre/Post hooks + автоматический rebuild через uv tool run), `< /dev/null` использован для standalone-вызова без hook-input JSON
