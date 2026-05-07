@@ -3,7 +3,6 @@
 import os
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 import pytest
 
@@ -52,7 +51,9 @@ class TestIdempotency:
         # Подложим vendored-like содержимое (могут быть уже патченые)
         _seed_real_targets(fake_pkg)
 
-        # Первый apply: applied=3 (если seed был unpatched) или skipped=3 (если уже patched).
+        n_patches = len(list(PATCHES_DIR.glob("*.patch")))
+
+        # Первый apply: applied=N (если seed был unpatched) или skipped=N (если уже patched).
         r1 = run_apply(fake_pkg)
         assert r1.returncode == 0
         assert "failed=0" in r1.stdout
@@ -61,10 +62,10 @@ class TestIdempotency:
         for f in ("detect.py", "watch.py", "cache.py"):
             assert "ICLAUDE-PATCHED-v1" in (fake_pkg / f).read_text()
 
-        # Второй apply: всегда skipped=3, applied=0 (idempotent)
+        # Второй apply: всегда skipped=N, applied=0 (idempotent)
         r2 = run_apply(fake_pkg)
         assert r2.returncode == 0
-        assert "skipped=3" in r2.stdout
+        assert f"skipped={n_patches}" in r2.stdout
         assert "applied=0" in r2.stdout
 
     def test_dry_run_fail_does_not_block(self, fake_pkg):
@@ -74,9 +75,10 @@ class TestIdempotency:
         (fake_pkg / "watch.py").write_text("# different\n")
         (fake_pkg / "cache.py").write_text("# different\n")
 
+        n_patches = len(list(PATCHES_DIR.glob("*.patch")))
         result = run_apply(fake_pkg)
         assert result.returncode == 0
-        assert "failed=3" in result.stdout
+        assert f"failed={n_patches}" in result.stdout
 
 
 def _seed_real_targets(pkg: Path):
