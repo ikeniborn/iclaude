@@ -160,14 +160,20 @@ install_graphify() {
         print_success "graphify symlink: $graphify_bin_dst"
     fi
 
-    # Step 3: graphify install (Claude Code skill setup)
-    print_info "Setting up Claude Code skill ..."
-    if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
-        "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
-        print_success "Claude Code skill configured"
+    # Step 3: graphify install (Claude Code skill setup) — only on first install or --force.
+    # `graphify install` overwrites SKILL.md with upstream, losing local customizations.
+    local skill_md="${CLAUDE_CONFIG_DIR}/skills/graphify/SKILL.md"
+    if [[ "$force" == true ]] || [[ ! -f "$skill_md" ]]; then
+        print_info "Setting up Claude Code skill ..."
+        if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+            CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
+            "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
+            print_success "Claude Code skill configured"
+        else
+            print_warning "graphify install returned non-zero (skill setup optional — continuing)"
+        fi
     else
-        print_warning "graphify install returned non-zero (skill setup optional — continuing)"
+        print_success "Claude Code skill already configured (skipping to preserve local customizations)"
     fi
 
     echo ""
