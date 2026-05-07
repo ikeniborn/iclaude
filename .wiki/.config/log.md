@@ -60,3 +60,14 @@
 
 ---
 
+
+## 2026-05-07T16:30:00
+
+**Операция:** ingest (update)
+**Домен:** документация
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (developing) — добавлен раздел «Хук normalize-paths: портативность путей abs↔rel»; источники: `hooks/normalize-paths.py`, `settings.json` (commit 802fa66), `tests/test_normalize_paths.py`
+
+**Контекст:** новые коммиты ed852cc, 802fa66, fec5c8f, 6f7980b, 29bb859 — feature normalize-paths hook для abs↔rel портативности `.graphify/` между разработчиками.
