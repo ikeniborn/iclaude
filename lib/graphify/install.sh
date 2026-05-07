@@ -61,17 +61,20 @@ _graphify_rebuild_graph() {
     fi
     _patch_graphify_watch
 
-    local uv_bin
-    uv_bin=$(_graphify_resolve_uv)
-
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
     local out_label="${GRAPHIFY_OUT:-graphify-out}"
     print_info "Building knowledge graph → ${project_root}/${out_label}/"
 
-    # Build args: "update <project_root>" [extra_args...]
-    local -a graphify_args=("update" "$project_root")
+    # Use the installed graphify binary directly (not uv tool run) so that iclaude
+    # patches applied to the tool dir venv are always in effect.
+    local graphify_bin="${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify"
+
+    # Pass "." (relative) instead of absolute project_root so .graphify_root and
+    # manifest keys are relative — required for git portability across machines.
+    # Build args: "update ." [extra_args...]
+    local -a graphify_args=("update" ".")
     # Split GRAPHIFY_EXTRA_ARGS on whitespace (intentional word splitting for flag list)
     # shellcheck disable=SC2086
     [[ -n "$GRAPHIFY_EXTRA_ARGS" ]] && read -ra _extra <<< "$GRAPHIFY_EXTRA_ARGS" && graphify_args+=("${_extra[@]}")
@@ -85,9 +88,7 @@ _graphify_rebuild_graph() {
         env_args+=(UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
     fi
 
-    UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        env "${env_args[@]}" \
-        "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
+    env "${env_args[@]}" "$graphify_bin" "${graphify_args[@]}"
 }
 
 #######################################
