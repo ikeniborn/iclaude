@@ -276,11 +276,18 @@ echo "L1: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]
 ```
 
-- [ ] **Step 2: Run L1 — verify all preflight tests FAIL (helper still empty)**
+- [ ] **Step 2: Run L1 — verify Tests 2 and 4 FAIL (helper still empty)**
 
 Run: `bash tests/test_pii_dnat_unit.sh`
-Expected: at least Tests 2 and 4 fail (they expect rc=1 and warnings; empty helper returns 0). Tests 1, 3, 5 pass coincidentally because empty helper happens to return 0.
-Final line should be `L1: PASS=3 FAIL=2` (or similar — exact pass count depends on coincidental matches). Exit code: 1.
+
+Trace with empty helper (`return 0`, no output):
+- Test 1 (PII inactive → 0, no output) — 2 passes
+- Test 2 (no-sudo → expect rc=1 + warning) — 2 fails
+- Test 3 (happy path → 0, no output) — 2 passes
+- Test 4 (iptables-nat-fail → expect rc=1 + warning) — 2 fails
+- Test 5 (net-disabled → 0) — 1 pass
+
+Expected final line: `L1: PASS=5 FAIL=4`. Exit code: 1.
 
 - [ ] **Step 3: Commit**
 
@@ -328,7 +335,7 @@ Expected: no output, exit 0.
 - [ ] **Step 3: Run L1 — verify all preflight tests PASS**
 
 Run: `bash tests/test_pii_dnat_unit.sh`
-Expected final line: `L1: PASS=8 FAIL=0` (4 rc-checks + 4 output-checks across 5 tests; Test 1 has rc+empty = 2; Test 2 has rc+contains = 2; etc — count varies). Exit code: 0.
+Expected final line: `L1: PASS=9 FAIL=0` (Test 1: 2, Test 2: 2, Test 3: 2, Test 4: 2, Test 5: 1). Exit code: 0.
 
 If FAIL > 0: read the FAIL lines, compare expected vs actual, fix the helper body.
 
@@ -526,7 +533,7 @@ The existing block (current code):
     fi
 ```
 
-Replace it with:
+Replace it (entire block) with:
 
 ```bash
     if _pii_dnat_preflight && \
@@ -555,17 +562,17 @@ Differences:
 - sweep called before adding fresh rules;
 - both `iptables -A` lines carry `-m comment --comment "iclaude-pii-dnat:<tap>"`.
 
-- [ ] **Step 2: Verify bash syntax**
+- [ ] **Step 3: Verify bash syntax**
 
 Run: `bash -n lib/sandbox/microvm.sh`
 Expected: no output, exit 0.
 
-- [ ] **Step 3: Run L1 — confirm regression-free**
+- [ ] **Step 4: Run L1 — confirm regression-free**
 
 Run: `bash tests/test_pii_dnat_unit.sh`
 Expected: `L1: PASS=N FAIL=0`. Exit code: 0.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add lib/sandbox/microvm.sh
@@ -622,17 +629,17 @@ Differences:
 - explicit per-rule `-D` calls replaced by single `_pii_dnat_sweep_stale` call;
 - sysctl reset retained.
 
-- [ ] **Step 2: Verify bash syntax**
+- [ ] **Step 3: Verify bash syntax**
 
 Run: `bash -n lib/sandbox/microvm.sh`
 Expected: no output, exit 0.
 
-- [ ] **Step 3: Run L1**
+- [ ] **Step 4: Run L1**
 
 Run: `bash tests/test_pii_dnat_unit.sh`
 Expected: `L1: PASS=N FAIL=0`. Exit code: 0.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add lib/sandbox/microvm.sh
@@ -789,7 +796,7 @@ chmod +x tests/test_pii_dnat_iptables.sh
 - [ ] **Step 2: Run L2 (or skip)**
 
 Run: `bash tests/test_pii_dnat_iptables.sh`
-Expected on dev hosts with passwordless sudo: `L2: PASS=8 FAIL=0`, exit 0.
+Expected on dev hosts with passwordless sudo: `L2: PASS=9 FAIL=0` (L2.1: 2 checks, L2.2: 3, L2.3: 2, L2.4: 2), exit 0.
 Expected on hosts without sudo: `L2: SKIP (passwordless sudo for iptables not available)`, exit 0.
 
 - [ ] **Step 3: Run full runner**
@@ -835,7 +842,7 @@ Locate the `--sandbox-microvm)` case (around line 611). Immediately AFTER its cl
             ;;
 ```
 
-- [ ] **Step 3: Add post-boot dispatch in `lib/launcher/launch.sh`**
+- [ ] **Step 2: Add post-boot dispatch in `lib/launcher/launch.sh`**
 
 Locate the closing `fi` of the `start_microvm` block (line 167 — the `fi` that closes `if ! start_microvm "$skip_isolated"; then ... exit 1; fi`).
 
@@ -858,17 +865,17 @@ Immediately after that `fi` and before the `# SSH ControlMaster socket path` com
 
 This runs BEFORE the SSH ControlMaster setup and BEFORE the guest-attach / claude-launch step, so neither completes when the E2E flags are active.
 
-- [ ] **Step 4: Verify bash syntax**
+- [ ] **Step 3: Verify bash syntax**
 
 Run: `bash -n iclaude.sh && bash -n lib/launcher/launch.sh && echo OK`
 Expected: `OK`.
 
-- [ ] **Step 5: Verify gating works without env var**
+- [ ] **Step 4: Verify gating works without env var**
 
 Run: `./iclaude.sh --e2e-exit-after-boot 2>&1 | head -3 ; echo "exit: $?"`
 Expected: error message containing `ICLAUDE_E2E_HEADLESS=1`, exit 2.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add iclaude.sh lib/launcher/launch.sh
@@ -986,7 +993,7 @@ git commit -m "test(microvm): add L3 full E2E DNAT lifecycle test"
 
 Append to `docs/functions/MICROVM.md`:
 
-```markdown
+````markdown
 ## Troubleshooting
 
 ### Guest cannot reach PII proxy
@@ -1016,6 +1023,8 @@ Configure NOPASSWD via `visudo`, e.g.:
 %iclaude ALL=(root) NOPASSWD: /usr/sbin/iptables, /usr/sbin/sysctl, /usr/sbin/ip
 ```
 
+(Adjust paths via `command -v iptables sysctl ip` — locations vary across distros, e.g. `/sbin/iptables` vs `/usr/sbin/iptables`. The full required command list is: `iptables`, `sysctl`, `ip`.)
+
 ### Stale iptables rules after crash
 
 If iclaude was killed via `kill -9` or the host crashed, DNAT rules may persist. They are removed automatically the next time iclaude launches with `--pii-proxy --sandbox-microvm` (sweep on start).
@@ -1028,7 +1037,7 @@ while sudo iptables -t nat -L PREROUTING --line-numbers -n | grep -q iclaude-pii
     sudo iptables -t nat -D PREROUTING "$L"
 done
 ```
-```
+````
 
 - [ ] **Step 2: Commit**
 
