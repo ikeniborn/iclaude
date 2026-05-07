@@ -140,7 +140,9 @@ def main() -> None:
         if data.get("tool_name") != "Bash":
             sys.exit(0)
         command = data.get("tool_input", {}).get("command", "")
-        if not re.search(r"\bgraphify\b", command):
+        # Match graphify as command invocation, not as path component (.graphify/).
+        # Negative lookbehind for "." excludes ".graphify" directory references.
+        if not re.search(r"(?<!\.)\bgraphify\b", command):
             sys.exit(0)
 
     # Определяем gout через git/CWD (project_root нужен ещё до чтения .graphify_root)
