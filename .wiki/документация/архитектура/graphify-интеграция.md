@@ -10,7 +10,7 @@ wiki_sources:
   - ".nvm-isolated/.claude-isolated/settings.json"
   - "tests/test_normalize_paths.py"
 wiki_updated: 2026-05-07
-wiki_status: developing
+wiki_status: mature
 wiki_outgoing_links:
   - "[[модульная-структура|Модульная структура (lib/)]]"
   - "[[claude-config|Конфигурационный файл (.claude_config)]]"
@@ -193,6 +193,33 @@ _patch_graphify_watch() {
 ### Тесты
 
 `tests/test_normalize_paths.py` — unit-тесты abs↔rel конверсии для manifest/root/cache.
+
+### Дополнительная точка вызова: после auto-rebuild в install.sh
+
+Хуки PreToolUse/PostToolUse покрывают только Bash-вызовы пользователя, содержащие `\bgraphify\b`. Но `_graphify_rebuild_graph()` в `lib/graphify/install.sh` запускается из самого iclaude (`uv tool run ... graphify`) — вне Bash-tool агента. Поэтому после rebuild добавлен прямой вызов normalize-paths:
+
+```bash
+# lib/graphify/install.sh::_graphify_rebuild_graph()
+UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+    env "${env_args[@]}" \
+    "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
+
+if [[ -n "$CLAUDE_CONFIG_DIR" && -f "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" ]]; then
+    python3 "$CLAUDE_CONFIG_DIR/hooks/normalize-paths.py" abs2rel < /dev/null
+fi
+```
+
+`< /dev/null` — хук читает stdin для hook-input JSON; в standalone-режиме передача пустого stdin триггерит ветку «вне hook-контекста» (используется `Path.cwd()` + git-fallback вместо `tool_name`/`tool_input`).
+
+Гарантия: после каждого автоматического rebuild графа `.graphify/` остаётся в относительных путях, готовый к коммиту в git без post-processing.
+
+### Сводка точек нормализации
+
+| Точка | Режим | Триггер |
+|-------|-------|---------|
+| PreToolUse hook (Bash + `graphify`) | rel2abs | перед пользовательским `graphify ...` (нужен runtime) |
+| PostToolUse hook (Bash + `graphify`) | abs2rel | после пользовательского `graphify ...` |
+| `install.sh::_graphify_rebuild_graph` | abs2rel | после автоматического rebuild через `uv tool run` |
 
 ## Архитектура skill-слоя
 
