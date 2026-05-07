@@ -4,8 +4,8 @@
     "hash": "58179966131de0aaf1244d4ec120612a"
   },
   "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/tests/test_patterns_examples.py": {
-    "mtime": 1773843664.038181,
-    "hash": "434ee5d7b463abcbe45a819868c54898"
+    "mtime": 1778138018.5525806,
+    "hash": "5db2917613c2526dd27460c3299dd722"
   },
   "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/lib/pii-proxy/server.py": {
     "mtime": 1776231239.9516697,
@@ -75,6 +75,22 @@
     "mtime": 1778132068.9558718,
     "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
   },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-07-graphify-hardcode-audit-design.md": {
+    "mtime": 1778142566.5401065,
+    "hash": "723f9b5f92a0d6d06b2cf5457597818f"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-07-graphify-manifest-path-bug-design.md": {
+    "mtime": 1778148823.0424562,
+    "hash": "6b34e8dcafcc9306276304a6bad981cb"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-07-graphify-portability-design.md": {
+    "mtime": 1778149183.8749382,
+    "hash": "153a2d8a88d7f69c17727143415d779d"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/specs/2026-05-07-pii-shared-server-design.md": {
+    "mtime": 1778152584.3363938,
+    "hash": "84b286a25dbdbe4528101b3116c7dd46"
+  },
   "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-04-29-verify-dialogue.md": {
     "mtime": 1777459379.4126213,
     "hash": "f0979ea599b03d20e39fba1c235aad26"
@@ -106,6 +122,22 @@
   "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-context-awareness-graph-integration.md": {
     "mtime": 1778132068.9558718,
     "hash": "204b101ec0ee44d2fecebe5d284016e4"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-graphify-hardcode-fix.md": {
+    "mtime": 1778142541.3284435,
+    "hash": "aa3cccd36f6126ab21d05c9c5559b526"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-graphify-manifest-path-bug.md": {
+    "mtime": 1778149292.429791,
+    "hash": "f8293a313ee230db16d92e0088b3a86e"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-graphify-portability-plan.md": {
+    "mtime": 1778152728.1041784,
+    "hash": "96da818af7e6a1fb63a915674980ee1a"
+  },
+  "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/superpowers/plans/2026-05-07-pii-shared-server.md": {
+    "mtime": 1778153028.4150844,
+    "hash": "0460983aec69df28e24978ac8771295c"
   },
   "/home/UF.RT.RU/i.y.tischenko/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Git/iclaude/docs/functions/CONFIGURATION.md": {
     "mtime": 1778045369.1574476,
