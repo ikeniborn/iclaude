@@ -173,7 +173,25 @@ install_graphify() {
             print_warning "graphify install returned non-zero (skill setup optional — continuing)"
         fi
     else
-        print_success "Claude Code skill already configured (skipping to preserve local customizations)"
+        print_success "Claude Code skill already configured (preserving local customizations)"
+        # Extract upstream SKILL.md into a temp dir, compare, save .new if different
+        local tmp_dir
+        tmp_dir=$(mktemp -d)
+        if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+            CLAUDE_CONFIG_DIR="$tmp_dir" \
+            "$uv_bin" tool run --from graphifyy graphify install &>/dev/null; then
+            local upstream_skill="${tmp_dir}/skills/graphify/SKILL.md"
+            if [[ -f "$upstream_skill" ]]; then
+                if ! diff -q "$skill_md" "$upstream_skill" &>/dev/null; then
+                    cp "$upstream_skill" "${skill_md}.new"
+                    print_warning "Upstream SKILL.md differs from local — saved to: ${skill_md}.new"
+                    print_info "  Review: diff ${skill_md} ${skill_md}.new"
+                else
+                    print_info "Upstream SKILL.md matches local (no .new saved)"
+                fi
+            fi
+        fi
+        rm -rf "$tmp_dir"
     fi
 
     echo ""
