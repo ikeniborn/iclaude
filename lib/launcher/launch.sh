@@ -810,6 +810,36 @@ cleanup_stale_session_env() {
 }
 
 #######################################
+# Sweep dead consumer registrations from pii-proxy-pid/consumers/.
+# Must be called while holding flock on shared.lock.
+# Removes files whose stored PID is dead (kill -0 fails).
+#######################################
+_sweep_dead_pii_consumers() {
+    local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
+    [[ -d "$consumers_dir" ]] || return 0
+    local _cf _cpid
+    for _cf in "$consumers_dir"/*.pid; do
+        [[ -f "$_cf" ]] || continue
+        _cpid=$(cat "$_cf" 2>/dev/null)
+        if [[ -z "$_cpid" ]] || ! kill -0 "$_cpid" 2>/dev/null; then
+            rm -f "$_cf"
+        fi
+    done
+}
+
+#######################################
+# Register current session as a consumer of the shared PII proxy.
+# Creates pii-proxy-pid/consumers/$ICLAUDE_SESSION_ID.pid with current bash PID.
+# Must be called while holding flock on shared.lock.
+#######################################
+_register_pii_consumer() {
+    local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
+    mkdir -p "$consumers_dir"
+    chmod 700 "$consumers_dir"
+    echo "$$" > "$consumers_dir/${ICLAUDE_SESSION_ID}.pid"
+}
+
+#######################################
 # Start PII proxy server and redirect API traffic through it.
 # Each iclaude session starts its own independent proxy on a dynamic port.
 # Per-session PID and port files (pii-proxy-<SESSION_ID>.{pid,port}) prevent
