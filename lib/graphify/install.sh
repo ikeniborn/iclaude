@@ -1,6 +1,6 @@
 #!/bin/bash
 # Graphify installation module
-# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_resolve_uv(), _graphify_install_command()
+# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_resolve_uv()
 
 #######################################
 # Resolve proxy URL from environment
@@ -160,52 +160,13 @@ install_graphify() {
         print_warning "graphify install returned non-zero (skill setup optional — continuing)"
     fi
 
-    # Step 4: Create commands/graphify
-    _graphify_install_command || return 1
-
     echo ""
     print_success "Graphify installed successfully!"
     echo ""
     print_info "Next steps:"
     print_info "  Status:           ./iclaude.sh --check-graphify"
     print_info "  Build graph:      ./iclaude.sh --graphify"
-    print_info "  In Claude Code:   /graphify-update (slash command)"
+    print_info "  In Claude Code:   /graphify"
     echo ""
     return 0
-}
-
-#######################################
-# Create commands/graphify-update.md Claude Code slash command.
-# Invoked as /graphify-update inside a Claude Code session.
-# Returns: 0 on success, 1 on failure
-#######################################
-_graphify_install_command() {
-    local commands_dir="${ISOLATED_CONFIG_DIR}/commands"
-    local cmd_path="${commands_dir}/graphify-update.md"
-
-    mkdir -p "$commands_dir"
-
-    # Write markdown slash command for Claude Code (/graphify-update).
-    # Embed real paths so command works without iclaude env vars.
-    local _uv_bin="$GRAPHIFY_UV_BIN"
-    local _tool_dir="$GRAPHIFY_TOOL_DIR"
-    cat > "$cmd_path" << GRAPHIFY_MD
----
-description: Rebuild graphify knowledge graph for the current project
----
-
-Rebuild the graphify knowledge graph for the current project. Run the following bash command and report the result:
-
-\`\`\`bash
-_gfy_root=\$(git rev-parse --show-toplevel 2>/dev/null || echo "\$PWD")
-_gfy_out_env=()
-[[ -n "\${GRAPHIFY_OUT:-}" ]] && _gfy_out_env=(GRAPHIFY_OUT="\${GRAPHIFY_OUT}")
-UV_TOOL_DIR="${_tool_dir}" "\${_gfy_out_env[@]}" "${_uv_bin}" tool run --from graphifyy graphify \\
-    update "\${_gfy_root}" \${GRAPHIFY_EXTRA_ARGS:+\${GRAPHIFY_EXTRA_ARGS}}
-\`\`\`
-
-After the command completes, report: success or failure, output directory, and briefly what was analyzed.
-GRAPHIFY_MD
-
-    print_success "Slash command created: /graphify-update ($cmd_path)"
 }

@@ -61,7 +61,6 @@ OPTIONS:
   --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
   --install-graphify                Install graphify knowledge graph tool (uv + Python 3.12 + graphifyy)
-                                    Creates /graphify-update slash command for Claude Code
   --install-graphify --force        Force reinstall (removes existing graphify tool dir)
   --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
   --graphify                        Rebuild knowledge graph before launching claude
