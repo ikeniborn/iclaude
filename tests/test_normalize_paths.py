@@ -2,8 +2,6 @@
 """Tests for normalize-paths.py path normalization logic."""
 import json
 import sys
-import os
-import tempfile
 from pathlib import Path
 import pytest
 
@@ -39,7 +37,7 @@ class TestGetProjectRoot:
         (tmp_gout / ".graphify_root").write_text(".")
         monkeypatch.setattr(
             "subprocess.check_output",
-            lambda *a, **kw: "/home/alice/project\n"
+            lambda *_, **__: "/home/alice/project\n"
         )
 
         result = np_mod.get_project_root(tmp_gout)
@@ -50,7 +48,7 @@ class TestGetProjectRoot:
         import subprocess as sp
         monkeypatch.setattr(
             "subprocess.check_output",
-            lambda *a, **kw: (_ for _ in ()).throw(sp.CalledProcessError(128, "git"))
+            lambda *_, **__: (_ for _ in ()).throw(sp.CalledProcessError(128, "git"))
         )
 
         result = np_mod.get_project_root(tmp_gout)
@@ -199,7 +197,7 @@ class TestNormalizeCacheFile:
 
 
 class TestHookFilter:
-    def test_non_bash_tool_exits_zero(self, tmp_gout, monkeypatch):
+    def test_non_bash_tool_exits_zero(self, monkeypatch):
         hook_input = json.dumps({"tool_name": "Read", "tool_input": {"file_path": "/foo"}})
 
         monkeypatch.setattr("sys.stdin", __import__("io").StringIO(hook_input))
@@ -209,7 +207,7 @@ class TestHookFilter:
             np_mod.main()
         assert exc.value.code == 0
 
-    def test_bash_without_graphify_exits_zero(self, tmp_gout, monkeypatch):
+    def test_bash_without_graphify_exits_zero(self, monkeypatch):
         hook_input = json.dumps({"tool_name": "Bash", "tool_input": {"command": "ls -la"}})
 
         monkeypatch.setattr("sys.stdin", __import__("io").StringIO(hook_input))
