@@ -8,8 +8,8 @@
     "hash": "58179966131de0aaf1244d4ec120612a"
   },
   "tests/test_graphify_patches.py": {
-    "mtime": 1778173902.7945316,
-    "hash": "60a68bbd01da23389defb4bbb88b35b0"
+    "mtime": 1778175932.8364184,
+    "hash": "9c9762de93af9d635341e66029febe4c"
   },
   "tests/test_patterns_examples.py": {
     "mtime": 1778159397.330814,
@@ -26,6 +26,10 @@
   "lib/README.md": {
     "mtime": 1774809683.5182161,
     "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
+  },
+  "lib/graphify/UPSTREAM_ISSUE.md": {
+    "mtime": 1778183066.153494,
+    "hash": "89b4d2fa304084a60b8c27c5327398f1"
   },
   "docs/architecture/overview.yaml": {
     "mtime": 1774809683.515068,
