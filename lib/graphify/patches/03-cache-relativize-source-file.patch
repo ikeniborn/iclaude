@@ -1,0 +1,20 @@
+--- a/cache.py
++++ b/cache.py
+@@ -118,5 +118,17 @@ def save_cached(path: Path, result: dict, root: Path = Path("."), kind: str = "ast") -> None:
+     p = Path(path)
+     if not p.is_file():
+         return
++    # ICLAUDE-PATCHED-v1: relativize source_file vs root for git portability
++    _root_abs = Path(root).resolve()
++    for _bucket in ("nodes", "edges"):
++        for _item in result.get(_bucket, []):
++            _sf = _item.get("source_file", "")
++            if _sf and Path(_sf).is_absolute():
++                try:
++                    _rel = os.path.relpath(_sf, _root_abs)
++                    if not _rel.startswith(".."):
++                        _item["source_file"] = _rel
++                except ValueError:
++                    pass
+     h = file_hash(p, root)
+     target_dir = cache_dir(root, kind)
