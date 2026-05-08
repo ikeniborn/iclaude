@@ -1,7 +1,7 @@
 ---
 wiki_sources:
   - "docs/functions/CAVEMAN.md"
-wiki_updated: 2026-05-07
+wiki_updated: 2026-05-08
 wiki_status: developing
 wiki_outgoing_links:
   - "[[claude-config|Конфигурационный файл (.claude_config)]]"
@@ -66,7 +66,7 @@ aliases:
 |------------|--------------|----------|
 | `CAVEMAN_ENABLED` | (не задана) | Метка «установлено пользователем»; на рантайм не влияет |
 | `CAVEMAN_DEFAULT_MODE` | `full` | Режим компрессии (см. ниже) |
-| `CAVEMAN_STATUSLINE` | `false` | Badge экономии токенов в статусной строке |
+| `CAVEMAN_STATUSLINE` | `false` | Badge `⛏` в статусной строке. Счётчик токенов (`⛏ 5.2k`) обновляется только при ручном `/caveman-stats` |
 
 `CAVEMAN_DEFAULT_MODE` экспортируется в окружение Claude Code из `lib/launcher/launch.sh`. Приоритет чтения хуками: `process.env.CAVEMAN_DEFAULT_MODE` → JSON config → дефолт `full`.
 
@@ -120,3 +120,9 @@ Caveman автоматически возвращается к нормальн�
 | Хуки не активируются | Проверить `$CLAUDE_CONFIG_DIR/settings.json` (блок `hooks`) |
 | Mode не меняется | Перезапустить сессию после правки `.claude_config` |
 | Стиль слишком агрессивный | Понизить до `lite` или `off` |
+
+## Связанные документы
+
+- Spec: `docs/superpowers/specs/2026-05-06-caveman-integration-design.md`
+- Plan: `docs/superpowers/plans/2026-05-06-caveman-integration.md`
+- Upstream: <https://github.com/JuliusBrussee/caveman>

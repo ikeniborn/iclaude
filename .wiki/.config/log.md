@@ -167,3 +167,80 @@
 - Тестовая пирамида self-gates: L1 на любом Linux, L2 требует sudo+dummy module, L3 требует KVM+sudo+firecracker — каждый уровень skip без прерывания runner.
 - `iptables -F` запрещён в L2/L3 cleanup — только targeted marker-based deletion (защита host iptables от тестового мусора).
 - E2E-флаги gated `ICLAUDE_E2E_HEADLESS=1` — невозможно случайно crash сессию через `--e2e-kill-after-boot` без env var.
+
+## 2026-05-08T16:50:00
+
+**Операция:** lint
+**Домен:** документация
+
+**Проверено страниц:** 19
+**Итого:** 0 errors, 5 warnings, 9 info
+
+- WARN: FM-005 (2) — несуществующие источники в `graphify-интеграция.md`: `.nvm-isolated/.claude-isolated/hooks/normalize-paths.py`, `tests/test_normalize_paths.py`
+- WARN: CT-003 (2) — мёртвые WikiLinks: `[[redact-secrets]]` (правильно `[[маскирование-содержимого]]`), `[[конфигурационные-переменные-прокси]]` (страница не существует)
+- WARN: CV-002 (1) — 8 SKILL.md без покрытия: mermaid-obsidian, git-workflow, prd-generator, compact-session, toon-skill, prompt-verifier, agent-builder, architecture-documentation
+- INFO: CT-004 (6) — orphan-страницы: статуслайн-адаптеры, телеметрия, маскирование-содержимого, обзор-команд, llm-wiki, caveman
+- INFO: CV-001 (33) — некоторые docs/ файлы (superpowers/specs|plans, architecture/diagrams) без покрытия
+
+## 2026-05-08T17:15:00
+
+**Операция:** ingest
+**Источник:** `docs/functions/UPSTREAM_ISSUE.md`
+**Домен:** документация
+
+**Создано страниц:** 0
+**Обновлено страниц:** 1
+
+- ОБНОВЛЕНА: `документация/архитектура/graphify-интеграция.md` (mature) — добавлены секции «Cleanup-цикл после merge #777 + релиза» (пошаговый план: pin lockfile, удаление `lib/graphify/patches/`, `apply_patches.sh`, `tests/test_graphify_patches.py`, пересмотр `_patch_graphify_watch`) и «Out-of-scope для upstream: Patch 04» (явная фиксация дублирования между патч-файлом 04 и runtime-shim `_patch_graphify_watch` для разных runtime-окружений: uv tool dir vs uv tool run cache). Источник уже присутствовал в `wiki_sources` от предыдущего ingest — добавлены только недостающие детали из исходника.
+
+**Пропущено сущностей:** 0
+- Issues #756, #758, #777, #722 уже задокументированы в существующей секции «Upstream issues и PR в safishamsi/graphify» с тем же уровнем детализации, что и исходник.
+- Workaround `normalize-paths.py` + `_patch_graphify_watch` уже задокументирован в секциях «Хук normalize-paths» и «Патч watch.py: auto-patch при каждом rebuild».
+
+**Ключевые находки:**
+- Дублирование Patch 04 (файл-патч в `lib/graphify/patches/`) и runtime-shim `_patch_graphify_watch` (`sed` правка в uv tool run cache) — намеренное: покрывают **два разных Python-окружения** для одного графифая. Консолидация отложена до релиза upstream-fix.
+
+## 2026-05-08T00:00:00
+
+**Операция:** ingest
+**Домен:** документация
+**Источник:** `docs/functions/GRAPHIFY.md`
+
+**Затронуто страниц:** 0
+
+**Решение:** SKIP — источник уже полностью учтён в `документация/функции/graphify.md` (ingested 2026-05-07). Сравнение секций Зачем/Архитектура/Флаги/Конфигурация/Патчи/SKILL.md/Диагностика показало 1:1 соответствие; новой информации в источнике относительно текущей wiki-страницы нет.
+
+**Связанные страницы:**
+- `документация/функции/graphify.md` (wiki_status: developing) — feature-страница, не изменена
+- `документация/архитектура/graphify-интеграция.md` (wiki_status: mature) — runtime-уровень (normalize-paths, _patch_graphify_watch, GRAPHIFY_OUT sync), также не затронут
+
+**Следующий шаг:** `/llm-wiki lint документация` (опционально) для проверки актуальности существующих страниц.
+
+## 2026-05-08T17:30:00
+
+**Операция:** ingest
+**Источник:** docs/functions/MICROVM.md
+**Домен:** документация
+
+**Затронуто страниц:** 2
+
+- ОБНОВЛЕНА: `документация/функции/microvm-firecracker.md` (developing → mature) — добавлены 7 конфиг-переменных (MICRO_VM_INSECURE_DOWNLOAD, MICRO_VM_ROOTFS_SIZE_MB, MICRO_VM_WORKSPACE_SIZE_MB, MICRO_VM_NET_SUBNET, MICRO_VM_SYNC_INTERVAL, MICRO_VM_SYNC_EXCLUDE, MICRO_VM_SNAPSHOT_DIR), разделы Linux Capabilities, IPv6 SLAAC, Troubleshooting (ALT Linux sudo/TLS, TAP)
+- ОБНОВЛЕНА: `документация/конфигурация/claude-config.md` — расширен microVM-блок до 13 переменных (добавлены WORKSPACE_SIZE_MB, ROOTFS_SIZE_MB, NET_SUBNET, SYNC_INTERVAL, SYNC_EXCLUDE, SNAPSHOT_DIR, INSECURE_DOWNLOAD)
+
+**Примечание:** Источник уже в wiki_sources, обнаружено новое содержимое не отражённое на странице (config-переменные, troubleshooting, security notes). Создание новых страниц не требовалось. wiki_status microvm-firecracker.md повышен stub→mature: 4 источника, все основные разделы заполнены.
+
+---
+
+## 2026-05-08T17:15:00
+
+**Операция:** ingest
+**Источник:** docs/functions/CAVEMAN.md
+**Домен:** документация
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/функции/caveman.md` (developing) — детализировано описание `CAVEMAN_STATUSLINE` (badge `⛏`, счётчик `⛏ 5.2k`, обновление через `/caveman-stats`); добавлен раздел "Связанные документы" со ссылками на spec и plan
+
+**Примечание:** Источник уже в wiki_sources, обнаружены два минорных delta (детали статуслайн-badge и ссылки spec/plan). wiki_status оставлен developing — у страницы один источник (`docs/functions/CAVEMAN.md`), для повышения до mature нужно ≥ 4.
+
+---
