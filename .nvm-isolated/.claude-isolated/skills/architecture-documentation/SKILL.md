@@ -1,6 +1,6 @@
 ---
 name: architecture-documentation
-description: Generate detailed architectural documentation in YAML and TOON formats with component dependencies and relationships
+description: Generate developer-facing architecture docs (component graph, dependencies, data flows) in YAML + TOON + Mermaid. Use when user asks to "document architecture", "map components/dependencies", "build module diagram". NOT for product/feature requirements — use prd-generator.
 user-invocable: true
 context: fork
 # version: 1.4.0

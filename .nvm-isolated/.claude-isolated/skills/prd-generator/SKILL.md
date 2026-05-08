@@ -1,6 +1,6 @@
 ---
 name: prd-generator
-description: Автоматизированное создание Product Requirements Document (PRD) с интерактивными вопросами, AI-генерацией 14 разделов и 5 Mermaid диаграмм
+description: Создание Product Requirements Document (PRD) — 14 разделов + 5 Mermaid-диаграмм через интерактивный Q&A. Использовать когда пользователь просит "написать PRD", "составить product spec", "описать требования к продукту". НЕ для технической архитектуры — использовать architecture-documentation.
 user-invocable: true
 context: fork
 # version: 1.3.0

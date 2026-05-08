@@ -1,6 +1,6 @@
 ---
 name: context-awareness
-description: Автоматическое определение контекста проекта. Поиск по документации.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Use when starting any task, switching project, or before running syntax/test checks. NOT for querying knowledge graph (graphify-context) and NOT for wiki synthesis (llm-wiki).
 user-invocable: false
 agent: Explore
 # version: 1.2.0
