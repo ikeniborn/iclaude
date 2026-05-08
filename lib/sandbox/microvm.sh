@@ -1169,6 +1169,20 @@ _create_named_snapshot() {
 # Returns 1 with explicit warnings if PII is active but prerequisites missing.
 #######################################
 _pii_dnat_preflight() {
+    [[ "${ICLAUDE_PII_ACTIVE:-0}" != "1" ]] && return 0
+    [[ "${MICRO_VM_NET_ENABLED:-true}" != "true" ]] && return 0
+    [[ -z "${ICLAUDE_PII_ACTIVE_PORT:-}" ]] && return 0
+
+    if ! sudo -n true 2>/dev/null; then
+        print_warning "microVM: PII proxy active but passwordless sudo unavailable"
+        print_warning "microVM: guest cannot reach PII proxy at ${MICRO_VM_NET_HOST_IP}:${ICLAUDE_PII_ACTIVE_PORT}"
+        print_info    "microVM: configure NOPASSWD for iptables/sysctl OR launch without --pii-proxy"
+        return 1
+    fi
+    if ! sudo -n iptables -t nat -L PREROUTING -n &>/dev/null; then
+        print_warning "microVM: iptables nat table inaccessible — PII proxy DNAT disabled"
+        return 1
+    fi
     return 0
 }
 
