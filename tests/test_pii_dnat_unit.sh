@@ -117,5 +117,74 @@ out=$(
 ); rc=$?
 assert_eq "$rc" "0" "preflight: net-disabled returns 0"
 
+# Test 6: sweep — empty rule list, terminates fast (no infinite loop)
+TD=$(mktemp -d)
+make_mocks "$TD" 1 '
+case "$*" in
+    *"--line-numbers"*)
+        echo "Chain PREROUTING (policy ACCEPT)"
+        echo "num  target  prot  opt  source  destination"
+        ;;
+    *"-D "*) exit 0 ;;
+esac
+exit 0
+'
+PATH="$TD:$PATH" timeout 5 bash -c "$(declare -f _pii_dnat_sweep_stale make_mocks); _pii_dnat_sweep_stale tap-iclaude-1"
+assert_eq "$?" "0" "sweep: empty list terminates"
+rm -rf "$TD"
+
+# Test 7: sweep — drains 2 stale rules
+TD=$(mktemp -d)
+echo "2" > "$TD/state"
+cat > "$TD/sudo" <<EOF
+#!/usr/bin/env bash
+[[ "\$1" == "-n" ]] && shift
+exec "\$@"
+EOF
+cat > "$TD/iptables" <<EOF
+#!/usr/bin/env bash
+STATE="$TD/state"
+N=\$(cat "\$STATE")
+case "\$*" in
+    *"--line-numbers"*)
+        if [[ "\$N" -gt 0 ]]; then
+            echo "1  DNAT  tcp  --  0.0.0.0/0  172.16.0.1  /* iclaude-pii-dnat:tap-iclaude-1 */"
+        fi
+        ;;
+    *"-D "*"PREROUTING 1"*|*"-D "*"INPUT 1"*)
+        echo \$((N - 1)) > "\$STATE"
+        ;;
+esac
+exit 0
+EOF
+chmod +x "$TD/sudo" "$TD/iptables"
+PATH="$TD:$PATH" timeout 5 bash -c "$(declare -f _pii_dnat_sweep_stale); _pii_dnat_sweep_stale tap-iclaude-1"
+remaining=$(cat "$TD/state")
+assert_eq "$remaining" "0" "sweep: 2 stale rules drained"
+rm -rf "$TD"
+
+# Test 8: sweep — guard cap fires on pathological input (rule never goes away)
+TD=$(mktemp -d)
+make_mocks "$TD" 1 '
+case "$*" in
+    *"--line-numbers"*)
+        echo "1  DNAT  tcp  --  0  0  /* iclaude-pii-dnat:tap-iclaude-1 */"
+        ;;
+    *"-D "*) exit 0 ;;
+esac
+exit 0
+'
+start_ts=$(date +%s)
+PATH="$TD:$PATH" timeout 5 bash -c "$(declare -f _pii_dnat_sweep_stale); _pii_dnat_sweep_stale tap-iclaude-1"
+rc=$?
+end_ts=$(date +%s)
+assert_eq "$rc" "0" "sweep: guard cap returns 0"
+[[ $((end_ts - start_ts)) -lt 5 ]] && PASS=$((PASS + 1)) || { FAIL=$((FAIL + 1)); echo "FAIL [sweep guard timing]: took $((end_ts - start_ts))s"; }
+rm -rf "$TD"
+
+# Test 9: sweep — empty tap arg returns 0 silently
+out=$(bash -c "$(declare -f _pii_dnat_sweep_stale); _pii_dnat_sweep_stale \"\"" 2>&1); rc=$?
+assert_eq "$rc" "0" "sweep: empty tap arg returns 0"
+
 echo "L1: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]
