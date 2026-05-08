@@ -16,7 +16,7 @@ wiki_sources:
   - ".nvm-isolated/.claude-isolated/hooks/normalize-paths.py"
   - ".nvm-isolated/.claude-isolated/settings.json"
   - "tests/test_normalize_paths.py"
-wiki_updated: 2026-05-07
+wiki_updated: 2026-05-08
 wiki_status: mature
 wiki_relocations:
   - "lib/graphify/UPSTREAM_ISSUE.md → docs/functions/UPSTREAM_ISSUE.md (2026-05-07)"
@@ -299,6 +299,21 @@ GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
 | [#777](https://github.com/safishamsi/graphify/issues/777) | bug: absolute paths in `manifest.json`, `.graphify_root`, `cache/ast/*.json` break git-shared `graphify-out/` across machines | OPEN (submitted 2026-05-07) | Подана отдельным bug-репортом со ссылкой на #722. Покрывает 3 артефакта (включая `cache/ast/*.json`, не покрытый #722). Предложен PR с 3 атомарными патчами в `detect.py::save_manifest` / `watch.py::_rebuild_code` / `cache.py::save_cached` + 3 теста. Локальный обходной путь — хук `normalize-paths.py` (abs↔rel) + shim `_patch_graphify_watch`. После merge — cleanup-цикл: удалить хук и shim. |
 
 После релиза `graphifyy` с PR #758 локальный обходной путь — явный `--graph "${GRAPHIFY_OUT}/graph.json"` в `graphify-context/SKILL.md` (см. секцию «graphify-context/SKILL.md: --graph flag») — становится избыточным; оставлен как defense-in-depth для пользователей со старыми версиями.
+
+### Cleanup-цикл после merge #777 + релиза
+
+По `docs/functions/UPSTREAM_ISSUE.md` цикл удаления локальных воркераундов после релиза `graphifyy>=X.Y.Z` с merged PR:
+
+1. Pin `graphifyy>=X.Y.Z` в lockfile.
+2. Удалить `lib/graphify/patches/` + `apply_patches.sh`.
+3. Удалить `tests/test_graphify_patches.py`.
+4. Удалить вызов `apply_patches` из `lib/graphify/install.sh`.
+5. Пересмотреть `_patch_graphify_watch` shim — Patch 04 в каталоге патчей и shim в `install.sh` дублируют друг друга для **разных runtime-окружений**: Patch 04 правит исходник в каталоге uv tool dir, а `_patch_graphify_watch` правит файл, который reachable через `uv tool run --from graphifyy python3 -c "import graphify.watch; print(...)"` (uv tool run cache). Только после уверенности, что upstream покрывает оба пути, удалить и патч, и shim.
+6. Обновить статус в `docs/superpowers/specs/2026-05-07-graphify-c3-patch-graphifyy-design.md`.
+
+### Out-of-scope для upstream: Patch 04 (`04-watch-manifest-path-respect-out`)
+
+Patch 04 заставляет `watch._rebuild_code` передавать `manifest_path=out / "manifest.json"` в `save_manifest`, чтобы манифест попадал внутрь `GRAPHIFY_OUT/`. Это **дублирует** runtime-shim `_patch_graphify_watch` (см. секцию «Патч watch.py: auto-patch при каждом rebuild») — но через другую точку входа: патч-файл vs `sed`-правка в caching directory uv. Консолидация двух механизмов планируется в cleanup-цикле.
 
 ### Связанные upstream issue (других авторов)
 
