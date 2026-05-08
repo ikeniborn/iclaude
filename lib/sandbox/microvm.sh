@@ -1644,17 +1644,10 @@ stop_microvm() {
     fi
 
     # Remove DNAT rule and route_localnet for PII proxy (added in start_microvm when PII proxy is active).
-    if [[ -n "${MICRO_VM_PII_DNAT_PORT:-}" ]] && [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && \
-       [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && sudo -n true 2>/dev/null; then
-        sudo iptables -t nat -D PREROUTING \
-            -i "${MICRO_VM_NET_TAP_IFACE}" \
-            -d "${MICRO_VM_NET_HOST_IP}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
-            -j DNAT --to-destination "127.0.0.1:${MICRO_VM_PII_DNAT_PORT}" \
-            2>/dev/null || true
-        sudo iptables -D INPUT \
-            -i "${MICRO_VM_NET_TAP_IFACE}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
-            -j ACCEPT 2>/dev/null || true
-        sudo sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=0" &>/dev/null || true
+    # Uses comment-marker sweep so cleanup is robust against port mismatches and partial state.
+    if [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && sudo -n true 2>/dev/null; then
+        _pii_dnat_sweep_stale "${MICRO_VM_NET_TAP_IFACE}"
+        sudo -n sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=0" &>/dev/null || true
         MICRO_VM_PII_DNAT_PORT=""
     fi
 
