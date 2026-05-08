@@ -574,7 +574,7 @@ INFO: microVM: configure NOPASSWD for iptables/sysctl OR launch without --pii-pr
 Configure NOPASSWD via `visudo`, e.g.:
 
 ```
-%iclaude ALL=(root) NOPASSWD: "[PASSWORD_REDACTED]" /usr/sbin/sysctl, /usr/sbin/ip
+%iclaude ALL=(root) NOPASSWD: /usr/sbin/iptables, /usr/sbin/sysctl, /usr/sbin/ip
 ```
 
 Adjust paths via `command -v iptables sysctl ip` — locations vary across distros (e.g. `/sbin/iptables` vs `/usr/sbin/iptables`). Required commands: `iptables`, `sysctl`, `ip`.
