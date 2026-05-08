@@ -1,6 +1,7 @@
 ---
 wiki_sources:
   - "[[.nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md]]"
+  - "[[docs/audits/2026-05-08-skills-description-audit.md]]"
 wiki_updated: 2026-05-08
 wiki_status: stub
 wiki_outgoing_links:
@@ -85,6 +86,20 @@ Skill состоит из:
 | Хочу сохранить ответ навсегда | `query --save` |
 | Проверить качество и актуальность вики | `lint` |
 | Первичная инициализация раздела из корпуса источников | `init` |
+
+## Маршрутизация (frontmatter description)
+
+По итогам аудита `description:` всех 13 скиллов (2026-05-08) каноническая формулировка для `llm-wiki`:
+
+> Создание и поддержка Obsidian-вики из raw-источников (код, docs, papers) — извлечение, синтез, дедупликация знаний по доменам. Использовать когда пользователь просит "построить/обновить/освежить вики", "загрузить новые источники в vault", "синтезировать знания по домену". НЕ для live-запросов к кодовой базе — использовать graphify-context.
+
+**Границы относительно соседних скиллов:**
+
+- **vs `graphify`** — `graphify` строит граф знаний из папки файлов с community detection и тремя артефактами (HTML / GraphRAG JSON / GRAPH_REPORT.md); `llm-wiki` синтезирует Obsidian-вики со структурированными страницами и WikiLinks. Разные форматы вывода для разных целей (анализ связей vs читаемая база знаний).
+- **vs `graphify-context`** — `graphify-context` отвечает на live-запросы к уже построенному графу; `llm-wiki` — отдельный процесс синтеза/поддержки вики.
+- **vs `context-awareness`** — `context-awareness` определяет язык/framework/команды проекта в Phase 0 задачи; `llm-wiki` не дублирует эту функцию.
+
+См. [[документация/архитектура/skills-маршрутизация]] (если будет создана) и `docs/audits/2026-05-08-skills-description-audit.md`.
 
 ## Связанные концепции
 
