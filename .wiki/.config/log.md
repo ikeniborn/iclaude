@@ -149,3 +149,21 @@
 **Примечание:** Первая страница в поддомене «скиллы». Источник описывает сам skill `llm-wiki` (v2.2.0): фазы Phase 0–3, операции ingest/query/lint/init, multi-language readers (markdown/python/typescript/javascript/bash), bootstrap-анализ при пустых entity_types, структура `.wiki/.config/`. Другие entity_types домена (функция, команда, конфигурационная-переменная, интеграция, механизм-безопасности, архитектурный-компонент) в источнике не встречаются — SKILL.md описывает один скилл.
 
 ---
+
+## 2026-05-08T07:50:00
+
+**Операция:** ingest (update)
+**Домен:** функции
+**Тема:** PII proxy + microVM DNAT hardening (P1+P2+P5)
+
+**Затронуто страниц:** 2
+
+- ОБНОВЛЕНА: `документация/функции/microvm-firecracker.md` (developing) — добавлена секция «Интеграция с PII proxy: DNAT hardening (2026-05-08)»: устранены P1 (silent sudo failure), P2 (stale rules после crash), P5 (route_localnet leak). Описаны `_pii_dnat_preflight`, `_pii_dnat_sweep_stale`, comment marker `iclaude-pii-dnat:<tap>`, тестовая пирамида L1/L2/L3, E2E-флаги `--e2e-exit-after-boot`/`--e2e-kill-after-boot`. Источник: spec `2026-05-08-pii-microvm-dnat-hardening-design.md`, plan `2026-05-08-pii-microvm-dnat-hardening.md`, commits `63c0909e..dd81791c`.
+- ОБНОВЛЕНА: `документация/функции/pii-прокси.md` (developing) — кросс-ссылка на microvm hardening section в строке про `--sandbox-microvm`.
+
+**Ключевые находки:**
+- Comment marker `iclaude-pii-dnat:<tap>` заменяет зависимость от внешнего state (PID, port files) — cleanup устойчив к partial state и port mismatches.
+- `_pii_dnat_sweep_stale` использует guard cap=20 для защиты от pathological iptables (rule never disappears).
+- Тестовая пирамида self-gates: L1 на любом Linux, L2 требует sudo+dummy module, L3 требует KVM+sudo+firecracker — каждый уровень skip без прерывания runner.
+- `iptables -F` запрещён в L2/L3 cleanup — только targeted marker-based deletion (защита host iptables от тестового мусора).
+- E2E-флаги gated `ICLAUDE_E2E_HEADLESS=1` — невозможно случайно crash сессию через `--e2e-kill-after-boot` без env var.

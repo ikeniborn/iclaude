@@ -59,7 +59,7 @@ Claude Code → PreToolUse
 
 ```bash
 ./iclaude.sh --pii-proxy
-./iclaude.sh --pii-proxy --sandbox-microvm  # совместим с microVM
+./iclaude.sh --pii-proxy --sandbox-microvm  # совместим с microVM (DNAT bridge, см. [[microvm-firecracker#Интеграция с PII proxy|microvm hardening]])
 ./iclaude.sh --pii-proxy --router           # совместим с Router
 ```
 

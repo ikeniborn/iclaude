@@ -3,7 +3,8 @@ wiki_sources:
   - "docs/functions/MICROVM.md"
   - "docs/functions/USE_CASES.md"
   - "docs/functions/CONFIGURATION.md"
-wiki_updated: 2026-05-06
+  - "docs/superpowers/specs/2026-05-08-pii-microvm-dnat-hardening-design.md"
+wiki_updated: 2026-05-08
 wiki_status: developing
 wiki_outgoing_links:
   - "[[pii-прокси|PII-прокси]]"
@@ -91,3 +92,47 @@ Host OS (Linux + KVM)
 ## Безопасность
 
 Граница безопасности — KVM hypervisor. Capabilities внутри guest не выходят за пределы VM. При `MICRO_VM_NET_ENABLED=true` гость получает выход в интернет через NAT (необходим для Anthropic API).
+
+## Интеграция с PII proxy: DNAT hardening (2026-05-08)
+
+PII proxy биндится только на `127.0.0.1`. Чтобы guest microVM мог достучаться до прокси на хосте, `start_microvm` устанавливает iptables DNAT-правило `<host_ip>:<port> → 127.0.0.1:<port>` + `route_localnet=1` на TAP-интерфейсе.
+
+### Три проблемы устранены
+
+**P1 (silent sudo failure):** раньше при отсутствии passwordless sudo DNAT тихо не создавался — guest получал connection-refused без диагностики. Теперь `_pii_dnat_preflight` явно предупреждает в логе и подсказывает настроить NOPASSWD или запускать без `--pii-proxy`.
+
+**P2 (stale rules):** `kill -9` или crash хоста оставлял orphaned DNAT-правила в iptables. Теперь `_pii_dnat_sweep_stale` идемпотентно вычищает их при каждом старте по comment-маркеру `iclaude-pii-dnat:<tap>`.
+
+**P5 (route_localnet leak):** sysctl флаг сбрасывается в `stop_microvm` через тот же sweep-механизм; зависимость от `MICRO_VM_PII_DNAT_PORT` устранена.
+
+### Новые helper-функции (`lib/sandbox/microvm.sh`)
+
+| Функция | Назначение |
+|---------|-----------|
+| `_pii_dnat_preflight` | Проверяет PII-активность + passwordless sudo + iptables nat. Возвращает 1 с warning при недоступности. |
+| `_pii_dnat_sweep_stale <tap>` | Идемпотентный drain orphaned DNAT/INPUT-правил по marker `iclaude-pii-dnat:<tap>`. Guard cap=20. |
+
+### Comment marker как стабильный идентификатор
+
+iptables-правила теперь несут `-m comment --comment "iclaude-pii-dnat:<tap>"`. Cleanup ищет по маркеру, а не по `(host_ip, port, tap)` — устойчив к port mismatches и partial state.
+
+### Тестовая пирамида
+
+| Уровень | Файл | Зависимости | Поведение |
+|--------|------|-------------|-----------|
+| L1 | `tests/test_pii_dnat_unit.sh` | bash + awk | PATH-mock unit-тесты, всегда выполняется |
+| L2 | `tests/test_pii_dnat_iptables.sh` | passwordless sudo + dummy module | Реальный iptables на dummy iface, self-skip |
+| L3 | `tests/test_pii_dnat_e2e.sh` | KVM + sudo + firecracker | Полный lifecycle с E2E-флагами, self-skip |
+
+Runner: `bash tests/test_pii_dnat.sh` — каждый уровень self-gates, без прерываний.
+
+### E2E debug-флаги
+
+Только для L3 (gated `ICLAUDE_E2E_HEADLESS=1`):
+
+- `--e2e-exit-after-boot` — clean exit после boot (sweep отрабатывает)
+- `--e2e-kill-after-boot` — `kill -9` self после boot (имитация crash, оставляет stale rules)
+
+### Troubleshooting
+
+См. `docs/functions/MICROVM.md#troubleshooting` — диагностика отсутствующего DNAT-правила, NOPASSWD-конфигурация через `visudo`, ручная очистка stale rules.
