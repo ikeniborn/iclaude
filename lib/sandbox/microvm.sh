@@ -1193,7 +1193,30 @@ _pii_dnat_preflight() {
 #   $1 - tap_iface (required)
 #######################################
 _pii_dnat_sweep_stale() {
-    return 0
+    local tap="$1"
+    [[ -z "$tap" ]] && return 0
+    sudo -n true 2>/dev/null || return 0
+
+    local marker="iclaude-pii-dnat:${tap}"
+    local _guard _line
+
+    _guard=0
+    while [[ $_guard -lt 20 ]]; do
+        _line=$(sudo -n iptables -t nat -L PREROUTING --line-numbers -n 2>/dev/null \
+                | awk -v m="$marker" '$0 ~ m {print $1; exit}')
+        [[ -z "$_line" ]] && break
+        sudo -n iptables -t nat -D PREROUTING "$_line" 2>/dev/null || break
+        _guard=$((_guard + 1))
+    done
+
+    _guard=0
+    while [[ $_guard -lt 20 ]]; do
+        _line=$(sudo -n iptables -L INPUT --line-numbers -n 2>/dev/null \
+                | awk -v m="$marker" '$0 ~ m {print $1; exit}')
+        [[ -z "$_line" ]] && break
+        sudo -n iptables -D INPUT "$_line" 2>/dev/null || break
+        _guard=$((_guard + 1))
+    done
 }
 
 #######################################
