@@ -20,16 +20,12 @@
     "hash": "05edb81a42b62f4ea6e565e9f3e9ca39"
   },
   "README.md": {
-    "mtime": 1778100314.8284054,
-    "hash": "4422f7ec89d6e788133005dc85688e2b"
+    "mtime": 1778188529.2054164,
+    "hash": "1971c0413167f31c0ff6e36b2d55116a"
   },
   "lib/README.md": {
     "mtime": 1774809683.5182161,
     "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
-  },
-  "lib/graphify/UPSTREAM_ISSUE.md": {
-    "mtime": 1778183066.153494,
-    "hash": "89b4d2fa304084a60b8c27c5327398f1"
   },
   "docs/architecture/overview.yaml": {
     "mtime": 1774809683.515068,
@@ -99,6 +95,10 @@
     "mtime": 1778100314.8294332,
     "hash": "763e6e5906066881ce81a0051eb8d9cf"
   },
+  "docs/superpowers/specs/2026-05-08-pii-microvm-dnat-hardening-design.md": {
+    "mtime": 1778187903.929743,
+    "hash": "71cb50c8317373a5c33572ca2aebb107"
+  },
   "docs/superpowers/specs/2026-05-07-context-awareness-graph-integration-design.md": {
     "mtime": 1778101889.7161865,
     "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
@@ -114,6 +114,10 @@
   "docs/superpowers/plans/2026-05-07-graphify-c3-patch-graphifyy.md": {
     "mtime": 1778164132.1478004,
     "hash": "d0df59e0ad028dba2c008e9839a51abd"
+  },
+  "docs/superpowers/plans/2026-05-08-pii-microvm-dnat-hardening.md": {
+    "mtime": 1778189402.4750657,
+    "hash": "16aae7d4c1ae5dc5d292538c69460f4a"
   },
   "docs/superpowers/plans/2026-05-06-graphify-integration.md": {
     "mtime": 1778100314.8294332,
@@ -171,6 +175,10 @@
     "mtime": 1778100314.8286858,
     "hash": "be25341ccb0b5b1985640bbe3ba86483"
   },
+  "docs/functions/CAVEMAN.md": {
+    "mtime": 1778188535.076348,
+    "hash": "fa1d2718a03980d9cf3924318e925bc5"
+  },
   "docs/functions/PROXY.md": {
     "mtime": 1778100314.8286858,
     "hash": "5d65e4c39a42b672de888d7e1f35d8e7"
@@ -178,6 +186,10 @@
   "docs/functions/TELEMETRY.md": {
     "mtime": 1778100314.8286858,
     "hash": "421f9d5b1e0a898fe935c653bfd69f8b"
+  },
+  "docs/functions/UPSTREAM_ISSUE.md": {
+    "mtime": 1778183066.153494,
+    "hash": "89b4d2fa304084a60b8c27c5327398f1"
   },
   "docs/functions/QUICK_CONFIG.md": {
     "mtime": 1778100314.8286858,
@@ -191,6 +203,10 @@
     "mtime": 1778100314.8284054,
     "hash": "d9c508847034c67bcd9be5589efc052e"
   },
+  "docs/functions/GRAPHIFY.md": {
+    "mtime": 1778187505.4274185,
+    "hash": "71b0f2069e4986a24816b4ad0f5dfb3d"
+  },
   "docs/functions/STATUSLINE.md": {
     "mtime": 1778100314.8286858,
     "hash": "a34903b147d801ac9fccb050d7ccf3b6"
@@ -200,8 +216,8 @@
     "hash": "68d16553443f6f84b68b7bcad6821ed2"
   },
   "docs/functions/MICROVM.md": {
-    "mtime": 1778100314.8286858,
-    "hash": "2ff6bdf86557bd4346208eb23f656769"
+    "mtime": 1778215411.5027676,
+    "hash": "dae2d03570a8c6bae158aee8c91280b1"
   },
   "tests/phase2-summary.md": {
     "mtime": 1774809683.5223594,

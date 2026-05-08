@@ -61,6 +61,13 @@ _graphify_rebuild_graph() {
     fi
     _patch_graphify_watch
 
+    # Re-apply portability patches (idempotent via ICLAUDE-PATCHED-v1 marker).
+    # Guards against `uv tool upgrade graphifyy` reverting patches between rebuilds.
+    if [[ -f "$LIB_DIR/graphify/apply_patches.sh" ]]; then
+        bash "$LIB_DIR/graphify/apply_patches.sh" >/dev/null 2>&1 || \
+            print_warning "apply_patches.sh failed — graph may contain absolute paths"
+    fi
+
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 
