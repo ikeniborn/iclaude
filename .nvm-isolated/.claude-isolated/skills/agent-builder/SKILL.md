@@ -1,6 +1,6 @@
 ---
 name: agent-builder
-description: Интерактивное создание Claude Code sub-agents с корректным frontmatter, документацией роли, примерами IO и валидацией по официальной схеме
+description: Интерактивное создание НОВОГО Claude Code sub-agent (AGENT.md с валидным frontmatter, документацией роли, IO-примерами, валидацией по схеме). Использовать когда пользователь просит "создать/собрать/построить агента", "новый sub-agent". НЕ для редактирования существующих AGENT.md/SKILL.md/CLAUDE.md — использовать prompt-verifier.
 user-invocable: true
 context: fork
 # version: 1.1.0 | updated: 2026-02-24

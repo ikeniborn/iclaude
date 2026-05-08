@@ -1,6 +1,6 @@
 ---
 name: graphify
-description: "any input (code, docs, papers, images, videos) to knowledge graph. Use when user asks any question about a codebase, documents, or project content - especially if ${GRAPHIFY_OUT:-graphify-out}/ exists, treat the question as a /graphify query."
+description: "Build knowledge graph from a folder of files (code, docs, papers, images, videos) — community detection, audit trail, three outputs (HTML, GraphRAG JSON, GRAPH_REPORT.md). Use when user types /graphify, asks to \"build/rebuild/update the graph\", or graph artifacts are missing in ${GRAPHIFY_OUT:-graphify-out}/. NOT for querying an existing graph — use graphify-context. NOT for project-language detection — use context-awareness."
 trigger: /graphify
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: mermaid-obsidian
-description: Use this skill whenever you need to create, generate, write, or fix Mermaid diagrams for viewing in Obsidian. Triggers when the user asks to "draw a diagram", "create a flowchart", "make a sequence diagram", "visualize architecture", "show relationships as a diagram", "create a mindmap in Obsidian", mentions Mermaid syntax, asks to fix a broken diagram, or wants to add any kind of chart/graph to their Obsidian notes. Covers all Mermaid diagram types: flowchart, sequence, class, ER, state, gantt, pie, gitGraph, mindmap, timeline. Always use this skill even if the user just says "draw" or "diagram" without specifying Mermaid explicitly — if they're working in Obsidian, Mermaid is the right tool.
+description: "Use this skill whenever you need to create, generate, write, or fix Mermaid diagrams for viewing in Obsidian. Triggers when the user asks to \"draw a diagram\", \"create a flowchart\", \"make a sequence diagram\", \"visualize architecture\", \"show relationships as a diagram\", \"create a mindmap in Obsidian\", mentions Mermaid syntax, asks to fix a broken diagram, or wants to add any kind of chart/graph to their Obsidian notes. Covers all Mermaid diagram types: flowchart, sequence, class, ER, state, gantt, pie, gitGraph, mindmap, timeline. Always use this skill when user asks to draw/fix a standalone diagram in Obsidian. NOT for diagrams embedded inside PRD documents (use prd-generator) or architecture YAML (use architecture-documentation) — those skills generate Mermaid internally."
 version: 1.0.0
 ---
 
