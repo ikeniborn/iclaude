@@ -166,6 +166,19 @@ launch_claude() {
             exit 1
         fi
 
+        # E2E test hooks — only active when ICLAUDE_E2E_HEADLESS=1 was set at launch
+        if [[ "${ICLAUDE_E2E_KILL_AFTER_BOOT:-0}" == "1" ]]; then
+            echo "E2E: simulating crash via SIGKILL on self (PID $$)"
+            kill -9 $$
+        fi
+        if [[ "${ICLAUDE_E2E_EXIT_AFTER_BOOT:-0}" == "1" ]]; then
+            echo "E2E: clean exit after microVM boot"
+            stop_microvm 2>/dev/null || true
+            [[ "$use_pii_proxy" == "true" ]] && stop_pii_proxy_server 2>/dev/null || true
+            [[ "$use_router" == "true" ]] && stop_ccr_server 2>/dev/null || true
+            exit 0
+        fi
+
         # SSH ControlMaster socket path — initialized below after ControlMaster setup.
         # Declared here (empty) so _cm_cleanup trap can reference it safely before initialization.
         local _ssh_control_socket=""
