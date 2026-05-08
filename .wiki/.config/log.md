@@ -133,3 +133,19 @@
 - graphify-интеграция (архитектура) и graphify (функция) — два дополняющих документа: feature-страница описывает CLI/конфиг/4 патча, архитектурная — runtime-механизмы (`_sync_graphify_env_to_settings`, `normalize-paths.py` abs↔rel, `_patch_graphify_watch`).
 - Caveman несовместим с `--system`: только изолированная среда. `CAVEMAN_DEFAULT_MODE` приоритет: env → JSON → дефолт `full`.
 - Auto-clarity у caveman автоматически отключает компрессию для security warnings, irreversible actions (`git push`, `rm -rf`, `drop table`), multi-step sequences.
+
+---
+
+## 2026-05-08T13:00:00
+
+**Операция:** ingest
+**Источник:** .nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md
+**Домен:** документация
+
+**Затронуто страниц:** 1
+
+- СОЗДАНА: `.wiki/документация/скиллы/llm-wiki.md` (stub) — entity_type: скилл, новый поддомен `документация/скиллы/`
+
+**Примечание:** Первая страница в поддомене «скиллы». Источник описывает сам skill `llm-wiki` (v2.2.0): фазы Phase 0–3, операции ingest/query/lint/init, multi-language readers (markdown/python/typescript/javascript/bash), bootstrap-анализ при пустых entity_types, структура `.wiki/.config/`. Другие entity_types домена (функция, команда, конфигурационная-переменная, интеграция, механизм-безопасности, архитектурный-компонент) в источнике не встречаются — SKILL.md описывает один скилл.
+
+---
