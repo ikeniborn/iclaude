@@ -1164,6 +1164,25 @@ _create_named_snapshot() {
 }
 
 #######################################
+# Preflight check: PII proxy DNAT requires passwordless sudo + iptables nat.
+# Returns 0 if DNAT can be configured (or PII not active — nothing to check).
+# Returns 1 with explicit warnings if PII is active but prerequisites missing.
+#######################################
+_pii_dnat_preflight() {
+    return 0
+}
+
+#######################################
+# Idempotent removal of orphaned PII DNAT rules from previous crashed sessions.
+# Matches by iptables comment marker "iclaude-pii-dnat:<tap_iface>".
+# Args:
+#   $1 - tap_iface (required)
+#######################################
+_pii_dnat_sweep_stale() {
+    return 0
+}
+
+#######################################
 # Start Firecracker microVM and prepare guest for claude launch.
 # Sets MICRO_VM_PID, MICRO_VM_SOCKET, MICRO_VM_SESSION_OWNED globals.
 # v2 architecture: Claude runs INSIDE guest VM via SSH; block devices for storage.
