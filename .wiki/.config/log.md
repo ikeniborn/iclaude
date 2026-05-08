@@ -244,3 +244,31 @@
 **Примечание:** Источник уже в wiki_sources, обнаружены два минорных delta (детали статуслайн-badge и ссылки spec/plan). wiki_status оставлен developing — у страницы один источник (`docs/functions/CAVEMAN.md`), для повышения до mature нужно ≥ 4.
 
 ---
+
+---
+
+## 2026-05-08T00:00:00
+
+**Операция:** ingest (внешний источник)
+**Домен:** документация
+**Тема:** superpowers-context-reset
+
+**Затронуто страниц:** 1
+
+- СОЗДАНА: `документация/скиллы/superpowers-context-reset.md` (stub) — источник: GitHub issue obra/superpowers#1503 + связанные #1490, #931, #478
+
+**Примечание:** Внешний источник (GitHub issue в стороннем репозитории), аналогично прецеденту `graphify-интеграция.md`. Сущность относится к типу "скилл" (extraction_cues: skill, superpowers, workflow). Связь с локальными скиллами `.nvm-isolated/.claude-isolated/skills/superpowers/`.
+
+## 2026-05-08T21:32:04 (commit 0dba184)
+
+**Операция:** ingest
+**Домен:** документация
+**Источники:** 9 SKILL.md (skills routing audit) + docs/audits/2026-05-08-skills-description-audit.md
+
+**Затронуто страниц:** 1
+
+- ОБНОВЛЕНА: `документация/скиллы/llm-wiki.md` — добавлен раздел «Маршрутизация (frontmatter description)» с канонической формулировкой description и границами vs graphify / graphify-context / context-awareness; в `wiki_sources` добавлен audit-документ.
+
+**Пропущено:** 8 SKILL.md (agent-builder, architecture-documentation, context-awareness, git-workflow, graphify, mermaid-obsidian, prd-generator, prompt-verifier) — нет существующих wiki-страниц, single-source каждой из этих сущностей даёт только 1 упоминание (min_mentions_for_page=2 для типа «скилл»), CREATE не сработает.
+
+**Примечание:** Коммит 0dba184 — переписывание `description:` frontmatter в 9 SKILL.md для устранения triggers overlap (audit от 2026-05-08). Функциональность скиллов не менялась — только метаданные маршрутизации. Для llm-wiki это UPDATE (изменился источник, страница есть). Для остальных — SKIP до накопления второго источника. Если в будущем потребуется отдельная страница «skills-маршрутизация», audit-документ достаточен как HLD-источник.
