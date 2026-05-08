@@ -55,6 +55,10 @@
     "mtime": 1774809683.513919,
     "hash": "daf4faf893a8abb11abff42c754de7e8"
   },
+  "docs/audits/2026-05-08-skills-description-audit.md": {
+    "mtime": 1778260630.7561793,
+    "hash": "fd47a7c4f4afd553d0cc514b589ec6ed"
+  },
   "docs/superpowers/specs/2026-05-07-pii-shared-detach-design.md": {
     "mtime": 1778162932.786613,
     "hash": "ea90a2ca4e3f978d6fba6a0637bc9137"
@@ -103,6 +107,10 @@
     "mtime": 1778101889.7161865,
     "hash": "b14cf79adbf54a63c3a6ba4cd5eece73"
   },
+  "docs/superpowers/specs/2026-05-08-skills-description-audit-design.md": {
+    "mtime": 1778261765.8519194,
+    "hash": "8bed2a7cebf987d8a5c9165bc5faef68"
+  },
   "docs/superpowers/specs/2026-05-06-caveman-integration-design.md": {
     "mtime": 1778100314.829992,
     "hash": "799d2464283b473b3a7b56e2bbb77237"
@@ -130,6 +138,10 @@
   "docs/superpowers/plans/2026-05-07-graphify-hardcode-fix.md": {
     "mtime": 1778159397.3297255,
     "hash": "aa3cccd36f6126ab21d05c9c5559b526"
+  },
+  "docs/superpowers/plans/2026-05-08-skills-description-audit.md": {
+    "mtime": 1778263879.6012697,
+    "hash": "5ed024310cf8aaa26a2b82327e416fe1"
   },
   "docs/superpowers/plans/2026-05-07-graphify-portability-plan.md": {
     "mtime": 1778159397.3298483,
