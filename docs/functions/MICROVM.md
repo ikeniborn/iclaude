@@ -546,3 +546,48 @@ username ALL=(ALL) NOPASSWD: ICLAUDE_NET
 - `lib/sandbox/microvm.sh` — реализация `start_microvm()`
 - `lib/sandbox/install.sh` — реализация `install_microvm()`
 - `lib/sandbox/guest-init.sh` — guest PID 1 (монтирование, sshd)
+
+## Troubleshooting
+
+### Guest cannot reach PII proxy
+
+If the guest's Claude Code calls hang or fail with connection errors after launching with `--pii-proxy --sandbox-microvm`, verify the host installed the DNAT rule:
+
+```bash
+sudo iptables -t nat -L PREROUTING -n | grep iclaude-pii-dnat
+```
+
+Expected: one rule per active microVM session, e.g.
+
+```
+DNAT  tcp  --  0.0.0.0/0  172.16.0.1  tcp dpt:<port> /* iclaude-pii-dnat:tap-iclaude-1 */ to:127.0.0.1:<port>
+```
+
+If the rule is missing, the most common cause is missing passwordless sudo. iclaude prints a warning at launch time:
+
+```
+WARN: microVM: PII proxy active but passwordless sudo unavailable
+WARN: microVM: guest cannot reach PII proxy at 172.16.0.1:<port>
+INFO: microVM: configure NOPASSWD for iptables/sysctl OR launch without --pii-proxy
+```
+
+Configure NOPASSWD via `visudo`, e.g.:
+
+```
+%iclaude ALL=(root) NOPASSWD: "[PASSWORD_REDACTED]" /usr/sbin/sysctl, /usr/sbin/ip
+```
+
+Adjust paths via `command -v iptables sysctl ip` — locations vary across distros (e.g. `/sbin/iptables` vs `/usr/sbin/iptables`). Required commands: `iptables`, `sysctl`, `ip`.
+
+### Stale iptables rules after crash
+
+If iclaude was killed via `kill -9` or the host crashed, DNAT rules may persist. They are removed automatically the next time iclaude launches with `--pii-proxy --sandbox-microvm` (sweep on start).
+
+To remove them manually:
+
+```bash
+while sudo iptables -t nat -L PREROUTING --line-numbers -n | grep -q iclaude-pii-dnat; do
+    L=$(sudo iptables -t nat -L PREROUTING --line-numbers -n | awk '/iclaude-pii-dnat/ {print $1; exit}')
+    sudo iptables -t nat -D PREROUTING "$L"
+done
+```
