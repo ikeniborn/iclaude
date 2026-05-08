@@ -612,6 +612,22 @@ fi
                 USE_MICRO_VM_FLAG=true
                 shift
                 ;;
+            --e2e-exit-after-boot)
+                if [[ "${ICLAUDE_E2E_HEADLESS:-0}" != "1" ]]; then
+                    echo "ERROR: --e2e-exit-after-boot requires ICLAUDE_E2E_HEADLESS=1" >&2
+                    exit 2
+                fi
+                ICLAUDE_E2E_EXIT_AFTER_BOOT=1
+                shift
+                ;;
+            --e2e-kill-after-boot)
+                if [[ "${ICLAUDE_E2E_HEADLESS:-0}" != "1" ]]; then
+                    echo "ERROR: --e2e-kill-after-boot requires ICLAUDE_E2E_HEADLESS=1" >&2
+                    exit 2
+                fi
+                ICLAUDE_E2E_KILL_AFTER_BOOT=1
+                shift
+                ;;
             --no-attribution-header)
                 NO_ATTRIBUTION_HEADER=true
                 shift
