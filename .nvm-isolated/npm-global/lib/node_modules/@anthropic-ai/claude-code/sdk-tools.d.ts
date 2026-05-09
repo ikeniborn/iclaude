@@ -260,7 +260,15 @@ export type ListMcpResourcesOutput = {
 /**
  * MCP tool execution result
  */
-export type McpOutput = string;
+export type McpOutput =
+  | string
+  | {
+      type: string;
+      [k: string]: unknown;
+    }[]
+  | {
+      [k: string]: unknown;
+    };
 
 export interface AgentInput {
   /**
