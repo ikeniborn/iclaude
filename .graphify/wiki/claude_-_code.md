@@ -1,10 +1,10 @@
-# firecracker
+# claude / code
 
 > 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Firecracker VMM** (0 connections) — `docs/architecture/diagrams/data-flow-microvm-launch.md`
+- **Claude Code CLI** (0 connections) — `CLAUDE.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/architecture/diagrams/data-flow-microvm-launch.md`
+- `CLAUDE.md`
 
 ## Audit Trail
 

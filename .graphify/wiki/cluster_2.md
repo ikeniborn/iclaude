@@ -1,4 +1,4 @@
-# cluster_3
+# cluster_2
 
 > 27 nodes · cohesion 0.11
 
@@ -33,7 +33,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[vendored / graphify]] (76 shared connections)
 
 ## Source Files
 

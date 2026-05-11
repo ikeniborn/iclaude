@@ -33,7 +33,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[cluster_2]] (96 shared connections)
+- [[vendored / graphify]] (3 shared connections)
 
 ## Source Files
 
