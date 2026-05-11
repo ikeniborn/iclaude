@@ -1,0 +1,20 @@
+---
+type: community
+cohesion: 1.00
+members: 1
+---
+
+# router / documentation
+
+**Cohesion:** 1.00 - tightly connected
+**Members:** 1 nodes
+
+## Members
+- [[Router Documentation]] - document - docs/functions/ROUTER.md
+
+## Live Query (requires Dataview plugin)
+
+```dataview
+TABLE source_file, type FROM #community/router_/_documentation
+SORT file.name ASC
+```

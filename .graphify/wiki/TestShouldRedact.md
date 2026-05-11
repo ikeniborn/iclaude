@@ -2,8 +2,6 @@
 
 > God node · 21 connections · `tests/test_patterns_examples.py`
 
-**Community:** [[Security Pattern Tests]]
-
 ## Connections by Relation
 
 ### contains

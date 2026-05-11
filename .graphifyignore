@@ -1,0 +1,7 @@
+# Implementation plans and design specs — generate noise (bash snippets as nodes)
+docs/superpowers/plans/
+docs/superpowers/specs/
+
+# Test phase summaries — noisy markdown with code blocks
+tests/phase1-summary.md
+tests/phase2-summary.md
