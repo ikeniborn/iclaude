@@ -59,6 +59,10 @@
     "mtime": 1778260630.7561793,
     "hash": "fd47a7c4f4afd553d0cc514b589ec6ed"
   },
+  "docs/superpowers/specs/2026-05-11-ccr-reasoning-transformer-design.md": {
+    "mtime": 1778519433.2351635,
+    "hash": "ad9f7bec730c5df8c3879b1b6c41d277"
+  },
   "docs/superpowers/specs/2026-05-07-pii-shared-detach-design.md": {
     "mtime": 1778162932.786613,
     "hash": "ea90a2ca4e3f978d6fba6a0637bc9137"
@@ -134,6 +138,10 @@
   "docs/superpowers/plans/2026-05-06-graphify-integration.md": {
     "mtime": 1778100314.8294332,
     "hash": "5793047e8e29548d42ca91b21029d89b"
+  },
+  "docs/superpowers/plans/2026-05-11-ccr-reasoning-transformer.md": {
+    "mtime": 1778520546.9338899,
+    "hash": "213076b33f5224c5d78965308951f47a"
   },
   "docs/superpowers/plans/2026-05-05-skip-permissions-config.md": {
     "mtime": 1778100314.8294332,
