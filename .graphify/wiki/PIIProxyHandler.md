@@ -2,12 +2,10 @@
 
 > God node · 20 connections · `lib/pii-proxy/server.py`
 
-**Community:** [[PII Proxy Server]]
-
 ## Connections by Relation
 
 ### contains
-- [[server.py]] `EXTRACTED`
+- [[PII Proxy Server]] `EXTRACTED`
 
 ### method
 - [[._proxy_passthrough()]] `EXTRACTED`
