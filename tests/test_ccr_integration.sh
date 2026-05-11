@@ -115,6 +115,17 @@ fi
 # Response must contain "content" key
 if echo "$HTTP_BODY" | grep -q '"content"'; then
     pass "CCR routed request successfully (status $HTTP_STATUS, response contains 'content')"
+    # Check that text content is non-empty (reasoning transformer plugin working)
+    TEXT=$(echo "$HTTP_BODY" | python3 -c "
+import json,sys
+r=json.load(sys.stdin)
+print(' '.join(b.get('text','') for b in r.get('content',[]) if b.get('type')=='text'))
+" 2>/dev/null || true)
+    if [[ -n "${TEXT// /}" ]]; then
+        pass "Text content non-empty (reasoning→content transform working)"
+    else
+        echo "WARN: 'content' key present but text blocks empty — plugin may not be active" >&2
+    fi
 else
     echo "ERROR: Response body: $HTTP_BODY" >&2
     fail "Response does not contain 'content' key (status $HTTP_STATUS)"
