@@ -35,7 +35,7 @@ Result: Claude Code gets both `delta.content` (text) and thinking blocks.
 |------|--------|----------------|
 | `.nvm-isolated/.claude-isolated/.claude-code-router/plugins/ollama-reasoning.js` | Create | CCR transformer class |
 | `.nvm-isolated/.claude-isolated/router.json` | Modify | Add `transformers` key + wire into `use` arrays |
-| `.nvm-isolated/.claude-isolated/.claude-code-router/config.json` | Auto-update | Regenerated from `router.json` on each CCR restart (no manual edit needed) |
+| `.nvm-isolated/.claude-isolated/.claude-code-router/config.json` | Copied | Copied from `router.json` by `iclaude --router` launcher or manually in Task 3 Step 2 |
 
 ---
 
@@ -44,9 +44,10 @@ Result: Claude Code gets both `delta.content` (text) and thinking blocks.
 **Files:**
 - Create: `.nvm-isolated/.claude-isolated/.claude-code-router/plugins/ollama-reasoning.js`
 
-- [ ] **Step 1: Create plugin directory (already exists, verify)**
+- [ ] **Step 1: Create plugin directory**
 
 ```bash
+mkdir -p .nvm-isolated/.claude-isolated/.claude-code-router/plugins/
 ls .nvm-isolated/.claude-isolated/.claude-code-router/plugins/
 ```
 
@@ -184,7 +185,9 @@ name: ollama-reasoning | transformResponseOut: function
 
 CCR requires TWO changes:
 1. `"transformers"` at root — tells CCR to load and register the plugin by name
-2. `"ollama-reasoning"` added to `transformer.use` arrays — tells CCR to apply it in the pipeline
+2. `"ollama-reasoning"` added to the provider-level `transformer.use` — tells CCR to apply it in the pipeline
+
+**Important:** add `"ollama-reasoning"` ONLY to `Providers[0].transformer.use` (provider-level), NOT to the per-model arrays. `dD()` applies BOTH provider-level `use` AND per-model `use` sequentially. Adding to both causes a double-run: first on raw Ollama SSE (correct), second on the already-processed Anthropic format (no-op but wasteful). Provider-level is sufficient — it covers all models.
 
 The path in `"transformers"` must be absolute (CCR's `require.resolve` resolves relative to its own `dist/` directory, not to the config file).
 
@@ -222,12 +225,9 @@ jq --arg path "$PLUGIN_PATH" '
   # 1. Add transformers registration at root
   . + {"transformers": [{"path": $path}]} |
 
-  # 2. Wire into default provider transformer.use (append last = runs first)
-  .Providers[0].transformer.use += ["ollama-reasoning"] |
-
-  # 3. Wire into per-model use arrays (kimi and deepseek)
-  .Providers[0].transformer["kimi-k2.6:cloud"].use += ["ollama-reasoning"] |
-  .Providers[0].transformer["deepseek-v4-flash:cloud"].use += ["ollama-reasoning"]
+  # 2. Wire into provider-level transformer.use ONLY (append last = runs first due to reverse order)
+  # Do NOT add to per-model arrays — dD() applies both chains; adding to both causes double-run
+  .Providers[0].transformer.use += ["ollama-reasoning"]
 ' .nvm-isolated/.claude-isolated/router.json \
   > /tmp/router-new.json && \
   mv /tmp/router-new.json .nvm-isolated/.claude-isolated/router.json
@@ -243,12 +243,12 @@ jq '{
 }' .nvm-isolated/.claude-isolated/router.json
 ```
 
-Expected:
+Expected — `provider_use` has `"ollama-reasoning"` at end; `kimi_use` does NOT:
 ```json
 {
   "transformers": [{"path": "/abs/path/.../ollama-reasoning.js"}],
   "provider_use": ["reasoning", ["sampling", {...}], "ollama-reasoning"],
-  "kimi_use": ["reasoning", ["sampling", {...}], "ollama-reasoning"]
+  "kimi_use": ["reasoning", ["sampling", {...}]]
 }
 ```
 
@@ -275,7 +275,7 @@ cp .nvm-isolated/.claude-isolated/router.json \
    "$CCR_HOME/.claude-code-router/config.json"
 ```
 
-- [ ] **Step 3: Start CCR and capture startup log**
+- [ ] **Step 3: Start CCR and wait for startup**
 
 ```bash
 CCR_CMD=".nvm-isolated/npm-global/bin/ccr"
@@ -283,10 +283,21 @@ CCR_HOME="$(pwd)/.nvm-isolated/.claude-isolated"
 HOME="$CCR_HOME" "$CCR_CMD" start > /tmp/ccr-plugin-test.log 2>&1 &
 CCR_PID=$!
 sleep 3
-cat /tmp/ccr-plugin-test.log
 ```
 
-Expected log must contain:
+- [ ] **Step 4: Check plugin registration in CCR log file**
+
+CCR logs to `$CCR_HOME/.claude-code-router/logs/app.log`, not to stdout:
+
+```bash
+CCR_HOME="$(pwd)/.nvm-isolated/.claude-isolated"
+LOG="$CCR_HOME/.claude-code-router/logs/app.log"
+echo "=== stdout/stderr ===" && cat /tmp/ccr-plugin-test.log
+echo "=== app.log ===" && tail -30 "$LOG" 2>/dev/null || echo "(log not found)"
+grep -i 'ollama-reasoning\|load transformer.*error' "$LOG" 2>/dev/null || echo "(no match in log)"
+```
+
+Expected: log contains:
 ```
 register transformer: ollama-reasoning
 ```
@@ -296,7 +307,7 @@ Must NOT contain:
 load transformer (.../ollama-reasoning.js) error:
 ```
 
-- [ ] **Step 4: Verify CCR is responding**
+- [ ] **Step 5: Verify CCR is responding**
 
 ```bash
 (: >/dev/tcp/127.0.0.1/3456) 2>/dev/null && echo "CCR up" || echo "CCR not responding"
@@ -324,7 +335,7 @@ RESPONSE=$(curl -s \
 echo "$RESPONSE"
 ```
 
-Note: model `claude-sonnet-4-5` routes to `default` slot → `ollama,kimi-k2.6:cloud` (or whichever is configured). If the router slot is deepseek, adjust accordingly.
+Note: model `claude-sonnet-4-5` routes to `default` slot → `ollama,kimi-k2.6:cloud` (verified in current router.json). kimi is a reasoning model — the plugin is specifically needed here.
 
 - [ ] **Step 2: Assert response has non-empty content**
 
@@ -494,7 +505,7 @@ Expected: commit at HEAD for `test_ccr_integration.sh`.
 | Universal for all ollama models (passthrough if no reasoning) | Task 1 (conditional copy only when reasoning non-empty and content empty) |
 | Thinking blocks preserved (copy not move) | Task 1 (`delta.reasoning` unchanged) |
 | Registered in `router.json` via `transformers` array | Task 2 |
-| Wired into `transformer.use` per-provider and per-model | Task 2 |
+| Wired into `transformer.use` at provider level only (not per-model — avoids double-run) | Task 2 |
 | Runs before `reasoning` transformer (raw Ollama format) | Task 2 (placed last in `use` array → runs first due to reverse order) |
 | Plugin load verified in CCR startup log | Task 3 |
 | End-to-end test with kimi-k2.6:cloud | Task 4 |
@@ -506,6 +517,10 @@ Expected: commit at HEAD for `test_ccr_integration.sh`.
 ## Notes for Implementer
 
 **Execution order subtlety:** CCR applies `transformer.use` in **reverse order** (`Array.from(use).reverse()` in `dD()`). Placing `"ollama-reasoning"` **last** in the array means it runs **first** on the raw Ollama SSE stream.
+
+**Double-run avoidance:** `dD()` applies provider-level `transformer.use` AND then per-model `transformer["model"].use` independently. Adding `"ollama-reasoning"` to both would run it twice. Provider-level alone is sufficient and correct.
+
+**Plugin is a class, not a plain object:** The design spec shows a plain object (`module.exports = { name: ..., transformResponseOut() {} }`) — that was written before the CCR bundle was analyzed. CCR does `new T(options)`, so a plain object would throw `TypeError: t is not a constructor`. Use the class as written in the plan.
 
 **Path resolution:** CCR's `registerTransformerFromConfig` calls `require.resolve(e.path)`. Relative paths resolve relative to CCR's `dist/` directory, not the config file location. Use absolute path in `router.json`.
 
