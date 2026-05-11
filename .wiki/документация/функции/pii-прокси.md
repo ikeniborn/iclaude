@@ -7,7 +7,7 @@ wiki_sources:
   - "docs/superpowers/plans/2026-05-07-pii-shared-detach.md"
   - "lib/launcher/launch.sh"
   - "tests/test_pii_shared_detach.sh"
-wiki_updated: 2026-05-07
+wiki_updated: 2026-05-11
 wiki_status: developing
 wiki_outgoing_links:
   - "[[presidio|Microsoft Presidio]]"
@@ -99,7 +99,9 @@ Claude Code → PreToolUse
 
 ### Активация
 
-Shared mode включается автоматически, когда PII-прокси запускается без CCR (`CCR_SESSION_OWNED != true`). Сессия с CCR продолжает поднимать собственный per-session прокси.
+Shared mode включается автоматически, когда `ANTHROPIC_BASE_URL` не указывает на CCR (`CCR_UPSTREAM_ACTIVE != true`). Сессия с CCR (в любом режиме — владелец или переиспользователь) всегда поднимает собственный per-session прокси.
+
+> **Изменение 2026-05-11.** До этого охранное условие проверяло `CCR_SESSION_OWNED != true`. Это создавало баг: при переиспользовании уже запущенного CCR-демона другой сессией `CCR_SESSION_OWNED` был `false`, и `start_pii_proxy_server()` присоединялась к shared proxy с неверным upstream (`api.anthropic.com` вместо `http://CCR:3456`), обходя CCR целиком. Исправление: `start_ccr_server()` теперь экспортирует `CCR_UPSTREAM_ACTIVE=true` в обоих путях (свежий старт и переиспользование); охранное условие изменено на `CCR_UPSTREAM_ACTIVE`. Подробнее: [[маршрутизатор-ccr#Баг 3: обход CCR в --router --pii-proxy при переиспользовании демона|Баг 3 в маршрутизатор-ccr]].
 
 ### Состояния `PII_PROXY_SESSION_OWNED`
 
@@ -202,3 +204,24 @@ PII_PROXY_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}" \
 | `ICLAUDE_PII_MASKING_LEVEL` | Уровень маскирования |
 | `ICLAUDE_PII_ACTIVE_PORT` | Порт для curl к `/api/metrics` |
 | `ICLAUDE_PII_LOG_PATH` | Путь к лог-файлу сессии |
+
+## Фоновые утилиты очистки (launch.sh)
+
+### `cleanup_orphaned_pii_proxies`
+
+Вызывается в начале `start_pii_proxy_server`. Выполняет три sweep-прохода:
+
+1. **Legacy sweep** — старые PID-файлы в корне `ISOLATED_CONFIG_DIR` (формат до `pii-proxy-pid/`). Мёртвые удаляет, живые оставляет (их сессии ещё держат `PII_PROXY_PID_FILE` на этот путь).
+2. **Per-session sweep** — PID-файлы в `pii-proxy-pid/*.pid`. Удаляет записи с мёртвыми PID или PID, переиспользованным несвязанным процессом (проверка через `ps -o cmd=`).
+3. **Log rotation** — удаляет `*.log` в `pii-proxy-logs/` старше `PII_LOG_RETENTION_DAYS` (по умолчанию 7 дней). Исключения: `access.log` и `ccr-daemon.log` (агрегирующие, не ротируются).
+
+### `cleanup_stale_session_env`
+
+Вызывается один раз при каждом `launch_claude()`. Убирает устаревшие директории `CLAUDE_CONFIG_DIR/session-env/{SID}/`:
+
+| Тип директории | Удалять после |
+|----------------|---------------|
+| Пустая | `SESSION_ENV_RETENTION_DAYS` (по умолч. 7 дней) |
+| Непустая | `SESSION_ENV_RETENTION_DAYS × 4` (по умолч. 28 дней) |
+
+Безопасно для параллельных сессий: активные директории имеют свежий mtime.

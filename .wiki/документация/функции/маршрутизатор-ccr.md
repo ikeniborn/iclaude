@@ -3,7 +3,13 @@ wiki_sources:
   - "docs/functions/ROUTER.md"
   - "docs/functions/USE_CASES.md"
   - "docs/functions/CONFIGURATION.md"
-wiki_updated: 2026-05-06
+  - "lib/launcher/launch.sh"
+  - "docs/superpowers/specs/2026-05-11-ccr-integration-verify-design.md"
+  - "docs/superpowers/plans/2026-05-11-ccr-integration-verify.md"
+  - "lib/router/status.sh"
+  - ".nvm-isolated/.claude-isolated/router.json"
+  - "tests/test_ccr_integration.sh"
+wiki_updated: 2026-05-11
 wiki_status: developing
 wiki_outgoing_links:
   - "[[ollama|Ollama]]"
@@ -103,3 +109,61 @@ ccr stop
 # или вручную:
 kill $(cat ~/.claude-code-router/.claude-code-router.pid)
 ```
+
+## Комбинированный режим: CCR + PII proxy (launch.sh)
+
+В режиме `--router --pii-proxy` `exec ccr code` невозможен — нужно держать оба сервера живыми. `launch_claude()` в `lib/launcher/launch.sh` управляет этим через `start_ccr_server`:
+
+```
+start_ccr_server  → ANTHROPIC_BASE_URL=http://CCR:PORT
+start_pii_proxy_server → читает ANTHROPIC_BASE_URL как upstream → ANTHROPIC_BASE_URL=http://PII:PORT
+claude binary → PII proxy → CCR → providers
+```
+
+### `start_ccr_server` (lib/launcher/launch.sh)
+
+Запускает CCR как фоновый демон через `ccr start` (не `ccr code`). Перед запуском проверяет порт через `/dev/tcp` — если занят, переиспользует существующий сервер (`CCR_SESSION_OWNED=false`).
+
+| Глобал | Значение |
+|--------|----------|
+| `CCR_PID` | PID запущенного демона |
+| `CCR_SESSION_OWNED` | `true` — сессия запустила CCR; `false` — переиспользование |
+| `CCR_UPSTREAM_ACTIVE` | `true` — `ANTHROPIC_BASE_URL` указывает на CCR; экспортируется в **обоих** путях (fix 2026-05-11) |
+
+Готовность: `bash /dev/tcp` polling, max 5s (10 × 0.5s).
+
+**`CCR_HOME`**: `launch_claude` устанавливает `CCR_HOME` на `.nvm-isolated/.claude-isolated` (если isolated env активен) так, что CCR хранит PID-файл, логи и конфиг вне `~/.claude-code-router/`.
+
+### `stop_ccr_server`
+
+Срабатывает по `EXIT/INT/TERM` trap. Убивает CCR только если `CCR_SESSION_OWNED=true`. Graceful shutdown: SIGTERM → wait 1s → SIGKILL fallback.
+
+## Исправления багов CCR (2026-05-11)
+
+Три бага в интеграции CCR были выявлены и исправлены (коммит после планa `2026-05-11-ccr-integration-verify`).
+
+### Баг 1: флаг версии `--version` → `-v` (`lib/router/status.sh:34`)
+
+`lib/router/status.sh` вызывал `ccr --version` для определения версии CCR, но CCR v2.0.0 не поддерживает `--version` — команда выводит справку и завершается с кодом 1. Из-за `pipefail` вся строка падала, `|| echo "unknown"` срабатывал, и в статуслайне версия отображалась двумя сломанными строками. Исправление: `ccr -v` (выводит `claude-code-router version: 2.0.0`, завершается с кодом 0).
+
+### Баг 2: формат слотов `think`/`longContext` в `router.json`
+
+Слоты `think` и `longContext` в `.nvm-isolated/.claude-isolated/router.json` содержали `"deepseek-v4-flash:cloud"` без обязательного префикса провайдера. CCR не мог маршрутизировать запросы к этим слотам. Исправление: добавлен префикс `ollama,` — `"ollama,deepseek-v4-flash:cloud"`. Формат `"провайдер,модель"` обязателен для всех ненативных (не Anthropic) слотов.
+
+### Баг 3: обход CCR в `--router --pii-proxy` при переиспользовании демона (`lib/launcher/launch.sh`)
+
+Когда CCR уже запущен другой сессией, `start_ccr_server()` устанавливал только `CCR_SESSION_OWNED=false`. Функция `start_pii_proxy_server()` использовала эту переменную как охранное условие для shared proxy: `CCR_SESSION_OWNED != true` означало «shared разрешён» — и прокси присоединялся к существующему shared-экземпляру, у которого upstream был `api.anthropic.com` (выставлен предыдущей `--pii-proxy`-сессией). Трафик шёл `claude → shared_proxy → api.anthropic.com`, минуя CCR.
+
+Исправление: введена переменная `CCR_UPSTREAM_ACTIVE=true`, которая экспортируется в **обоих** путях `start_ccr_server()` — как при свежем запуске (`CCR_SESSION_OWNED=true`), так и при переиспользовании (`CCR_SESSION_OWNED=false`). Охранное условие в `start_pii_proxy_server()` изменено с `CCR_SESSION_OWNED != true` на `CCR_UPSTREAM_ACTIVE != true`. `stop_ccr_server()` по-прежнему проверяет `CCR_SESSION_OWNED` — не меняется (убивать CCR нужно только если эта сессия его запустила).
+
+## E2E тест (`tests/test_ccr_integration.sh`)
+
+Bash-скрипт для сквозной проверки CCR с Ollama cloud-моделями. Запуск: `bash tests/test_ccr_integration.sh`.
+
+| Код выхода | Условие |
+|:----------:|---------|
+| `0` | CCR маршрутизировал запрос, ответ содержит `"content"` |
+| `1` | CCR запущен, но запрос не прошёл (сетевая ошибка, модель недоступна) |
+| `77` | CCR не установлен или `ollama signin` не выполнен (skip, не ошибка) |
+
+Тест запускает CCR (`ccr start`), ждёт готовности порта 3456 (max 10s), делает POST на `/v1/messages` с моделью `claude-sonnet-4-5` (роутится в `default` слот), проверяет наличие `"content"` в ответе. HTTP 401 трактуется как skip (ollama не авторизован).

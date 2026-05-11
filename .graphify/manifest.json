@@ -95,6 +95,10 @@
     "mtime": 1778159397.3300302,
     "hash": "153a2d8a88d7f69c17727143415d779d"
   },
+  "docs/superpowers/specs/2026-05-11-ccr-integration-verify-design.md": {
+    "mtime": 1778507133.6039255,
+    "hash": "f06496778eca457198229347a751ba05"
+  },
   "docs/superpowers/specs/2026-04-29-verify-dialogue-design.md": {
     "mtime": 1778100314.8294332,
     "hash": "763e6e5906066881ce81a0051eb8d9cf"
@@ -182,6 +186,10 @@
   "docs/superpowers/plans/2026-04-29-verify-dialogue.md": {
     "mtime": 1778100314.8293583,
     "hash": "f0979ea599b03d20e39fba1c235aad26"
+  },
+  "docs/superpowers/plans/2026-05-11-ccr-integration-verify.md": {
+    "mtime": 1778508540.5703006,
+    "hash": "3fdf470e3d5492fad424c87a5268585d"
   },
   "docs/functions/ROUTER.md": {
     "mtime": 1778100314.8286858,
