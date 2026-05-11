@@ -31,7 +31,7 @@ check_router_status() {
 	print_success "Router installed: $ccr_cmd"
 
 	# Show version
-	local router_version=$("$ccr_cmd" --version 2>/dev/null | head -1 || echo "unknown")
+	local router_version=$("$ccr_cmd" -v 2>/dev/null | head -1 || echo "unknown")
 	if [[ "$router_version" != "unknown" ]]; then
 		echo "  Version: $router_version"
 	fi

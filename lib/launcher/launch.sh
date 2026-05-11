@@ -937,8 +937,13 @@ except Exception:
     # Shared proxy mode (non-CCR only): attach to existing shared proxy or start one.
     # All clean-PII sessions share one Python process to avoid loading Presidio NLP
     # multiple times. A flock on shared.lock serializes start/stop decisions.
-    # CCR sessions (CCR_SESSION_OWNED=true) bypass this and start a per-session proxy.
-    if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]]; then
+    # CCR sessions bypass this and always start a per-session proxy, even when they
+    # reused an existing CCR daemon (CCR_SESSION_OWNED=false). CCR_UPSTREAM_ACTIVE is
+    # set by start_ccr_server() in both the fresh-start and reuse paths — it signals
+    # that ANTHROPIC_BASE_URL points to CCR and a per-session proxy is required.
+    # Without this, a reused-CCR session would attach to a shared proxy whose upstream
+    # was baked as api.anthropic.com by an earlier --pii-proxy session, bypassing CCR.
+    if [[ "${CCR_UPSTREAM_ACTIVE:-false}" != "true" ]]; then
         local _shared_lock="${PII_PROXY_PID_DIR}/shared.lock"
         local _shared_pid_file="${PII_PROXY_PID_DIR}/shared.pid"
         local _shared_port_file="${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
@@ -1206,8 +1211,10 @@ start_ccr_server() {
     if (: >/dev/tcp/"$CCR_HOST"/"$CCR_PORT") 2>/dev/null; then
         print_info "CCR router: reusing existing instance on ${CCR_HOST}:${CCR_PORT}"
         CCR_SESSION_OWNED=false
+        CCR_UPSTREAM_ACTIVE=true
         # Set ANTHROPIC_BASE_URL so start_pii_proxy_server() captures CCR as upstream_url
         export ANTHROPIC_BASE_URL="http://${CCR_HOST}:${CCR_PORT}"
+        export CCR_UPSTREAM_ACTIVE
         return 0
     fi
 
@@ -1218,7 +1225,8 @@ start_ccr_server() {
     HOME="${CCR_HOME:-$HOME}" nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
     CCR_PID=$!
     CCR_SESSION_OWNED=true
-    export CCR_PID CCR_SESSION_OWNED
+    CCR_UPSTREAM_ACTIVE=true
+    export CCR_PID CCR_SESSION_OWNED CCR_UPSTREAM_ACTIVE
 
     # Wait for CCR to be ready (max 10 × 0.5s = 5 seconds) via bash /dev/tcp health check
     local max_ticks=10
