@@ -272,3 +272,24 @@
 **Пропущено:** 8 SKILL.md (agent-builder, architecture-documentation, context-awareness, git-workflow, graphify, mermaid-obsidian, prd-generator, prompt-verifier) — нет существующих wiki-страниц, single-source каждой из этих сущностей даёт только 1 упоминание (min_mentions_for_page=2 для типа «скилл»), CREATE не сработает.
 
 **Примечание:** Коммит 0dba184 — переписывание `description:` frontmatter в 9 SKILL.md для устранения triggers overlap (audit от 2026-05-08). Функциональность скиллов не менялась — только метаданные маршрутизации. Для llm-wiki это UPDATE (изменился источник, страница есть). Для остальных — SKIP до накопления второго источника. Если в будущем потребуется отдельная страница «skills-маршрутизация», audit-документ достаточен как HLD-источник.
+
+---
+
+## 2026-05-11T00:00:00
+
+**Операция:** ingest
+**Источник:** lib/launcher/launch.sh
+**Домен:** документация
+
+**Затронуто страниц:** 4
+
+- СОЗДАНА: `документация/архитектура/launch-claude.md` (stub) — entity_type: архитектурный-компонент; функция `launch_claude()` + все вспомогательные публичные функции файла
+- ОБНОВЛЕНА: `документация/функции/маршрутизатор-ccr.md` (developing) — добавлен раздел «Комбинированный режим: CCR + PII proxy»; описаны `start_ccr_server`/`stop_ccr_server`, `CCR_HOME`, `CCR_SESSION_OWNED`, `CCR_UPSTREAM_ACTIVE`; lib/launcher/launch.sh добавлен в wiki_sources
+- ОБНОВЛЕНА: `документация/функции/pii-прокси.md` (developing) — добавлен раздел «Фоновые утилиты очистки»: `cleanup_orphaned_pii_proxies` (3 sweep: legacy, per-session, log rotation) и `cleanup_stale_session_env` (session-env/ directories)
+- ОБНОВЛЕНА: `документация/архитектура/модульная-структура.md` (developing) — расширено описание launch.sh с ветвями запуска; lib/launcher/launch.sh добавлен в wiki_sources; ссылка на новую [[launch-claude]]
+
+**Пропущено:**
+- `_sync_graphify_env_to_settings`, `_sweep_dead_pii_consumers`, `_register_pii_consumer` — private helpers (ведущий `_`), SKIP по bash reader rules
+- `stop_pii_proxy_server` — документирован в pii-прокси.md через ранний ingest spec/plan (2026-05-07), нет новых фактов
+
+---
