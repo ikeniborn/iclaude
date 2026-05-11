@@ -17,7 +17,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[graphify / patches]] (18 shared connections)
+- [[redacted / should]] (3 shared connections)
+- [[should / string]] (1 shared connections)
 
 ## Source Files
 

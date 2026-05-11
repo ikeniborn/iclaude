@@ -25,7 +25,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[simple]] (34 shared connections)
+- [[redacted / should]] (8 shared connections)
+- [[should / string]] (1 shared connections)
 
 ## Source Files
 

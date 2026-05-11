@@ -2,6 +2,8 @@
 
 > God node · 10 connections · `tests/test_patterns_examples.py`
 
+**Community:** [[документирует]]
+
 ## Connections by Relation
 
 ### contains

@@ -23,7 +23,10 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[should / string]] (40 shared connections)
+- [[redacted / should]] (3 shared connections)
+- [[graphify / patches]] (1 shared connections)
+- [[документирует]] (1 shared connections)
 
 ## Source Files
 

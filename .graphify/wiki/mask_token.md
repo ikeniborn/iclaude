@@ -24,7 +24,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[документирует]] (44 shared connections)
+- [[should / string]] (1 shared connections)
 
 ## Source Files
 
