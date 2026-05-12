@@ -1,10 +1,10 @@
-# cluster_4
+# cluster_8
 
-> 27 nodes · cohesion 0.11
+> 25 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **server.py** (17 connections) — `lib/pii-proxy/server.py`
+- **server.py** (15 connections) — `lib/pii-proxy/server.py`
 - **presidio_mask()** (8 connections) — `lib/pii-proxy/server.py`
 - **mask_request_body()** (6 connections) — `lib/pii-proxy/server.py`
 - **mask_content_block()** (5 connections) — `lib/pii-proxy/server.py`
@@ -29,7 +29,6 @@
 - **Mask a single content block. Returns (masked_block, [found_descriptions]).** (1 connections) — `lib/pii-proxy/server.py`
 - **Prefix each found description with field location (used in debug logging).** (1 connections) — `lib/pii-proxy/server.py`
 - **Mask PII in user messages and assistant tool_use inputs only.      Masking scope** (1 connections) — `lib/pii-proxy/server.py`
-- *... and 2 more nodes in this community*
 
 ## Relationships
 
@@ -38,13 +37,11 @@
 ## Source Files
 
 - `lib/pii-proxy/server.py`
-- `tests/test-quality-analysis.py`
-- `tests/test_patterns_examples.py`
 
 ## Audit Trail
 
-- EXTRACTED: 75 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 75 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

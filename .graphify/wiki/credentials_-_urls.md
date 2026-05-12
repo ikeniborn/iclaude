@@ -1,11 +1,11 @@
-# passwords / config
+# credentials / urls
 
 > 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **.test_password_in_config()** (3 connections) — `tests/test_patterns_examples.py`
-- **Passwords in config files should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **.test_url_credentials()** (3 connections) — `tests/test_patterns_examples.py`
+- **Credentials in URLs should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 

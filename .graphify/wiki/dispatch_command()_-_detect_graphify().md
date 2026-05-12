@@ -1,6 +1,6 @@
 # dispatch_command() / detect_graphify()
 
-> 52 nodes · cohesion 0.07
+> 60 nodes · cohesion 0.06
 
 ## Key Concepts
 
@@ -8,6 +8,7 @@
 - **launch_claude()** (15 connections) — `lib/launcher/launch.sh`
 - **start_pii_proxy_server()** (9 connections) — `lib/launcher/launch.sh`
 - **ISOLATED_NVM_DIR (env var)** (9 connections) — `lib/nvm/setup.sh`
+- **repair_isolated_environment()** (8 connections) — `lib/nvm/repair.sh`
 - **setup_isolated_nvm()** (8 connections) — `lib/nvm/setup.sh`
 - **install_from_lockfile()** (7 connections) — `lib/lockfile/install.sh`
 - **install_graphify()** (6 connections) — `lib/graphify/install.sh`
@@ -24,12 +25,11 @@
 - **install_isolated_nvm()** (4 connections) — `lib/nvm/install.sh`
 - **GRAPHIFY_OUT (env var)** (4 connections) — `iclaude.sh`
 - **GRAPHIFY_TOOL_DIR (env var)** (4 connections) — `lib/graphify/install.sh`
+- **PII_PROXY_VENV (env var)** (4 connections) — `lib/pii-proxy/detect.sh`
 - **_graphify_resolve_proxy()** (3 connections) — `lib/graphify/install.sh`
 - **_graphify_resolve_uv()** (3 connections) — `lib/graphify/install.sh`
 - **get_nvm_claude_path()** (3 connections) — `lib/nvm/detect.sh`
-- **ISOLATED_LOCKFILE (env var)** (3 connections) — `lib/lockfile/save.sh`
-- **stop_pii_proxy_server()** (2 connections) — `lib/launcher/launch.sh`
-- *... and 27 more nodes in this community*
+- *... and 35 more nodes in this community*
 
 ## Relationships
 
@@ -51,6 +51,7 @@
 - `lib/nvm/cleanup.sh`
 - `lib/nvm/detect.sh`
 - `lib/nvm/install.sh`
+- `lib/nvm/repair.sh`
 - `lib/nvm/setup.sh`
 - `lib/pii-proxy/detect.sh`
 - `lib/pii-proxy/status.sh`
@@ -58,8 +59,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 190 (97%)
-- INFERRED: 5 (3%)
+- EXTRACTED: 209 (98%)
+- INFERRED: 5 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

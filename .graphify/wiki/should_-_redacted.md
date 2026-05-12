@@ -5,23 +5,23 @@
 ## Key Concepts
 
 - **TestShouldRedact** (21 connections) — `tests/test_patterns_examples.py`
-- **.test_anthropic_api_key()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_aws_secret_key()** (3 connections) — `tests/test_patterns_examples.py`
 - **.test_credit_card_visa()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_github_token()** (3 connections) — `tests/test_patterns_examples.py`
 - **.test_google_ai_studio_key()** (3 connections) — `tests/test_patterns_examples.py`
-- **.test_google_ai_studio_key_real()** (3 connections) — `tests/test_patterns_examples.py`
 - **.test_groq_api_key()** (3 connections) — `tests/test_patterns_examples.py`
 - **.test_huggingface_token()** (3 connections) — `tests/test_patterns_examples.py`
-- **.test_stripe_secret_key()** (3 connections) — `tests/test_patterns_examples.py`
-- **.test_stripe_test_key()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_password_in_config()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_pem_private_key()** (3 connections) — `tests/test_patterns_examples.py`
 - **Test cases for patterns that SHOULD be detected and redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **Anthropic API keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 - **Google AI Studio keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **Stripe secret keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **Stripe test keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 - **HuggingFace tokens should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 - **Groq API keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **GitHub tokens should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 - **Visa credit cards should be redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **Google AI Studio keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **PEM private keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **AWS Secret Access Keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Passwords in config files should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 

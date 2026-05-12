@@ -1,11 +1,11 @@
-# private / keys
+# access
 
 > 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **.test_pem_private_key()** (3 connections) — `tests/test_patterns_examples.py`
-- **PEM private keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **.test_aws_access_key()** (3 connections) — `tests/test_patterns_examples.py`
+- **AWS Access Key IDs should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 

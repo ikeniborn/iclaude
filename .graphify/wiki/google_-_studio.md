@@ -1,11 +1,11 @@
-# secret / access
+# google / studio
 
 > 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **.test_aws_secret_key()** (3 connections) — `tests/test_patterns_examples.py`
-- **AWS Secret Access Keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **.test_google_ai_studio_key_real()** (3 connections) — `tests/test_patterns_examples.py`
+- **Google AI Studio keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 

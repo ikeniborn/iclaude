@@ -1,15 +1,15 @@
-# module / core
+# module / proxy
 
 > 8 nodes · cohesion 0.25
 
 ## Key Concepts
 
 - **Lib README** (7 connections) — `lib/README.md`
-- **Core Init Module** (1 connections) — `lib/core/init.sh`
 - **Core JSON Module** (1 connections) — `lib/core/json.sh`
 - **Core Logging Module** (1 connections) — `lib/core/logging.sh`
 - **Core Validation Module** (1 connections) — `lib/core/validation.sh`
 - **Proxy Configure Module** (1 connections) — `lib/proxy/configure.sh`
+- **Proxy Credentials Module** (1 connections) — `lib/proxy/credentials.sh`
 - **Proxy Git Module** (1 connections) — `lib/proxy/git.sh`
 - **Proxy Validation Module** (1 connections) — `lib/proxy/validate.sh`
 
@@ -20,11 +20,11 @@
 ## Source Files
 
 - `lib/README.md`
-- `lib/core/init.sh`
 - `lib/core/json.sh`
 - `lib/core/logging.sh`
 - `lib/core/validation.sh`
 - `lib/proxy/configure.sh`
+- `lib/proxy/credentials.sh`
 - `lib/proxy/git.sh`
 - `lib/proxy/validate.sh`
 

@@ -1,11 +1,11 @@
-# github / tokens
+# node / version
 
 > 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **.test_github_token()** (3 connections) — `tests/test_patterns_examples.py`
-- **GitHub tokens should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Node Version Manager (nvm)** (1 connections) — `.nvm-isolated/README.md`
+- **nvm v0.39.7** (1 connections) — `.nvm-isolated/README.md`
 
 ## Relationships
 
@@ -13,11 +13,11 @@
 
 ## Source Files
 
-- `tests/test_patterns_examples.py`
+- `.nvm-isolated/README.md`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
