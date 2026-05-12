@@ -5,15 +5,15 @@
 ## Key Concepts
 
 - **.redact_text()** (37 connections) — `tests/test_patterns_examples.py`
-- **.test_aws_access_key()** (3 connections) — `tests/test_patterns_examples.py`
 - **.test_generic_secret_in_config()** (3 connections) — `tests/test_patterns_examples.py`
-- **.test_huggingface_token_real()** (3 connections) — `tests/test_patterns_examples.py`
-- **.test_url_credentials()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_groq_api_key_real()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_stripe_secret_key()** (3 connections) — `tests/test_patterns_examples.py`
+- **.test_stripe_test_key()** (3 connections) — `tests/test_patterns_examples.py`
 - **Apply all patterns and return redacted text + found patterns** (1 connections) — `tests/test_patterns_examples.py`
-- **AWS Access Key IDs should be redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **Credentials in URLs should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Stripe secret keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Stripe test keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 - **Generic secret assignments should be redacted** (1 connections) — `tests/test_patterns_examples.py`
-- **HuggingFace tokens should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Groq API keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 

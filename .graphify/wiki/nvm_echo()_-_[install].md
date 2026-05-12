@@ -1,10 +1,10 @@
-# core / initialization
+# nvm_echo() / [install]
 
 > 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Core Initialization Module** (0 connections) — `lib/core/init.sh`
+- **nvm_echo() [install]** (0 connections) — `.nvm-isolated/install.sh`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `lib/core/init.sh`
+- `.nvm-isolated/install.sh`
 
 ## Audit Trail
 

@@ -1,10 +1,10 @@
-# lib/pii-proxy/server.py
+# delete_streaming_state()
 
 > 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **lib/pii-proxy/server.py** (0 connections) — `lib/pii-proxy/server.py`
+- **delete_streaming_state()** (0 connections) — `.nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `lib/pii-proxy/server.py`
+- `.nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh`
 
 ## Audit Trail
 

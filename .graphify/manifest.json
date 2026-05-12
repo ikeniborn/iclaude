@@ -127,6 +127,10 @@
     "mtime": 1774809683.520957,
     "hash": "792fb0c892ccc0ca0b84fc1f0d3c5673"
   },
+  "lib/proxy/credentials.sh": {
+    "mtime": 1778100314.8314052,
+    "hash": "d086fe437b42a22857c61d979a4245c0"
+  },
   "lib/config/status.sh": {
     "mtime": 1774809683.519519,
     "hash": "f2af3e6d8bf51768580662167ae9bbde"
@@ -215,6 +219,106 @@
     "mtime": 1778100314.8314052,
     "hash": "566b021e141a9f526547c9f5ff5805a9"
   },
+  "lib/oauth/token.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "71858b78aae3ae370b258973ccafed65"
+  },
+  ".nvm-isolated/nvm-exec": {
+    "mtime": 1773925649.140255,
+    "hash": "aca21638e05de09fb181f81d7f6a480c"
+  },
+  ".nvm-isolated/install.sh": {
+    "mtime": 1773925646.7483091,
+    "hash": "b75afbe19092d5a3d0f64ec49de1535d"
+  },
+  ".nvm-isolated/nvm.sh": {
+    "mtime": 1773925649.1409235,
+    "hash": "6f66fa6001fc322c0845dc33708d890b"
+  },
+  ".nvm-isolated/.claude-isolated/pii-proxy-server.py": {
+    "mtime": 1778159397.3306575,
+    "hash": "50e988c993c594633536ff1db989d893"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/view-tool-results.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "a549335713f5366bf4c87e38aba17904"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/claude-statusline.sh": {
+    "mtime": 1778100314.257411,
+    "hash": "b1237b317dc4ca4a302cbc55b71bd244"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh": {
+    "mtime": 1774809682.7339554,
+    "hash": "e1998d155aea4d29382c5a8e88e95ce7"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/provider-adapter.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "fefa44dafe9c168803f0ee7a495c661a"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "b84fa15439381fa706ebfd66fb00519e"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-parser.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "95188a93277a3b55a1e592789c2756df"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/pricing-lookup.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "72c890245f1c60bf7e35913358a14483"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/rate-limit.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "0cfe64142b0d0b183faf25282b3ca88b"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-detector.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "89c66a77b49729b0197c85ecccf05500"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/ollama.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "04cb7f3f012984a81093571bb6a9dc98"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/gemini.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "08b1f9d6b511ff533c6a1cc55d5cdf3d"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/generic.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "e8c3f43e2343f8d84ad81c794f8ece1e"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/anthropic.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "6449a01cc3ff3d4bced45391b816c24b"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/openai.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "2e17b11678ad3c7b14180b37a39c49ae"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
+    "mtime": 1778100314.256411,
+    "hash": "0a77df0018325d52608c362754786451"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/redact-secrets.py": {
+    "mtime": 1778159397.3287008,
+    "hash": "0e833c8b062f800c6ca72d97ddc521c5"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
+    "mtime": 1778100314.257411,
+    "hash": "2c88a17ff88451629d3edafe474cfff0"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/block-secrets.py": {
+    "mtime": 1774809682.733874,
+    "hash": "0825548e5a734b876942b07d1321f6ba"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
+    "mtime": 1778100314.256411,
+    "hash": "a0166a65e117ec9ddcec646e481e5185"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
+    "mtime": 1778100314.257411,
+    "hash": "4946e31570eac0b8fe763d429978dbdc"
+  },
   "tests/regression-phase0.sh": {
     "mtime": 1774809683.5223594,
     "hash": "037c62ca56eb94576c2e7f2434ed3c8f"
@@ -302,5 +406,21 @@
   "lib/README.md": {
     "mtime": 1774809683.5182161,
     "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
+  },
+  ".nvm-isolated/README.md": {
+    "mtime": 1773925646.7483091,
+    "hash": "8ee03949b8b2fc164601669da010b4e1"
+  },
+  ".nvm-isolated/LICENSE.md": {
+    "mtime": 1773925646.7483091,
+    "hash": "d9eae036a0f5820f88ab3fa289a9016b"
+  },
+  ".nvm-isolated/.claude-isolated/CLAUDE.md": {
+    "mtime": 1778100314.256411,
+    "hash": "dcadf4bdbb6d0744ac72bb977fc20d99"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/README.md": {
+    "mtime": 1774809682.734205,
+    "hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
   }
 }

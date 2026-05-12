@@ -1,10 +1,11 @@
 # setup_isolated_config() / check_isolated_status()
 
-> 19 nodes · cohesion 0.11
+> 21 nodes · cohesion 0.10
 
 ## Key Concepts
 
 - **ISOLATED_NVM_DIR** (13 connections) — `lib/core/init.sh`
+- **_create_microvm_nvm_image()** (3 connections) — `lib/sandbox/install.sh`
 - **setup_isolated_config()** (2 connections) — `lib/config/isolated.sh`
 - **check_isolated_status()** (2 connections) — `lib/config/status.sh`
 - **detect_ohmyposh_platform()** (2 connections) — `lib/ohmyposh/detect.sh`
@@ -23,6 +24,7 @@
 - **check_update()** (1 connections) — `lib/core/remaining.sh`
 - **create_symlink_only()** (1 connections) — `lib/core/remaining.sh`
 - **install_isolated_router()** (1 connections) — `lib/router/install.sh`
+- **_priv_run()** (1 connections) — `lib/sandbox/install.sh`
 
 ## Relationships
 
@@ -42,10 +44,11 @@
 - `lib/ohmyposh/status.sh`
 - `lib/router/detect.sh`
 - `lib/router/install.sh`
+- `lib/sandbox/install.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 37 (95%)
+- EXTRACTED: 41 (95%)
 - INFERRED: 2 (5%)
 - AMBIGUOUS: 0 (0%)
 

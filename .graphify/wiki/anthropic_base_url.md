@@ -11,6 +11,7 @@
 - **_free_microvm_slot()** (5 connections) — `lib/sandbox/microvm.sh`
 - **_alloc_microvm_slot()** (4 connections) — `lib/sandbox/microvm.sh`
 - **microVM workspace isolation mode test suite** (4 connections) — `tests/test_microvm_workspace.sh`
+- **ICLAUDE_PII_ACTIVE env var** (3 connections) — `lib/core/init.sh`
 - **start_pii_proxy_server()** (3 connections) — `lib/launcher/launch.sh`
 - **_claim_microvm_slot()** (3 connections) — `lib/sandbox/microvm.sh`
 - **configure_guest_environment()** (3 connections) — `lib/sandbox/microvm.sh`
@@ -19,7 +20,6 @@
 - **microVM integration test suite (CLI flags)** (3 connections) — `tests/test_microvm_integration.sh`
 - **PII proxy parallel sessions + security test suite** (3 connections) — `tests/test-pii-parallel.sh`
 - **ANTHROPIC_BASE_URL env var** (2 connections) — `lib/core/init.sh`
-- **ICLAUDE_PII_ACTIVE env var** (2 connections) — `lib/core/init.sh`
 - **_stop_one_vm()** (2 connections) — `tests/test-microvm-dual.sh`
 - **PII shared proxy setsid detach test suite** (2 connections) — `tests/test_pii_shared_detach.sh`
 - **MICRO_VM_ENABLED env var** (1 connections) — `lib/core/init.sh`
@@ -53,7 +53,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 87 (96%)
+- EXTRACTED: 88 (96%)
 - INFERRED: 4 (4%)
 - AMBIGUOUS: 0 (0%)
 

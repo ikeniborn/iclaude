@@ -1,11 +1,10 @@
-# groq / keys
+# pattern / examples
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **.test_groq_api_key_real()** (3 connections) — `tests/test_patterns_examples.py`
-- **Groq API keys should be redacted** (1 connections) — `tests/test_patterns_examples.py`
+- **Pattern Examples Tests** (0 connections) — `tests/test_patterns_examples.py`
 
 ## Relationships
 
@@ -17,7 +16,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

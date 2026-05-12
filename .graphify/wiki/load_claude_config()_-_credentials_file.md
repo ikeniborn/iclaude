@@ -1,6 +1,6 @@
 # load_claude_config() / credentials_file
 
-> 35 nodes · cohesion 0.08
+> 33 nodes · cohesion 0.08
 
 ## Key Concepts
 
@@ -13,7 +13,6 @@
 - **detect_kvm_support()** (3 connections) — `lib/sandbox/detect.sh`
 - **detect_microvm_binary()** (3 connections) — `lib/sandbox/detect.sh`
 - **check_microvm_dependencies()** (3 connections) — `lib/sandbox/install.sh`
-- **_create_microvm_nvm_image()** (3 connections) — `lib/sandbox/install.sh`
 - **_download_firecracker()** (3 connections) — `lib/sandbox/install.sh`
 - **_download_rootfs()** (3 connections) — `lib/sandbox/install.sh`
 - **_download_vmlinux()** (3 connections) — `lib/sandbox/install.sh`
@@ -29,7 +28,8 @@
 - **install_plugins_from_manifest()** (1 connections) — `lib/lsp/repair.sh`
 - **_claim_microvm_slot()** (1 connections) — `lib/sandbox/microvm.sh`
 - **_ensure_slot_tap()** (1 connections) — `lib/sandbox/microvm.sh`
-- *... and 10 more nodes in this community*
+- **_free_microvm_slot()** (1 connections) — `lib/sandbox/microvm.sh`
+- *... and 8 more nodes in this community*
 
 ## Relationships
 
@@ -50,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 85 (93%)
+- EXTRACTED: 81 (93%)
 - INFERRED: 6 (7%)
 - AMBIGUOUS: 0 (0%)
 
