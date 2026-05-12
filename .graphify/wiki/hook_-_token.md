@@ -21,8 +21,7 @@
 
 ## Relationships
 
-- [[_get_http_session() / piiproxyhandler]] (25 shared connections)
-- [[mask_token]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 

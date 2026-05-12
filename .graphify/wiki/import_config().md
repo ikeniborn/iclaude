@@ -1,10 +1,10 @@
-# claude / code
+# import_config()
 
 > 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Claude Code CLI** (0 connections) — `CLAUDE.md`
+- **import_config()** (0 connections) — `lib/config/export.sh`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `CLAUDE.md`
+- `lib/config/export.sh`
 
 ## Audit Trail
 
