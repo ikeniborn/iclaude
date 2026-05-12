@@ -25,6 +25,5 @@ docs/
 .nvm-isolated/.claude-isolated/file-history/
 .nvm-isolated/.claude-isolated/tasks/
 .nvm-isolated/.claude-isolated/graphify/
-.nvm-isolated/.claude-isolated/skills/
 .nvm-isolated/.claude-isolated/chrome/
 .nvm-isolated/.claude-isolated/commands/
