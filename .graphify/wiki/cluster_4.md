@@ -1,10 +1,10 @@
-# cluster_2
+# cluster_4
 
 > 27 nodes · cohesion 0.11
 
 ## Key Concepts
 
-- **PII Proxy Server** (17 connections) — `lib/pii-proxy/server.py`
+- **server.py** (17 connections) — `lib/pii-proxy/server.py`
 - **presidio_mask()** (8 connections) — `lib/pii-proxy/server.py`
 - **mask_request_body()** (6 connections) — `lib/pii-proxy/server.py`
 - **mask_content_block()** (5 connections) — `lib/pii-proxy/server.py`
@@ -33,7 +33,7 @@
 
 ## Relationships
 
-- [[vendored / graphify]] (76 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 

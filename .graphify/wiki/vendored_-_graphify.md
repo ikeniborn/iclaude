@@ -29,7 +29,7 @@
 
 ## Relationships
 
-- [[should]] (56 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 

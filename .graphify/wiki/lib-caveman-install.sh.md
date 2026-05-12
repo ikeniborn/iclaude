@@ -1,10 +1,10 @@
-# readme
+# lib/caveman/install.sh
 
 > 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Lib README** (0 connections) — `lib/README.md`
+- **lib/caveman/install.sh** (0 connections) — `lib/caveman/install.sh`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `lib/README.md`
+- `lib/caveman/install.sh`
 
 ## Audit Trail
 

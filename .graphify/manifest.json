@@ -1,7 +1,251 @@
 {
+  "iclaude.sh": {
+    "mtime": 1778214964.2388272,
+    "hash": "2ecb8452532b15e98db01bf1a1bbafb4"
+  },
+  "lib/caveman/install.sh": {
+    "mtime": 1778100314.829992,
+    "hash": "c981374135672ab067fd964570e99417"
+  },
+  "lib/command/usage.sh": {
+    "mtime": 1778159397.3301523,
+    "hash": "44f34ea225f77ea1f0dc3a433ce4e946"
+  },
+  "lib/command/dispatch.sh": {
+    "mtime": 1774809683.5192838,
+    "hash": "05e73e981c9a2bb0c6e9e82ae88a3929"
+  },
+  "lib/command/parse.sh": {
+    "mtime": 1774809683.5193748,
+    "hash": "a58fe718e2543bb579a0415483f296b5"
+  },
+  "lib/launcher/launch.sh": {
+    "mtime": 1778507091.6022103,
+    "hash": "6ecf340d0fd652e1ad3718b91c322e89"
+  },
+  "lib/lockfile/install.sh": {
+    "mtime": 1774809683.5198443,
+    "hash": "5b8ed243cb9f5f8c0a887ffa4a392a59"
+  },
+  "lib/lockfile/save.sh": {
+    "mtime": 1774809683.5202615,
+    "hash": "3166142d6c3f6a6edbd59932e53fba6c"
+  },
+  "lib/graphify/status.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "4c09722003dbab85ee38158c02e0b280"
+  },
+  "lib/graphify/install.sh": {
+    "mtime": 1778247844.617427,
+    "hash": "25fbcbd31dd4043a4d34c63108ed506f"
+  },
+  "lib/graphify/detect.sh": {
+    "mtime": 1778100314.8304052,
+    "hash": "a420d697e387677a19a82da0ee13d59a"
+  },
+  "lib/graphify/apply_patches.sh": {
+    "mtime": 1778175009.3536928,
+    "hash": "87f621368be4dd299f30200540e8065b"
+  },
+  "lib/pii-proxy/status.sh": {
+    "mtime": 1778160799.5602515,
+    "hash": "1a52c39cc44ab428f83dacbebdf9d73d"
+  },
   "lib/pii-proxy/server.py": {
     "mtime": 1778159397.3306575,
     "hash": "50e988c993c594633536ff1db989d893"
+  },
+  "lib/pii-proxy/install.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "708d90847cc2b8a8e454466298e555ec"
+  },
+  "lib/pii-proxy/detect.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "dedaed811c4e7f0d3e16c4d9733a7066"
+  },
+  "lib/nvm/cleanup.sh": {
+    "mtime": 1774809683.5205402,
+    "hash": "29bac29c3ea16d7da396ca4acc883b05"
+  },
+  "lib/nvm/repair.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "abb33a281e0553a4bff9695cde60acb3"
+  },
+  "lib/nvm/install.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "cf3d254c5c2f29a4b8a3002b441a4472"
+  },
+  "lib/nvm/claude.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "d46dd66868d5a8101450e6eeeb2f85a4"
+  },
+  "lib/nvm/detect.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "7b5254077e9c36aff5b0a0ac47a80cda"
+  },
+  "lib/nvm/setup.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "9111c27c7f091f1c69f08c1e838a5b0d"
+  },
+  "lib/router/status.sh": {
+    "mtime": 1778508661.237189,
+    "hash": "b1387699ef0e23419e06d18d2e74b56f"
+  },
+  "lib/router/install.sh": {
+    "mtime": 1774809683.5214155,
+    "hash": "78e836b23a0153524fa0894268c81fdc"
+  },
+  "lib/router/detect.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "8405872f7ce21b3ba29128d0fab5e72c"
+  },
+  "lib/chrome/detection.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "02130d6c5d4fd34f688c5c143d5d1c35"
+  },
+  "lib/lsp/status.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "7f48de8465c9a3024b4dfd424081788c"
+  },
+  "lib/lsp/repair.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "81b830c16a3704f98143023648dd9c31"
+  },
+  "lib/lsp/install.sh": {
+    "mtime": 1774809683.5202615,
+    "hash": "229d5e439826eca9813b82b536d0408a"
+  },
+  "lib/proxy/validate.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "8ad6ee8e357bcc5fd4b282eb726f36b6"
+  },
+  "lib/proxy/git.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "b4dd4f30da1fa7fd579b041593fe4248"
+  },
+  "lib/proxy/configure.sh": {
+    "mtime": 1774809683.520957,
+    "hash": "792fb0c892ccc0ca0b84fc1f0d3c5673"
+  },
+  "lib/config/status.sh": {
+    "mtime": 1774809683.519519,
+    "hash": "f2af3e6d8bf51768580662167ae9bbde"
+  },
+  "lib/config/export.sh": {
+    "mtime": 1774809683.5193748,
+    "hash": "68172aa3770482427fbdd502e153a3bd"
+  },
+  "lib/config/isolated.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "8fb96e68cfea0099b401f97641b21368"
+  },
+  "lib/ohmyposh/status.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "360f05248433892ed9beb5e62157516f"
+  },
+  "lib/ohmyposh/install.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "9bf96aa610df192c5a44fea0eb6fdb0a"
+  },
+  "lib/ohmyposh/detect.sh": {
+    "mtime": 1774809683.5205402,
+    "hash": "fcf9404e7f59b2d6f6388ee8fce30141"
+  },
+  "lib/core/remaining.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "cacf77badabb678b3f1b683ef65b36e6"
+  },
+  "lib/core/init.sh": {
+    "mtime": 1778159397.3302124,
+    "hash": "c30b5b4bdce53a2e5f7a300c039294c6"
+  },
+  "lib/core/json.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "2523ddc17c585ca99700872864ff825b"
+  },
+  "lib/core/logging.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "9f37fccca6af92d760d46a4554def604"
+  },
+  "lib/core/validation.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "0c20e58fbdd1b0ea1c7262fcee773201"
+  },
+  "lib/sandbox/status.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "b3905c1ea05bfa6f3fa3c8b07225f9af"
+  },
+  "lib/sandbox/install.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "1e0a4f5975c4625e6bf2ca3769e204ac"
+  },
+  "lib/sandbox/guest-init.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "c74e7bf6764b190e0a3e0dae8d3a6d2f"
+  },
+  "lib/sandbox/microvm.sh": {
+    "mtime": 1778213092.6622698,
+    "hash": "8c3d3ff3383d6786f4272ba5f2a3be39"
+  },
+  "lib/sandbox/detect.sh": {
+    "mtime": 1774809683.5214155,
+    "hash": "16b76d2dbb7c35320570edd414c9813b"
+  },
+  "lib/statusline/status.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "ec640ad61f8fe8acefedf96c501dcef9"
+  },
+  "lib/statusline/install.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "74fff0dde1224ff59d6494e30617f65c"
+  },
+  "lib/statusline/detect.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "60dbf517f16597a5d129339a988a0256"
+  },
+  "lib/update/cleanup.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "d3b7bdde301c3d1620937737c2de283b"
+  },
+  "lib/update/update.sh": {
+    "mtime": 1774809683.522159,
+    "hash": "557a73a1728fadf587b5f4c4e2d9300b"
+  },
+  "lib/update/isolated.sh": {
+    "mtime": 1778100314.8314052,
+    "hash": "566b021e141a9f526547c9f5ff5805a9"
+  },
+  "tests/regression-phase0.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "037c62ca56eb94576c2e7f2434ed3c8f"
+  },
+  "tests/test-redact-hook.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "4e682e31343561a70e7fca8219477d57"
+  },
+  "tests/test_microvm_integration.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "1291638dc77f8a9d6aa654f098066b75"
+  },
+  "tests/test_pii_dnat_iptables.sh": {
+    "mtime": 1778213202.0090468,
+    "hash": "9bdfd3468da6c10d00bd0e2bbde5d857"
+  },
+  "tests/test_pii_dnat_e2e.sh": {
+    "mtime": 1778215065.1117954,
+    "hash": "e1571f4ea7ec021439c6b9a356fc5938"
+  },
+  "tests/test-chrome-detection.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "778c4d189c7fac0734106c9cc2d8ec47"
+  },
+  "tests/test_microvm.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "366868742e114667f2655bd33b79ffb8"
+  },
+  "tests/test_ccr_integration.sh": {
+    "mtime": 1778521607.3227174,
+    "hash": "533a2d8e20c4188874bc1cc532261bdc"
   },
   "tests/test-quality-analysis.py": {
     "mtime": 1774809683.5223594,
@@ -11,9 +255,41 @@
     "mtime": 1778175932.8364184,
     "hash": "9c9762de93af9d635341e66029febe4c"
   },
+  "tests/test-pii-integration.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "67306ad94ca62ad5e597bd66b9121a3d"
+  },
+  "tests/test-pii-parallel.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "bf1fc48b498fa30dc2df31bb06b89b82"
+  },
+  "tests/test_pii_dnat_unit.sh": {
+    "mtime": 1778212852.7952673,
+    "hash": "3ffa19de84a2bfca8b181041b8f8dcec"
+  },
+  "tests/test-microvm-dual.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "ff4ad542a74ecafb119d2140f5d6ceb3"
+  },
+  "tests/test_pii_dnat.sh": {
+    "mtime": 1778212433.57443,
+    "hash": "d9ce9a4445a7a290c2c600ca4aabf823"
+  },
+  "tests/test_pii_shared_detach.sh": {
+    "mtime": 1778164714.064306,
+    "hash": "56ff2c20dce6debc917f3115991d0deb"
+  },
   "tests/test_patterns_examples.py": {
     "mtime": 1778159397.330814,
     "hash": "5db2917613c2526dd27460c3299dd722"
+  },
+  "tests/test_microvm_workspace.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "250e3ed9200a352e8634dfb2a9ce403a"
+  },
+  "scripts/download-ohmyposh-binaries.sh": {
+    "mtime": 1774809683.522159,
+    "hash": "717a9634dfd68d8c68068093d4e3e277"
   },
   "CLAUDE.md": {
     "mtime": 1778100314.828211,

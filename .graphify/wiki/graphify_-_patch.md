@@ -1,10 +1,11 @@
-# graphify / patches
+# graphify / patch
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Graphify Patches Tests** (0 connections) — `tests/test_graphify_patches.py`
+- **Graphify Patch Applier** (1 connections) — `lib/graphify/apply_patches.sh`
+- **Graphify Patches Tests** (1 connections) — `tests/test_graphify_patches.py`
 
 ## Relationships
 
@@ -12,11 +13,12 @@
 
 ## Source Files
 
+- `lib/graphify/apply_patches.sh`
 - `tests/test_graphify_patches.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

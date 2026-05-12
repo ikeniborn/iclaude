@@ -2,8 +2,6 @@
 
 > God node · 13 connections · `README.md`
 
-**Community:** [[_get_http_session() / piiproxyhandler]]
-
 ## Connections by Relation
 
 ### includes
