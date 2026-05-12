@@ -1,0 +1,506 @@
+{
+  "communities": {
+    "0": [
+      "tests_test_patterns_examples_rationale_152",
+      "tests_test_patterns_examples_rationale_167",
+      "tests_test_patterns_examples_rationale_174",
+      "tests_test_patterns_examples_rationale_181",
+      "tests_test_patterns_examples_rationale_188",
+      "tests_test_patterns_examples_rationale_195",
+      "tests_test_patterns_examples_rationale_202",
+      "tests_test_patterns_examples_rationale_208",
+      "tests_test_patterns_examples_rationale_214",
+      "tests_test_patterns_examples_rationale_220",
+      "tests_test_patterns_examples_rationale_226",
+      "tests_test_patterns_examples_rationale_232",
+      "tests_test_patterns_examples_rationale_238",
+      "tests_test_patterns_examples_rationale_246",
+      "tests_test_patterns_examples_rationale_254",
+      "tests_test_patterns_examples_rationale_262",
+      "tests_test_patterns_examples_rationale_270",
+      "tests_test_patterns_examples_rationale_278",
+      "tests_test_patterns_examples_rationale_286",
+      "tests_test_patterns_examples_rationale_293",
+      "tests_test_patterns_examples_rationale_300",
+      "tests_test_patterns_examples_rationale_449",
+      "tests_test_patterns_examples_rationale_456",
+      "tests_test_patterns_examples_rationale_462",
+      "tests_test_patterns_examples_rationale_468",
+      "tests_test_patterns_examples_rationale_479",
+      "tests_test_patterns_examples_secretdetector_redact_text",
+      "tests_test_patterns_examples_testedgecases",
+      "tests_test_patterns_examples_testedgecases_test_empty_string",
+      "tests_test_patterns_examples_testedgecases_test_multiple_secrets_in_text",
+      "tests_test_patterns_examples_testedgecases_test_none_like_string",
+      "tests_test_patterns_examples_testedgecases_test_partial_match_not_redacted",
+      "tests_test_patterns_examples_testedgecases_test_unicode_characters",
+      "tests_test_patterns_examples_testshouldredact",
+      "tests_test_patterns_examples_testshouldredact_test_anthropic_api_key",
+      "tests_test_patterns_examples_testshouldredact_test_aws_access_key",
+      "tests_test_patterns_examples_testshouldredact_test_aws_secret_key",
+      "tests_test_patterns_examples_testshouldredact_test_credit_card_visa",
+      "tests_test_patterns_examples_testshouldredact_test_dotenv_secret_variable",
+      "tests_test_patterns_examples_testshouldredact_test_generic_secret_in_config",
+      "tests_test_patterns_examples_testshouldredact_test_github_token",
+      "tests_test_patterns_examples_testshouldredact_test_google_ai_studio_key",
+      "tests_test_patterns_examples_testshouldredact_test_google_ai_studio_key_real",
+      "tests_test_patterns_examples_testshouldredact_test_groq_api_key",
+      "tests_test_patterns_examples_testshouldredact_test_groq_api_key_real",
+      "tests_test_patterns_examples_testshouldredact_test_huggingface_token",
+      "tests_test_patterns_examples_testshouldredact_test_huggingface_token_real",
+      "tests_test_patterns_examples_testshouldredact_test_jwt_token",
+      "tests_test_patterns_examples_testshouldredact_test_password_in_config",
+      "tests_test_patterns_examples_testshouldredact_test_pem_private_key",
+      "tests_test_patterns_examples_testshouldredact_test_stripe_secret_key",
+      "tests_test_patterns_examples_testshouldredact_test_stripe_test_key",
+      "tests_test_patterns_examples_testshouldredact_test_url_credentials"
+    ],
+    "1": [
+      "caveman_auto_clarity",
+      "caveman_caveman",
+      "caveman_hooks",
+      "caveman_isolated_install",
+      "graphify_apply_patches_sh",
+      "graphify_detect_sh",
+      "graphify_graphify",
+      "graphify_install_sh",
+      "graphify_lib_module",
+      "graphify_portability_patches",
+      "graphify_skill",
+      "graphify_status_sh",
+      "readme_block_secrets",
+      "readme_caveman",
+      "readme_ccr",
+      "readme_chrome",
+      "readme_claude_code",
+      "readme_graphify",
+      "readme_iclaude",
+      "readme_isolated_nvm",
+      "readme_oauth",
+      "readme_pii_proxy",
+      "readme_proxy_management",
+      "readme_redact_secrets",
+      "readme_statusline",
+      "upstream_issue_722",
+      "upstream_issue_756",
+      "upstream_issue_777",
+      "upstream_issue_tracker",
+      "upstream_normalize_paths_hook",
+      "upstream_patch_graphify_watch",
+      "upstream_pr_758"
+    ],
+    "2": [
+      "pii_proxy_server_get_http_session",
+      "pii_proxy_server_piiproxyhandler",
+      "pii_proxy_server_piiproxyhandler_build_upstream_headers",
+      "pii_proxy_server_piiproxyhandler_do_delete",
+      "pii_proxy_server_piiproxyhandler_do_get",
+      "pii_proxy_server_piiproxyhandler_do_head",
+      "pii_proxy_server_piiproxyhandler_do_options",
+      "pii_proxy_server_piiproxyhandler_do_patch",
+      "pii_proxy_server_piiproxyhandler_do_post",
+      "pii_proxy_server_piiproxyhandler_do_put",
+      "pii_proxy_server_piiproxyhandler_error_response",
+      "pii_proxy_server_piiproxyhandler_forward",
+      "pii_proxy_server_piiproxyhandler_health",
+      "pii_proxy_server_piiproxyhandler_health_head",
+      "pii_proxy_server_piiproxyhandler_log_message",
+      "pii_proxy_server_piiproxyhandler_metrics",
+      "pii_proxy_server_piiproxyhandler_proxy_head",
+      "pii_proxy_server_piiproxyhandler_proxy_messages",
+      "pii_proxy_server_piiproxyhandler_proxy_passthrough",
+      "pii_proxy_server_piiproxyhandler_read_body",
+      "pii_proxy_server_rationale_198",
+      "pii_proxy_server_rationale_680",
+      "pii_proxy_server_rationale_696",
+      "pii_proxy_server_rationale_768",
+      "pii_proxy_server_rationale_782",
+      "pii_proxy_server_rationale_806",
+      "pii_proxy_server_rationale_842",
+      "pii_proxy_server_rationale_876",
+      "pii_proxy_server_rationale_883",
+      "pii_proxy_server_rationale_912"
+    ],
+    "3": [
+      "lib_pii_proxy_server_py",
+      "pii_proxy_server_build_ssl_verify",
+      "pii_proxy_server_detect_spacy_models",
+      "pii_proxy_server_init_presidio",
+      "pii_proxy_server_main",
+      "pii_proxy_server_mask_content_block",
+      "pii_proxy_server_mask_request_body",
+      "pii_proxy_server_mask_value",
+      "pii_proxy_server_prefix",
+      "pii_proxy_server_presidio_mask",
+      "pii_proxy_server_rationale_134",
+      "pii_proxy_server_rationale_227",
+      "pii_proxy_server_rationale_249",
+      "pii_proxy_server_rationale_289",
+      "pii_proxy_server_rationale_343",
+      "pii_proxy_server_rationale_349",
+      "pii_proxy_server_rationale_371",
+      "pii_proxy_server_rationale_403",
+      "pii_proxy_server_rationale_506",
+      "pii_proxy_server_rationale_581",
+      "pii_proxy_server_rationale_586",
+      "pii_proxy_server_regex_mask",
+      "pii_proxy_server_setup_logging",
+      "pii_proxy_server_snippet",
+      "pii_proxy_server_validate_upstream_url",
+      "test_patterns_examples_py",
+      "test_quality_analysis_py"
+    ],
+    "4": [
+      "tests_test_graphify_patches_fake_pkg",
+      "tests_test_graphify_patches_graphify_bin",
+      "tests_test_graphify_patches_py",
+      "tests_test_graphify_patches_rationale_107",
+      "tests_test_graphify_patches_rationale_16",
+      "tests_test_graphify_patches_rationale_50",
+      "tests_test_graphify_patches_rationale_72",
+      "tests_test_graphify_patches_rationale_85",
+      "tests_test_graphify_patches_rationale_97",
+      "tests_test_graphify_patches_run_apply",
+      "tests_test_graphify_patches_seed_real_targets",
+      "tests_test_graphify_patches_testapplypatchesbasic",
+      "tests_test_graphify_patches_testapplypatchesbasic_test_script_exists_and_executable",
+      "tests_test_graphify_patches_testapplypatchesbasic_test_skips_when_pkg_missing",
+      "tests_test_graphify_patches_testidempotency",
+      "tests_test_graphify_patches_testidempotency_test_applied_marker_prevents_reapply",
+      "tests_test_graphify_patches_testidempotency_test_dry_run_fail_does_not_block",
+      "tests_test_graphify_patches_testportabilitye2e",
+      "tests_test_graphify_patches_testportabilitye2e_test_cache_source_file_relative",
+      "tests_test_graphify_patches_testportabilitye2e_test_graphify_root_is_dot",
+      "tests_test_graphify_patches_testportabilitye2e_test_manifest_keys_relative",
+      "tests_test_graphify_patches_testportabilitye2e_verify_patches_applied"
+    ],
+    "5": [
+      "architecture_diagrams_readme",
+      "claude_code_cli",
+      "docs_architecture_overview",
+      "iclaude_project",
+      "isolated_installation",
+      "microvm_dnat_troubleshooting",
+      "microvm_firecracker",
+      "microvm_guest_init",
+      "microvm_install_microvm",
+      "microvm_kvm_threat_boundary",
+      "microvm_microvm",
+      "microvm_snapshots",
+      "microvm_ssh_controlmaster",
+      "microvm_start_microvm",
+      "microvm_workspace_modes",
+      "nvm_isolated",
+      "oauth_token_management",
+      "plans_directory",
+      "quick_config_guide",
+      "readme_microvm",
+      "use_cases_guide"
+    ],
+    "6": [
+      "tests_test_patterns_examples_rationale_313",
+      "tests_test_patterns_examples_rationale_320",
+      "tests_test_patterns_examples_rationale_327",
+      "tests_test_patterns_examples_rationale_334",
+      "tests_test_patterns_examples_rationale_341",
+      "tests_test_patterns_examples_rationale_348",
+      "tests_test_patterns_examples_rationale_355",
+      "tests_test_patterns_examples_rationale_362",
+      "tests_test_patterns_examples_rationale_370",
+      "tests_test_patterns_examples_testfalsepositives",
+      "tests_test_patterns_examples_testfalsepositives_test_bash_placeholder_not_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_docker_image_reference_not_fully_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_git_commit_hash_not_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_long_hex_string_not_obviously_secret",
+      "tests_test_patterns_examples_testfalsepositives_test_template_variables_not_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_test_password_should_not_be_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_uuid_should_not_be_redacted",
+      "tests_test_patterns_examples_testfalsepositives_test_version_tag_not_redacted"
+    ],
+    "7": [
+      "tests_test_patterns_examples_rationale_540",
+      "tests_test_patterns_examples_rationale_560",
+      "tests_test_patterns_examples_rationale_568",
+      "tests_test_patterns_examples_rationale_573",
+      "tests_test_patterns_examples_rationale_578",
+      "tests_test_patterns_examples_rationale_586",
+      "tests_test_patterns_examples_rationale_599",
+      "tests_test_patterns_examples_rationale_607",
+      "tests_test_patterns_examples_testmasktoken",
+      "tests_test_patterns_examples_testmasktoken_load_mod",
+      "tests_test_patterns_examples_testmasktoken_test_custom_token_stored",
+      "tests_test_patterns_examples_testmasktoken_test_default_token_value",
+      "tests_test_patterns_examples_testmasktoken_test_empty_token_accepted",
+      "tests_test_patterns_examples_testmasktoken_test_env_empty_string_is_set",
+      "tests_test_patterns_examples_testmasktoken_test_secrets_mode_github_uses_hardcoded_token",
+      "tests_test_patterns_examples_testmasktoken_test_secrets_mode_jwt_uses_hardcoded_token",
+      "tests_test_patterns_examples_testmasktoken_test_standard_regex_path_uses_hardcoded_token"
+    ],
+    "8": [
+      "anthropic_provider",
+      "claude_code_router",
+      "credential_storage",
+      "deepseek_api",
+      "deepseek_provider",
+      "gemini_provider",
+      "http_proxy_env",
+      "https_proxy_env",
+      "ollama",
+      "ollama_provider",
+      "openrouter",
+      "openrouter_provider",
+      "proxy_configuration_flow",
+      "router_json_config",
+      "router_launch_flow",
+      "siliconflow_provider",
+      "volcengine_provider"
+    ],
+    "9": [
+      "tests_test_patterns_examples_detector",
+      "tests_test_patterns_examples_mask",
+      "tests_test_patterns_examples_py",
+      "tests_test_patterns_examples_rationale_28",
+      "tests_test_patterns_examples_rationale_491",
+      "tests_test_patterns_examples_rationale_503",
+      "tests_test_patterns_examples_rationale_511",
+      "tests_test_patterns_examples_rationale_520",
+      "tests_test_patterns_examples_rationale_526",
+      "tests_test_patterns_examples_secretdetector",
+      "tests_test_patterns_examples_secretdetector_init",
+      "tests_test_patterns_examples_testserverregexmask",
+      "tests_test_patterns_examples_testserverregexmask_test_url_credentials_at_in_password",
+      "tests_test_patterns_examples_testserverregexmask_test_url_credentials_performance",
+      "tests_test_patterns_examples_testserverregexmask_test_url_credentials_simple",
+      "tests_test_patterns_examples_testserverregexmask_test_url_no_credentials_not_masked"
+    ],
+    "10": [
+      "tests_test_quality_analysis_assert_clean",
+      "tests_test_quality_analysis_assert_masked",
+      "tests_test_quality_analysis_assert_missed",
+      "tests_test_quality_analysis_assert_pii_missed",
+      "tests_test_quality_analysis_get_masked",
+      "tests_test_quality_analysis_py",
+      "tests_test_quality_analysis_rationale_107",
+      "tests_test_quality_analysis_rationale_33",
+      "tests_test_quality_analysis_rationale_46",
+      "tests_test_quality_analysis_rationale_71",
+      "tests_test_quality_analysis_rationale_86",
+      "tests_test_quality_analysis_rationale_97",
+      "tests_test_quality_analysis_record",
+      "tests_test_quality_analysis_run_hook"
+    ],
+    "11": [
+      "skill_agent_builder",
+      "skill_architecture_documentation",
+      "skill_context_awareness",
+      "skill_git_workflow",
+      "skill_graphify",
+      "skill_graphify_context",
+      "skill_llm_wiki",
+      "skill_mermaid_obsidian",
+      "skill_prd_generator",
+      "skill_prompt_verifier",
+      "skills_system"
+    ],
+    "12": [
+      "tests_test_patterns_examples_rationale_382",
+      "tests_test_patterns_examples_rationale_389",
+      "tests_test_patterns_examples_rationale_404",
+      "tests_test_patterns_examples_rationale_418",
+      "tests_test_patterns_examples_rationale_424",
+      "tests_test_patterns_examples_testperformance",
+      "tests_test_patterns_examples_testperformance_test_long_url_with_credentials_no_timeout",
+      "tests_test_patterns_examples_testperformance_test_many_matches_in_text",
+      "tests_test_patterns_examples_testperformance_test_pem_key_with_long_content_no_timeout",
+      "tests_test_patterns_examples_testperformance_test_pem_key_with_malformed_no_timeout"
+    ],
+    "13": [
+      "lib_pii_proxy_server"
+    ],
+    "14": [
+      "test_graphify_patches_py"
+    ],
+    "15": [
+      "oauth_token_mgmt"
+    ],
+    "16": [
+      "lib_readme_md"
+    ],
+    "17": [
+      "statusline_script"
+    ],
+    "18": [
+      "firecracker_vmm"
+    ],
+    "19": [
+      "skills_audit_report"
+    ],
+    "20": [
+      "docs_router"
+    ],
+    "21": [
+      "proxy_config"
+    ],
+    "22": [
+      "docs_proxy"
+    ],
+    "23": [
+      "docs_telemetry"
+    ],
+    "24": [
+      "claude_config"
+    ],
+    "25": [
+      "docs_statusline"
+    ],
+    "26": [
+      "presidio_nlp"
+    ],
+    "27": [
+      "pasteguard"
+    ],
+    "28": [
+      "docs_pii_masking"
+    ]
+  },
+  "cohesion_scores": {
+    "0": 0.05,
+    "1": 0.07,
+    "2": 0.11,
+    "3": 0.11,
+    "4": 0.12,
+    "5": 0.1,
+    "6": 0.11,
+    "7": 0.16,
+    "8": 0.12,
+    "9": 0.17,
+    "10": 0.24,
+    "11": 0.24,
+    "12": 0.2,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0
+  },
+  "god_nodes": [
+    {
+      "id": "tests_test_patterns_examples_testshouldredact",
+      "label": "TestShouldRedact",
+      "degree": 21
+    },
+    {
+      "id": "pii_proxy_server_piiproxyhandler",
+      "label": "PIIProxyHandler",
+      "degree": 20
+    },
+    {
+      "id": "lib_pii_proxy_server_py",
+      "label": "PII Proxy Server",
+      "degree": 17
+    },
+    {
+      "id": "readme_iclaude",
+      "label": "iclaude",
+      "degree": 13
+    },
+    {
+      "id": "claude_code_router",
+      "label": "Claude Code Router (CCR)",
+      "degree": 12
+    },
+    {
+      "id": "skills_system",
+      "label": "Claude Code Skills System",
+      "degree": 11
+    },
+    {
+      "id": "tests_test_patterns_examples_testfalsepositives",
+      "label": "TestFalsePositives",
+      "degree": 10
+    },
+    {
+      "id": "tests_test_patterns_examples_testmasktoken",
+      "label": "TestMaskToken",
+      "degree": 10
+    },
+    {
+      "id": "iclaude_project",
+      "label": "iclaude Project",
+      "degree": 10
+    },
+    {
+      "id": "microvm_microvm",
+      "label": "microVM Sandbox (Firecracker v2)",
+      "degree": 10
+    }
+  ],
+  "surprises": [
+    {
+      "source": "PII Proxy Server",
+      "target": "Quality Analysis Tests",
+      "source_files": [
+        "lib/pii-proxy/server.py",
+        "tests/test-quality-analysis.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "shares_data_with",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `Quality Analysis Tests` unexpectedly reaches hub `PII Proxy Server`"
+    },
+    {
+      "source": "PII Proxy Server",
+      "target": "Pattern Examples Tests",
+      "source_files": [
+        "lib/pii-proxy/server.py",
+        "tests/test_patterns_examples.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "shares_data_with",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `Pattern Examples Tests` unexpectedly reaches hub `PII Proxy Server`"
+    },
+    {
+      "source": "iclaude Project",
+      "target": "Claude Code CLI",
+      "source_files": [
+        "docs/architecture/diagrams/README.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "conceptually_related_to",
+      "why": "connects across different repos/directories; peripheral node `Claude Code CLI` unexpectedly reaches hub `iclaude Project`"
+    },
+    {
+      "source": "microVM (Firecracker) sandbox",
+      "target": "microVM Sandbox (Firecracker v2)",
+      "source_files": [
+        "README.md",
+        "docs/functions/MICROVM.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "connects across different repos/directories; peripheral node `microVM (Firecracker) sandbox` unexpectedly reaches hub `microVM Sandbox (Firecracker v2)`"
+    },
+    {
+      "source": "NVM Isolated Environment",
+      "target": "Claude Code CLI",
+      "source_files": [
+        "docs/architecture/diagrams/data-flow-isolated-installation.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "shares_data_with",
+      "why": "connects across different repos/directories"
+    }
+  ]
+}
