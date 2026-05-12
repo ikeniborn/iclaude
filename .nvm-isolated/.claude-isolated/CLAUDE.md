@@ -4,6 +4,20 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## 0. Project Exploration — Start Here
+
+**Before exploring code manually — load the graph and wiki first.**
+
+At the start of any task involving an unfamiliar codebase or after a long break:
+1. Run `/graphify-context` → load knowledge graph into context (architecture, dependencies, clusters).
+2. Run `/llm-wiki` → load wiki entries for the relevant domain.
+
+Why: the graph and wiki encode decisions, constraints, and patterns that are invisible in raw code. Reading code without them wastes time rediscovering known context.
+
+- New project or feature area → mandatory.
+- Returning after a break (>1 day) → mandatory.
+- Familiar area, same session → skip.
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
@@ -59,4 +73,18 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. Knowledge Actualization
+
+**After every non-trivial change — update the graph and wiki.**
+
+After completing any feature, bugfix, or refactor:
+1. Run `/graphify` → rebuild knowledge graph from updated codebase.
+2. Run `/llm-wiki` → sync wiki entries affected by the change.
+
+Why: stale graph/wiki misleads future sessions. Fresh context is cheap; rediscovery is expensive.
+
+- Trivial changes (typo, comment, formatting) — skip.
+- Non-trivial changes (new module, API change, architectural decision) — mandatory.
+- If unsure — update. False positives cost less than stale knowledge.
 
