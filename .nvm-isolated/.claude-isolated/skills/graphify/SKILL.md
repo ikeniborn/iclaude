@@ -113,7 +113,7 @@ if [ -z "$PYTHON" ]; then PYTHON="python3"; fi
 mkdir -p "${GRAPHIFY_OUT}"
 "$PYTHON" -c "import sys; open('${GRAPHIFY_OUT}/.graphify_python', 'w').write(sys.executable)"
 # Save scan root so `graphify update` (no args) knows where to look next time
-echo "$(cd INPUT_PATH && pwd)" > "${GRAPHIFY_OUT}/.graphify_root"
+echo "." > "${GRAPHIFY_OUT}/.graphify_root"
 ```
 
 If the import succeeds, print nothing and move straight to Step 2.
