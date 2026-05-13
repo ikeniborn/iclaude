@@ -4,6 +4,9 @@
 # Graphify generated output
 graphify-out/
 
+# graphify machine-specific interpreter path (re-resolved per-machine by SKILL.md Step 1)
+.graphify/.graphify_python
+
 # Python cache (global)
 __pycache__/
 *.pyc
