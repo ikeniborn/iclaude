@@ -7,7 +7,7 @@
   "HOST": "127.0.0.1",
   "LOG": true,
   "LOG_LEVEL": "info",
-  "API_TIMEOUT_MS": 60000,
+  "API_TIMEOUT_MS": 600000,
 
   "Providers": [
     {
@@ -58,14 +58,14 @@
       "name": "ollama-cloud",
       "api_base_url": "http://localhost:11434/v1/chat/completions",
       "api_key": "ollama",
-      "models": ["qwen3.5:397b-cloud", "qwen3-coder-next:cloud", "qwen3-vl:235b-cloud"],
+      "models": ["kimi-k2.6:cloud", "deepseek-v4-flash:cloud"],
       "transformer": {
         "use": [
           ["sampling", { "temperature": 0.2, "top_p": 0.9, "top_k": 40 }]
         ],
-        "qwen3-vl:235b-cloud": {
+        "deepseek-v4-flash:cloud": {
           "use": [
-            ["sampling", { "temperature": 0.5, "top_p": 0.95 }]
+            ["sampling", { "temperature": 0.6, "top_p": 0.9, "top_k": 40 }]
           ]
         }
       }
@@ -93,11 +93,12 @@
 
   "_comment_ollama_cloud_router": "Пример Router для Ollama Cloud (замените секции выше при необходимости)",
   "_Router_ollama_cloud_example": {
-    "default": "ollama-cloud,qwen3.5:397b-cloud",
-    "background": "ollama-cloud,qwen3-coder-next:cloud",
-    "think": "ollama-cloud,qwen3.5:397b-cloud",
-    "longContext": "ollama-cloud,qwen3.5:397b-cloud",
-    "longContextThreshold": 60000,
-    "image": "ollama-cloud,qwen3-vl:235b-cloud"
+    "default": "ollama-cloud,kimi-k2.6:cloud",
+    "background": "ollama-cloud,kimi-k2.6:cloud",
+    "think": "ollama-cloud,deepseek-v4-flash:cloud",
+    "longContext": "ollama-cloud,deepseek-v4-flash:cloud",
+    "longContextThreshold": 200000,
+    "webSearch": "ollama-cloud,kimi-k2.6:cloud",
+    "image": "ollama-cloud,kimi-k2.6:cloud"
   }
 }

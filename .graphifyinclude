@@ -1,0 +1,5 @@
+# Allow traversal into hidden dirs that contain project code
+.nvm-isolated/.claude-isolated/hooks/
+.nvm-isolated/.claude-isolated/scripts/
+.nvm-isolated/.claude-isolated/skills/
+.nvm-isolated/.claude-isolated/commands/

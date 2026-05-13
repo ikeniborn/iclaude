@@ -1,242 +1,426 @@
 {
-  "/home/ikeniborn/Documents/Project/iclaude/lib/pii-proxy/server.py": {
-    "mtime": 1776225407.4011357,
-    "hash": "1c2fc17ee077770dfcbea144167880c6"
+  "iclaude.sh": {
+    "mtime": 1778214964.2388272,
+    "hash": "2ecb8452532b15e98db01bf1a1bbafb4"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
-    "mtime": 1778068281.1457272,
+  "lib/caveman/install.sh": {
+    "mtime": 1778100314.829992,
+    "hash": "c981374135672ab067fd964570e99417"
+  },
+  "lib/command/usage.sh": {
+    "mtime": 1778159397.3301523,
+    "hash": "44f34ea225f77ea1f0dc3a433ce4e946"
+  },
+  "lib/command/dispatch.sh": {
+    "mtime": 1774809683.5192838,
+    "hash": "05e73e981c9a2bb0c6e9e82ae88a3929"
+  },
+  "lib/command/parse.sh": {
+    "mtime": 1774809683.5193748,
+    "hash": "a58fe718e2543bb579a0415483f296b5"
+  },
+  "lib/launcher/launch.sh": {
+    "mtime": 1778507091.6022103,
+    "hash": "6ecf340d0fd652e1ad3718b91c322e89"
+  },
+  "lib/lockfile/install.sh": {
+    "mtime": 1774809683.5198443,
+    "hash": "5b8ed243cb9f5f8c0a887ffa4a392a59"
+  },
+  "lib/lockfile/save.sh": {
+    "mtime": 1774809683.5202615,
+    "hash": "3166142d6c3f6a6edbd59932e53fba6c"
+  },
+  "lib/graphify/status.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "4c09722003dbab85ee38158c02e0b280"
+  },
+  "lib/graphify/install.sh": {
+    "mtime": 1778247844.617427,
+    "hash": "25fbcbd31dd4043a4d34c63108ed506f"
+  },
+  "lib/graphify/detect.sh": {
+    "mtime": 1778100314.8304052,
+    "hash": "a420d697e387677a19a82da0ee13d59a"
+  },
+  "lib/graphify/apply_patches.sh": {
+    "mtime": 1778175009.3536928,
+    "hash": "87f621368be4dd299f30200540e8065b"
+  },
+  "lib/pii-proxy/status.sh": {
+    "mtime": 1778160799.5602515,
+    "hash": "1a52c39cc44ab428f83dacbebdf9d73d"
+  },
+  "lib/pii-proxy/server.py": {
+    "mtime": 1778159397.3306575,
+    "hash": "50e988c993c594633536ff1db989d893"
+  },
+  "lib/pii-proxy/install.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "708d90847cc2b8a8e454466298e555ec"
+  },
+  "lib/pii-proxy/detect.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "dedaed811c4e7f0d3e16c4d9733a7066"
+  },
+  "lib/nvm/cleanup.sh": {
+    "mtime": 1774809683.5205402,
+    "hash": "29bac29c3ea16d7da396ca4acc883b05"
+  },
+  "lib/nvm/repair.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "abb33a281e0553a4bff9695cde60acb3"
+  },
+  "lib/nvm/install.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "cf3d254c5c2f29a4b8a3002b441a4472"
+  },
+  "lib/nvm/claude.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "d46dd66868d5a8101450e6eeeb2f85a4"
+  },
+  "lib/nvm/detect.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "7b5254077e9c36aff5b0a0ac47a80cda"
+  },
+  "lib/nvm/setup.sh": {
+    "mtime": 1778100314.8307116,
+    "hash": "9111c27c7f091f1c69f08c1e838a5b0d"
+  },
+  "lib/router/status.sh": {
+    "mtime": 1778508661.237189,
+    "hash": "b1387699ef0e23419e06d18d2e74b56f"
+  },
+  "lib/router/install.sh": {
+    "mtime": 1774809683.5214155,
+    "hash": "78e836b23a0153524fa0894268c81fdc"
+  },
+  "lib/router/detect.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "8405872f7ce21b3ba29128d0fab5e72c"
+  },
+  "lib/chrome/detection.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "02130d6c5d4fd34f688c5c143d5d1c35"
+  },
+  "lib/lsp/status.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "7f48de8465c9a3024b4dfd424081788c"
+  },
+  "lib/lsp/repair.sh": {
+    "mtime": 1774809683.5203917,
+    "hash": "81b830c16a3704f98143023648dd9c31"
+  },
+  "lib/lsp/install.sh": {
+    "mtime": 1774809683.5202615,
+    "hash": "229d5e439826eca9813b82b536d0408a"
+  },
+  "lib/proxy/validate.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "8ad6ee8e357bcc5fd4b282eb726f36b6"
+  },
+  "lib/proxy/git.sh": {
+    "mtime": 1774809683.521262,
+    "hash": "b4dd4f30da1fa7fd579b041593fe4248"
+  },
+  "lib/proxy/configure.sh": {
+    "mtime": 1774809683.520957,
+    "hash": "792fb0c892ccc0ca0b84fc1f0d3c5673"
+  },
+  "lib/proxy/credentials.sh": {
+    "mtime": 1778100314.8314052,
+    "hash": "d086fe437b42a22857c61d979a4245c0"
+  },
+  "lib/config/status.sh": {
+    "mtime": 1774809683.519519,
+    "hash": "f2af3e6d8bf51768580662167ae9bbde"
+  },
+  "lib/config/export.sh": {
+    "mtime": 1774809683.5193748,
+    "hash": "68172aa3770482427fbdd502e153a3bd"
+  },
+  "lib/config/isolated.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "8fb96e68cfea0099b401f97641b21368"
+  },
+  "lib/ohmyposh/status.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "360f05248433892ed9beb5e62157516f"
+  },
+  "lib/ohmyposh/install.sh": {
+    "mtime": 1774809683.5208702,
+    "hash": "9bf96aa610df192c5a44fea0eb6fdb0a"
+  },
+  "lib/ohmyposh/detect.sh": {
+    "mtime": 1774809683.5205402,
+    "hash": "fcf9404e7f59b2d6f6388ee8fce30141"
+  },
+  "lib/core/remaining.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "cacf77badabb678b3f1b683ef65b36e6"
+  },
+  "lib/core/init.sh": {
+    "mtime": 1778159397.3302124,
+    "hash": "c30b5b4bdce53a2e5f7a300c039294c6"
+  },
+  "lib/core/json.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "2523ddc17c585ca99700872864ff825b"
+  },
+  "lib/core/logging.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "9f37fccca6af92d760d46a4554def604"
+  },
+  "lib/core/validation.sh": {
+    "mtime": 1774809683.519654,
+    "hash": "0c20e58fbdd1b0ea1c7262fcee773201"
+  },
+  "lib/sandbox/status.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "b3905c1ea05bfa6f3fa3c8b07225f9af"
+  },
+  "lib/sandbox/install.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "1e0a4f5975c4625e6bf2ca3769e204ac"
+  },
+  "lib/sandbox/guest-init.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "c74e7bf6764b190e0a3e0dae8d3a6d2f"
+  },
+  "lib/sandbox/microvm.sh": {
+    "mtime": 1778213092.6622698,
+    "hash": "8c3d3ff3383d6786f4272ba5f2a3be39"
+  },
+  "lib/sandbox/detect.sh": {
+    "mtime": 1774809683.5214155,
+    "hash": "16b76d2dbb7c35320570edd414c9813b"
+  },
+  "lib/statusline/status.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "ec640ad61f8fe8acefedf96c501dcef9"
+  },
+  "lib/statusline/install.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "74fff0dde1224ff59d6494e30617f65c"
+  },
+  "lib/statusline/detect.sh": {
+    "mtime": 1774809683.5215168,
+    "hash": "60dbf517f16597a5d129339a988a0256"
+  },
+  "lib/update/cleanup.sh": {
+    "mtime": 1774809683.5220525,
+    "hash": "d3b7bdde301c3d1620937737c2de283b"
+  },
+  "lib/update/update.sh": {
+    "mtime": 1774809683.522159,
+    "hash": "557a73a1728fadf587b5f4c4e2d9300b"
+  },
+  "lib/update/isolated.sh": {
+    "mtime": 1778100314.8314052,
+    "hash": "566b021e141a9f526547c9f5ff5805a9"
+  },
+  "lib/oauth/token.sh": {
+    "mtime": 1774814772.32791,
+    "hash": "71858b78aae3ae370b258973ccafed65"
+  },
+  ".nvm-isolated/nvm-exec": {
+    "mtime": 1773925649.140255,
+    "hash": "aca21638e05de09fb181f81d7f6a480c"
+  },
+  ".nvm-isolated/install.sh": {
+    "mtime": 1773925646.7483091,
+    "hash": "b75afbe19092d5a3d0f64ec49de1535d"
+  },
+  ".nvm-isolated/nvm.sh": {
+    "mtime": 1773925649.1409235,
+    "hash": "6f66fa6001fc322c0845dc33708d890b"
+  },
+  ".nvm-isolated/.claude-isolated/pii-proxy-server.py": {
+    "mtime": 1778159397.3306575,
+    "hash": "50e988c993c594633536ff1db989d893"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/view-tool-results.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "a549335713f5366bf4c87e38aba17904"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/claude-statusline.sh": {
+    "mtime": 1778100314.257411,
+    "hash": "b1237b317dc4ca4a302cbc55b71bd244"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh": {
+    "mtime": 1774809682.7339554,
+    "hash": "e1998d155aea4d29382c5a8e88e95ce7"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/provider-adapter.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "fefa44dafe9c168803f0ee7a495c661a"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "b84fa15439381fa706ebfd66fb00519e"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-parser.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "95188a93277a3b55a1e592789c2756df"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/pricing-lookup.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "72c890245f1c60bf7e35913358a14483"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/rate-limit.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "0cfe64142b0d0b183faf25282b3ca88b"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-detector.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "89c66a77b49729b0197c85ecccf05500"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/ollama.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "04cb7f3f012984a81093571bb6a9dc98"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/gemini.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "08b1f9d6b511ff533c6a1cc55d5cdf3d"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/generic.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "e8c3f43e2343f8d84ad81c794f8ece1e"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/anthropic.sh": {
+    "mtime": 1774814772.2477248,
+    "hash": "6449a01cc3ff3d4bced45391b816c24b"
+  },
+  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/openai.sh": {
+    "mtime": 1774809682.734798,
+    "hash": "2e17b11678ad3c7b14180b37a39c49ae"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
+    "mtime": 1778100314.256411,
     "hash": "0a77df0018325d52608c362754786451"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
-    "mtime": 1778068283.6420288,
+  ".nvm-isolated/.claude-isolated/hooks/redact-secrets.py": {
+    "mtime": 1778159397.3287008,
+    "hash": "0e833c8b062f800c6ca72d97ddc521c5"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
+    "mtime": 1778100314.257411,
     "hash": "2c88a17ff88451629d3edafe474cfff0"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
-    "mtime": 1778068281.9474585,
+  ".nvm-isolated/.claude-isolated/hooks/block-secrets.py": {
+    "mtime": 1774809682.733874,
+    "hash": "0825548e5a734b876942b07d1321f6ba"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
+    "mtime": 1778100314.256411,
     "hash": "a0166a65e117ec9ddcec646e481e5185"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
-    "mtime": 1778068282.7174757,
+  ".nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
+    "mtime": 1778100314.257411,
     "hash": "4946e31570eac0b8fe763d429978dbdc"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
-    "mtime": 1774809682.7465634,
-    "hash": "1fc257caf781382ca9164aeac282531d"
+  "tests/regression-phase0.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "037c62ca56eb94576c2e7f2434ed3c8f"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/skill-md-integration.test.mjs": {
-    "mtime": 1774809682.7469864,
-    "hash": "de542dd0bab35d19b554228890334dc2"
+  "tests/test-redact-hook.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "4e682e31343561a70e7fca8219477d57"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/end-to-end.test.mjs": {
-    "mtime": 1774809682.7466476,
-    "hash": "2f8f523e3b9ba865402a3b3754e24cf7"
+  "tests/test_microvm_integration.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "1291638dc77f8a9d6aa654f098066b75"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/round-trip.test.mjs": {
-    "mtime": 1774809682.7469864,
-    "hash": "c252354b79d718f40b9f7ca6bd0ed0b0"
+  "tests/test_pii_dnat_iptables.sh": {
+    "mtime": 1778213202.0090468,
+    "hash": "9bdfd3468da6c10d00bd0e2bbde5d857"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/toon-converter.mjs": {
-    "mtime": 1774809682.737833,
-    "hash": "6363ca2310af4502ad88b4a84b8001db"
+  "tests/test_pii_dnat_e2e.sh": {
+    "mtime": 1778215065.1117954,
+    "hash": "e1571f4ea7ec021439c6b9a356fc5938"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/lib/README.md": {
+  "tests/test-chrome-detection.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "778c4d189c7fac0734106c9cc2d8ec47"
+  },
+  "tests/test_microvm.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "366868742e114667f2655bd33b79ffb8"
+  },
+  "tests/test_ccr_integration.sh": {
+    "mtime": 1778521607.3227174,
+    "hash": "533a2d8e20c4188874bc1cc532261bdc"
+  },
+  "tests/test-quality-analysis.py": {
+    "mtime": 1774809683.5223594,
+    "hash": "58179966131de0aaf1244d4ec120612a"
+  },
+  "tests/test_graphify_patches.py": {
+    "mtime": 1778175932.8364184,
+    "hash": "9c9762de93af9d635341e66029febe4c"
+  },
+  "tests/test-pii-integration.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "67306ad94ca62ad5e597bd66b9121a3d"
+  },
+  "tests/test-pii-parallel.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "bf1fc48b498fa30dc2df31bb06b89b82"
+  },
+  "tests/test_pii_dnat_unit.sh": {
+    "mtime": 1778212852.7952673,
+    "hash": "3ffa19de84a2bfca8b181041b8f8dcec"
+  },
+  "tests/test-microvm-dual.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "ff4ad542a74ecafb119d2140f5d6ceb3"
+  },
+  "tests/test_pii_dnat.sh": {
+    "mtime": 1778212433.57443,
+    "hash": "d9ce9a4445a7a290c2c600ca4aabf823"
+  },
+  "tests/test_pii_shared_detach.sh": {
+    "mtime": 1778164714.064306,
+    "hash": "56ff2c20dce6debc917f3115991d0deb"
+  },
+  "tests/test_patterns_examples.py": {
+    "mtime": 1778159397.330814,
+    "hash": "5db2917613c2526dd27460c3299dd722"
+  },
+  "tests/test_microvm_workspace.sh": {
+    "mtime": 1774809683.5223594,
+    "hash": "250e3ed9200a352e8634dfb2a9ce403a"
+  },
+  "scripts/download-ohmyposh-binaries.sh": {
+    "mtime": 1774809683.522159,
+    "hash": "717a9634dfd68d8c68068093d4e3e277"
+  },
+  "CLAUDE.md": {
+    "mtime": 1778100314.828211,
+    "hash": "05edb81a42b62f4ea6e565e9f3e9ca39"
+  },
+  "README.md": {
+    "mtime": 1778188529.2054164,
+    "hash": "1971c0413167f31c0ff6e36b2d55116a"
+  },
+  "lib/README.md": {
     "mtime": 1774809683.5182161,
     "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/mermaid-obsidian/SKILL.md": {
-    "mtime": 1777239602.0228732,
-    "hash": "d3f32059f00b4c168d90ced4f7046c7c"
+  ".nvm-isolated/README.md": {
+    "mtime": 1773925646.7483091,
+    "hash": "8ee03949b8b2fc164601669da010b4e1"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md": {
-    "mtime": 1774809682.742253,
-    "hash": "bb7d8ecf3fb0fdff17e6b0dba7e16991"
+  ".nvm-isolated/LICENSE.md": {
+    "mtime": 1773925646.7483091,
+    "hash": "d9eae036a0f5820f88ab3fa289a9016b"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/templates/task-summary.txt": {
-    "mtime": 1773925646.7405686,
-    "hash": "fd8364ab86c819f6680d051495c7a0f4"
+  ".nvm-isolated/.claude-isolated/CLAUDE.md": {
+    "mtime": 1778100314.256411,
+    "hash": "dcadf4bdbb6d0744ac72bb977fc20d99"
   },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/examples/basic-usage.md": {
-    "mtime": 1774809682.742253,
-    "hash": "7db6cbebd209c9bc701a409284937fb9"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
-    "mtime": 1778064529.3891912,
-    "hash": "d56e89dfab8d722a2a6248f2e628e541"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
-    "mtime": 1774809682.7444031,
-    "hash": "946dd5445b812652910b91bc85c75886"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/prd-best-practices.md": {
-    "mtime": 1774809682.744604,
-    "hash": "33d14ffd7884e488d5ff62c260223215"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/markdown-guidelines.md": {
-    "mtime": 1774809682.7444031,
-    "hash": "b81d657b57e8753e9a70baa3b55afe5c"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/mermaid-diagrams.md": {
-    "mtime": 1774809682.744604,
-    "hash": "8dee0e4fc936c7ac68b26bae1f70dcbb"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
-    "mtime": 1774809682.7395995,
-    "hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
-    "mtime": 1778098304.6393585,
-    "hash": "c0fa0b54d70ae1bf1f5e116fb6f2a757"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "ac8320339f253084a4545c217c18cf14"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/frontmatter-parser.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "b026e1f235b9839f9a76670029a28932"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/YAML-WORKFLOW-README.md": {
-    "mtime": 1774809682.7354975,
-    "hash": "75aca0a1da510db72b9ddaabfc0bfc69"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
-    "mtime": 1778069623.619094,
-    "hash": "8b9b512c9c1a3d3bf069e5fa665ca923"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
-    "mtime": 1774809682.7400665,
-    "hash": "1610dbaf0d7228dc25f9feed05963e1a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/SKILL.md": {
-    "mtime": 1774809682.7463157,
-    "hash": "219aaabc16d0c61234da7c5b5fb9e033"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/README.md": {
-    "mtime": 1774809682.7464967,
-    "hash": "43b8e7820bd96291d3c9e9de2cabe7f5"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/examples/integration-guide.md": {
-    "mtime": 1774809682.7466476,
-    "hash": "90236fdfe4a4e00418ceea51da87ddc6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
-    "mtime": 1778064529.389488,
-    "hash": "e56fcce922e26d07d353c69bb2a57686"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
-    "mtime": 1775820723.9417357,
-    "hash": "b66c1d5c4a9a0906961414f2392ed2ea"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/agent-instructions.md": {
-    "mtime": 1775820723.9415886,
-    "hash": "c06a27e5f355d2e74cf2bc41c2386f83"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/basic-claude-md.md": {
-    "mtime": 1775820723.941662,
-    "hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
-    "mtime": 1775820723.9417896,
-    "hash": "33a3f524663a8f636e6799674cf06db6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md": {
-    "mtime": 1778042255.9213483,
-    "hash": "2b52b12815f3c00a6c47474ddf71b4fa"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/query-example.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "4180292664c864765dbb61c8199111d7"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/lint-example.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "37df9b0c27d43db03a6353d2a7fb1cc8"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/examples/ingest-example.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "9c06fd7dbd3be3e045e6b38c0943a764"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/ingest-rules.md": {
-    "mtime": 1778042940.7971823,
-    "hash": "432b69206540abe5562c701bf4a0832a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/wiki-conventions.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "3c93ac3458eadea7f3a34bcb374aec64"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/lint-criteria.md": {
-    "mtime": 1778003235.6801307,
-    "hash": "27dc9bd33a440d23c7b88ffcae15ce81"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/javascript.md": {
-    "mtime": 1778097848.7367358,
-    "hash": "1d93ffed9352dd4055f755886303bbc2"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/python.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "b409d74b05310cc46c2c7a7d03f457cf"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/bash.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "6b6d29125dc924d29eedf87654d6ba26"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/markdown.md": {
-    "mtime": 1778097848.735736,
-    "hash": "ab3492d680e08780443dbc4ad2d3dcc0"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/typescript.md": {
-    "mtime": 1778097848.7497149,
-    "hash": "6d40884e06133a1495c514e2374a411b"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
-    "mtime": 1778069623.6191401,
-    "hash": "4bb0ea6c16153de752d0aa843943d398"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
-    "mtime": 1778064529.388488,
-    "hash": "c9aee8dd9af5f26b8e4198e7d737086c"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
-    "mtime": 1774809682.7368128,
-    "hash": "55c91eb6886ec5ae5bc0a2a1390e07a4"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/minimal-agent.md": {
-    "mtime": 1774809682.736916,
-    "hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/rules/agent-best-practices.md": {
-    "mtime": 1774809682.736916,
-    "hash": "b74b7478e194f9717f9862ca328f7fe7"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
-    "mtime": 1778064529.388488,
-    "hash": "84ec96ec15a1665a66eb175cfb4e7a6b"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
-    "mtime": 1774809682.7377477,
-    "hash": "c739c2c6d5fe6739503858a58aa7c9b3"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/dependency-graph.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "96635e8dc64a1ea54f8a5b5454fffc93"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/README.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "34a5025631c3872f782c2406a2f46db1"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/architecture-full.yaml": {
-    "mtime": 1773925646.7355509,
-    "hash": "5cdf497641efddd4dc01591a0b79aecc"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/TOON-INTEGRATION-GUIDE.md": {
-    "mtime": 1774809682.737833,
-    "hash": "6357eb5f13251a7c239c8a4c45e27d22"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md": {
-    "mtime": 1774809682.738172,
-    "hash": "74750531946911f943d9e9bee490132a"
-  },
-  "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md": {
-    "mtime": 1774809682.7385385,
-    "hash": "0151836c9fb7bc3c1ba74ef4bcb123b8"
+  ".nvm-isolated/.claude-isolated/scripts/lib/README.md": {
+    "mtime": 1774809682.734205,
+    "hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
   }
 }

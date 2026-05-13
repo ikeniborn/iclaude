@@ -125,6 +125,40 @@ check_pii_proxy_status() {
         echo "  (not created yet)"
     fi
 
+    # Shared proxy
+    echo ""
+    local _shared_pid_file="${PII_PROXY_PID_DIR:-${ISOLATED_CONFIG_DIR}/pii-proxy-pid}/shared.pid"
+    local _shared_port_file="${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
+    local _consumers_dir="${PII_PROXY_PID_DIR:-${ISOLATED_CONFIG_DIR}/pii-proxy-pid}/consumers"
+    local _shared_pid _shared_port _shared_alive=false
+
+    _shared_pid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+    if [[ -n "$_shared_pid" ]] && kill -0 "$_shared_pid" 2>/dev/null && \
+       ps -p "$_shared_pid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+        _shared_alive=true
+        _shared_port=$(cat "$_shared_port_file" 2>/dev/null || echo "?")
+    fi
+
+    if [[ "$_shared_alive" == "true" ]]; then
+        print_success "Shared proxy: PID $_shared_pid, port $_shared_port"
+        if [[ -d "$_consumers_dir" ]]; then
+            local _cf _cpid _csid _calive
+            for _cf in "$_consumers_dir"/*.pid; do
+                [[ -f "$_cf" ]] || continue
+                _cpid=$(cat "$_cf" 2>/dev/null || true)
+                _csid="${_cf##*/}"; _csid="${_csid%.pid}"
+                if [[ -n "$_cpid" ]] && kill -0 "$_cpid" 2>/dev/null; then
+                    _calive="alive"
+                else
+                    _calive="dead (orphan)"
+                fi
+                echo "    Session ${_csid}: bash PID ${_cpid} (${_calive})"
+            done
+        fi
+    else
+        print_info "Shared proxy: not running"
+    fi
+
     # Running processes (per-session: scan PID files in PII_PROXY_PID_DIR).
     # Also sweeps legacy pii-proxy-*.pid files from the root of ISOLATED_CONFIG_DIR
     # so status output reflects both layouts while migration is in flight.

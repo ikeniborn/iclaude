@@ -1,6 +1,6 @@
 ---
 name: graphify-context
-description: Use when exploring project architecture, component relationships, or codebase structure — especially at brainstorming Step 1 or when the user asks how parts of the system connect. Reads .graphify/ knowledge graph without rebuilding it.
+description: Use when exploring project architecture, component relationships, or codebase structure — especially at brainstorming Step 1 or when the user asks how parts of the system connect. Reads project knowledge graph (path from GRAPHIFY_OUT) without rebuilding it.
 user-invocable: true
 context: fork
 # version: 1.1.0
@@ -39,11 +39,19 @@ Skill(skill="graphify-context", args='explain "ClassName"')
 С `query "..."` → Phase 0 + targeted `graphify query "<вопрос>"`.
 С `path A B` / `explain X` → Phase 0 + соответствующий graphify CLI вызов.
 
+## Step 0: Resolve graph output dir
+
+```bash
+GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
+```
+
+Use `{GOUT}` as the graph directory in all path checks below. (`{GOUT}` is pseudocode — substitute the printed value literally.)
+
 ## Phase 0: Определение наличия графа
 
 ```
-IF exists {CWD}/.graphify/GRAPH_REPORT.md:
-  1. Прочитать GRAPH_REPORT.md
+IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
+  1. Прочитать {GOUT}/GRAPH_REPORT.md
      → извлечь: god_nodes (топ-5), communities (N), suggested_questions
   2. Проверить свежесть:
      built_at_commit из GRAPH_REPORT.md == `git rev-parse HEAD`?
@@ -72,19 +80,19 @@ GRAPH_REPORT.md содержит готовый структурный обзо�
 
 ```bash
 # Широкий обзор компонентов (BFS)
-graphify query "What are the core components and how do they connect?" --budget 1200
+graphify query "What are the core components and how do they connect?" --budget 1200 --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Трассировка конкретного пути (DFS)
-graphify query "How does <entry_point> reach <target>?" --dfs --budget 1000
+graphify query "How does <entry_point> reach <target>?" --dfs --budget 1000 --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Связь между двумя конкретными узлами
-graphify path "ComponentA" "ComponentB"
+graphify path "ComponentA" "ComponentB" --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Полный контекст одного узла
-graphify explain "ClassName"
+graphify explain "ClassName" --graph "${GRAPHIFY_OUT}/graph.json"
 
 # Любой вопрос по архитектуре
-graphify query "<вопрос от пользователя>" --budget 1500
+graphify query "<вопрос от пользователя>" --budget 1500 --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 **Выбор режима:**
@@ -113,7 +121,7 @@ graphify query "<вопрос от пользователя>" --budget 1500
 context-awareness вызывает этот навык в Phase 6 (аналогично тому, как Phase 5 вызывает llm-wiki):
 
 ```
-IF exists {CWD}/.graphify/GRAPH_REPORT.md:
+IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
   Skill(skill="graphify-context")
   → добавить результат в project_context:
        graph_initialized: true
@@ -145,12 +153,12 @@ graphify query "What are the module integration points in lib/?" --budget 1200
 graphify path "PIIProxyHandler" "TestShouldRedact"
 
 # При обзоре архитектуры целиком
-# → просто читать .graphify/GRAPH_REPORT.md, не вызывать CLI
+# → просто читать {GOUT}/GRAPH_REPORT.md, не вызывать CLI
 ```
 
 ## Когда НЕ использовать
 
-- Граф отсутствует (`.graphify/` нет) — нечего запрашивать
+- Граф отсутствует (`{GOUT}/` нет) — нечего запрашивать
 - Проект < 20 файлов — граф добавит шум, не ценность
 - Нужно ПЕРЕСТРОИТЬ граф — используй `/graphify` или `graphify-update`
 - Вопрос не об архитектуре, а о бизнес-логике — используй `llm-wiki query`

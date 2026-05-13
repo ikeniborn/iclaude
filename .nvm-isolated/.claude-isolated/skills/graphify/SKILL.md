@@ -1,6 +1,6 @@
 ---
 name: graphify
-description: "any input (code, docs, papers, images, videos) to knowledge graph. Use when user asks any question about a codebase, documents, or project content - especially if graphify-out/ exists, treat the question as a /graphify query."
+description: "Build knowledge graph from a folder of files (code, docs, papers, images, videos) — community detection, audit trail, three outputs (HTML, GraphRAG JSON, GRAPH_REPORT.md). Use when user types /graphify, asks to \"build/rebuild/update the graph\", or graph artifacts are missing in ${GRAPHIFY_OUT:-graphify-out}/. NOT for querying an existing graph — use graphify-context. NOT for project-language detection — use context-awareness."
 trigger: /graphify
 ---
 
@@ -91,7 +91,7 @@ The printed value is the resolved output directory. Use this **literal string** 
 ```bash
 export GRAPHIFY_OUT="RESOLVED_GRAPHIFY_OUT"  # ← substitute the literal value from Step 0.5
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
-PYTHON="
+PYTHON=""
 GRAPHIFY_BIN=$(which graphify 2>/dev/null)
 # 1. uv tool installs — most reliable on modern Mac/Linux
 if [ -z "$PYTHON" ] && command -v uv >/dev/null 2>&1; then
@@ -113,7 +113,7 @@ if [ -z "$PYTHON" ]; then PYTHON="python3"; fi
 mkdir -p "${GRAPHIFY_OUT}"
 "$PYTHON" -c "import sys; open('${GRAPHIFY_OUT}/.graphify_python', 'w').write(sys.executable)"
 # Save scan root so `graphify update` (no args) knows where to look next time
-echo "$(cd INPUT_PATH && pwd)" > "${GRAPHIFY_OUT}/.graphify_root"
+echo "." > "${GRAPHIFY_OUT}/.graphify_root"
 ```
 
 If the import succeeds, print nothing and move straight to Step 2.
@@ -951,8 +951,8 @@ Two traversal modes - choose based on the question:
 | DFS | `--dfs` | "How does X reach Y?" - trace a specific chain or dependency path |
 
 ```bash
-graphify query "QUESTION"
-# or: graphify query "QUESTION" --dfs --budget 3000
+graphify query "QUESTION" --graph "${GRAPHIFY_OUT}/graph.json"
+# or: graphify query "QUESTION" --dfs --budget 3000 --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `QUESTION` with the user's actual question. Answer using **only** what the graph output contains. Quote `source_location` when citing a specific fact. If the graph lacks enough information, say so - do not hallucinate edges.
@@ -960,7 +960,7 @@ Replace `QUESTION` with the user's actual question. Answer using **only** what t
 After writing the answer, save it back into the graph so it improves future queries:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "QUESTION" --answer "ANSWER" --type query --nodes NODE1 NODE2
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "QUESTION" --answer "ANSWER" --type query --nodes NODE1 NODE2 --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 Replace `QUESTION` with the question, `ANSWER` with your full answer text, `SOURCE_NODES` with the list of node labels you cited. This closes the feedback loop: the next `--update` will extract this Q&A as a node in the graph.
@@ -972,7 +972,7 @@ Replace `QUESTION` with the question, `ANSWER` with your full answer text, `SOUR
 Find the shortest path between two named concepts in the graph.
 
 ```bash
-graphify path "NODE_A" "NODE_B"
+graphify path "NODE_A" "NODE_B" --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `NODE_A` and `NODE_B` with the actual concept names. Then explain the path in plain language - what each hop means, why it's significant.
@@ -980,7 +980,7 @@ Replace `NODE_A` and `NODE_B` with the actual concept names. Then explain the pa
 After writing the explanation, save it back:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Path from NODE_A to NODE_B" --answer "ANSWER" --type path_query --nodes NODE_A NODE_B
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Path from NODE_A to NODE_B" --answer "ANSWER" --type path_query --nodes NODE_A NODE_B --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 ---
@@ -990,7 +990,7 @@ $(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Pa
 Give a plain-language explanation of a single node - everything connected to it.
 
 ```bash
-graphify explain "NODE_NAME"
+graphify explain "NODE_NAME" --graph "${GRAPHIFY_OUT}/graph.json"
 ```
 
 Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sentence explanation of what this node is, what it connects to, and why those connections are significant. Use the source locations as citations.
@@ -998,7 +998,7 @@ Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sent
 After writing the explanation, save it back:
 
 ```bash
-$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Explain NODE_NAME" --answer "ANSWER" --type explain --nodes NODE_NAME
+$(cat "${GRAPHIFY_OUT}/.graphify_python") -m graphify save-result --question "Explain NODE_NAME" --answer "ANSWER" --type explain --nodes NODE_NAME --memory-dir "${GRAPHIFY_OUT}/memory"
 ```
 
 ---

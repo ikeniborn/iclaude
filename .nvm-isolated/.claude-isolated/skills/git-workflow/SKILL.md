@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Стандартизированный git workflow с Conventional Commits
+description: Standardized git workflow with Conventional Commits. Use when creating a feature branch, staging commits, opening a PR, or when user says "commit", "create branch", "open PR", "fix commit message". Enforces commit prefix (feat/fix/docs/...), branch naming, PR template.
 user-invocable: false
 # version: 2.2.0
 # tags: git, commit, branch, conventional-commits, toon

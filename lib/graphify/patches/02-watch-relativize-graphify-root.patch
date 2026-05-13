@@ -1,0 +1,12 @@
+--- a/watch.py
++++ b/watch.py
+@@ -130,7 +130,8 @@
+         questions = suggest_questions(G, communities, labels)
+
+         out.mkdir(exist_ok=True)
+-        (out / ".graphify_root").write_text(str(watch_root), encoding="utf-8")
++        # ICLAUDE-PATCHED-v1: preserve user-provided path (relative if `.`)
++        (out / ".graphify_root").write_text(str(watch_path), encoding="utf-8")
+
+         json_written = to_json(G, communities, str(out / "graph.json"), force=force, built_at_commit=commit)
+         if not json_written:

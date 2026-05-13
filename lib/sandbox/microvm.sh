@@ -1164,6 +1164,62 @@ _create_named_snapshot() {
 }
 
 #######################################
+# Preflight check: PII proxy DNAT requires passwordless sudo + iptables nat.
+# Returns 0 if DNAT can be configured (or PII not active — nothing to check).
+# Returns 1 with explicit warnings if PII is active but prerequisites missing.
+#######################################
+_pii_dnat_preflight() {
+    [[ "${ICLAUDE_PII_ACTIVE:-0}" != "1" ]] && return 0
+    [[ "${MICRO_VM_NET_ENABLED:-true}" != "true" ]] && return 0
+    [[ -z "${ICLAUDE_PII_ACTIVE_PORT:-}" ]] && return 0
+
+    if ! sudo -n true 2>/dev/null; then
+        print_warning "microVM: PII proxy active but passwordless sudo unavailable"
+        print_warning "microVM: guest cannot reach PII proxy at ${MICRO_VM_NET_HOST_IP}:${ICLAUDE_PII_ACTIVE_PORT}"
+        print_info    "microVM: configure NOPASSWD for iptables/sysctl OR launch without --pii-proxy"
+        return 1
+    fi
+    if ! sudo -n iptables -t nat -L PREROUTING -n &>/dev/null; then
+        print_warning "microVM: iptables nat table inaccessible — PII proxy DNAT disabled"
+        return 1
+    fi
+    return 0
+}
+
+#######################################
+# Idempotent removal of orphaned PII DNAT rules from previous crashed sessions.
+# Matches by iptables comment marker "iclaude-pii-dnat:<tap_iface>".
+# Args:
+#   $1 - tap_iface (required)
+#######################################
+_pii_dnat_sweep_stale() {
+    local tap="$1"
+    [[ -z "$tap" ]] && return 0
+    sudo -n true 2>/dev/null || return 0
+
+    local marker="iclaude-pii-dnat:${tap}"
+    local _guard _line
+
+    _guard=0
+    while [[ $_guard -lt 20 ]]; do
+        _line=$(sudo -n iptables -t nat -L PREROUTING --line-numbers -n 2>/dev/null \
+                | awk -v m="$marker" '$0 ~ m {print $1; exit}')
+        [[ -z "$_line" ]] && break
+        sudo -n iptables -t nat -D PREROUTING "$_line" 2>/dev/null || break
+        _guard=$((_guard + 1))
+    done
+
+    _guard=0
+    while [[ $_guard -lt 20 ]]; do
+        _line=$(sudo -n iptables -L INPUT --line-numbers -n 2>/dev/null \
+                | awk -v m="$marker" '$0 ~ m {print $1; exit}')
+        [[ -z "$_line" ]] && break
+        sudo -n iptables -D INPUT "$_line" 2>/dev/null || break
+        _guard=$((_guard + 1))
+    done
+}
+
+#######################################
 # Start Firecracker microVM and prepare guest for claude launch.
 # Sets MICRO_VM_PID, MICRO_VM_SOCKET, MICRO_VM_SESSION_OWNED globals.
 # v2 architecture: Claude runs INSIDE guest VM via SSH; block devices for storage.
@@ -1488,21 +1544,22 @@ start_microvm() {
     #  2. iptables PREROUTING DNAT — rewrites destination from host TAP IP to 127.0.0.1.
     #
     # Both are scoped to the slot's TAP interface and removed in stop_microvm().
-    if [[ "${ICLAUDE_PII_ACTIVE:-0}" == "1" ]] && \
+    if _pii_dnat_preflight && \
        [[ "${ICLAUDE_PII_ACTIVE_PORT:-}" =~ ^[0-9]+$ ]] && \
-       [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]] && \
-       [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && \
-       sudo -n true 2>/dev/null; then
+       [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]]; then
+        _pii_dnat_sweep_stale "${MICRO_VM_NET_TAP_IFACE}"
         # Enable routing of localnet (127/8) packets arriving on the TAP interface
         sudo sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=1" &>/dev/null || true
         sudo iptables -t nat -A PREROUTING \
             -i "${MICRO_VM_NET_TAP_IFACE}" \
             -d "${MICRO_VM_NET_HOST_IP}" -p tcp --dport "${ICLAUDE_PII_ACTIVE_PORT}" \
+            -m comment --comment "iclaude-pii-dnat:${MICRO_VM_NET_TAP_IFACE}" \
             -j DNAT --to-destination "127.0.0.1:${ICLAUDE_PII_ACTIVE_PORT}" \
             2>/dev/null || true
         # INPUT ACCEPT for the DNAT'd connection arriving on the TAP interface
         sudo iptables -A INPUT \
             -i "${MICRO_VM_NET_TAP_IFACE}" -p tcp --dport "${ICLAUDE_PII_ACTIVE_PORT}" \
+            -m comment --comment "iclaude-pii-dnat:${MICRO_VM_NET_TAP_IFACE}" \
             -j ACCEPT 2>/dev/null || true
         export MICRO_VM_PII_DNAT_PORT="${ICLAUDE_PII_ACTIVE_PORT}"
         print_info "microVM: DNAT ${MICRO_VM_NET_HOST_IP}:${ICLAUDE_PII_ACTIVE_PORT} → 127.0.0.1:${ICLAUDE_PII_ACTIVE_PORT} (PII proxy)"
@@ -1587,17 +1644,10 @@ stop_microvm() {
     fi
 
     # Remove DNAT rule and route_localnet for PII proxy (added in start_microvm when PII proxy is active).
-    if [[ -n "${MICRO_VM_PII_DNAT_PORT:-}" ]] && [[ -n "${MICRO_VM_NET_HOST_IP:-}" ]] && \
-       [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && sudo -n true 2>/dev/null; then
-        sudo iptables -t nat -D PREROUTING \
-            -i "${MICRO_VM_NET_TAP_IFACE}" \
-            -d "${MICRO_VM_NET_HOST_IP}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
-            -j DNAT --to-destination "127.0.0.1:${MICRO_VM_PII_DNAT_PORT}" \
-            2>/dev/null || true
-        sudo iptables -D INPUT \
-            -i "${MICRO_VM_NET_TAP_IFACE}" -p tcp --dport "${MICRO_VM_PII_DNAT_PORT}" \
-            -j ACCEPT 2>/dev/null || true
-        sudo sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=0" &>/dev/null || true
+    # Uses comment-marker sweep so cleanup is robust against port mismatches and partial state.
+    if [[ -n "${MICRO_VM_NET_TAP_IFACE:-}" ]] && sudo -n true 2>/dev/null; then
+        _pii_dnat_sweep_stale "${MICRO_VM_NET_TAP_IFACE}"
+        sudo -n sysctl -w "net.ipv4.conf.${MICRO_VM_NET_TAP_IFACE}.route_localnet=0" &>/dev/null || true
         MICRO_VM_PII_DNAT_PORT=""
     fi
 

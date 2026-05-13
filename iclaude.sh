@@ -612,6 +612,22 @@ fi
                 USE_MICRO_VM_FLAG=true
                 shift
                 ;;
+            --e2e-exit-after-boot)
+                if [[ "${ICLAUDE_E2E_HEADLESS:-0}" != "1" ]]; then
+                    echo "ERROR: --e2e-exit-after-boot requires ICLAUDE_E2E_HEADLESS=1" >&2
+                    exit 2
+                fi
+                ICLAUDE_E2E_EXIT_AFTER_BOOT=1
+                shift
+                ;;
+            --e2e-kill-after-boot)
+                if [[ "${ICLAUDE_E2E_HEADLESS:-0}" != "1" ]]; then
+                    echo "ERROR: --e2e-kill-after-boot requires ICLAUDE_E2E_HEADLESS=1" >&2
+                    exit 2
+                fi
+                ICLAUDE_E2E_KILL_AFTER_BOOT=1
+                shift
+                ;;
             --no-attribution-header)
                 NO_ATTRIBUTION_HEADER=true
                 shift
@@ -756,11 +772,6 @@ fi
             restore_git_proxy
         fi
 
-        # Save model selection to config if specified
-        if [[ -n "$model_value" ]]; then
-            save_model_to_config "$model_value"
-        fi
-
         # Check OAuth token expiration
         check_token_expiration
 
@@ -823,11 +834,6 @@ fi
     # Configure proxy
     print_info "Configuring proxy..."
     configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
-
-    # Save model selection to config if specified
-    if [[ -n "$model_value" ]]; then
-        save_model_to_config "$model_value"
-    fi
 
     # Display configuration
     display_proxy_info "$show_password"

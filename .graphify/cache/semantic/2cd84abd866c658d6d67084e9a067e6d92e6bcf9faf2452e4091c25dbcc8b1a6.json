@@ -1,0 +1,1 @@
+{"nodes": [{"id": "sandbox_guest_init_graceful_shutdown", "label": "_graceful_shutdown()", "file_type": "code", "source_file": "lib/sandbox/guest-init.sh", "source_location": "100", "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

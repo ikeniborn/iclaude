@@ -1,6 +1,6 @@
 #!/bin/bash
 # Graphify installation module
-# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_resolve_uv(), _graphify_install_command()
+# Provides: install_graphify(), _graphify_rebuild_graph(), _graphify_resolve_proxy(), _graphify_resolve_uv()
 
 #######################################
 # Resolve proxy URL from environment
@@ -23,6 +23,33 @@ _graphify_resolve_uv() {
 }
 
 #######################################
+# Patch graphify watch.py to pass explicit manifest_path to save_manifest.
+# Idempotent — no-op if already patched or file not found.
+# Upstream bug: watch._rebuild_code() calls save_manifest(detected["files"])
+# without manifest_path, falling through to hardcoded "graphify-out/manifest.json".
+#######################################
+_patch_graphify_watch() {
+    local uv_bin
+    uv_bin=$(_graphify_resolve_uv)
+    [[ -z "$uv_bin" ]] && return 0
+
+    local watch_py
+    watch_py=$(UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+        "$uv_bin" tool run --from graphifyy python3 \
+        -c "import graphify.watch; print(graphify.watch.__file__)" 2>/dev/null || echo "")
+    [[ -z "$watch_py" || ! -f "$watch_py" ]] && return 0
+
+    # Idempotent: only patch when the unpatched line is present
+    if grep -qF 'save_manifest(detected["files"])' "$watch_py"; then
+        if sed -i 's|save_manifest(detected\["files"\])|save_manifest(detected["files"], manifest_path=str(out / "manifest.json"))|' "$watch_py"; then
+            print_info "Patched graphify watch.py: save_manifest now uses explicit manifest_path"
+        else
+            print_warning "Failed to patch graphify watch.py (sed error — check permissions)"
+        fi
+    fi
+}
+
+#######################################
 # Rebuild knowledge graph for current project.
 # Called by --graphify flag before launching claude.
 # Returns: 0 on success, 1 on failure
@@ -32,9 +59,14 @@ _graphify_rebuild_graph() {
         print_error "graphify not installed. Run: ./iclaude.sh --install-graphify"
         return 1
     fi
+    _patch_graphify_watch
 
-    local uv_bin
-    uv_bin=$(_graphify_resolve_uv)
+    # Re-apply portability patches (idempotent via ICLAUDE-PATCHED-v1 marker).
+    # Guards against `uv tool upgrade graphifyy` reverting patches between rebuilds.
+    if [[ -f "$LIB_DIR/graphify/apply_patches.sh" ]]; then
+        bash "$LIB_DIR/graphify/apply_patches.sh" >/dev/null 2>&1 || \
+            print_warning "apply_patches.sh failed — graph may contain absolute paths"
+    fi
 
     local project_root
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
@@ -42,8 +74,14 @@ _graphify_rebuild_graph() {
     local out_label="${GRAPHIFY_OUT:-graphify-out}"
     print_info "Building knowledge graph → ${project_root}/${out_label}/"
 
-    # Build args: "update <project_root>" [extra_args...]
-    local -a graphify_args=("update" "$project_root")
+    # Use the installed graphify binary directly (not uv tool run) so that iclaude
+    # patches applied to the tool dir venv are always in effect.
+    local graphify_bin="${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify"
+
+    # Pass "." (relative) instead of absolute project_root so .graphify_root and
+    # manifest keys are relative — required for git portability across machines.
+    # Build args: "update ." [extra_args...]
+    local -a graphify_args=("update" ".")
     # Split GRAPHIFY_EXTRA_ARGS on whitespace (intentional word splitting for flag list)
     # shellcheck disable=SC2086
     [[ -n "$GRAPHIFY_EXTRA_ARGS" ]] && read -ra _extra <<< "$GRAPHIFY_EXTRA_ARGS" && graphify_args+=("${_extra[@]}")
@@ -57,9 +95,7 @@ _graphify_rebuild_graph() {
         env_args+=(UV_HTTP_PROXY="$proxy" UV_HTTPS_PROXY="$proxy")
     fi
 
-    UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        env "${env_args[@]}" \
-        "$uv_bin" tool run --from graphifyy graphify "${graphify_args[@]}"
+    env "${env_args[@]}" "$graphify_bin" "${graphify_args[@]}"
 }
 
 #######################################
@@ -144,24 +180,63 @@ install_graphify() {
     if ! UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
         UV_PYTHON_INSTALL_DIR="$GRAPHIFY_PYTHON_DIR" \
         "${proxy_env[@]}" \
-        "$uv_bin" tool install graphifyy --python 3.12; then
+        "$uv_bin" tool install graphifyy --python 3.12 ${force:+--force}; then
         print_error "Failed to install graphifyy"
         return 1
     fi
     print_success "graphifyy installed"
+    _patch_graphify_watch
 
-    # Step 3: graphify install (Claude Code skill setup)
-    print_info "Setting up Claude Code skill ..."
-    if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
-        CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
-        "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
-        print_success "Claude Code skill configured"
-    else
-        print_warning "graphify install returned non-zero (skill setup optional — continuing)"
+    # Apply iclaude portability patches (relative paths in manifest/root/cache)
+    if [[ -f "$LIB_DIR/graphify/apply_patches.sh" ]]; then
+        bash "$LIB_DIR/graphify/apply_patches.sh"
     fi
 
-    # Step 4: Create commands/graphify
-    _graphify_install_command || return 1
+    # Step 2.5: Symlink graphify binary into isolated bin/ so `which graphify` resolves correctly.
+    # SKILL.md detects graphify by reading its shebang — which points to the uv-managed Python 3.12.
+    # Without this symlink, `which graphify` returns empty → skill falls back to system python3 (3.9).
+    local graphify_bin_src="${GRAPHIFY_TOOL_DIR}/graphifyy/bin/graphify"
+    local graphify_bin_dst="${ISOLATED_NVM_DIR}/bin/graphify"
+    if [[ -x "$graphify_bin_src" ]]; then
+        ln -sf "$graphify_bin_src" "$graphify_bin_dst"
+        print_success "graphify symlink: $graphify_bin_dst"
+    fi
+
+    # Step 3: graphify install (Claude Code skill setup).
+    # SKILL.md is never overwritten automatically — local customizations are always preserved.
+    # On first install (no SKILL.md): run graphify install normally.
+    # On reinstall (SKILL.md exists): run into temp dir, compare, save .new if upstream differs.
+    local skill_md="${CLAUDE_CONFIG_DIR}/skills/graphify/SKILL.md"
+    if [[ ! -f "$skill_md" ]]; then
+        print_info "Setting up Claude Code skill ..."
+        if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+            CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
+            "$uv_bin" tool run --from graphifyy graphify install 2>/dev/null; then
+            print_success "Claude Code skill configured"
+        else
+            print_warning "graphify install returned non-zero (skill setup optional — continuing)"
+        fi
+    else
+        [[ "$force" == true ]] && print_warning "--force does not overwrite SKILL.md (preserving local customizations)"
+        print_success "Claude Code skill already configured (preserving local customizations)"
+        local tmp_dir
+        tmp_dir=$(mktemp -d)
+        if UV_TOOL_DIR="$GRAPHIFY_TOOL_DIR" \
+            CLAUDE_CONFIG_DIR="$tmp_dir" \
+            "$uv_bin" tool run --from graphifyy graphify install &>/dev/null; then
+            local upstream_skill="${tmp_dir}/skills/graphify/SKILL.md"
+            if [[ -f "$upstream_skill" ]]; then
+                if ! diff -q "$skill_md" "$upstream_skill" &>/dev/null; then
+                    cp "$upstream_skill" "${skill_md}.new"
+                    print_warning "Upstream SKILL.md differs from local — saved to: ${skill_md}.new"
+                    print_info "  Review: diff ${skill_md} ${skill_md}.new"
+                else
+                    print_info "Upstream SKILL.md matches local (no .new saved)"
+                fi
+            fi
+        fi
+        rm -rf "$tmp_dir"
+    fi
 
     echo ""
     print_success "Graphify installed successfully!"
@@ -169,43 +244,7 @@ install_graphify() {
     print_info "Next steps:"
     print_info "  Status:           ./iclaude.sh --check-graphify"
     print_info "  Build graph:      ./iclaude.sh --graphify"
-    print_info "  In Claude Code:   /graphify-update (slash command)"
+    print_info "  In Claude Code:   /graphify"
     echo ""
     return 0
-}
-
-#######################################
-# Create commands/graphify-update.md Claude Code slash command.
-# Invoked as /graphify-update inside a Claude Code session.
-# Returns: 0 on success, 1 on failure
-#######################################
-_graphify_install_command() {
-    local commands_dir="${ISOLATED_CONFIG_DIR}/commands"
-    local cmd_path="${commands_dir}/graphify-update.md"
-
-    mkdir -p "$commands_dir"
-
-    # Write markdown slash command for Claude Code (/graphify-update).
-    # Embed real paths so command works without iclaude env vars.
-    local _uv_bin="$GRAPHIFY_UV_BIN"
-    local _tool_dir="$GRAPHIFY_TOOL_DIR"
-    cat > "$cmd_path" << GRAPHIFY_MD
----
-description: Rebuild graphify knowledge graph for the current project
----
-
-Rebuild the graphify knowledge graph for the current project. Run the following bash command and report the result:
-
-\`\`\`bash
-_gfy_root=\$(git rev-parse --show-toplevel 2>/dev/null || echo "\$PWD")
-_gfy_out_env=()
-[[ -n "\${GRAPHIFY_OUT:-}" ]] && _gfy_out_env=(GRAPHIFY_OUT="\${GRAPHIFY_OUT}")
-UV_TOOL_DIR="${_tool_dir}" "\${_gfy_out_env[@]}" "${_uv_bin}" tool run --from graphifyy graphify \\
-    update "\${_gfy_root}" \${GRAPHIFY_EXTRA_ARGS:+\${GRAPHIFY_EXTRA_ARGS}}
-\`\`\`
-
-After the command completes, report: success or failure, output directory, and briefly what was analyzed.
-GRAPHIFY_MD
-
-    print_success "Slash command created: /graphify-update ($cmd_path)"
 }

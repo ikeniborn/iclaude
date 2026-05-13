@@ -8,7 +8,7 @@
       "id": "документация",
       "name": "Документация iclaude",
       "description": "Документация по функциям, командам, конфигурации и архитектуре iclaude — bash-обёртки для запуска Claude Code",
-      "source_paths": ["docs/"],
+      "source_paths": ["docs/", ".nvm-isolated/.claude-isolated/skills/"],
       "wiki_subfolder": "документация",
       "tags": ["iclaude", "documentation"],
       "language_notes": "Основной язык: русский. Технические термины (CLI, API, OAuth, KVM, PII, NLP, SSH, TAP, JWT) — не переводить. Имена систем: Claude Code, Firecracker, Presidio, PasteGuard — оригинальное написание.",
@@ -54,6 +54,13 @@
           "extraction_cues": ["lib/", "launcher", "launch.sh", "init.sh", "adapter", "адаптер", "модуль", "iclaude-guest-init", "claude-statusline", "provider-adapter", "pricing-lookup", "module"],
           "min_mentions_for_page": 2,
           "wiki_subfolder": "документация/архитектура"
+        },
+        {
+          "type": "скилл",
+          "description": "Claude Code skills в .nvm-isolated/.claude-isolated/skills/: SKILL.md, операции (ingest/query/lint/init), readers, шаблоны",
+          "extraction_cues": ["SKILL.md", "skill", "скилл", "ingest", "query", "lint", "init", "reader", "domain-map", "wiki", "frontmatter", "extraction_cues", "entity_types", "source_types"],
+          "min_mentions_for_page": 2,
+          "wiki_subfolder": "документация/скиллы"
         }
       ]
     }

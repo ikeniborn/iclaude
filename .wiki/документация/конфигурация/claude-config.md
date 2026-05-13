@@ -4,7 +4,7 @@ wiki_sources:
   - "docs/functions/QUICK_CONFIG.md"
   - "docs/functions/MICROVM.md"
   - "docs/functions/PII_MASKING.md"
-wiki_updated: 2026-05-06
+wiki_updated: 2026-05-08
 wiki_status: developing
 wiki_outgoing_links:
   - "[[прокси|Прокси]]"
@@ -56,8 +56,15 @@ aliases:
 | `MICRO_VM_VCPU` | `2` | vCPU |
 | `MICRO_VM_WORKSPACE_MODE` | `full` | `full` или `isolated` |
 | `MICRO_VM_WORKSPACE_PATH` | — | Путь к проекту (по умолчанию `$PWD`) |
+| `MICRO_VM_WORKSPACE_SIZE_MB` | `2048` | Размер workspace-диска (vdc, sparse) |
+| `MICRO_VM_ROOTFS_SIZE_MB` | `2048` | Размер rootfs-образа (vda) с авто-расширением |
 | `MICRO_VM_NET_ENABLED` | `true` | TAP-сеть |
+| `MICRO_VM_NET_SUBNET` | `172.16.0.0/26` | Подсеть IP-пула слотов |
+| `MICRO_VM_SYNC_INTERVAL` | `0` | Периодический sync guest→host (секунды) |
+| `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений |
 | `MICRO_VM_SNAPSHOT_ENABLED` | `false` | Именованные снэпшоты |
+| `MICRO_VM_SNAPSHOT_DIR` | `microvm-snapshots/` | Каталог снэпшотов |
+| `MICRO_VM_INSECURE_DOWNLOAD` | `false` | TLS workaround для ALT Linux 10 при `--install-microvm` |
 
 **PII proxy:**
 

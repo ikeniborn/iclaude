@@ -166,6 +166,19 @@ launch_claude() {
             exit 1
         fi
 
+        # E2E test hooks — only active when ICLAUDE_E2E_HEADLESS=1 was set at launch
+        if [[ "${ICLAUDE_E2E_KILL_AFTER_BOOT:-0}" == "1" ]]; then
+            echo "E2E: simulating crash via SIGKILL on self (PID $$)"
+            kill -9 $$
+        fi
+        if [[ "${ICLAUDE_E2E_EXIT_AFTER_BOOT:-0}" == "1" ]]; then
+            echo "E2E: clean exit after microVM boot"
+            stop_microvm 2>/dev/null || true
+            [[ "$use_pii_proxy" == "true" ]] && stop_pii_proxy_server 2>/dev/null || true
+            [[ "$use_router" == "true" ]] && stop_ccr_server 2>/dev/null || true
+            exit 0
+        fi
+
         # SSH ControlMaster socket path — initialized below after ControlMaster setup.
         # Declared here (empty) so _cm_cleanup trap can reference it safely before initialization.
         local _ssh_control_socket=""
@@ -810,6 +823,36 @@ cleanup_stale_session_env() {
 }
 
 #######################################
+# Sweep dead consumer registrations from pii-proxy-pid/consumers/.
+# Must be called while holding flock on shared.lock.
+# Removes files whose stored PID is dead (kill -0 fails).
+#######################################
+_sweep_dead_pii_consumers() {
+    local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
+    [[ -d "$consumers_dir" ]] || return 0
+    local _cf _cpid
+    for _cf in "$consumers_dir"/*.pid; do
+        [[ -f "$_cf" ]] || continue
+        _cpid=$(cat "$_cf" 2>/dev/null)
+        if [[ -z "$_cpid" ]] || ! kill -0 "$_cpid" 2>/dev/null; then
+            rm -f "$_cf"
+        fi
+    done
+}
+
+#######################################
+# Register current session as a consumer of the shared PII proxy.
+# Creates pii-proxy-pid/consumers/$ICLAUDE_SESSION_ID.pid with current bash PID.
+# Must be called while holding flock on shared.lock.
+#######################################
+_register_pii_consumer() {
+    local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
+    mkdir -p "$consumers_dir"
+    chmod 700 "$consumers_dir"
+    echo "$$" > "$consumers_dir/${ICLAUDE_SESSION_ID}.pid"
+}
+
+#######################################
 # Start PII proxy server and redirect API traffic through it.
 # Each iclaude session starts its own independent proxy on a dynamic port.
 # Per-session PID and port files (pii-proxy-<SESSION_ID>.{pid,port}) prevent
@@ -889,6 +932,142 @@ except Exception:
                 return 0
             fi
         fi
+    fi
+
+    # Shared proxy mode (non-CCR only): attach to existing shared proxy or start one.
+    # All clean-PII sessions share one Python process to avoid loading Presidio NLP
+    # multiple times. A flock on shared.lock serializes start/stop decisions.
+    # CCR sessions bypass this and always start a per-session proxy, even when they
+    # reused an existing CCR daemon (CCR_SESSION_OWNED=false). CCR_UPSTREAM_ACTIVE is
+    # set by start_ccr_server() in both the fresh-start and reuse paths — it signals
+    # that ANTHROPIC_BASE_URL points to CCR and a per-session proxy is required.
+    # Without this, a reused-CCR session would attach to a shared proxy whose upstream
+    # was baked as api.anthropic.com by an earlier --pii-proxy session, bypassing CCR.
+    if [[ "${CCR_UPSTREAM_ACTIVE:-false}" != "true" ]]; then
+        local _shared_lock="${PII_PROXY_PID_DIR}/shared.lock"
+        local _shared_pid_file="${PII_PROXY_PID_DIR}/shared.pid"
+        local _shared_port_file="${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
+        # Capture upstream before subshell (subshells cannot set parent vars)
+        local _upstream_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+        # Temp file to pass port out of the flock subshell (subshells cannot set parent vars)
+        local _shared_result="${PII_PROXY_PID_DIR}/shared-attach-${ICLAUDE_SESSION_ID}.tmp"
+        rm -f "$_shared_result"
+        mkdir -p "$PII_PROXY_PID_DIR"
+        chmod 700 "$PII_PROXY_PID_DIR"
+
+        (
+            flock -x 9
+            _sweep_dead_pii_consumers
+
+            # Check if shared proxy is alive
+            local _spid _sport _salive=false
+            _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+            if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null && \
+               ps -p "$_spid" -o cmd= 2>/dev/null | grep -q 'pii-proxy-server.py'; then
+                _sport=$(cat "$_shared_port_file" 2>/dev/null || true)
+                [[ "$_sport" =~ ^[0-9]+$ ]] && _salive=true
+            fi
+
+            if [[ "$_salive" == "true" ]]; then
+                # Attach to existing shared proxy
+                _register_pii_consumer
+                echo "attach:${_sport}" > "$_shared_result"
+            else
+                # Start new shared proxy
+                rm -f "$_shared_pid_file" "$_shared_port_file"
+                local _upstream="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+                mkdir -p "$PII_PROXY_LOG_DIR"
+                chmod 700 "$PII_PROXY_LOG_DIR"
+
+                ANTHROPIC_UPSTREAM_URL="$_upstream" \
+                ICLAUDE_SESSION_ID="shared" \
+                PII_PROXY_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}" \
+                    setsid "$python_bin" "$PII_PROXY_SERVER_SCRIPT" \
+                    --port "$PII_PROXY_PORT" \
+                    --log-dir "$PII_PROXY_LOG_DIR" \
+                    </dev/null >/dev/null 2>&1 9>&- &
+
+                local _proxy_pid=$!
+                disown "$_proxy_pid" 2>/dev/null || true
+                echo "$_proxy_pid" > "$_shared_pid_file"
+
+                # Poll for port file then HTTP health (max 15s, 0.5s intervals)
+                local _max=30 _tick=0 _health=false _port=""
+                while [[ $_tick -lt $_max ]]; do
+                    if ! kill -0 "$_proxy_pid" 2>/dev/null; then
+                        echo "fail:process_exited" > "$_shared_result"
+                        rm -f "$_shared_pid_file"
+                        exit 1
+                    fi
+                    if [[ -f "$_shared_port_file" ]]; then
+                        _port=$(cat "$_shared_port_file" 2>/dev/null || true)
+                        if [[ "$_port" =~ ^[0-9]+$ ]]; then
+                            if (: >/dev/tcp/127.0.0.1/"$_port") 2>/dev/null; then
+                                if _pii_proxy_http_health "$_port"; then
+                                    _health=true
+                                    break
+                                fi
+                            fi
+                        fi
+                    fi
+                    sleep 0.5
+                    _tick=$((_tick + 1))
+                done
+
+                if [[ "$_health" != "true" ]]; then
+                    kill "$_proxy_pid" 2>/dev/null || true
+                    rm -f "$_shared_pid_file" "$_shared_port_file"
+                    echo "fail:timeout" > "$_shared_result"
+                    exit 1
+                fi
+
+                _register_pii_consumer
+                echo "start:${_port}" > "$_shared_result"
+            fi
+        ) 9>"$_shared_lock"
+
+        # Process result from flock subshell
+        local _result _mode _port
+        if [[ -f "$_shared_result" ]]; then
+            _result=$(cat "$_shared_result" 2>/dev/null || true)
+            rm -f "$_shared_result"
+        else
+            _result="fail:no_result"
+        fi
+        _mode="${_result%%:*}"
+        _port="${_result#*:}"
+
+        case "$_mode" in
+            attach|start)
+                if [[ ! "$_port" =~ ^[0-9]+$ ]]; then
+                    print_warning "PII proxy: shared proxy returned invalid port"
+                    unset -f _pii_proxy_http_health
+                    return 1
+                fi
+                PII_PROXY_ACTIVE_PORT="$_port"
+                PII_PROXY_SESSION_OWNED=shared
+                export ANTHROPIC_BASE_URL="http://127.0.0.1:$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_ACTIVE=1
+                export ICLAUDE_PII_MASKING_LEVEL="${PII_PROXY_MASKING_LEVEL:-standard}"
+                export ICLAUDE_PII_ACTIVE_PORT="$PII_PROXY_ACTIVE_PORT"
+                export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
+                export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/shared.log"
+                if [[ "$_mode" == "attach" ]]; then
+                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT"
+                else
+                    print_info "PII proxy: shared proxy started on :$PII_PROXY_ACTIVE_PORT → $_upstream_url [${PII_PROXY_MASKING_LEVEL:-standard}]"
+                fi
+                unset -f _pii_proxy_http_health
+                echo ""
+                return 0
+                ;;
+            *)
+                print_warning "PII proxy: shared proxy failed to start (${_result})"
+                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                unset -f _pii_proxy_http_health
+                return 1
+                ;;
+        esac
     fi
 
     # Cleanup orphaned proxies from previous (terminated) sessions
@@ -1032,8 +1211,10 @@ start_ccr_server() {
     if (: >/dev/tcp/"$CCR_HOST"/"$CCR_PORT") 2>/dev/null; then
         print_info "CCR router: reusing existing instance on ${CCR_HOST}:${CCR_PORT}"
         CCR_SESSION_OWNED=false
+        CCR_UPSTREAM_ACTIVE=true
         # Set ANTHROPIC_BASE_URL so start_pii_proxy_server() captures CCR as upstream_url
         export ANTHROPIC_BASE_URL="http://${CCR_HOST}:${CCR_PORT}"
+        export CCR_UPSTREAM_ACTIVE
         return 0
     fi
 
@@ -1044,7 +1225,8 @@ start_ccr_server() {
     HOME="${CCR_HOME:-$HOME}" nohup "$ccr_cmd" start >>"${PII_PROXY_LOG_DIR:-/tmp}/ccr-daemon.log" 2>&1 &
     CCR_PID=$!
     CCR_SESSION_OWNED=true
-    export CCR_PID CCR_SESSION_OWNED
+    CCR_UPSTREAM_ACTIVE=true
+    export CCR_PID CCR_SESSION_OWNED CCR_UPSTREAM_ACTIVE
 
     # Wait for CCR to be ready (max 10 × 0.5s = 5 seconds) via bash /dev/tcp health check
     local max_ticks=10
@@ -1115,6 +1297,40 @@ stop_pii_proxy_server() {
     if [[ "${PII_PROXY_SESSION_OWNED:-}" == "false" ]]; then
         return 0
     fi
+
+    # Shared proxy: deregister this session; kill proxy only if no consumers remain
+    if [[ "${PII_PROXY_SESSION_OWNED:-}" == "shared" ]]; then
+        local _shared_lock="${PII_PROXY_PID_DIR}/shared.lock"
+        local _shared_pid_file="${PII_PROXY_PID_DIR}/shared.pid"
+        mkdir -p "$PII_PROXY_PID_DIR"
+        (
+            flock -x 9
+            rm -f "${PII_PROXY_PID_DIR}/consumers/${ICLAUDE_SESSION_ID}.pid"
+            _sweep_dead_pii_consumers
+            local _count
+            _count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
+            if [[ "$_count" -eq 0 ]]; then
+                local _spid
+                _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+                if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null; then
+                    kill "$_spid" 2>/dev/null || true
+                    local _waited=0
+                    while kill -0 "$_spid" 2>/dev/null && [[ $_waited -lt 10 ]]; do
+                        sleep 0.1
+                        _waited=$((_waited + 1))
+                    done
+                    kill -9 "$_spid" 2>/dev/null || true
+                fi
+                rm -f "$_shared_pid_file"
+                rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
+                if [[ "${PII_PROXY_LOG_LEVEL:-info}" != "debug" ]]; then
+                    rm -f "${PII_PROXY_LOG_DIR}/shared.log"
+                fi
+            fi
+        ) 9>"$_shared_lock"
+        return 0
+    fi
+
     if [[ -f "${PII_PROXY_PID_FILE:-}" ]]; then
         local pid
         pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
