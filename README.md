@@ -276,6 +276,25 @@ Claude Code может читать, изменять и выполнять фа
 
 Подробнее: [docs/functions/GRAPHIFY.md](docs/functions/GRAPHIFY.md).
 
+### GSD Framework (Get Shit Done)
+
+Устанавливает набор slash-команд [GSD](https://github.com/JuliusBrussee/get-shit-done-cc) в изолированную среду Claude Code. GSD — фреймворк spec-driven разработки: `/gsd` запускает интерактивный процесс написания спецификации → плана → реализации.
+
+```bash
+./iclaude.sh --install-gsd          # Установка (npx get-shit-done-cc@latest)
+./iclaude.sh --install-gsd --force  # Переустановка (удаляет старые skill-каталоги)
+./iclaude.sh --check-gsd            # Статус: версия, установленные skills
+```
+
+**Что устанавливается:** GSD создаёт каталоги `skills/gsd-*/` в `$CLAUDE_CONFIG_DIR`. Версия фиксируется в маркере `.gsd-version` для offline-чтения lockfile.
+
+**Интеграция:**
+- `--update` автоматически обновляет GSD, если он установлен
+- `--install-from-lockfile` восстанавливает GSD по полю `gsdVersion` из lockfile
+- Поле `gsdVersion` добавляется в lockfile при каждом `save_isolated_lockfile`
+
+**В сессии:** запустите Claude Code и введите `/gsd` для старта.
+
 ### Сжатие токенов (Caveman)
 
 Сокращает использование output-токенов на ~65–75% через [caveman](https://github.com/JuliusBrussee/caveman) — компрессивный стиль ответов модели (drop articles/filler/pleasantries). Не затрагивает код, коммиты, security warnings, error quotes.
@@ -371,7 +390,8 @@ iclaude.sh
 ├── lib/sandbox/     — Firecracker microVM
 ├── lib/statusline/  — метрики в статуслайне
 ├── lib/launcher/    — запуск Claude Code (финальный вызов)
-└── lib/graphify/    — граф знаний проекта
+├── lib/graphify/    — граф знаний проекта
+└── lib/gsd/         — GSD framework (detect, install, status)
 ```
 
 Хуки безопасности: `.nvm-isolated/.claude-isolated/hooks/`
@@ -389,6 +409,7 @@ iclaude.sh
 | Статуслайн | `docs/functions/STATUSLINE.md` |
 | microVM | `docs/functions/MICROVM.md` |
 | Граф знаний (Graphify) | `docs/functions/GRAPHIFY.md` |
+| GSD Framework | `docs/superpowers/plans/2026-05-14-gsd-integration.md` |
 | Сжатие токенов (Caveman) | `docs/functions/CAVEMAN.md` |
 | Все команды | `docs/functions/CONFIGURATION.md` |
 | Примеры сценариев | `docs/functions/USE_CASES.md` |
