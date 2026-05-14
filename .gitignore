@@ -114,6 +114,7 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Router configuration (only example in git, actual config ignored)
 !.nvm-isolated/.claude-isolated/router.json.example
+!.nvm-isolated/.claude-isolated/router.json
 
 # Plugin manifest (declarative list of plugins to install after git clone)
 !.nvm-isolated/.claude-isolated/plugins-manifest.json
