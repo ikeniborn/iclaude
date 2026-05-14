@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), and Graphify knowledge graph.
+**iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), Graphify knowledge graph, and GSD framework.
 
 Key paths: `.nvm-isolated/` (isolated env), `lib/` (16 bash modules), `docs/` (feature docs).
 
@@ -44,6 +44,8 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
 ./iclaude.sh --install-graphify       # Install Graphify (uv + Python 3.12 + graphifyy)
+./iclaude.sh --install-gsd            # Install GSD framework (npx get-shit-done-cc)
+./iclaude.sh --check-gsd              # Check GSD installation status
 ./iclaude.sh --install-microvm        # Install Firecracker (~1.4GB)
 ./iclaude.sh --sandbox-microvm        # Launch with microVM kernel isolation
 ```
@@ -58,6 +60,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
 | microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
 | Graphify Knowledge Graph (uv, Python 3.12, graphifyy) | `lib/graphify/` |
+| GSD Framework (meta-prompting, spec-driven dev) | [docs/superpowers/specs/2026-05-14-gsd-integration-design.md](docs/superpowers/specs/2026-05-14-gsd-integration-design.md) |
 | OAuth Token Management | `lib/oauth/token.sh` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
 
