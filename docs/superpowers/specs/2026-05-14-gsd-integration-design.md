@@ -54,7 +54,8 @@ detect_gsd() {
    ```
 5. Write installed version to marker file:
    ```bash
-   # Capture version from npm registry (no network re-download; npm just reads local cache)
+   # npm cache is warm after the preceding npx install; a separate network round-trip
+   # is usually avoided, but not guaranteed if cache is expired or the registry is slow.
    local ver
    ver=$(npm view get-shit-done-cc version 2>/dev/null || echo "unknown")
    echo "$ver" > "${CLAUDE_CONFIG_DIR}/.gsd-version"
