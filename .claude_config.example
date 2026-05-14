@@ -371,8 +371,10 @@ USE_PII_PROXY=false
 #   qwen2.5-coder:14b — локальная, хорошо следует JSON-инструкциям
 #   qwen2.5-coder:7b  — быстрее, меньше памяти (дефолт graphify)
 #
-# export OLLAMA_BASE_URL=http://localhost:11434/v1
-# export OLLAMA_MODEL=kimi-k2.6:cloud
+# export OLLAMA_BASE_URL=https://your-provider.example.com/v1                                    
+# export OLLAMA_API_KEY=your-secret-key                      
+# export OLLAMA_MODEL=smart-model                                                                                                                                                               
+# export GRAPHIFY_EXTRA_ARGS="--backend ollama"
 
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
