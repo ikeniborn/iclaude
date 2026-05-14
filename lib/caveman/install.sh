@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # lib/caveman/install.sh — caveman token-compression hooks for iclaude isolated env
 
-_CAVEMAN_HOOKS_BASE="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/hooks"
+_CAVEMAN_HOOKS_BASE="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/hooks"
 _CAVEMAN_HOOK_FILES=(caveman-activate.js caveman-config.js caveman-mode-tracker.js caveman-stats.js)
+_CAVEMAN_SKILL_URL="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/skills/caveman/SKILL.md"
 
 #######################################
 # Show caveman installation status.
@@ -29,6 +30,15 @@ check_caveman() {
             missing=$((missing + 1))
         fi
     done
+
+    local skill_file="$config_dir/skills/caveman/SKILL.md"
+    if [[ -f "$skill_file" ]]; then
+        echo "  [OK]      skills/caveman/SKILL.md"
+        [[ -f "${skill_file}.new" ]] && echo "  [PENDING] skills/caveman/SKILL.md.new  (review and replace manually)"
+    else
+        echo "  [MISSING] skills/caveman/SKILL.md"
+        missing=$((missing + 1))
+    fi
 
     echo ""
     if [[ $missing -eq 0 ]]; then
@@ -104,6 +114,39 @@ install_caveman() {
         print_info "  $f"
     done
 
+    # Download SKILL.md (only via curl; git-clone fallback handles it below)
+    if [[ "$_all_curl_ok" == true ]]; then
+        local _skills_dir="$config_dir/skills/caveman"
+        mkdir -p "$_skills_dir"
+        local _skill_dst="$_skills_dir/SKILL.md"
+        if [[ -f "$_skill_dst" ]]; then
+            _skill_dst="${_skill_dst}.new"
+            _exit=0
+            curl -fsSL "${_proxy_args[@]}" -o "$_skill_dst" "$_CAVEMAN_SKILL_URL" 2>/dev/null || _exit=$?
+            if [[ $_exit -eq 0 ]]; then
+                print_info "  skills/caveman/SKILL.md.new (existing preserved — review manually)"
+            elif [[ $_exit -eq 35 ]]; then
+                rm -f "$_skill_dst"
+                _all_curl_ok=false
+            else
+                print_warning "Failed to download SKILL.md (curl exit $_exit) — skill level differentiation unavailable"
+                rm -f "$_skill_dst"
+            fi
+        else
+            _exit=0
+            curl -fsSL "${_proxy_args[@]}" -o "$_skill_dst" "$_CAVEMAN_SKILL_URL" 2>/dev/null || _exit=$?
+            if [[ $_exit -eq 0 ]]; then
+                print_info "  skills/caveman/SKILL.md"
+            elif [[ $_exit -eq 35 ]]; then
+                rm -f "$_skill_dst"
+                _all_curl_ok=false
+            else
+                print_warning "Failed to download SKILL.md (curl exit $_exit) — skill level differentiation unavailable"
+                rm -f "$_skill_dst"
+            fi
+        fi
+    fi
+
     if [[ "$_all_curl_ok" == false ]]; then
         print_warning "curl TLS error (exit 35) — falling back to git clone with GIT_SSL_NO_VERIFY=1"
         _clone_dir=$(mktemp -d)
@@ -116,14 +159,32 @@ install_caveman() {
             return 1
         fi
         for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
-            if [[ ! -f "$_clone_dir/hooks/$f" ]]; then
+            if [[ ! -f "$_clone_dir/src/hooks/$f" ]]; then
                 rm -rf "$_clone_dir"
-                print_error "File not found in clone: hooks/$f"
+                print_error "File not found in clone: src/hooks/$f"
                 return 1
             fi
-            cp "$_clone_dir/hooks/$f" "$hooks_dir/$f"
+            cp "$_clone_dir/src/hooks/$f" "$hooks_dir/$f"
             print_info "  $f"
         done
+
+        # Copy SKILL.md from clone
+        local _skill_src="$_clone_dir/skills/caveman/SKILL.md"
+        if [[ -f "$_skill_src" ]]; then
+            local _skills_dir="$config_dir/skills/caveman"
+            mkdir -p "$_skills_dir"
+            local _skill_dst="$_skills_dir/SKILL.md"
+            if [[ -f "$_skill_dst" ]]; then
+                cp "$_skill_src" "${_skill_dst}.new"
+                print_info "  skills/caveman/SKILL.md.new (existing preserved — review manually)"
+            else
+                cp "$_skill_src" "$_skill_dst"
+                print_info "  skills/caveman/SKILL.md"
+            fi
+        else
+            print_warning "SKILL.md not found in clone — skill level differentiation unavailable"
+        fi
+
         rm -rf "$_clone_dir"
     fi
 
@@ -250,6 +311,12 @@ PYEOF
             print_error "Failed to clean settings.json"
             return 1
         fi
+    fi
+
+    local skills_dir="$config_dir/skills/caveman"
+    if [[ -d "$skills_dir" ]]; then
+        rm -rf "$skills_dir"
+        print_info "  Removed skills/caveman/"
     fi
 
     rm -f "$config_dir/caveman-version"
