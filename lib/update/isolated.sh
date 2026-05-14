@@ -106,7 +106,7 @@ update_isolated_claude() {
 
 		# Update GSD if installed
 		if declare -f update_gsd_if_installed &>/dev/null; then
-			update_gsd_if_installed || print_warning "GSD update failed (non-critical)"
+			update_gsd_if_installed
 		fi
 
 		# Update lockfile with new version

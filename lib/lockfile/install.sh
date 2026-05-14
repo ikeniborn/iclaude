@@ -90,6 +90,8 @@ install_from_lockfile() {
 	fi
 
 	# Install GSD if version specified in lockfile
+	# Uses npx directly (not install_gsd) for quiet output; stale gsd-* dirs
+	# are safe because npx overwrites them with the pinned version.
 	local gsd_version
 	gsd_version=$(jq -r '.gsdVersion // "not installed"' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
 
