@@ -149,6 +149,15 @@ if [[ -d "$LIB_DIR/caveman" ]]; then
 fi
 
 #######################################
+# Load GSD modules (Phase 8.5)
+#######################################
+if [[ -d "$LIB_DIR/gsd" ]]; then
+    source "${LIB_DIR}/gsd/detect.sh"
+    source "${LIB_DIR}/gsd/install.sh"
+    source "${LIB_DIR}/gsd/status.sh"
+fi
+
+#######################################
 # Load Sandbox modules (Phase 9.1)
 #######################################
 if [[ -d "$LIB_DIR/sandbox" ]]; then
