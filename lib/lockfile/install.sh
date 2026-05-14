@@ -89,6 +89,21 @@ install_from_lockfile() {
 		fi
 	fi
 
+	# Install GSD if version specified in lockfile
+	local gsd_version
+	gsd_version=$(jq -r '.gsdVersion // "not installed"' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
+
+	if [[ "$gsd_version" != "not installed" ]] && [[ "$gsd_version" != "unknown" ]]; then
+		echo ""
+		print_info "Installing GSD version: $gsd_version"
+		echo ""
+
+		CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR" \
+			npx "get-shit-done-cc@$gsd_version" --global \
+			&& echo "$gsd_version" > "${CLAUDE_CONFIG_DIR}/.gsd-version" \
+			|| print_warning "GSD install failed (non-critical)"
+	fi
+
 	# Install LSP servers and plugins from lockfile
 	# Check jq dependency
 	if ! command -v jq &>/dev/null; then
