@@ -1,7 +1,6 @@
 {
   "_comment": "Claude Code Router v2.0.0 — Ollama Cloud Models configuration",
   "_docs": "https://github.com/musistudio/claude-code-router | docs/ROUTER.md",
-  "_note": "Требует авторизации: ollama signin. Таймаут увеличен для крупных облачных моделей.",
   "PORT": 3456,
   "HOST": "127.0.0.1",
   "LOG": true,
