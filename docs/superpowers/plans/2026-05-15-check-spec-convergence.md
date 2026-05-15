@@ -1,3 +1,25 @@
+---
+review:
+  plan_hash: sha256:ccfe650a
+  spec_hash: sha256:fef3d1fb
+  last_run: 2026-05-15
+  phases:
+    structure:     { status: passed, finished: 2026-05-15 }
+    coverage:      { status: passed, finished: 2026-05-15 }
+    dependencies:  { status: passed, finished: 2026-05-15 }
+    verifiability: { status: passed, finished: 2026-05-15 }
+    consistency:   { status: passed, finished: 2026-05-15 }
+  findings:
+    - id: F-001
+      phase: verifiability
+      severity: WARNING
+      section: Task 3 / Step 5
+      section_hash: sha256:pending
+      text: "«те же гарантии» без конкретной verify-команды и ожидаемого вывода — критерий DoD неизмерим"
+      verdict: accepted
+      verdict_at: 2026-05-15
+---
+
 # Check-Spec / Check-Plan Convergence Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -410,9 +432,18 @@ Verify: `grep verdict docs/superpowers/specs/2026-05-15-check-spec-convergence-d
 
 - [ ] **Step 5: Аналогичный прогон check-plan**
 
-Действие пользователя: `/check-plan docs/superpowers/plans/2026-05-15-check-spec-convergence.md`
+Действие пользователя:
+1. Запустить `/check-plan docs/superpowers/plans/2026-05-15-check-spec-convergence.md` (первый прогон)
+2. Выставить verdicts на все open findings
+3. Запустить `/check-plan` повторно на том же файле
 
-Expected: те же гарантии — frontmatter review инициализируется, фазы выполняются, повторный прогон без изменений → cached OK.
+Expected:
+- Первый прогон: блок `review:` с `plan_hash` и `spec_hash` инициализируется во frontmatter плана; фазы 1–5 выполняются; findings (если есть) получают id `F-NNN`
+- Повторный прогон: вывод содержит `OK (cached, hash match)` БЕЗ запуска фаз; `last_run` не обновился
+
+Verify:
+- `grep -A 20 '^review:' docs/superpowers/plans/2026-05-15-check-spec-convergence.md` — блок review присутствует с `plan_hash` + `spec_hash`
+- Повторный прогон в выводе содержит строку `cached`
 
 - [ ] **Step 6: Commit результатов верификации**
 

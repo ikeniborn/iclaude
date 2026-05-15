@@ -1,3 +1,15 @@
+---
+review:
+  spec_hash: sha256:fef3d1fbc66bd395
+  last_run: 2026-05-15
+  phases:
+    structure:   { status: passed, finished: 2026-05-15 }
+    coverage:    { status: passed, finished: 2026-05-15 }
+    clarity:     { status: passed, finished: 2026-05-15 }
+    consistency: { status: passed, finished: 2026-05-15 }
+  findings: []
+---
+
 # Check-Spec / Check-Plan: сходимость проверок
 
 **Дата:** 2026-05-15
