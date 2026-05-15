@@ -42,6 +42,13 @@ source "${LIB_DIR}/core/remaining.sh"
 init_environment
 
 #######################################
+# Load telemetry module
+#######################################
+if [[ -f "${LIB_DIR}/telemetry/otel.sh" ]]; then
+    source "${LIB_DIR}/telemetry/otel.sh"
+fi
+
+#######################################
 # Load proxy modules (Phase 2)
 #######################################
 if [[ -d "$LIB_DIR/proxy" ]]; then
