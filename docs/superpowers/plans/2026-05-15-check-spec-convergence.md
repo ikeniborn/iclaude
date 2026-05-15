@@ -1,7 +1,7 @@
 ---
 review:
-  plan_hash: sha256:ccfe650a
-  spec_hash: sha256:fef3d1fb
+  plan_hash: sha256:91e525c110573397
+  spec_hash: sha256:ac53035535612070
   last_run: 2026-05-15
   phases:
     structure:     { status: passed, finished: 2026-05-15 }
