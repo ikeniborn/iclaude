@@ -766,3 +766,20 @@ DEBUG_LAUNCH=
 #
 # # Show token savings badge in status line (default: false):
 # CAVEMAN_STATUSLINE=true
+
+# ============================================================================
+# Telemetry (Claude Code → Grafana)
+# ============================================================================
+# Полный opt-out (1=disable telemetry, 0/unset=enabled by default).
+# ICLAUDE_NO_TELEMETRY=0
+
+# Переопределить OTLP endpoint (default: http://127.0.0.1:4318 — локальный collector).
+# Использовать при удалённом collector или альтернативном порту.
+# OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
+
+# Логирование тела user prompt в Loki (1=on, 0=off).
+# Default 1. Установить 0 для приватных сессий без `--no-telemetry`.
+# OTEL_LOG_USER_PROMPTS=1
+
+# Метка proxy.profile в resource attrs (default: $PROXY_PROFILE из profile loader).
+# PROXY_PROFILE=default
