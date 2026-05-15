@@ -1058,7 +1058,7 @@ except Exception:
                     print_info "PII proxy: shared proxy started on :$PII_PROXY_ACTIVE_PORT → $_upstream_url [${PII_PROXY_MASKING_LEVEL:-standard}]"
                 fi
                 unset -f _pii_proxy_http_health
-                echo ""
+                command -v print_telemetry_status >/dev/null 2>&1 && print_telemetry_status
                 return 0
                 ;;
             *)

@@ -33,4 +33,21 @@ setup_telemetry() {
     log_debug "telemetry enabled: project=$project"
 }
 
+print_telemetry_status() {
+    if [[ "${CLAUDE_CODE_ENABLE_TELEMETRY:-0}" != "1" ]]; then
+        return 0
+    fi
+    local endpoint="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://127.0.0.1:4318}"
+    local project
+    project="$(printf '%s' "${OTEL_RESOURCE_ATTRIBUTES:-}" | tr ',' '\n' | awk -F= '/^project=/{print $2; exit}')"
+    [[ -z "$project" ]] && project="unknown"
+    echo ""
+    if command -v print_info >/dev/null 2>&1; then
+        print_info "Telemetry: enabled → ${endpoint} (project=${project}, protocol=${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf})"
+    else
+        echo "Telemetry: enabled → ${endpoint} (project=${project}, protocol=${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf})"
+    fi
+    echo ""
+}
+
 setup_telemetry || log_warn "telemetry setup failed (non-fatal)"

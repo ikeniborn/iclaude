@@ -1,315 +1,43 @@
 {
-  "iclaude.sh": {
-    "mtime": 1778214964.2388272,
-    "hash": "2ecb8452532b15e98db01bf1a1bbafb4"
-  },
-  "lib/caveman/install.sh": {
-    "mtime": 1778100314.829992,
-    "hash": "c981374135672ab067fd964570e99417"
-  },
-  "lib/command/usage.sh": {
-    "mtime": 1778159397.3301523,
-    "hash": "44f34ea225f77ea1f0dc3a433ce4e946"
-  },
-  "lib/command/dispatch.sh": {
-    "mtime": 1774809683.5192838,
-    "hash": "05e73e981c9a2bb0c6e9e82ae88a3929"
-  },
-  "lib/command/parse.sh": {
-    "mtime": 1774809683.5193748,
-    "hash": "a58fe718e2543bb579a0415483f296b5"
-  },
-  "lib/launcher/launch.sh": {
-    "mtime": 1778507091.6022103,
-    "hash": "6ecf340d0fd652e1ad3718b91c322e89"
-  },
-  "lib/lockfile/install.sh": {
-    "mtime": 1774809683.5198443,
-    "hash": "5b8ed243cb9f5f8c0a887ffa4a392a59"
-  },
-  "lib/lockfile/save.sh": {
-    "mtime": 1774809683.5202615,
-    "hash": "3166142d6c3f6a6edbd59932e53fba6c"
-  },
-  "lib/graphify/status.sh": {
-    "mtime": 1778100314.8307116,
-    "hash": "4c09722003dbab85ee38158c02e0b280"
-  },
-  "lib/graphify/install.sh": {
-    "mtime": 1778247844.617427,
-    "hash": "25fbcbd31dd4043a4d34c63108ed506f"
-  },
-  "lib/graphify/detect.sh": {
-    "mtime": 1778100314.8304052,
-    "hash": "a420d697e387677a19a82da0ee13d59a"
-  },
-  "lib/graphify/apply_patches.sh": {
-    "mtime": 1778175009.3536928,
-    "hash": "87f621368be4dd299f30200540e8065b"
-  },
-  "lib/pii-proxy/status.sh": {
-    "mtime": 1778160799.5602515,
-    "hash": "1a52c39cc44ab428f83dacbebdf9d73d"
-  },
   "lib/pii-proxy/server.py": {
     "mtime": 1778159397.3306575,
     "hash": "50e988c993c594633536ff1db989d893"
-  },
-  "lib/pii-proxy/install.sh": {
-    "mtime": 1774814772.32791,
-    "hash": "708d90847cc2b8a8e454466298e555ec"
-  },
-  "lib/pii-proxy/detect.sh": {
-    "mtime": 1774809683.5208702,
-    "hash": "dedaed811c4e7f0d3e16c4d9733a7066"
-  },
-  "lib/nvm/cleanup.sh": {
-    "mtime": 1774809683.5205402,
-    "hash": "29bac29c3ea16d7da396ca4acc883b05"
-  },
-  "lib/nvm/repair.sh": {
-    "mtime": 1778100314.8307116,
-    "hash": "abb33a281e0553a4bff9695cde60acb3"
-  },
-  "lib/nvm/install.sh": {
-    "mtime": 1778100314.8307116,
-    "hash": "cf3d254c5c2f29a4b8a3002b441a4472"
-  },
-  "lib/nvm/claude.sh": {
-    "mtime": 1774809683.5203917,
-    "hash": "d46dd66868d5a8101450e6eeeb2f85a4"
-  },
-  "lib/nvm/detect.sh": {
-    "mtime": 1778100314.8307116,
-    "hash": "7b5254077e9c36aff5b0a0ac47a80cda"
-  },
-  "lib/nvm/setup.sh": {
-    "mtime": 1778100314.8307116,
-    "hash": "9111c27c7f091f1c69f08c1e838a5b0d"
-  },
-  "lib/router/status.sh": {
-    "mtime": 1778508661.237189,
-    "hash": "b1387699ef0e23419e06d18d2e74b56f"
-  },
-  "lib/router/install.sh": {
-    "mtime": 1774809683.5214155,
-    "hash": "78e836b23a0153524fa0894268c81fdc"
-  },
-  "lib/router/detect.sh": {
-    "mtime": 1774809683.521262,
-    "hash": "8405872f7ce21b3ba29128d0fab5e72c"
-  },
-  "lib/chrome/detection.sh": {
-    "mtime": 1774814772.32791,
-    "hash": "02130d6c5d4fd34f688c5c143d5d1c35"
-  },
-  "lib/lsp/status.sh": {
-    "mtime": 1774809683.5203917,
-    "hash": "7f48de8465c9a3024b4dfd424081788c"
-  },
-  "lib/lsp/repair.sh": {
-    "mtime": 1774809683.5203917,
-    "hash": "81b830c16a3704f98143023648dd9c31"
-  },
-  "lib/lsp/install.sh": {
-    "mtime": 1774809683.5202615,
-    "hash": "229d5e439826eca9813b82b536d0408a"
-  },
-  "lib/proxy/validate.sh": {
-    "mtime": 1774809683.521262,
-    "hash": "8ad6ee8e357bcc5fd4b282eb726f36b6"
-  },
-  "lib/proxy/git.sh": {
-    "mtime": 1774809683.521262,
-    "hash": "b4dd4f30da1fa7fd579b041593fe4248"
-  },
-  "lib/proxy/configure.sh": {
-    "mtime": 1774809683.520957,
-    "hash": "792fb0c892ccc0ca0b84fc1f0d3c5673"
-  },
-  "lib/proxy/credentials.sh": {
-    "mtime": 1778100314.8314052,
-    "hash": "d086fe437b42a22857c61d979a4245c0"
-  },
-  "lib/config/status.sh": {
-    "mtime": 1774809683.519519,
-    "hash": "f2af3e6d8bf51768580662167ae9bbde"
-  },
-  "lib/config/export.sh": {
-    "mtime": 1774809683.5193748,
-    "hash": "68172aa3770482427fbdd502e153a3bd"
-  },
-  "lib/config/isolated.sh": {
-    "mtime": 1774814772.32791,
-    "hash": "8fb96e68cfea0099b401f97641b21368"
-  },
-  "lib/ohmyposh/status.sh": {
-    "mtime": 1774809683.5208702,
-    "hash": "360f05248433892ed9beb5e62157516f"
-  },
-  "lib/ohmyposh/install.sh": {
-    "mtime": 1774809683.5208702,
-    "hash": "9bf96aa610df192c5a44fea0eb6fdb0a"
-  },
-  "lib/ohmyposh/detect.sh": {
-    "mtime": 1774809683.5205402,
-    "hash": "fcf9404e7f59b2d6f6388ee8fce30141"
-  },
-  "lib/core/remaining.sh": {
-    "mtime": 1774809683.519654,
-    "hash": "cacf77badabb678b3f1b683ef65b36e6"
-  },
-  "lib/core/init.sh": {
-    "mtime": 1778159397.3302124,
-    "hash": "c30b5b4bdce53a2e5f7a300c039294c6"
-  },
-  "lib/core/json.sh": {
-    "mtime": 1774809683.519654,
-    "hash": "2523ddc17c585ca99700872864ff825b"
-  },
-  "lib/core/logging.sh": {
-    "mtime": 1774809683.519654,
-    "hash": "9f37fccca6af92d760d46a4554def604"
-  },
-  "lib/core/validation.sh": {
-    "mtime": 1774809683.519654,
-    "hash": "0c20e58fbdd1b0ea1c7262fcee773201"
-  },
-  "lib/sandbox/status.sh": {
-    "mtime": 1774809683.5215168,
-    "hash": "b3905c1ea05bfa6f3fa3c8b07225f9af"
-  },
-  "lib/sandbox/install.sh": {
-    "mtime": 1774809683.5215168,
-    "hash": "1e0a4f5975c4625e6bf2ca3769e204ac"
-  },
-  "lib/sandbox/guest-init.sh": {
-    "mtime": 1774809683.5215168,
-    "hash": "c74e7bf6764b190e0a3e0dae8d3a6d2f"
-  },
-  "lib/sandbox/microvm.sh": {
-    "mtime": 1778213092.6622698,
-    "hash": "8c3d3ff3383d6786f4272ba5f2a3be39"
-  },
-  "lib/sandbox/detect.sh": {
-    "mtime": 1774809683.5214155,
-    "hash": "16b76d2dbb7c35320570edd414c9813b"
-  },
-  "lib/statusline/status.sh": {
-    "mtime": 1774809683.5220525,
-    "hash": "ec640ad61f8fe8acefedf96c501dcef9"
-  },
-  "lib/statusline/install.sh": {
-    "mtime": 1774809683.5220525,
-    "hash": "74fff0dde1224ff59d6494e30617f65c"
-  },
-  "lib/statusline/detect.sh": {
-    "mtime": 1774809683.5215168,
-    "hash": "60dbf517f16597a5d129339a988a0256"
-  },
-  "lib/update/cleanup.sh": {
-    "mtime": 1774809683.5220525,
-    "hash": "d3b7bdde301c3d1620937737c2de283b"
-  },
-  "lib/update/update.sh": {
-    "mtime": 1774809683.522159,
-    "hash": "557a73a1728fadf587b5f4c4e2d9300b"
-  },
-  "lib/update/isolated.sh": {
-    "mtime": 1778100314.8314052,
-    "hash": "566b021e141a9f526547c9f5ff5805a9"
-  },
-  "lib/oauth/token.sh": {
-    "mtime": 1774814772.32791,
-    "hash": "71858b78aae3ae370b258973ccafed65"
   },
   ".nvm-isolated/nvm-exec": {
     "mtime": 1773925649.140255,
     "hash": "aca21638e05de09fb181f81d7f6a480c"
   },
-  ".nvm-isolated/install.sh": {
-    "mtime": 1773925646.7483091,
-    "hash": "b75afbe19092d5a3d0f64ec49de1535d"
-  },
-  ".nvm-isolated/nvm.sh": {
-    "mtime": 1773925649.1409235,
-    "hash": "6f66fa6001fc322c0845dc33708d890b"
-  },
   ".nvm-isolated/.claude-isolated/pii-proxy-server.py": {
     "mtime": 1778159397.3306575,
     "hash": "50e988c993c594633536ff1db989d893"
   },
-  ".nvm-isolated/.claude-isolated/scripts/view-tool-results.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "a549335713f5366bf4c87e38aba17904"
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
+    "mtime": 1774809682.7465634,
+    "hash": "1fc257caf781382ca9164aeac282531d"
   },
-  ".nvm-isolated/.claude-isolated/scripts/claude-statusline.sh": {
-    "mtime": 1778100314.257411,
-    "hash": "b1237b317dc4ca4a302cbc55b71bd244"
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/skill-md-integration.test.mjs": {
+    "mtime": 1774809682.7469864,
+    "hash": "de542dd0bab35d19b554228890334dc2"
   },
-  ".nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh": {
-    "mtime": 1774809682.7339554,
-    "hash": "e1998d155aea4d29382c5a8e88e95ce7"
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/end-to-end.test.mjs": {
+    "mtime": 1774809682.7466476,
+    "hash": "2f8f523e3b9ba865402a3b3754e24cf7"
   },
-  ".nvm-isolated/.claude-isolated/scripts/lib/provider-adapter.sh": {
-    "mtime": 1774814772.2477248,
-    "hash": "fefa44dafe9c168803f0ee7a495c661a"
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/round-trip.test.mjs": {
+    "mtime": 1774809682.7469864,
+    "hash": "c252354b79d718f40b9f7ca6bd0ed0b0"
   },
-  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "b84fa15439381fa706ebfd66fb00519e"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-parser.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "95188a93277a3b55a1e592789c2756df"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/pricing-lookup.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "72c890245f1c60bf7e35913358a14483"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/rate-limit.sh": {
-    "mtime": 1774814772.2477248,
-    "hash": "0cfe64142b0d0b183faf25282b3ca88b"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/streaming-detector.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "89c66a77b49729b0197c85ecccf05500"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/ollama.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "04cb7f3f012984a81093571bb6a9dc98"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/gemini.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "08b1f9d6b511ff533c6a1cc55d5cdf3d"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/generic.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "e8c3f43e2343f8d84ad81c794f8ece1e"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/anthropic.sh": {
-    "mtime": 1774814772.2477248,
-    "hash": "6449a01cc3ff3d4bced45391b816c24b"
-  },
-  ".nvm-isolated/.claude-isolated/scripts/lib/adapters/openai.sh": {
-    "mtime": 1774809682.734798,
-    "hash": "2e17b11678ad3c7b14180b37a39c49ae"
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/toon-converter.mjs": {
+    "mtime": 1774809682.737833,
+    "hash": "6363ca2310af4502ad88b4a84b8001db"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
     "mtime": 1778100314.256411,
     "hash": "0a77df0018325d52608c362754786451"
   },
-  ".nvm-isolated/.claude-isolated/hooks/redact-secrets.py": {
-    "mtime": 1778159397.3287008,
-    "hash": "0e833c8b062f800c6ca72d97ddc521c5"
-  },
   ".nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
     "mtime": 1778100314.257411,
     "hash": "2c88a17ff88451629d3edafe474cfff0"
-  },
-  ".nvm-isolated/.claude-isolated/hooks/block-secrets.py": {
-    "mtime": 1774809682.733874,
-    "hash": "0825548e5a734b876942b07d1321f6ba"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
     "mtime": 1778100314.256411,
@@ -319,38 +47,6 @@
     "mtime": 1778100314.257411,
     "hash": "4946e31570eac0b8fe763d429978dbdc"
   },
-  "tests/regression-phase0.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "037c62ca56eb94576c2e7f2434ed3c8f"
-  },
-  "tests/test-redact-hook.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "4e682e31343561a70e7fca8219477d57"
-  },
-  "tests/test_microvm_integration.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "1291638dc77f8a9d6aa654f098066b75"
-  },
-  "tests/test_pii_dnat_iptables.sh": {
-    "mtime": 1778213202.0090468,
-    "hash": "9bdfd3468da6c10d00bd0e2bbde5d857"
-  },
-  "tests/test_pii_dnat_e2e.sh": {
-    "mtime": 1778215065.1117954,
-    "hash": "e1571f4ea7ec021439c6b9a356fc5938"
-  },
-  "tests/test-chrome-detection.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "778c4d189c7fac0734106c9cc2d8ec47"
-  },
-  "tests/test_microvm.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "366868742e114667f2655bd33b79ffb8"
-  },
-  "tests/test_ccr_integration.sh": {
-    "mtime": 1778521607.3227174,
-    "hash": "533a2d8e20c4188874bc1cc532261bdc"
-  },
   "tests/test-quality-analysis.py": {
     "mtime": 1774809683.5223594,
     "hash": "58179966131de0aaf1244d4ec120612a"
@@ -359,49 +55,17 @@
     "mtime": 1778175932.8364184,
     "hash": "9c9762de93af9d635341e66029febe4c"
   },
-  "tests/test-pii-integration.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "67306ad94ca62ad5e597bd66b9121a3d"
-  },
-  "tests/test-pii-parallel.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "bf1fc48b498fa30dc2df31bb06b89b82"
-  },
-  "tests/test_pii_dnat_unit.sh": {
-    "mtime": 1778212852.7952673,
-    "hash": "3ffa19de84a2bfca8b181041b8f8dcec"
-  },
-  "tests/test-microvm-dual.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "ff4ad542a74ecafb119d2140f5d6ceb3"
-  },
-  "tests/test_pii_dnat.sh": {
-    "mtime": 1778212433.57443,
-    "hash": "d9ce9a4445a7a290c2c600ca4aabf823"
-  },
-  "tests/test_pii_shared_detach.sh": {
-    "mtime": 1778164714.064306,
-    "hash": "56ff2c20dce6debc917f3115991d0deb"
-  },
   "tests/test_patterns_examples.py": {
     "mtime": 1778159397.330814,
     "hash": "5db2917613c2526dd27460c3299dd722"
   },
-  "tests/test_microvm_workspace.sh": {
-    "mtime": 1774809683.5223594,
-    "hash": "250e3ed9200a352e8634dfb2a9ce403a"
-  },
-  "scripts/download-ohmyposh-binaries.sh": {
-    "mtime": 1774809683.522159,
-    "hash": "717a9634dfd68d8c68068093d4e3e277"
-  },
   "CLAUDE.md": {
-    "mtime": 1778100314.828211,
-    "hash": "05edb81a42b62f4ea6e565e9f3e9ca39"
+    "mtime": 1778764211.1106706,
+    "hash": "c30e817fa87cca2dfdd0430a0d49c256"
   },
   "README.md": {
-    "mtime": 1778188529.2054164,
-    "hash": "1971c0413167f31c0ff6e36b2d55116a"
+    "mtime": 1778764211.110814,
+    "hash": "64bfcb413211c892c854ea87b4ea255f"
   },
   "lib/README.md": {
     "mtime": 1774809683.5182161,
@@ -416,8 +80,1052 @@
     "hash": "d9eae036a0f5820f88ab3fa289a9016b"
   },
   ".nvm-isolated/.claude-isolated/CLAUDE.md": {
-    "mtime": 1778100314.256411,
-    "hash": "dcadf4bdbb6d0744ac72bb977fc20d99"
+    "mtime": 1778586416.653557,
+    "hash": "24b2859102af59c5f0bb025e53bc4dd0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/project.md": {
+    "mtime": 1778787583.435124,
+    "hash": "9d8bcabeb7314fcf8180148281fb71a8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/AI-SPEC.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "e4914af5d55892b006995785a6a66079"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/milestone.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "aa6a849cf855d35da7d761ce2bf63cbd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/debug-subagent-prompt.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "24fa1011c6357f81b659b287c4bd537a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/VALIDATION.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "4b6752a861c10ce4cdfb5ddca9e8510c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/spec.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "a3e627f40201d388c78b428a55c6565e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/context.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "70ac4bb07c0ac16dc5340520a5a58d57"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/claude-md.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "cb073d5b27473c1434f63faac5bd1a5d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/milestone-archive.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "2ecf0cd7ec0b83a86ecfa26b37807f08"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "01d2a54bc1ecb29d6382712d2b44b464"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/verification-report.md": {
+    "mtime": 1778787583.4361238,
+    "hash": "2b52c482fca6ffc01e81039cb0e9f5ea"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/state.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "3ce8d237d7e86a84dd89f2267acbd2e0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/UI-SPEC.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "440063040bb8eadaa7aa1b6ff2230822"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/phase-prompt.md": {
+    "mtime": 1778787583.435124,
+    "hash": "3901ebcd8840b3748867f634731de731"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/discovery.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "edd1dc775c6536444069b5e32f8454b0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/continue-here.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "9120ab25dec26c36de46bcebcd584bc5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/UAT.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "63b69a5840cdf649edeb5781dc3f1835"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/SECURITY.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "7ffb5b1f33a1c5d4f3a330b262064c00"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/dev-preferences.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "a4e5dd7a0c8fa5c27995f4e33d055153"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/copilot-instructions.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "d687178aac36c9497fa94f73895c8f4f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-standard.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "a9282a79c26b7408ccc69f417f2c7bbc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/discussion-log.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "65e491752daf55d9475280c420bec5c1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/README.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "17e76652ee71b5f97cab4bbe553c5643"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/user-setup.md": {
+    "mtime": 1778787583.4361238,
+    "hash": "eb0f760c4bf4a5c8b2a046a837d5a099"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "4c4f04838cdad034aac358fbc6852704"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/requirements.md": {
+    "mtime": 1778787583.435124,
+    "hash": "46b17decdc37a4e17a971819998a92cf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/user-profile.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "9567d5c39fec70ee1ae4bc401a7a0573"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/DEBUG.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "a08e4fffbb04d19b0cdd3f7c279a9ff7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/roadmap.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "2a0b2286575c31d2c5d04d7dda39ca8a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-minimal.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "cb56b997ba0a6c6b88830fb0b34e3835"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-complex.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "3d3fe4b6d8d69dd22fafdfad190cb68e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/retrospective.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "77d90126f81ec3d786d46d355e603506"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/planner-subagent-prompt.md": {
+    "mtime": 1778787583.435124,
+    "hash": "cb3db0aab4d9fe11628bbdfe657462a1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/integrations.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "080c74b99947918e5f790300e0fbc2f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/testing.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "8284aecc988d2fca720d60a44806ca10"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/concerns.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "2ba9bbf9ac19221377bb739d78ef1250"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/conventions.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "9112ff443b1069fc374ee20f328c7f44"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/structure.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "941c650de4e51e49e8357e47a25ad989"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/architecture.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "2ec48c771e81aa8e0259f1e69691bc2a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/stack.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "c75effaa928d5c93784a1e136674097b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/PITFALLS.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "b55a2f0654b8fbfd91f3a40c0c5bf133"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/FEATURES.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "1348ef22f4974ee350621fffa0069821"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/SUMMARY.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "ae9a9e668c8ea0ded20e50a1cc86ed17"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/STACK.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "483099bbfacda6ff148615dde7fe8212"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/ARCHITECTURE.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "1eb7e085f1d0a393ca3b3037ea433bb0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/universal-anti-patterns.md": {
+    "mtime": 1778787583.433124,
+    "hash": "18184149770526ff6c220b01dc7a4e2c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/workstream-flag.md": {
+    "mtime": 1778787583.433124,
+    "hash": "c63bf139352127eef29e98e85ff1e63c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-reviews.md": {
+    "mtime": 1778787583.431209,
+    "hash": "c71d7556b75cab8edb7313e689eedb87"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/spidr-splitting.md": {
+    "mtime": 1778787583.432124,
+    "hash": "8788d6fe6cbdc70e39efbbc1861a14ab"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/agent-contracts.md": {
+    "mtime": 1778787583.429681,
+    "hash": "68f457d8a0b4c39f15a6f0b2f6a060da"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profile-resolution.md": {
+    "mtime": 1778787583.431209,
+    "hash": "2a9d2c3eb036f64d177547521973519f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/doc-conflict-engine.md": {
+    "mtime": 1778787583.430124,
+    "hash": "f30745f7c8c2b7bffef066278fa432bc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/mvp-concepts.md": {
+    "mtime": 1778787583.431209,
+    "hash": "eb4e91cbd8aaddd78c89d403567275a4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/debugger-philosophy.md": {
+    "mtime": 1778787583.430124,
+    "hash": "dddbcc4f5267608c22489fcd9e612ff6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-planning.md": {
+    "mtime": 1778787583.432124,
+    "hash": "24182fd4a7f4fa9446355d096c38bde4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/user-profiling.md": {
+    "mtime": 1778787583.433124,
+    "hash": "09d25307992334d4ea20f7325b9b1abc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/domain-probes.md": {
+    "mtime": 1778787583.430124,
+    "hash": "36c5761927ed768e5c61dd35f6d19447"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/execute-mvp-tdd.md": {
+    "mtime": 1778787583.430124,
+    "hash": "bc070788232c660209b4521d316e9fda"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-research.md": {
+    "mtime": 1778787583.433124,
+    "hash": "5360cff860b7d0c758ca575679c406f9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-revision.md": {
+    "mtime": 1778787583.431209,
+    "hash": "c3030dd27b995ccf5795379a138589c2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-antipatterns.md": {
+    "mtime": 1778787583.431209,
+    "hash": "dc40fa51d21cd1441230596fd66fd6ed"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/tdd.md": {
+    "mtime": 1778787583.432124,
+    "hash": "ff7640e0bb7b9d3f99e7fdd401ec46c8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/artifact-types.md": {
+    "mtime": 1778787583.429681,
+    "hash": "9b37d7b2007e142261dfeb4cf50fa1fc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/scout-codebase.md": {
+    "mtime": 1778787583.432124,
+    "hash": "3fd5b5d332ddb35733dcb6b976a2d1be"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-mvp-mode.md": {
+    "mtime": 1778787583.431209,
+    "hash": "9d6ebd968fb1970170557adecf1c0278"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/user-story-template.md": {
+    "mtime": 1778787583.433124,
+    "hash": "f005df4d5ad02e6225ca99b6f7932355"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-interactivity.md": {
+    "mtime": 1778787583.432124,
+    "hash": "58920cccb5fce0ddd6cd45594bd97549"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-execution.md": {
+    "mtime": 1778787583.432124,
+    "hash": "6b5a09a6a7a40c291a851f691ef9f9ef"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/worktree-path-safety.md": {
+    "mtime": 1778787583.433124,
+    "hash": "7212dd42a18e7d41570aa603ae3ead3a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-verification.md": {
+    "mtime": 1778787583.433124,
+    "hash": "7b78061e171a134c12bbadc7a90e8804"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/autonomous-smart-discuss.md": {
+    "mtime": 1778787583.429681,
+    "hash": "666580f8f9e847268e0758f193155d2a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/phase-argument-parsing.md": {
+    "mtime": 1778787583.431209,
+    "hash": "0b8ee7aa7aa57654d87ca64be18ed3db"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-variant-patterns.md": {
+    "mtime": 1778787583.432124,
+    "hash": "1a42d81c8a08a61b1848dd34932a3077"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ios-scaffold.md": {
+    "mtime": 1778787583.431209,
+    "hash": "95a8027b33e64dc00fd95b5ee5a27139"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/project-skills-discovery.md": {
+    "mtime": 1778787583.432124,
+    "hash": "87423ed6217d04f191fec491afabbd11"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ai-frameworks.md": {
+    "mtime": 1778787583.429681,
+    "hash": "12c099ed2b3917a8341d2f1cca2aadf6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/decimal-phase-calculation.md": {
+    "mtime": 1778787583.430124,
+    "hash": "fffe342286c6fd6cbf5f95ca7e1011f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-debug.md": {
+    "mtime": 1778787583.432124,
+    "hash": "f6b6dd4a3250056669ee01cf4c40ad18"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-tooling.md": {
+    "mtime": 1778787583.432124,
+    "hash": "d1e6b0df4918db3e61e972a5614fbc21"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-source-audit.md": {
+    "mtime": 1778787583.431209,
+    "hash": "b8dfe92a75ebfc7312163b903fa8526c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/questioning.md": {
+    "mtime": 1778787583.432124,
+    "hash": "4f12f4f67f65184b8ee8220dc173794e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/continuation-format.md": {
+    "mtime": 1778787583.429681,
+    "hash": "3ed1f7a3e29896188b3282f1befcf087"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planning-config.md": {
+    "mtime": 1778787583.432124,
+    "hash": "548a4737d7df8f8bbe58e1a00df79c53"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ui-brand.md": {
+    "mtime": 1778787583.433124,
+    "hash": "ccbe8d48add340cb1d8da7f3c7990848"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/common-bug-patterns.md": {
+    "mtime": 1778787583.429681,
+    "hash": "d7d13c6090aca12176c85acbc967ccb5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/mandatory-initial-read.md": {
+    "mtime": 1778787583.431209,
+    "hash": "270db662005d39161f35283b6315c3f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/executor-examples.md": {
+    "mtime": 1778787583.430124,
+    "hash": "e2dd4da11171a84a9f86264ceeac6690"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verify-mvp-mode.md": {
+    "mtime": 1778787583.433124,
+    "hash": "fd8b7927b31a5a75ff3aafdad4b2836c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/skeleton-template.md": {
+    "mtime": 1778787583.432124,
+    "hash": "54ba40611cb9365d4a7f1a7bb0cbaac1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-theme-system.md": {
+    "mtime": 1778787583.432124,
+    "hash": "fe368ffd3d47e27781682a54f9eef063"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/git-planning-commit.md": {
+    "mtime": 1778787583.431209,
+    "hash": "5d09af2f04f947be20b9f8ba1407f5e2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/checkpoints.md": {
+    "mtime": 1778787583.429681,
+    "hash": "2571978a14e24bd91143810348a59950"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/gates.md": {
+    "mtime": 1778787583.431209,
+    "hash": "4e7c0b345be2cae471e799173eeba0d5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-gap-closure.md": {
+    "mtime": 1778787583.431209,
+    "hash": "795a9c88620b165cb867d44f2dee0168"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-patterns.md": {
+    "mtime": 1778787583.433124,
+    "hash": "f255c6dc98a82dc5524d72b4d7c22cb8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/context-budget.md": {
+    "mtime": 1778787583.429681,
+    "hash": "eeea26e427eccfd44b689cf8153f5db4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-overrides.md": {
+    "mtime": 1778787583.433124,
+    "hash": "6f6d3897f8663740ea3935db7df08dec"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profiles.md": {
+    "mtime": 1778787583.431209,
+    "hash": "24a3684b75ee27d3dba209161b3b77dc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/gate-prompts.md": {
+    "mtime": 1778787583.431209,
+    "hash": "b7774d89c8920048b3f798bc84f0b532"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-partner.md": {
+    "mtime": 1778787583.433124,
+    "hash": "a3fc8194e79add6042bcabfdea7a1a14"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/git-integration.md": {
+    "mtime": 1778787583.431209,
+    "hash": "842a7a6820169ecb4490f604d35bc14a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ai-evals.md": {
+    "mtime": 1778787583.429681,
+    "hash": "672e97cab43dc58b1b8db81e884b457d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-chunked.md": {
+    "mtime": 1778787583.431209,
+    "hash": "25e360eaf1fc5c887691d754add8f440"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/revision-loop.md": {
+    "mtime": 1778787583.432124,
+    "hash": "42e90a405f0b8e5ac39aadc6375c9cc6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/plan-checker.md": {
+    "mtime": 1778787583.431209,
+    "hash": "f9b5ce1b32f1ab061f44d20c60006bb9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/verifier.md": {
+    "mtime": 1778787583.431209,
+    "hash": "5114e6fc01028c098fe2c2bf0a8b81d7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/list-workspaces.md": {
+    "mtime": 1778787583.440124,
+    "hash": "7f3b947064fa5feb0fd64535bdb6fff9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-uat.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "b7f2bd0280dec824d1d4605fbc110a9b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/cleanup.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "06c1c3bfc71eb647d01f571187b24590"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/extract-learnings.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "7362d1c7e95bb83502fbd87ef68728c9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/quick.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "5e0417d2afb81aaac53ced3384ba47a0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/profile-user.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "c369397307d45e813690e72eb04be81d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/manager.md": {
+    "mtime": 1778787583.440124,
+    "hash": "08125691c357ce45afd9610fae1cc658"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plant-seed.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "dec2c6d293c77a789ad6e4fe56f943f7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/docs-update.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "2bc63f64f37bf712170467e6134cfca8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/node-repair.md": {
+    "mtime": 1778787583.441124,
+    "hash": "ff57b22997713ab01860c09a975c304c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/note.md": {
+    "mtime": 1778787583.441124,
+    "hash": "aabb1aacd0f532f12e0b3dd7ff221184"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-review-convergence.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "b76a94c4acfbeff0406b33a4e41f3f08"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/session-report.md": {
+    "mtime": 1778787583.444124,
+    "hash": "300bfb8076a443a90d712871c31dff09"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/secure-phase.md": {
+    "mtime": 1778787583.444124,
+    "hash": "ed46cd070950e96b2f87eee183962574"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-tests.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "d4b5261072e650d3ed1c9a6cbd5d9bc8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/resume-project.md": {
+    "mtime": 1778787583.444124,
+    "hash": "1b9f09cdbf3f723d495370d6e320fc74"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/remove-phase.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "43b094311539a202d4dd020a4cd1e46e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/verify-phase.md": {
+    "mtime": 1778787583.4461238,
+    "hash": "d0a2b8e2d17fd975bdf7418e6f8b8a64"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spike-wrap-up.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d06f37eab5b389c793d0e68ecc8fe7d9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/code-review-fix.md": {
+    "mtime": 1778787583.437124,
+    "hash": "886a28e226883adb4f4f70143eaa5646"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/map-codebase.md": {
+    "mtime": 1778787583.441124,
+    "hash": "b19eedd1f15f976a9a8534066a4af7dd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sketch-wrap-up.md": {
+    "mtime": 1778787583.444124,
+    "hash": "6047212ab3b9582e4b68e1b9eae3f98f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/undo.md": {
+    "mtime": 1778787583.445124,
+    "hash": "a175455274f02002b01033eaef75e51c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ai-integration-phase.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "3c74199c813cc13a378ed7f6d7eecb9f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-phase.md": {
+    "mtime": 1778787583.442124,
+    "hash": "6080b45b97931966ca120dbac2be410b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ui-review.md": {
+    "mtime": 1778787583.445124,
+    "hash": "35e554735796e7b36f6028acc840204a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-milestone.md": {
+    "mtime": 1778787583.441124,
+    "hash": "2f634c958a563e1184ecbc4aaccc431b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/stats.md": {
+    "mtime": 1778787583.445124,
+    "hash": "e7c9762a3a1af4dd5e30533c72c9e871"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase-assumptions.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b0d9875400057187b1ac8ca2cc231a99"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/do.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "53e800184fa539a788d2eafb2526fce3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/reapply-patches.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "5f4bc5c4c62738ea6b458a6c2ba5a824"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discovery-phase.md": {
+    "mtime": 1778787583.437124,
+    "hash": "47a4b2c7d14e6c5592e4ced3bd1087ab"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sketch.md": {
+    "mtime": 1778787583.444124,
+    "hash": "01581a28bd79220146faacedcfabbfca"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "67ceeaa2c447dfdc34f075d1867770da"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/eval-review.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b6ad53b87ce6a0d678572ac2e6470f7d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-fix.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "c032ca773532b3826030491dd416c8d7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/inbox.md": {
+    "mtime": 1778787583.440124,
+    "hash": "a1a1172d233556a8a28f19805f962ebc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/insert-phase.md": {
+    "mtime": 1778787583.440124,
+    "hash": "5f89fd0f359b09c3fbea52fa7bba54e2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ui-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "e2176cdf50f3f60c45db383ef05f2979"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-milestone-gaps.md": {
+    "mtime": 1778787583.442124,
+    "hash": "c813b7f4957699510f12faf5fc6e383c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase-power.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "bd6ef2e4e63412857978e66c82fab29c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/explore.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "5968394a69d54bc15864b190e9ac350b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-backlog.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "1a2e988a65cadb0238b2820c530c0db3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings-advanced.md": {
+    "mtime": 1778787583.444124,
+    "hash": "18ac27f0345c9eaf63647302a7c84382"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/pr-branch.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "91c1ba46264eeec8eb8b4ca6ce447182"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/code-review.md": {
+    "mtime": 1778787583.437124,
+    "hash": "95e247221156604dcc10c71f25b19b4d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/check-todos.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "9daa6e35023843a8bd0986f29dbaa2e5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spec-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "c08ba174a17043e168cee657b7c47617"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/graduation.md": {
+    "mtime": 1778787583.440124,
+    "hash": "663929f21300963b8e9af8f9fdab9f1a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ingest-docs.md": {
+    "mtime": 1778787583.440124,
+    "hash": "297045f612bb9f721b76eca70fdf91a3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sync-skills.md": {
+    "mtime": 1778787583.445124,
+    "hash": "4e7ac6c2a63bbac8063f6563f0b9fd01"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-plan.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "7d70a85dca892cfd03a019c56a268d09"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ultraplan-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d560ed44944ad39bb72d6b18dc308542"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/debug.md": {
+    "mtime": 1778787583.437124,
+    "hash": "30f86dd3856f8941abc827d967fee800"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/remove-workspace.md": {
+    "mtime": 1778787583.444124,
+    "hash": "1fc4678a437e590bdc3b33ccc6d2f094"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/pause-work.md": {
+    "mtime": 1778787583.442124,
+    "hash": "b7cddcda39222bb1992385189c2b9cf0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-todo.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "e299a2fe463133aac3da75c857589e0a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/diagnose-issues.md": {
+    "mtime": 1778787583.437124,
+    "hash": "bd208709c82bb4ad8905e3fda9066cb5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b4aa434c78b342fa0dd35b432a02fe9f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/review.md": {
+    "mtime": 1778787583.444124,
+    "hash": "aff90dccce91796dfd3a2051e9fa4e1c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/mvp-phase.md": {
+    "mtime": 1778787583.441124,
+    "hash": "7b9de2c3a0f0a68571820f9d478288ae"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/next.md": {
+    "mtime": 1778787583.441124,
+    "hash": "fbdde4796f4800e0766509eafa4314bf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/health.md": {
+    "mtime": 1778787583.440124,
+    "hash": "e07a5013db090805a9224e45f87b64ca"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/progress.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "058d6a9a5480efd1eb84f61abe0b1081"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/complete-milestone.md": {
+    "mtime": 1778787583.437124,
+    "hash": "e258dc0d37913f6fc95215be956bc786"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/autonomous.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "a8af1cb7a249b54c9e96fbce9b91a9c2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings.md": {
+    "mtime": 1778787583.444124,
+    "hash": "f29db8b314321a248158deb4b6bc258f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-workspace.md": {
+    "mtime": 1778787583.441124,
+    "hash": "7c69308d309f4e1b4d2a996b7bd78dad"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-phase.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "740d02e890226d4ff2724697665c33d1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spike.md": {
+    "mtime": 1778787583.445124,
+    "hash": "afa220a99c08a242a3416320a8220086"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/forensics.md": {
+    "mtime": 1778787583.440124,
+    "hash": "a092998328bf2a3b4b5d59f073c877c0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/fast.md": {
+    "mtime": 1778787583.440124,
+    "hash": "128dd1e5402b1f44895c721a7617df66"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/transition.md": {
+    "mtime": 1778787583.445124,
+    "hash": "edfe98d831e993514f8f76aeb64bacc6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/analyze-dependencies.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "7ddf39005a6b41518d302954abcbaca6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/thread.md": {
+    "mtime": 1778787583.445124,
+    "hash": "93cde7dc2addec8aceb43e5b5d0a7060"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings-integrations.md": {
+    "mtime": 1778787583.444124,
+    "hash": "2779038c8aac4b0978d6f5009a14a7fb"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/list-phase-assumptions.md": {
+    "mtime": 1778787583.440124,
+    "hash": "938904ca505e941065f5d35b79205d65"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ship.md": {
+    "mtime": 1778787583.444124,
+    "hash": "fad2fd7a585378475d8f8cb13ed82761"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/milestone-summary.md": {
+    "mtime": 1778787583.441124,
+    "hash": "e459ccdc858f3800d58585e1fa76e083"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/edit-phase.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "bff2d7af484dabeefe66943d8af29db6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/help.md": {
+    "mtime": 1778787583.440124,
+    "hash": "4a0a29e710bc4288e5938e504bcef17a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/update.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d0d7cdf9f64b5b06546a11255b1b7d66"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/scan.md": {
+    "mtime": 1778787583.444124,
+    "hash": "165a0aa1eabf515c3cc85307ddd5aeba"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/verify-work.md": {
+    "mtime": 1778787583.4461238,
+    "hash": "4aeebd99fdcec00cd0aad982db55b7ac"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/validate-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "a3665758f1a9cd1973efbac55fbeebbd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-milestone.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "cc7964cd550f1070e17ceb79a3bf8a5a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-project.md": {
+    "mtime": 1778787583.441124,
+    "hash": "e7d8cc24f6892cb69b9afa86596428f5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/import.md": {
+    "mtime": 1778787583.440124,
+    "hash": "404cb182f0066a8fabe2e12034be1ebc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/templates/context.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "816f7dc3751b3d422e8b4a31e121a737"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/templates/discussion-log.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "4da8fcade34b79a50f9e0f2faef1fb9a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/all.md": {
+    "mtime": 1778787583.438046,
+    "hash": "936ff16fdcb90db2ff95fd3c9944c28d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/analyze.md": {
+    "mtime": 1778787583.438046,
+    "hash": "c354fe0b79cfc0c594064822dfd45f84"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/batch.md": {
+    "mtime": 1778787583.438046,
+    "hash": "a5c3a34a28cb49090bb24ff3379a0b1b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/text.md": {
+    "mtime": 1778787583.438124,
+    "hash": "3f126d3a2ce0d54bd54be892659e115f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/chain.md": {
+    "mtime": 1778787583.438046,
+    "hash": "3871d69627e2fb717b107fc63fc001c0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/advisor.md": {
+    "mtime": 1778787583.438046,
+    "hash": "11e921fce790be6a5586195b2edd00f0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/default.md": {
+    "mtime": 1778787583.438046,
+    "hash": "f4b7693bccb2d7699ce4a9a4a5030298"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/power.md": {
+    "mtime": 1778787583.438046,
+    "hash": "f80449bf54ea1880f53e5b6c0d7bbf58"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/auto.md": {
+    "mtime": 1778787583.438046,
+    "hash": "7df27c3eeb8d32c3aec2367d89ae3602"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/post-merge-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "f804de2f39918c82ac9a538bccb60fdf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/per-plan-worktree-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "bec00ae8e1b77458c6871cc156cb1b2b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/codebase-drift-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "107bb57836f2c70a6b27b91995e4a3a1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/research.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "efe586c459336cd5740264f1ad6d43cf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/review.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "8be8a37b9459681c97d80f8ea3020830"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/dev.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "d397161b51d5d56d8c3cec30cdcb166b"
+  },
+  ".nvm-isolated/.claude-isolated/skills/mermaid-obsidian/SKILL.md": {
+    "mtime": 1778264330.5435386,
+    "hash": "7afc751571608f9b11799156cb8a7445"
+  },
+  ".nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md": {
+    "mtime": 1778264316.8196774,
+    "hash": "30b83a122f39b996c3c0906a62f5299a"
+  },
+  ".nvm-isolated/.claude-isolated/skills/git-workflow/templates/task-summary.txt": {
+    "mtime": 1773925646.7405686,
+    "hash": "fd8364ab86c819f6680d051495c7a0f4"
+  },
+  ".nvm-isolated/.claude-isolated/skills/git-workflow/examples/basic-usage.md": {
+    "mtime": 1774809682.742253,
+    "hash": "7db6cbebd209c9bc701a409284937fb9"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
+    "mtime": 1778264316.9206762,
+    "hash": "e71717fd61b9c1d6f27aa66d1ce99e44"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
+    "mtime": 1774809682.7444031,
+    "hash": "946dd5445b812652910b91bc85c75886"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/prd-best-practices.md": {
+    "mtime": 1774809682.744604,
+    "hash": "33d14ffd7884e488d5ff62c260223215"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/markdown-guidelines.md": {
+    "mtime": 1774809682.7444031,
+    "hash": "b81d657b57e8753e9a70baa3b55afe5c"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/mermaid-diagrams.md": {
+    "mtime": 1774809682.744604,
+    "hash": "8dee0e4fc936c7ac68b26bae1f70dcbb"
+  },
+  ".nvm-isolated/.claude-isolated/skills/caveman/SKILL.md": {
+    "mtime": 1778764211.110121,
+    "hash": "5c43ca000385e41e9d9dd02c8574dfa0"
+  },
+  ".nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
+    "mtime": 1774809682.7395995,
+    "hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
+  },
+  ".nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
+    "mtime": 1778705373.3368568,
+    "hash": "5c022b5257801a337be67dce008c3831"
+  },
+  ".nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
+    "mtime": 1774809682.7354975,
+    "hash": "ac8320339f253084a4545c217c18cf14"
+  },
+  ".nvm-isolated/.claude-isolated/skills/_shared/frontmatter-parser.md": {
+    "mtime": 1774809682.7354975,
+    "hash": "b026e1f235b9839f9a76670029a28932"
+  },
+  ".nvm-isolated/.claude-isolated/skills/_shared/YAML-WORKFLOW-README.md": {
+    "mtime": 1774809682.7354975,
+    "hash": "75aca0a1da510db72b9ddaabfc0bfc69"
+  },
+  ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
+    "mtime": 1778264316.7896776,
+    "hash": "3d019aa4297c1d1643ccbd0412cf79ec"
+  },
+  ".nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
+    "mtime": 1774809682.7400665,
+    "hash": "1610dbaf0d7228dc25f9feed05963e1a"
+  },
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/SKILL.md": {
+    "mtime": 1774809682.7463157,
+    "hash": "219aaabc16d0c61234da7c5b5fb9e033"
+  },
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/converters/README.md": {
+    "mtime": 1774809682.7464967,
+    "hash": "43b8e7820bd96291d3c9e9de2cabe7f5"
+  },
+  ".nvm-isolated/.claude-isolated/skills/toon-skill/examples/integration-guide.md": {
+    "mtime": 1774809682.7466476,
+    "hash": "90236fdfe4a4e00418ceea51da87ddc6"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
+    "mtime": 1778264316.9876757,
+    "hash": "30b126cde50258189ca61bee468d292b"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
+    "mtime": 1778100314.2615428,
+    "hash": "b66c1d5c4a9a0906961414f2392ed2ea"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/agent-instructions.md": {
+    "mtime": 1778100314.2614698,
+    "hash": "c06a27e5f355d2e74cf2bc41c2386f83"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/basic-claude-md.md": {
+    "mtime": 1778100314.2615428,
+    "hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8"
+  },
+  ".nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
+    "mtime": 1778100314.2615428,
+    "hash": "33a3f524663a8f636e6799674cf06db6"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md": {
+    "mtime": 1778264317.0206752,
+    "hash": "3b2e926daf616ebe4fecb6379a26ea35"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/query-example.md": {
+    "mtime": 1778100314.2600958,
+    "hash": "4180292664c864765dbb61c8199111d7"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/lint-example.md": {
+    "mtime": 1778100314.2600958,
+    "hash": "37df9b0c27d43db03a6353d2a7fb1cc8"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/ingest-example.md": {
+    "mtime": 1778100314.2599888,
+    "hash": "9c06fd7dbd3be3e045e6b38c0943a764"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/ingest-rules.md": {
+    "mtime": 1778100314.2600958,
+    "hash": "432b69206540abe5562c701bf4a0832a"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/wiki-conventions.md": {
+    "mtime": 1778100314.2604592,
+    "hash": "3c93ac3458eadea7f3a34bcb374aec64"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/lint-criteria.md": {
+    "mtime": 1778100314.260325,
+    "hash": "27dc9bd33a440d23c7b88ffcae15ce81"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/javascript.md": {
+    "mtime": 1778100314.2604592,
+    "hash": "1d93ffed9352dd4055f755886303bbc2"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/python.md": {
+    "mtime": 1778100314.2604592,
+    "hash": "b409d74b05310cc46c2c7a7d03f457cf"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/bash.md": {
+    "mtime": 1778100314.260325,
+    "hash": "6b6d29125dc924d29eedf87654d6ba26"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/markdown.md": {
+    "mtime": 1778100314.2604592,
+    "hash": "ab3492d680e08780443dbc4ad2d3dcc0"
+  },
+  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/typescript.md": {
+    "mtime": 1778100314.2604592,
+    "hash": "6d40884e06133a1495c514e2374a411b"
+  },
+  ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
+    "mtime": 1778159397.3289163,
+    "hash": "0564473eb5812a5cbaa234da28e80000"
+  },
+  ".nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
+    "mtime": 1778264316.952676,
+    "hash": "e32b23bdefdd26cf4b63ba88a0ca96a0"
+  },
+  ".nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
+    "mtime": 1774809682.7368128,
+    "hash": "55c91eb6886ec5ae5bc0a2a1390e07a4"
+  },
+  ".nvm-isolated/.claude-isolated/skills/agent-builder/examples/minimal-agent.md": {
+    "mtime": 1774809682.736916,
+    "hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6"
+  },
+  ".nvm-isolated/.claude-isolated/skills/agent-builder/rules/agent-best-practices.md": {
+    "mtime": 1774809682.736916,
+    "hash": "b74b7478e194f9717f9862ca328f7fe7"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
+    "mtime": 1778264316.8856766,
+    "hash": "f57ca9ba90d557652a5931fbe0cbfbcd"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
+    "mtime": 1774809682.7377477,
+    "hash": "c739c2c6d5fe6739503858a58aa7c9b3"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/dependency-graph.md": {
+    "mtime": 1774809682.7385385,
+    "hash": "96635e8dc64a1ea54f8a5b5454fffc93"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/README.md": {
+    "mtime": 1774809682.7385385,
+    "hash": "34a5025631c3872f782c2406a2f46db1"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/architecture-full.yaml": {
+    "mtime": 1773925646.7355509,
+    "hash": "5cdf497641efddd4dc01591a0b79aecc"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/TOON-INTEGRATION-GUIDE.md": {
+    "mtime": 1774809682.737833,
+    "hash": "6357eb5f13251a7c239c8a4c45e27d22"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md": {
+    "mtime": 1774809682.738172,
+    "hash": "74750531946911f943d9e9bee490132a"
+  },
+  ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md": {
+    "mtime": 1774809682.7385385,
+    "hash": "0151836c9fb7bc3c1ba74ef4bcb123b8"
   },
   ".nvm-isolated/.claude-isolated/scripts/lib/README.md": {
     "mtime": 1774809682.734205,
