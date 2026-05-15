@@ -42,13 +42,6 @@ source "${LIB_DIR}/core/remaining.sh"
 init_environment
 
 #######################################
-# Load telemetry module
-#######################################
-if [[ -f "${LIB_DIR}/telemetry/otel.sh" ]]; then
-    source "${LIB_DIR}/telemetry/otel.sh"
-fi
-
-#######################################
 # Load proxy modules (Phase 2)
 #######################################
 if [[ -d "$LIB_DIR/proxy" ]]; then
@@ -667,6 +660,10 @@ fi
                 NO_ATTRIBUTION_HEADER=true
                 shift
                 ;;
+            --no-telemetry)
+                export ICLAUDE_NO_TELEMETRY=1
+                shift
+                ;;
             --chrome)
                 USE_CHROME=true
                 shift
@@ -745,6 +742,13 @@ fi
                 ;;
         esac
     done
+
+    #######################################
+    # Load telemetry module (after arg parsing)
+    #######################################
+    if [[ -f "${LIB_DIR}/telemetry/otel.sh" ]]; then
+        source "${LIB_DIR}/telemetry/otel.sh"
+    fi
 
     # Combined mode: PII proxy + CCR router — show informational message
     # Both flags can now be combined; chain: claude → PII proxy(:9000) → CCR(:3456) → providers
