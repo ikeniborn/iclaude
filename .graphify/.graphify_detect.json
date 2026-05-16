@@ -1,1 +1,0 @@
-{"files": {"code": ["iclaude.sh", "lib/telemetry/otel.sh", "tests/test_telemetry_otel.sh", "tests/test_telemetry_e2e.sh"], "document": [".claude_config.example"], "paper": [], "image": [], "video": []}, "total_files": 5, "total_words": 5000, "skipped_sensitive": []}

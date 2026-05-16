@@ -168,6 +168,5 @@
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "skipDangerousModePermissionPrompt": true
 }
