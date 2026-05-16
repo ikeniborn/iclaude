@@ -28,8 +28,9 @@ init_environment() {
     # Determine script directory
     SCRIPT_DIR="${SCRIPT_DIR:-$(resolve_script_directory)}"
 
-    # Wrapper version (git short hash; fallback to "dev")
-    ICLAUDE_VERSION="$(git -C "${SCRIPT_DIR}" rev-parse --short HEAD 2>/dev/null || echo dev)"
+    # Wrapper version (from VERSION file; fallback to "dev")
+    ICLAUDE_VERSION="$(cat "${SCRIPT_DIR}/VERSION" 2>/dev/null | tr -d '[:space:]')"
+    [[ -z "$ICLAUDE_VERSION" ]] && ICLAUDE_VERSION="dev"
     export ICLAUDE_VERSION
 
     # Constants
