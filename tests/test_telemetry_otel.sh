@@ -41,7 +41,7 @@ TMPDIR_TEST=$(mktemp -d)
 pushd "$TMPDIR_TEST" >/dev/null
 source "$LIB_DIR/telemetry/otel.sh"
 expected_project=$(basename "$TMPDIR_TEST")
-[[ "$OTEL_RESOURCE_ATTRIBUTES" == *"project=${expected_project}"* ]] && { echo "  ✓ project=$expected_project"; PASS=$((PASS+1)); } || { echo "  ✗ project missing/wrong"; FAIL=$((FAIL+1)); }
+[[ "$OTEL_RESOURCE_ATTRIBUTES" == *"iclaude.project=${expected_project}"* ]] && { echo "  ✓ iclaude.project=$expected_project"; PASS=$((PASS+1)); } || { echo "  ✗ iclaude.project missing/wrong"; FAIL=$((FAIL+1)); }
 popd >/dev/null
 rm -rf "$TMPDIR_TEST"
 

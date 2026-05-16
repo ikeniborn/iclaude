@@ -28,7 +28,7 @@ setup_telemetry() {
     export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
     export OTEL_METRIC_EXPORT_INTERVAL=10000
 
-    export OTEL_RESOURCE_ATTRIBUTES="service.name=claude-code,service.namespace=iclaude,project=${project},host=$(hostname),wrapper.version=${ICLAUDE_VERSION:-unknown},proxy.profile=${PROXY_PROFILE:-default},deployment.environment=production"
+    export OTEL_RESOURCE_ATTRIBUTES="service.name=claude-code,service.namespace=iclaude,iclaude.project=${project},host=$(hostname),wrapper.version=${ICLAUDE_VERSION:-unknown},proxy.profile=${PROXY_PROFILE:-default},deployment.environment=production"
 
     log_debug "telemetry enabled: project=$project"
 }

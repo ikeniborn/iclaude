@@ -28,6 +28,10 @@ init_environment() {
     # Determine script directory
     SCRIPT_DIR="${SCRIPT_DIR:-$(resolve_script_directory)}"
 
+    # Wrapper version (git short hash; fallback to "dev")
+    ICLAUDE_VERSION="$(git -C "${SCRIPT_DIR}" rev-parse --short HEAD 2>/dev/null || echo dev)"
+    export ICLAUDE_VERSION
+
     # Constants
     CONFIG_FILE="${SCRIPT_DIR}/.claude_config"
     LEGACY_CREDENTIALS_FILE="${SCRIPT_DIR}/.claude_proxy_credentials"
