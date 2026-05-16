@@ -1,7 +1,27 @@
 #!/bin/bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+VERSION_FILE="$REPO_ROOT/VERSION"
+
+bump_patch=0
+
 while read local_ref local_sha remote_ref remote_sha; do
   if [[ "$remote_ref" == "refs/heads/master" ]]; then
     echo "ERROR: Direct push to master is forbidden. Use a PR."
     exit 1
   fi
+  if [[ "$remote_ref" == "refs/heads/dev" ]]; then
+    bump_patch=1
+  fi
 done
+
+if [[ "$bump_patch" == "1" ]] && [[ -f "$VERSION_FILE" ]]; then
+  version="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
+  major="${version%%.*}"; rest="${version#*.}"
+  minor="${rest%%.*}"; patch="${rest#*.}"
+  new_patch=$((patch + 1))
+  new_version="${major}.${minor}.${new_patch}"
+  echo "$new_version" > "$VERSION_FILE"
+  git -C "$REPO_ROOT" add "$VERSION_FILE"
+  git -C "$REPO_ROOT" commit --no-verify -m "chore(version): bump patch to ${new_version} [skip ci]"
+  echo "Version bumped: ${version} → ${new_version}"
+fi
