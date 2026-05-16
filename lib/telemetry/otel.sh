@@ -12,9 +12,13 @@ setup_telemetry() {
         return 0
     fi
 
-    local project toplevel
+    local project toplevel remote
     toplevel="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || toplevel=""
-    if [[ -n "$toplevel" ]]; then
+    remote="$(git -C "${toplevel:-$PWD}" remote get-url origin 2>/dev/null)" || remote=""
+    if [[ -n "$remote" ]]; then
+        # strip trailing .git, then take last path segment
+        project="$(basename "${remote%.git}")"
+    elif [[ -n "$toplevel" ]]; then
         project="$(basename "$toplevel")"
     else
         project="$(basename "$PWD")"
