@@ -12,9 +12,12 @@ setup_telemetry() {
         return 0
     fi
 
-    local project toplevel remote
-    if [[ -n "${ICLAUDE_PROJECT:-}" ]]; then
-        project="$ICLAUDE_PROJECT"
+    local project toplevel remote existing_project
+    # If caller already embedded iclaude.project in OTEL_RESOURCE_ATTRIBUTES, honour it.
+    existing_project="$(printf '%s' "${OTEL_RESOURCE_ATTRIBUTES:-}" | tr ',' '\n' \
+        | sed -n 's/^iclaude\.project=//p' | head -1)"
+    if [[ -n "$existing_project" ]]; then
+        project="$existing_project"
     else
         toplevel="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || toplevel=""
         remote="$(git -C "${toplevel:-$PWD}" remote get-url origin 2>/dev/null)" || remote=""
