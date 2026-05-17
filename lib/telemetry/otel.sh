@@ -13,15 +13,19 @@ setup_telemetry() {
     fi
 
     local project toplevel remote
-    toplevel="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || toplevel=""
-    remote="$(git -C "${toplevel:-$PWD}" remote get-url origin 2>/dev/null)" || remote=""
-    if [[ -n "$remote" ]]; then
-        # strip trailing .git, then take last path segment
-        project="$(basename "${remote%.git}")"
-    elif [[ -n "$toplevel" ]]; then
-        project="$(basename "$toplevel")"
+    if [[ -n "${ICLAUDE_PROJECT:-}" ]]; then
+        project="$ICLAUDE_PROJECT"
     else
-        project="$(basename "$PWD")"
+        toplevel="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || toplevel=""
+        remote="$(git -C "${toplevel:-$PWD}" remote get-url origin 2>/dev/null)" || remote=""
+        if [[ -n "$remote" ]]; then
+            # strip trailing .git, then take last path segment
+            project="$(basename "${remote%.git}")"
+        elif [[ -n "$toplevel" ]]; then
+            project="$(basename "$toplevel")"
+        else
+            project="$(basename "$PWD")"
+        fi
     fi
 
     export CLAUDE_CODE_ENABLE_TELEMETRY=1
