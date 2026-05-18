@@ -39,6 +39,15 @@ setup_telemetry() {
     export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
     export OTEL_METRIC_EXPORT_INTERVAL=10000
 
+    # Auto-generate BasicAuth header from credentials if set and headers not already configured.
+    # OTEL_EXPORTER_OTLP_CREDENTIALS="user:password"
+    if [[ -n "${OTEL_EXPORTER_OTLP_CREDENTIALS:-}" && -z "${OTEL_EXPORTER_OTLP_HEADERS:-}" ]]; then
+        local b64
+        b64="$(printf '%s' "${OTEL_EXPORTER_OTLP_CREDENTIALS}" | base64 -w 0)"
+        export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic ${b64}"
+        log_debug "telemetry: BasicAuth header generated from OTEL_EXPORTER_OTLP_CREDENTIALS"
+    fi
+
     export OTEL_RESOURCE_ATTRIBUTES="service.name=claude-code,service.namespace=iclaude,iclaude.project=${project},host=$(hostname),wrapper.version=${ICLAUDE_VERSION:-unknown},proxy.profile=${PROXY_PROFILE:-default},deployment.environment=production"
 
     log_debug "telemetry enabled: project=$project"

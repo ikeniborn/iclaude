@@ -1,0 +1,103 @@
+{
+  "nodes": [
+    {
+      "id": "lib/telemetry/otel.sh::setup_telemetry",
+      "type": "function",
+      "name": "setup_telemetry",
+      "file": "lib/telemetry/otel.sh",
+      "source_file": "lib/telemetry/otel.sh",
+      "language": "bash",
+      "description": "Configures OpenTelemetry environment variables for Claude Code. Detects the project name from git remote/toplevel/PWD. Exports OTEL exporters, endpoint, protocol, and metric interval. New in this revision: auto-generates OTEL_EXPORTER_OTLP_HEADERS (BasicAuth) from OTEL_EXPORTER_OTLP_CREDENTIALS (user:password format) via base64 encoding, only when credentials are set and headers are not already configured.",
+      "exports": [
+        "CLAUDE_CODE_ENABLE_TELEMETRY",
+        "OTEL_METRICS_EXPORTER",
+        "OTEL_LOGS_EXPORTER",
+        "OTEL_LOG_USER_PROMPTS",
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "OTEL_EXPORTER_OTLP_PROTOCOL",
+        "OTEL_METRIC_EXPORT_INTERVAL",
+        "OTEL_EXPORTER_OTLP_HEADERS",
+        "OTEL_RESOURCE_ATTRIBUTES"
+      ],
+      "line_start": 9,
+      "line_end": 54
+    },
+    {
+      "id": "lib/telemetry/otel.sh::print_telemetry_status",
+      "type": "function",
+      "name": "print_telemetry_status",
+      "file": "lib/telemetry/otel.sh",
+      "source_file": "lib/telemetry/otel.sh",
+      "language": "bash",
+      "description": "Prints a one-line telemetry status message to stdout showing endpoint, project name extracted from OTEL_RESOURCE_ATTRIBUTES, and protocol. No-ops if CLAUDE_CODE_ENABLE_TELEMETRY is not 1.",
+      "line_start": 56,
+      "line_end": 71
+    },
+    {
+      "id": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_CREDENTIALS",
+      "type": "variable",
+      "name": "OTEL_EXPORTER_OTLP_CREDENTIALS",
+      "file": "lib/telemetry/otel.sh",
+      "source_file": "lib/telemetry/otel.sh",
+      "language": "bash",
+      "description": "Input variable (user:password format). When set and OTEL_EXPORTER_OTLP_HEADERS is not already configured, setup_telemetry base64-encodes this value and exports it as an Authorization=Basic header in OTEL_EXPORTER_OTLP_HEADERS.",
+      "line_start": 44,
+      "line_end": 49
+    },
+    {
+      "id": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_HEADERS",
+      "type": "variable",
+      "name": "OTEL_EXPORTER_OTLP_HEADERS",
+      "file": "lib/telemetry/otel.sh",
+      "source_file": "lib/telemetry/otel.sh",
+      "language": "bash",
+      "description": "Output variable set by setup_telemetry. Contains BasicAuth Authorization header derived from OTEL_EXPORTER_OTLP_CREDENTIALS. Not overwritten if already set by caller.",
+      "line_start": 47,
+      "line_end": 47
+    },
+    {
+      "id": "lib/telemetry/otel.sh",
+      "type": "file",
+      "name": "otel.sh",
+      "file": "lib/telemetry/otel.sh",
+      "source_file": "lib/telemetry/otel.sh",
+      "language": "bash",
+      "description": "Telemetry module for iclaude. Sources setup_telemetry on load. Provides BasicAuth header auto-generation from OTEL_EXPORTER_OTLP_CREDENTIALS, project name detection from git, and OTEL exporter configuration. Designed to be sourced from the iclaude entry-point scripts."
+    }
+  ],
+  "edges": [
+    {
+      "source": "lib/telemetry/otel.sh::setup_telemetry",
+      "target": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_CREDENTIALS",
+      "type": "reads",
+      "source_file": "lib/telemetry/otel.sh"
+    },
+    {
+      "source": "lib/telemetry/otel.sh::setup_telemetry",
+      "target": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_HEADERS",
+      "type": "writes",
+      "source_file": "lib/telemetry/otel.sh"
+    },
+    {
+      "source": "lib/telemetry/otel.sh",
+      "target": "lib/telemetry/otel.sh::setup_telemetry",
+      "type": "calls",
+      "source_file": "lib/telemetry/otel.sh"
+    },
+    {
+      "source": "lib/telemetry/otel.sh",
+      "target": "lib/telemetry/otel.sh::print_telemetry_status",
+      "type": "defines",
+      "source_file": "lib/telemetry/otel.sh"
+    },
+    {
+      "source": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_CREDENTIALS",
+      "target": "lib/telemetry/otel.sh::OTEL_EXPORTER_OTLP_HEADERS",
+      "type": "derives",
+      "source_file": "lib/telemetry/otel.sh"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

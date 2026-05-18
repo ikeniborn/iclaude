@@ -770,12 +770,17 @@ DEBUG_LAUNCH=
 # ============================================================================
 # Telemetry (Claude Code → Grafana)
 # ============================================================================
-# Полный opt-out (1=disable telemetry, 0/unset=enabled by default).
+# Полный opt-out (1=disable telemetry, 0/unset=enabled по умолчанию).
 # ICLAUDE_NO_TELEMETRY=0
 
-# Переопределить OTLP endpoint (default: http://127.0.0.1:4318 — локальный collector).
-# Использовать при удалённом collector или альтернативном порту.
+# --- Вариант A: Локально (та же машина, трафик не выходит наружу) -----------
+# По умолчанию. Collector доступен напрямую на 127.0.0.1:4318, без TLS и auth.
 # OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
+
+# --- Вариант B: Внешний (iclaude на другой машине → otel.ikeniborn.ru) ------
+# Указать endpoint и пароль — lib автоматически сформирует Authorization заголовок.
+# OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.ikeniborn.ru"
+# OTEL_EXPORTER_OTLP_PASSWORD="ТВОЙ_ПАРОЛЬ"
 
 # Логирование тела user prompt в Loki (1=on, 0=off).
 # Default 1. Установить 0 для приватных сессий без `--no-telemetry`.
