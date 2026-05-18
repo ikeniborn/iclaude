@@ -4,59 +4,61 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## 0. Project Exploration — Start Here
+## Getting Started
 
-**Before exploring code manually — load the graph and wiki first.**
+**Load graph and wiki before exploring code — they encode decisions invisible in raw code.**
 
-At the start of any task involving an unfamiliar codebase or after a long break:
-1. Run `/graphify-context` → load knowledge graph into context (architecture, dependencies, clusters).
-2. Run `/llm-wiki` → load wiki entries for the relevant domain.
+At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-Why: the graph and wiki encode decisions, constraints, and patterns that are invisible in raw code. Reading code without them wastes time rediscovering known context.
+1. Run `graphify-context` → loads architecture, dependencies, clusters into context.
+2. Run `llm-wiki` → loads wiki entries for the relevant domain.
 
-- New project or feature area → mandatory.
-- Returning after a break (>1 day) → mandatory.
-- Familiar area, same session → skip.
+Skip only when: familiar area, same session.
 
-## 1. Think Before Coding
+## Language Rules
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+- **Conversations and questions**: Russian — to match user expectations.
+- **Documentation and code comments**: English — to keep docs universally readable.
+
+## Think Before Coding
+
+**Don't assume. Surface tradeoffs. Ask when unclear.**
 
 Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so.
 - If something is unclear, stop. Name what's confusing. Ask.
 
-## 2. Simplicity First
+## Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
+- No unrequested features — scope creep compounds review cost.
+- No abstractions for single-use code — increases cognitive load without reuse benefit.
+- No "flexibility" not requested — premature generalization adds maintenance burden.
+- No error handling for impossible scenarios — dead code misleads readers.
 - If you write 200 lines and it could be 50, rewrite it.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+Ask yourself: "Would a senior engineer call this overcomplicated?" If yes, simplify.
 
-## 3. Surgical Changes
+## Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+- Don't improve adjacent code or formatting — unrelated changes bloat diffs and risk regressions.
+- Don't refactor things that aren't broken — stability is a feature.
+- Match existing style — consistency beats personal preference.
+- If you notice unrelated dead code, mention it — don't delete it.
 
 When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
+- Remove imports/variables/functions YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-The test: Every changed line should trace directly to the user's request.
+Test: every changed line must trace directly to the user's request.
 
-## 4. Goal-Driven Execution
+## Execution
 
 **Define success criteria. Loop until verified.**
 
@@ -72,19 +74,16 @@ For multi-step tasks, state a brief plan:
 3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+## Maintenance
 
-## 5. Knowledge Actualization
-
-**After every non-trivial change — update the graph and wiki.**
+**After every non-trivial change — update graph and wiki.**
 
 After completing any feature, bugfix, or refactor:
-1. Run `/graphify` → rebuild knowledge graph from updated codebase.
-2. Run `/llm-wiki` → sync wiki entries affected by the change.
+1. Run `graphify` → rebuilds knowledge graph.
+2. Run `llm-wiki` → syncs affected wiki entries.
 
-Why: stale graph/wiki misleads future sessions. Fresh context is cheap; rediscovery is expensive.
+Why: stale graph/wiki misleads future sessions; fresh context is cheaper than rediscovery.
 
 - Trivial changes (typo, comment, formatting) — skip.
 - Non-trivial changes (new module, API change, architectural decision) — mandatory.
-- If unsure — update. False positives cost less than stale knowledge.
-
+- If unsure — update.
