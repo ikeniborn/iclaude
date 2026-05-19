@@ -788,5 +788,3 @@ DEBUG_LAUNCH=
 
 # Метка proxy.profile в resource attrs (default: $PROXY_PROFILE из profile loader).
 # PROXY_PROFILE=default
-
-1
