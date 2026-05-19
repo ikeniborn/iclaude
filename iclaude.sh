@@ -873,6 +873,7 @@ fi
     # Configure proxy
     print_info "Configuring proxy..."
     configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
+    command -v patch_no_proxy_for_telemetry >/dev/null 2>&1 && patch_no_proxy_for_telemetry
 
     # Display configuration
     display_proxy_info "$show_password"

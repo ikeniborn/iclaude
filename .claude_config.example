@@ -781,6 +781,7 @@ DEBUG_LAUNCH=
 # Указать endpoint и credentials (user:password) — lib автоматически сформирует Authorization заголовок.
 # OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.ikeniborn.ru"
 # OTEL_EXPORTER_OTLP_CREDENTIALS="user:[PASSWORD_REDACTED]"
+# Хост endpoint автоматически добавляется в NO_PROXY (otel.sh:patch_no_proxy_for_telemetry).
 
 # Логирование тела user prompt в Loki (1=on, 0=off).
 # Default 1. Установить 0 для приватных сессий без `--no-telemetry`.

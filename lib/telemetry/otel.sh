@@ -53,6 +53,22 @@ setup_telemetry() {
     log_debug "telemetry enabled: project=$project"
 }
 
+# Add OTEL endpoint host to NO_PROXY so traffic bypasses the proxy.
+# Must be called AFTER configure_proxy_from_url() sets NO_PROXY.
+patch_no_proxy_for_telemetry() {
+    [[ "${CLAUDE_CODE_ENABLE_TELEMETRY:-0}" != "1" ]] && return 0
+    local endpoint="${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
+    [[ -z "$endpoint" ]] && return 0
+    local host
+    host="$(printf '%s' "$endpoint" | sed -E 's|^https?://([^/:]+).*|\1|')"
+    [[ -z "$host" || "$host" == "127.0.0.1" || "$host" == "localhost" ]] && return 0
+    if [[ ",${NO_PROXY:-}," != *",${host},"* ]]; then
+        NO_PROXY="${NO_PROXY:+${NO_PROXY},}${host}"
+        export NO_PROXY
+        log_debug "telemetry: ${host} added to NO_PROXY"
+    fi
+}
+
 print_telemetry_status() {
     if [[ "${CLAUDE_CODE_ENABLE_TELEMETRY:-0}" != "1" ]]; then
         return 0
