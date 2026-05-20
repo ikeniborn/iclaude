@@ -143,6 +143,10 @@ export type FileReadOutput =
          * Total number of lines in the file
          */
         totalLines: number;
+        /**
+         * True when a whole-file read was auto-paginated because it exceeded the token cap (the content is a partial first page). A programmatic signal for internal consumers; survives output reconstruction (unlike the render-time banner).
+         */
+        truncatedByTokenCap?: boolean;
       };
     }
   | {
