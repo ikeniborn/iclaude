@@ -359,7 +359,11 @@ check_lockfile_changes() {
 			echo ""
 			print_info "Native binary missing after git pull — restoring..."
 			echo ""
-			create_claude_symlink
+			if ! create_claude_symlink; then
+				print_warning "Binary restore failed — run './iclaude.sh --repair-isolated' to fix"
+				echo ""
+				return 0
+			fi
 			update_lockfile_hash
 			return 0
 		fi
