@@ -346,8 +346,20 @@ check_lockfile_changes() {
 		fi
 
 		if [[ -n "$installed_claude_ver" && "$installed_claude_ver" == "$lockfile_claude_ver" ]]; then
-			# Installed version matches lockfile — environment is already up to date
-			# (e.g. CI pushed npm packages to git, user ran git pull)
+			local claude_bin="${ISOLATED_NVM_DIR}/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
+			if [[ -f "$claude_bin" ]]; then
+				# Binary present and version matches lockfile — truly up to date
+				# (e.g. CI pushed npm packages to git, user ran git pull)
+				update_lockfile_hash
+				return 0
+			fi
+			# package.json matches lockfile but native binary is missing.
+			# Typical cause: git pull updated package.json (tracked) but bin/claude.exe
+			# is excluded from git (>100MB) and was not restored.
+			echo ""
+			print_info "Native binary missing after git pull — restoring..."
+			echo ""
+			create_claude_symlink
 			update_lockfile_hash
 			return 0
 		fi
