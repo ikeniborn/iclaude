@@ -27,10 +27,20 @@ export type ToolInputSchemas =
   | WebFetchInput
   | WebSearchInput
   | AskUserQuestionInput
+  | EnterPlanModeInput
   | TaskCreateInput
   | TaskGetInput
   | TaskUpdateInput
   | TaskListInput
+  | REPLInput
+  | WorkflowInput
+  | CronCreateInput
+  | CronDeleteInput
+  | CronListInput
+  | ScheduleWakeupInput
+  | RemoteTriggerInput
+  | MonitorInput
+  | PushNotificationInput
   | EnterWorktreeInput
   | ExitWorktreeInput
   | ToolOutputSchemas;
@@ -57,7 +67,17 @@ export type ToolOutputSchemas =
   | TaskCreateOutput
   | TaskGetOutput
   | TaskUpdateOutput
-  | TaskListOutput;
+  | TaskListOutput
+  | RemoteTriggerOutput
+  | ScheduleWakeupOutput
+  | MonitorOutput
+  | EnterPlanModeOutput
+  | REPLOutput
+  | WorkflowOutput
+  | CronCreateOutput
+  | CronDeleteOutput
+  | CronListOutput
+  | PushNotificationOutput;
 export type AgentOutput =
   | {
       agentId: string;
@@ -2162,6 +2182,7 @@ export interface AskUserQuestionInput {
     source?: string;
   };
 }
+export interface EnterPlanModeInput {}
 export interface TaskCreateInput {
   /**
    * A brief title for the task
@@ -2229,6 +2250,121 @@ export interface TaskUpdateInput {
   };
 }
 export interface TaskListInput {}
+export interface REPLInput {
+  /**
+   * JavaScript code to execute. Supports top-level await. State persists across calls.
+   */
+  code: string;
+  /**
+   * Clear, concise description of what this script does in active voice (5-10 words). E.g. "Trace upgrade message to its GrowthBook flag"
+   */
+  description?: string;
+  /**
+   * Optional timeout in milliseconds (default 30000, max 600000)
+   */
+  timeout?: number;
+}
+export interface WorkflowInput {
+  /**
+   * Self-contained workflow script. Must begin with `export const meta = { name, description, phases }` (pure literal, no computed values) followed by the script body using agent()/parallel()/pipeline()/phase().
+   */
+  script?: string;
+  /**
+   * Name of a predefined workflow (built-in or from .claude/workflows/). Resolves to a self-contained script.
+   */
+  name?: string;
+  /**
+   * Optional input value exposed to the script as the global `args`. Use for parameterized named workflows (e.g. a research question).
+   */
+  args?: {
+    [k: string]: unknown;
+  };
+  /**
+   * Path to a workflow script file on disk. Every Workflow invocation persists its script under the session directory and returns the path in the tool result. To iterate, edit that file with Write/Edit and re-invoke Workflow with the same `scriptPath` instead of re-sending the full script. Takes precedence over `script` and `name`.
+   */
+  scriptPath?: string;
+  /**
+   * Run ID of a prior Workflow invocation to resume from. Completed agent() calls with unchanged (prompt, opts) return their cached results instantly; only edited or new calls re-run. Same-session only. Stop the prior run first (TaskStop) before resuming.
+   */
+  resumeFromRunId?: string;
+}
+export interface CronCreateInput {
+  /**
+   * Standard 5-field cron expression in local time: "M H DoM Mon DoW" (e.g. "* /5 * * * *" = every 5 minutes, "30 14 28 2 *" = Feb 28 at 2:30pm local once).
+   */
+  cron: string;
+  /**
+   * The prompt to enqueue at each fire time.
+   */
+  prompt: string;
+  /**
+   * true (default) = fire on every cron match until deleted or auto-expired after 7 days. false = fire once at the next match, then auto-delete. Use false for "remind me at X" one-shot requests with pinned minute/hour/dom/month.
+   */
+  recurring?: boolean;
+  /**
+   * true = persist to .claude/scheduled_tasks.json and survive restarts. false (default) = in-memory only, dies when this Claude session ends. Use true only when the user asks the task to survive across sessions.
+   */
+  durable?: boolean;
+}
+export interface CronDeleteInput {
+  /**
+   * Job ID returned by CronCreate.
+   */
+  id: string;
+}
+export interface CronListInput {}
+export interface ScheduleWakeupInput {
+  /**
+   * Seconds from now to wake up. Clamped to [60, 3600] by the runtime.
+   */
+  delaySeconds: number;
+  /**
+   * One short sentence explaining the chosen delay. Goes to telemetry and is shown to the user. Be specific.
+   */
+  reason: string;
+  /**
+   * The /loop input to fire on wake-up. Pass the same /loop input verbatim each turn so the next firing re-enters the skill and continues the loop. For autonomous /loop (no user prompt), pass the literal sentinel `<<autonomous-loop-dynamic>>` instead (the dynamic-pacing variant, not the CronCreate-mode `<<autonomous-loop>>`).
+   */
+  prompt: string;
+}
+export interface RemoteTriggerInput {
+  action: "list" | "get" | "create" | "update" | "run";
+  /**
+   * Required for get, update, and run
+   */
+  trigger_id?: string;
+  /**
+   * Required for create and update; optional for run
+   */
+  body?: {
+    [k: string]: unknown;
+  };
+}
+export interface MonitorInput {
+  /**
+   * Short human-readable description of what you are monitoring (shown in notifications).
+   */
+  description: string;
+  /**
+   * Kill the monitor after this deadline. Default 300000ms, max 3600000ms. Ignored when persistent is true.
+   */
+  timeout_ms: number;
+  /**
+   * Run for the lifetime of the session (no timeout). Use for session-length watches like PR monitoring or log tails. Stop with TaskStop.
+   */
+  persistent: boolean;
+  /**
+   * Shell command or script. Each stdout line is an event; exit ends the watch.
+   */
+  command: string;
+}
+export interface PushNotificationInput {
+  /**
+   * The notification body. Keep it under 200 characters; mobile OSes truncate.
+   */
+  message: string;
+  status: "proactive";
+}
 export interface EnterWorktreeInput {
   /**
    * Optional name for a new worktree. Each "/"-separated segment may contain only letters, digits, dots, underscores, and dashes; max 64 chars total. A random name is generated if not provided. Mutually exclusive with `path`.
@@ -2849,4 +2985,144 @@ export interface TaskListOutput {
     owner?: string;
     blockedBy: string[];
   }[];
+}
+export interface RemoteTriggerOutput {
+  status: number;
+  json: string;
+  summary?: string;
+}
+export interface ScheduleWakeupOutput {
+  /**
+   * Epoch ms timestamp when the next wakeup will fire
+   */
+  scheduledFor: number;
+  /**
+   * Actual delay used after clamping to runtime bounds
+   */
+  clampedDelaySeconds: number;
+  /**
+   * True if the requested delaySeconds was outside [60, 3600]
+   */
+  wasClamped: boolean;
+}
+export interface MonitorOutput {
+  /**
+   * ID of the background monitor task.
+   */
+  taskId: string;
+  /**
+   * Timeout deadline in milliseconds (0 when persistent).
+   */
+  timeoutMs: number;
+  /**
+   * No timeout — runs until TaskStop or session end.
+   */
+  persistent?: boolean;
+}
+export interface EnterPlanModeOutput {
+  /**
+   * Confirmation that plan mode was entered
+   */
+  message: string;
+}
+export interface REPLOutput {
+  /**
+   * The code that was executed
+   */
+  code: string;
+  /**
+   * Return value from the code execution
+   */
+  result: {
+    [k: string]: unknown;
+  };
+  /**
+   * Captured console.log output
+   */
+  stdout: string;
+  /**
+   * Captured console.error output
+   */
+  stderr: string;
+  /**
+   * Error message if execution failed
+   */
+  error?: string;
+  /**
+   * Names of tools registered during this execution
+   */
+  registeredTools?: string[];
+  /**
+   * Images returned by inner Read calls — surfaced as image content blocks
+   */
+  images?: {
+    base64: string;
+    mediaType: string;
+  }[];
+  /**
+   * PDFs returned by inner Read calls — surfaced as document content blocks
+   */
+  documents?: {
+    base64: string;
+  }[];
+}
+export interface WorkflowOutput {
+  status: "async_launched" | "remote_launched";
+  taskId: string;
+  /**
+   * Local workflow run identifier for resumeFromRunId. Absent for remote_launched (the CCR session URL is the resume handle there) and on transcripts written before this field existed.
+   */
+  runId?: string;
+  summary?: string;
+  /**
+   * Directory where subagent transcripts are written during execution
+   */
+  transcriptDir?: string;
+  /**
+   * Path to the persisted workflow script for this invocation. Editable via Write/Edit; pass back as `scriptPath` to re-run without resending the script.
+   */
+  scriptPath?: string;
+  /**
+   * CCR session URL when status is remote_launched
+   */
+  sessionUrl?: string;
+  /**
+   * Non-blocking heads-up (e.g. local git state diverges from the pushed branch the remote session will clone)
+   */
+  warning?: string;
+  /**
+   * Set if syntax check failed
+   */
+  error?: string;
+}
+export interface CronCreateOutput {
+  id: string;
+  humanSchedule: string;
+  recurring: boolean;
+  durable?: boolean;
+}
+export interface CronDeleteOutput {
+  id: string;
+}
+export interface CronListOutput {
+  jobs: {
+    id: string;
+    cron: string;
+    humanSchedule: string;
+    prompt: string;
+    recurring?: boolean;
+    durable?: boolean;
+  }[];
+}
+export interface PushNotificationOutput {
+  message: string;
+  pushSent?: boolean;
+  localSent?: boolean;
+  disabledReason?: "config_off" | "user_present" | "no_transport";
+  idleSec?: number;
+  hasFocus?: boolean;
+  /**
+   * ISO timestamp captured at tool execution on the emitting process. Optional — resumed sessions replay pre-sentAt outputs verbatim.
+   */
+  sentAt?: string;
 }
