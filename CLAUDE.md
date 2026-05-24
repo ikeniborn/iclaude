@@ -51,6 +51,10 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
 ./iclaude.sh --install-graphify       # Install Graphify (uv + Python 3.12 + graphifyy)
+./iclaude.sh --install-lat         # Install lat.md (Node 22 + MCP)
+./iclaude.sh --lat-init            # Initialize lat.md/ in current project
+./iclaude.sh --lat-check           # Check doc link integrity + install pre-commit hook
+./iclaude.sh --check-lat           # Show lat.md status
 ./iclaude.sh --install-gsd            # Install GSD framework (npx get-shit-done-cc)
 ./iclaude.sh --check-gsd              # Check GSD installation status
 ./iclaude.sh --install-microvm        # Install Firecracker (~1.4GB)
@@ -67,6 +71,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
 | microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
 | Graphify Knowledge Graph (uv, Python 3.12, graphifyy) | `lib/graphify/` |
+| lat.md Documentation Graph (Node 22, MCP server) | `lib/lat/` |
 | GSD Framework (meta-prompting, spec-driven dev) | [docs/superpowers/specs/2026-05-14-gsd-integration-design.md](docs/superpowers/specs/2026-05-14-gsd-integration-design.md) |
 | OAuth Token Management | `lib/oauth/token.sh` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |

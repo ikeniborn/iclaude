@@ -6,12 +6,12 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 ## Getting Started
 
-**Load graph and wiki before exploring code — they encode decisions invisible in raw code.**
+**Load graph and docs before exploring code — they encode decisions invisible in raw code.**
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
 1. Run `graphify-context` → loads architecture, dependencies, clusters into context.
-2. Run `llm-wiki` → loads wiki entries for the relevant domain.
+2. Run `update-docs` → checks lat.md/ integrity and updates sections.
 
 Skip only when: familiar area, same session.
 
@@ -76,11 +76,11 @@ For multi-step tasks, state a brief plan:
 
 ## Maintenance
 
-**After every non-trivial change — update graph and wiki.**
+**After every non-trivial change — update graph and docs.**
 
 After completing any feature, bugfix, or refactor:
 1. Run `graphify` → rebuilds knowledge graph.
-2. Run `llm-wiki` → syncs affected wiki entries.
+2. Run `update-docs` → runs lat check + updates lat.md/ sections.
 
 Why: stale graph/wiki misleads future sessions; fresh context is cheaper than rediscovery.
 
