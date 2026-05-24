@@ -40,7 +40,13 @@ install_lat_precommit() {
         print_warning "Not a git repo at $LAUNCH_DIR — skipping pre-commit hook"
         return 0
     }
-    local hook_file="${LAUNCH_DIR}/${git_dir}/hooks/pre-commit"
+    local hook_file
+    # git_dir may be absolute (worktree) or relative (normal repo)
+    if [[ "$git_dir" = /* ]]; then
+        hook_file="${git_dir}/hooks/pre-commit"
+    else
+        hook_file="${LAUNCH_DIR}/${git_dir}/hooks/pre-commit"
+    fi
     mkdir -p "$(dirname "$hook_file")"
 
     # Already installed — skip
@@ -74,7 +80,12 @@ HOOKEOF
 remove_lat_precommit() {
     local git_dir
     git_dir=$(cd "$LAUNCH_DIR" && git rev-parse --git-dir 2>/dev/null) || return 0
-    local hook_file="${LAUNCH_DIR}/${git_dir}/hooks/pre-commit"
+    local hook_file
+    if [[ "$git_dir" = /* ]]; then
+        hook_file="${git_dir}/hooks/pre-commit"
+    else
+        hook_file="${LAUNCH_DIR}/${git_dir}/hooks/pre-commit"
+    fi
 
     [[ -f "$hook_file" ]] || return 0
     grep -qF "LAT-PRECOMMIT-BEGIN" "$hook_file" || return 0
