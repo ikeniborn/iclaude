@@ -60,12 +60,12 @@
     "hash": "5db2917613c2526dd27460c3299dd722"
   },
   "CLAUDE.md": {
-    "mtime": 1778764211.1106706,
-    "hash": "c30e817fa87cca2dfdd0430a0d49c256"
+    "mtime": 1779653496.3611126,
+    "hash": "5b280ddbc22c298f0e76d9468bcc452f"
   },
   "README.md": {
-    "mtime": 1778764211.110814,
-    "hash": "64bfcb413211c892c854ea87b4ea255f"
+    "mtime": 1779653285.6286275,
+    "hash": "64bd98ad20274e9bbfe509736d291071"
   },
   "lib/README.md": {
     "mtime": 1774809683.5182161,
@@ -80,8 +80,8 @@
     "hash": "d9eae036a0f5820f88ab3fa289a9016b"
   },
   ".nvm-isolated/.claude-isolated/CLAUDE.md": {
-    "mtime": 1778586416.653557,
-    "hash": "24b2859102af59c5f0bb025e53bc4dd0"
+    "mtime": 1779652486.8644986,
+    "hash": "ceaae3fa52f7344638b6dccdd07f8ba0"
   },
   ".nvm-isolated/.claude-isolated/get-shit-done/templates/project.md": {
     "mtime": 1778787583.435124,
@@ -1027,57 +1027,13 @@
     "mtime": 1778100314.2615428,
     "hash": "33a3f524663a8f636e6799674cf06db6"
   },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/SKILL.md": {
-    "mtime": 1778264317.0206752,
-    "hash": "3b2e926daf616ebe4fecb6379a26ea35"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/query-example.md": {
-    "mtime": 1778100314.2600958,
-    "hash": "4180292664c864765dbb61c8199111d7"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/lint-example.md": {
-    "mtime": 1778100314.2600958,
-    "hash": "37df9b0c27d43db03a6353d2a7fb1cc8"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/examples/ingest-example.md": {
-    "mtime": 1778100314.2599888,
-    "hash": "9c06fd7dbd3be3e045e6b38c0943a764"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/ingest-rules.md": {
-    "mtime": 1778100314.2600958,
-    "hash": "432b69206540abe5562c701bf4a0832a"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/wiki-conventions.md": {
-    "mtime": 1778100314.2604592,
-    "hash": "3c93ac3458eadea7f3a34bcb374aec64"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/lint-criteria.md": {
-    "mtime": 1778100314.260325,
-    "hash": "27dc9bd33a440d23c7b88ffcae15ce81"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/javascript.md": {
-    "mtime": 1778100314.2604592,
-    "hash": "1d93ffed9352dd4055f755886303bbc2"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/python.md": {
-    "mtime": 1778100314.2604592,
-    "hash": "b409d74b05310cc46c2c7a7d03f457cf"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/bash.md": {
-    "mtime": 1778100314.260325,
-    "hash": "6b6d29125dc924d29eedf87654d6ba26"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/markdown.md": {
-    "mtime": 1778100314.2604592,
-    "hash": "ab3492d680e08780443dbc4ad2d3dcc0"
-  },
-  ".nvm-isolated/.claude-isolated/skills/llm-wiki/rules/readers/typescript.md": {
-    "mtime": 1778100314.2604592,
-    "hash": "6d40884e06133a1495c514e2374a411b"
-  },
   ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
     "mtime": 1778159397.3289163,
     "hash": "0564473eb5812a5cbaa234da28e80000"
+  },
+  ".nvm-isolated/.claude-isolated/skills/idd/SKILL.md": {
+    "mtime": 1779653099.5176873,
+    "hash": "c570d1706dcc8e90bee25a463aa2b94e"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
     "mtime": 1778264316.952676,
@@ -1130,5 +1086,9 @@
   ".nvm-isolated/.claude-isolated/scripts/lib/README.md": {
     "mtime": 1774809682.734205,
     "hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
+  },
+  "lat.md/lat.md": {
+    "mtime": 1779653197.1227324,
+    "hash": "c7437ee82beb6c033a46fa8a229d277c"
   }
 }
