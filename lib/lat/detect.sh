@@ -8,7 +8,7 @@
 # Returns: 0 if installed, 1 otherwise
 #######################################
 detect_lat() {
-    local bin="${NPM_CONFIG_PREFIX:-}/bin/lat"
+    local bin="${NPM_CONFIG_PREFIX:-${ISOLATED_NVM_DIR}/npm-global}/bin/lat"
     [[ -x "$bin" ]] || return 1
     LAT_BIN="$bin"
     export LAT_BIN
