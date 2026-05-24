@@ -111,3 +111,7 @@ print('Idempotent OK')
   rm -rf "$tmpdir"
 )
 echo "✓ inject_lat_mcp() idempotent"
+
+echo "[8] Syntax check: lib/lat/install.sh"
+bash -n "$SCRIPT_DIR/lib/lat/install.sh"
+echo "✓ lib/lat/install.sh syntax OK"
