@@ -376,6 +376,32 @@ USE_PII_PROXY=false
 # export OLLAMA_MODEL=smart-model                                                                                                                                                               
 # export GRAPHIFY_EXTRA_ARGS="--backend ollama"
 
+# ============================================================================
+#  lat.md (граф документации)
+# ============================================================================
+# lat.md поставляется вместе с репозиторием (git-deliverable). Отдельная
+# установка не нужна — CLI доступен сразу после git clone.
+#
+# Семантический поиск (lat search) требует embedding API ключ.
+# Поддерживаемые провайдеры: OpenAI (sk-...) или Vercel AI Gateway (vck_...).
+# OpenAI-compatible провайдер задаётся через LAT_LLM_BASE_URL.
+#
+# Установка: поставляется с репозиторием (git clone = lat готов)
+# Обновить:  ./iclaude.sh --install-lat
+# Статус:    ./iclaude.sh --check-lat
+#
+# API ключ для lat search (прямое значение):
+# export LAT_LLM_KEY="sk-..."
+#
+# OpenAI-compatible провайдер (необязательно, по умолчанию — OpenAI):
+# export LAT_LLM_BASE_URL="https://api.openai.com/v1"
+#
+# Путь к файлу с ключом (альтернатива LAT_LLM_KEY):
+# export LAT_LLM_KEY_FILE="/path/to/key-file"
+#
+# Команда для получения ключа (альтернатива LAT_LLM_KEY):
+# export LAT_LLM_KEY_HELPER="pass lat/api-key"
+
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================

@@ -4,7 +4,7 @@
 
 #######################################
 # Install lat.md in isolated environment.
-# Upgrades Node to 22 via nvm, installs lat.md globally.
+# Uses the currently active nvm node version (no forced Node upgrade).
 # Returns: 0 on success, 1 on failure
 #######################################
 install_lat() {
@@ -19,39 +19,31 @@ install_lat() {
         return 1
     fi
 
-    # Step 1: Load nvm and upgrade to Node 22
-    print_info "Loading nvm from $ISOLATED_NVM_DIR ..."
+    # Load nvm and activate the isolated environment
+    print_info "Loading isolated nvm environment..."
     # shellcheck source=/dev/null
     if ! source "${ISOLATED_NVM_DIR}/nvm.sh" --no-use 2>/dev/null; then
         print_error "Failed to load nvm"
         return 1
     fi
 
-    print_info "Installing Node.js 22 (required by lat.md) ..."
-    if ! NVM_DIR="$ISOLATED_NVM_DIR" nvm install 22; then
-        print_error "Failed to install Node 22"
-        return 1
-    fi
+    # Use the highest installed node version in the isolated environment
+    setup_isolated_nvm
 
-    print_info "Setting Node 22 as default ..."
-    if ! NVM_DIR="$ISOLATED_NVM_DIR" nvm alias default 22; then
-        print_warning "Failed to set Node 22 as default (non-fatal)"
-    else
-        print_success "Node 22 set as default"
-    fi
-
-    # Reload nvm so npm uses Node 22
-    NVM_DIR="$ISOLATED_NVM_DIR" nvm use 22 &>/dev/null || true
-
-    # Step 2: Install lat.md globally
     # Ensure NPM_CONFIG_PREFIX is set — may not be set if install runs before setup_isolated_nvm
     NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-${ISOLATED_NVM_DIR}/npm-global}"
     export NPM_CONFIG_PREFIX
 
+    # Install lat.md globally
     print_info "Installing lat.md globally (npm install -g lat.md) ..."
     local npm_bin="${NPM_CONFIG_PREFIX}/bin/npm"
     if [[ ! -x "$npm_bin" ]]; then
-        npm_bin="$(NVM_DIR="$ISOLATED_NVM_DIR" nvm which current 2>/dev/null | sed 's|/node$|/npm|')"
+        npm_bin="$(command -v npm 2>/dev/null)"
+    fi
+
+    if [[ -z "$npm_bin" ]]; then
+        print_error "npm not found. Ensure Node.js is installed in the isolated environment."
+        return 1
     fi
 
     if ! NPM_CONFIG_PREFIX="$NPM_CONFIG_PREFIX" "$npm_bin" install -g lat.md; then

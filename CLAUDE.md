@@ -1,3 +1,17 @@
+# Before starting work
+
+- Run `lat search` to find sections relevant to your task. Read them before writing code.
+- Run `lat expand` on user prompts to expand any `[[refs]]` — resolves section names to file locations.
+
+# Post-task checklist (REQUIRED — do not skip)
+
+After EVERY task, before responding to the user:
+
+- [ ] Update `lat.md/` if you added or changed any functionality, architecture, tests, or behavior
+- [ ] Run `lat check` — all wiki links and code refs must pass
+
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -6,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), Graphify knowledge graph, and GSD framework.
 
-Key paths: `.nvm-isolated/` (isolated env), `lib/` (16 bash modules), `docs/` (feature docs).
+Key paths: `.nvm-isolated/` (isolated env), `lib/` (18 bash modules), `docs/` (feature docs).
 
 See [README.md](README.md) for the full feature list.
 
@@ -184,3 +198,37 @@ Before answering questions about this project, invoke **@skill:context-awareness
 - **@skill:iclaude-commands** — CLI command reference
 - **@skill:lsp-integration** — LSP integration
 - **@skill:git-workflow** — commit messages and PR creation
+
+---
+
+## lat.md reference
+
+lat.md maintains a structured knowledge graph in `lat.md/` — cross-linked markdown that describes architecture, design decisions, and test specs.
+
+### Commands
+
+```bash
+lat locate "Section Name"      # find a section by name (exact, fuzzy)
+lat refs "file#Section"        # find what references a section
+lat search "natural language"  # semantic search (requires LAT_LLM_KEY)
+lat expand "user prompt text"  # expand [[refs]] to resolved locations
+lat check                      # validate all links and code refs
+```
+
+Semantic search (`lat search`) requires `LAT_LLM_KEY` — set it in `.claude_config`:
+```bash
+export LAT_LLM_KEY="sk-..."   # OpenAI key, or vck_... for Vercel AI Gateway
+```
+OpenAI-compatible providers are supported via `LAT_LLM_BASE_URL`:
+```bash
+export LAT_LLM_BASE_URL="https://your-provider/v1"
+export LAT_LLM_KEY="your-key"
+```
+
+### Syntax
+
+- **Wiki links**: `[[target]]` or `[[target|alias]]` — cross-references between sections or source code (`[[src/foo.sh#functionName]]`)
+- **Code refs**: `# @lat: [[section-id]]` (bash/Python) or `// @lat: [[section-id]]` (JS/TS) — ties source to concepts
+- **Section ids**: `lat.md/path/file#Heading#SubHeading` (full) or `file#Heading` (short when unique)
+
+Every section must have a leading paragraph (≤250 chars) immediately after the heading.

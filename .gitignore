@@ -186,3 +186,4 @@ tests/fixtures/
 .claude/pii/
 .superpowers
 .worktrees/
+.mcp.json
