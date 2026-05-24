@@ -579,7 +579,13 @@ fi
                     exit 1
                 fi
                 (cd "$LAUNCH_DIR" && "$LAT_BIN" init)
-                exit $?
+                _lat_init_exit=$?
+                if [[ $_lat_init_exit -eq 0 ]]; then
+                    echo ""
+                    print_info "Cleaning up per-project artifacts (iclaude manages skill + MCP centrally)..."
+                    cleanup_lat_project_artifacts "$LAUNCH_DIR"
+                fi
+                exit $_lat_init_exit
                 ;;
             --lat-check)
                 if ! detect_lat; then
