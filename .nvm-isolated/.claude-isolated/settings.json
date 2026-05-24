@@ -147,6 +147,24 @@
             "statusMessage": "Tracking caveman mode..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude UserPromptSubmit || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude Stop || true"
+          }
+        ]
       }
     ]
   },
@@ -169,5 +187,18 @@
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "mcpServers": {
+    "lat": {
+      "type": "stdio",
+      "command": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat",
+      "args": [
+        "mcp"
+      ],
+      "env": {
+        "PATH": "/home/ikeniborn/.nvm/versions/node/v20.19.2/bin:/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin:/usr/local/bin:/usr/bin:/bin"
+      },
+      "cwd": "/home/ikeniborn/Documents/Project/ecom1-agent"
+    }
+  }
 }

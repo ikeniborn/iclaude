@@ -1,0 +1,4 @@
+/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md
+/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md
+/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/README.md
+/home/ikeniborn/Documents/Project/iclaude/lat.md/lat.md

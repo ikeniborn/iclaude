@@ -1,0 +1,424 @@
+{
+  "nodes": [
+    {
+      "id": "gsd_verification_patterns",
+      "label": "Verification Patterns Reference",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-patterns.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_context_budget",
+      "label": "Context Budget Rules",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/context-budget.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_verification_overrides",
+      "label": "Verification Overrides",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-overrides.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_model_profiles",
+      "label": "Model Profiles for GSD Agents",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profiles.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_gate_prompts",
+      "label": "Gate Prompt Patterns",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/gate-prompts.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_thinking_partner",
+      "label": "Thinking Partner Integration",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-partner.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_git_integration",
+      "label": "Git Integration for GSD",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/git-integration.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_ai_evals",
+      "label": "AI Evaluation Reference",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/ai-evals.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_planner_chunked",
+      "label": "Chunked Mode Return Formats",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-chunked.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_revision_loop",
+      "label": "Revision Loop Pattern",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/revision-loop.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_plan_checker_examples",
+      "label": "Plan-Checker Few-Shot Examples",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/plan-checker.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_verifier_examples",
+      "label": "Verifier Few-Shot Examples",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/verifier.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_list_workspaces",
+      "label": "List Workspaces Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/list-workspaces.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_audit_uat",
+      "label": "Audit UAT Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-uat.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_cleanup",
+      "label": "Cleanup Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/cleanup.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_extract_learnings",
+      "label": "Extract Learnings Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/extract-learnings.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_quick_workflow",
+      "label": "Quick Task Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/quick.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_profile_user",
+      "label": "Profile User Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/profile-user.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_manager",
+      "label": "Manager Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/manager.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_plant_seed",
+      "label": "Plant Seed Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plant-seed.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_docs_update",
+      "label": "Docs Update Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/docs-update.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_node_repair",
+      "label": "Node Repair Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/node-repair.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_note",
+      "label": "Note Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/note.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_plan_review_convergence",
+      "label": "Plan Review Convergence Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-review-convergence.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gsd_session_report",
+      "label": "Session Report Workflow",
+      "file_type": "document",
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/session-report.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "gsd_verification_patterns",
+      "target": "gsd_verifier_examples",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-patterns.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_verification_overrides",
+      "target": "gsd_verifier_examples",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-overrides.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_model_profiles",
+      "target": "gsd_context_budget",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profiles.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_revision_loop",
+      "target": "gsd_plan_checker_examples",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/revision-loop.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_gate_prompts",
+      "target": "gsd_manager",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/manager.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_quick_workflow",
+      "target": "gsd_gate_prompts",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/quick.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_extract_learnings",
+      "target": "gsd_cleanup",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/extract-learnings.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_git_integration",
+      "target": "gsd_quick_workflow",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/quick.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_thinking_partner",
+      "target": "gsd_profile_user",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/profile-user.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_ai_evals",
+      "target": "gsd_verifier_examples",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/verifier.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_manager",
+      "target": "gsd_plan_review_convergence",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-review-convergence.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_docs_update",
+      "target": "gsd_verifier_examples",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/docs-update.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_node_repair",
+      "target": "gsd_revision_loop",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/references/revision-loop.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gsd_session_report",
+      "target": "gsd_extract_learnings",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".nvm-isolated/.claude-isolated/get-shit-done/workflows/extract-learnings.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
