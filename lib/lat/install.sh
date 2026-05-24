@@ -36,8 +36,9 @@ install_lat() {
     print_info "Setting Node 22 as default ..."
     if ! NVM_DIR="$ISOLATED_NVM_DIR" nvm alias default 22; then
         print_warning "Failed to set Node 22 as default (non-fatal)"
+    else
+        print_success "Node 22 set as default"
     fi
-    print_success "Node 22 set as default"
 
     # Reload nvm so npm uses Node 22
     NVM_DIR="$ISOLATED_NVM_DIR" nvm use 22 &>/dev/null || true
