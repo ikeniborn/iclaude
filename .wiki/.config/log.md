@@ -247,6 +247,25 @@
 
 ---
 
+## 2026-05-24T00:00:00
+
+**Операция:** ingest (4 источника)
+**Домен:** документация
+**Тема:** idd skill — Intent-Driven Design
+
+**Затронуто страниц:** 1
+
+- СОЗДАНА: `документация/скиллы/idd.md` (developing) — entity_type: скилл; новый skill idd для захвата intent перед /brainstorm. Источники: spec 2026-05-24-idd-sdd-integration-design.md, SKILL.md (~/.claude/skills/idd/), план 2026-05-24-idd-skill.md, CLAUDE.md (IDD→SDD раздел).
+
+**Ключевые находки:**
+- Skill добавляет upstream слой к superpowers SDD workflow: `/idd` → `/brainstorm` → writing-plans → execute
+- Brainstorming Step 1 подхватывает intent doc автоматически (сканирует файлы проекта) — изменений в superpowers не требовалось
+- Scope: глобальный (`~/.claude/skills/idd/SKILL.md`), один файл ≤500 слов
+- Intent doc: 6 разделов (Objective, Desired Outcomes, Health Metrics, Constraints, Autonomy Level, Stop Rules) — путь `docs/superpowers/intents/YYYY-MM-DD-<topic>-intent.md`
+- CLAUDE.md обновлён: добавлен раздел `## IDD → SDD workflow` после Project Overview
+
+---
+
 ## 2026-05-08T00:00:00
 
 **Операция:** ingest (внешний источник)

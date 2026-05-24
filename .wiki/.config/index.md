@@ -47,4 +47,5 @@
 
 - `документация/скиллы/llm-wiki.md` — llm-wiki (компаундируемая wiki-база знаний из raw-источников)
 - `документация/скиллы/superpowers-context-reset.md` — Auto context-reset между фазами workflow superpowers (#1503)
+- `документация/скиллы/idd.md` — idd (Intent-Driven Design, upstream слой перед /brainstorm)
 

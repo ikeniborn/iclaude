@@ -1,3 +1,30 @@
+---
+review:
+  spec_hash: ebff71a4eb4049ae
+  last_run: 2026-05-24
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: "## Success Criteria"
+      section_hash: cbf7149eeb4eac8b
+      text: "SC#2 'finds and uses intent doc without additional setup' — 'uses' has no acceptance criterion. How does evaluator verify brainstorming actually consumed the intent doc vs. only located it?"
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: clarity
+      severity: INFO
+      section: "## Approach"
+      section_hash: dd7e01fb5e77ece9
+      text: "'non-trivial features' undefined in this section. Criterion (new module, API change, architectural decision) only appears in ## CLAUDE.md Change."
+      verdict: open
+      verdict_at: null
+---
 # IDD Integration Design
 
 **Date:** 2026-05-24
