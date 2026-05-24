@@ -276,6 +276,21 @@ Claude Code может читать, изменять и выполнять фа
 
 Подробнее: [docs/functions/GRAPHIFY.md](docs/functions/GRAPHIFY.md).
 
+### Граф документации (lat.md)
+
+Интегрирует [lat.md](https://lat.md) — инструмент для построения структурированной документации с поддержкой `[[wiki-ссылок]]` и проверкой целостности. При запуске iclaude автоматически обнаруживает `lat.md/` в текущем проекте и подключает lat как MCP-сервер.
+
+```bash
+./iclaude.sh --install-lat     # Установка lat.md (Node 22 + npm)
+./iclaude.sh --lat-init        # Инициализация lat.md/ в текущем проекте
+./iclaude.sh --lat-check       # Проверка целостности ссылок + pre-commit hook
+./iclaude.sh --check-lat       # Статус: lat CLI, lat.md/, MCP-конфиг
+```
+
+Автоматическое поведение при запуске: если lat установлен и `lat.md/` найден в рабочей директории — lat MCP-сервер подключается к Claude Code без дополнительных флагов. Конфигурация lat не требует переменных в `.claude_config` — всё определяется автоматически.
+
+---
+
 ### GSD Framework (Get Shit Done)
 
 Устанавливает набор slash-команд [GSD](https://github.com/JuliusBrussee/get-shit-done-cc) в изолированную среду Claude Code. GSD — фреймворк spec-driven разработки: `/gsd` запускает интерактивный процесс написания спецификации → плана → реализации.
@@ -391,6 +406,7 @@ iclaude.sh
 ├── lib/statusline/  — метрики в статуслайне
 ├── lib/launcher/    — запуск Claude Code (финальный вызов)
 ├── lib/graphify/    — граф знаний проекта
+├── lib/lat/         — граф документации (lat.md, MCP-сервер)
 └── lib/gsd/         — GSD framework (detect, install, status)
 ```
 
