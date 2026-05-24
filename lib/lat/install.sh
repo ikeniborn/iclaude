@@ -44,6 +44,10 @@ install_lat() {
     NVM_DIR="$ISOLATED_NVM_DIR" nvm use 22 &>/dev/null || true
 
     # Step 2: Install lat.md globally
+    # Ensure NPM_CONFIG_PREFIX is set — may not be set if install runs before setup_isolated_nvm
+    NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-${ISOLATED_NVM_DIR}/npm-global}"
+    export NPM_CONFIG_PREFIX
+
     print_info "Installing lat.md globally (npm install -g lat.md) ..."
     local npm_bin="${NPM_CONFIG_PREFIX}/bin/npm"
     if [[ ! -x "$npm_bin" ]]; then
