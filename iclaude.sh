@@ -230,8 +230,6 @@ fi
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
     USE_GRAPHIFY_FLAG=false
-    USE_LAT_CHECK_FLAG=false
-    USE_LAT_INIT_FLAG=false
     USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
     NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
