@@ -66,10 +66,13 @@ lib/lat/
 Добавляются в `init_environment()`:
 
 ```bash
+LAUNCH_DIR="$PWD"          # каталог, из которого запущен iclaude — захватить первым в init_environment()
 LAT_ENABLED=false          # устанавливается в true при detect_lat() + detect_lat_project()
-LAT_BIN=""                 # путь к lat CLI (resolve при detect)
-LAT_PROJECT_ROOT=""        # путь к lat.md/ в текущем проекте
+LAT_BIN=""                 # путь к lat CLI в изолированном npm ($NPM_CONFIG_PREFIX/bin/lat)
+LAT_PROJECT_ROOT=""        # путь к lat.md/ внутри $LAUNCH_DIR
 ```
+
+`LAUNCH_DIR` — каталог пользовательского проекта, в котором запущен `iclaude.sh`. Именно там работает lat mcp, читает `lat.md/` и аннотации `// @lat:` в коде.
 
 ## Новые флаги в `iclaude.sh`
 
@@ -98,8 +101,8 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ в текущем проект�
 ```
 
 Оба значения подставляются `inject_lat_mcp()` как абсолютные пути:
-- `command` — `$NPM_CONFIG_PREFIX/bin/lat` (задан при установке, не меняется)
-- `cwd` — `$PROJECT_ROOT` (рабочий каталог текущего запуска iclaude; `git rev-parse --show-toplevel` или `$PWD`)
+- `command` — `$NPM_CONFIG_PREFIX/bin/lat` (binary в изолированной среде iclaude)
+- `cwd` — `$LAUNCH_DIR` (каталог проекта где запущен iclaude, захваченный в `init_environment()`)
 
 Так lat mcp всегда работает в контексте запущенного проекта. Если `lat.md/` не найдена в `$PROJECT_ROOT`, MCP сервер стартует, инструменты возвращают пустые результаты (не фатально).
 
@@ -117,7 +120,7 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ в текущем проект�
 ```
 ./iclaude.sh
   → detect_lat()                        → lat CLI найден?
-  → detect_lat_project()                → lat.md/ в $PROJECT_ROOT?
+  → detect_lat_project()                → lat.md/ в $LAUNCH_DIR?
   → оба true  → LAT_ENABLED=true
                → inject_lat_mcp()       → settings.json (command + cwd актуальны)
                → lat mcp стартует при запуске Claude
