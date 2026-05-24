@@ -58,6 +58,8 @@ install_lat() {
 
     print_success "lat.md installed: $LAT_BIN"
 
+    patch_lat_provider || print_warning "lat provider patch failed — ollama/LAT_LLM_BASE_URL unavailable"
+
     echo ""
     print_success "lat.md installed successfully!"
     echo ""
@@ -68,4 +70,83 @@ install_lat() {
     print_info "  Check refs:   ./iclaude.sh --lat-check"
     echo ""
     return 0
+}
+
+#######################################
+# Patch lat provider.js to add:
+#   - ollama / local key support (no auth, OpenAI-compatible API)
+#   - LAT_LLM_BASE_URL env override for all providers
+#   - LAT_LLM_MODEL env override for all providers
+# Idempotent — no-op if patch already applied.
+# Returns: 0 on success, 1 on failure
+#######################################
+patch_lat_provider() {
+    local provider_js
+    provider_js="${NPM_CONFIG_PREFIX}/lib/node_modules/lat.md/dist/src/search/provider.js"
+
+    if [[ ! -f "$provider_js" ]]; then
+        print_warning "lat provider.js not found: $provider_js"
+        return 1
+    fi
+
+    # Idempotent: already patched
+    if grep -q "applyEnvOverrides" "$provider_js" 2>/dev/null; then
+        print_info "lat provider.js already patched"
+        return 0
+    fi
+
+    python3 - "$provider_js" << 'PYEOF'
+import sys, re
+path = sys.argv[1]
+with open(path) as f:
+    src = f.read()
+
+old = """    if (key.startsWith('vck_'))
+        return vercel;
+    if (key.startsWith('sk-'))
+        return openai;
+    throw new Error(`Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...).`);
+}"""
+
+new = """    if (key.startsWith('vck_'))
+        return applyEnvOverrides(vercel, key);
+    if (key.startsWith('sk-'))
+        return applyEnvOverrides(openai, key);
+    // ollama / local OpenAI-compatible: LAT_LLM_KEY=ollama (no auth required)
+    if (key === 'ollama' || key === 'local') {
+        const baseUrl = process.env.LAT_LLM_BASE_URL || 'http://localhost:11434/v1';
+        const model = process.env.LAT_LLM_MODEL || 'nomic-embed-text';
+        return {
+            name: 'ollama',
+            apiBase: baseUrl,
+            model,
+            dimensions: 768,
+            headers: () => ({ 'Content-Type': 'application/json' }),
+        };
+    }
+    throw new Error(`Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...), Ollama (ollama).`);
+}
+function applyEnvOverrides(provider, key) {
+    const baseUrl = process.env.LAT_LLM_BASE_URL;
+    const model = process.env.LAT_LLM_MODEL;
+    if (!baseUrl && !model) return provider;
+    return {
+        ...provider,
+        ...(baseUrl ? { apiBase: baseUrl } : {}),
+        ...(model ? { model } : {}),
+    };
+}"""
+
+if old not in src:
+    print("lat provider.js: pattern not found — may have been updated upstream", file=sys.stderr)
+    sys.exit(1)
+
+with open(path, 'w') as f:
+    f.write(src.replace(old, new, 1))
+PYEOF
+    local rc=$?
+    if [[ $rc -eq 0 ]]; then
+        print_success "lat provider.js patched (ollama + LAT_LLM_BASE_URL/MODEL support)"
+    fi
+    return $rc
 }
