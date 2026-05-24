@@ -10,6 +10,13 @@ Key paths: `.nvm-isolated/` (isolated env), `lib/` (16 bash modules), `docs/` (f
 
 See [README.md](README.md) for the full feature list.
 
+## IDD → SDD workflow
+
+For non-trivial features (new module, new CLI flag, API change, architectural decision):
+
+1. `/idd <topic>` — creates intent doc in `docs/superpowers/intents/`
+2. `/brainstorm` — reads intent doc as context (Step 1 picks it up automatically)
+
 ## Commands
 
 ### Daily
