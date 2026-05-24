@@ -1,3 +1,53 @@
+---
+review:
+  spec_hash: 0e90455dded5f7cf
+  last_run: 2026-05-24
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  section_hashes:
+    Overview: fe81ee134cfc7128
+    Разделение ответственности: 8bcc36e6468df97a
+    Архитектура: 0e1000016effcc1a
+    Node.js Upgrade: 5cf20ab71c76b312
+    Новые файлы: d2c9fdd868f206e8
+    Переменные в lib/core/init.sh: 2daef3cfe3e3bde0
+    Новые флаги в iclaude.sh: f09aed5a6d869d54
+    MCP Integration: 9672d595903da805
+    Data Flow: 01ba4719c80b6fe9
+    update-docs (после разработки): 0322f6a89ba548dc
+    Изменения скиллового слоя: 01ba4719c80b6fe9
+    Изменения в lib/command/usage.sh: 18d3bbc8f3360deb
+    Совместимость: 78b7b789e3f76b63
+    Out of scope (v1): 7cd757204d5aa355
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: Новые файлы
+      section_hash: d2c9fdd868f206e8
+      text: "$CWD заменён на $LAUNCH_DIR в detect_lat_project()"
+      verdict: fixed
+      verdict_at: 2026-05-24
+    - id: F-002
+      phase: clarity
+      severity: WARNING
+      section: MCP Integration
+      section_hash: 9672d595903da805
+      text: "$PROJECT_ROOT заменён на $LAUNCH_DIR во всех упоминаниях"
+      verdict: fixed
+      verdict_at: 2026-05-24
+    - id: F-003
+      phase: clarity
+      severity: INFO
+      section: update-docs (после разработки)
+      section_hash: 0322f6a89ba548dc
+      text: "Добавлен DoD для Phase 3: lat section --update + lat check exit 0"
+      verdict: fixed
+      verdict_at: 2026-05-24
+---
 # lat.md Integration Design
 
 **Date:** 2026-05-24
@@ -54,7 +104,7 @@ nvm alias default 22
 lib/lat/
   install.sh   — install_lat()        : Node 22 upgrade + npm install -g lat.md + MCP inject
   detect.sh    — detect_lat()         : проверяет lat CLI в изолированном npm
-               — detect_lat_project() : ищет lat.md/ в $CWD
+               — detect_lat_project() : ищет lat.md/ в $LAUNCH_DIR
   mcp.sh       — inject_lat_mcp()     : добавляет lat mcp в settings.json mcpServers
   check.sh     — run_lat_check()      : запускает lat check в проекте
                — install_lat_precommit() : пишет/дополняет .git/hooks/pre-commit
@@ -94,7 +144,7 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ внутри $LAUNCH_DIR
       "type": "stdio",
       "command": "$NPM_CONFIG_PREFIX/bin/lat",
       "args": ["mcp"],
-      "cwd": "$PROJECT_ROOT"
+      "cwd": "$LAUNCH_DIR"
     }
   }
 }
@@ -104,7 +154,7 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ внутри $LAUNCH_DIR
 - `command` — `$NPM_CONFIG_PREFIX/bin/lat` (binary в изолированной среде iclaude)
 - `cwd` — `$LAUNCH_DIR` (каталог проекта где запущен iclaude, захваченный в `init_environment()`)
 
-Так lat mcp всегда работает в контексте запущенного проекта. Если `lat.md/` не найдена в `$PROJECT_ROOT`, MCP сервер стартует, инструменты возвращают пустые результаты (не фатально).
+Так lat mcp всегда работает в контексте запущенного проекта. Если `lat.md/` не найдена в `$LAUNCH_DIR`, MCP сервер стартует, инструменты возвращают пустые результаты (не фатально).
 
 ## Data Flow
 
@@ -150,7 +200,9 @@ git commit
 /update-docs
   Phase 1: graphify update .           ← code graph rebuild
   Phase 2: lat check                   ← doc integrity validation
-  Phase 3: обновить lat.md/ секции     ← синк изменённых doc sections
+  Phase 3: lat section <changed> --update  ← обновить затронутые секции в lat.md/
+             DoD: все секции, связанные с изменёнными файлами, актуализированы;
+                  lat check возвращает exit 0
 ```
 
 ## Изменения скиллового слоя
