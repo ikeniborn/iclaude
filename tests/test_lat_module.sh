@@ -169,3 +169,10 @@ echo "✓ remove_lat_precommit() removes only lat section"
 echo "[12] iclaude.sh syntax OK"
 bash -n "$SCRIPT_DIR/iclaude.sh" || { echo "FAIL: iclaude.sh syntax error"; exit 1; }
 echo "✓ iclaude.sh syntax OK"
+
+echo "[13] --help output contains lat flags"
+help_out=$("$SCRIPT_DIR/iclaude.sh" --help 2>&1)
+for flag in "--install-lat" "--lat-init" "--lat-check" "--check-lat"; do
+    echo "$help_out" | grep -qF -- "$flag" || { echo "FAIL: $flag missing from --help"; exit 1; }
+done
+echo "✓ All lat flags in --help"
