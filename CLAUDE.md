@@ -156,7 +156,7 @@ Plans saved to `docs/plans/` via `.claude/settings.json`:
 
 ## Architecture
 
-**Version 4.0** — modular bash in `lib/` (17 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify).
+**Version 4.0** — modular bash in `lib/` (18 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify, lat).
 
 Source order: Phase 0 (core) → Phase 2–8.1 (feature modules) → Phase 14 (command dispatch).
 
