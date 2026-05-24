@@ -20,27 +20,40 @@ IDD captures *why* before *how*. Run before `/brainstorm` to anchor the spec to 
 
 ## Process
 
-Ask the five questions below **one at a time**. Wait for the user's answer before asking the next. Do not batch them.
+Ask the six questions below **one at a time**. Wait for the user's answer before asking the next. Do not batch them.
 
 1. **Objective** — What problem does this solve, and why now?
-2. **Desired outcomes** — What observable, user-facing states confirm success?
-3. **Health metrics** — What must not degrade? (Goodhart's Law: name the metrics that stay stable even if the feature ships.)
-4. **Constraints** — What architectural or technical constraints apply?
-5. **Stop rules + autonomy** — What decisions can be made without asking? What conditions require escalating to the user?
+2. **Desired Outcomes** — What observable, user-facing states confirm success?
+3. **Health Metrics** — What must not degrade? (Goodhart's Law: name the metrics that stay stable even if the feature ships.)
+4. **Strategic Context** — What systems, modules, or people interact with this? Priority trade-off: trust / speed / cost?
+5. **Constraints** — What steering constraints (behavioral guidance) apply? What hard constraints (architectural or forbidden) apply?
+6. **Autonomy & Stop Rules** — For each decision type, which autonomy zone applies: full / guarded / proposal-first / no-go? What conditions halt, escalate, or mark completion?
 
-## After all five answers
+## After all six answers
 
-Write the intent doc using the template below. Fill each section with the user's answers verbatim or lightly edited for clarity.
+**Validation checklist** — verify before presenting the doc:
+1. All sections filled — no empty bullets?
+2. Every constraint maps to steering OR hard (not both)?
+3. Autonomy zones cover all decision types in this feature?
+4. Stop Rules include at least one "Done when:" criterion?
+
+Fix any failures inline, then present.
+
+**Write the intent doc** using the template below. Fill each section with the user's answers verbatim or lightly edited for clarity.
 
 **File path:** `docs/superpowers/intents/YYYY-MM-DD-<topic>-intent.md`
 
-Then commit:
-
+Commit:
 ```bash
 git add docs/superpowers/intents/ && git commit -m "docs(idd): add intent doc for <topic>"
 ```
 
-Finally say: "Intent doc ready. Run /brainstorm next."
+**User review gate:**
+1. Show a summary of the written document.
+2. Ask: "Review the intent doc. Approve it or request changes."
+3. On approval: update `Status: draft` → `Status: approved`, re-commit.
+4. On changes requested: edit → re-show → repeat.
+5. Only after approval: "Intent doc approved. Run /brainstorm next."
 
 ## Intent doc template
 
@@ -60,19 +73,30 @@ Finally say: "Intent doc ready. Run /brainstorm next."
 ## Health Metrics
 - [metric that must not degrade]
 
-## Constraints
-- [architectural or technical constraint]
+## Strategic Context
+- Interacts with: [modules / agents / humans]
+- Priority trade-off: [trust | speed | cost]
 
-## Autonomy Level
-[Decisions Claude makes without asking]
+## Constraints
+### Steering (behavioral guidance)
+- [guideline 1]
+
+### Hard (architectural enforcement)
+- [restriction 1]
+
+## Autonomy Zones
+- Full autonomy (reversible, low risk): [decision types]
+- Guarded (log + confidence threshold): [decision types]
+- Proposal-first (needs approval): [decision types]
+- No autonomy (human only): [decision types]
 
 ## Stop Rules
-[Conditions that require escalating to user]
+- Halt if: [condition]
+- Escalate if: [condition]
+- Done when: [completion criterion]
 ```
 
 ## Common mistakes
 
-- **"It's a small change" / "It's just a flag"** — A new CLI flag is a CLI API change. Still run IDD. Intent docs take 5 minutes and prevent hours of misaligned work.
-- **"I already know what to build"** — The intent doc is for the *user*, not the agent. It makes implicit assumptions explicit and reviewable.
+- **"It's a small change"** — A new CLI flag is a CLI API change. Still run IDD. Intent docs take 5 minutes and prevent hours of misaligned work.
 - **"Let me ask one clarifying question and proceed"** — Asking scope is not capturing intent. Scope answers WHAT; intent captures WHY, outcomes, and stop conditions.
-- **"We discussed this before"** — Check if intent doc exists. If not, create it.
