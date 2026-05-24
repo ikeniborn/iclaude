@@ -56,3 +56,58 @@ echo "[5] detect_lat_project() returns 0 when lat.md/ exists"
   rm -rf "$tmpdir"
 )
 echo "✓ detect_lat_project() returns 0 when lat.md/ present"
+
+echo "[6] inject_lat_mcp() writes mcpServers.lat to settings.json"
+(
+  SCRIPT_DIR="$SCRIPT_DIR"
+  tmpdir=$(mktemp -d)
+  # Minimal settings.json
+  echo '{"permissions": {}}' > "$tmpdir/settings.json"
+  source "$SCRIPT_DIR/lib/core/init.sh"
+  init_environment
+  CLAUDE_CONFIG_DIR="$tmpdir"
+  LAT_BIN="/usr/local/bin/lat"
+  LAUNCH_DIR="/home/user/myproject"
+  source "$SCRIPT_DIR/lib/lat/mcp.sh"
+  inject_lat_mcp
+  # Verify mcpServers.lat.command and cwd
+  python3 -c "
+import json, sys
+with open('$tmpdir/settings.json') as f:
+    s = json.load(f)
+assert 'mcpServers' in s, 'mcpServers missing'
+assert 'lat' in s['mcpServers'], 'lat server missing'
+lat = s['mcpServers']['lat']
+assert lat['command'] == '/usr/local/bin/lat', f'wrong command: {lat[\"command\"]}'
+assert lat['cwd'] == '/home/user/myproject', f'wrong cwd: {lat[\"cwd\"]}'
+assert lat['args'] == ['mcp'], f'wrong args: {lat[\"args\"]}'
+assert lat['type'] == 'stdio', f'wrong type: {lat[\"type\"]}'
+print('JSON structure OK')
+"
+  rm -rf "$tmpdir"
+)
+echo "✓ inject_lat_mcp() writes correct settings.json"
+
+echo "[7] inject_lat_mcp() is idempotent (safe to call twice)"
+(
+  SCRIPT_DIR="$SCRIPT_DIR"
+  tmpdir=$(mktemp -d)
+  echo '{"permissions": {}}' > "$tmpdir/settings.json"
+  source "$SCRIPT_DIR/lib/core/init.sh"
+  init_environment
+  CLAUDE_CONFIG_DIR="$tmpdir"
+  LAT_BIN="/usr/local/bin/lat"
+  LAUNCH_DIR="/home/user/myproject"
+  source "$SCRIPT_DIR/lib/lat/mcp.sh"
+  inject_lat_mcp
+  inject_lat_mcp
+  python3 -c "
+import json
+with open('$tmpdir/settings.json') as f:
+    s = json.load(f)
+assert len([k for k in s['mcpServers']]) == 1, 'duplicate entries'
+print('Idempotent OK')
+"
+  rm -rf "$tmpdir"
+)
+echo "✓ inject_lat_mcp() idempotent"
