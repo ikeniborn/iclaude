@@ -165,3 +165,7 @@ echo "[11] remove_lat_precommit() removes lat section only"
   rm -rf "$tmpdir"
 )
 echo "✓ remove_lat_precommit() removes only lat section"
+
+echo "[12] iclaude.sh syntax OK"
+bash -n "$SCRIPT_DIR/iclaude.sh" || { echo "FAIL: iclaude.sh syntax error"; exit 1; }
+echo "✓ iclaude.sh syntax OK"

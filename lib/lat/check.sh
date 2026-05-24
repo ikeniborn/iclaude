@@ -111,3 +111,51 @@ PYEOF
     print_info "lat pre-commit hook removed"
     return 0
 }
+
+#######################################
+# Display lat.md installation and project status.
+# Returns: 0 always
+#######################################
+check_lat_status() {
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  lat.md: Documentation Graph Status"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # lat CLI
+    if detect_lat; then
+        local lat_ver
+        lat_ver=$("$LAT_BIN" --version 2>/dev/null || echo "unknown")
+        print_success "lat CLI: $LAT_BIN ($lat_ver)"
+    else
+        print_warning "lat CLI: not installed"
+        echo "  Run: ./iclaude.sh --install-lat"
+        echo ""
+        return 0
+    fi
+
+    # lat.md/ in project
+    if detect_lat_project; then
+        print_success "lat.md/: found at $LAT_PROJECT_ROOT"
+    else
+        print_warning "lat.md/: not found in $LAUNCH_DIR"
+        echo "  Run: ./iclaude.sh --lat-init"
+    fi
+
+    # MCP config
+    local settings_file="${CLAUDE_CONFIG_DIR}/settings.json"
+    if python3 -c "
+import json, sys
+with open('$settings_file') as f:
+    s = json.load(f)
+sys.exit(0 if 'lat' in s.get('mcpServers', {}) else 1)
+" 2>/dev/null; then
+        print_success "MCP: configured in settings.json"
+    else
+        print_warning "MCP: not configured (auto-injects on next launch when lat.md/ present)"
+    fi
+
+    echo ""
+    return 0
+}
