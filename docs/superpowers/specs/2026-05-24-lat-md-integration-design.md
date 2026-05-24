@@ -82,23 +82,26 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ в текущем проект�
 
 ## MCP Integration
 
-`--install-lat` добавляет в `.nvm-isolated/.claude-isolated/settings.json`:
+`inject_lat_mcp()` вызывается **при каждом запуске** iclaude (не только при `--install-lat`) и записывает актуальный config в `settings.json` перед стартом Claude Code:
 
 ```json
 {
   "mcpServers": {
     "lat": {
       "type": "stdio",
-      "command": "/path/to/.nvm-isolated/npm-global/bin/lat",
-      "args": ["mcp"]
+      "command": "$NPM_CONFIG_PREFIX/bin/lat",
+      "args": ["mcp"],
+      "cwd": "$PROJECT_ROOT"
     }
   }
 }
 ```
 
-`inject_lat_mcp()` подставляет абсолютный путь к `lat` binary из `$NPM_CONFIG_PREFIX/bin/lat` — не зависит от PATH Claude Code.
+Оба значения подставляются `inject_lat_mcp()` как абсолютные пути:
+- `command` — `$NPM_CONFIG_PREFIX/bin/lat` (задан при установке, не меняется)
+- `cwd` — `$PROJECT_ROOT` (рабочий каталог текущего запуска iclaude; `git rev-parse --show-toplevel` или `$PWD`)
 
-`lat mcp` использует CWD при запуске — работает корректно для любого проекта. Если `lat.md/` не найдена в проекте, MCP сервер стартует но инструменты возвращают пустые результаты (не фатально).
+Так lat mcp всегда работает в контексте запущенного проекта. Если `lat.md/` не найдена в `$PROJECT_ROOT`, MCP сервер стартует, инструменты возвращают пустые результаты (не фатально).
 
 ## Data Flow
 
@@ -107,16 +110,18 @@ LAT_PROJECT_ROOT=""        # путь к lat.md/ в текущем проект�
 ./iclaude.sh --install-lat
   → nvm install 22 && nvm alias default 22
   → npm install -g lat.md
-  → inject_lat_mcp() → settings.json
-  → print_success
+  → print_success "lat.md installed. MCP wires automatically on each launch."
 ```
 
 ### Launch (авто-детект)
 ```
 ./iclaude.sh
-  → detect_lat() + detect_lat_project()
-  → оба true  → LAT_ENABLED=true → lat mcp стартует через settings.json
-  → один false → silent skip
+  → detect_lat()                        → lat CLI найден?
+  → detect_lat_project()                → lat.md/ в $PROJECT_ROOT?
+  → оба true  → LAT_ENABLED=true
+               → inject_lat_mcp()       → settings.json (command + cwd актуальны)
+               → lat mcp стартует при запуске Claude
+  → один false → silent skip (MCP не добавляется)
 ```
 
 ### --lat-check
