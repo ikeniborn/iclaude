@@ -1,6 +1,6 @@
 # Isolation
 
-`CLAUDE_CONFIG_DIR` isolation is always active — Claude Code stores all its state in `.nvm-isolated/.claude-isolated/` instead of the default `~/.claude/`. This prevents the iclaude wrapper's config from polluting the user's global Claude installation.
+`CLAUDE_CONFIG_DIR` isolation is always active. Claude Code stores state in `.nvm-isolated/.claude-isolated/` instead of `~/.claude/`, preventing config pollution of the user's global installation.
 
 ## CLAUDE_CONFIG_DIR Isolation
 
@@ -34,4 +34,4 @@ Full kernel-level isolation via Firecracker KVM. See [[sandbox]] for details.
 
 ## --system Flag
 
-`--system` skips the isolated NVM environment and uses the host's Node.js installation. `CLAUDE_CONFIG_DIR` isolation remains active. PII proxy and microVM are not supported in `--system` mode (both require the isolated venv/environment) — attempts fail with a clear error.
+Uses host Node.js instead of isolated NVM. `CLAUDE_CONFIG_DIR` isolation remains active. PII proxy and microVM are unsupported in `--system` mode — both require the isolated venv — and abort with a clear error.

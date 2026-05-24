@@ -38,6 +38,8 @@ A persistent mux connection is established before Claude starts. Reduces per-op 
 
 ## Configuration Variables
 
+Set in `.claude_config` or as environment variables before launch.
+
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `MICRO_VM_VCPU` | 2 | vCPU count |

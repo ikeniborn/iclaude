@@ -37,6 +37,8 @@ When `--router` or `--no-attribution-header` is active, `CLAUDE_CODE_ATTRIBUTION
 
 ## Combined Modes
 
+Traffic chains when multiple features are active simultaneously.
+
 | Mode | Chain |
 |------|-------|
 | PII only | `claude → PII proxy(:PORT) → api.anthropic.com` |

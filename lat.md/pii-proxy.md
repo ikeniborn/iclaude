@@ -12,6 +12,8 @@ The proxy runs as a sidecar process per session. `ANTHROPIC_BASE_URL` is rewritt
 
 ## Shared vs Per-Session Proxy
 
+Three ownership modes determine lifecycle and cleanup behavior.
+
 | Mode | When | Notes |
 |------|------|-------|
 | Shared | Standard `--pii-proxy` (no CCR) | One Python/Presidio process shared by all sessions; flock serializes start/stop |
@@ -50,6 +52,8 @@ Port files live under `$ISOLATED_CONFIG_DIR/pii-proxy-logs/`:
 - `PII_PROXY_SESSION_OWNED=true` → kill proxy + remove PID/port files + delete session log (unless debug mode)
 
 ## Environment Signals
+
+Exported before Claude starts to signal proxy state to statusline and hooks.
 
 | Variable | Purpose |
 |----------|---------|
