@@ -192,3 +192,10 @@ echo "[14] lat-runner.sh resolves lat via NPM_CONFIG_PREFIX"
   rm -rf "$tmpdir"
 )
 echo "✓ lat-runner.sh resolves binary via NPM_CONFIG_PREFIX"
+
+echo "[15] lat-mcp-wrapper.sh uses correct relative path (../../)"
+wrapper="$SCRIPT_DIR/.nvm-isolated/.claude-isolated/scripts/lat-mcp-wrapper.sh"
+grep -q '"$(dirname "$0")/../../npm-global/bin/lat"' "$wrapper" \
+  || grep -q "'\$(dirname.*\)\.\./\.\./npm-global/bin/lat'" "$wrapper" \
+  || { echo "FAIL: wrapper still uses wrong path (../../../)"; exit 1; }
+echo "✓ lat-mcp-wrapper.sh uses ../../npm-global/bin/lat"
