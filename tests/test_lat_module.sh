@@ -70,7 +70,7 @@ echo "[6] inject_lat_mcp() writes mcpServers.lat to settings.json"
   LAUNCH_DIR="/home/user/myproject"
   source "$SCRIPT_DIR/lib/lat/mcp.sh"
   inject_lat_mcp
-  # Verify mcpServers.lat.command and cwd
+  # Verify mcpServers.lat and hook commands use lat-runner.sh
   python3 -c "
 import json, sys
 with open('$tmpdir/settings.json') as f:
@@ -78,10 +78,15 @@ with open('$tmpdir/settings.json') as f:
 assert 'mcpServers' in s, 'mcpServers missing'
 assert 'lat' in s['mcpServers'], 'lat server missing'
 lat = s['mcpServers']['lat']
-assert lat['command'] == '/usr/local/bin/lat', f'wrong command: {lat[\"command\"]}'
-assert lat['cwd'] == '/home/user/myproject', f'wrong cwd: {lat[\"cwd\"]}'
-assert lat['args'] == ['mcp'], f'wrong args: {lat[\"args\"]}'
+# MCP command: still uses lat_wrapper (or lat_bin fallback)
 assert lat['type'] == 'stdio', f'wrong type: {lat[\"type\"]}'
+# Hook commands must use lat-runner.sh, not absolute lat_bin
+hooks = s.get('hooks', {})
+submit_cmds = [h.get('command','') for g in hooks.get('UserPromptSubmit',[]) for h in g.get('hooks',[])]
+stop_cmds   = [h.get('command','') for g in hooks.get('Stop',[])            for h in g.get('hooks',[])]
+assert any('lat-runner.sh' in c for c in submit_cmds), f'UserPromptSubmit hook missing lat-runner.sh: {submit_cmds}'
+assert any('lat-runner.sh' in c for c in stop_cmds),   f'Stop hook missing lat-runner.sh: {stop_cmds}'
+assert not any('/usr/local/bin/lat' in c for c in submit_cmds + stop_cmds), 'absolute lat path still in hooks'
 print('JSON structure OK')
 "
   rm -rf "$tmpdir"

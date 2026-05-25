@@ -47,8 +47,8 @@ s.setdefault('mcpServers', {})['lat'] = {
 
 # Hooks: inject lat workflow reminders
 # Conditional: only runs when project has lat.md/ (no noise in non-lat projects)
-hook_submit = {'type': 'command', 'command': f'[[ -d "$LAUNCH_DIR/lat.md" ]] && "{lat_bin}" hook claude UserPromptSubmit || true'}
-hook_stop   = {'type': 'command', 'command': f'[[ -d "$LAUNCH_DIR/lat.md" ]] && "{lat_bin}" hook claude Stop || true'}
+hook_submit = {'type': 'command', 'command': '[[ -d "$LAUNCH_DIR/lat.md" ]] && "${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh" hook claude UserPromptSubmit || true'}
+hook_stop   = {'type': 'command', 'command': '[[ -d "$LAUNCH_DIR/lat.md" ]] && "${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh" hook claude Stop || true'}
 
 hooks = s.setdefault('hooks', {})
 
