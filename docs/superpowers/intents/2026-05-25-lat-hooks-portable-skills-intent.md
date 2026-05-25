@@ -1,7 +1,7 @@
 # Intent: lat hooks portable + lat-check/lat-search skills
 
 **Date:** 2026-05-25
-**Status:** draft
+**Status:** approved
 
 ## Objective
 
