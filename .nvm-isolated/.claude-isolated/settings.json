@@ -191,10 +191,7 @@
   "mcpServers": {
     "lat": {
       "type": "stdio",
-      "command": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lat-mcp-wrapper.sh",
-      "env": {
-        "PATH": "/home/ikeniborn/.nvm/versions/node/v20.19.2/bin:/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin:/usr/local/bin:/usr/bin:/bin"
-      }
+      "command": "$CLAUDE_CONFIG_DIR/scripts/lat-mcp-wrapper.sh"
     }
   }
 }
