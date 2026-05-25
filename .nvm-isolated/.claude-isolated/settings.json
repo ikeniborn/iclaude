@@ -152,7 +152,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude UserPromptSubmit || true"
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh\" hook claude UserPromptSubmit || true"
           }
         ]
       }
@@ -162,7 +162,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude Stop || true"
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh\" hook claude Stop || true"
           }
         ]
       }
