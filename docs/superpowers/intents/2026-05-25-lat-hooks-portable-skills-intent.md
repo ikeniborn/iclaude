@@ -16,6 +16,7 @@
 - Навыки `lat-check` и `lat-search` существуют в `.nvm-isolated/.claude-isolated/skills/`
 - Claude в любом проекте с `lat.md/` вызывает навык и получает результаты через embedded бинарник iclaude
 - Хук Stop не вызывает "lat not found" ни в iclaude-проекте, ни в других проектах
+- CLAUDE.md, `lat-md` навык и другие зависимые навыки вызывают `lat-check`/`lat-search` через Skill tool, а не через raw bash `lat check`
 - `lat check` проходит после всех изменений
 
 ## Health Metrics
@@ -48,7 +49,7 @@
 ## Autonomy Zones
 
 - **Full autonomy**: изменение `inject_lat_mcp()`, создание навыков `lat-check`/`lat-search`, правка `lat-mcp-wrapper.sh`
-- **Guarded**: обновление зависимых навыков (показать diff перед применением)
+- **Guarded**: обновление зависимых навыков (CLAUDE.md, `lat-md` skill, idd, update-docs) — показать diff перед применением
 - **Proposal-first**: изменение формата или структуры `settings.json`
 - **No autonomy**: изменение поведения Stop hook (только обсуждение)
 
