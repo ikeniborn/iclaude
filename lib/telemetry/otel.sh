@@ -83,6 +83,10 @@ print_telemetry_status() {
     else
         echo "Telemetry: enabled → ${endpoint} (project=${project}, protocol=${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf})"
     fi
+    if [[ "$endpoint" != *"127.0.0.1"* && "$endpoint" != *"localhost"* \
+          && "${OTEL_LOG_USER_PROMPTS:-0}" == "1" ]]; then
+        log_warn "Prompt logging ENABLED → remote endpoint: ${endpoint}"
+    fi
     echo ""
 }
 
