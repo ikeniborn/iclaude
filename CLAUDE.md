@@ -1,6 +1,6 @@
 # Before starting work
 
-- Run `lat search` to find sections relevant to your task. Read them before writing code.
+- Invoke `lat-search` skill to find sections relevant to your task. Read them before writing code.
 - Run `lat expand` on user prompts to expand any `[[refs]]` — resolves section names to file locations.
 
 # Post-task checklist (REQUIRED — do not skip)
@@ -8,7 +8,7 @@
 After EVERY task, before responding to the user:
 
 - [ ] Update `lat.md/` if you added or changed any functionality, architecture, tests, or behavior
-- [ ] Run `lat check` — all wiki links and code refs must pass
+- [ ] Invoke `lat-check` skill — all wiki links and code refs must pass
 
 ---
 
