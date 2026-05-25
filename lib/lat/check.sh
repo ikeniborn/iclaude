@@ -62,9 +62,9 @@ install_lat_precommit() {
 
 ${_LAT_HOOK_BEGIN}
 # lat.md reference integrity check — installed by iclaude --lat-check
-if command -v "${LAT_BIN}" &>/dev/null; then
-    "${LAT_BIN}" check || exit 1
-fi
+_lat="\${NPM_CONFIG_PREFIX:+\${NPM_CONFIG_PREFIX}/bin/lat}"
+[[ -x "\$_lat" ]] || _lat="\$(command -v lat 2>/dev/null)"
+[[ -x "\$_lat" ]] && "\$_lat" check || true
 ${_LAT_HOOK_END}
 HOOKEOF
 

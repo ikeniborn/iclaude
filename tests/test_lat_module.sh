@@ -204,3 +204,27 @@ grep -q '"$(dirname "$0")/../../npm-global/bin/lat"' "$wrapper" \
   || grep -q "'\$(dirname.*\)\.\./\.\./npm-global/bin/lat'" "$wrapper" \
   || { echo "FAIL: wrapper still uses wrong path (../../../)"; exit 1; }
 echo "✓ lat-mcp-wrapper.sh uses ../../npm-global/bin/lat"
+
+echo "[16] install_lat_precommit() uses portable resolution (no absolute LAT_BIN)"
+(
+  print_success() { :; }
+  print_warning() { :; }
+  print_error()   { :; }
+  print_info()    { :; }
+  tmpdir=$(mktemp -d)
+  git init -q "$tmpdir"
+  LAUNCH_DIR="$tmpdir"
+  LAT_BIN="/absolute/path/to/lat"
+  source "$SCRIPT_DIR/lib/lat/check.sh"
+  install_lat_precommit
+  hook="$tmpdir/.git/hooks/pre-commit"
+  # Must NOT contain the absolute path — only portable resolution
+  grep -q "/absolute/path/to/lat" "$hook" \
+    && { echo "FAIL: absolute path found in hook"; rm -rf "$tmpdir"; exit 1; }
+  grep -q "NPM_CONFIG_PREFIX" "$hook" \
+    || { echo "FAIL: NPM_CONFIG_PREFIX not in hook"; rm -rf "$tmpdir"; exit 1; }
+  grep -q "command -v lat" "$hook" \
+    || { echo "FAIL: 'command -v lat' fallback not in hook"; rm -rf "$tmpdir"; exit 1; }
+  rm -rf "$tmpdir"
+)
+echo "✓ install_lat_precommit() uses portable resolution"
