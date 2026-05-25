@@ -52,7 +52,7 @@ Details about this child topic.
 This is invalid — "Bad Section" has no leading paragraph.
 ```
 
-`lat check` enforces this rule.
+Invoke the `lat-check` skill to enforce this rule.
 
 ## Section IDs
 
@@ -87,7 +87,7 @@ Reference functions, classes, constants, and methods in source files:
 [[src/app.h#Greeter]]                   — C struct
 ```
 
-`lat check` validates that all targets exist.
+Invoke the `lat-check` skill to validate that all targets exist.
 
 ## Code refs
 
@@ -145,7 +145,7 @@ def test_rejects_expired_tokens():
 Rules:
 - Every leaf section under `require-code-mention: true` must be referenced by exactly one `@lat:` comment
 - Every section MUST have a description — at least one sentence explaining what the test verifies and why
-- `lat check` flags unreferenced specs and dangling code refs
+- Invoke the `lat-check` skill to flag unreferenced specs and dangling code refs
 
 ## Frontmatter
 
@@ -162,7 +162,7 @@ Currently the only supported field is `require-code-mention` for test spec enfor
 
 ## Validation
 
-Always run `lat check` after editing `lat.md/` files. It validates:
+Always invoke the `lat-check` skill after editing `lat.md/` files. It validates:
 - All wiki links point to existing sections or source code symbols
 - All `@lat:` code refs point to existing sections
 - Every section has a leading paragraph (≤250 chars)
