@@ -971,7 +971,17 @@ except Exception:
             if [[ "$_salive" == "true" ]]; then
                 # Attach to existing shared proxy
                 _register_pii_consumer
-                echo "attach:${_sport}" > "$_shared_result"
+                # Query proxy metadata for display (best-effort; failure degrades gracefully)
+                local _meta_json _meta_suffix=""
+                _meta_json=$(curl -sf --max-time 2 "http://127.0.0.1/${_sport}/api/meta" 2>/dev/null || true)
+                if [[ -n "$_meta_json" ]]; then
+                    _meta_suffix=$("$python_bin" -c "
+import json, sys
+d = json.loads(sys.stdin.read())
+print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} | started by: {d['session_id']} from {d['pwd']}\")
+" <<< "$_meta_json" 2>/dev/null || true)
+                fi
+                echo "attach:${_sport}:${_meta_suffix}" > "$_shared_result"
             else
                 # Start new shared proxy
                 rm -f "$_shared_pid_file" "$_shared_port_file"
@@ -1034,8 +1044,11 @@ except Exception:
         else
             _result="fail:no_result"
         fi
+        local _rest _meta_suffix=""
         _mode="${_result%%:*}"
-        _port="${_result#*:}"
+        _rest="${_result#*:}"
+        _port="${_rest%%:*}"
+        _meta_suffix="${_rest#*:}"
 
         case "$_mode" in
             attach|start)
@@ -1053,7 +1066,7 @@ except Exception:
                 export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
                 export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/shared.log"
                 if [[ "$_mode" == "attach" ]]; then
-                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT"
+                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT${_meta_suffix:+ $_meta_suffix}"
                 else
                     print_info "PII proxy: shared proxy started on :$PII_PROXY_ACTIVE_PORT → $_upstream_url [${PII_PROXY_MASKING_LEVEL:-standard}]"
                 fi
