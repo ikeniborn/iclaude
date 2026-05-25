@@ -30,6 +30,18 @@ Router mode auto-sets `CLAUDE_CODE_ATTRIBUTION_HEADER=0` to disable the `cch=` b
 
 The hash changes per-request and invalidates KV cache on proxies (CCR/Ollama/Bedrock) that treat the system prompt as a cache key. Only set if not already in environment — respects user override.
 
+## Transformers
+
+Custom CCR transformers are defined in `router.json` under the `transformers` array. Each entry has a `path` pointing to a JS plugin.
+
+Use `${CLAUDE_CONFIG_DIR}` in `path` instead of an absolute filesystem path — CCR expands `${VAR}` at startup from the inherited environment. This keeps `router.json` portable across machines and directory moves (both files are tracked in git).
+
+```json
+"transformers": [
+  { "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/ollama-reasoning.js" }
+]
+```
+
 ## API Keys
 
 CCR requires a real API key (`sk-ant-api03-...`), not an OAuth token (`sk-ant-oat01-...`). Store in `.claude_config`:
