@@ -210,6 +210,7 @@ _API_KEY_FROM_ENV = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # Global masked items counter (thread-safe)
 _masked_items_total: int = 0
+_startup_meta: dict = {}  # populated in main() after server binds
 _masked_items_lock = threading.Lock()
 _server_start_time: float = 0.0  # set in main() after server binds
 
@@ -720,6 +721,8 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self._health()
         elif self.path == '/api/metrics':
             self._metrics()
+        elif self.path == '/api/meta':
+            self._meta()
         else:
             self._proxy_passthrough()
 
@@ -777,6 +780,14 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
+
+    def _meta(self) -> None:
+        body = json.dumps(_startup_meta).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _metrics(self) -> None:
         """GET /api/metrics — return live masking metrics for statusline integration."""
@@ -1042,8 +1053,16 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
-    global _server_start_time
+    global _server_start_time, _startup_meta
     _server_start_time = time.time()
+    _startup_meta = {
+        'session_id': session_id,
+        'pwd': os.getcwd(),
+        'upstream_url': str(UPSTREAM_URL),
+        'masking_level': MASKING_LEVEL,
+        'log_level': LOG_LEVEL,
+        'started_at': _server_start_time,
+    }
 
     log.info('PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s)', port, UPSTREAM_URL, MASKING_LEVEL)
 
