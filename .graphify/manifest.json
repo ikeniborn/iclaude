@@ -55,13 +55,17 @@
     "mtime": 1778175932.8364184,
     "hash": "9c9762de93af9d635341e66029febe4c"
   },
+  "tests/test_pii_meta_endpoint.py": {
+    "mtime": 1779708125.989663,
+    "hash": "f358ea5e98c756a2ebfb6dd3fc746d24"
+  },
   "tests/test_patterns_examples.py": {
     "mtime": 1778159397.330814,
     "hash": "5db2917613c2526dd27460c3299dd722"
   },
   "CLAUDE.md": {
-    "mtime": 1779653496.3611126,
-    "hash": "5b280ddbc22c298f0e76d9468bcc452f"
+    "mtime": 1779715462.593295,
+    "hash": "79cafd85dcaf5d89d99fde747de6c3a4"
   },
   "README.md": {
     "mtime": 1779653285.6286275,
@@ -943,6 +947,10 @@
     "mtime": 1774809682.742253,
     "hash": "7db6cbebd209c9bc701a409284937fb9"
   },
+  ".nvm-isolated/.claude-isolated/skills/lat-init/SKILL.md": {
+    "mtime": 1779715778.627654,
+    "hash": "a99d21dac736a6eb55298ddf751a40ae"
+  },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
     "mtime": 1778264316.9206762,
     "hash": "e71717fd61b9c1d6f27aa66d1ce99e44"
@@ -967,6 +975,10 @@
     "mtime": 1778764211.110121,
     "hash": "5c43ca000385e41e9d9dd02c8574dfa0"
   },
+  ".nvm-isolated/.claude-isolated/skills/lat-md/SKILL.md": {
+    "mtime": 1779715462.5930817,
+    "hash": "205da3ba523cab81f05f4c553a442f8f"
+  },
   ".nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
     "mtime": 1774809682.7395995,
     "hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
@@ -974,6 +986,10 @@
   ".nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
     "mtime": 1778705373.3368568,
     "hash": "5c022b5257801a337be67dce008c3831"
+  },
+  ".nvm-isolated/.claude-isolated/skills/install-lat/SKILL.md": {
+    "mtime": 1779715796.1974037,
+    "hash": "65a88e26275915d1201a5176e9b0e8d1"
   },
   ".nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
     "mtime": 1774809682.7354975,
@@ -1026,6 +1042,14 @@
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
     "mtime": 1778100314.2615428,
     "hash": "33a3f524663a8f636e6799674cf06db6"
+  },
+  ".nvm-isolated/.claude-isolated/skills/lat-check/SKILL.md": {
+    "mtime": 1779715462.5928957,
+    "hash": "98d4ced673f8851a7107e21f5c52fa8f"
+  },
+  ".nvm-isolated/.claude-isolated/skills/lat-search/SKILL.md": {
+    "mtime": 1779715462.5930817,
+    "hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0"
   },
   ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
     "mtime": 1778159397.3289163,
@@ -1087,8 +1111,44 @@
     "mtime": 1774809682.734205,
     "hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
   },
+  "lat.md/router.md": {
+    "mtime": 1779655522.9908495,
+    "hash": "ae38806f0bb6b06997edcc5a61a8fd32"
+  },
+  "lat.md/proxy.md": {
+    "mtime": 1779655357.1393712,
+    "hash": "d1006074677b47bcd47b102e410b8fe0"
+  },
+  "lat.md/oauth.md": {
+    "mtime": 1779655457.3711326,
+    "hash": "9de2a428e25bcde8753111c9c42a24f9"
+  },
+  "lat.md/pii-proxy.md": {
+    "mtime": 1779655522.9500225,
+    "hash": "200856f1845cb82fd7625cd7c0b42982"
+  },
+  "lat.md/sandbox.md": {
+    "mtime": 1779655523.031263,
+    "hash": "109839d7956b40670c37911bc621356e"
+  },
+  "lat.md/launch-flow.md": {
+    "mtime": 1779655522.8432655,
+    "hash": "aa6b2a4307552577b00534400305e77b"
+  },
+  "lat.md/architecture.md": {
+    "mtime": 1779655327.1356978,
+    "hash": "51201053d4623043bb96c12a9a87d52e"
+  },
+  "lat.md/isolation.md": {
+    "mtime": 1779655509.6144395,
+    "hash": "de43e213d7aaa025179c5f6bd2ee98ce"
+  },
   "lat.md/lat.md": {
-    "mtime": 1779653197.1227324,
-    "hash": "c7437ee82beb6c033a46fa8a229d277c"
+    "mtime": 1779655522.7972662,
+    "hash": "232ac44624c4fd18a117176f1b21ef63"
+  },
+  "lat.md/security.md": {
+    "mtime": 1779655415.5026965,
+    "hash": "c94aaa12142df72eff991becc64e4852"
   }
 }
