@@ -152,7 +152,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude UserPromptSubmit || true"
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude UserPromptSubmit || true"
           }
         ]
       }
@@ -162,7 +162,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude Stop || true"
+            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/npm-global/bin/lat\" hook claude Stop || true"
           }
         ]
       }
@@ -191,9 +191,9 @@
   "mcpServers": {
     "lat": {
       "type": "stdio",
-      "command": "/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lat-mcp-wrapper.sh",
+      "command": "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lat-mcp-wrapper.sh",
       "env": {
-        "PATH": "/home/ikeniborn/.nvm/versions/node/v20.19.2/bin:/home/ikeniborn/Documents/Project/iclaude/.nvm-isolated/npm-global/bin:/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/usr/bin:/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/npm-global/bin:/usr/local/bin:/bin"
       }
     }
   }
