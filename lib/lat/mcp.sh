@@ -16,33 +16,18 @@ inject_lat_mcp() {
         return 1
     fi
 
-    # Resolve isolated node bin dir — lat.md requires Node 20+ (uses RegExp 'v' flag)
-    # Pass explicitly so MCP subprocess inherits the right PATH regardless of how Claude Code spawns it.
-    local node_bin node_dir lat_wrapper
-    node_bin="$(command -v node 2>/dev/null)"
-    node_dir="$(dirname "$node_bin" 2>/dev/null)"
-    lat_wrapper="${CLAUDE_CONFIG_DIR}/scripts/lat-mcp-wrapper.sh"
-
-    if ! python3 - "$settings_file" "$LAT_BIN" "$lat_wrapper" "${node_dir:-}" << 'PYEOF'
-import json, sys, os
-settings_path, lat_bin, lat_wrapper, node_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    if ! python3 - "$settings_file" << 'PYEOF'
+import json, sys
+settings_path = sys.argv[1]
 with open(settings_path) as f:
     s = json.load(f)
 
-# Build explicit PATH for MCP subprocess: isolated node first, then system fallback.
-# lat.md requires Node 20+; without this, Claude Code may spawn with system Node 18.
-npm_bin_dir = os.path.dirname(lat_bin)
-path_parts = [p for p in [node_dir, npm_bin_dir, '/usr/local/bin', '/usr/bin', '/bin'] if p]
-mcp_env = {'PATH': ':'.join(dict.fromkeys(path_parts))}  # deduplicate, preserve order
-
-# Use wrapper script instead of lat binary directly.
-# Wrapper cd's to $LAUNCH_DIR (inherited from iclaude's env) at spawn time, so lat
-# always operates on the current project's lat.md — not the project from last inject.
-cmd = lat_wrapper if os.path.isfile(lat_wrapper) else lat_bin
+# Use literal $CLAUDE_CONFIG_DIR — expanded by Claude Code at spawn time (same as hooks/statusLine).
+# Wrapper handles NVM/PATH setup internally, so no env.PATH needed here.
+# This keeps settings.json portable across machines and directory moves.
 s.setdefault('mcpServers', {})['lat'] = {
     'type': 'stdio',
-    'command': cmd,
-    'env': mcp_env,
+    'command': '$CLAUDE_CONFIG_DIR/scripts/lat-mcp-wrapper.sh',
 }
 
 # Hooks: inject lat workflow reminders
