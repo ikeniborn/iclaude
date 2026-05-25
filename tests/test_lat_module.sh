@@ -176,3 +176,19 @@ for flag in "--install-lat" "--lat-init" "--lat-check" "--check-lat"; do
     echo "$help_out" | grep -qF -- "$flag" || { echo "FAIL: $flag missing from --help"; exit 1; }
 done
 echo "✓ All lat flags in --help"
+
+echo "[14] lat-runner.sh resolves lat via NPM_CONFIG_PREFIX"
+(
+  tmpdir=$(mktemp -d)
+  # Fake lat binary
+  mkdir -p "$tmpdir/bin"
+  printf '#!/bin/bash\necho "lat ok"\n' > "$tmpdir/bin/lat"
+  chmod +x "$tmpdir/bin/lat"
+  NPM_CONFIG_PREFIX="$tmpdir"
+  runner="$SCRIPT_DIR/.nvm-isolated/.claude-isolated/scripts/lat-runner.sh"
+  out=$("$runner" --version 2>&1 || true)
+  # Expect to find and run our fake lat
+  [[ "$out" == "lat ok" ]] || { echo "FAIL: expected 'lat ok', got '$out'"; rm -rf "$tmpdir"; exit 1; }
+  rm -rf "$tmpdir"
+)
+echo "✓ lat-runner.sh resolves binary via NPM_CONFIG_PREFIX"
