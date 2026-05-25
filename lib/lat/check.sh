@@ -145,12 +145,12 @@ check_lat_status() {
 
     # MCP config
     local settings_file="${CLAUDE_CONFIG_DIR}/settings.json"
-    if python3 -c "
+    if python3 - "$settings_file" << 'PYEOF' 2>/dev/null; then
 import json, sys
-with open('$settings_file') as f:
+with open(sys.argv[1]) as f:
     s = json.load(f)
 sys.exit(0 if 'lat' in s.get('mcpServers', {}) else 1)
-" 2>/dev/null; then
+PYEOF
         print_success "MCP: configured in settings.json"
     else
         print_warning "MCP: not configured (auto-injects on next launch when lat.md/ present)"
