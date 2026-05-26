@@ -89,64 +89,104 @@ patch_lat_provider() {
         return 1
     fi
 
-    # Idempotent: already patched
-    if grep -q "applyEnvOverrides" "$provider_js" 2>/dev/null; then
+    # Idempotent: check for the custom-provider block we add (not just applyEnvOverrides,
+    # which upstream 0.11.0+ already includes).
+    if grep -q "name: \'custom\'" "$provider_js" 2>/dev/null; then
         print_info "lat provider.js already patched"
         return 0
     fi
 
-    python3 - "$provider_js" << 'PYEOF'
-import sys, re
+    python3 - "$provider_js" << 'PYPATCH'
+import sys
 path = sys.argv[1]
 with open(path) as f:
     src = f.read()
 
-old = """    if (key.startsWith('vck_'))
-        return vercel;
-    if (key.startsWith('sk-'))
-        return openai;
-    throw new Error(`Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...).`);
-}"""
+# Pattern A: upstream 0.11.0+ (has applyEnvOverrides + ollama, missing custom block)
+OLD_A = ("    throw new Error(`Unrecognized LAT_LLM_KEY prefix."
+         " Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...),"
+         " Ollama (ollama).`);\n}\nfunction applyEnvOverrides")
 
-new = """    if (key.startsWith('vck_'))
-        return applyEnvOverrides(vercel, key);
-    if (key.startsWith('sk-'))
-        return applyEnvOverrides(openai, key);
-    // ollama / local OpenAI-compatible: LAT_LLM_KEY=ollama (no auth required)
-    if (key === 'ollama' || key === 'local') {
-        const baseUrl = process.env.LAT_LLM_BASE_URL || 'http://localhost:11434/v1';
-        const model = process.env.LAT_LLM_MODEL || 'nomic-embed-text';
-        return {
-            name: 'ollama',
-            apiBase: baseUrl,
-            model,
-            dimensions: 768,
-            headers: () => ({ 'Content-Type': 'application/json' }),
-        };
-    }
-    throw new Error(`Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...), Ollama (ollama).`);
-}
-function applyEnvOverrides(provider, key) {
-    const baseUrl = process.env.LAT_LLM_BASE_URL;
-    const model = process.env.LAT_LLM_MODEL;
-    if (!baseUrl && !model) return provider;
-    return {
-        ...provider,
-        ...(baseUrl ? { apiBase: baseUrl } : {}),
-        ...(model ? { model } : {}),
-    };
-}"""
+# Pattern B: older upstream (no applyEnvOverrides, no ollama)
+OLD_B = (
+    "    if (key.startsWith(\'vck_\'))\n"
+    "        return vercel;\n"
+    "    if (key.startsWith(\'sk-\'))\n"
+    "        return openai;\n"
+    "    throw new Error(`Unrecognized LAT_LLM_KEY prefix."
+    " Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...).`);\n}"
+)
 
-if old not in src:
-    print("lat provider.js: pattern not found — may have been updated upstream", file=sys.stderr)
+CUSTOM_BLOCK = (
+    "    // Custom OpenAI-compatible provider: any key when LAT_LLM_BASE_URL is set\n"
+    "    const baseUrl = process.env.LAT_LLM_BASE_URL;\n"
+    "    if (baseUrl) {\n"
+    "        const model = process.env.LAT_LLM_MODEL || \'text-embedding-3-small\';\n"
+    "        const dimensions = parseInt(process.env.LAT_LLM_DIMENSIONS || \'1536\', 10);\n"
+    "        return {\n"
+    "            name: \'custom\',\n"
+    "            apiBase: baseUrl,\n"
+    "            model,\n"
+    "            dimensions,\n"
+    "            headers: (k) => ({\n"
+    "                Authorization: `Bearer ${k}`,\n"
+    "                \'Content-Type\': \'application/json\',\n"
+    "            }),\n"
+    "        };\n"
+    "    }"
+)
+
+NEW_ERR = ("    throw new Error(`Unrecognized LAT_LLM_KEY prefix."
+           " Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...),"
+           " Ollama (ollama), or set LAT_LLM_BASE_URL for custom providers.`);")
+
+if OLD_A in src:
+    new_a = CUSTOM_BLOCK + "\n" + NEW_ERR + "\n}\nfunction applyEnvOverrides"
+    out = src.replace(OLD_A, new_a, 1)
+elif OLD_B in src:
+    new_b = (
+        "    if (key.startsWith(\'vck_\'))\n"
+        "        return applyEnvOverrides(vercel, key);\n"
+        "    if (key.startsWith(\'sk-\'))\n"
+        "        return applyEnvOverrides(openai, key);\n"
+        "    // ollama / local OpenAI-compatible: LAT_LLM_KEY=ollama (no auth required)\n"
+        "    if (key === \'ollama\' || key === \'local\') {\n"
+        "        const baseUrl = process.env.LAT_LLM_BASE_URL || \'http://localhost:11434/v1\';\n"
+        "        const model = process.env.LAT_LLM_MODEL || \'nomic-embed-text\';\n"
+        "        return {\n"
+        "            name: \'ollama\',\n"
+        "            apiBase: baseUrl,\n"
+        "            model,\n"
+        "            dimensions: 768,\n"
+        "            headers: () => ({ \'Content-Type\': \'application/json\' }),\n"
+        "        };\n"
+        "    }\n"
+        + CUSTOM_BLOCK + "\n"
+        + NEW_ERR + "\n"
+        "}\n"
+        "function applyEnvOverrides(provider, key) {\n"
+        "    const baseUrl = process.env.LAT_LLM_BASE_URL;\n"
+        "    const model = process.env.LAT_LLM_MODEL;\n"
+        "    if (!baseUrl && !model) return provider;\n"
+        "    return {\n"
+        "        ...provider,\n"
+        "        ...(baseUrl ? { apiBase: baseUrl } : {}),\n"
+        "        ...(model ? { model } : {}),\n"
+        "    };\n"
+        "}"
+    )
+    out = src.replace(OLD_B, new_b, 1)
+else:
+    print("lat provider.js: no known pattern found — upstream may have changed significantly",
+          file=sys.stderr)
     sys.exit(1)
 
-with open(path, 'w') as f:
-    f.write(src.replace(old, new, 1))
-PYEOF
+with open(path, "w") as f:
+    f.write(out)
+PYPATCH
     local rc=$?
     if [[ $rc -eq 0 ]]; then
-        print_success "lat provider.js patched (ollama + LAT_LLM_BASE_URL/MODEL support)"
+        print_success "lat provider.js patched (custom LAT_LLM_BASE_URL provider + LAT_LLM_DIMENSIONS)"
     fi
     return $rc
 }
