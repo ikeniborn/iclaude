@@ -47,6 +47,7 @@
       "Bash(cd:*)",
       "Bash(bash -n:*)",
       "Bash(ssh:*)",
+      "Bash(lat:*)",
       "Bash(source:*)"
     ],
     "deny": [
