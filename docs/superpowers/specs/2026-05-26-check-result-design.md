@@ -1,13 +1,53 @@
 ---
 review:
-  spec_hash: ""
+  spec_hash: 7cea659c25488637
   last_run: 2026-05-26
   phases:
-    structure:   { status: pending }
-    coverage:    { status: pending }
-    clarity:     { status: pending }
-    consistency: { status: pending }
-  findings: []
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  section_hashes:
+    "## Problem":                              031e94afc8abdfe3
+    "## Architecture":                         fe1e2a83356bd9cf
+    "## chain: Frontmatter Block":             b6470b6389a461a6
+    "## Changes to check-spec.md":             2a0482c694b9e63b
+    "## Changes to check-plan.md":             0f26ecd21243dda1
+    "## check-result.md (replaces verify.md)": a8c5c4c01d323665
+    "## Success Criteria":                     1b9f50de28d48a29
+  findings:
+    - id: F-001
+      phase: structure
+      severity: INFO
+      section: "## Changes to check-spec.md"
+      section_hash: 2a0482c694b9e63b
+      text: "Duplicate ### headings 'Step 1 additions', 'Step 2 additions', 'Report footer' appear under both check-spec and check-plan sections. Contextually unambiguous but technically duplicate."
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: coverage
+      severity: INFO
+      section: "## check-result.md (replaces verify.md)"
+      section_hash: a8c5c4c01d323665
+      text: "Flag --since=<ref> not requested in user tasks or intent doc. Added as design extension. Does not contradict intent."
+      verdict: open
+      verdict_at: null
+    - id: F-003
+      phase: clarity
+      severity: WARNING
+      section: "## check-result.md (replaces verify.md)"
+      section_hash: a8c5c4c01d323665
+      text: "Step 4: 'match semantically against diff content' — no criterion defined for what constitutes a semantic match. No threshold for DONE vs PARTIAL when file paths are absent."
+      verdict: fixed
+      verdict_at: 2026-05-26
+    - id: F-004
+      phase: clarity
+      severity: INFO
+      section: "## check-result.md (replaces verify.md)"
+      section_hash: a8c5c4c01d323665
+      text: "Severity table: '[INFO] Minor semantic mismatch' — 'minor' is not quantified."
+      verdict: open
+      verdict_at: null
 chain:
   intent: docs/superpowers/intents/2026-05-26-check-result-intent.md
 ---
@@ -162,10 +202,10 @@ $ARGUMENTS = path/to/plan.md  [required]
 For each plan step:
 1. Extract explicit file paths mentioned in the step text
 2. Check if those files appear in `git diff HEAD`
-3. For steps without explicit file paths: match semantically against diff content
+3. For steps without explicit file paths: match semantically against diff content. Classification rule: `DONE` if diff changes clearly and completely correspond to the step description; `PARTIAL` if diff contains related changes but misses part of the described action (e.g., step says "rename and rewrite X" but only rename is present); `MISSING` if no diff evidence relates to the step at all.
 4. Classify each step:
    - `DONE` — diff contains changes matching the step
-   - `PARTIAL` — diff contains some but not all expected changes
+   - `PARTIAL` — diff contains related but incomplete changes for the step
    - `MISSING` — no diff evidence for this step
 
 Also identify `EXCESS`: changed files with no corresponding plan step.
