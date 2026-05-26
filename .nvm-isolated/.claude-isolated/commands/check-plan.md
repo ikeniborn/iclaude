@@ -39,6 +39,14 @@
 - Спека: совпадение по имени или последний изменённый в `docs/superpowers/specs/`
 - Если не найден — сообщи: «Не найден план. Укажи путь: `/check-plan path/to/plan.md`»
 
+Дополнительно — определи `intent_path`:
+- Прочитай frontmatter спеки: если поле `chain.intent` присутствует — используй его
+- Иначе — извлеки `<topic>` из имени файла плана (`YYYY-MM-DD-<topic>-plan.md`) и выполни:
+  ```bash
+  find docs/superpowers/intents/ -name "*<topic>*intent.md" 2>/dev/null | head -1
+  ```
+- Если не найден — `intent_path = null`
+
 ### Шаг 2. Подтверди файлы и инициализируй state
 
 1. Сообщи: «Буду проверять план: `<путь>` против спеки: `<путь>`. Верно?»
@@ -60,6 +68,13 @@
    - Посчитать хеши секций плана (шагов/тасков)
    - Для existing findings с изменившимся `section_hash` — `verdict: open`
    - Обновить `plan_hash`, `spec_hash`, `last_run`
+   - Если блока `chain:` нет во frontmatter плана — добавить:
+     ```yaml
+     chain:
+       intent: <intent_path или null>
+       spec:   <путь к спеке>
+     ```
+   - Если `chain:` уже есть — обновить оба поля до resolved значений
 
 ### Шаг 3. Выполнение фаз
 
@@ -141,6 +156,16 @@
 - CRITICAL open: N
 - WARNING open: M
 - Вердикт: OK | требует доработки
+```
+
+В конец отчёта добавить:
+```
+---
+Previous step: <spec_path>
+```
+Если `intent_path` известен — также добавить строку:
+```
+Chain: <intent_path> → <spec_path> → <plan_path>
 ```
 
 $ARGUMENTS
