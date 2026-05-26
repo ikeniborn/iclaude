@@ -973,7 +973,7 @@ except Exception:
                 _register_pii_consumer
                 # Query proxy metadata for display (best-effort; failure degrades gracefully)
                 local _meta_json _meta_suffix=""
-                _meta_json=$(curl -sf --max-time 2 "http://127.0.0.1/${_sport}/api/meta" 2>/dev/null || true)
+                _meta_json=$(curl -sf --max-time 2 "http://127.0.0.1:${_sport}/api/meta" 2>/dev/null || true)
                 if [[ -n "$_meta_json" ]]; then
                     _meta_suffix=$("$python_bin" -c "
 import json, sys
