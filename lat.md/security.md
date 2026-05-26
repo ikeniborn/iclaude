@@ -40,6 +40,12 @@ Redacts secrets from tool input before passing to Claude. Uses `toolInputOverrid
 | `sk-ant-api03-...` | Real API key | Yes |
 | `sk-ant-oat01-...` | OAuth token | No — CCR requires real API key |
 
+## Telemetry and Prompt Logging
+
+When `CLAUDE_CODE_ENABLE_TELEMETRY=1`, `lib/telemetry/otel.sh` always exports `OTEL_LOG_USER_PROMPTS=1` — prompts are forwarded to the OTLP endpoint.
+
+Default endpoint: `http://127.0.0.1:4318` (local). If overridden via `OTEL_EXPORTER_OTLP_ENDPOINT` to a remote host, prompts are sent there with no startup warning.
+
 ## Test Suite
 
 28 security hook tests: `python3 -m pytest tests/test_patterns_examples.py -v`
