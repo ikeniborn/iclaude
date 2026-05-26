@@ -37,6 +37,15 @@
 - Иначе — последний изменённый файл в `docs/superpowers/specs/`
 - Если не найден — сообщи: «Не найдена спецификация. Укажи путь: `/check-spec path/to/spec.md`»
 
+Дополнительно — определи путь к intent doc:
+- Если `$ARGUMENTS` содержит второй путь (к файлу `*intent.md`) — используй его
+- Если intent doc упоминается в контексте разговора — используй его
+- Иначе — извлеки `<topic>` из имени файла спеки (`YYYY-MM-DD-<topic>-design.md`) и выполни:
+  ```bash
+  find docs/superpowers/intents/ -name "*<topic>*intent.md" 2>/dev/null | head -1
+  ```
+- Если не найден — запомни `intent_path = null`, продолжай без блокировки
+
 ### Шаг 2. Подтверди файл и инициализируй state
 
 1. Сообщи: «Буду проверять: `<путь>`. Верно?»
@@ -56,6 +65,12 @@
    - Посчитать хеши всех секций (по заголовкам `##`/`###`)
    - Для каждого существующего finding с `section_hash != current_section_hash` — сбросить `verdict: open`
    - Обновить `spec_hash` и `last_run`
+   - Если блока `chain:` нет во frontmatter — добавить:
+     ```yaml
+     chain:
+       intent: <intent_path или null>
+     ```
+   - Если `chain:` уже есть — обновить `chain.intent` до resolved значения
 
 ### Шаг 3. Выполнение фаз
 
@@ -139,6 +154,12 @@
 - CRITICAL open: N
 - WARNING open: M
 - Вердикт: OK | требует доработки
+```
+
+Если `intent_path` известен — добавить в конец отчёта:
+```
+---
+Previous step: <intent_path>
 ```
 
 $ARGUMENTS
