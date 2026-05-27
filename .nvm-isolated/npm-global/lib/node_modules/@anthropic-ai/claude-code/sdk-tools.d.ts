@@ -2274,6 +2274,14 @@ export interface WorkflowInput {
    */
   name?: string;
   /**
+   * Ignored — set the workflow description in the script's `meta` block.
+   */
+  description?: string;
+  /**
+   * Ignored — set the workflow title in the script's `meta` block.
+   */
+  title?: string;
+  /**
    * Optional input value exposed to the script as the global `args`. Use for parameterized named workflows (e.g. a research question).
    */
   args?: {
