@@ -440,14 +440,14 @@
     "semantic_hash": "e12849b143b8f891dbcd6cabde7c929c"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/settings.json": {
-    "mtime": 1779787167.461489,
+    "mtime": 1779860842.2826047,
     "ast_hash": "39a8c9e1a9511bb55e5ec26fc8afb033",
     "semantic_hash": "39a8c9e1a9511bb55e5ec26fc8afb033"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/.claude.json": {
-    "mtime": 1779787266.577816,
-    "ast_hash": "bb96d315ac75bbab7e9f7d932565ac68",
-    "semantic_hash": "bb96d315ac75bbab7e9f7d932565ac68"
+    "mtime": 1779865142.2660668,
+    "ast_hash": "d31a6e527eb7be52ca78b732b31e247a",
+    "semantic_hash": "d31a6e527eb7be52ca78b732b31e247a"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
     "mtime": 1779087282.585674,
@@ -680,9 +680,9 @@
     "semantic_hash": "de542dd0bab35d19b554228890334dc2"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/caveman/install.sh": {
-    "mtime": 1779088691.0259914,
-    "ast_hash": "815901ff9e814b947378f4eab8d5eea8",
-    "semantic_hash": "815901ff9e814b947378f4eab8d5eea8"
+    "mtime": 1779791180.9698973,
+    "ast_hash": "4dbfe71ff785173055e3e19bc948c5ac",
+    "semantic_hash": "4dbfe71ff785173055e3e19bc948c5ac"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/chrome/detection.sh": {
     "mtime": 1779087285.9127815,
@@ -765,9 +765,9 @@
     "semantic_hash": "4c09722003dbab85ee38158c02e0b280"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/launcher/launch.sh": {
-    "mtime": 1779777390.584501,
-    "ast_hash": "a56917ea3562b338181b9e5325db1acc",
-    "semantic_hash": "a56917ea3562b338181b9e5325db1acc"
+    "mtime": 1779863846.6263006,
+    "ast_hash": "60aaa6e5e6934e392d3614fe0f88520a",
+    "semantic_hash": "60aaa6e5e6934e392d3614fe0f88520a"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lockfile/install.sh": {
     "mtime": 1779695378.151606,
@@ -975,9 +975,9 @@
     "semantic_hash": "282676949cc5571bd6a5c6c48035e9fe"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/install.sh": {
-    "mtime": 1779695378.150606,
-    "ast_hash": "8392528bc4d551883ad0cac7f593d3fb",
-    "semantic_hash": "8392528bc4d551883ad0cac7f593d3fb"
+    "mtime": 1779788782.605097,
+    "ast_hash": "026a489fdffc4d41549b3c723483285b",
+    "semantic_hash": "026a489fdffc4d41549b3c723483285b"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/check.sh": {
     "mtime": 1779777390.5835009,
@@ -1475,9 +1475,9 @@
     "semantic_hash": "109839d7956b40670c37911bc621356e"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/security.md": {
-    "mtime": 1779695378.149606,
-    "ast_hash": "c94aaa12142df72eff991becc64e4852",
-    "semantic_hash": "c94aaa12142df72eff991becc64e4852"
+    "mtime": 1779787899.002497,
+    "ast_hash": "c4136f6a4678e21065c0d13b5a0b49ff",
+    "semantic_hash": "c4136f6a4678e21065c0d13b5a0b49ff"
   },
   "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/isolation.md": {
     "mtime": 1779777390.5835009,
@@ -1498,5 +1498,10 @@
     "mtime": 1779087282.612675,
     "ast_hash": "3feae23287132af028ca35ce6613f3ce",
     "semantic_hash": "3feae23287132af028ca35ce6613f3ce"
+  },
+  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_shared_lifecycle.sh": {
+    "mtime": 1779862875.3389442,
+    "ast_hash": "5d7d77f57c8a2b9707391f693fe6d258",
+    "semantic_hash": "5d7d77f57c8a2b9707391f693fe6d258"
   }
 }

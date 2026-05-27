@@ -26,6 +26,7 @@ All per-session state lives under `$ISOLATED_CONFIG_DIR/pii-proxy-pid/`:
 
 - `<SID>.pid` — PID of session's proxy process
 - `shared.pid` — PID of shared proxy
+- `shared.starter` — `ICLAUDE_SESSION_ID` (12-char hex) of the session that launched the shared proxy; written on start, deleted on last-consumer stop or orphan kill
 - `consumers/<SID>.pid` — consumer registration (shared mode reference counting)
 - `shared.lock` — flock lock for shared proxy start/stop
 
@@ -40,15 +41,17 @@ Port files live under `$ISOLATED_CONFIG_DIR/pii-proxy-logs/`:
 
 1. Detect Python binary in venv (`$ISOLATED_CONFIG_DIR/pii-proxy-venv`)
 2. Check for inherited parent proxy (same `ICLAUDE_SESSION_ID`) — reuse if alive
-3. Acquire flock on `shared.lock`; attach to or start shared proxy
-4. Poll port file → TCP connect → HTTP `/api/health` (max 15s)
-5. Export `ANTHROPIC_BASE_URL=http://127.0.0.1:PORT`
+3. Acquire flock on `shared.lock`; sweep dead consumer PIDs; count live consumers
+4. Orphan check: if proxy alive but `_consumer_count == 0` → kill orphan, delete `shared.pid` + port file + `shared.starter`, fall through to start
+5. Attach to existing proxy (register consumer, read `shared.starter` → display "started by: &lt;SID&gt;") or start new proxy (write `shared.starter`)
+6. Poll port file → TCP connect → HTTP `/api/health` (max 15s)
+7. Export `ANTHROPIC_BASE_URL=http://127.0.0.1:PORT`
 
 ## Cleanup
 
 `stop_pii_proxy_server()` on `EXIT/INT/TERM` trap:
 - `PII_PROXY_SESSION_OWNED=false` → no-op (parent owns proxy)
-- `PII_PROXY_SESSION_OWNED=shared` → deregister consumer; kill proxy only if count reaches 0
+- `PII_PROXY_SESSION_OWNED=shared` → deregister consumer; if count reaches 0: delete `shared.pid` + port file + `shared.starter`, then kill proxy
 - `PII_PROXY_SESSION_OWNED=true` → kill proxy + remove PID/port files + delete session log (unless debug mode)
 
 ## Environment Signals
