@@ -958,6 +958,8 @@ except Exception:
         (
             flock -x 9
             _sweep_dead_pii_consumers
+            local _consumer_count
+            _consumer_count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
 
             # Check if shared proxy is alive
             local _spid _sport _salive=false
@@ -968,18 +970,29 @@ except Exception:
                 [[ "$_sport" =~ ^[0-9]+$ ]] && _salive=true
             fi
 
+            if [[ "$_salive" == "true" && "$_consumer_count" -eq 0 ]]; then
+                # Orphan: proxy alive but no registered consumers
+                kill "$_spid" 2>/dev/null || true
+                rm -f "$_shared_pid_file" \
+                      "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port" \
+                      "${PII_PROXY_PID_DIR}/shared.starter"
+                _salive=false
+            fi
+
             if [[ "$_salive" == "true" ]]; then
                 # Attach to existing shared proxy
                 _register_pii_consumer
                 # Query proxy metadata for display (best-effort; failure degrades gracefully)
-                local _meta_json _meta_suffix=""
+                local _starter_sid _meta_json _meta_suffix=""
+                _starter_sid=$(cat "${PII_PROXY_PID_DIR}/shared.starter" 2>/dev/null || echo "shared")
                 _meta_json=$(curl -sf --max-time 2 "http://127.0.0.1:${_sport}/api/meta" 2>/dev/null || true)
                 if [[ -n "$_meta_json" ]]; then
                     _meta_suffix=$("$python_bin" -c "
 import json, sys
 d = json.loads(sys.stdin.read())
-print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} | started by: {d['session_id']} from {d['pwd']}\")
-" <<< "$_meta_json" 2>/dev/null || true)
+starter = sys.argv[1]
+print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} | started by: {starter} from {d['pwd']}\")
+" "$_starter_sid" <<< "$_meta_json" 2>/dev/null || true)
                 fi
                 echo "attach:${_sport}:${_meta_suffix}" > "$_shared_result"
             else
@@ -1000,6 +1013,7 @@ print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} 
                 local _proxy_pid=$!
                 disown "$_proxy_pid" 2>/dev/null || true
                 echo "$_proxy_pid" > "$_shared_pid_file"
+                echo "${ICLAUDE_SESSION_ID:-unknown}" > "${PII_PROXY_PID_DIR}/shared.starter"
 
                 # Poll for port file then HTTP health (max 15s, 0.5s intervals)
                 local _max=30 _tick=0 _health=false _port=""
@@ -1322,9 +1336,12 @@ stop_pii_proxy_server() {
             _sweep_dead_pii_consumers
             local _count
             _count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
-            if [[ "$_count" -eq 0 ]]; then
+            if [[ $_count -eq 0 ]]; then
                 local _spid
                 _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+                rm -f "$_shared_pid_file" \
+                      "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port" \
+                      "${PII_PROXY_PID_DIR}/shared.starter"
                 if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null; then
                     kill "$_spid" 2>/dev/null || true
                     local _waited=0
@@ -1334,8 +1351,6 @@ stop_pii_proxy_server() {
                     done
                     kill -9 "$_spid" 2>/dev/null || true
                 fi
-                rm -f "$_shared_pid_file"
-                rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
                 if [[ "${PII_PROXY_LOG_LEVEL:-info}" != "debug" ]]; then
                     rm -f "${PII_PROXY_LOG_DIR}/shared.log"
                 fi
