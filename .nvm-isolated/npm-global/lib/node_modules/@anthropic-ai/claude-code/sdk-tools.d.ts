@@ -2959,6 +2959,10 @@ export interface AskUserQuestionOutput {
     [k: string]: string;
   };
   /**
+   * Freeform text the user typed instead of selecting a structured option
+   */
+  response?: string;
+  /**
    * Optional per-question annotations from the user (e.g., notes on preview selections). Keyed by question text.
    */
   annotations?: {
