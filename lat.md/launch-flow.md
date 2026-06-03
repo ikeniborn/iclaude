@@ -31,6 +31,17 @@ launch_claude()
     └── [standard]: exec "${claude_cmd_arr[@]}" "$@"
 ```
 
+## Binary-Absent Error Handling
+
+When `claude_cmd` is empty after all detection steps, `launch_claude()` exits 1 with a context-aware message:
+
+| `skip_isolated` | Message |
+|-----------------|---------|
+| `false` (default) | `--repair-isolated` hint |
+| `true` (`--system` flag) | `npm install -g` hint |
+
+The npx fallback (`npx @anthropic-ai/claude-code`) was removed. Binaries are delivered only via CI/CD (`git pull` + `--install-from-lockfile`).
+
 ## Attribution Header
 
 When `--router` or `--no-attribution-header` is active, `CLAUDE_CODE_ATTRIBUTION_HEADER=0` is set. This disables the `x-anthropic-billing-header` (`cch=`) that changes every request and invalidates KV cache on CCR/Ollama/Bedrock proxies.
