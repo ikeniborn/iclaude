@@ -187,3 +187,4 @@ tests/fixtures/
 .superpowers
 .worktrees/
 .mcp.json
+.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code-linux-x64/
