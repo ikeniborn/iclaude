@@ -609,32 +609,22 @@ launch_claude() {
         fi
     fi
 
-    # If still not found, try npx as fallback
     if [[ -z "$claude_cmd" ]]; then
-        if command -v npx &> /dev/null; then
-            print_info "Using npx to run Claude Code..."
-            if [[ "$use_pii_proxy" == "true" ]]; then
-                # Solo PII proxy mode: start proxy now (combined mode: proxy already started)
-                if [[ "$use_router" != "true" ]]; then
-                    if ! start_pii_proxy_server "$skip_isolated"; then
-                        print_error "PII proxy failed to start — aborting for safety"
-                        print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
-                        exit 1
-                    fi
-                    trap 'stop_pii_proxy_server' EXIT INT TERM
-                fi
-                # Combined mode trap already set above
-                npx @anthropic-ai/claude-code "$@"
-                exit $?
-            fi
-            exec npx @anthropic-ai/claude-code "$@"
-        else
-            print_error "Claude Code not found"
+        if [[ "$skip_isolated" == "true" ]]; then
+            print_error "Claude Code not found in system."
             echo ""
-            echo "Install Claude Code globally:"
+            echo "Install globally:"
             echo "  npm install -g @anthropic-ai/claude-code"
-            exit 1
+        else
+            print_error "Claude Code not found in isolated environment."
+            echo ""
+            echo "Restore the isolated environment:"
+            echo "  ./iclaude.sh --repair-isolated"
+            echo ""
+            echo "Updates are delivered via CI/CD (git pull + --install-from-lockfile),"
+            echo "not via local npm install."
         fi
+        exit 1
     fi
 
     print_info "Using Claude Code: $claude_cmd"
