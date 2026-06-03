@@ -171,8 +171,10 @@ create_claude_symlink() {
 	fi
 
 	# Binary is excluded from git (>100MB). Try to regenerate via postinstall.
+	# bin/ must exist first — install.cjs hardlinks into it and fails silently if absent.
 	if [[ ! -f "$claude_bin" ]] && [[ -f "$install_script" ]]; then
 		print_info "  Running postinstall to restore claude binary..."
+		mkdir -p "$claude_pkg_dir/bin"
 		(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
 	fi
 
@@ -183,6 +185,7 @@ create_claude_symlink() {
 			npm install -g @anthropic-ai/claude-code 2>&1 | tail -3 || true
 			# Re-run postinstall now that optional dep is available
 			if [[ -f "$install_script" ]]; then
+				mkdir -p "$claude_pkg_dir/bin"
 				(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
 			fi
 		fi

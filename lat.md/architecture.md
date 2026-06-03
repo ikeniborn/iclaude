@@ -45,4 +45,5 @@ Key exports:
 2. `bin/claude.exe` native binary (v2.1.114+, ~237 MB, excluded from git)
 3. `cli.js` via `node` (legacy pre-v2.1.114)
 4. System `/usr/local/bin/claude`, `/usr/bin/claude`
-5. `npx @anthropic-ai/claude-code` (last resort)
+
+If none found: context-aware error (exit 1). See [[lat.md/launch-flow#Binary-Absent Error Handling]].
