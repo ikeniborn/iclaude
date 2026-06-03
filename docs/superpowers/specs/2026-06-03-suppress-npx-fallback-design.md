@@ -1,3 +1,39 @@
+---
+chain:
+  intent: docs/superpowers/intents/2026-06-03-suppress-npx-fallback-intent.md
+review:
+  spec_hash: 2ed0c6c7495ce9be
+  last_run: 2026-06-03
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  section_hashes:
+    Problem:             f1591a698fed8536
+    Solution:            89f844b606d50f04
+    Architecture:        7abcbcd1e1330829
+    Error message logic: 35e3fbbc73fc0c92
+    Out of scope:        142f0cad111ac1cf
+    Health checks:       1bcea3ce1cf410ef
+  findings:
+    - id: F-001
+      phase: structure
+      severity: INFO
+      section: Architecture
+      section_hash: 7abcbcd1e1330829
+      text: "... in Before block is intentional abbreviation of PII-proxy branch, not a placeholder"
+      verdict: accepted
+      verdict_at: 2026-06-03
+    - id: F-002
+      phase: clarity
+      severity: INFO
+      section: Health checks
+      section_hash: 1bcea3ce1cf410ef
+      text: "'no regression' without formal DoD — accepted: After block is acceptance criterion, health checks are manual smoke tests"
+      verdict: accepted
+      verdict_at: 2026-06-03
+---
 # Design: Suppress npx fallback on launch
 
 **Date:** 2026-06-03  
@@ -63,10 +99,10 @@ fi
 
 ## Error message logic
 
-| Context | Trigger | Message |
-|---------|---------|---------|
+| Context                               | Trigger                          | Message           |
+|---------------------------------------|----------------------------------|-------------------|
 | Normal launch (`skip_isolated=false`) | Binary missing in `.nvm-isolated/` | `--repair-isolated` |
-| `--system` flag (`skip_isolated=true`) | Binary missing in system | `npm install -g` |
+| `--system` flag (`skip_isolated=true`) | Binary missing in system        | `npm install -g`  |
 
 ## Out of scope
 
