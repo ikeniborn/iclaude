@@ -1,7 +1,7 @@
 # Intent: Suppress npx fallback on launch
 
 **Date:** 2026-06-03
-**Status:** draft
+**Status:** approved
 
 ## Objective
 
