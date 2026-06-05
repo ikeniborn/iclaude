@@ -164,6 +164,24 @@ _raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower
 MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
 MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
 
+# ---------------------------------------------------------------------------
+# Upstream timeouts (split connect/read; env-configurable).
+# A single 30s scalar previously tripped ReadTimeout on slow time-to-first-byte
+# (Opus + extended thinking + large prompts) → 502. The Anthropic SDK uses ~600s
+# read for /v1/messages; 300s is a safe default that still fails fast on a dead host.
+# ---------------------------------------------------------------------------
+def _timeout_env(name: str, default: float) -> float:
+    """Parse a positive-float timeout from env; fall back to default on missing/invalid."""
+    try:
+        v = float(os.environ.get(name, ''))
+        return v if v > 0 else default
+    except (ValueError, TypeError):
+        return default
+
+
+CONNECT_TIMEOUT: float = _timeout_env('PII_PROXY_CONNECT_TIMEOUT', 10.0)
+READ_TIMEOUT: float = _timeout_env('PII_PROXY_READ_TIMEOUT', 300.0)
+
 # Log level: controls verbosity of masking log entries.
 #   'info'  - log count of masked items only (default, no PII metadata in logs)
 #   'debug' - log count + entity types/descriptions found (contains PII metadata;
