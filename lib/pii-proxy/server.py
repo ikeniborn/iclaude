@@ -1001,9 +1001,9 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                                     self.wfile.flush()
                                 except (BrokenPipeError, ConnectionResetError):
                                     break  # client disconnected mid-stream
-                    except (_ReqTimeout, _ReqConnError) as exc:
-                        # Upstream timeout/reset AFTER the 200 + headers were sent: we
-                        # cannot switch to 502 now. End the stream; client keeps partial output.
+                    except _requests.exceptions.RequestException as exc:
+                        # ANY upstream error AFTER the 200 + headers were sent: we cannot
+                        # switch to 502 now. End the stream; client keeps partial output.
                         log.warning('Mid-stream upstream error; ending partial response: %s', exc)
                 else:
                     content = resp.content  # fully buffered (already decompressed by requests)
