@@ -152,3 +152,17 @@ class TestStreamGuard:
         h._forward(b'{}')
         assert h._codes == [200]
         assert b'hello' in h.wfile.getvalue()
+
+    def test_conn_reset_midstream_does_not_double_send(self, monkeypatch):
+        resp = _FakeResp(
+            status=200,
+            headers={'Content-Type': 'text/event-stream'},
+            chunks=[b'data: partial\n\n'],
+            raise_iter=pii._ReqConnError('Connection reset by peer'),
+        )
+        sess = _FakeSession(resp)
+        monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
+        h = _make_forward_handler()
+        h._forward(b'{}')
+        assert h._codes == [200]
+        assert b'partial' in h.wfile.getvalue()
