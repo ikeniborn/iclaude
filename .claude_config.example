@@ -311,6 +311,14 @@ USE_PII_PROXY=false
 # PII_PROXY_PORT_MIN=20000
 # PII_PROXY_PORT_MAX=40000
 
+# Таймауты соединения PII proxy с upstream (в секундах).
+# Раздельные connect/read: connect — установка TCP-соединения, read — ожидание ответа.
+# Read=300 рассчитан на долгие ответы (Opus + extended thinking + большие промпты);
+# при слишком низком значении возможны ложные «502 PII proxy upstream unavailable».
+# По умолчанию: connect=10, read=300
+# PII_PROXY_CONNECT_TIMEOUT=10
+# PII_PROXY_READ_TIMEOUT=300
+
 # ------------------------------------------------------------
 # Переменные окружения, автоматически экспортируемые при старте
 # PII proxy (устанавливаются launch.sh — не задавайте вручную):
