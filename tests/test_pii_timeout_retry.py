@@ -49,3 +49,20 @@ class TestTimeoutEnv:
     def test_default_constants(self):
         assert pii.CONNECT_TIMEOUT == 10.0
         assert pii.READ_TIMEOUT == 300.0
+
+
+class TestRetryAdapter:
+    def test_session_has_connect_only_retry(self):
+        s = pii._get_http_session()
+        adapter = s.get_adapter('https://api.anthropic.com')
+        retries = adapter.max_retries
+        assert retries.connect == 2
+        assert retries.read == 0
+        assert retries.status == 0
+
+    def test_both_schemes_mounted(self):
+        s = pii._get_http_session()
+        https = s.get_adapter('https://x')
+        http = s.get_adapter('http://x')
+        assert https.max_retries.connect == 2
+        assert http.max_retries.connect == 2

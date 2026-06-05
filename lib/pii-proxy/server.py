@@ -42,7 +42,9 @@ from pathlib import Path
 from typing import Any
 
 import requests as _requests
+from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError as _ReqConnError, Timeout as _ReqTimeout
+from urllib3.util.retry import Retry
 
 # ---------------------------------------------------------------------------
 # Deterministic regex patterns (ported from redact-secrets.py)
@@ -209,6 +211,19 @@ _SSL_VERIFY = _build_ssl_verify()
 # Thread-local HTTP sessions: each request-handler thread gets its own Session so
 # concurrent requests don't share mutable state (cookie jar, adapter state).
 # Per-thread connection pooling still applies — urllib3 pools are per-Session.
+# Connect-only retry: retries connection ESTABLISHMENT (no bytes sent yet) — safe for
+# the non-idempotent POST /v1/messages. read=0/status=0 → never retry after a partial
+# response, so no duplicate generation or double billing.
+_RETRY = Retry(
+    total=None,
+    connect=2,
+    read=0,
+    status=0,
+    redirect=0,
+    backoff_factor=0.5,
+    raise_on_status=False,
+)
+
 _thread_local = threading.local()
 
 
@@ -217,6 +232,9 @@ def _get_http_session() -> _requests.Session:
     if not hasattr(_thread_local, 'session'):
         s = _requests.Session()
         s.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+        adapter = HTTPAdapter(max_retries=_RETRY)
+        s.mount('http://', adapter)
+        s.mount('https://', adapter)
         _thread_local.session = s
     return _thread_local.session
 
