@@ -111,6 +111,7 @@ def _make_forward_handler(command='POST', path='/v1/messages'):
     h.command = command
     h.headers = {}
     h.wfile = io.BytesIO()
+    h.rfile = io.BytesIO()
     h._codes = []
     h.send_response = lambda code, msg=None: h._codes.append(code)
     h.send_header = lambda k, v: None
@@ -125,4 +126,12 @@ class TestSplitTimeout:
         monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
         h = _make_forward_handler()
         h._forward(b'{}')
+        assert sess.calls[0]['timeout'] == (pii.CONNECT_TIMEOUT, pii.READ_TIMEOUT)
+
+    def test_proxy_head_passes_timeout_tuple(self, monkeypatch):
+        resp = _FakeResp(status=200, headers={'Content-Type': 'text/plain'})
+        sess = _FakeSession(resp)
+        monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
+        h = _make_forward_handler(command='HEAD', path='/v1/messages')
+        h._proxy_head()
         assert sess.calls[0]['timeout'] == (pii.CONNECT_TIMEOUT, pii.READ_TIMEOUT)
