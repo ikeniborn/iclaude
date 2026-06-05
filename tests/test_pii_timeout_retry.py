@@ -70,15 +70,18 @@ class TestRetryAdapter:
 
 class _FakeResp:
     """Minimal stand-in for a requests streaming Response context manager."""
-    def __init__(self, status=200, headers=None, content=b'', chunks=None, raise_iter=None):
+    def __init__(self, status=200, headers=None, content=b'', chunks=None, raise_iter=None, raise_content=None):
         self.status_code = status
         self.headers = headers or {'Content-Type': 'application/json'}
         self._content = content
         self._chunks = chunks or []
         self._raise_iter = raise_iter
+        self._raise_content = raise_content
 
     @property
     def content(self):
+        if self._raise_content:
+            raise self._raise_content
         return self._content
 
     def iter_content(self, chunk_size=4096):
@@ -167,6 +170,7 @@ class TestStreamGuard:
         assert h._codes == [200]
         assert b'partial' in h.wfile.getvalue()
 
+
     def test_chunked_encoding_error_midstream_does_not_double_send(self, monkeypatch):
         resp = _FakeResp(
             status=200,
@@ -180,3 +184,20 @@ class TestStreamGuard:
         h._forward(b'{}')
         assert h._codes == [200]
         assert b'partial' in h.wfile.getvalue()
+
+
+class TestNonStreamingGuard:
+    def test_read_error_buffering_body_sends_clean_502(self, monkeypatch):
+        # Non-streaming (no text/event-stream): resp.content is read to buffer the
+        # body. If that read raises, the upstream status must NOT have been emitted
+        # yet — otherwise the client gets a corrupt 200-then-502 double status line.
+        resp = _FakeResp(
+            status=200,
+            headers={'Content-Type': 'application/json'},
+            raise_content=pii._ReqTimeout('read timed out'),
+        )
+        sess = _FakeSession(resp)
+        monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
+        h = _make_forward_handler()
+        h._forward(b'{}')
+        assert h._codes == [502]  # single clean 502, not [200, 502]

@@ -980,18 +980,20 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
                 allow_redirects=False,
             ) as resp:
-                self.send_response(resp.status_code)
                 # Exclude headers that change after requests decompresses the body:
                 # content-encoding (decoded), content-length (recalculated below),
                 # transfer-encoding / connection (hop-by-hop, not for client).
                 _skip = ('transfer-encoding', 'connection', 'content-encoding', 'content-length')
-                for key, val in resp.headers.items():
-                    if key.lower() not in _skip:
-                        self.send_header(key, val)
-
                 is_streaming = 'text/event-stream' in resp.headers.get('Content-Type', '')
+
                 if is_streaming:
-                    # SSE: stream chunks without buffering; no Content-Length.
+                    # SSE: status + headers must go out before the first chunk. After
+                    # that the response is committed, so a mid-stream upstream error can
+                    # only end the stream (handled below) — it cannot become a 502.
+                    self.send_response(resp.status_code)
+                    for key, val in resp.headers.items():
+                        if key.lower() not in _skip:
+                            self.send_header(key, val)
                     self.end_headers()
                     try:
                         for chunk in resp.iter_content(chunk_size=4096):
@@ -1006,7 +1008,14 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                         # switch to 502 now. End the stream; client keeps partial output.
                         log.warning('Mid-stream upstream error; ending partial response: %s', exc)
                 else:
+                    # Buffer the full body FIRST. If reading it raises an upstream error,
+                    # no status line has been emitted yet, so the outer handler still
+                    # sends a clean 502 instead of corrupting a started 200 response.
                     content = resp.content  # fully buffered (already decompressed by requests)
+                    self.send_response(resp.status_code)
+                    for key, val in resp.headers.items():
+                        if key.lower() not in _skip:
+                            self.send_header(key, val)
                     self.send_header('Content-Length', str(len(content)))
                     self.end_headers()
                     self.wfile.write(content)
