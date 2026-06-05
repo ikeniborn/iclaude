@@ -66,3 +66,63 @@ class TestRetryAdapter:
         http = s.get_adapter('http://x')
         assert https.max_retries.connect == 2
         assert http.max_retries.connect == 2
+
+
+class _FakeResp:
+    """Minimal stand-in for a requests streaming Response context manager."""
+    def __init__(self, status=200, headers=None, content=b'', chunks=None, raise_iter=None):
+        self.status_code = status
+        self.headers = headers or {'Content-Type': 'application/json'}
+        self._content = content
+        self._chunks = chunks or []
+        self._raise_iter = raise_iter
+
+    @property
+    def content(self):
+        return self._content
+
+    def iter_content(self, chunk_size=4096):
+        for c in self._chunks:
+            yield c
+        if self._raise_iter:
+            raise self._raise_iter
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class _FakeSession:
+    def __init__(self, resp):
+        self.resp = resp
+        self.calls = []
+
+    def request(self, **kw):
+        self.calls.append(kw)
+        return self.resp
+
+
+def _make_forward_handler(command='POST', path='/v1/messages'):
+    """A PIIProxyHandler wired for _forward without a real socket."""
+    h = pii.PIIProxyHandler.__new__(pii.PIIProxyHandler)
+    h.path = path
+    h.command = command
+    h.headers = {}
+    h.wfile = io.BytesIO()
+    h._codes = []
+    h.send_response = lambda code, msg=None: h._codes.append(code)
+    h.send_header = lambda k, v: None
+    h.end_headers = lambda: None
+    return h
+
+
+class TestSplitTimeout:
+    def test_forward_passes_timeout_tuple(self, monkeypatch):
+        resp = _FakeResp(status=200, headers={'Content-Type': 'application/json'}, content=b'{}')
+        sess = _FakeSession(resp)
+        monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
+        h = _make_forward_handler()
+        h._forward(b'{}')
+        assert sess.calls[0]['timeout'] == (pii.CONNECT_TIMEOUT, pii.READ_TIMEOUT)

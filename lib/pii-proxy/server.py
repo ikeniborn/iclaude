@@ -937,7 +937,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 headers=headers,
                 stream=False,
                 verify=_SSL_VERIFY,
-                timeout=30,
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
                 allow_redirects=False,
             )
             self.send_response(resp.status_code)
@@ -974,7 +974,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 data=body,
                 stream=True,
                 verify=_SSL_VERIFY,
-                timeout=30,
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
                 allow_redirects=False,
             ) as resp:
                 self.send_response(resp.status_code)
