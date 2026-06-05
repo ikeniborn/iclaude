@@ -990,13 +990,18 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 if is_streaming:
                     # SSE: stream chunks without buffering; no Content-Length.
                     self.end_headers()
-                    for chunk in resp.iter_content(chunk_size=4096):
-                        if chunk:
-                            try:
-                                self.wfile.write(chunk)
-                                self.wfile.flush()
-                            except (BrokenPipeError, ConnectionResetError):
-                                break  # client disconnected mid-stream
+                    try:
+                        for chunk in resp.iter_content(chunk_size=4096):
+                            if chunk:
+                                try:
+                                    self.wfile.write(chunk)
+                                    self.wfile.flush()
+                                except (BrokenPipeError, ConnectionResetError):
+                                    break  # client disconnected mid-stream
+                    except _ReqTimeout:
+                        # Read timeout AFTER the 200 + headers were sent: we cannot
+                        # switch to 502 now. End the stream; client keeps partial output.
+                        log.warning('Read timeout mid-stream; ending partial response')
                 else:
                     content = resp.content  # fully buffered (already decompressed by requests)
                     self.send_header('Content-Length', str(len(content)))

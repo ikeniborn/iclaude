@@ -135,3 +135,20 @@ class TestSplitTimeout:
         h = _make_forward_handler(command='HEAD', path='/v1/messages')
         h._proxy_head()
         assert sess.calls[0]['timeout'] == (pii.CONNECT_TIMEOUT, pii.READ_TIMEOUT)
+
+
+class TestStreamGuard:
+    def test_read_timeout_midstream_does_not_double_send(self, monkeypatch):
+        resp = _FakeResp(
+            status=200,
+            headers={'Content-Type': 'text/event-stream'},
+            chunks=[b'data: hello\n\n'],
+            raise_iter=pii._ReqTimeout('read timed out'),
+        )
+        sess = _FakeSession(resp)
+        monkeypatch.setattr(pii, '_get_http_session', lambda: sess)
+        h = _make_forward_handler()
+        # Must not raise; must not emit a 502 over the already-started 200.
+        h._forward(b'{}')
+        assert h._codes == [200]
+        assert b'hello' in h.wfile.getvalue()
