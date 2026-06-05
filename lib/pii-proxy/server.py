@@ -22,6 +22,9 @@ Environment:
                                   info     - log count of masked items only (default)
                                   debug    - log count + entity types/descriptions found (PII metadata);
                                              log file is auto-deleted on session exit
+    PII_PROXY_CONNECT_TIMEOUT - upstream TCP connect timeout, seconds (default: 10)
+    PII_PROXY_READ_TIMEOUT    - upstream read timeout, seconds (default: 300; raise for
+                                long extended-thinking responses)
     ICLAUDE_SESSION_ID        - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
@@ -1105,7 +1108,10 @@ def main() -> None:
         'started_at': _server_start_time,
     }
 
-    log.info('PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s)', port, UPSTREAM_URL, MASKING_LEVEL)
+    log.info(
+        'PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s, connect_timeout=%.0fs, read_timeout=%.0fs)',
+        port, UPSTREAM_URL, MASKING_LEVEL, CONNECT_TIMEOUT, READ_TIMEOUT,
+    )
 
     # Pre-load Presidio in background thread only when needed (threading imported at top)
     if MASKING_LEVEL == 'standard':
