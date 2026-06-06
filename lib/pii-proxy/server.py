@@ -1158,6 +1158,13 @@ def _supervise(server: http.server.ThreadingHTTPServer, port_file: "Path") -> No
             _run_worker(server)   # blocks; on SIGTERM the worker calls os._exit
             os._exit(0)           # serve_forever returned unexpectedly
         _current_worker_pid = pid
+        # Close the fork/assign window: if SIGTERM arrived before _current_worker_pid was set,
+        # _sup_shutdown could not have signalled this child — do it now so waitpid won't hang.
+        if _supervisor_stop:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
         try:
             os.waitpid(pid, 0)
         except ChildProcessError:
