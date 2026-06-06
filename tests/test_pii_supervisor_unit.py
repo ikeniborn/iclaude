@@ -40,3 +40,10 @@ class TestBuildServer:
             assert 20000 <= port <= 40000
         finally:
             srv.server_close()
+
+
+class TestStormGuard:
+    def test_storm_constants(self):
+        assert pii._MAX_RESTARTS == 5
+        assert pii._RESTART_WINDOW == 10.0
+        assert callable(pii._supervise)

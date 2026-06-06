@@ -1128,8 +1128,61 @@ def _run_worker(server: http.server.ThreadingHTTPServer, port_file: "Path | None
 
 
 def _supervise(server: http.server.ThreadingHTTPServer, port_file: "Path") -> None:
-    # Stub — replaced in Task 2. Falls back to single-worker serving.
-    _run_worker(server, port_file)
+    """Fork a worker to serve on the bound socket; re-fork it on unexpected death.
+
+    The listening socket is bound once (by the caller) and inherited across forks, so the port is
+    stable for the supervisor's lifetime. On SIGTERM/SIGINT the supervisor forwards the signal to the
+    current worker and exits without respawning. A restart-storm cap prevents busy-looping on a
+    worker that crashes immediately on startup.
+    """
+    global _supervisor_stop, _current_worker_pid
+
+    def _sup_shutdown(signum: int, _: Any) -> None:
+        global _supervisor_stop
+        _supervisor_stop = True
+        if _current_worker_pid:
+            try:
+                os.kill(_current_worker_pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+
+    signal.signal(signal.SIGTERM, _sup_shutdown)
+    signal.signal(signal.SIGINT, _sup_shutdown)
+
+    restarts: list[float] = []
+    while not _supervisor_stop:
+        pid = os.fork()
+        if pid == 0:
+            # Child: serve on the inherited socket. _run_worker re-installs signal handlers,
+            # replacing the supervisor's _sup_shutdown that this child inherited from the fork.
+            _run_worker(server)   # blocks; on SIGTERM the worker calls os._exit
+            os._exit(0)           # serve_forever returned unexpectedly
+        _current_worker_pid = pid
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
+        if _supervisor_stop:
+            break
+        now = time.time()
+        restarts.append(now)
+        restarts = [t for t in restarts if now - t <= _RESTART_WINDOW]
+        if len(restarts) > _MAX_RESTARTS:
+            log.error(
+                'PII-proxy worker crash-looped (%d restarts in %.0fs); supervisor exiting',
+                len(restarts), _RESTART_WINDOW,
+            )
+            break
+        log.warning('PII-proxy worker died; respawning on the same port')
+        time.sleep(0.2)
+
+    log.info('PII-proxy supervisor shutting down')
+    try:
+        server.server_close()
+    except Exception:
+        pass
+    port_file.unlink(missing_ok=True)
+    sys.exit(0)
 
 
 def main() -> None:
