@@ -3112,6 +3112,14 @@ export interface WorkflowOutput {
   status: "async_launched" | "remote_launched";
   taskId: string;
   /**
+   * TaskType of the registered background task — 'local_workflow' for in-process runs, 'remote_agent' when remote:true dispatches to CCR. Set on all new writes; absent only on transcripts written before this field existed.
+   */
+  taskType?: "local_workflow" | "remote_agent";
+  /**
+   * meta.name from the workflow script — same value as task_started.workflow_name. Set on all new writes; absent only on transcripts written before this field existed.
+   */
+  workflowName?: string;
+  /**
    * Local workflow run identifier for resumeFromRunId. Absent for remote_launched (the CCR session URL is the resume handle there) and on transcripts written before this field existed.
    */
   runId?: string;
