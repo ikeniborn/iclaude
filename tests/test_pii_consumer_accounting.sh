@@ -70,4 +70,23 @@ echo "$B1_RESULT" | grep -q 'started=no' || { rm -rf "$B1_TMP"; fail "B1-behavio
 rm -rf "$B1_TMP"
 pass "B1-behavior" "inherited env -> early return 0, SESSION_OWNED=false, no server started"
 
+# ---------------------------------------------------------------------------
+# B2: consumer registration keyed by PID ($$), not SID — prevents same-SID
+# processes from cross-deleting each other's consumer file.
+# ---------------------------------------------------------------------------
+grep -q 'consumers/\$\$\.pid' "$LAUNCH_SH" || fail "B2-register" "consumer file not keyed by \$\$"
+pass "B2-register" "consumer file keyed by PID"
+
+# B2: stop_pii_proxy_server removes the PID-keyed consumer file
+python3 - "$LAUNCH_SH" <<'PYCHECK'
+import sys
+t = open(sys.argv[1]).read()
+stop = t.find('stop_pii_proxy_server()')
+assert stop != -1, "stop_pii_proxy_server not found"
+seg = t[stop:stop+2000]
+assert 'consumers/$$.pid' in seg, "B2: stop must rm consumers/$$.pid"
+print("PASS[B2-stop]: stop removes PID-keyed consumer file")
+PYCHECK
+[[ $? -eq 0 ]] || fail "B2-stop" "stop does not remove PID-keyed consumer file"
+
 echo "ALL PASS"

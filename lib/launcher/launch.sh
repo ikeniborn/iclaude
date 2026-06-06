@@ -832,14 +832,17 @@ _sweep_dead_pii_consumers() {
 
 #######################################
 # Register current session as a consumer of the shared PII proxy.
-# Creates pii-proxy-pid/consumers/$ICLAUDE_SESSION_ID.pid with current bash PID.
+# Creates pii-proxy-pid/consumers/$$.pid (keyed by PID, not SID) with current bash PID.
 # Must be called while holding flock on shared.lock.
 #######################################
 _register_pii_consumer() {
     local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
     mkdir -p "$consumers_dir"
     chmod 700 "$consumers_dir"
-    echo "$$" > "$consumers_dir/${ICLAUDE_SESSION_ID}.pid"
+    # Key by PID, not SID: multiple processes can share ICLAUDE_SESSION_ID (a Claude session and its
+    # Bash-tool sub-invocations). PID-keyed files prevent cross-deletion; _sweep_dead_pii_consumers
+    # reaps them by `kill -0` on the stored PID.
+    echo "$$" > "$consumers_dir/$$.pid"
 }
 
 #######################################
@@ -1336,7 +1339,7 @@ stop_pii_proxy_server() {
         mkdir -p "$PII_PROXY_PID_DIR"
         (
             flock -x 9
-            rm -f "${PII_PROXY_PID_DIR}/consumers/${ICLAUDE_SESSION_ID}.pid"
+            rm -f "${PII_PROXY_PID_DIR}/consumers/$$.pid"
             _sweep_dead_pii_consumers
             local _count
             _count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
