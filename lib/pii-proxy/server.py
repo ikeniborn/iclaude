@@ -187,6 +187,20 @@ def _timeout_env(name: str, default: float) -> float:
 CONNECT_TIMEOUT: float = _timeout_env('PII_PROXY_CONNECT_TIMEOUT', 10.0)
 READ_TIMEOUT: float = _timeout_env('PII_PROXY_READ_TIMEOUT', 300.0)
 
+# Supervisor: re-fork the request-serving worker if it dies (OOM / kill / crash), keeping the
+# listening socket — and therefore the port — stable for the proxy's whole lifetime. A Claude
+# session bakes ANTHROPIC_BASE_URL once at launch; without this, a vanished worker is unrecoverable.
+SUPERVISE: bool = os.environ.get('PII_PROXY_SUPERVISE', 'true').lower() != 'false'
+
+# Restart-storm guard: if the worker dies more than _MAX_RESTARTS times within _RESTART_WINDOW
+# seconds, the supervisor gives up instead of busy-looping on an unrecoverable startup crash.
+_MAX_RESTARTS = 5
+_RESTART_WINDOW = 10.0
+
+# Supervisor state (module-level so the SIGTERM handler can reach them).
+_supervisor_stop = False
+_current_worker_pid = 0
+
 # Log level: controls verbosity of masking log entries.
 #   'info'  - log count of masked items only (default, no PII metadata in logs)
 #   'debug' - log count + entity types/descriptions found (contains PII metadata;
@@ -1039,6 +1053,85 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b'PII-proxy internal error')
 
 
+def _build_server(args: Any) -> http.server.ThreadingHTTPServer:
+    """Select a port and return a bound + listening ThreadingHTTPServer (does not serve yet).
+
+    Port strategy: explicit args.port if free, else up to 30 random candidates from
+    [PORT_MIN, PORT_MAX], else OS-assigned (bind 0). Each attempt is an atomic bind.
+    """
+    try:
+        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
+        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
+    except (ValueError, TypeError):
+        _port_min, _port_max = 20000, 40000
+    if not (1024 <= _port_min < _port_max <= 65535):
+        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
+        _port_min, _port_max = 20000, 40000
+
+    server = None
+    if args.port != 0:
+        try:
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+        except OSError:
+            pass
+    if server is None:
+        _n = min(30, _port_max - _port_min + 1)
+        for _p in random.sample(range(_port_min, _port_max + 1), _n):
+            try:
+                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
+                break
+            except OSError:
+                continue
+        if server is None:
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+    return server
+
+
+def _run_worker(server: http.server.ThreadingHTTPServer, port_file: "Path | None" = None) -> None:
+    """Serve requests until terminated. Used as the forked worker and in non-supervised mode.
+
+    Installs its own SIGTERM/SIGINT handler (overriding any inherited supervisor handler in a
+    forked child). When port_file is given (non-supervised path) it is unlinked on shutdown;
+    in supervised mode the supervisor owns the port file and passes None.
+    """
+    global _server_start_time, _startup_meta
+    _server_start_time = time.time()
+    port = server.server_address[1]
+    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+    session_id = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
+    _startup_meta = {
+        'session_id': session_id,
+        'pwd': os.getcwd(),
+        'upstream_url': str(UPSTREAM_URL),
+        'masking_level': MASKING_LEVEL,
+        'log_level': LOG_LEVEL,
+        'started_at': _server_start_time,
+    }
+
+    def _worker_shutdown(signum: int, _: Any) -> None:
+        log.info('PII-proxy worker shutting down (signal %d)', signum)
+        try:
+            server.server_close()
+        except Exception:
+            pass
+        if port_file is not None:
+            port_file.unlink(missing_ok=True)
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, _worker_shutdown)
+    signal.signal(signal.SIGINT, _worker_shutdown)
+
+    if MASKING_LEVEL == 'standard':
+        threading.Thread(target=init_presidio, daemon=True).start()
+
+    server.serve_forever()
+
+
+def _supervise(server: http.server.ThreadingHTTPServer, port_file: "Path") -> None:
+    # Stub — replaced in Task 2. Falls back to single-worker serving.
+    _run_worker(server, port_file)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description='PII-Proxy Server')
     parser.add_argument('--port', type=int, default=DEFAULT_PORT)
@@ -1049,84 +1142,25 @@ def main() -> None:
     sid = os.environ.get('ICLAUDE_SESSION_ID', 'default')
     setup_logging(log_dir, sid)
 
-    # Port selection strategy:
-    #   port == 0  → auto-select a random free port from [PORT_MIN, PORT_MAX]
-    #   port != 0  → try exact port first, then fall back to range
-    # Trying up to 30 random candidates from the range before last-resort bind(0).
-    # Each attempt is an atomic bind (no TOCTOU race).
-    try:
-        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
-        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
-    except (ValueError, TypeError):
-        _port_min, _port_max = 20000, 40000
-    # Sanity check: must be valid unprivileged range with at least one port
-    if not (1024 <= _port_min < _port_max <= 65535):
-        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
-        _port_min, _port_max = 20000, 40000
-    server = None
-
-    if args.port != 0:
-        # Explicit port requested — honour it if free
-        try:
-            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
-        except OSError:
-            pass  # fall through to range selection below
-
-    if server is None:
-        # Auto-select: probe a random sample from the range to spread sessions
-        # across 20000-40000 without sequential clustering.
-        _n = min(30, _port_max - _port_min + 1)
-        for _p in random.sample(range(_port_min, _port_max + 1), _n):
-            try:
-                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
-                break
-            except OSError:
-                continue
-        if server is None:
-            # Last resort: let OS pick any free port
-            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
-
+    server = _build_server(args)
     port = server.server_address[1]  # actual port assigned by OS
 
-    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions each
-    # write their own file and never overwrite each other (eliminates the global server.port
-    # race where session-2 could overwrite session-1's file before session-1 read it).
-    # Validate session_id to hex-only (12 chars) to prevent path traversal via env variable.
+    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions never collide.
     _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
     session_id = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
     port_file = log_dir / f'pii-proxy-{session_id}.port'
     port_file.write_text(str(port))
 
-    def _shutdown(signum: int, _: Any) -> None:
-        log.info('PII-proxy shutting down (signal %d)', signum)
-        server.server_close()
-        port_file.unlink(missing_ok=True)
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, _shutdown)
-    signal.signal(signal.SIGINT, _shutdown)
-
-    global _server_start_time, _startup_meta
-    _server_start_time = time.time()
-    _startup_meta = {
-        'session_id': session_id,
-        'pwd': os.getcwd(),
-        'upstream_url': str(UPSTREAM_URL),
-        'masking_level': MASKING_LEVEL,
-        'log_level': LOG_LEVEL,
-        'started_at': _server_start_time,
-    }
-
     log.info(
-        'PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s, connect_timeout=%.0fs, read_timeout=%.0fs)',
-        port, UPSTREAM_URL, MASKING_LEVEL, CONNECT_TIMEOUT, READ_TIMEOUT,
+        'PII-proxy listening on 127.0.0.1:%d -> %s '
+        '(masking_level=%s, connect_timeout=%.0fs, read_timeout=%.0fs, supervise=%s)',
+        port, UPSTREAM_URL, MASKING_LEVEL, CONNECT_TIMEOUT, READ_TIMEOUT, SUPERVISE,
     )
 
-    # Pre-load Presidio in background thread only when needed (threading imported at top)
-    if MASKING_LEVEL == 'standard':
-        threading.Thread(target=init_presidio, daemon=True).start()
-
-    server.serve_forever()
+    if SUPERVISE:
+        _supervise(server, port_file)
+    else:
+        _run_worker(server, port_file)
 
 
 if __name__ == '__main__':
