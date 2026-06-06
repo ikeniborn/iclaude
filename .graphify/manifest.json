@@ -1,1507 +1,1166 @@
 {
   "lib/pii-proxy/server.py": {
-    "mtime": 1779721104.306148,
-    "ast_hash": "c3dc47807e98e9d7790941d818ec7ff8",
-    "semantic_hash": ""
+    "mtime": 1780757486.981938,
+    "hash": "5ae411996ffa1ce1ce620d63af22eb59"
   },
   ".nvm-isolated/nvm-exec": {
     "mtime": 1773925649.140255,
-    "ast_hash": "aca21638e05de09fb181f81d7f6a480c",
-    "semantic_hash": ""
+    "hash": "aca21638e05de09fb181f81d7f6a480c"
   },
   ".nvm-isolated/.claude-isolated/pii-proxy-server.py": {
-    "mtime": 1779721104.306148,
-    "ast_hash": "c3dc47807e98e9d7790941d818ec7ff8",
-    "semantic_hash": ""
+    "mtime": 1780757486.981938,
+    "hash": "5ae411996ffa1ce1ce620d63af22eb59"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
     "mtime": 1774809682.7465634,
-    "ast_hash": "1fc257caf781382ca9164aeac282531d",
-    "semantic_hash": ""
+    "hash": "1fc257caf781382ca9164aeac282531d"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/skill-md-integration.test.mjs": {
     "mtime": 1774809682.7469864,
-    "ast_hash": "de542dd0bab35d19b554228890334dc2",
-    "semantic_hash": ""
+    "hash": "de542dd0bab35d19b554228890334dc2"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/end-to-end.test.mjs": {
     "mtime": 1774809682.7466476,
-    "ast_hash": "2f8f523e3b9ba865402a3b3754e24cf7",
-    "semantic_hash": ""
+    "hash": "2f8f523e3b9ba865402a3b3754e24cf7"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/tests/round-trip.test.mjs": {
     "mtime": 1774809682.7469864,
-    "ast_hash": "c252354b79d718f40b9f7ca6bd0ed0b0",
-    "semantic_hash": ""
+    "hash": "c252354b79d718f40b9f7ca6bd0ed0b0"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/toon-converter.mjs": {
     "mtime": 1774809682.737833,
-    "ast_hash": "6363ca2310af4502ad88b4a84b8001db",
-    "semantic_hash": ""
+    "hash": "6363ca2310af4502ad88b4a84b8001db"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
     "mtime": 1778100314.256411,
-    "ast_hash": "0a77df0018325d52608c362754786451",
-    "semantic_hash": ""
+    "hash": "0a77df0018325d52608c362754786451"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
     "mtime": 1778100314.257411,
-    "ast_hash": "2c88a17ff88451629d3edafe474cfff0",
-    "semantic_hash": ""
+    "hash": "2c88a17ff88451629d3edafe474cfff0"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
     "mtime": 1778100314.256411,
-    "ast_hash": "a0166a65e117ec9ddcec646e481e5185",
-    "semantic_hash": ""
+    "hash": "a0166a65e117ec9ddcec646e481e5185"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
     "mtime": 1778100314.257411,
-    "ast_hash": "4946e31570eac0b8fe763d429978dbdc",
-    "semantic_hash": ""
+    "hash": "4946e31570eac0b8fe763d429978dbdc"
+  },
+  "tests/test_pii_supervisor_unit.py": {
+    "mtime": 1780748409.472063,
+    "hash": "9f67d43bfb62a7e832339483f31df2f2"
+  },
+  "tests/test_pii_timeout_retry.py": {
+    "mtime": 1780685372.965228,
+    "hash": "2ac4ba9ade192018974f7b5b86613908"
   },
   "tests/test-quality-analysis.py": {
     "mtime": 1774809683.5223594,
-    "ast_hash": "58179966131de0aaf1244d4ec120612a",
-    "semantic_hash": ""
+    "hash": "58179966131de0aaf1244d4ec120612a"
   },
   "tests/test_graphify_patches.py": {
     "mtime": 1778175932.8364184,
-    "ast_hash": "9c9762de93af9d635341e66029febe4c",
-    "semantic_hash": ""
+    "hash": "9c9762de93af9d635341e66029febe4c"
   },
   "tests/test_pii_meta_endpoint.py": {
     "mtime": 1779708125.989663,
-    "ast_hash": "f358ea5e98c756a2ebfb6dd3fc746d24",
-    "semantic_hash": ""
+    "hash": "f358ea5e98c756a2ebfb6dd3fc746d24"
   },
   "tests/test_patterns_examples.py": {
     "mtime": 1778159397.330814,
-    "ast_hash": "5db2917613c2526dd27460c3299dd722",
-    "semantic_hash": ""
+    "hash": "5db2917613c2526dd27460c3299dd722"
   },
   "CLAUDE.md": {
     "mtime": 1779715462.593295,
-    "ast_hash": "79cafd85dcaf5d89d99fde747de6c3a4",
-    "semantic_hash": ""
+    "hash": "79cafd85dcaf5d89d99fde747de6c3a4"
   },
   "README.md": {
     "mtime": 1779653285.6286275,
-    "ast_hash": "64bd98ad20274e9bbfe509736d291071",
-    "semantic_hash": ""
+    "hash": "64bd98ad20274e9bbfe509736d291071"
   },
   "lib/README.md": {
     "mtime": 1774809683.5182161,
-    "ast_hash": "d0fc4c2b363cb43bff88fa5d5ac7e193",
-    "semantic_hash": ""
+    "hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
   },
   ".nvm-isolated/README.md": {
     "mtime": 1773925646.7483091,
-    "ast_hash": "8ee03949b8b2fc164601669da010b4e1",
-    "semantic_hash": ""
+    "hash": "8ee03949b8b2fc164601669da010b4e1"
   },
   ".nvm-isolated/LICENSE.md": {
     "mtime": 1773925646.7483091,
-    "ast_hash": "d9eae036a0f5820f88ab3fa289a9016b",
-    "semantic_hash": ""
+    "hash": "d9eae036a0f5820f88ab3fa289a9016b"
   },
   ".nvm-isolated/.claude-isolated/CLAUDE.md": {
     "mtime": 1779652486.8644986,
-    "ast_hash": "ceaae3fa52f7344638b6dccdd07f8ba0",
-    "semantic_hash": ""
+    "hash": "ceaae3fa52f7344638b6dccdd07f8ba0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/project.md": {
+    "mtime": 1778787583.435124,
+    "hash": "9d8bcabeb7314fcf8180148281fb71a8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/AI-SPEC.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "e4914af5d55892b006995785a6a66079"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/milestone.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "aa6a849cf855d35da7d761ce2bf63cbd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/debug-subagent-prompt.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "24fa1011c6357f81b659b287c4bd537a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/VALIDATION.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "4b6752a861c10ce4cdfb5ddca9e8510c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/spec.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "a3e627f40201d388c78b428a55c6565e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/context.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "70ac4bb07c0ac16dc5340520a5a58d57"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/claude-md.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "cb073d5b27473c1434f63faac5bd1a5d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/milestone-archive.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "2ecf0cd7ec0b83a86ecfa26b37807f08"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "01d2a54bc1ecb29d6382712d2b44b464"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/verification-report.md": {
+    "mtime": 1778787583.4361238,
+    "hash": "2b52c482fca6ffc01e81039cb0e9f5ea"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/state.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "3ce8d237d7e86a84dd89f2267acbd2e0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/UI-SPEC.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "440063040bb8eadaa7aa1b6ff2230822"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/phase-prompt.md": {
+    "mtime": 1778787583.435124,
+    "hash": "3901ebcd8840b3748867f634731de731"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/discovery.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "edd1dc775c6536444069b5e32f8454b0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/continue-here.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "9120ab25dec26c36de46bcebcd584bc5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/UAT.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "63b69a5840cdf649edeb5781dc3f1835"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/SECURITY.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "7ffb5b1f33a1c5d4f3a330b262064c00"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/dev-preferences.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "a4e5dd7a0c8fa5c27995f4e33d055153"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/copilot-instructions.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "d687178aac36c9497fa94f73895c8f4f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-standard.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "a9282a79c26b7408ccc69f417f2c7bbc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/discussion-log.md": {
+    "mtime": 1778787583.4349802,
+    "hash": "65e491752daf55d9475280c420bec5c1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/README.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "17e76652ee71b5f97cab4bbe553c5643"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/user-setup.md": {
+    "mtime": 1778787583.4361238,
+    "hash": "eb0f760c4bf4a5c8b2a046a837d5a099"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "4c4f04838cdad034aac358fbc6852704"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/requirements.md": {
+    "mtime": 1778787583.435124,
+    "hash": "46b17decdc37a4e17a971819998a92cf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/user-profile.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "9567d5c39fec70ee1ae4bc401a7a0573"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/DEBUG.md": {
+    "mtime": 1778787583.4342964,
+    "hash": "a08e4fffbb04d19b0cdd3f7c279a9ff7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/roadmap.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "2a0b2286575c31d2c5d04d7dda39ca8a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-minimal.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "cb56b997ba0a6c6b88830fb0b34e3835"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/summary-complex.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "3d3fe4b6d8d69dd22fafdfad190cb68e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/retrospective.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "77d90126f81ec3d786d46d355e603506"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/planner-subagent-prompt.md": {
+    "mtime": 1778787583.435124,
+    "hash": "cb3db0aab4d9fe11628bbdfe657462a1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/integrations.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "080c74b99947918e5f790300e0fbc2f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/testing.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "8284aecc988d2fca720d60a44806ca10"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/concerns.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "2ba9bbf9ac19221377bb739d78ef1250"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/conventions.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "9112ff443b1069fc374ee20f328c7f44"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/structure.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "941c650de4e51e49e8357e47a25ad989"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/architecture.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "2ec48c771e81aa8e0259f1e69691bc2a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/codebase/stack.md": {
+    "mtime": 1778787583.4346607,
+    "hash": "c75effaa928d5c93784a1e136674097b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/PITFALLS.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "b55a2f0654b8fbfd91f3a40c0c5bf133"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/FEATURES.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "1348ef22f4974ee350621fffa0069821"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/SUMMARY.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "ae9a9e668c8ea0ded20e50a1cc86ed17"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/STACK.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "483099bbfacda6ff148615dde7fe8212"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/templates/research-project/ARCHITECTURE.md": {
+    "mtime": 1778787583.4357603,
+    "hash": "1eb7e085f1d0a393ca3b3037ea433bb0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/universal-anti-patterns.md": {
+    "mtime": 1778787583.433124,
+    "hash": "18184149770526ff6c220b01dc7a4e2c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/workstream-flag.md": {
+    "mtime": 1778787583.433124,
+    "hash": "c63bf139352127eef29e98e85ff1e63c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-reviews.md": {
+    "mtime": 1778787583.431209,
+    "hash": "c71d7556b75cab8edb7313e689eedb87"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/spidr-splitting.md": {
+    "mtime": 1778787583.432124,
+    "hash": "8788d6fe6cbdc70e39efbbc1861a14ab"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/agent-contracts.md": {
+    "mtime": 1778787583.429681,
+    "hash": "68f457d8a0b4c39f15a6f0b2f6a060da"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profile-resolution.md": {
+    "mtime": 1778787583.431209,
+    "hash": "2a9d2c3eb036f64d177547521973519f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/doc-conflict-engine.md": {
+    "mtime": 1778787583.430124,
+    "hash": "f30745f7c8c2b7bffef066278fa432bc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/mvp-concepts.md": {
+    "mtime": 1778787583.431209,
+    "hash": "eb4e91cbd8aaddd78c89d403567275a4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/debugger-philosophy.md": {
+    "mtime": 1778787583.430124,
+    "hash": "dddbcc4f5267608c22489fcd9e612ff6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-planning.md": {
+    "mtime": 1778787583.432124,
+    "hash": "24182fd4a7f4fa9446355d096c38bde4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/user-profiling.md": {
+    "mtime": 1778787583.433124,
+    "hash": "09d25307992334d4ea20f7325b9b1abc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/domain-probes.md": {
+    "mtime": 1778787583.430124,
+    "hash": "36c5761927ed768e5c61dd35f6d19447"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/execute-mvp-tdd.md": {
+    "mtime": 1778787583.430124,
+    "hash": "bc070788232c660209b4521d316e9fda"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-research.md": {
+    "mtime": 1778787583.433124,
+    "hash": "5360cff860b7d0c758ca575679c406f9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-revision.md": {
+    "mtime": 1778787583.431209,
+    "hash": "c3030dd27b995ccf5795379a138589c2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-antipatterns.md": {
+    "mtime": 1778787583.431209,
+    "hash": "dc40fa51d21cd1441230596fd66fd6ed"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/tdd.md": {
+    "mtime": 1778787583.432124,
+    "hash": "ff7640e0bb7b9d3f99e7fdd401ec46c8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/artifact-types.md": {
+    "mtime": 1778787583.429681,
+    "hash": "9b37d7b2007e142261dfeb4cf50fa1fc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/scout-codebase.md": {
+    "mtime": 1778787583.432124,
+    "hash": "3fd5b5d332ddb35733dcb6b976a2d1be"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-mvp-mode.md": {
+    "mtime": 1778787583.431209,
+    "hash": "9d6ebd968fb1970170557adecf1c0278"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/user-story-template.md": {
+    "mtime": 1778787583.433124,
+    "hash": "f005df4d5ad02e6225ca99b6f7932355"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-interactivity.md": {
+    "mtime": 1778787583.432124,
+    "hash": "58920cccb5fce0ddd6cd45594bd97549"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-execution.md": {
+    "mtime": 1778787583.432124,
+    "hash": "6b5a09a6a7a40c291a851f691ef9f9ef"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/worktree-path-safety.md": {
+    "mtime": 1778787583.433124,
+    "hash": "7212dd42a18e7d41570aa603ae3ead3a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-verification.md": {
+    "mtime": 1778787583.433124,
+    "hash": "7b78061e171a134c12bbadc7a90e8804"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/autonomous-smart-discuss.md": {
+    "mtime": 1778787583.429681,
+    "hash": "666580f8f9e847268e0758f193155d2a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/phase-argument-parsing.md": {
+    "mtime": 1778787583.431209,
+    "hash": "0b8ee7aa7aa57654d87ca64be18ed3db"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-variant-patterns.md": {
+    "mtime": 1778787583.432124,
+    "hash": "1a42d81c8a08a61b1848dd34932a3077"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ios-scaffold.md": {
+    "mtime": 1778787583.431209,
+    "hash": "95a8027b33e64dc00fd95b5ee5a27139"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/project-skills-discovery.md": {
+    "mtime": 1778787583.432124,
+    "hash": "87423ed6217d04f191fec491afabbd11"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ai-frameworks.md": {
+    "mtime": 1778787583.429681,
+    "hash": "12c099ed2b3917a8341d2f1cca2aadf6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/decimal-phase-calculation.md": {
+    "mtime": 1778787583.430124,
+    "hash": "fffe342286c6fd6cbf5f95ca7e1011f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-models-debug.md": {
+    "mtime": 1778787583.432124,
+    "hash": "f6b6dd4a3250056669ee01cf4c40ad18"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-tooling.md": {
+    "mtime": 1778787583.432124,
+    "hash": "d1e6b0df4918db3e61e972a5614fbc21"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-source-audit.md": {
+    "mtime": 1778787583.431209,
+    "hash": "b8dfe92a75ebfc7312163b903fa8526c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/questioning.md": {
+    "mtime": 1778787583.432124,
+    "hash": "4f12f4f67f65184b8ee8220dc173794e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/continuation-format.md": {
+    "mtime": 1778787583.429681,
+    "hash": "3ed1f7a3e29896188b3282f1befcf087"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planning-config.md": {
+    "mtime": 1778787583.432124,
+    "hash": "548a4737d7df8f8bbe58e1a00df79c53"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ui-brand.md": {
+    "mtime": 1778787583.433124,
+    "hash": "ccbe8d48add340cb1d8da7f3c7990848"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/common-bug-patterns.md": {
+    "mtime": 1778787583.429681,
+    "hash": "d7d13c6090aca12176c85acbc967ccb5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/mandatory-initial-read.md": {
+    "mtime": 1778787583.431209,
+    "hash": "270db662005d39161f35283b6315c3f3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/executor-examples.md": {
+    "mtime": 1778787583.430124,
+    "hash": "e2dd4da11171a84a9f86264ceeac6690"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verify-mvp-mode.md": {
+    "mtime": 1778787583.433124,
+    "hash": "fd8b7927b31a5a75ff3aafdad4b2836c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/skeleton-template.md": {
+    "mtime": 1778787583.432124,
+    "hash": "54ba40611cb9365d4a7f1a7bb0cbaac1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/sketch-theme-system.md": {
+    "mtime": 1778787583.432124,
+    "hash": "fe368ffd3d47e27781682a54f9eef063"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/git-planning-commit.md": {
+    "mtime": 1778787583.431209,
+    "hash": "5d09af2f04f947be20b9f8ba1407f5e2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/checkpoints.md": {
+    "mtime": 1778787583.429681,
+    "hash": "2571978a14e24bd91143810348a59950"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/gates.md": {
+    "mtime": 1778787583.431209,
+    "hash": "4e7c0b345be2cae471e799173eeba0d5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-gap-closure.md": {
+    "mtime": 1778787583.431209,
+    "hash": "795a9c88620b165cb867d44f2dee0168"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-patterns.md": {
+    "mtime": 1778787583.433124,
+    "hash": "f255c6dc98a82dc5524d72b4d7c22cb8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/context-budget.md": {
+    "mtime": 1778787583.429681,
+    "hash": "eeea26e427eccfd44b689cf8153f5db4"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/verification-overrides.md": {
+    "mtime": 1778787583.433124,
+    "hash": "6f6d3897f8663740ea3935db7df08dec"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/model-profiles.md": {
+    "mtime": 1778787583.431209,
+    "hash": "24a3684b75ee27d3dba209161b3b77dc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/gate-prompts.md": {
+    "mtime": 1778787583.431209,
+    "hash": "b7774d89c8920048b3f798bc84f0b532"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/thinking-partner.md": {
+    "mtime": 1778787583.433124,
+    "hash": "a3fc8194e79add6042bcabfdea7a1a14"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/git-integration.md": {
+    "mtime": 1778787583.431209,
+    "hash": "842a7a6820169ecb4490f604d35bc14a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/ai-evals.md": {
+    "mtime": 1778787583.429681,
+    "hash": "672e97cab43dc58b1b8db81e884b457d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/planner-chunked.md": {
+    "mtime": 1778787583.431209,
+    "hash": "25e360eaf1fc5c887691d754add8f440"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/revision-loop.md": {
+    "mtime": 1778787583.432124,
+    "hash": "42e90a405f0b8e5ac39aadc6375c9cc6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/plan-checker.md": {
+    "mtime": 1778787583.431209,
+    "hash": "f9b5ce1b32f1ab061f44d20c60006bb9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/references/few-shot-examples/verifier.md": {
+    "mtime": 1778787583.431209,
+    "hash": "5114e6fc01028c098fe2c2bf0a8b81d7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/list-workspaces.md": {
+    "mtime": 1778787583.440124,
+    "hash": "7f3b947064fa5feb0fd64535bdb6fff9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-uat.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "b7f2bd0280dec824d1d4605fbc110a9b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/cleanup.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "06c1c3bfc71eb647d01f571187b24590"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/extract-learnings.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "7362d1c7e95bb83502fbd87ef68728c9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/quick.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "5e0417d2afb81aaac53ced3384ba47a0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/profile-user.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "c369397307d45e813690e72eb04be81d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/manager.md": {
+    "mtime": 1778787583.440124,
+    "hash": "08125691c357ce45afd9610fae1cc658"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plant-seed.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "dec2c6d293c77a789ad6e4fe56f943f7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/docs-update.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "2bc63f64f37bf712170467e6134cfca8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/node-repair.md": {
+    "mtime": 1778787583.441124,
+    "hash": "ff57b22997713ab01860c09a975c304c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/note.md": {
+    "mtime": 1778787583.441124,
+    "hash": "aabb1aacd0f532f12e0b3dd7ff221184"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-review-convergence.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "b76a94c4acfbeff0406b33a4e41f3f08"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/session-report.md": {
+    "mtime": 1778787583.444124,
+    "hash": "300bfb8076a443a90d712871c31dff09"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/secure-phase.md": {
+    "mtime": 1778787583.444124,
+    "hash": "ed46cd070950e96b2f87eee183962574"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-tests.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "d4b5261072e650d3ed1c9a6cbd5d9bc8"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/resume-project.md": {
+    "mtime": 1778787583.444124,
+    "hash": "1b9f09cdbf3f723d495370d6e320fc74"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/remove-phase.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "43b094311539a202d4dd020a4cd1e46e"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/verify-phase.md": {
+    "mtime": 1778787583.4461238,
+    "hash": "d0a2b8e2d17fd975bdf7418e6f8b8a64"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spike-wrap-up.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d06f37eab5b389c793d0e68ecc8fe7d9"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/code-review-fix.md": {
+    "mtime": 1778787583.437124,
+    "hash": "886a28e226883adb4f4f70143eaa5646"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/map-codebase.md": {
+    "mtime": 1778787583.441124,
+    "hash": "b19eedd1f15f976a9a8534066a4af7dd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sketch-wrap-up.md": {
+    "mtime": 1778787583.444124,
+    "hash": "6047212ab3b9582e4b68e1b9eae3f98f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/undo.md": {
+    "mtime": 1778787583.445124,
+    "hash": "a175455274f02002b01033eaef75e51c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ai-integration-phase.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "3c74199c813cc13a378ed7f6d7eecb9f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-phase.md": {
+    "mtime": 1778787583.442124,
+    "hash": "6080b45b97931966ca120dbac2be410b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ui-review.md": {
+    "mtime": 1778787583.445124,
+    "hash": "35e554735796e7b36f6028acc840204a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-milestone.md": {
+    "mtime": 1778787583.441124,
+    "hash": "2f634c958a563e1184ecbc4aaccc431b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/stats.md": {
+    "mtime": 1778787583.445124,
+    "hash": "e7c9762a3a1af4dd5e30533c72c9e871"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase-assumptions.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b0d9875400057187b1ac8ca2cc231a99"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/do.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "53e800184fa539a788d2eafb2526fce3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/reapply-patches.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "5f4bc5c4c62738ea6b458a6c2ba5a824"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discovery-phase.md": {
+    "mtime": 1778787583.437124,
+    "hash": "47a4b2c7d14e6c5592e4ced3bd1087ab"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sketch.md": {
+    "mtime": 1778787583.444124,
+    "hash": "01581a28bd79220146faacedcfabbfca"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "67ceeaa2c447dfdc34f075d1867770da"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/eval-review.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b6ad53b87ce6a0d678572ac2e6470f7d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-fix.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "c032ca773532b3826030491dd416c8d7"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/inbox.md": {
+    "mtime": 1778787583.440124,
+    "hash": "a1a1172d233556a8a28f19805f962ebc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/insert-phase.md": {
+    "mtime": 1778787583.440124,
+    "hash": "5f89fd0f359b09c3fbea52fa7bba54e2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ui-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "e2176cdf50f3f60c45db383ef05f2979"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/plan-milestone-gaps.md": {
+    "mtime": 1778787583.442124,
+    "hash": "c813b7f4957699510f12faf5fc6e383c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase-power.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "bd6ef2e4e63412857978e66c82fab29c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/explore.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "5968394a69d54bc15864b190e9ac350b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-backlog.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "1a2e988a65cadb0238b2820c530c0db3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings-advanced.md": {
+    "mtime": 1778787583.444124,
+    "hash": "18ac27f0345c9eaf63647302a7c84382"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/pr-branch.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "91c1ba46264eeec8eb8b4ca6ce447182"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/code-review.md": {
+    "mtime": 1778787583.437124,
+    "hash": "95e247221156604dcc10c71f25b19b4d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/check-todos.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "9daa6e35023843a8bd0986f29dbaa2e5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spec-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "c08ba174a17043e168cee657b7c47617"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/graduation.md": {
+    "mtime": 1778787583.440124,
+    "hash": "663929f21300963b8e9af8f9fdab9f1a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ingest-docs.md": {
+    "mtime": 1778787583.440124,
+    "hash": "297045f612bb9f721b76eca70fdf91a3"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/sync-skills.md": {
+    "mtime": 1778787583.445124,
+    "hash": "4e7ac6c2a63bbac8063f6563f0b9fd01"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-plan.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "7d70a85dca892cfd03a019c56a268d09"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ultraplan-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d560ed44944ad39bb72d6b18dc308542"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/debug.md": {
+    "mtime": 1778787583.437124,
+    "hash": "30f86dd3856f8941abc827d967fee800"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/remove-workspace.md": {
+    "mtime": 1778787583.444124,
+    "hash": "1fc4678a437e590bdc3b33ccc6d2f094"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/pause-work.md": {
+    "mtime": 1778787583.442124,
+    "hash": "b7cddcda39222bb1992385189c2b9cf0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-todo.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "e299a2fe463133aac3da75c857589e0a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/diagnose-issues.md": {
+    "mtime": 1778787583.437124,
+    "hash": "bd208709c82bb4ad8905e3fda9066cb5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "b4aa434c78b342fa0dd35b432a02fe9f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/review.md": {
+    "mtime": 1778787583.444124,
+    "hash": "aff90dccce91796dfd3a2051e9fa4e1c"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/mvp-phase.md": {
+    "mtime": 1778787583.441124,
+    "hash": "7b9de2c3a0f0a68571820f9d478288ae"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/next.md": {
+    "mtime": 1778787583.441124,
+    "hash": "fbdde4796f4800e0766509eafa4314bf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/health.md": {
+    "mtime": 1778787583.440124,
+    "hash": "e07a5013db090805a9224e45f87b64ca"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/progress.md": {
+    "mtime": 1778787583.4431238,
+    "hash": "058d6a9a5480efd1eb84f61abe0b1081"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/complete-milestone.md": {
+    "mtime": 1778787583.437124,
+    "hash": "e258dc0d37913f6fc95215be956bc786"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/autonomous.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "a8af1cb7a249b54c9e96fbce9b91a9c2"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings.md": {
+    "mtime": 1778787583.444124,
+    "hash": "f29db8b314321a248158deb4b6bc258f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-workspace.md": {
+    "mtime": 1778787583.441124,
+    "hash": "7c69308d309f4e1b4d2a996b7bd78dad"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/add-phase.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "740d02e890226d4ff2724697665c33d1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/spike.md": {
+    "mtime": 1778787583.445124,
+    "hash": "afa220a99c08a242a3416320a8220086"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/forensics.md": {
+    "mtime": 1778787583.440124,
+    "hash": "a092998328bf2a3b4b5d59f073c877c0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/fast.md": {
+    "mtime": 1778787583.440124,
+    "hash": "128dd1e5402b1f44895c721a7617df66"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/transition.md": {
+    "mtime": 1778787583.445124,
+    "hash": "edfe98d831e993514f8f76aeb64bacc6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/analyze-dependencies.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "7ddf39005a6b41518d302954abcbaca6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/thread.md": {
+    "mtime": 1778787583.445124,
+    "hash": "93cde7dc2addec8aceb43e5b5d0a7060"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/settings-integrations.md": {
+    "mtime": 1778787583.444124,
+    "hash": "2779038c8aac4b0978d6f5009a14a7fb"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/list-phase-assumptions.md": {
+    "mtime": 1778787583.440124,
+    "hash": "938904ca505e941065f5d35b79205d65"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/ship.md": {
+    "mtime": 1778787583.444124,
+    "hash": "fad2fd7a585378475d8f8cb13ed82761"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/milestone-summary.md": {
+    "mtime": 1778787583.441124,
+    "hash": "e459ccdc858f3800d58585e1fa76e083"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/edit-phase.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "bff2d7af484dabeefe66943d8af29db6"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/help.md": {
+    "mtime": 1778787583.440124,
+    "hash": "4a0a29e710bc4288e5938e504bcef17a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/update.md": {
+    "mtime": 1778787583.445124,
+    "hash": "d0d7cdf9f64b5b06546a11255b1b7d66"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/scan.md": {
+    "mtime": 1778787583.444124,
+    "hash": "165a0aa1eabf515c3cc85307ddd5aeba"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/verify-work.md": {
+    "mtime": 1778787583.4461238,
+    "hash": "4aeebd99fdcec00cd0aad982db55b7ac"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/validate-phase.md": {
+    "mtime": 1778787583.445124,
+    "hash": "a3665758f1a9cd1973efbac55fbeebbd"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/audit-milestone.md": {
+    "mtime": 1778787583.4366705,
+    "hash": "cc7964cd550f1070e17ceb79a3bf8a5a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/new-project.md": {
+    "mtime": 1778787583.441124,
+    "hash": "e7d8cc24f6892cb69b9afa86596428f5"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/import.md": {
+    "mtime": 1778787583.440124,
+    "hash": "404cb182f0066a8fabe2e12034be1ebc"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/templates/context.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "816f7dc3751b3d422e8b4a31e121a737"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/templates/discussion-log.md": {
+    "mtime": 1778787583.4385326,
+    "hash": "4da8fcade34b79a50f9e0f2faef1fb9a"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/all.md": {
+    "mtime": 1778787583.438046,
+    "hash": "936ff16fdcb90db2ff95fd3c9944c28d"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/analyze.md": {
+    "mtime": 1778787583.438046,
+    "hash": "c354fe0b79cfc0c594064822dfd45f84"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/batch.md": {
+    "mtime": 1778787583.438046,
+    "hash": "a5c3a34a28cb49090bb24ff3379a0b1b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/text.md": {
+    "mtime": 1778787583.438124,
+    "hash": "3f126d3a2ce0d54bd54be892659e115f"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/chain.md": {
+    "mtime": 1778787583.438046,
+    "hash": "3871d69627e2fb717b107fc63fc001c0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/advisor.md": {
+    "mtime": 1778787583.438046,
+    "hash": "11e921fce790be6a5586195b2edd00f0"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/default.md": {
+    "mtime": 1778787583.438046,
+    "hash": "f4b7693bccb2d7699ce4a9a4a5030298"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/power.md": {
+    "mtime": 1778787583.438046,
+    "hash": "f80449bf54ea1880f53e5b6c0d7bbf58"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/discuss-phase/modes/auto.md": {
+    "mtime": 1778787583.438046,
+    "hash": "7df27c3eeb8d32c3aec2367d89ae3602"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/post-merge-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "f804de2f39918c82ac9a538bccb60fdf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/per-plan-worktree-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "bec00ae8e1b77458c6871cc156cb1b2b"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/workflows/execute-phase/steps/codebase-drift-gate.md": {
+    "mtime": 1778787583.4395227,
+    "hash": "107bb57836f2c70a6b27b91995e4a3a1"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/research.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "efe586c459336cd5740264f1ad6d43cf"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/review.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "8be8a37b9459681c97d80f8ea3020830"
+  },
+  ".nvm-isolated/.claude-isolated/get-shit-done/contexts/dev.md": {
+    "mtime": 1778787583.4294124,
+    "hash": "d397161b51d5d56d8c3cec30cdcb166b"
   },
   ".nvm-isolated/.claude-isolated/skills/mermaid-obsidian/SKILL.md": {
     "mtime": 1778264330.5435386,
-    "ast_hash": "7afc751571608f9b11799156cb8a7445",
-    "semantic_hash": ""
+    "hash": "7afc751571608f9b11799156cb8a7445"
   },
   ".nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md": {
     "mtime": 1778264316.8196774,
-    "ast_hash": "30b83a122f39b996c3c0906a62f5299a",
-    "semantic_hash": ""
+    "hash": "30b83a122f39b996c3c0906a62f5299a"
   },
   ".nvm-isolated/.claude-isolated/skills/git-workflow/templates/task-summary.txt": {
     "mtime": 1773925646.7405686,
-    "ast_hash": "fd8364ab86c819f6680d051495c7a0f4",
-    "semantic_hash": ""
+    "hash": "fd8364ab86c819f6680d051495c7a0f4"
   },
   ".nvm-isolated/.claude-isolated/skills/git-workflow/examples/basic-usage.md": {
     "mtime": 1774809682.742253,
-    "ast_hash": "7db6cbebd209c9bc701a409284937fb9",
-    "semantic_hash": ""
+    "hash": "7db6cbebd209c9bc701a409284937fb9"
   },
   ".nvm-isolated/.claude-isolated/skills/lat-init/SKILL.md": {
     "mtime": 1779715778.627654,
-    "ast_hash": "a99d21dac736a6eb55298ddf751a40ae",
-    "semantic_hash": ""
+    "hash": "a99d21dac736a6eb55298ddf751a40ae"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
     "mtime": 1778264316.9206762,
-    "ast_hash": "e71717fd61b9c1d6f27aa66d1ce99e44",
-    "semantic_hash": ""
+    "hash": "e71717fd61b9c1d6f27aa66d1ce99e44"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
     "mtime": 1774809682.7444031,
-    "ast_hash": "946dd5445b812652910b91bc85c75886",
-    "semantic_hash": ""
+    "hash": "946dd5445b812652910b91bc85c75886"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/prd-best-practices.md": {
     "mtime": 1774809682.744604,
-    "ast_hash": "33d14ffd7884e488d5ff62c260223215",
-    "semantic_hash": ""
+    "hash": "33d14ffd7884e488d5ff62c260223215"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/markdown-guidelines.md": {
     "mtime": 1774809682.7444031,
-    "ast_hash": "b81d657b57e8753e9a70baa3b55afe5c",
-    "semantic_hash": ""
+    "hash": "b81d657b57e8753e9a70baa3b55afe5c"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/rules/mermaid-diagrams.md": {
     "mtime": 1774809682.744604,
-    "ast_hash": "8dee0e4fc936c7ac68b26bae1f70dcbb",
-    "semantic_hash": ""
+    "hash": "8dee0e4fc936c7ac68b26bae1f70dcbb"
   },
   ".nvm-isolated/.claude-isolated/skills/caveman/SKILL.md": {
     "mtime": 1778764211.110121,
-    "ast_hash": "5c43ca000385e41e9d9dd02c8574dfa0",
-    "semantic_hash": ""
+    "hash": "5c43ca000385e41e9d9dd02c8574dfa0"
   },
   ".nvm-isolated/.claude-isolated/skills/lat-md/SKILL.md": {
     "mtime": 1779715462.5930817,
-    "ast_hash": "205da3ba523cab81f05f4c553a442f8f",
-    "semantic_hash": ""
+    "hash": "205da3ba523cab81f05f4c553a442f8f"
   },
   ".nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
     "mtime": 1774809682.7395995,
-    "ast_hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0",
-    "semantic_hash": ""
+    "hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
   },
   ".nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
     "mtime": 1778705373.3368568,
-    "ast_hash": "5c022b5257801a337be67dce008c3831",
-    "semantic_hash": ""
+    "hash": "5c022b5257801a337be67dce008c3831"
   },
   ".nvm-isolated/.claude-isolated/skills/install-lat/SKILL.md": {
     "mtime": 1779715796.1974037,
-    "ast_hash": "65a88e26275915d1201a5176e9b0e8d1",
-    "semantic_hash": ""
+    "hash": "65a88e26275915d1201a5176e9b0e8d1"
   },
   ".nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
     "mtime": 1774809682.7354975,
-    "ast_hash": "ac8320339f253084a4545c217c18cf14",
-    "semantic_hash": ""
+    "hash": "ac8320339f253084a4545c217c18cf14"
   },
   ".nvm-isolated/.claude-isolated/skills/_shared/frontmatter-parser.md": {
     "mtime": 1774809682.7354975,
-    "ast_hash": "b026e1f235b9839f9a76670029a28932",
-    "semantic_hash": ""
+    "hash": "b026e1f235b9839f9a76670029a28932"
   },
   ".nvm-isolated/.claude-isolated/skills/_shared/YAML-WORKFLOW-README.md": {
     "mtime": 1774809682.7354975,
-    "ast_hash": "75aca0a1da510db72b9ddaabfc0bfc69",
-    "semantic_hash": ""
+    "hash": "75aca0a1da510db72b9ddaabfc0bfc69"
   },
   ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
     "mtime": 1778264316.7896776,
-    "ast_hash": "3d019aa4297c1d1643ccbd0412cf79ec",
-    "semantic_hash": ""
+    "hash": "3d019aa4297c1d1643ccbd0412cf79ec"
   },
   ".nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
     "mtime": 1774809682.7400665,
-    "ast_hash": "1610dbaf0d7228dc25f9feed05963e1a",
-    "semantic_hash": ""
+    "hash": "1610dbaf0d7228dc25f9feed05963e1a"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/SKILL.md": {
     "mtime": 1774809682.7463157,
-    "ast_hash": "219aaabc16d0c61234da7c5b5fb9e033",
-    "semantic_hash": ""
+    "hash": "219aaabc16d0c61234da7c5b5fb9e033"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/converters/README.md": {
     "mtime": 1774809682.7464967,
-    "ast_hash": "43b8e7820bd96291d3c9e9de2cabe7f5",
-    "semantic_hash": ""
+    "hash": "43b8e7820bd96291d3c9e9de2cabe7f5"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/examples/integration-guide.md": {
     "mtime": 1774809682.7466476,
-    "ast_hash": "90236fdfe4a4e00418ceea51da87ddc6",
-    "semantic_hash": ""
+    "hash": "90236fdfe4a4e00418ceea51da87ddc6"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
     "mtime": 1778264316.9876757,
-    "ast_hash": "30b126cde50258189ca61bee468d292b",
-    "semantic_hash": ""
+    "hash": "30b126cde50258189ca61bee468d292b"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
     "mtime": 1778100314.2615428,
-    "ast_hash": "b66c1d5c4a9a0906961414f2392ed2ea",
-    "semantic_hash": ""
+    "hash": "b66c1d5c4a9a0906961414f2392ed2ea"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/agent-instructions.md": {
     "mtime": 1778100314.2614698,
-    "ast_hash": "c06a27e5f355d2e74cf2bc41c2386f83",
-    "semantic_hash": ""
+    "hash": "c06a27e5f355d2e74cf2bc41c2386f83"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/basic-claude-md.md": {
     "mtime": 1778100314.2615428,
-    "ast_hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8",
-    "semantic_hash": ""
+    "hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
     "mtime": 1778100314.2615428,
-    "ast_hash": "33a3f524663a8f636e6799674cf06db6",
-    "semantic_hash": ""
+    "hash": "33a3f524663a8f636e6799674cf06db6"
   },
   ".nvm-isolated/.claude-isolated/skills/lat-check/SKILL.md": {
     "mtime": 1779715462.5928957,
-    "ast_hash": "98d4ced673f8851a7107e21f5c52fa8f",
-    "semantic_hash": ""
+    "hash": "98d4ced673f8851a7107e21f5c52fa8f"
   },
   ".nvm-isolated/.claude-isolated/skills/lat-search/SKILL.md": {
     "mtime": 1779715462.5930817,
-    "ast_hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0",
-    "semantic_hash": ""
+    "hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0"
   },
   ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
     "mtime": 1778159397.3289163,
-    "ast_hash": "0564473eb5812a5cbaa234da28e80000",
-    "semantic_hash": ""
+    "hash": "0564473eb5812a5cbaa234da28e80000"
   },
   ".nvm-isolated/.claude-isolated/skills/idd/SKILL.md": {
     "mtime": 1779653099.5176873,
-    "ast_hash": "c570d1706dcc8e90bee25a463aa2b94e",
-    "semantic_hash": ""
+    "hash": "c570d1706dcc8e90bee25a463aa2b94e"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
     "mtime": 1778264316.952676,
-    "ast_hash": "e32b23bdefdd26cf4b63ba88a0ca96a0",
-    "semantic_hash": ""
+    "hash": "e32b23bdefdd26cf4b63ba88a0ca96a0"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
     "mtime": 1774809682.7368128,
-    "ast_hash": "55c91eb6886ec5ae5bc0a2a1390e07a4",
-    "semantic_hash": ""
+    "hash": "55c91eb6886ec5ae5bc0a2a1390e07a4"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/examples/minimal-agent.md": {
     "mtime": 1774809682.736916,
-    "ast_hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6",
-    "semantic_hash": ""
+    "hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/rules/agent-best-practices.md": {
     "mtime": 1774809682.736916,
-    "ast_hash": "b74b7478e194f9717f9862ca328f7fe7",
-    "semantic_hash": ""
+    "hash": "b74b7478e194f9717f9862ca328f7fe7"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
     "mtime": 1778264316.8856766,
-    "ast_hash": "f57ca9ba90d557652a5931fbe0cbfbcd",
-    "semantic_hash": ""
+    "hash": "f57ca9ba90d557652a5931fbe0cbfbcd"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
     "mtime": 1774809682.7377477,
-    "ast_hash": "c739c2c6d5fe6739503858a58aa7c9b3",
-    "semantic_hash": ""
+    "hash": "c739c2c6d5fe6739503858a58aa7c9b3"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/dependency-graph.md": {
     "mtime": 1774809682.7385385,
-    "ast_hash": "96635e8dc64a1ea54f8a5b5454fffc93",
-    "semantic_hash": ""
+    "hash": "96635e8dc64a1ea54f8a5b5454fffc93"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/README.md": {
     "mtime": 1774809682.7385385,
-    "ast_hash": "34a5025631c3872f782c2406a2f46db1",
-    "semantic_hash": ""
+    "hash": "34a5025631c3872f782c2406a2f46db1"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/architecture-full.yaml": {
     "mtime": 1773925646.7355509,
-    "ast_hash": "5cdf497641efddd4dc01591a0b79aecc",
-    "semantic_hash": ""
+    "hash": "5cdf497641efddd4dc01591a0b79aecc"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/TOON-INTEGRATION-GUIDE.md": {
     "mtime": 1774809682.737833,
-    "ast_hash": "6357eb5f13251a7c239c8a4c45e27d22",
-    "semantic_hash": ""
+    "hash": "6357eb5f13251a7c239c8a4c45e27d22"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md": {
     "mtime": 1774809682.738172,
-    "ast_hash": "74750531946911f943d9e9bee490132a",
-    "semantic_hash": ""
+    "hash": "74750531946911f943d9e9bee490132a"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md": {
     "mtime": 1774809682.7385385,
-    "ast_hash": "0151836c9fb7bc3c1ba74ef4bcb123b8",
-    "semantic_hash": ""
+    "hash": "0151836c9fb7bc3c1ba74ef4bcb123b8"
   },
   ".nvm-isolated/.claude-isolated/scripts/lib/README.md": {
     "mtime": 1774809682.734205,
-    "ast_hash": "e8dd4149bfa4c6ff85ac14a6e40f6718",
-    "semantic_hash": ""
+    "hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
   },
   "lat.md/router.md": {
-    "mtime": 1779655522.9908495,
-    "ast_hash": "ae38806f0bb6b06997edcc5a61a8fd32",
-    "semantic_hash": ""
+    "mtime": 1779728606.6949847,
+    "hash": "e6ac1f4e23b374bf29f3b1a75fd5bc54"
   },
   "lat.md/proxy.md": {
     "mtime": 1779655357.1393712,
-    "ast_hash": "d1006074677b47bcd47b102e410b8fe0",
-    "semantic_hash": ""
+    "hash": "d1006074677b47bcd47b102e410b8fe0"
   },
   "lat.md/oauth.md": {
     "mtime": 1779655457.3711326,
-    "ast_hash": "9de2a428e25bcde8753111c9c42a24f9",
-    "semantic_hash": ""
+    "hash": "9de2a428e25bcde8753111c9c42a24f9"
   },
   "lat.md/pii-proxy.md": {
-    "mtime": 1779655522.9500225,
-    "ast_hash": "200856f1845cb82fd7625cd7c0b42982",
-    "semantic_hash": ""
+    "mtime": 1780758110.319895,
+    "hash": "e9f7c4c1890ce340c65eca684065fdc1"
   },
   "lat.md/sandbox.md": {
     "mtime": 1779655523.031263,
-    "ast_hash": "109839d7956b40670c37911bc621356e",
-    "semantic_hash": ""
+    "hash": "109839d7956b40670c37911bc621356e"
   },
   "lat.md/launch-flow.md": {
-    "mtime": 1779655522.8432655,
-    "ast_hash": "aa6b2a4307552577b00534400305e77b",
-    "semantic_hash": ""
+    "mtime": 1780577387.5385764,
+    "hash": "2025f669d68c07a330ab78bfb2d5a9ea"
   },
   "lat.md/architecture.md": {
-    "mtime": 1779655327.1356978,
-    "ast_hash": "51201053d4623043bb96c12a9a87d52e",
-    "semantic_hash": ""
+    "mtime": 1780577387.5385294,
+    "hash": "a46c72e1c236f34fd0798d32573ec336"
   },
   "lat.md/isolation.md": {
-    "mtime": 1779655509.6144395,
-    "ast_hash": "de43e213d7aaa025179c5f6bd2ee98ce",
-    "semantic_hash": ""
+    "mtime": 1779728617.9938498,
+    "hash": "edf9e73a163ae2151ac455f01dbbb9a3"
   },
   "lat.md/lat.md": {
     "mtime": 1779655522.7972662,
-    "ast_hash": "232ac44624c4fd18a117176f1b21ef63",
-    "semantic_hash": ""
+    "hash": "232ac44624c4fd18a117176f1b21ef63"
   },
   "lat.md/security.md": {
-    "mtime": 1779655415.5026965,
-    "ast_hash": "c94aaa12142df72eff991becc64e4852",
-    "semantic_hash": ""
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated-lockfile.json": {
-    "mtime": 1779695378.1066046,
-    "ast_hash": "562a6dfabc48825afb6d4b3bfe2cee14",
-    "semantic_hash": "562a6dfabc48825afb6d4b3bfe2cee14"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/iclaude.sh": {
-    "mtime": 1779695378.123605,
-    "ast_hash": "3d6b1060f7a89a31f3e8d7166be5aa16",
-    "semantic_hash": "3d6b1060f7a89a31f3e8d7166be5aa16"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.githooks/pre-push": {
-    "mtime": 1779088691.0089908,
-    "ast_hash": "b153b099e450c5250e7df285e26d1683",
-    "semantic_hash": "b153b099e450c5250e7df285e26d1683"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/install.sh": {
-    "mtime": 1779087282.8646832,
-    "ast_hash": "b75afbe19092d5a3d0f64ec49de1535d",
-    "semantic_hash": "b75afbe19092d5a3d0f64ec49de1535d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/nvm-exec": {
-    "mtime": 1779087284.00772,
-    "ast_hash": "aca21638e05de09fb181f81d7f6a480c",
-    "semantic_hash": "aca21638e05de09fb181f81d7f6a480c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/nvm.sh": {
-    "mtime": 1779087284.00872,
-    "ast_hash": "6f66fa6001fc322c0845dc33708d890b",
-    "semantic_hash": "6f66fa6001fc322c0845dc33708d890b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/package.json": {
-    "mtime": 1779087284.00872,
-    "ast_hash": "46d25f8917cfe50ea8028b7f39012c6b",
-    "semantic_hash": "46d25f8917cfe50ea8028b7f39012c6b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/plugins-manifest.json": {
-    "mtime": 1779087282.5866742,
-    "ast_hash": "9f6627ec696e209536d42bea39a57ff4",
-    "semantic_hash": "9f6627ec696e209536d42bea39a57ff4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/mcp-needs-auth-cache.json": {
-    "mtime": 1779346285.30207,
-    "ast_hash": "958ca905327aa38e9a8e982af84ef026",
-    "semantic_hash": "958ca905327aa38e9a8e982af84ef026"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/pii-proxy-server.py": {
-    "mtime": 1779777390.584501,
-    "ast_hash": "c3dc47807e98e9d7790941d818ec7ff8",
-    "semantic_hash": "c3dc47807e98e9d7790941d818ec7ff8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/router.json": {
-    "mtime": 1779777390.5805008,
-    "ast_hash": "e12849b143b8f891dbcd6cabde7c929c",
-    "semantic_hash": "e12849b143b8f891dbcd6cabde7c929c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/settings.json": {
-    "mtime": 1779860842.2826047,
-    "ast_hash": "39a8c9e1a9511bb55e5ec26fc8afb033",
-    "semantic_hash": "39a8c9e1a9511bb55e5ec26fc8afb033"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/.claude.json": {
-    "mtime": 1779865142.2660668,
-    "ast_hash": "d31a6e527eb7be52ca78b732b31e247a",
-    "semantic_hash": "d31a6e527eb7be52ca78b732b31e247a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-activate.js": {
-    "mtime": 1779087282.585674,
-    "ast_hash": "0a77df0018325d52608c362754786451",
-    "semantic_hash": "0a77df0018325d52608c362754786451"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
-    "mtime": 1779087282.585674,
-    "ast_hash": "a0166a65e117ec9ddcec646e481e5185",
-    "semantic_hash": "a0166a65e117ec9ddcec646e481e5185"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-mode-tracker.js": {
-    "mtime": 1779087282.585674,
-    "ast_hash": "4946e31570eac0b8fe763d429978dbdc",
-    "semantic_hash": "4946e31570eac0b8fe763d429978dbdc"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
-    "mtime": 1779087282.5866742,
-    "ast_hash": "2c88a17ff88451629d3edafe474cfff0",
-    "semantic_hash": "2c88a17ff88451629d3edafe474cfff0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh": {
-    "mtime": 1779087282.5866742,
-    "ast_hash": "e1998d155aea4d29382c5a8e88e95ce7",
-    "semantic_hash": "e1998d155aea4d29382c5a8e88e95ce7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh": {
-    "mtime": 1779087282.5876741,
-    "ast_hash": "b1237b317dc4ca4a302cbc55b71bd244",
-    "semantic_hash": "b1237b317dc4ca4a302cbc55b71bd244"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/view-tool-results.sh": {
-    "mtime": 1779087282.5896742,
-    "ast_hash": "a549335713f5366bf4c87e38aba17904",
-    "semantic_hash": "a549335713f5366bf4c87e38aba17904"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lat-mcp-wrapper.sh": {
-    "mtime": 1779777390.5805008,
-    "ast_hash": "912421facddb66a37b27cbd0258f1fac",
-    "semantic_hash": "912421facddb66a37b27cbd0258f1fac"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lat-runner.sh": {
-    "mtime": 1779777390.5805008,
-    "ast_hash": "e50c6ff872d6eb93d5053458b53c9986",
-    "semantic_hash": "e50c6ff872d6eb93d5053458b53c9986"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/pricing-lookup.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "72c890245f1c60bf7e35913358a14483",
-    "semantic_hash": "72c890245f1c60bf7e35913358a14483"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/provider-adapter.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "fefa44dafe9c168803f0ee7a495c661a",
-    "semantic_hash": "fefa44dafe9c168803f0ee7a495c661a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/rate-limit.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "0cfe64142b0d0b183faf25282b3ca88b",
-    "semantic_hash": "0cfe64142b0d0b183faf25282b3ca88b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/streaming-detector.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "89c66a77b49729b0197c85ecccf05500",
-    "semantic_hash": "89c66a77b49729b0197c85ecccf05500"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/streaming-parser.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "95188a93277a3b55a1e592789c2756df",
-    "semantic_hash": "95188a93277a3b55a1e592789c2756df"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/streaming-state.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "b84fa15439381fa706ebfd66fb00519e",
-    "semantic_hash": "b84fa15439381fa706ebfd66fb00519e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/adapters/anthropic.sh": {
-    "mtime": 1779087282.5876741,
-    "ast_hash": "6449a01cc3ff3d4bced45391b816c24b",
-    "semantic_hash": "6449a01cc3ff3d4bced45391b816c24b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/adapters/gemini.sh": {
-    "mtime": 1779087282.5876741,
-    "ast_hash": "08b1f9d6b511ff533c6a1cc55d5cdf3d",
-    "semantic_hash": "08b1f9d6b511ff533c6a1cc55d5cdf3d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/adapters/generic.sh": {
-    "mtime": 1779087282.5876741,
-    "ast_hash": "e8c3f43e2343f8d84ad81c794f8ece1e",
-    "semantic_hash": "e8c3f43e2343f8d84ad81c794f8ece1e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/adapters/ollama.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "04cb7f3f012984a81093571bb6a9dc98",
-    "semantic_hash": "04cb7f3f012984a81093571bb6a9dc98"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/adapters/openai.sh": {
-    "mtime": 1779087282.5886743,
-    "ast_hash": "2e17b11678ad3c7b14180b37a39c49ae",
-    "semantic_hash": "2e17b11678ad3c7b14180b37a39c49ae"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/commit-types.json": {
-    "mtime": 1779087282.5896742,
-    "ast_hash": "7ab54d10ecf9fe4198c2e22ff83f401a",
-    "semantic_hash": "7ab54d10ecf9fe4198c2e22ff83f401a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/templates/agent-body.json": {
-    "mtime": 1779087282.5906742,
-    "ast_hash": "b83d5fb4b87a2e54de30de36dea6797c",
-    "semantic_hash": "b83d5fb4b87a2e54de30de36dea6797c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/package.json": {
-    "mtime": 1779087282.5916743,
-    "ast_hash": "d07c1480e8a1b56703a859b53990a498",
-    "semantic_hash": "d07c1480e8a1b56703a859b53990a498"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/toon-converter.mjs": {
-    "mtime": 1779087282.5916743,
-    "ast_hash": "6363ca2310af4502ad88b4a84b8001db",
-    "semantic_hash": "6363ca2310af4502ad88b4a84b8001db"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/structured-output-example.json": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "6e0c50bc55458435e9eb425424fd1a78",
-    "semantic_hash": "6e0c50bc55458435e9eb425424fd1a78"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/test-components.json": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "582067fdac7f2a0ff8ac85c9cec7e12d",
-    "semantic_hash": "582067fdac7f2a0ff8ac85c9cec7e12d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/test-dependency-graph-roundtrip.json": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "27a24179eb5e4efed8378b8fa4d690af",
-    "semantic_hash": "27a24179eb5e4efed8378b8fa4d690af"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/test-dependency-graph.json": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "8e5e31d85aca37d4c95ed5040ee082ab",
-    "semantic_hash": "8e5e31d85aca37d4c95ed5040ee082ab"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/schemas/architecture-output.schema.json": {
-    "mtime": 1779087282.5956745,
-    "ast_hash": "71a5e8146ac8d73cf2b701be1ef51aa6",
-    "semantic_hash": "71a5e8146ac8d73cf2b701be1ef51aa6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/schemas/architecture.schema.json": {
-    "mtime": 1779087282.5956745,
-    "ast_hash": "0ba6f5786231e3655800d5671080fb1b",
-    "semantic_hash": "0ba6f5786231e3655800d5671080fb1b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/templates/project-context.json": {
-    "mtime": 1779087282.5996745,
-    "ast_hash": "f6ab2f168ca3a060a9e0253ef10e62a5",
-    "semantic_hash": "f6ab2f168ca3a060a9e0253ef10e62a5"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/templates/prd-input.json": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "4434ca906caec2be82793e869757cde9",
-    "semantic_hash": "4434ca906caec2be82793e869757cde9"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/templates/prd-output.json": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "b08d0abe3afb81b58270a6ecd8daaed3",
-    "semantic_hash": "b08d0abe3afb81b58270a6ecd8daaed3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/schemas/input.schema.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "74fb64f03464a0471cf2c9bdbd9e9ca7",
-    "semantic_hash": "74fb64f03464a0471cf2c9bdbd9e9ca7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/schemas/output-adapt.schema.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "ed431fbcdb05a0eb953bc21c0aef1eb5",
-    "semantic_hash": "ed431fbcdb05a0eb953bc21c0aef1eb5"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/schemas/output-verify.schema.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "713572979dc57661a0ae08be463de785",
-    "semantic_hash": "713572979dc57661a0ae08be463de785"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/templates/input.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "8344ed0dd8908d93d44a9fd86ca0f483",
-    "semantic_hash": "8344ed0dd8908d93d44a9fd86ca0f483"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/templates/output-adapt.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "741ed2dd8cdcb25350dd9b8430c40c08",
-    "semantic_hash": "741ed2dd8cdcb25350dd9b8430c40c08"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/templates/output-verify.json": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "5628ce07fbba9d4866fe3d6bbf93581c",
-    "semantic_hash": "5628ce07fbba9d4866fe3d6bbf93581c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/package.json": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "3ec4c24747144e884e4f92d7af72d865",
-    "semantic_hash": "3ec4c24747144e884e4f92d7af72d865"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
-    "mtime": 1779087282.6076748,
-    "ast_hash": "1fc257caf781382ca9164aeac282531d",
-    "semantic_hash": "1fc257caf781382ca9164aeac282531d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/schemas/toon-output.schema.json": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "5675204c69648976c214fd7c19a3dfb7",
-    "semantic_hash": "5675204c69648976c214fd7c19a3dfb7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/templates/hybrid-output.json": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "32a690f57e5f7af0f9f416b6631b7326",
-    "semantic_hash": "32a690f57e5f7af0f9f416b6631b7326"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/end-to-end.test.mjs": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "2f8f523e3b9ba865402a3b3754e24cf7",
-    "semantic_hash": "2f8f523e3b9ba865402a3b3754e24cf7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/round-trip.test.mjs": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "c252354b79d718f40b9f7ca6bd0ed0b0",
-    "semantic_hash": "c252354b79d718f40b9f7ca6bd0ed0b0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/tests/skill-md-integration.test.mjs": {
-    "mtime": 1779087282.609675,
-    "ast_hash": "de542dd0bab35d19b554228890334dc2",
-    "semantic_hash": "de542dd0bab35d19b554228890334dc2"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/caveman/install.sh": {
-    "mtime": 1779791180.9698973,
-    "ast_hash": "4dbfe71ff785173055e3e19bc948c5ac",
-    "semantic_hash": "4dbfe71ff785173055e3e19bc948c5ac"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/chrome/detection.sh": {
-    "mtime": 1779087285.9127815,
-    "ast_hash": "02130d6c5d4fd34f688c5c143d5d1c35",
-    "semantic_hash": "02130d6c5d4fd34f688c5c143d5d1c35"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/command/dispatch.sh": {
-    "mtime": 1779087285.9127815,
-    "ast_hash": "05e73e981c9a2bb0c6e9e82ae88a3929",
-    "semantic_hash": "05e73e981c9a2bb0c6e9e82ae88a3929"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/command/parse.sh": {
-    "mtime": 1779087285.9127815,
-    "ast_hash": "a58fe718e2543bb579a0415483f296b5",
-    "semantic_hash": "a58fe718e2543bb579a0415483f296b5"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/command/usage.sh": {
-    "mtime": 1779695378.149606,
-    "ast_hash": "09032944bd5a2ab2d9f1bc92fe412153",
-    "semantic_hash": "09032944bd5a2ab2d9f1bc92fe412153"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/config/export.sh": {
-    "mtime": 1779087285.9127815,
-    "ast_hash": "68172aa3770482427fbdd502e153a3bd",
-    "semantic_hash": "68172aa3770482427fbdd502e153a3bd"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/config/isolated.sh": {
-    "mtime": 1779087285.9137814,
-    "ast_hash": "8fb96e68cfea0099b401f97641b21368",
-    "semantic_hash": "8fb96e68cfea0099b401f97641b21368"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/config/status.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "f2af3e6d8bf51768580662167ae9bbde",
-    "semantic_hash": "f2af3e6d8bf51768580662167ae9bbde"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/core/json.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "2523ddc17c585ca99700872864ff825b",
-    "semantic_hash": "2523ddc17c585ca99700872864ff825b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/core/logging.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "9f37fccca6af92d760d46a4554def604",
-    "semantic_hash": "9f37fccca6af92d760d46a4554def604"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/core/remaining.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "cacf77badabb678b3f1b683ef65b36e6",
-    "semantic_hash": "cacf77badabb678b3f1b683ef65b36e6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/core/validation.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "0c20e58fbdd1b0ea1c7262fcee773201",
-    "semantic_hash": "0c20e58fbdd1b0ea1c7262fcee773201"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/core/init.sh": {
-    "mtime": 1779695378.150606,
-    "ast_hash": "042c75b9cf0b6b92a9969a9e78ae447b",
-    "semantic_hash": "042c75b9cf0b6b92a9969a9e78ae447b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/graphify/apply_patches.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "87f621368be4dd299f30200540e8065b",
-    "semantic_hash": "87f621368be4dd299f30200540e8065b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/graphify/detect.sh": {
-    "mtime": 1779087285.9147816,
-    "ast_hash": "a420d697e387677a19a82da0ee13d59a",
-    "semantic_hash": "a420d697e387677a19a82da0ee13d59a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/graphify/install.sh": {
-    "mtime": 1779087285.9157815,
-    "ast_hash": "25fbcbd31dd4043a4d34c63108ed506f",
-    "semantic_hash": "25fbcbd31dd4043a4d34c63108ed506f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/graphify/status.sh": {
-    "mtime": 1779087285.9167817,
-    "ast_hash": "4c09722003dbab85ee38158c02e0b280",
-    "semantic_hash": "4c09722003dbab85ee38158c02e0b280"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/launcher/launch.sh": {
-    "mtime": 1779863846.6263006,
-    "ast_hash": "60aaa6e5e6934e392d3614fe0f88520a",
-    "semantic_hash": "60aaa6e5e6934e392d3614fe0f88520a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lockfile/install.sh": {
-    "mtime": 1779695378.151606,
-    "ast_hash": "0e87608587ef6d2b17d489fe6b917afd",
-    "semantic_hash": "0e87608587ef6d2b17d489fe6b917afd"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lockfile/save.sh": {
-    "mtime": 1779695378.151606,
-    "ast_hash": "75bb680355fc8ca0a683e1186ea68611",
-    "semantic_hash": "75bb680355fc8ca0a683e1186ea68611"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lsp/install.sh": {
-    "mtime": 1779087285.9167817,
-    "ast_hash": "229d5e439826eca9813b82b536d0408a",
-    "semantic_hash": "229d5e439826eca9813b82b536d0408a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lsp/repair.sh": {
-    "mtime": 1779087285.9167817,
-    "ast_hash": "81b830c16a3704f98143023648dd9c31",
-    "semantic_hash": "81b830c16a3704f98143023648dd9c31"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lsp/status.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "7f48de8465c9a3024b4dfd424081788c",
-    "semantic_hash": "7f48de8465c9a3024b4dfd424081788c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/claude.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "d46dd66868d5a8101450e6eeeb2f85a4",
-    "semantic_hash": "d46dd66868d5a8101450e6eeeb2f85a4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/cleanup.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "29bac29c3ea16d7da396ca4acc883b05",
-    "semantic_hash": "29bac29c3ea16d7da396ca4acc883b05"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/detect.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "7b5254077e9c36aff5b0a0ac47a80cda",
-    "semantic_hash": "7b5254077e9c36aff5b0a0ac47a80cda"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/install.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "cf3d254c5c2f29a4b8a3002b441a4472",
-    "semantic_hash": "cf3d254c5c2f29a4b8a3002b441a4472"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/repair.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "abb33a281e0553a4bff9695cde60acb3",
-    "semantic_hash": "abb33a281e0553a4bff9695cde60acb3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/nvm/setup.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "9111c27c7f091f1c69f08c1e838a5b0d",
-    "semantic_hash": "9111c27c7f091f1c69f08c1e838a5b0d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/ohmyposh/detect.sh": {
-    "mtime": 1779087285.9177816,
-    "ast_hash": "fcf9404e7f59b2d6f6388ee8fce30141",
-    "semantic_hash": "fcf9404e7f59b2d6f6388ee8fce30141"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/ohmyposh/install.sh": {
-    "mtime": 1779087285.9187815,
-    "ast_hash": "9bf96aa610df192c5a44fea0eb6fdb0a",
-    "semantic_hash": "9bf96aa610df192c5a44fea0eb6fdb0a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/ohmyposh/status.sh": {
-    "mtime": 1779087285.9187815,
-    "ast_hash": "360f05248433892ed9beb5e62157516f",
-    "semantic_hash": "360f05248433892ed9beb5e62157516f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/pii-proxy/detect.sh": {
-    "mtime": 1779087285.9187815,
-    "ast_hash": "dedaed811c4e7f0d3e16c4d9733a7066",
-    "semantic_hash": "dedaed811c4e7f0d3e16c4d9733a7066"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/pii-proxy/install.sh": {
-    "mtime": 1779087285.9187815,
-    "ast_hash": "708d90847cc2b8a8e454466298e555ec",
-    "semantic_hash": "708d90847cc2b8a8e454466298e555ec"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/pii-proxy/status.sh": {
-    "mtime": 1779087285.9187815,
-    "ast_hash": "1a52c39cc44ab428f83dacbebdf9d73d",
-    "semantic_hash": "1a52c39cc44ab428f83dacbebdf9d73d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/pii-proxy/server.py": {
-    "mtime": 1779777390.584501,
-    "ast_hash": "c3dc47807e98e9d7790941d818ec7ff8",
-    "semantic_hash": "c3dc47807e98e9d7790941d818ec7ff8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/proxy/configure.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "792fb0c892ccc0ca0b84fc1f0d3c5673",
-    "semantic_hash": "792fb0c892ccc0ca0b84fc1f0d3c5673"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/proxy/git.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "b4dd4f30da1fa7fd579b041593fe4248",
-    "semantic_hash": "b4dd4f30da1fa7fd579b041593fe4248"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/proxy/validate.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "8ad6ee8e357bcc5fd4b282eb726f36b6",
-    "semantic_hash": "8ad6ee8e357bcc5fd4b282eb726f36b6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/router/detect.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "8405872f7ce21b3ba29128d0fab5e72c",
-    "semantic_hash": "8405872f7ce21b3ba29128d0fab5e72c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/router/install.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "78e836b23a0153524fa0894268c81fdc",
-    "semantic_hash": "78e836b23a0153524fa0894268c81fdc"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/router/status.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "b1387699ef0e23419e06d18d2e74b56f",
-    "semantic_hash": "b1387699ef0e23419e06d18d2e74b56f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/detect.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "16b76d2dbb7c35320570edd414c9813b",
-    "semantic_hash": "16b76d2dbb7c35320570edd414c9813b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/guest-init.sh": {
-    "mtime": 1779087285.9197817,
-    "ast_hash": "c74e7bf6764b190e0a3e0dae8d3a6d2f",
-    "semantic_hash": "c74e7bf6764b190e0a3e0dae8d3a6d2f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/install.sh": {
-    "mtime": 1779087285.9207816,
-    "ast_hash": "1e0a4f5975c4625e6bf2ca3769e204ac",
-    "semantic_hash": "1e0a4f5975c4625e6bf2ca3769e204ac"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/microvm.sh": {
-    "mtime": 1779087285.9207816,
-    "ast_hash": "8c3d3ff3383d6786f4272ba5f2a3be39",
-    "semantic_hash": "8c3d3ff3383d6786f4272ba5f2a3be39"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/status.sh": {
-    "mtime": 1779087285.9207816,
-    "ast_hash": "b3905c1ea05bfa6f3fa3c8b07225f9af",
-    "semantic_hash": "b3905c1ea05bfa6f3fa3c8b07225f9af"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/sandbox/versions.json": {
-    "mtime": 1779087285.9207816,
-    "ast_hash": "158c32a5f621d96b0df2cade9fef282b",
-    "semantic_hash": "158c32a5f621d96b0df2cade9fef282b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/statusline/detect.sh": {
-    "mtime": 1779087285.9217818,
-    "ast_hash": "60dbf517f16597a5d129339a988a0256",
-    "semantic_hash": "60dbf517f16597a5d129339a988a0256"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/statusline/install.sh": {
-    "mtime": 1779087285.9217818,
-    "ast_hash": "74fff0dde1224ff59d6494e30617f65c",
-    "semantic_hash": "74fff0dde1224ff59d6494e30617f65c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/statusline/status.sh": {
-    "mtime": 1779087285.9217818,
-    "ast_hash": "ec640ad61f8fe8acefedf96c501dcef9",
-    "semantic_hash": "ec640ad61f8fe8acefedf96c501dcef9"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/update/cleanup.sh": {
-    "mtime": 1779087285.9217818,
-    "ast_hash": "d3b7bdde301c3d1620937737c2de283b",
-    "semantic_hash": "d3b7bdde301c3d1620937737c2de283b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/update/update.sh": {
-    "mtime": 1779087285.9217818,
-    "ast_hash": "557a73a1728fadf587b5f4c4e2d9300b",
-    "semantic_hash": "557a73a1728fadf587b5f4c4e2d9300b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/update/isolated.sh": {
-    "mtime": 1779088691.0339916,
-    "ast_hash": "36b1d9cd0c763263917bf8f1108e1f19",
-    "semantic_hash": "36b1d9cd0c763263917bf8f1108e1f19"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/gsd/detect.sh": {
-    "mtime": 1779088691.0299914,
-    "ast_hash": "59b2867c5ef6bbdfebf025128ab12be7",
-    "semantic_hash": "59b2867c5ef6bbdfebf025128ab12be7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/gsd/install.sh": {
-    "mtime": 1779088691.0309916,
-    "ast_hash": "eb4a51f70e4b93f5f9b785053c2c5920",
-    "semantic_hash": "eb4a51f70e4b93f5f9b785053c2c5920"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/gsd/status.sh": {
-    "mtime": 1779088691.0309916,
-    "ast_hash": "d13526567f294007020dc66e21119b64",
-    "semantic_hash": "d13526567f294007020dc66e21119b64"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/telemetry/otel.sh": {
-    "mtime": 1779781144.6825714,
-    "ast_hash": "568f6c751dec906394a778f63c34c89c",
-    "semantic_hash": "568f6c751dec906394a778f63c34c89c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/detect.sh": {
-    "mtime": 1779695378.150606,
-    "ast_hash": "282676949cc5571bd6a5c6c48035e9fe",
-    "semantic_hash": "282676949cc5571bd6a5c6c48035e9fe"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/install.sh": {
-    "mtime": 1779788782.605097,
-    "ast_hash": "026a489fdffc4d41549b3c723483285b",
-    "semantic_hash": "026a489fdffc4d41549b3c723483285b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/check.sh": {
-    "mtime": 1779777390.5835009,
-    "ast_hash": "a38080301442bdb8b205de3ee2771d61",
-    "semantic_hash": "a38080301442bdb8b205de3ee2771d61"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/lat/mcp.sh": {
-    "mtime": 1779777390.5835009,
-    "ast_hash": "2f38c65b747d3fdcf1ac97556557628b",
-    "semantic_hash": "2f38c65b747d3fdcf1ac97556557628b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/scripts/download-ohmyposh-binaries.sh": {
-    "mtime": 1779087285.9227817,
-    "ast_hash": "717a9634dfd68d8c68068093d4e3e277",
-    "semantic_hash": "717a9634dfd68d8c68068093d4e3e277"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-chrome-detection.sh": {
-    "mtime": 1779087285.9227817,
-    "ast_hash": "778c4d189c7fac0734106c9cc2d8ec47",
-    "semantic_hash": "778c4d189c7fac0734106c9cc2d8ec47"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-microvm-dual.sh": {
-    "mtime": 1779087285.9227817,
-    "ast_hash": "ff4ad542a74ecafb119d2140f5d6ceb3",
-    "semantic_hash": "ff4ad542a74ecafb119d2140f5d6ceb3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-pii-integration.sh": {
-    "mtime": 1779087285.9227817,
-    "ast_hash": "67306ad94ca62ad5e597bd66b9121a3d",
-    "semantic_hash": "67306ad94ca62ad5e597bd66b9121a3d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-pii-parallel.sh": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "bf1fc48b498fa30dc2df31bb06b89b82",
-    "semantic_hash": "bf1fc48b498fa30dc2df31bb06b89b82"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-quality-analysis.py": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "58179966131de0aaf1244d4ec120612a",
-    "semantic_hash": "58179966131de0aaf1244d4ec120612a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test-redact-hook.sh": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "4e682e31343561a70e7fca8219477d57",
-    "semantic_hash": "4e682e31343561a70e7fca8219477d57"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_ccr_integration.sh": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "533a2d8e20c4188874bc1cc532261bdc",
-    "semantic_hash": "533a2d8e20c4188874bc1cc532261bdc"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_graphify_patches.py": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "9c9762de93af9d635341e66029febe4c",
-    "semantic_hash": "9c9762de93af9d635341e66029febe4c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_microvm.sh": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "366868742e114667f2655bd33b79ffb8",
-    "semantic_hash": "366868742e114667f2655bd33b79ffb8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_microvm_integration.sh": {
-    "mtime": 1779087285.9237819,
-    "ast_hash": "1291638dc77f8a9d6aa654f098066b75",
-    "semantic_hash": "1291638dc77f8a9d6aa654f098066b75"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_microvm_workspace.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "250e3ed9200a352e8634dfb2a9ce403a",
-    "semantic_hash": "250e3ed9200a352e8634dfb2a9ce403a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_patterns_examples.py": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "5db2917613c2526dd27460c3299dd722",
-    "semantic_hash": "5db2917613c2526dd27460c3299dd722"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_dnat.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "d9ce9a4445a7a290c2c600ca4aabf823",
-    "semantic_hash": "d9ce9a4445a7a290c2c600ca4aabf823"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_dnat_e2e.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "e1571f4ea7ec021439c6b9a356fc5938",
-    "semantic_hash": "e1571f4ea7ec021439c6b9a356fc5938"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_dnat_iptables.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "9bdfd3468da6c10d00bd0e2bbde5d857",
-    "semantic_hash": "9bdfd3468da6c10d00bd0e2bbde5d857"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_dnat_unit.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "3ffa19de84a2bfca8b181041b8f8dcec",
-    "semantic_hash": "3ffa19de84a2bfca8b181041b8f8dcec"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_shared_detach.sh": {
-    "mtime": 1779087285.9247818,
-    "ast_hash": "56ff2c20dce6debc917f3115991d0deb",
-    "semantic_hash": "56ff2c20dce6debc917f3115991d0deb"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_telemetry_e2e.sh": {
-    "mtime": 1779088691.0339916,
-    "ast_hash": "c255e3fc592c7bc3797c64318714c168",
-    "semantic_hash": "c255e3fc592c7bc3797c64318714c168"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_telemetry_otel.sh": {
-    "mtime": 1779088691.0339916,
-    "ast_hash": "47fb7a99f78923f800593bafb543f51b",
-    "semantic_hash": "47fb7a99f78923f800593bafb543f51b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_meta_endpoint.py": {
-    "mtime": 1779441697.5760014,
-    "ast_hash": "f358ea5e98c756a2ebfb6dd3fc746d24",
-    "semantic_hash": "f358ea5e98c756a2ebfb6dd3fc746d24"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/regression-phase0.sh": {
-    "mtime": 1779695378.151606,
-    "ast_hash": "c3e347312ad954d8c0b0d01109cf6b56",
-    "semantic_hash": "c3e347312ad954d8c0b0d01109cf6b56"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_lat_module.sh": {
-    "mtime": 1779777390.584501,
-    "ast_hash": "d9e6ce02c70c194b071debe4623f224d",
-    "semantic_hash": "d9e6ce02c70c194b071debe4623f224d"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/README.md": {
-    "mtime": 1779695378.122605,
-    "ast_hash": "64bd98ad20274e9bbfe509736d291071",
-    "semantic_hash": "64bd98ad20274e9bbfe509736d291071"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/CLAUDE.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "79cafd85dcaf5d89d99fde747de6c3a4",
-    "semantic_hash": "79cafd85dcaf5d89d99fde747de6c3a4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.github/workflows/README.md": {
-    "mtime": 1779087282.4826708,
-    "ast_hash": "a1ae1621b2f7b4a4bcb1071489cf6a54",
-    "semantic_hash": "a1ae1621b2f7b4a4bcb1071489cf6a54"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.github/workflows/auto-update-claude.yml": {
-    "mtime": 1779087282.4836707,
-    "ast_hash": "d8b4c102a8c43bb156a1e99e98fb58ba",
-    "semantic_hash": "d8b4c102a8c43bb156a1e99e98fb58ba"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.travis.yml": {
-    "mtime": 1779087282.613675,
-    "ast_hash": "285a4233825b75945a182603e2c68616",
-    "semantic_hash": "285a4233825b75945a182603e2c68616"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/LICENSE.md": {
-    "mtime": 1779087282.613675,
-    "ast_hash": "d9eae036a0f5820f88ab3fa289a9016b",
-    "semantic_hash": "d9eae036a0f5820f88ab3fa289a9016b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/README.md": {
-    "mtime": 1779087282.614675,
-    "ast_hash": "8ee03949b8b2fc164601669da010b4e1",
-    "semantic_hash": "8ee03949b8b2fc164601669da010b4e1"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/CLAUDE.md": {
-    "mtime": 1779695378.1066046,
-    "ast_hash": "ceaae3fa52f7344638b6dccdd07f8ba0",
-    "semantic_hash": "ceaae3fa52f7344638b6dccdd07f8ba0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/scripts/lib/README.md": {
-    "mtime": 1779087282.5876741,
-    "ast_hash": "e8dd4149bfa4c6ff85ac14a6e40f6718",
-    "semantic_hash": "e8dd4149bfa4c6ff85ac14a6e40f6718"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/YAML-WORKFLOW-README.md": {
-    "mtime": 1779087282.5896742,
-    "ast_hash": "75aca0a1da510db72b9ddaabfc0bfc69",
-    "semantic_hash": "75aca0a1da510db72b9ddaabfc0bfc69"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/frontmatter-parser.md": {
-    "mtime": 1779087282.5896742,
-    "ast_hash": "b026e1f235b9839f9a76670029a28932",
-    "semantic_hash": "b026e1f235b9839f9a76670029a28932"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/_shared/markdown-templates.md": {
-    "mtime": 1779087282.5896742,
-    "ast_hash": "ac8320339f253084a4545c217c18cf14",
-    "semantic_hash": "ac8320339f253084a4545c217c18cf14"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
-    "mtime": 1779087282.5906742,
-    "ast_hash": "e32b23bdefdd26cf4b63ba88a0ca96a0",
-    "semantic_hash": "e32b23bdefdd26cf4b63ba88a0ca96a0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
-    "mtime": 1779087282.5906742,
-    "ast_hash": "55c91eb6886ec5ae5bc0a2a1390e07a4",
-    "semantic_hash": "55c91eb6886ec5ae5bc0a2a1390e07a4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/examples/minimal-agent.md": {
-    "mtime": 1779087282.5906742,
-    "ast_hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6",
-    "semantic_hash": "29f73b7f2e3fe7df7e0a66b0e4dd2ae6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/agent-builder/rules/agent-best-practices.md": {
-    "mtime": 1779087282.5906742,
-    "ast_hash": "b74b7478e194f9717f9862ca328f7fe7",
-    "semantic_hash": "b74b7478e194f9717f9862ca328f7fe7"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
-    "mtime": 1779087282.5916743,
-    "ast_hash": "f57ca9ba90d557652a5931fbe0cbfbcd",
-    "semantic_hash": "f57ca9ba90d557652a5931fbe0cbfbcd"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
-    "mtime": 1779087282.5916743,
-    "ast_hash": "c739c2c6d5fe6739503858a58aa7c9b3",
-    "semantic_hash": "c739c2c6d5fe6739503858a58aa7c9b3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/TOON-INTEGRATION-GUIDE.md": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "6357eb5f13251a7c239c8a4c45e27d22",
-    "semantic_hash": "6357eb5f13251a7c239c8a4c45e27d22"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/benchmarks.md": {
-    "mtime": 1779087282.5926743,
-    "ast_hash": "74750531946911f943d9e9bee490132a",
-    "semantic_hash": "74750531946911f943d9e9bee490132a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/examples/workflow-example.md": {
-    "mtime": 1779087282.5956745,
-    "ast_hash": "0151836c9fb7bc3c1ba74ef4bcb123b8",
-    "semantic_hash": "0151836c9fb7bc3c1ba74ef4bcb123b8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/README.md": {
-    "mtime": 1779087282.5966744,
-    "ast_hash": "34a5025631c3872f782c2406a2f46db1",
-    "semantic_hash": "34a5025631c3872f782c2406a2f46db1"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/architecture-full.yaml": {
-    "mtime": 1779087282.5966744,
-    "ast_hash": "5cdf497641efddd4dc01591a0b79aecc",
-    "semantic_hash": "5cdf497641efddd4dc01591a0b79aecc"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/architecture-documentation/templates/dependency-graph.md": {
-    "mtime": 1779087282.5966744,
-    "ast_hash": "96635e8dc64a1ea54f8a5b5454fffc93",
-    "semantic_hash": "96635e8dc64a1ea54f8a5b5454fffc93"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/compact-session/SKILL.md": {
-    "mtime": 1779087282.5986745,
-    "ast_hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0",
-    "semantic_hash": "dc1daf4c7dfe6e2ecb7084a0e3f572a0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
-    "mtime": 1779087282.5996745,
-    "ast_hash": "3d019aa4297c1d1643ccbd0412cf79ec",
-    "semantic_hash": "3d019aa4297c1d1643ccbd0412cf79ec"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
-    "mtime": 1779087282.5996745,
-    "ast_hash": "1610dbaf0d7228dc25f9feed05963e1a",
-    "semantic_hash": "1610dbaf0d7228dc25f9feed05963e1a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md": {
-    "mtime": 1779087282.5996745,
-    "ast_hash": "30b83a122f39b996c3c0906a62f5299a",
-    "semantic_hash": "30b83a122f39b996c3c0906a62f5299a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/examples/basic-usage.md": {
-    "mtime": 1779087282.6006746,
-    "ast_hash": "7db6cbebd209c9bc701a409284937fb9",
-    "semantic_hash": "7db6cbebd209c9bc701a409284937fb9"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/git-workflow/templates/task-summary.txt": {
-    "mtime": 1779087282.6006746,
-    "ast_hash": "fd8364ab86c819f6680d051495c7a0f4",
-    "semantic_hash": "fd8364ab86c819f6680d051495c7a0f4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
-    "mtime": 1779087282.6006746,
-    "ast_hash": "0564473eb5812a5cbaa234da28e80000",
-    "semantic_hash": "0564473eb5812a5cbaa234da28e80000"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/graphify/SKILL.md": {
-    "mtime": 1779087282.6016746,
-    "ast_hash": "5c022b5257801a337be67dce008c3831",
-    "semantic_hash": "5c022b5257801a337be67dce008c3831"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/mermaid-obsidian/SKILL.md": {
-    "mtime": 1779087282.6036747,
-    "ast_hash": "7afc751571608f9b11799156cb8a7445",
-    "semantic_hash": "7afc751571608f9b11799156cb8a7445"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
-    "mtime": 1779087282.6036747,
-    "ast_hash": "e71717fd61b9c1d6f27aa66d1ce99e44",
-    "semantic_hash": "e71717fd61b9c1d6f27aa66d1ce99e44"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
-    "mtime": 1779087282.6046748,
-    "ast_hash": "946dd5445b812652910b91bc85c75886",
-    "semantic_hash": "946dd5445b812652910b91bc85c75886"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/markdown-guidelines.md": {
-    "mtime": 1779087282.6046748,
-    "ast_hash": "b81d657b57e8753e9a70baa3b55afe5c",
-    "semantic_hash": "b81d657b57e8753e9a70baa3b55afe5c"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/mermaid-diagrams.md": {
-    "mtime": 1779087282.6046748,
-    "ast_hash": "8dee0e4fc936c7ac68b26bae1f70dcbb",
-    "semantic_hash": "8dee0e4fc936c7ac68b26bae1f70dcbb"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prd-generator/rules/prd-best-practices.md": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "33d14ffd7884e488d5ff62c260223215",
-    "semantic_hash": "33d14ffd7884e488d5ff62c260223215"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "30b126cde50258189ca61bee468d292b",
-    "semantic_hash": "30b126cde50258189ca61bee468d292b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/agent-instructions.md": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "c06a27e5f355d2e74cf2bc41c2386f83",
-    "semantic_hash": "c06a27e5f355d2e74cf2bc41c2386f83"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/basic-claude-md.md": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8",
-    "semantic_hash": "b3b9c6e63f4231ebf92bf4d6dda7f4f8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
-    "mtime": 1779087282.6056747,
-    "ast_hash": "b66c1d5c4a9a0906961414f2392ed2ea",
-    "semantic_hash": "b66c1d5c4a9a0906961414f2392ed2ea"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/prompt-verifier/rules/best-practices.md": {
-    "mtime": 1779087282.6066747,
-    "ast_hash": "33a3f524663a8f636e6799674cf06db6",
-    "semantic_hash": "33a3f524663a8f636e6799674cf06db6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/SKILL.md": {
-    "mtime": 1779087282.6076748,
-    "ast_hash": "219aaabc16d0c61234da7c5b5fb9e033",
-    "semantic_hash": "219aaabc16d0c61234da7c5b5fb9e033"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/converters/README.md": {
-    "mtime": 1779087282.6076748,
-    "ast_hash": "43b8e7820bd96291d3c9e9de2cabe7f5",
-    "semantic_hash": "43b8e7820bd96291d3c9e9de2cabe7f5"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/toon-skill/examples/integration-guide.md": {
-    "mtime": 1779087282.6086748,
-    "ast_hash": "90236fdfe4a4e00418ceea51da87ddc6",
-    "semantic_hash": "90236fdfe4a4e00418ceea51da87ddc6"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/caveman/SKILL.md": {
-    "mtime": 1779088691.0199912,
-    "ast_hash": "5c43ca000385e41e9d9dd02c8574dfa0",
-    "semantic_hash": "5c43ca000385e41e9d9dd02c8574dfa0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/idd/SKILL.md": {
-    "mtime": 1779695378.1076045,
-    "ast_hash": "c570d1706dcc8e90bee25a463aa2b94e",
-    "semantic_hash": "c570d1706dcc8e90bee25a463aa2b94e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/lat-md/SKILL.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "205da3ba523cab81f05f4c553a442f8f",
-    "semantic_hash": "205da3ba523cab81f05f4c553a442f8f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/install-lat/SKILL.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "65a88e26275915d1201a5176e9b0e8d1",
-    "semantic_hash": "65a88e26275915d1201a5176e9b0e8d1"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/lat-check/SKILL.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "98d4ced673f8851a7107e21f5c52fa8f",
-    "semantic_hash": "98d4ced673f8851a7107e21f5c52fa8f"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/lat-init/SKILL.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "a99d21dac736a6eb55298ddf751a40ae",
-    "semantic_hash": "a99d21dac736a6eb55298ddf751a40ae"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.claude-isolated/skills/lat-search/SKILL.md": {
-    "mtime": 1779777390.5815008,
-    "ast_hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0",
-    "semantic_hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/FUNDING.yml": {
-    "mtime": 1779087282.6106749,
-    "ast_hash": "e025a9360bb8c3dde0bdd9ba998973c4",
-    "semantic_hash": "e025a9360bb8c3dde0bdd9ba998973c4"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/ISSUE_TEMPLATE.md": {
-    "mtime": 1779087282.6106749,
-    "ast_hash": "0200dec010a045bb814d7dd916e6757b",
-    "semantic_hash": "0200dec010a045bb814d7dd916e6757b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/SECURITY.md": {
-    "mtime": 1779087282.6106749,
-    "ast_hash": "15281505d6ecc54db10a57dd4f7df95a",
-    "semantic_hash": "15281505d6ecc54db10a57dd4f7df95a"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/THREAT_MODEL.md": {
-    "mtime": 1779087282.611675,
-    "ast_hash": "c3128364c3329951eb6dfcc28a6704f3",
-    "semantic_hash": "c3128364c3329951eb6dfcc28a6704f3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/latest-npm.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "076fcc468f2155dc916f49d0474fe5f8",
-    "semantic_hash": "076fcc468f2155dc916f49d0474fe5f8"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/lint.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "4140b6be71b02e61df0b0ccdb612a401",
-    "semantic_hash": "4140b6be71b02e61df0b0ccdb612a401"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/rebase.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "926bad8ad06e75fa48afd6921e0fe123",
-    "semantic_hash": "926bad8ad06e75fa48afd6921e0fe123"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/release.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "8024c3e36e9bfdc22b64c45662140feb",
-    "semantic_hash": "8024c3e36e9bfdc22b64c45662140feb"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/require-allow-edits.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "eeba7f55b9e66bce3e748fc30e466de3",
-    "semantic_hash": "eeba7f55b9e66bce3e748fc30e466de3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/shellcheck.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "d5b1088b745f626a3b9e27f8c85127aa",
-    "semantic_hash": "d5b1088b745f626a3b9e27f8c85127aa"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/tests.yml": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "4a238694c8138e03248872627d82eeff",
-    "semantic_hash": "4a238694c8138e03248872627d82eeff"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/toc.yml": {
-    "mtime": 1779087282.613675,
-    "ast_hash": "cf4aafac387b98a5a6b3a24d43c67022",
-    "semantic_hash": "cf4aafac387b98a5a6b3a24d43c67022"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/workflows/windows-npm.yml": {
-    "mtime": 1779087282.613675,
-    "ast_hash": "821eca3242c4d0d8ba91878e4a78e91e",
-    "semantic_hash": "821eca3242c4d0d8ba91878e4a78e91e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lib/README.md": {
-    "mtime": 1779087285.9117813,
-    "ast_hash": "d0fc4c2b363cb43bff88fa5d5ac7e193",
-    "semantic_hash": "d0fc4c2b363cb43bff88fa5d5ac7e193"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/architecture.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "51201053d4623043bb96c12a9a87d52e",
-    "semantic_hash": "51201053d4623043bb96c12a9a87d52e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/lat.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "232ac44624c4fd18a117176f1b21ef63",
-    "semantic_hash": "232ac44624c4fd18a117176f1b21ef63"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/launch-flow.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "aa6b2a4307552577b00534400305e77b",
-    "semantic_hash": "aa6b2a4307552577b00534400305e77b"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/oauth.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "9de2a428e25bcde8753111c9c42a24f9",
-    "semantic_hash": "9de2a428e25bcde8753111c9c42a24f9"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/pii-proxy.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "200856f1845cb82fd7625cd7c0b42982",
-    "semantic_hash": "200856f1845cb82fd7625cd7c0b42982"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/proxy.md": {
-    "mtime": 1779695378.1486058,
-    "ast_hash": "d1006074677b47bcd47b102e410b8fe0",
-    "semantic_hash": "d1006074677b47bcd47b102e410b8fe0"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/sandbox.md": {
-    "mtime": 1779695378.149606,
-    "ast_hash": "109839d7956b40670c37911bc621356e",
-    "semantic_hash": "109839d7956b40670c37911bc621356e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/security.md": {
-    "mtime": 1779787899.002497,
-    "ast_hash": "c4136f6a4678e21065c0d13b5a0b49ff",
-    "semantic_hash": "c4136f6a4678e21065c0d13b5a0b49ff"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/isolation.md": {
-    "mtime": 1779777390.5835009,
-    "ast_hash": "edf9e73a163ae2151ac455f01dbbb9a3",
-    "semantic_hash": "edf9e73a163ae2151ac455f01dbbb9a3"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/lat.md/router.md": {
-    "mtime": 1779777390.5835009,
-    "ast_hash": "e6ac1f4e23b374bf29f3b1a75fd5bc54",
-    "semantic_hash": "e6ac1f4e23b374bf29f3b1a75fd5bc54"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/external-threat-actor.png": {
-    "mtime": 1779087282.611675,
-    "ast_hash": "028ca6623cce6e86eb0c2b04f2dbba7e",
-    "semantic_hash": "028ca6623cce6e86eb0c2b04f2dbba7e"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/.nvm-isolated/.github/insider-threat-actor-and-libs.png": {
-    "mtime": 1779087282.612675,
-    "ast_hash": "3feae23287132af028ca35ce6613f3ce",
-    "semantic_hash": "3feae23287132af028ca35ce6613f3ce"
-  },
-  "/home/altuser/\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b/Project/iclaude/tests/test_pii_shared_lifecycle.sh": {
-    "mtime": 1779862875.3389442,
-    "ast_hash": "5d7d77f57c8a2b9707391f693fe6d258",
-    "semantic_hash": "5d7d77f57c8a2b9707391f693fe6d258"
+    "mtime": 1779796708.1148543,
+    "hash": "c4136f6a4678e21065c0d13b5a0b49ff"
+  },
+  ".nvm-isolated/.claude-isolated/image-cache/88e2c2a0-9c78-4c22-92b8-d37fcc5af82d/1.png": {
+    "mtime": 1780758104.4931197,
+    "hash": "6cfedac750033c830ca6b48f7edcf9ef"
   }
 }

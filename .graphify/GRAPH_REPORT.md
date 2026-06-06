@@ -1,12 +1,11 @@
-# Graph Report - .  (2026-05-27)
+# Graph Report - .  (2026-06-06)
 
 ## Corpus Check
-- 0 files · ~0 words
-- Verdict: corpus is large enough that graph structure adds value.
+- Large corpus: 292 files · ~346,763 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder, or use --no-semantic to run AST-only.
 
 ## Summary
-- 571 nodes · 618 edges · 91 communities (50 shown, 41 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 61 edges (avg confidence: 0.77)
+- 629 nodes · 703 edges · 92 communities (51 shown, 41 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 61 edges (avg confidence: 0.77)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -101,6 +100,7 @@
 - [[_COMMUNITY_Community 88|Community 88]]
 - [[_COMMUNITY_Community 89|Community 89]]
 - [[_COMMUNITY_Community 90|Community 90]]
+- [[_COMMUNITY_Community 91|Community 91]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `/home/altuser/Документы/Project/obsidian-ai-wiki` - 33 edges
@@ -111,8 +111,8 @@
 6. `lastSessionMetrics` - 22 edges
 7. `lastSessionMetrics` - 22 edges
 8. `lastSessionMetrics` - 22 edges
-9. `tipsHistory` - 18 edges
-10. `skillUsage` - 18 edges
+9. `PIIProxyHandler` - 21 edges
+10. `tipsHistory` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Get-Shit-Done Framework` --uses_template--> `PROJECT.md Template`  [INFERRED]
@@ -126,7 +126,7 @@
 - `Get-Shit-Done Framework` --uses_template--> `Phase Context Template`  [INFERRED]
   .nvm-isolated/.claude-isolated/get-shit-done/templates/README.md → .nvm-isolated/.claude-isolated/get-shit-done/templates/context.md
 
-## Communities (91 total, 41 thin omitted)
+## Communities (92 total, 41 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
@@ -137,68 +137,68 @@ Cohesion: 0.06
 Nodes (33): type, url, allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, exampleFilesGeneratedAt, hasClaudeMdExternalIncludesApproved (+25 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.07
-Nodes (30): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, exampleFilesGeneratedAt, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasCompletedProjectOnboarding (+22 more)
+Cohesion: 0.09
+Nodes (31): _build_server(), _detect_spacy_models(), init_presidio(), main(), mask_content_block(), mask_request_body(), _mask_value(), _prefix() (+23 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.07
-Nodes (30): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, exampleFilesGeneratedAt, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasCompletedProjectOnboarding (+22 more)
+Cohesion: 0.11
+Nodes (12): _get_http_session(), PIIProxyHandler, Return this thread's requests.Session, creating it on first access., HTTP request handler for PII-proxy.      Design: asymmetric masking — only REQUE, Build request headers for upstream forwarding.          In API-key mode (ANTHROP, HEAD /api/health — return headers only, no body (RFC 7231 §4.3.2)., GET /api/metrics — return live masking metrics for statusline integration., Read request body with Content-Length validation.          Handles both Content- (+4 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (28): cachedExtraUsageDisabledReason, firstStartTime, githubRepoPaths, ikeniborn/clickhouse, ikeniborn/iclaude, ikeniborn/obsidian, ikeniborn/obsidian-ai-wiki, hasCompletedOnboarding (+20 more)
+Cohesion: 0.09
+Nodes (30): AI Evaluation Reference, GSD Code Review Workflow, GSD Codebase Drift Gate, GSD Complete Milestone Workflow, GSD Debug Workflow, GSD Diagnose Issues Workflow, GSD Discovery Phase Workflow, Discuss Phase Context Template (+22 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.07
-Nodes (29): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasTrustDialogAccepted, lastAPIDuration (+21 more)
+Nodes (30): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, exampleFilesGeneratedAt, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasCompletedProjectOnboarding (+22 more)
 
 ### Community 6 - "Community 6"
+Cohesion: 0.07
+Nodes (30): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, exampleFilesGeneratedAt, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasCompletedProjectOnboarding (+22 more)
+
+### Community 7 - "Community 7"
+Cohesion: 0.07
+Nodes (29): allowedTools, disabledMcpjsonServers, enabledMcpjsonServers, exampleFiles, hasClaudeMdExternalIncludesApproved, hasClaudeMdExternalIncludesWarningShown, hasTrustDialogAccepted, lastAPIDuration (+21 more)
+
+### Community 8 - "Community 8"
+Cohesion: 0.07
+Nodes (28): cachedExtraUsageDisabledReason, firstStartTime, githubRepoPaths, ikeniborn/clickhouse, ikeniborn/iclaude, ikeniborn/obsidian, ikeniborn/obsidian-ai-wiki, hasCompletedOnboarding (+20 more)
+
+### Community 9 - "Community 9"
 Cohesion: 0.08
 Nodes (28): AI-SPEC Template, GSD Canonical Artifact Registry, CLAUDE.md Template, Phase Context Template, GSD Copilot Instructions, Debug Template, Discussion Log Template, GSD Execution Phase Template (+20 more)
 
-### Community 7 - "Community 7"
+### Community 10 - "Community 10"
 Cohesion: 0.08
 Nodes (27): Abort Gate, Chesterton's Fence (Thinking Model), Confirmation Bias Counter (Thinking Model), Counterfactual Thinking (Thinking Model), checkpoint:decision, Escalation Gate, Executor Agent, Checkpoints Taxonomy (+19 more)
 
-### Community 8 - "Community 8"
+### Community 11 - "Community 11"
 Cohesion: 0.28
 Nodes (26): lastSessionMetrics, lastSessionMetrics, lastSessionMetrics, lastSessionMetrics, lastSessionMetrics, frame_duration_ms_avg, frame_duration_ms_count, frame_duration_ms_max (+18 more)
 
-### Community 9 - "Community 9"
-Cohesion: 0.10
+### Community 12 - "Community 12"
+Cohesion: 0.1
 Nodes (20): Add Backlog Workflow, Add Todo Workflow, Check Todos Workflow, Code Review Workflow, Debug Workflow, Diagnose Issues Workflow, Discuss Phase Workflow, Discuss Phase Power Mode Workflow (+12 more)
 
-### Community 10 - "Community 10"
+### Community 13 - "Community 13"
 Cohesion: 0.11
 Nodes (18): tipsHistory, color-when-multi-clauding, continue, custom-agents, double-esc-code-restore, drag-and-drop-images, enter-to-steer-in-relatime, image-paste (+10 more)
 
-### Community 11 - "Community 11"
-Cohesion: 0.17
-Nodes (17): GSD Discovery Phase Workflow, Discuss Phase Context Template, Discuss Phase Discussion Log Template, GSD Discuss Mode: Advisor, GSD Discuss Mode: All, GSD Discuss Mode: Analyze, GSD Discuss Mode: Auto, GSD Discuss Mode: Batch (+9 more)
-
-### Community 12 - "Community 12"
-Cohesion: 0.12
-Nodes (16): oauthAccount, accountCreatedAt, accountUuid, billingType, ccOnboardingFlags, claudeCodeTrialDurationDays, claudeCodeTrialEndsAt, displayName (+8 more)
-
-### Community 13 - "Community 13"
+### Community 14 - "Community 14"
 Cohesion: 0.17
 Nodes (16): Agent Contracts, GSD Artifact Types, Debugger Philosophy, Doc Conflict Engine, Execute-Phase — MVP+TDD Gate (Runtime Enforcement), Model Profile Resolution, MVP Concepts — index, Planner — MVP Mode (Vertical Slice Strategy) (+8 more)
 
-### Community 14 - "Community 14"
-Cohesion: 0.23
-Nodes (12): launch.sh script, cleanup_orphaned_pii_proxies(), cleanup_stale_session_env(), launch_claude(), _register_pii_consumer(), start_ccr_server(), start_pii_proxy_server(), stop_ccr_server() (+4 more)
-
 ### Community 15 - "Community 15"
-Cohesion: 0.17
-Nodes (13): AI Evaluation Reference, GSD Code Review Workflow, GSD Codebase Drift Gate, GSD Complete Milestone Workflow, GSD Debug Workflow, GSD Diagnose Issues Workflow, GSD Do Dispatcher Workflow, Docs Update Workflow (+5 more)
+Cohesion: 0.12
+Nodes (16): oauthAccount, accountCreatedAt, accountUuid, billingType, ccOnboardingFlags, claudeCodeTrialDurationDays, claudeCodeTrialEndsAt, displayName (+8 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.18
 Nodes (11): cacheCreationInputTokens, cacheReadInputTokens, costUSD, inputTokens, outputTokens, webSearchRequests, lastModelUsage, lastModelUsage (+3 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.33
-Nodes (4): _caveman_python_download(), install_caveman(), install.sh script, install.sh script
+Cohesion: 0.22
+Nodes (4): Unit tests for the PII proxy supervisor/worker split., TestBuildServer, TestStormGuard, TestSuperviseFlag
 
 ### Community 18 - "Community 18"
 Cohesion: 0.48
@@ -206,26 +206,26 @@ Nodes (5): otel.sh script, log_debug(), log_warn(), patch_no_proxy_for_telemetry
 
 ### Community 19 - "Community 19"
 Cohesion: 0.33
-Nodes (6): Debugger Agent, Fault Tree Analysis (Thinking Model), Common Bug Patterns, Thinking Models: Debug Cluster, Hypothesis-Driven Investigation (Thinking Model), Occam's Razor (Thinking Model)
+Nodes (4): _caveman_python_download(), install_caveman(), install.sh script, install.sh script
 
 ### Community 20 - "Community 20"
 Cohesion: 0.33
-Nodes (6): Audit Milestone Workflow, Complete Milestone Workflow, Progress Workflow, Ship Workflow, Transition Workflow, Verify Work Workflow
+Nodes (6): Debugger Agent, Fault Tree Analysis (Thinking Model), Common Bug Patterns, Thinking Models: Debug Cluster, Hypothesis-Driven Investigation (Thinking Model), Occam's Razor (Thinking Model)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.40
-Nodes (5): Gate Prompt Patterns, Git Integration for GSD, Manager Workflow, Plan Review Convergence Workflow, Quick Task Workflow
+Cohesion: 0.33
+Nodes (6): Audit Milestone Workflow, Complete Milestone Workflow, Progress Workflow, Ship Workflow, Transition Workflow, Verify Work Workflow
 
 ### Community 22 - "Community 22"
-Cohesion: 0.50
-Nodes (4): skillUsage, superpowers:brainstorming, lastUsedAt, usageCount
+Cohesion: 0.4
+Nodes (5): Gate Prompt Patterns, Git Integration for GSD, Manager Workflow, Plan Review Convergence Workflow, Quick Task Workflow
 
 ### Community 23 - "Community 23"
-Cohesion: 0.50
+Cohesion: 0.5
 Nodes (4): Domain-Aware Probing Patterns, Codebase scout — map selection table, Thinking Models: Research Cluster, User Profiling: Detection Heuristics Reference
 
 ### Community 24 - "Community 24"
-Cohesion: 0.50
+Cohesion: 0.5
 Nodes (4): Add Phase Workflow, Autonomous Workflow, New Project Workflow, Spike Workflow
 
 ### Community 25 - "Community 25"
@@ -233,120 +233,124 @@ Cohesion: 0.67
 Nodes (3): install_lat(), patch_lat_provider(), install.sh script
 
 ### Community 26 - "Community 26"
+Cohesion: 0.5
+Nodes (4): lastUsedAt, usageCount, skillUsage, lat-search
+
+### Community 27 - "Community 27"
 Cohesion: 0.83
 Nodes (3): test_pii_shared_lifecycle.sh script, fail(), pass()
 
-### Community 27 - "Community 27"
-Cohesion: 0.67
-Nodes (3): Git Branching Strategy, Git Planning Commit, Planning Config
-
 ### Community 28 - "Community 28"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, check-plan
-
-### Community 29 - "Community 29"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, check-spec
-
-### Community 30 - "Community 30"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, git-workflow
-
-### Community 31 - "Community 31"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, lat-check
-
-### Community 32 - "Community 32"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, lat-search
-
-### Community 33 - "Community 33"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, check-result
-
-### Community 34 - "Community 34"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, graphify
-
-### Community 35 - "Community 35"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, idd
-
-### Community 36 - "Community 36"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, llm-wiki
-
-### Community 37 - "Community 37"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, mermaid-obsidian
-
-### Community 38 - "Community 38"
-Cohesion: 0.67
-Nodes (3): lastUsedAt, usageCount, security-review
-
-### Community 39 - "Community 39"
-Cohesion: 0.67
-Nodes (3): superpowers:finishing-a-development-branch, lastUsedAt, usageCount
-
-### Community 40 - "Community 40"
-Cohesion: 0.67
-Nodes (3): superpowers:using-git-worktrees, lastUsedAt, usageCount
-
-### Community 41 - "Community 41"
-Cohesion: 0.67
-Nodes (3): superpowers:subagent-driven-development, lastUsedAt, usageCount
-
-### Community 42 - "Community 42"
-Cohesion: 0.67
-Nodes (3): superpowers:writing-plans, lastUsedAt, usageCount
-
-### Community 43 - "Community 43"
-Cohesion: 0.67
-Nodes (3): update-docs, lastUsedAt, usageCount
-
-### Community 44 - "Community 44"
 Cohesion: 0.67
 Nodes (3): CONTEXT.md Template, Questioning Guide, Smart Discuss — Autonomous Mode
 
-### Community 45 - "Community 45"
-Cohesion: 0.67
-Nodes (3): Cleanup Workflow, Extract Learnings Workflow, Session Report Workflow
-
-### Community 46 - "Community 46"
-Cohesion: 0.67
-Nodes (3): GSD Dev Context Profile, GSD Research Context Profile, GSD Review Context Profile
-
-### Community 47 - "Community 47"
-Cohesion: 0.67
-Nodes (3): GSD Execute Phase: Codebase Drift Gate, GSD Execute Phase: Per-Plan Worktree Gate, GSD Execute Phase: Post-Merge Gate
-
-### Community 48 - "Community 48"
-Cohesion: 0.67
-Nodes (3): Node Repair Workflow, Plan-Checker Few-Shot Examples, Revision Loop Pattern
-
-### Community 49 - "Community 49"
+### Community 29 - "Community 29"
 Cohesion: 0.67
 Nodes (3): Shared Theme System, Sketch Toolbar, Multi-Variant HTML Patterns
 
+### Community 30 - "Community 30"
+Cohesion: 0.67
+Nodes (3): Git Branching Strategy, Git Planning Commit, Planning Config
+
+### Community 31 - "Community 31"
+Cohesion: 0.67
+Nodes (3): Node Repair Workflow, Plan-Checker Few-Shot Examples, Revision Loop Pattern
+
+### Community 32 - "Community 32"
+Cohesion: 0.67
+Nodes (3): Cleanup Workflow, Extract Learnings Workflow, Session Report Workflow
+
+### Community 33 - "Community 33"
+Cohesion: 0.67
+Nodes (3): GSD Execute Phase: Codebase Drift Gate, GSD Execute Phase: Per-Plan Worktree Gate, GSD Execute Phase: Post-Merge Gate
+
+### Community 34 - "Community 34"
+Cohesion: 0.67
+Nodes (3): GSD Dev Context Profile, GSD Research Context Profile, GSD Review Context Profile
+
+### Community 35 - "Community 35"
+Cohesion: 0.67
+Nodes (3): superpowers:finishing-a-development-branch, lastUsedAt, usageCount
+
+### Community 36 - "Community 36"
+Cohesion: 0.67
+Nodes (3): superpowers:subagent-driven-development, lastUsedAt, usageCount
+
+### Community 37 - "Community 37"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, security-review
+
+### Community 38 - "Community 38"
+Cohesion: 0.67
+Nodes (3): update-docs, lastUsedAt, usageCount
+
+### Community 39 - "Community 39"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, graphify
+
+### Community 40 - "Community 40"
+Cohesion: 0.67
+Nodes (3): superpowers:brainstorming, lastUsedAt, usageCount
+
+### Community 41 - "Community 41"
+Cohesion: 0.67
+Nodes (3): superpowers:using-git-worktrees, lastUsedAt, usageCount
+
+### Community 42 - "Community 42"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, check-result
+
+### Community 43 - "Community 43"
+Cohesion: 0.67
+Nodes (3): superpowers:writing-plans, lastUsedAt, usageCount
+
+### Community 44 - "Community 44"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, git-workflow
+
+### Community 45 - "Community 45"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, check-plan
+
+### Community 46 - "Community 46"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, llm-wiki
+
+### Community 47 - "Community 47"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, lat-check
+
+### Community 48 - "Community 48"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, idd
+
+### Community 49 - "Community 49"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, check-spec
+
+### Community 50 - "Community 50"
+Cohesion: 0.67
+Nodes (3): lastUsedAt, usageCount, mermaid-obsidian
+
 ## Knowledge Gaps
-- **374 isolated node(s):** `PROJECT.md Template`, `AI-SPEC Template`, `Milestone Entry Template`, `CLAUDE.md Template`, `GSD Copilot Instructions` (+369 more)
+- **400 isolated node(s):** `PROJECT.md Template`, `AI-SPEC Template`, `Milestone Entry Template`, `CLAUDE.md Template`, `GSD Copilot Instructions` (+395 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **41 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `projects` connect `Community 4` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 5`?**
-  _High betweenness centrality (0.208) - this node is a cross-community bridge._
-- **Why does `skillUsage` connect `Community 22` to `Community 32`, `Community 33`, `Community 34`, `Community 35`, `Community 4`, `Community 37`, `Community 38`, `Community 39`, `Community 36`, `Community 41`, `Community 42`, `Community 43`, `Community 40`, `Community 28`, `Community 29`, `Community 30`, `Community 31`?**
-  _High betweenness centrality (0.090) - this node is a cross-community bridge._
-- **Why does `/home/altuser/Документы/Project/obsidian-ai-wiki` connect `Community 0` to `Community 16`, `Community 8`, `Community 4`?**
-  _High betweenness centrality (0.078) - this node is a cross-community bridge._
+- **Why does `projects` connect `Community 8` to `Community 0`, `Community 1`, `Community 5`, `Community 6`, `Community 7`?**
+  _High betweenness centrality (0.171) - this node is a cross-community bridge._
+- **Why does `skillUsage` connect `Community 26` to `Community 35`, `Community 36`, `Community 37`, `Community 38`, `Community 39`, `Community 8`, `Community 40`, `Community 41`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 49`, `Community 50`, `Community 42`?**
+  _High betweenness centrality (0.074) - this node is a cross-community bridge._
+- **Why does `/home/altuser/Документы/Project/obsidian-ai-wiki` connect `Community 0` to `Community 8`, `Community 16`, `Community 11`?**
+  _High betweenness centrality (0.064) - this node is a cross-community bridge._
 - **What connects `PROJECT.md Template`, `AI-SPEC Template`, `Milestone Entry Template` to the rest of the system?**
-  _376 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _400 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06666666666666667 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09 - nodes in this community are weakly interconnected._
