@@ -16,6 +16,7 @@ docs/
 .nvm-isolated/.claude-isolated/projects/
 .nvm-isolated/.claude-isolated/sessions/
 .nvm-isolated/.claude-isolated/history.jsonl
+.nvm-isolated/.claude-isolated/.claude.json
 .nvm-isolated/.claude-isolated/shell-snapshots/
 .nvm-isolated/.claude-isolated/paste-cache/
 .nvm-isolated/.claude-isolated/backups/
