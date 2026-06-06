@@ -25,6 +25,9 @@ Environment:
     PII_PROXY_CONNECT_TIMEOUT - upstream TCP connect timeout, seconds (default: 10)
     PII_PROXY_READ_TIMEOUT    - upstream read timeout, seconds (default: 300; raise for
                                 long extended-thinking responses)
+    PII_PROXY_SUPERVISE       - respawn the serving worker if it dies (OOM/crash/kill), keeping the
+                                same port so a running session never hits ConnectionRefused.
+                                true (default) | false. Gives up after >5 restarts in 10s.
     ICLAUDE_SESSION_ID        - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
