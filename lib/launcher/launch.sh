@@ -899,6 +899,20 @@ except Exception:
     # (CCR_SESSION_OWNED=true) and needs a FRESH PII proxy to chain PII→CCR→providers.
     # Reusing the parent's proxy would bypass CCR entirely because the parent proxy's
     # upstream was baked in at its startup and cannot be changed retroactively.
+    # Inherited-env reuse guard: a same-SID sub-invocation (e.g. a Bash tool call inside a Claude
+    # session) inherits ANTHROPIC_BASE_URL + ICLAUDE_PII_ACTIVE from the parent. Reuse the parent's
+    # proxy and return BEFORE any shared-proxy consumer accounting, so the sub-invocation can never
+    # deregister/kill the proxy the live session depends on. Combined PII+CCR mode is excluded: it
+    # needs a fresh proxy chained to its own CCR daemon.
+    if [[ "${ICLAUDE_PII_ACTIVE:-}" == "1" ]] && \
+       [[ -n "${ANTHROPIC_BASE_URL:-}" ]] && \
+       [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && \
+       [[ "${CCR_UPSTREAM_ACTIVE:-false}" != "true" ]]; then
+        PII_PROXY_SESSION_OWNED=false
+        print_info "PII proxy: inheriting parent session proxy ($ANTHROPIC_BASE_URL)"
+        return 0
+    fi
+
     if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && [[ -f "$PII_PROXY_PID_FILE" ]]; then
         local _existing_pid
         _existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
