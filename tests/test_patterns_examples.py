@@ -494,6 +494,9 @@ class TestServerRegexMask:
     def mask(self):
         import importlib.util, os
         src = os.path.join(os.path.dirname(__file__), '..', 'lib', 'pii-proxy', 'server.py')
+        # Force the default MASK_TOKEN ('REDACTED') regardless of the dev shell's env
+        # (a developer may export PII_PROXY_MASK_TOKEN via .claude_config).
+        os.environ.pop('PII_PROXY_MASK_TOKEN', None)
         spec = importlib.util.spec_from_file_location('pii_server', src)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -504,7 +507,8 @@ class TestServerRegexMask:
         text = 'Connect to https://admin:secret123@db.example.com'
         masked, found = mask(text)
         assert 'secret123' not in masked
-        assert '[CREDENTIALS]' in masked
+        assert 'REDACTED' in masked
+        assert '[CREDENTIALS]' not in masked
         assert any("credentials in URL" in d for d in found)
 
     def test_url_credentials_at_in_password(self, mask):
@@ -514,7 +518,7 @@ class TestServerRegexMask:
         # Full userinfo (including '@' inside password) must be gone
         assert 's3cr3tP' not in masked
         assert 'ssw0rd' not in masked
-        assert masked == 'postgres://[CREDENTIALS]@db.example.com:5432/mydb'
+        assert masked == 'postgres://REDACTED@db.example.com:5432/mydb'
 
     def test_url_no_credentials_not_masked(self, mask):
         """URLs without credentials must not be altered."""
@@ -574,17 +578,18 @@ class TestMaskToken:
         mod = self._load_mod('standard', token='')
         assert mod.MASK_TOKEN == ''
 
-    def test_secrets_mode_github_uses_hardcoded_token(self):
-        """secrets mode: GitHub token uses [GITHUB_TOKEN], not MASK_TOKEN."""
-        mod = self._load_mod('secrets', token='MUSTNOTAPPEAR')
+    def test_secrets_mode_github_uses_mask_token(self):
+        """secrets mode: GitHub token is replaced with MASK_TOKEN (no hardcoded label)."""
+        mod = self._load_mod('secrets', token='MYMASK')
         gh = 'ghp_' + 'a' * 36
         masked, _ = mod.regex_mask('auth: ' + gh)
-        assert '[GITHUB_TOKEN]' in masked
-        assert 'MUSTNOTAPPEAR' not in masked
+        assert 'MYMASK' in masked
+        assert gh not in masked
+        assert '[GITHUB_TOKEN]' not in masked
 
-    def test_secrets_mode_jwt_uses_hardcoded_token(self):
-        """secrets mode: JWT uses [JWT_REDACTED], not MASK_TOKEN."""
-        mod = self._load_mod('secrets', token='MUSTNOTAPPEAR')
+    def test_secrets_mode_jwt_uses_mask_token(self):
+        """secrets mode: JWT is replaced with MASK_TOKEN (no hardcoded label)."""
+        mod = self._load_mod('secrets', token='MYMASK')
         # Construct at runtime — avoids the hook matching a JWT literal in source
         jwt = '.'.join([
             'eyJhbGciOiJIUzI1NiJ9',
@@ -592,16 +597,41 @@ class TestMaskToken:
             'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
         ])
         masked, _ = mod.regex_mask('Bearer ' + jwt)
-        assert '[JWT_REDACTED]' in masked
-        assert 'MUSTNOTAPPEAR' not in masked
+        assert 'MYMASK' in masked
+        assert '[JWT_REDACTED]' not in masked
 
-    def test_standard_regex_path_uses_hardcoded_token(self):
-        """standard mode regex_mask: GitHub token uses [GITHUB_TOKEN], not MASK_TOKEN."""
+    def test_standard_regex_path_uses_mask_token(self):
+        """standard mode regex_mask: GitHub token is replaced with MASK_TOKEN."""
         mod = self._load_mod('standard', token='MYTOKEN')
         gh = 'ghp_' + 'b' * 36
         masked, _ = mod.regex_mask('auth: ' + gh)
-        assert '[GITHUB_TOKEN]' in masked
-        assert 'MYTOKEN' not in masked
+        assert 'MYTOKEN' in masked
+        assert gh not in masked
+        assert '[GITHUB_TOKEN]' not in masked
+
+    def test_secrets_mode_default_token(self):
+        """secrets mode, no env token: secret replaced with default 'REDACTED'."""
+        mod = self._load_mod('secrets', token=None)
+        assert mod.MASK_TOKEN == 'REDACTED'
+        gh = 'ghp_' + 'c' * 36
+        masked, _ = mod.regex_mask('auth: ' + gh)
+        assert 'REDACTED' in masked
+        assert gh not in masked
+
+    def test_prefix_preserved_in_assignment(self):
+        """Structural prefix/quotes are preserved; only the value becomes MASK_TOKEN."""
+        mod = self._load_mod('secrets', token='XX')
+        line = 'password = "' + ('a' * 12) + '"'
+        masked, _ = mod.regex_mask(line)
+        assert masked == 'password = "XX"'
+
+    def test_empty_token_deletes_value_keeps_prefix(self):
+        """Empty MASK_TOKEN removes the value but preserves the assignment prefix."""
+        mod = self._load_mod('secrets', token='')
+        assert mod.MASK_TOKEN == ''
+        line = 'MYAPP_SECRET=' + 'my_long_secret_value_here_1234567890abcdef'
+        masked, _ = mod.regex_mask(line)
+        assert masked == 'MYAPP_SECRET='
 
     def test_env_empty_string_is_set(self):
         """${var+x} idiom: empty PII_PROXY_MASK_TOKEN is SET, not missing."""

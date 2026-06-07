@@ -12,6 +12,28 @@ The proxy runs as a sidecar process per session. `ANTHROPIC_BASE_URL` is rewritt
 
 By default (`PII_PROXY_SUPERVISE=true`) the sidecar is a supervisor that binds the listening socket once and re-forks the request-serving worker if it dies — see [[pii-proxy#Respawn Supervisor]].
 
+## Masking
+
+`[[lib/pii-proxy/server.py#presidio_mask]]` masks every detected secret/PII span with a single configurable token. Only request bodies (`POST /v1/messages`) are masked; responses pass through untouched.
+
+### Levels
+
+`PII_PROXY_MASKING_LEVEL` selects the detection engine. Default `standard`.
+
+| Level | Engine | Scope |
+|-------|--------|-------|
+| `off` | none | content forwarded unchanged (proxy still runs for auth/credential isolation) |
+| `secrets` | regex only | API keys, tokens, credentials, passwords, `.env` vars (`[[lib/pii-proxy/server.py#regex_mask]]`) |
+| `standard` | Presidio NLP + regex | adds EMAIL/PHONE/CREDIT_CARD/IBAN/IP/URL detection on top of the regex pass |
+
+### Replacement Token
+
+`PII_PROXY_MASK_TOKEN` is the replacement string for every detected span, applied at **all** levels (`secrets` + `standard`). Default `REDACTED`.
+
+An empty string enables deletion mode: the span is removed while the structural prefix (assignment `key=`, quotes, URL scheme) is preserved. The token is read once at module load — above `REDACT_PATTERNS` — so the regex replacements embed it; the `\g<N>` group refs in the templates keep that structural context. Detected secrets no longer carry type-specific labels (`[GITHUB_TOKEN]`, `[JWT_REDACTED]`, …); all collapse to the single token.
+
+Masking scope is asymmetric by role (`[[lib/pii-proxy/server.py#mask_request_body]]`): the `system` prompt and `<system-reminder>` blocks are never masked (trusted harness content); `user` messages are fully masked; `assistant` `tool_use` inputs are masked except structural path keys.
+
 ## Shared vs Per-Session Proxy
 
 Three ownership modes determine lifecycle and cleanup behavior.

@@ -18,6 +18,10 @@ Environment:
                                   off      - pass content through unmodified (proxy still runs)
                                   secrets  - regex-only: API keys, tokens, credentials
                                   standard - full: Presidio NLP + regex (default)
+    PII_PROXY_MASK_TOKEN      - replacement string for every detected secret/PII span, applied at
+                                ALL masking levels (secrets + standard). Default: 'REDACTED'.
+                                Empty string => deletion mode (span removed; assignment prefix,
+                                quotes and URL scheme are preserved).
     PII_PROXY_LOG_LEVEL       - logging verbosity: info|debug (default: info)
                                   info     - log count of masked items only (default)
                                   debug    - log count + entity types/descriptions found (PII metadata);
@@ -53,47 +57,62 @@ from requests.exceptions import ConnectionError as _ReqConnError, Timeout as _Re
 from urllib3.util.retry import Retry
 
 # ---------------------------------------------------------------------------
-# Deterministic regex patterns (ported from redact-secrets.py)
-# Applied when Presidio is unavailable or as pre-filter
+# Replacement token applied to EVERY detected secret/PII span, at all masking
+# levels (secrets + standard). Configurable via PII_PROXY_MASK_TOKEN; default
+# 'REDACTED'. Empty string => deletion mode (span removed, structural prefix kept).
+# Read here — before REDACT_PATTERNS — so the regex replacements can embed it.
+# _MASK_REPL backslash-escapes the token for safe use inside re.sub replacement
+# strings (where '\' introduces group refs); the \g<N> group refs we add to the
+# templates below stay intact regardless of the token's content.
+# ---------------------------------------------------------------------------
+MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
+_MASK_REPL: str = MASK_TOKEN.replace('\\', '\\\\')
+
+# ---------------------------------------------------------------------------
+# Deterministic regex patterns (ported from redact-secrets.py).
+# Applied when Presidio is unavailable or as pre-filter. Every replacement uses
+# MASK_TOKEN (via _MASK_REPL); structural context (assignment prefix, quotes,
+# URL scheme) is preserved so masked output stays readable and the regex keeps
+# anchoring on the same prefix.
 # ---------------------------------------------------------------------------
 REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
     (re.compile(r'\bsk-(?:ant-api03-|ant-|proj-|or-v1-)?[A-Za-z0-9\-_]{20,}'),
-     '[API_KEY_REDACTED]', 'Anthropic/OpenAI/Stripe API key'),
+     _MASK_REPL, 'Anthropic/OpenAI/Stripe API key'),
     (re.compile(r'\bAKIA[0-9A-Z]{16}\b'),
-     '[AWS_ACCESS_KEY_ID]', 'AWS Access Key ID'),
+     _MASK_REPL, 'AWS Access Key ID'),
     (re.compile(
         r'(?i)((?:aws[_\-]?secret[_\-]?(?:access[_\-]?)?key|AWS_SECRET_ACCESS_KEY)'
         r'\s*[=:]\s*)(["\']?)[A-Za-z0-9/+]{40}\2'),
-     r'\1\2[AWS_SECRET_KEY_REDACTED]\2', 'AWS Secret Access Key'),
+     rf'\g<1>\g<2>{_MASK_REPL}\g<2>', 'AWS Secret Access Key'),
     (re.compile(
         r'-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'
         r'[\s\S]*?'
         r'-----END (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'),
-     '[PRIVATE_KEY_REDACTED]', 'PEM private key block'),
+     _MASK_REPL, 'PEM private key block'),
     (re.compile(r'\bgh[pousr]_[A-Za-z0-9_]{36,}\b'),
-     '[GITHUB_TOKEN]', 'GitHub token'),
+     _MASK_REPL, 'GitHub token'),
     (re.compile(r'\bgithub_pat_[A-Za-z0-9_]{82,}\b'),
-     '[GITHUB_TOKEN]', 'GitHub fine-grained PAT'),
+     _MASK_REPL, 'GitHub fine-grained PAT'),
     (re.compile(r'\bhf_[A-Za-z0-9_]{36,}\b'),
-     '[HF_TOKEN_REDACTED]', 'HuggingFace API token'),
+     _MASK_REPL, 'HuggingFace API token'),
     (re.compile(r'\bgsk_[A-Za-z0-9\-_]{50,}\b'),
-     '[GROQ_API_KEY]', 'Groq API key'),
+     _MASK_REPL, 'Groq API key'),
     (re.compile(r'\bAIzaSy[A-Za-z0-9_\-]{32,}\b'),
-     '[GOOGLE_API_KEY]', 'Google AI Studio API key'),
+     _MASK_REPL, 'Google AI Studio API key'),
     (re.compile(r'([a-zA-Z][a-zA-Z0-9+\-.]*://)(?:[^@\s/]*@)+'),
-     r'\1[CREDENTIALS]@', 'credentials in URL'),
+     rf'\g<1>{_MASK_REPL}@', 'credentials in URL'),
     (re.compile(
         r'(?i)((?:password|passwd|pwd|db_pass|pgpassword)\s*[=:]\s*)'
         r'(?:["\'](?!\$\{)((?:[^"\'\\]|\\.){8,})["\']|([^\s#\n"\'$]{8,}))'),
-     r'\1"[PASSWORD_REDACTED]"', 'password in config'),
+     rf'\g<1>"{_MASK_REPL}"', 'password in config'),
     (re.compile(
         r'(?i)((?:secret|api[_\-]?key|access[_\-]?token|auth[_\-]?token)'
         r'\s*[=:]\s*)["\']([A-Za-z0-9\-_./+=]{16,})["\']'),
-     r'\1"[SECRET_REDACTED]"', 'generic secret/token'),
+     rf'\g<1>"{_MASK_REPL}"', 'generic secret/token'),
     (re.compile(r'\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*'),
-     '[JWT_REDACTED]', 'JWT token'),
+     _MASK_REPL, 'JWT token'),
     (re.compile(r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b'),
-     '[CARD_NUMBER_REDACTED]', 'credit card number'),
+     _MASK_REPL, 'credit card number'),
     (re.compile(
         r'(?m)^((?:export\s+)?[A-Z][A-Z0-9_]*'
         r'(?:SECRET|TOKEN|KEY|PASSWORD|PASSWD|PWD|PASS|APIKEY)'
@@ -101,7 +120,7 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
         r'(?!["\']?\$\{)'
         r'(?!["\']?\[)'
         r'([^\s#\n]{20,})'),
-     r'\1[REDACTED]', '.env secret variable'),
+     rf'\g<1>{_MASK_REPL}', '.env secret variable'),
 ]
 
 # ---------------------------------------------------------------------------
@@ -170,7 +189,8 @@ ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() !=
 #   'standard' - full masking: Presidio NLP + regex (default)
 _raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower().strip()
 MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
-MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
+# MASK_TOKEN is defined near the top of the module (above REDACT_PATTERNS) because the
+# regex replacements embed it. It is the single replacement token for all masking levels.
 
 # ---------------------------------------------------------------------------
 # Upstream timeouts (split connect/read; env-configurable).
