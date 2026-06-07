@@ -605,30 +605,44 @@ Branch name + uncommitted changes count (e.g., "master" or "feature-branch +3")
 
 The status line automatically adapts to terminal width to prevent line wrapping and maintain readability.
 
+#### Context markers
+
+`detect_real_context_window()` resolves the true window **by model name**, because
+Claude Code reports `context_window_size: 200000` even for 1M-window models
+(Opus/Sonnet 4.x). Mapping: Opus/Sonnet 4.5+ → 1M, Haiku → 200K, unknown → reported.
+
+- **Σ** — remaining tokens until the window is full (`window − active`), e.g. `Σ 680K ↓`.
+- **📊** — active context (real `total_input_tokens`, incl. cache) and its % of the
+  full window, e.g. `📊 320K (32%)`. `⚠️` appended if active exceeds the window.
+  Derived from real token counts, **not** from `used_percentage` (which Claude Code
+  saturates at 100 against its stale 200K value).
+- **📦** — cache tokens (read + creation).
+
+The fixed `🔒 45K` reserved-buffer marker was removed — it was meaningless at 1M.
+
 #### Display Modes
 
 **Full Mode (≥130 columns)**
 ```
-💳 113K | 📊 51K (26%) | 📦 79K | 🔒 45K | Sonnet 4.5 | $1.06 🌐 | 🔀 claude-sonnet-4-5 | 📄 | 🧠 | 🔱 test ●2
+Σ 680K ↓ | 📊 320K (32%) | 📦 320K | Opus 4.8 | $13.38 🌐 | 📄 | 🧠 | 🔱 test ●2
 ```
 - All components visible without abbreviations
-- Shows buffer (🔒), full model name, full router provider
+- Full model name, full router provider
 - 🧠 shown when project has `MEMORY.md`
 - Optimal for wide terminals (≥130 cols)
 
 **Compact Mode (110-129 columns)**
 ```
-💳 113K | 📊 51K (26%) | 📦 79K | S4.5 | $1.06 | 🧠
+Σ 680K ↓ | 📊 320K (32%) | 📦 320K | O4.8 | $13.38 | 🧠
 ```
 - Smart abbreviations to save space
-- Model abbreviated: "Sonnet 4.5" → "S4.5"
+- Model abbreviated: "Opus 4.8" → "O4.8"
 - Router, proxy, session link, git info hidden
 - 🧠 retained (quick access to project memory)
-- Buffer hidden (not critical)
 
 **Minimal Mode (<110 columns)**
 ```
-💳 113K | 📊 51K (26%) | S4.5 | $1.06
+Σ 680K ↓ | 📊 320K (32%) | O4.8 | $13.38
 ```
 - Only critical metrics: tokens, model, cost
 - Hides cache, proxy, router, session link, memory link, git info

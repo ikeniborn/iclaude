@@ -132,6 +132,24 @@ if [[ -f "$SCRIPT_DIR/lib/rate-limit.sh" ]]; then
     RATE_LIMIT_AVAILABLE=1
 fi
 
+# Detect the REAL context window by model name.
+# Claude Code reports context_window_size=200000 even for 1M-window models
+# (Opus/Sonnet 4.x), so the reported value can't be trusted. Map by model and
+# take max(known, reported) — falling back to the reported size for unknowns.
+detect_real_context_window() {
+    local model="$1" reported="${2:-200000}" known=0
+    case "${model,,}" in
+        *haiku*) known=200000 ;;                                  # Haiku 4.5 = 200K
+        *opus*|*sonnet*)
+            case "${model,,}" in
+                *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
+                *) known=0 ;;                                     # 4.0/4.1 → reported
+            esac ;;
+    esac
+    [[ "$reported" =~ ^[0-9]+$ ]] || reported=200000
+    (( known > reported )) && echo "$known" || echo "$reported"
+}
+
 # Parse session data
 # Anthropic fast path: если one-shot parse дал валидные данные — пропускаем весь адаптер.
 # Адаптер нужен только для не-Anthropic провайдеров (Gemini, OpenAI, Ollama via router).
@@ -158,23 +176,22 @@ else
     exit 0
 fi
 
+# Override the reported context window with the real per-model window.
+# Covers both branches above (MODEL + CONTEXT_LIMIT are set in each).
+CONTEXT_LIMIT=$(detect_real_context_window "$MODEL" "$CONTEXT_LIMIT")
+
 # Calculate API tokens percentage (billing only, excludes cache reads)
 # Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-# Parse active context (shows accumulated conversation INCLUDING cache)
-# This represents the TOTAL context window usage for next message
-# Cache is part of this total, shown separately in 📦
-USED_PERCENTAGE="$_SD_USED_PCT"
+# Active context = real input tokens of the current request (cache + conversation).
+# total_input_tokens is the actual window content; used_percentage is NOT used —
+# Claude Code saturates it at 100 against its stale 200K window.
+USED_PERCENTAGE="$_SD_USED_PCT"  # parsed but no longer the source of truth
 
-# Calculate active tokens from used_percentage
-# This shows accumulated context (cache + conversation)
-ACTIVE_TOKENS=0
-ACTIVE_PERCENT="0.0"
-if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USED_PERCENTAGE" != "0" ]]; then
-    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $USED_PERCENTAGE / 100.0)}")
-    ACTIVE_PERCENT="$USED_PERCENTAGE"
-fi
+ACTIVE_TOKENS="$TOTAL_INPUT"
+[[ "$ACTIVE_TOKENS" =~ ^[0-9]+$ ]] || ACTIVE_TOKENS=0
+ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
 # SESSION_ID, SESSION_FILE, PROJECT_DIR — уже установлены one-shot parse выше
 # CACHE_READ, CACHE_CREATION — уже установлены one-shot parse (legacy) или адаптером
@@ -758,18 +775,13 @@ if [[ "${STATUSLINE_ADAPTIVE:-1}" == "1" ]]; then
     DISPLAY_MODE=$(get_display_mode "$TERM_WIDTH")
 fi
 
-# Calculate reserved buffer (Claude Code reserves ~40-45K tokens as a safety buffer)
-BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
-EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
-
-# Calculate percentage of FULL context window (200K, not effective 155K)
-# This shows actual context usage relative to the full window
+# Percentage of the full context window
 EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
-EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
-BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
 
-# Format buffer display (show reserved buffer)
-BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT}"
+# Remaining tokens until the window is full (shown in Σ)
+REMAINING=$(( CONTEXT_LIMIT - ACTIVE_TOKENS ))
+(( REMAINING < 0 )) && REMAINING=0
+REMAINING_FMT=$(format_tokens "$REMAINING")
 
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
@@ -812,19 +824,17 @@ ACTIVE_TOKENS_FMT=$(printf '%s' "$ACTIVE_TOKENS_FMT" | tr -d '\n\r')
 EFFECTIVE_PERCENT=$(printf '%s' "$EFFECTIVE_PERCENT" | tr -d '\n\r')
 CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 
-# Show active context and percentage of FULL context window
-# Format: 📊 120K (60%) - active tokens and % of full 200K window
-# Percentage shows actual usage relative to full context limit (not effective window)
-# Show active context and percentage of FULL context window
+# Σ = remaining tokens until the window is full; 📊 = active context + % of full window
+# Format: Σ 680K ↓ | 📊 320K (32%)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
     # Zero active tokens (after /clear)
-    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
+    CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
@@ -852,7 +862,7 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)
