@@ -167,6 +167,15 @@
             "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh\" hook claude Stop || true"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-stats-stop.js\"",
+            "statusMessage": "Refreshing caveman stats..."
+          }
+        ]
       }
     ]
   },

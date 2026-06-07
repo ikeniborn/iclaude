@@ -23,9 +23,9 @@ const COMPRESSION = { 'full': 0.65 };
 // (e.g. claude-sonnet-4-20250514, claude-sonnet-4-7). Update from
 // https://www.anthropic.com/pricing if a release changes the tier.
 const MODEL_OUTPUT_PRICE_PER_M = [
-  ['claude-opus-4',     75.00],
+  ['claude-opus-4',     25.00],
   ['claude-sonnet-4',   15.00],
-  ['claude-haiku-4',     4.00],
+  ['claude-haiku-4',     5.00],
   ['claude-3-5-sonnet', 15.00],
   ['claude-3-5-haiku',   4.00],
   ['claude-3-opus',     75.00],
