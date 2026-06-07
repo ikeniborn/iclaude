@@ -1,121 +1,120 @@
 # Graph Report - .  (2026-06-07)
 
 ## Corpus Check
-- 0 files · ~0 words
-- Verdict: corpus is large enough that graph structure adds value.
+- Large corpus: 292 files · ~347,983 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder, or use --no-semantic to run AST-only.
 
 ## Summary
-- 752 nodes · 906 edges · 108 communities (43 shown, 65 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 44 edges (avg confidence: 0.79)
+- 789 nodes · 987 edges · 108 communities (43 shown, 65 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 48 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_body|body]]
-- [[_COMMUNITY_Scalability Analysis|Scalability Analysis]]
-- [[_COMMUNITY__get_http_session()|_get_http_session()]]
-- [[_COMMUNITY_server.py|server.py]]
-- [[_COMMUNITY__get_http_session()|_get_http_session()]]
-- [[_COMMUNITY_AI-SPEC Template|AI-SPEC Template]]
-- [[_COMMUNITY_AI Evaluation Reference|AI Evaluation Reference]]
-- [[_COMMUNITY_end-to-end.test.mjs|end-to-end.test.mjs]]
-- [[_COMMUNITY_Abort Gate|Abort Gate]]
-- [[_COMMUNITY__build_ssl_verify()|_build_ssl_verify()]]
-- [[_COMMUNITY_skill-md-integration.test.mjs|skill-md-integration.test.mjs]]
-- [[_COMMUNITY_fake_pkg()|fake_pkg()]]
-- [[_COMMUNITY_args|args]]
-- [[_COMMUNITY_Test cases for patterns that S|Test cases for patterns that S]]
-- [[_COMMUNITY_Add Backlog Workflow|Add Backlog Workflow]]
-- [[_COMMUNITY_Test cases for patterns that S|Test cases for patterns that S]]
-- [[_COMMUNITY_Tests for configurable MASK_TO|Tests for configurable MASK_TO]]
-- [[_COMMUNITY_detector()|detector()]]
-- [[_COMMUNITY_Agent Contracts|Agent Contracts]]
-- [[_COMMUNITY_assert_clean()|assert_clean()]]
-- [[_COMMUNITY_arrayToToon()|arrayToToon()]]
-- [[_COMMUNITY_Apply all patterns and return|Apply all patterns and return ]]
-- [[_COMMUNITY_Compact Session Skill|Compact Session Skill]]
-- [[_COMMUNITY_Empty string should not crash|Empty string should not crash]]
-- [[_COMMUNITY_Provider Adapter Factory|Provider Adapter Factory]]
-- [[_COMMUNITY_Performance tests to detect po|Performance tests to detect po]]
-- [[_COMMUNITY__make_handler()|_make_handler()]]
-- [[_COMMUNITY_Code refs @lat section-id|Code refs: @lat: [[section-id]]]
-- [[_COMMUNITY_Agent Builder Best Practices|Agent Builder Best Practices]]
-- [[_COMMUNITY_Debugger Agent|Debugger Agent]]
-- [[_COMMUNITY_Audit Milestone Workflow|Audit Milestone Workflow]]
-- [[_COMMUNITY_Gate Prompt Patterns|Gate Prompt Patterns]]
-- [[_COMMUNITY_PRD Best Practices Guide|PRD Best Practices Guide]]
-- [[_COMMUNITY_Domain-Aware Probing Patterns|Domain-Aware Probing Patterns]]
-- [[_COMMUNITY_Add Phase Workflow|Add Phase Workflow]]
-- [[_COMMUNITY_GSD Brainstorming Phase|GSD Brainstorming Phase]]
-- [[_COMMUNITY_Shared Theme System|Shared Theme System]]
-- [[_COMMUNITY_Git Branching Strategy|Git Branching Strategy]]
-- [[_COMMUNITY_CONTEXT.md Template|CONTEXT.md Template]]
-- [[_COMMUNITY_Node Repair Workflow|Node Repair Workflow]]
-- [[_COMMUNITY_Cleanup Workflow|Cleanup Workflow]]
-- [[_COMMUNITY_GSD Execute Phase Codebase Dr|GSD Execute Phase: Codebase Dr]]
-- [[_COMMUNITY_GSD Dev Context Profile|GSD Dev Context Profile]]
-- [[_COMMUNITY_Git Workflow Skill|Git Workflow Skill]]
-- [[_COMMUNITY_HuggingFace tokens should be r|HuggingFace tokens should be r]]
-- [[_COMMUNITY_GitHub tokens should be redact|GitHub tokens should be redact]]
-- [[_COMMUNITY_HuggingFace tokens should be r|HuggingFace tokens should be r]]
-- [[_COMMUNITY_Credentials in URLs should be|Credentials in URLs should be ]]
-- [[_COMMUNITY_Stripe test keys should be red|Stripe test keys should be red]]
-- [[_COMMUNITY_Codebase Integrations Template|Codebase Integrations Template]]
-- [[_COMMUNITY_Coding Conventions Template|Coding Conventions Template]]
-- [[_COMMUNITY_Architecture Template|Architecture Template]]
-- [[_COMMUNITY_Planner Anti-Patterns and Spec|Planner Anti-Patterns and Spec]]
-- [[_COMMUNITY_Decimal Phase Calculation|Decimal Phase Calculation]]
-- [[_COMMUNITY_iOS App Scaffold Reference|iOS App Scaffold Reference]]
-- [[_COMMUNITY_AI Framework Selection|AI Framework Selection]]
-- [[_COMMUNITY_Continuation Format|Continuation Format]]
-- [[_COMMUNITY_Context Budget Rules|Context Budget Rules]]
-- [[_COMMUNITY_Profile User Workflow|Profile User Workflow]]
-- [[_COMMUNITY_Settings Workflow|Settings Workflow]]
-- [[_COMMUNITY_Analyze Dependencies Workflow|Analyze Dependencies Workflow]]
-- [[_COMMUNITY_Architecture Full YAML Templat|Architecture Full YAML Templat]]
-- [[_COMMUNITY_context-awareness SKILL|context-awareness SKILL.md]]
-- [[_COMMUNITY_Context Awareness Skill|Context Awareness Skill]]
-- [[_COMMUNITY_OAuth token refresh with 7-day|OAuth token refresh with 7-day]]
-- [[_COMMUNITY_toon-converter.mjs|toon-converter.mjs]]
-- [[_COMMUNITY_Chrome Integration|Chrome Integration]]
-- [[_COMMUNITY_Codebase Concerns Template|Codebase Concerns Template]]
-- [[_COMMUNITY_Phase Execution Model|Phase Execution Model]]
-- [[_COMMUNITY_Architecture Research Template|Architecture Research Template]]
-- [[_COMMUNITY_Making Sketches Feel Alive|Making Sketches Feel Alive]]
-- [[_COMMUNITY_Worktree Path Safety|Worktree Path Safety]]
-- [[_COMMUNITY_MVP Mode Planner Integration|MVP Mode Planner Integration]]
-- [[_COMMUNITY_TDD Plan Structure and Executi|TDD Plan Structure and Executi]]
-- [[_COMMUNITY_Chunked Mode Return Formats|Chunked Mode Return Formats]]
-- [[_COMMUNITY_List Workspaces Workflow|List Workspaces Workflow]]
-- [[_COMMUNITY_Audit UAT Workflow|Audit UAT Workflow]]
-- [[_COMMUNITY_Plant Seed Workflow|Plant Seed Workflow]]
-- [[_COMMUNITY_Note Workflow|Note Workflow]]
-- [[_COMMUNITY_GSD Eval Review Workflow|GSD Eval Review Workflow]]
-- [[_COMMUNITY_Settings Advanced Workflow|Settings Advanced Workflow]]
-- [[_COMMUNITY_PR Branch Workflow|PR Branch Workflow]]
-- [[_COMMUNITY_Sync Skills Workflow|Sync Skills Workflow]]
-- [[_COMMUNITY_Ultraplan Phase Workflow|Ultraplan Phase Workflow]]
-- [[_COMMUNITY_Remove Workspace Workflow|Remove Workspace Workflow]]
-- [[_COMMUNITY_New Workspace Workflow|New Workspace Workflow]]
-- [[_COMMUNITY_Forensics Workflow|Forensics Workflow]]
-- [[_COMMUNITY_Thread Workflow|Thread Workflow]]
-- [[_COMMUNITY_List Phase Assumptions Workflo|List Phase Assumptions Workflo]]
-- [[_COMMUNITY_Milestone Summary Workflow|Milestone Summary Workflow]]
-- [[_COMMUNITY_Edit Phase Workflow|Edit Phase Workflow]]
-- [[_COMMUNITY_Help Workflow|Help Workflow]]
-- [[_COMMUNITY_Update Workflow|Update Workflow]]
-- [[_COMMUNITY_Scan Workflow|Scan Workflow]]
-- [[_COMMUNITY_Validate Phase Workflow|Validate Phase Workflow]]
-- [[_COMMUNITY_Import Workflow|Import Workflow]]
-- [[_COMMUNITY_Caveman Skill|Caveman Skill]]
-- [[_COMMUNITY_Architecture Templates README|Architecture Templates README]]
-- [[_COMMUNITY_lat.md Directory Documentation|lat.md Directory Documentation]]
-- [[_COMMUNITY_pii-proxy-server.py|pii-proxy-server.py]]
-- [[_COMMUNITY_Quality Analysis Tests|Quality Analysis Tests]]
-- [[_COMMUNITY_Graphify Patches Tests|Graphify Patches Tests]]
-- [[_COMMUNITY_Pattern Examples Tests|Pattern Examples Tests]]
-- [[_COMMUNITY_Lib README|Lib README]]
-- [[_COMMUNITY_PRD Generator Skill|PRD Generator Skill]]
-- [[_COMMUNITY_Architecture Documentation Ski|Architecture Documentation Ski]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
+- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
+- [[_COMMUNITY_Community 56|Community 56]]
+- [[_COMMUNITY_Community 57|Community 57]]
+- [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
+- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
+- [[_COMMUNITY_Community 64|Community 64]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
+- [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
+- [[_COMMUNITY_Community 71|Community 71]]
+- [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
+- [[_COMMUNITY_Community 74|Community 74]]
+- [[_COMMUNITY_Community 75|Community 75]]
+- [[_COMMUNITY_Community 76|Community 76]]
+- [[_COMMUNITY_Community 77|Community 77]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 79|Community 79]]
+- [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
+- [[_COMMUNITY_Community 82|Community 82]]
+- [[_COMMUNITY_Community 83|Community 83]]
+- [[_COMMUNITY_Community 84|Community 84]]
+- [[_COMMUNITY_Community 85|Community 85]]
+- [[_COMMUNITY_Community 86|Community 86]]
+- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 89|Community 89]]
+- [[_COMMUNITY_Community 90|Community 90]]
+- [[_COMMUNITY_Community 91|Community 91]]
+- [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 93|Community 93]]
+- [[_COMMUNITY_Community 94|Community 94]]
+- [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 96|Community 96]]
+- [[_COMMUNITY_Community 97|Community 97]]
+- [[_COMMUNITY_Community 98|Community 98]]
+- [[_COMMUNITY_Community 99|Community 99]]
+- [[_COMMUNITY_Community 100|Community 100]]
+- [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
+- [[_COMMUNITY_Community 104|Community 104]]
+- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -123,12 +122,12 @@
 2. `TestShouldRedact` - 21 edges
 3. `PIIProxyHandler` - 21 edges
 4. `TestMaskToken` - 17 edges
-5. `main()` - 15 edges
+5. `main()` - 16 edges
 6. `_FakeResp` - 12 edges
-7. `TestFalsePositives` - 10 edges
-8. `GSD Discuss Phase Workflow` - 10 edges
-9. `Provider Adapter System` - 10 edges
-10. `presidio_mask()` - 9 edges
+7. `caveman-stats main()` - 12 edges
+8. `TestFalsePositives` - 10 edges
+9. `GSD Discuss Phase Workflow` - 10 edges
+10. `Provider Adapter System` - 10 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `iclaude: bash wrapper for Claude Code` --references--> `TOON Format Token Savings Benchmarks`  [EXTRACTED]
@@ -142,195 +141,200 @@
 - `Summary Template` --conceptually_related_to--> `Minimal Summary Template`  [INFERRED]
   .nvm-isolated/.claude-isolated/get-shit-done/templates/summary.md → .nvm-isolated/.claude-isolated/get-shit-done/templates/summary-minimal.md
 
+## Hyperedges (group relationships)
+- **lat.md record flow (skill -> lat-md -> lat-check)** — prd_generator_skill, agent_builder_skill, prompt_verifier_skill, architecture_documentation_skill, lat_md_skill, lat_check_skill [EXTRACTED 1.00]
+- **context-awareness aggregates project_context from lat.md + graphify** — context_awareness_skill, lat_search_skill, graphify_context_skill, project_context [EXTRACTED 1.00]
+- **caveman statusline refresh pipeline** — caveman_stats_stop_main, caveman_stats_main, caveman_history_jsonl, caveman_statusline_suffix [EXTRACTED 1.00]
+
 ## Communities (108 total, 65 thin omitted)
 
-### Community 0 - "body"
+### Community 0 - "Community 0"
 Cohesion: 0.05
 Nodes (61): body, filtered, flagPath, fs, { getDefaultMode, safeWriteFlag }, INDEPENDENT_MODES, mode, os (+53 more)
 
-### Community 1 - "Scalability Analysis"
+### Community 1 - "Community 1"
 Cohesion: 0.06
 Nodes (46): _build_server(), _detect_spacy_models(), init_presidio(), main(), mask_content_block(), mask_request_body(), _mask_value(), _prefix() (+38 more)
 
-### Community 2 - "_get_http_session()"
+### Community 2 - "Community 2"
+Cohesion: 0.08
+Nodes (42): Agent Builder Best Practices, Agent Builder Example: Full Agent, Agent Builder Example: Minimal Agent, agent-builder skill, Architecture Documentation TOON Converters, architecture-documentation skill, Code refs: @lat: [[section-id]] comments, Compact Session Skill (+34 more)
+
+### Community 3 - "Community 3"
 Cohesion: 0.07
 Nodes (22): _get_http_session(), PIIProxyHandler, Return this thread's requests.Session, creating it on first access., Return this thread's requests.Session, creating it on first access., HTTP request handler for PII-proxy.      Design: asymmetric masking — only REQUE, Build request headers for upstream forwarding.          In API-key mode (ANTHROP, HTTP request handler for PII-proxy.      Design: asymmetric masking — only REQUE, Build request headers for upstream forwarding.          In API-key mode (ANTHROP (+14 more)
 
-### Community 3 - "server.py"
+### Community 4 - "Community 4"
 Cohesion: 0.08
 Nodes (20): Tests for configurable MASK_TOKEN in server.py masking modes., Tests for configurable MASK_TOKEN in server.py masking modes., Default MASK_TOKEN must be 'REDACTED' (not '[PII_REDACTED]', no brackets)., Default MASK_TOKEN must be 'REDACTED' (not '[PII_REDACTED]', no brackets)., Custom MASK_TOKEN value is preserved at module level., Custom MASK_TOKEN value is preserved at module level., Empty-string MASK_TOKEN (deletion mode) is accepted without error., Empty-string MASK_TOKEN (deletion mode) is accepted without error. (+12 more)
 
-### Community 4 - "_get_http_session()"
+### Community 5 - "Community 5"
 Cohesion: 0.09
 Nodes (31): _build_server(), _detect_spacy_models(), init_presidio(), main(), mask_content_block(), mask_request_body(), _mask_value(), _prefix() (+23 more)
 
-### Community 5 - "AI-SPEC Template"
+### Community 6 - "Community 6"
 Cohesion: 0.1
 Nodes (11): _FakeResp, _FakeSession, _make_forward_handler(), Tests for split connect/read timeouts and connect-only retry in pii-proxy-server, A PIIProxyHandler wired for _forward without a real socket., Minimal stand-in for a requests streaming Response context manager., TestNonStreamingGuard, TestRetryAdapter (+3 more)
 
-### Community 6 - "AI Evaluation Reference"
+### Community 7 - "Community 7"
 Cohesion: 0.11
 Nodes (12): _get_http_session(), PIIProxyHandler, Return this thread's requests.Session, creating it on first access., HTTP request handler for PII-proxy.      Design: asymmetric masking — only REQUE, Build request headers for upstream forwarding.          In API-key mode (ANTHROP, HEAD /api/health — return headers only, no body (RFC 7231 §4.3.2)., GET /api/metrics — return live masking metrics for statusline integration., Read request body with Content-Length validation.          Handles both Content- (+4 more)
 
-### Community 7 - "end-to-end.test.mjs"
+### Community 8 - "Community 8"
 Cohesion: 0.07
 Nodes (26): actualCodes, archDocContent, archDocMd, archDocResults, __dirname, discoveryToon, e001, errorsJson (+18 more)
 
-### Community 8 - "Abort Gate"
+### Community 9 - "Community 9"
 Cohesion: 0.09
 Nodes (20): extracted, extractedErrors, extractedQuestions, extractedRoundtrip, notFound, originalJson, reconstructedJson, results (+12 more)
 
-### Community 9 - "_build_ssl_verify()"
+### Community 10 - "Community 10"
 Cohesion: 0.12
 Nodes (12): fake_pkg(), Проверяет что vendored graphifyy уже патчен (precondition)., Создаёт минимальный faux graphify пакет для патчинга., Idempotent: после первого apply повторный — no-op., Если dry-run patch fails — best-effort exit 0, fails counted., Скопировать реальные vendored файлы в fake_pkg для valid patch context., End-to-end: после apply_patches graphify update пишет relative paths., run_apply() (+4 more)
 
-### Community 10 - "skill-md-integration.test.mjs"
+### Community 11 - "Community 11"
 Cohesion: 0.1
 Nodes (22): GSD Canonical Artifact Registry, GSD Copilot Instructions, Debug Template, Discussion Log Template, GSD Execution Phase Template, Get-Shit-Done Framework, Planner Subagent Prompt Template, GSD Planning Phase Template (+14 more)
 
-### Community 11 - "fake_pkg()"
+### Community 12 - "Community 12"
 Cohesion: 0.12
 Nodes (18): args, calculateTokenSavings(), componentsToToon(), dependencyGraphToToon(), __dirname, edgesToToon(), extractToonBlock(), __filename (+10 more)
 
-### Community 12 - "args"
+### Community 13 - "Community 13"
 Cohesion: 0.1
-Nodes (11): Test cases for patterns that SHOULD be detected and redacted, Google AI Studio keys should be redacted, Stripe secret keys should be redacted, PEM private keys should be redacted, AWS Secret Access Keys should be redacted, Credentials in URLs should be redacted, Passwords in config files should be redacted, Generic secret assignments should be redacted (+3 more)
+Nodes (11): Test cases for patterns that SHOULD be detected and redacted, Stripe secret keys should be redacted, HuggingFace tokens should be redacted, Groq API keys should be redacted, JWT tokens should be redacted, AWS Access Key IDs should be redacted, PEM private keys should be redacted, Credentials in URLs should be redacted (+3 more)
 
-### Community 13 - "Test cases for patterns that S"
+### Community 14 - "Community 14"
 Cohesion: 0.13
 Nodes (14): detector(), mask(), Simple redaction detector for testing purposes, Tests for server.py regex_mask — imported directly to catch divergence., Simple user:pass@host should be masked., Simple user:pass@host should be masked., Password containing @ must not leak after masking., Password containing @ must not leak after masking. (+6 more)
 
-### Community 14 - "Add Backlog Workflow"
+### Community 15 - "Community 15"
 Cohesion: 0.11
 Nodes (10): Test cases for patterns that SHOULD NOT be redacted (false positive risks), UUIDs should NOT be redacted even if 32+ hex chars, Git commit hashes should NOT be treated as tokens, Version tags should NOT be redacted, Docker image references should not be completely redacted, Template variables should NOT be redacted, Bash placeholders should NOT be redacted, Test/example passwords in test files should preferably not be redacted (+2 more)
 
-### Community 15 - "Test cases for patterns that S"
+### Community 16 - "Community 16"
+Cohesion: 0.15
+Nodes (12): .caveman-history.jsonl lifetime log, caveman-stats aggregateHistory(), caveman-config appendFlag(), caveman-stats deriveSavings(), caveman-stats findCompressedPairs(), caveman-stats formatStats(), caveman-stats main(), caveman-stats priceForModel() (+4 more)
+
+### Community 17 - "Community 17"
 Cohesion: 0.17
 Nodes (16): Agent Contracts, GSD Artifact Types, Debugger Philosophy, Doc Conflict Engine, Execute-Phase — MVP+TDD Gate (Runtime Enforcement), Model Profile Resolution, MVP Concepts — index, Planner — MVP Mode (Vertical Slice Strategy) (+8 more)
 
-### Community 16 - "Tests for configurable MASK_TO"
+### Community 18 - "Community 18"
 Cohesion: 0.24
 Nodes (13): assert_clean(), assert_masked(), assert_missed(), assert_pii_missed(), get_masked(), Документирует PII, который хук НЕ покрывает по дизайну., Запускает хук и возвращает (stdout, stderr)., Возвращает маскированное содержимое или None если не изменено. (+5 more)
 
-### Community 17 - "detector()"
+### Community 19 - "Community 19"
 Cohesion: 0.18
 Nodes (10): arrayToToon(), roundTripTest(), toonToJson(), validateToon(), input, items, output, parsed (+2 more)
 
-### Community 18 - "Agent Contracts"
+### Community 20 - "Community 20"
 Cohesion: 0.17
-Nodes (6): Apply all patterns and return redacted text + found patterns, Stripe test keys should be redacted, HuggingFace tokens should be redacted, Groq API keys should be redacted, Long .env secret variables should be redacted, HuggingFace tokens should be redacted
+Nodes (6): Apply all patterns and return redacted text + found patterns, Anthropic API keys should be redacted, Google AI Studio keys should be redacted, Visa credit cards should be redacted, Passwords in config files should be redacted, Generic secret assignments should be redacted
 
-### Community 19 - "assert_clean()"
+### Community 21 - "Community 21"
 Cohesion: 0.18
 Nodes (6): Empty string should not crash, String with 'None' should not crash, Unicode characters should be handled gracefully, Text with multiple different secret types should redact all, Partial patterns should not be redacted if incomplete, TestEdgeCases
 
-### Community 20 - "arrayToToon()"
+### Community 22 - "Community 22"
 Cohesion: 0.31
 Nodes (11): Discuss Phase Context Template, Discuss Phase Discussion Log Template, GSD Discuss Mode: Advisor, GSD Discuss Mode: All, GSD Discuss Mode: Analyze, GSD Discuss Mode: Auto, GSD Discuss Mode: Batch, GSD Discuss Mode: Chain (+3 more)
 
-### Community 21 - "Apply all patterns and return "
-Cohesion: 0.18
-Nodes (11): Compact Session Skill, Context Awareness Basic Usage Example, YAML Frontmatter Parser, Graphify Skill, Markdown Output Templates, Prompt Verifier Example: Agent Instructions, Prompt Verifier Example: Basic CLAUDE.md, Prompt Verifier Best Practices (+3 more)
-
-### Community 22 - "Compact Session Skill"
+### Community 23 - "Community 23"
 Cohesion: 0.25
 Nodes (11): Provider Adapter Factory, Anthropic Provider Adapter, Chunk Parser Module, Gemini Provider Adapter, Generic Provider Adapter, Ollama Provider Adapter, OpenAI Provider Adapter, Pricing Lookup Module (+3 more)
 
-### Community 23 - "Empty string should not crash"
+### Community 24 - "Community 24"
 Cohesion: 0.31
 Nodes (4): _make_handler(), Tests for GET /api/meta endpoint in pii-proxy-server.py., Return a PIIProxyHandler wired for testing (no real socket)., TestMetaEndpoint
 
-### Community 24 - "Provider Adapter Factory"
+### Community 25 - "Community 25"
 Cohesion: 0.2
 Nodes (6): Performance tests to detect potential ReDoS issues, PEM key with maximum allowed content should complete quickly, Malformed PEM (no END marker) should not cause timeout, Long URLs with credentials should process quickly, Text with many matches should process efficiently, TestPerformance
 
-### Community 25 - "Performance tests to detect po"
-Cohesion: 0.27
-Nodes (10): Code refs: @lat: [[section-id]] comments, install-lat skill: full setup guide, lat-check skill: validate wiki links, lat-init skill: initialize lat.md/ scaffold, lat-md skill: authoring guide, lat.md documentation graph system, lat-search skill: semantic search + locate, Section structure: leading paragraph ≤250 chars (+2 more)
-
-### Community 26 - "_make_handler()"
+### Community 26 - "Community 26"
 Cohesion: 0.22
 Nodes (4): Unit tests for the PII proxy supervisor/worker split., TestBuildServer, TestStormGuard, TestSuperviseFlag
 
-### Community 27 - "Code refs: @lat: [[section-id]"
-Cohesion: 0.31
-Nodes (9): Agent Builder Best Practices, Agent Builder Example: Full Agent, Agent Builder Example: Minimal Agent, Agent Builder Skill, Architecture Documentation TOON Converters, TOON Converter API Documentation, TOON Integration Guide, TOON Integration Guide for Architecture Documentation (+1 more)
-
-### Community 28 - "Agent Builder Best Practices"
+### Community 27 - "Community 27"
 Cohesion: 0.25
 Nodes (8): Scalability Analysis, Token Savings Analysis, TOON Format Token Savings Benchmarks, iclaude: bash wrapper for Claude Code, HTTPS/HTTP proxy with TLS, TOON Converter Library, Step 6b: Generate TOON Documentation, TOON Generation Workflow Example
 
-### Community 29 - "Debugger Agent"
+### Community 28 - "Community 28"
+Cohesion: 0.29
+Nodes (6): argv, data, { execFileSync }, fs, os, path
+
+### Community 29 - "Community 29"
 Cohesion: 0.33
 Nodes (6): Audit Milestone Workflow, Complete Milestone Workflow, Progress Workflow, Ship Workflow, Transition Workflow, Verify Work Workflow
 
-### Community 30 - "Audit Milestone Workflow"
+### Community 30 - "Community 30"
 Cohesion: 0.4
 Nodes (5): Gate Prompt Patterns, Git Integration for GSD, Manager Workflow, Plan Review Convergence Workflow, Quick Task Workflow
 
-### Community 31 - "Gate Prompt Patterns"
+### Community 31 - "Community 31"
 Cohesion: 0.4
 Nodes (5): AI Evaluation Reference, Docs Update Workflow, Verification Overrides, Verification Patterns Reference, Verifier Few-Shot Examples
 
-### Community 32 - "PRD Best Practices Guide"
+### Community 32 - "Community 32"
 Cohesion: 0.5
 Nodes (5): PRD Best Practices Guide, PRD Example: TaskFlow Pro, PRD Markdown Guidelines, PRD Mermaid Diagram Templates, Mermaid-Obsidian Skill
 
-### Community 33 - "Domain-Aware Probing Patterns"
+### Community 33 - "Community 33"
 Cohesion: 0.4
 Nodes (5): Guest SSH host key extraction and pinning, Firecracker microVM kernel isolation, Persistent SSH ControlMaster for ~5ms ops, TAP interface tap-iclaude (172.16.0.1/2), rsync workspace host <-> guest VM
 
-### Community 34 - "Add Phase Workflow"
+### Community 34 - "Community 34"
 Cohesion: 0.5
 Nodes (4): Domain-Aware Probing Patterns, Codebase scout — map selection table, Thinking Models: Research Cluster, User Profiling: Detection Heuristics Reference
 
-### Community 35 - "GSD Brainstorming Phase"
+### Community 35 - "Community 35"
 Cohesion: 0.5
 Nodes (4): Add Phase Workflow, Autonomous Workflow, New Project Workflow, Spike Workflow
 
-### Community 36 - "Shared Theme System"
+### Community 36 - "Community 36"
 Cohesion: 0.67
 Nodes (3): Shared Theme System, Sketch Toolbar, Multi-Variant HTML Patterns
 
-### Community 37 - "Git Branching Strategy"
+### Community 37 - "Community 37"
 Cohesion: 0.67
 Nodes (3): Node Repair Workflow, Plan-Checker Few-Shot Examples, Revision Loop Pattern
 
-### Community 38 - "CONTEXT.md Template"
+### Community 38 - "Community 38"
 Cohesion: 0.67
 Nodes (3): Cleanup Workflow, Extract Learnings Workflow, Session Report Workflow
 
-### Community 39 - "Node Repair Workflow"
+### Community 39 - "Community 39"
 Cohesion: 0.67
 Nodes (3): GSD Execute Phase: Codebase Drift Gate, GSD Execute Phase: Per-Plan Worktree Gate, GSD Execute Phase: Post-Merge Gate
 
-### Community 40 - "Cleanup Workflow"
+### Community 40 - "Community 40"
 Cohesion: 0.67
 Nodes (3): GSD Dev Context Profile, GSD Research Context Profile, GSD Review Context Profile
 
-### Community 41 - "GSD Execute Phase: Codebase Dr"
+### Community 41 - "Community 41"
 Cohesion: 0.67
 Nodes (3): Git Workflow Skill, Git Workflow Basic Usage Example, Git Workflow Task Summary Template
 
 ## Knowledge Gaps
-- **415 isolated node(s):** `Validate upstream URL: must be HTTPS or loopback HTTP (prevents SSRF via file://`, `Parse a positive-float timeout from env; fall back to default on missing/invalid`, `Return this thread's requests.Session, creating it on first access.`, `Configure 'pii-proxy' logger directly (not root logger) for reliability.`, `Detect installed spaCy models from venv marker files or by probing spacy.      R` (+410 more)
+- **416 isolated node(s):** `Validate upstream URL: must be HTTPS or loopback HTTP (prevents SSRF via file://`, `Parse a positive-float timeout from env; fall back to default on missing/invalid`, `Return this thread's requests.Session, creating it on first access.`, `Configure 'pii-proxy' logger directly (not root logger) for reliability.`, `Detect installed spaCy models from venv marker files or by probing spacy.      R` (+411 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **65 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `TestMaskToken` connect `server.py` to `Test cases for patterns that S`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `TestShouldRedact` connect `args` to `GSD Dev Context Profile`, `Git Workflow Skill`, `HuggingFace tokens should be r`, `GitHub tokens should be redact`, `Test cases for patterns that S`, `HuggingFace tokens should be r`, `Agent Contracts`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `PIIProxyHandler` connect `_get_http_session()` to `Scalability Analysis`?**
+- **Why does `TestMaskToken` connect `Community 4` to `Community 14`?**
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+- **Why does `TestShouldRedact` connect `Community 13` to `Community 42`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 14`, `Community 20`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `PIIProxyHandler` connect `Community 3` to `Community 1`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **What connects `Validate upstream URL: must be HTTPS or loopback HTTP (prevents SSRF via file://`, `Parse a positive-float timeout from env; fall back to default on missing/invalid`, `Return this thread's requests.Session, creating it on first access.` to the rest of the system?**
-  _415 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `body` be split into smaller, more focused modules?**
+  _416 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
-- **Should `Scalability Analysis` be split into smaller, more focused modules?**
+- **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
-- **Should `_get_http_session()` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
+- **Should `Community 2` be split into smaller, more focused modules?**
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._

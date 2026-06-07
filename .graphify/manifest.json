@@ -1,6 +1,6 @@
 {
   "lib/pii-proxy/server.py": {
-    "mtime": 1780818517.6738682,
+    "mtime": 1780825537.3581483,
     "hash": "230f3aa4f253d1ed7c6528a3fd01ebe2"
   },
   ".nvm-isolated/nvm-exec": {
@@ -8,7 +8,7 @@
     "hash": "aca21638e05de09fb181f81d7f6a480c"
   },
   ".nvm-isolated/.claude-isolated/pii-proxy-server.py": {
-    "mtime": 1780818517.6738682,
+    "mtime": 1780825537.3581483,
     "hash": "230f3aa4f253d1ed7c6528a3fd01ebe2"
   },
   ".nvm-isolated/.claude-isolated/skills/toon-skill/converters/toon-converter.mjs": {
@@ -36,8 +36,12 @@
     "hash": "0a77df0018325d52608c362754786451"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-stats.js": {
-    "mtime": 1778100314.257411,
-    "hash": "2c88a17ff88451629d3edafe474cfff0"
+    "mtime": 1780860940.2681763,
+    "hash": "c730816d8a10d3619461410ee2741965"
+  },
+  ".nvm-isolated/.claude-isolated/hooks/caveman-stats-stop.js": {
+    "mtime": 1780860930.4198062,
+    "hash": "d835255a54f346779cd4223c4fc484e0"
   },
   ".nvm-isolated/.claude-isolated/hooks/caveman-config.js": {
     "mtime": 1778100314.256411,
@@ -68,7 +72,7 @@
     "hash": "f358ea5e98c756a2ebfb6dd3fc746d24"
   },
   "tests/test_patterns_examples.py": {
-    "mtime": 1780818881.1699765,
+    "mtime": 1780825537.358311,
     "hash": "104b314859af8df57f69a8cc18cd798a"
   },
   "CLAUDE.md": {
@@ -960,8 +964,8 @@
     "hash": "a99d21dac736a6eb55298ddf751a40ae"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md": {
-    "mtime": 1778264316.9206762,
-    "hash": "e71717fd61b9c1d6f27aa66d1ce99e44"
+    "mtime": 1780859984.150365,
+    "hash": "be5142f288d2ee3ad9f497c207e73367"
   },
   ".nvm-isolated/.claude-isolated/skills/prd-generator/examples/basic-saas-product.md": {
     "mtime": 1774809682.7444031,
@@ -1012,8 +1016,8 @@
     "hash": "75aca0a1da510db72b9ddaabfc0bfc69"
   },
   ".nvm-isolated/.claude-isolated/skills/context-awareness/SKILL.md": {
-    "mtime": 1778264316.7896776,
-    "hash": "3d019aa4297c1d1643ccbd0412cf79ec"
+    "mtime": 1780860089.0842621,
+    "hash": "74f949a289ecfb243a24505dfff7c5e7"
   },
   ".nvm-isolated/.claude-isolated/skills/context-awareness/examples/basic-usage.md": {
     "mtime": 1774809682.7400665,
@@ -1032,8 +1036,8 @@
     "hash": "90236fdfe4a4e00418ceea51da87ddc6"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md": {
-    "mtime": 1778264316.9876757,
-    "hash": "30b126cde50258189ca61bee468d292b"
+    "mtime": 1780860060.9597945,
+    "hash": "98ff2a4d7186f52a6d153cbbda225a59"
   },
   ".nvm-isolated/.claude-isolated/skills/prompt-verifier/examples/skill-md-check.md": {
     "mtime": 1778100314.2615428,
@@ -1060,16 +1064,16 @@
     "hash": "0c61ec3d32cfc7f7e5182b5ae04ae6f0"
   },
   ".nvm-isolated/.claude-isolated/skills/graphify-context/SKILL.md": {
-    "mtime": 1778159397.3289163,
-    "hash": "0564473eb5812a5cbaa234da28e80000"
+    "mtime": 1780859956.3061612,
+    "hash": "3a5556195278be5a187ac53812b3d8b7"
   },
   ".nvm-isolated/.claude-isolated/skills/idd/SKILL.md": {
     "mtime": 1780760286.344912,
     "hash": "e638af89ee9d0103e55ed7ba96b431a2"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/SKILL.md": {
-    "mtime": 1778264316.952676,
-    "hash": "e32b23bdefdd26cf4b63ba88a0ca96a0"
+    "mtime": 1780860032.4222481,
+    "hash": "bd151666a7a503fda920c512f00f586b"
   },
   ".nvm-isolated/.claude-isolated/skills/agent-builder/examples/full-agent.md": {
     "mtime": 1774809682.7368128,
@@ -1084,8 +1088,8 @@
     "hash": "b74b7478e194f9717f9862ca328f7fe7"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/SKILL.md": {
-    "mtime": 1778264316.8856766,
-    "hash": "f57ca9ba90d557652a5931fbe0cbfbcd"
+    "mtime": 1780860011.8988583,
+    "hash": "33b225d16b9952916d6526e32b7b99d4"
   },
   ".nvm-isolated/.claude-isolated/skills/architecture-documentation/converters/README.md": {
     "mtime": 1774809682.7377477,
@@ -1132,7 +1136,7 @@
     "hash": "9de2a428e25bcde8753111c9c42a24f9"
   },
   "lat.md/pii-proxy.md": {
-    "mtime": 1780818975.0750926,
+    "mtime": 1780825537.357858,
     "hash": "6ae818c9b0959eec4e8d6fe8dbea3a31"
   },
   "lat.md/sandbox.md": {
