@@ -139,29 +139,34 @@ agent: general-purpose
 - **@schema:output-verify** - Валидация выходных данных (verify mode)
 - **@schema:output-adapt** - Валидация выходных данных (adapt mode)
 
-## Wiki Integration
+## lat.md Integration
 
-Этот скилл не вызывает `context-awareness` — проверяет wiki напрямую.
+Этот скилл не вызывает `context-awareness` — проверяет lat.md напрямую.
 
 ### Query (в начале Step 2 — Analyze Against Rules)
 
 ```
-IF exists("{CWD}/.wiki/.config/domain-map.json"):
-  Skill(skill="llm-wiki", args='query "паттерны нарушений и best practices форматирования инструкций"')
+IF exists("{CWD}/lat.md/"):
+  Skill(skill="lat-search", args='search "паттерны нарушений и best practices форматирования инструкций"')
+  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
 
   Использовать результат для обогащения Step 2:
-  - Если wiki содержит задокументированные нарушения → добавить в анализ
-  - Если wiki содержит принятые стандарты форматирования → учесть при adapt
-  - Если wiki нет данных → продолжить стандартный анализ по R1-R7
+  - Если lat.md содержит задокументированные нарушения → добавить в анализ
+  - Если lat.md содержит принятые стандарты форматирования → учесть при adapt
+  - Если в lat.md нет данных → продолжить стандартный анализ по R1-R7
 ```
 
-### Ingest (после Step 4 — только в режиме adapt)
+### Record (после Step 4 — только в режиме adapt)
+
+lat.md — авторский граф, без авто-ингеста: эталон добавляется ручной секцией.
 
 ```
-IF exists("{CWD}/.wiki/.config/domain-map.json") AND mode == "adapt" AND violations_found > 0:
-  Skill(skill="llm-wiki", args='ingest "{verified_file_path}"')
+IF exists("{CWD}/lat.md/") AND mode == "adapt" AND violations_found > 0:
+  (опционально) Skill(skill="lat-md") → создать/обновить секцию с примером нарушения
+    и его исправлением (что и почему), ссылаясь на {verified_file_path}
+  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: wiki накапливает конкретные примеры нарушений и их исправлений —
+  Результат: примеры нарушений и исправлений попадают в граф lat.md —
   переиспользуются как эталоны при следующих проверках документов.
 ```
 

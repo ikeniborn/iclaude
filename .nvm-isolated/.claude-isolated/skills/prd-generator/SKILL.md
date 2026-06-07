@@ -780,21 +780,22 @@ prdGeneration.toon = {
 
 ---
 
-## Wiki Integration
+## lat.md / graph Integration
 
-Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized` доступен.
+Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.lat_initialized`
+и `project_context.graph_initialized` доступны.
 
 ### Query (в Phase 0, после context-awareness)
 
 ```
-IF project_context.wiki_initialized == true:
-  Skill(skill="llm-wiki", args='query "Product Requirements Documents и требования к продуктам"')
+IF project_context.lat_initialized == true:
+  Skill(skill="lat-search", args='search "Product Requirements Documents и требования к продуктам"')
+  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
 
   Использовать результат для обогащения Phase 1 Questionnaire:
-  - Если найдены похожие PRD → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
-    из накопленных паттернов
+  - Если найдены похожие требования/цели → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
   - Если найдены success metrics → предложить их как варианты для Q5
-  - Если wiki нет данных → продолжить стандартный Questionnaire без изменений
+  - Если в lat.md нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
 IF project_context.graph_initialized == true:
@@ -806,16 +807,19 @@ IF project_context.graph_initialized == true:
     Добавить NOTE: "Данные о графе могут быть устаревшими — запусти /graphify --update"
   # graph_fresh === null означает неизвестно — не предупреждать
 
-### Ingest (в Phase 7, после успешной валидации)
+### Record (в Phase 7, после успешной валидации)
+
+lat.md — авторский документационный граф, без авто-ингеста. Накопление знаний =
+ручное создание секции, не индексация файла.
 
 ```
-IF project_context.wiki_initialized == true AND status IN ("success", "partial"):
-  Skill(skill="llm-wiki", args='ingest "docs/prd/01-executive-summary.md"')
-  Skill(skill="llm-wiki", args='ingest "docs/prd/02-goals-and-scope.md"')
-  Skill(skill="llm-wiki", args='ingest "docs/prd/04-target-audience.md"')
+IF project_context.lat_initialized == true AND status IN ("success", "partial"):
+  (опционально) Skill(skill="lat-md") → создать/обновить секцию в lat.md/
+    с целями продукта и целевой аудиторией (что и почему), ссылаясь на docs/prd/
+  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: wiki накапливает знания о бизнес-целях, целевых аудиториях
-  и продуктовых паттернах — переиспользуются в следующих PRD.
+  Результат: бизнес-цели и продуктовые паттерны попадают в граф lat.md —
+  доступны для lat-search в следующих PRD.
 ```
 
 ---
