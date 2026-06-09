@@ -3137,7 +3137,7 @@ export interface WorkflowOutput {
    */
   sessionUrl?: string;
   /**
-   * Non-blocking heads-up (e.g. local git state diverges from the pushed branch the remote session will clone)
+   * Non-blocking heads-up (e.g. local git state diverges from the pushed branch the cloud session will clone)
    */
   warning?: string;
   /**
