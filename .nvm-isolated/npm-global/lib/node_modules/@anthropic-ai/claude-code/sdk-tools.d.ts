@@ -318,7 +318,7 @@ export interface AgentInput {
   /**
    * Optional model override for this agent. Takes precedence over the agent definition's model frontmatter. If omitted, uses the agent definition's model, or inherits from the parent.
    */
-  model?: "sonnet" | "opus" | "haiku";
+  model?: "sonnet" | "opus" | "haiku" | "fable";
   /**
    * Set to true to run this agent in the background. You will be notified when it completes.
    */
