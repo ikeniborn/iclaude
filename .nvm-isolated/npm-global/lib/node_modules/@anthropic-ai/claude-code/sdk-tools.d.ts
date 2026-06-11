@@ -39,7 +39,9 @@ export type ToolInputSchemas =
   | CronListInput
   | ScheduleWakeupInput
   | RemoteTriggerInput
+  | ShowOnboardingRolePickerInput
   | MonitorInput
+  | ArtifactInput
   | PushNotificationInput
   | EnterWorktreeInput
   | ExitWorktreeInput
@@ -68,7 +70,9 @@ export type ToolOutputSchemas =
   | TaskGetOutput
   | TaskUpdateOutput
   | TaskListOutput
+  | ArtifactOutput
   | RemoteTriggerOutput
+  | ShowOnboardingRolePickerOutput
   | ScheduleWakeupOutput
   | MonitorOutput
   | EnterPlanModeOutput
@@ -2348,6 +2352,7 @@ export interface RemoteTriggerInput {
     [k: string]: unknown;
   };
 }
+export interface ShowOnboardingRolePickerInput {}
 export interface MonitorInput {
   /**
    * Short human-readable description of what you are monitoring (shown in notifications).
@@ -2365,6 +2370,24 @@ export interface MonitorInput {
    * Shell command or script. Each stdout line is an event; exit ends the watch.
    */
   command: string;
+}
+export interface ArtifactInput {
+  /**
+   * Path to an .html or .md file to render. Use a short, distinctive basename — it is the fallback title if the HTML has no <title>.
+   */
+  file_path: string;
+  /**
+   * Browser-tab icon: one or two emoji (e.g. "📊"). No markup. Keep stable across redeploys; change only on a hard topic pivot.
+   */
+  favicon: string;
+  /**
+   * Short human-readable name for this version (e.g. "fixed-background"). Shown in the version picker instead of the raw version id.
+   */
+  label?: string;
+  /**
+   * Existing artifact URL to redeploy to. Pass when the user gives you a URL for an artifact not published in this session; omit for new artifacts or same-session redeploys. Must be an artifact the user owns.
+   */
+  url?: string;
 }
 export interface PushNotificationInput {
   /**
@@ -2711,6 +2734,10 @@ export interface ReadMcpResourceOutput {
      */
     blobSavedTo?: string;
   }[];
+  /**
+   * Human-readable error when the server could not read the resource
+   */
+  error?: string;
 }
 export interface TodoWriteOutput {
   /**
@@ -3028,10 +3055,20 @@ export interface TaskListOutput {
     blockedBy: string[];
   }[];
 }
+export interface ArtifactOutput {
+  url: string;
+  path: string;
+  title?: string;
+  mcpDropped?: string;
+}
 export interface RemoteTriggerOutput {
   status: number;
   json: string;
   summary?: string;
+}
+export interface ShowOnboardingRolePickerOutput {
+  role?: string;
+  dismissed?: boolean;
 }
 export interface ScheduleWakeupOutput {
   /**
