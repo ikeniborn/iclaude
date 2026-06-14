@@ -1,4 +1,46 @@
 ---
+review:
+  spec_hash: 824d37b4b07dd785
+  last_run: 2026-06-14
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: INFO
+      section: Scope
+      section_hash: 71cec720f16779e7
+      text: >-
+        Task "create check-intent" is delegated out-of-scope to the separate
+        check-intent design/plan. Verify implementation ordering is tracked:
+        check-intent must ship before the intent->brainstorm gate (see edge case 7).
+      verdict: fixed
+      verdict_at: 2026-06-14
+    - id: F-002
+      phase: clarity
+      severity: WARNING
+      section: Gate predicate
+      section_hash: 85ee0689dd07c9d3
+      text: >-
+        "What blocks" states only open CRITICAL blocks, but the predicate also
+        blocks when a phase is not `passed` (e.g. pending/in_progress with no open
+        CRITICAL). Clarify that incomplete validation also blocks, so the two
+        statements do not read as contradictory.
+      verdict: fixed
+      verdict_at: 2026-06-14
+    - id: F-003
+      phase: clarity
+      severity: INFO
+      section: Architecture
+      section_hash: 821c01df6889778e
+      text: >-
+        The same entity is named interchangeably "doc" / "artifact" / "document".
+        Pick one term for consistency.
+      verdict: fixed
+      verdict_at: 2026-06-14
 chain:
   intent: null
 ---
@@ -31,7 +73,7 @@ Each role is matched to the only mechanism that fits it:
   does work and returns — it cannot block the parent flow.) The hook never
   validates: it reads the upstream artifact's state, blocks (`exit 2`) or allows
   (`exit 0`).
-- **Validation = subagent (clean context).** A validator reads a full document
+- **Validation = subagent (clean context).** A validator reads a full artifact
   and runs multi-phase analysis — expensive context that should not pollute the
   main session, especially after a long brainstorming/planning conversation. A
   subagent starts with a fresh context window, so dispatching the check to a
@@ -47,8 +89,8 @@ Each role is matched to the only mechanism that fits it:
   that keeps the main context lean.
 
 The hook never validates; the subagent never blocks and never asks for verdicts;
-the main session never re-reads the full document. They communicate through the
-doc's `review:` / `result_check:` frontmatter.
+the main session never re-reads the full artifact. They communicate through the
+artifact's `review:` / `result_check:` frontmatter.
 
 ## Scope
 
@@ -71,6 +113,9 @@ Out of scope (dependencies, not redefined here):
   The intent→brainstorm gate depends on that command existing and writing the
   `review:` block it specifies. If `/check-intent` is not yet implemented when
   the gate ships, the intent gate degrades gracefully (see Edge cases).
+  **Implementation ordering:** ship `/check-intent` before enabling the
+  `brainstorming` row in `GATE_MAP` (tracked in edge case 7 and the implementation
+  plan's task sequence).
 - The internal logic of `check-spec` / `check-plan` — unchanged.
 
 ## Architecture
@@ -91,7 +136,7 @@ state). The validators are *only* validation (write state). The hook never
 validates; a validator never blocks flow. They communicate exclusively through
 the `review:` (and, for result, `result_check:`) frontmatter.
 
-**Hash parity (critical):** the hook MUST compute the document body hash with
+**Hash parity (critical):** the hook MUST compute the artifact body hash with
 the *same* canonical algorithm the validators use. To avoid implementation
 drift, the hook **shells out to the identical bash pipeline** rather than
 reimplementing it in Python:
@@ -123,10 +168,14 @@ with no IDD docs passes freely.
 Otherwise (present but: no state block / stale hash / open CRITICAL / a phase not
 `passed`) → **BLOCK** (`exit 2`).
 
-**What blocks:** only open `CRITICAL` findings block. Open `WARNING` / `INFO` do
-not. This matches the validators' final verdict (`OK` = no open critical). It is
-the single tunable: a constant `BLOCK_ON = {"CRITICAL"}` in the hook — add
-`"WARNING"` to tighten.
+**What blocks:** an open `CRITICAL` finding blocks; so does a phase that has not
+reached `status: passed` (`pending` / `in_progress` — validation never ran or did
+not complete). Open `WARNING` / `INFO` do **not** block. In practice a phase
+reaches `passed` exactly when its CRITICAL findings are closed (a phase with only
+open WARNING/INFO is still `passed`), so the CRITICAL condition and the
+phase condition coincide except when validation is incomplete — which must block.
+Severity is the single tunable: a constant `BLOCK_ON = {"CRITICAL"}` in the hook —
+add `"WARNING"` to tighten.
 
 **Advisory phases:** validators may carry advisory phases (e.g.
 `check-intent`'s `alignment`) that never produce CRITICAL findings. Such a phase
@@ -210,19 +259,19 @@ When the gate blocks, the main session does **not** run the check inline. It
 dispatches a subagent so the validation runs on a fresh context:
 
 1. **Dispatch.** The main session calls the Agent tool with a prompt: read
-   `commands/check-<X>.md` and execute its algorithm against `<doc_path>`; run
-   all deterministic phases; compute hashes via the canonical bash pipeline;
+   `commands/check-<X>.md` and execute its algorithm against `<artifact_path>`;
+   run all deterministic phases; compute hashes via the canonical bash pipeline;
    write the `review:` frontmatter block with any new findings as `verdict:
    open`; **do NOT request verdicts interactively** — instead return the findings
    (`id, phase, severity, section, text`) as structured output.
-2. **Subagent runs on a fresh context** — it reads only the doc(s) it is pointed
-   at, writes the `review:` block (and `result_check:` for `check-result`), and
+2. **Subagent runs on a fresh context** — it reads only the artifact(s) it is
+   pointed at, writes the `review:` block (and `result_check:` for `check-result`), and
    returns the findings. No brainstorming/planning bloat enters its context. This
    is the clean context the user asked for, achieved without `/clear`.
 3. **Verdicts (main session).** If the subagent returns open CRITICAL findings,
    the main session presents them and collects verdicts. `accepted` / `wontfix` →
    written to the frontmatter (gate opens — the predicate counts only CRITICAL
-   with `verdict == open`). `fixed` → the user edits the doc body (hash changes)
+   with `verdict == open`). `fixed` → the user edits the artifact body (hash changes)
    → re-dispatch the subagent to re-validate.
 4. **Retry.** The main session re-invokes the gated skill; the gate re-reads the
    now-passing state and allows the transition.
@@ -232,12 +281,12 @@ hashes, new findings as `verdict: open`); the main session only patches verdict
 values. Writes are sequential (subagent finishes, then main edits) — no race.
 
 **`check-spec` task source.** `check-spec`'s coverage phase compares the spec
-against "tasks from the conversation" — the one input not derivable from the doc
-alone, and unavailable to a fresh subagent. The main session therefore includes a
-concise requirements/task summary in the dispatch prompt, or points the subagent
-at the spec's `## Acceptance (from intent)` section (carried in by the intent
-skill handoff). Extraction is cheap and stays in the main session; the expensive
-full-doc analysis runs clean in the subagent.
+against "tasks from the conversation" — the one input not derivable from the
+artifact alone, and unavailable to a fresh subagent. The main session therefore
+includes a concise requirements/task summary in the dispatch prompt, or points the
+subagent at the spec's `## Acceptance (from intent)` section (carried in by the
+intent skill handoff). Extraction is cheap and stays in the main session; the
+expensive full-artifact analysis runs clean in the subagent.
 
 **Subagent failure fallback.** If the subagent dies (terminal error) or returns
 nothing, the main session falls back to running the check inline. A subagent
@@ -346,7 +395,7 @@ Acceptance criteria:
    the chain proceed uninterrupted; skipping a check at any phase blocks the next
    skill until the check passes.
 7. Check-runner: on a block, the validation runs in a dispatched subagent (fresh
-   context — it reads only the target doc), the subagent writes the `review:`
+   context — it reads only the target artifact), the subagent writes the `review:`
    block and returns findings, and verdicts are collected in the main session.
    A simulated subagent failure falls back to an inline check without wedging the
    gate.
