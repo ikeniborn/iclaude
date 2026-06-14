@@ -31,8 +31,12 @@ fi
 lockver="$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$LOCKFILE" 2>/dev/null | head -n 1)"
 
 # 4. Real on-disk binary version (authoritative — not the git-tracked package.json).
+#    Mirror check_lockfile_changes(): try the symlink, fall back to the native binary.
 binver=""
 claude_bin="$REPO_ROOT/.nvm-isolated/npm-global/bin/claude"
+if [[ ! -x "$claude_bin" ]]; then
+  claude_bin="$REPO_ROOT/.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
+fi
 if [[ -x "$claude_bin" ]]; then
   binver="$("$claude_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
 fi
