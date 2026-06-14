@@ -1,3 +1,17 @@
+---
+review:
+  spec_hash: 37cd9e035cde3bcf
+  last_run: 2026-06-14
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings: []
+chain:
+  intent: null
+---
+
 # Design: `/check-intent` command — phased validation of IDD intent docs
 
 **Date:** 2026-06-14
