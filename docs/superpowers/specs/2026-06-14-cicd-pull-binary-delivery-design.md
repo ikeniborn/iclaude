@@ -1,3 +1,17 @@
+---
+review:
+  spec_hash: a1ff07f9d0b0c609
+  last_run: 2026-06-14
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings: []
+chain:
+  intent: docs/superpowers/intents/2026-06-14-cicd-pull-binary-delivery-intent.md
+---
+
 # Design: CI/CD auto-update — deliver new Claude Code binary via `git pull`
 
 **Date:** 2026-06-14
