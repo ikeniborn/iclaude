@@ -63,4 +63,26 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
    - Блок `chain:` НЕ добавлять (корень цепи)
    - Тело intent doc (включая строку `**Status:**`) НЕ редактировать ни при каких условиях
 
+### Шаг 3. Выполнение фаз
+
+Фазы выполняются строго последовательно. Фаза N+1 стартует только если в фазе N нет CRITICAL с `verdict: open`. Фаза `alignment` всегда последняя и advisory — не блокирует переход и финальный вердикт.
+
+#### Фаза 1: structure (CRITICAL)
+
+Закрытый чек-лист (НЕ расширять):
+- Плейсхолдеры: `TODO`, `TBD`, `???`, `FIXME`
+- Все 7 секций шаблона на месте: Objective, Desired Outcomes, Health Metrics, Strategic Context, Constraints, Autonomy Zones, Stop Rules
+- Пустые буллеты / пустые секции
+- Битые внутренние ссылки на разделы (§X.Y, [link](#anchor))
+- Дублирующиеся заголовки секций
+
+#### Фаза 2: completeness (CRITICAL)
+
+Закрытый чек-лист (НЕ расширять):
+- Каждый constraint привязан к steering XOR hard (не к обоим, не ни к одному)
+- Autonomy Zones покрывают все 4 зоны (Full / Guarded / Proposal-first / No autonomy) либо несут явный N/A для зоны
+- Stop Rules содержит ≥1 критерий `Done when:`
+- Health Metrics непусты
+- Strategic Context содержит и `Interacts with:`, и `Priority trade-off:`
+
 $ARGUMENTS
