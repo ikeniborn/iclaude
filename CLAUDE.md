@@ -44,19 +44,27 @@ the upstream artifact has passed its validator. Mapped transitions:
 | `finishing-a-development-branch` | `plans/*-plan.md` (`result_check`) | `/check-result` |
 
 The gate is **open** when no matching artifact exists (hotfix escape) or when the
-artifact's `review:` / `result_check:` frontmatter shows all phases `passed`, a
-matching body hash, and no open CRITICAL. Otherwise the gate blocks (`exit 2`) with
-a message naming the fix command. The hook fails **open** on any internal error.
+upstream artifact's state frontmatter passes its predicate:
+
+- **`review:` artifacts** (intent / spec / plan): a matching body hash, all phases
+  `passed`, and no open CRITICAL finding (`severity: CRITICAL` + `verdict: open`).
+- **`result_check:` artifacts** (plan, for `finishing-a-development-branch`): a
+  matching body hash and top-level `verdict: OK`.
+
+Otherwise the gate blocks (`exit 2`) with a message naming the fix command. The hook
+fails **open** on any internal error.
 
 **When the gate blocks, do NOT run the check inline — dispatch a clean-context
 subagent:**
 
 1. **Dispatch.** Call the Agent tool: read `commands/check-<X>.md` and execute its
    algorithm against `<artifact_path>`; run all deterministic phases; compute
-   hashes via the canonical bash pipeline; write the `review:` block (and
-   `result_check:` for `check-result`) with new findings as `verdict: open`; do
-   **not** request verdicts interactively — return the findings (`id, phase,
-   severity, section, text`) as structured output. For `check-spec`, include a
+   hashes via the canonical bash pipeline; write the `review:` block with new
+   findings as `verdict: open` (for `check-result`, write the `result_check:`
+   block with a single top-level `verdict: OK | needs_work` — it has no
+   per-finding verdicts); do **not** request verdicts interactively — return the
+   findings (`id, phase, severity, section, text`) as structured output. For
+   `check-spec`, include a
    concise task/requirements summary in the prompt (the one input not derivable
    from the artifact alone).
 2. **Subagent runs on a fresh context** — it reads only the target artifact, writes
