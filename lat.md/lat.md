@@ -10,6 +10,6 @@ Key subsystems documented in this directory.
 - [[pii-proxy]] — Presidio NLP PII masking proxy, shared/per-session modes
 - [[router]] — CCR integration, combined modes, attribution header
 - [[sandbox]] — Firecracker microVM isolation, workspace sync, SSH ControlMaster
-- [[security]] — PreToolUse hooks: block-secrets, redact-secrets
+- [[security]] — PreToolUse hooks: block-secrets, redact-secrets, idd-gate (IDD→SDD workflow gate)
 - [[isolation]] — `CLAUDE_CONFIG_DIR` isolation, session IDs, --system mode
 - [[oauth]] — OAuth token refresh, token types, expiry threshold

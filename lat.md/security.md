@@ -29,6 +29,26 @@ Redacts secrets from tool input before passing to Claude. Uses `toolInputOverrid
 
 **Note:** `Edit.old_string` is NOT redacted — it is a search pattern; masking would break the Edit tool.
 
+## Workflow Gate: idd-gate.py
+
+A third PreToolUse hook, but not a secret guard — it gates the IDD→SDD workflow. It intercepts the `Skill` tool and blocks each phase transition until the upstream artifact has passed its validator.
+
+Fail-open: any internal error → exit 0 (the opposite of `block-secrets.py`, which is fail-closed).
+
+| Skill | Upstream artifact | Validator |
+|-------|-------------------|-----------|
+| `brainstorming` | `intents/*-intent.md` | `/check-intent` |
+| `writing-plans` | `specs/*-design.md` | `/check-spec` |
+| `executing-plans` / `subagent-driven-development` | `plans/*-plan.md` | `/check-plan` |
+| `finishing-a-development-branch` | `plans/*-plan.md` (`result_check`) | `/check-result` |
+
+The gate is **open** when no matching artifact exists (hotfix escape) or when the artifact's state frontmatter passes its predicate:
+
+- `review:` artifacts (intent / spec / plan): matching body hash, all phases `passed`, no open CRITICAL (`severity: CRITICAL` + `verdict: open`).
+- `result_check:` artifacts (plan): matching body hash and top-level `verdict: OK`.
+
+Otherwise it blocks (`exit 2`) with a message naming the fix command. The hook validates nothing itself — validation is done by `/check-*` (dispatched to a clean-context subagent), which write the `review:` / `result_check:` frontmatter the gate reads. The body hash is computed by shelling out to the identical bash pipeline the validators use (`awk … | sha256sum | cut -c1-16`), guaranteeing parity. Wired in `settings.json` as a `PreToolUse` entry with `matcher: "Skill"`. Tests: `tests/test-idd-gate.sh` (14 stdin→exit-code cases).
+
 ## Credentials File
 
 `.claude_config` — chmod 600, excluded from git. Contains proxy URL, API keys, feature flags. Legacy filename `.claude_proxy_credentials` is auto-migrated on first run.
