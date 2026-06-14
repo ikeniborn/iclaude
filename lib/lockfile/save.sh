@@ -340,18 +340,20 @@ check_lockfile_changes() {
 		return 0
 	fi
 
-	# Hash changed — check if installed version already matches lockfile
-	# This handles git pull delivering CI updates: npm packages are updated in git,
-	# so the environment is already in sync even though .last-lockfile-hash is stale.
+	# Hash changed — compare the lockfile version against the REAL on-disk binary.
+	# package.json is git-tracked and bumped by the pull, so it is NOT a reliable
+	# "what is installed" signal; the native binary (claude --version) is authoritative.
 	local lockfile_claude_ver
 	lockfile_claude_ver=$(jq -r '.claudeCodeVersion // empty' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
 
 	if [[ -n "$lockfile_claude_ver" && "$lockfile_claude_ver" != "unknown" ]]; then
-		local package_json="${ISOLATED_NVM_DIR}/npm-global/lib/node_modules/@anthropic-ai/claude-code/package.json"
+		local claude_bin="${ISOLATED_NVM_DIR}/npm-global/bin/claude"
+		if [[ ! -x "$claude_bin" ]]; then
+			claude_bin="${ISOLATED_NVM_DIR}/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
+		fi
 		local installed_claude_ver=""
-		if [[ -f "$package_json" ]]; then
-			installed_claude_ver=$(jq -r '.version // empty' "$package_json" 2>/dev/null || \
-				grep -oP '"version":\s*"\K[^"]+' "$package_json" 2>/dev/null || echo "")
+		if [[ -x "$claude_bin" ]]; then
+			installed_claude_ver=$("$claude_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -n 1 || echo "")
 		fi
 
 		if [[ -n "$installed_claude_ver" && "$installed_claude_ver" == "$lockfile_claude_ver" ]]; then
