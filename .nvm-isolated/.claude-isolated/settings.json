@@ -125,6 +125,15 @@
             "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/idd-gate.py\""
+          }
+        ]
       }
     ],
     "SessionStart": [
