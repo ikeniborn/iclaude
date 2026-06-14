@@ -132,6 +132,8 @@ Claude Code uses a native binary (`bin/claude.exe`, ~237MB) excluded from git (e
 
 After `git clone`, run `--repair-isolated` to download the binary via `npm install` + postinstall. Without it, detection falls through to the legacy `cli.js` path, or fails with a clear error.
 
+**Pull-time refresh.** A tracked `.githooks/post-merge` hook (active via `core.hooksPath=.githooks`) runs after `git pull`/merge. When the pulled commit bumped `claudeCodeVersion`, it compares the lockfile version against the real on-disk binary (`claude --version`) and offers a `y/N` prompt to run `--install-from-lockfile`. It is fail-soft: silent when in sync, warn-only when non-interactive (CI/GUI), never blocks the pull. Opt out with `export ICLAUDE_NO_AUTO_UPDATE=1`. The launch-time `check_lockfile_changes()` is a fallback for pulls that bypass git hooks.
+
 Detection order (`lib/nvm/detect.sh::get_nvm_claude_path()`):
 1. `$npm_prefix/bin/claude` (symlink)
 2. `bin/claude.exe` (native binary, v2.1.114+)

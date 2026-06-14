@@ -42,6 +42,13 @@ When `claude_cmd` is empty after all detection steps, `launch_claude()` exits 1 
 
 The npx fallback (`npx @anthropic-ai/claude-code`) was removed. Binaries are delivered only via CI/CD (`git pull` + `--install-from-lockfile`).
 
+## Pull-Time Binary Refresh
+
+The native binary `bin/claude.exe` is gitignored (exceeds GitHub's 100MB limit), so `git pull` delivers the version bump in the 6 tracked metadata files but not the executable. Two pieces close the gap, both comparing the lockfile `claudeCodeVersion` against the **real binary** (`claude --version`, not the tracked `package.json`) and reusing `--install-from-lockfile`:
+
+- **`.githooks/post-merge`** ([[../.githooks/post-merge]]) — proactive, fires after `git pull`. Opt-out via `ICLAUDE_NO_AUTO_UPDATE=1`; guards on the lockfile actually changing in the merge; fail-soft (silent in-sync, warn-only non-interactive, never blocks the pull).
+- **`check_lockfile_changes()`** ([[../lib/lockfile/save.sh#check_lockfile_changes]]) — reactive fallback at iclaude launch, for pulls that bypass git hooks (GUI clients, opt-out, fresh clone before `--repair-isolated`).
+
 ## Attribution Header
 
 When `--router` or `--no-attribution-header` is active, `CLAUDE_CODE_ATTRIBUTION_HEADER=0` is set. This disables the `x-anthropic-billing-header` (`cch=`) that changes every request and invalidates KV cache on CCR/Ollama/Bedrock proxies.
