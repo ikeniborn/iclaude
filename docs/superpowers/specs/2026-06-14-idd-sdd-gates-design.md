@@ -22,23 +22,33 @@ next is blocked until the upstream artifact has passed its validator (no open
 CRITICAL). The gate is enforced by a single `PreToolUse` hook on the `Skill`
 tool — the actual choke point of every phase transition.
 
-## Why a hook, not an agent
+## Three roles: hook gates, subagent validates, main session collects verdicts
 
-A gate is **flow control** — it must *block* a transition the main loop is about
-to make. An agent *does work and returns*; it cannot block the parent flow. So
-the gate is inherently a hook concern.
+Each role is matched to the only mechanism that fits it:
 
-The validators are **interactive** — `check-spec` / `check-plan` / `check-intent`
-ask the user for verdicts on CRITICAL findings. A hook (a shell/python process)
-cannot run an interactive slash command; slash commands expand on the Claude
-side. Therefore the only viable division of labour is:
+- **Gate = `PreToolUse` hook.** A gate must *block* a transition the main loop is
+  about to make; a hook is the only thing that can deny a tool call. (An agent
+  does work and returns — it cannot block the parent flow.) The hook never
+  validates: it reads the upstream artifact's state, blocks (`exit 2`) or allows
+  (`exit 0`).
+- **Validation = subagent (clean context).** A validator reads a full document
+  and runs multi-phase analysis — expensive context that should not pollute the
+  main session, especially after a long brainstorming/planning conversation. A
+  subagent starts with a fresh context window, so dispatching the check to a
+  subagent gives clean-context validation **by construction — no `/clear`
+  needed**. (Claude cannot invoke `/clear` itself: it is a built-in CLI command,
+  excluded from the Skill tool. `/clear` would also destroy the very tasks
+  `check-spec` needs and the orchestration state needed to resume — the subagent
+  sidesteps both.)
+- **Verdict collection = main session.** Resolving CRITICAL findings is
+  interactive (the user chooses `accepted` / `wontfix` / `fixed`). A subagent
+  runs autonomously and cannot conduct this round-trip, so verdicts are collected
+  back in the main session — a small, cheap exchange (findings list + verdicts)
+  that keeps the main context lean.
 
-- **Hook** = the gate. Reads the upstream artifact's `review:` state, blocks
-  (`exit 2`) or allows (`exit 0`). Never validates.
-- **Claude, main session** = reads the block message, runs `/check-*`
-  interactively, resolves CRITICAL, retries the Skill invocation. Never blocks.
-
-A detached subagent fits neither role.
+The hook never validates; the subagent never blocks and never asks for verdicts;
+the main session never re-reads the full document. They communicate through the
+doc's `review:` / `result_check:` frontmatter.
 
 ## Scope
 
@@ -49,6 +59,8 @@ In scope:
    `result_check:` block into the plan frontmatter (the merge gate's pass signal).
 3. **`settings.json`** — wire `idd-gate.py` as a `PreToolUse` hook with
    `matcher: "Skill"`.
+4. **`CLAUDE.md`** — document the clean-context check-runner protocol (subagent
+   validation + main-session verdicts) that the gate's block message references.
 
 Out of scope (dependencies, not redefined here):
 
@@ -72,6 +84,7 @@ skills).
 | `hooks/idd-gate.py` | new | `PreToolUse` Skill gate: map skill → upstream artifact, evaluate predicate, allow / block |
 | `commands/check-result.md` | edit | Append `result_check:` state to the plan frontmatter |
 | `settings.json` | edit | New `PreToolUse` entry, `matcher: "Skill"` → `idd-gate.py` |
+| `CLAUDE.md` | edit | Document the check-runner protocol (subagent validation + main-session verdicts) |
 
 **Separation of concerns:** the hook is *only* a gate (block / allow, reads
 state). The validators are *only* validation (write state). The hook never
@@ -171,11 +184,14 @@ Input: stdin JSON `{tool_name, tool_input}`. Reads `tool_input.skill`.
 ```
 🚧 IDD gate: <artifact_path> has not passed validation.
 Reason: <no review: block | hash stale (edited after last check) | open CRITICAL: F-003, F-007 | phase coverage: in_progress>
-Action: run <fix_command>, close the CRITICAL findings (verdict fixed/accepted/wontfix), then retry the skill invocation.
+Action: dispatch a subagent to run <fix_command> on <artifact_path> (clean-context
+check-runner protocol), collect verdicts in the main session, resolve the CRITICAL
+findings, then retry the skill invocation.
 ```
 
-Claude reads stderr, runs the fix command interactively, resolves CRITICAL,
-retries the `Skill` call → the gate opens.
+Claude reads stderr and follows the check-runner protocol (below): dispatch the
+validation to a subagent, collect verdicts in the main session, then retry the
+`Skill` call → the gate opens.
 
 **Fail-open on hook errors (workflow-safety requirement):** any internal
 exception (malformed stdin JSON, missing `docs/`, subprocess failure, unparseable
@@ -187,6 +203,51 @@ the *known* unvalidated-artifact case. A bug in the hook must NOT block every
 **Working directory:** the project root is the launch dir. The hook resolves
 `docs/superpowers/<dir>/` relative to the current working directory (the project
 root at launch), consistent with how the validators locate docs.
+
+## Check-runner protocol (clean-context subagent)
+
+When the gate blocks, the main session does **not** run the check inline. It
+dispatches a subagent so the validation runs on a fresh context:
+
+1. **Dispatch.** The main session calls the Agent tool with a prompt: read
+   `commands/check-<X>.md` and execute its algorithm against `<doc_path>`; run
+   all deterministic phases; compute hashes via the canonical bash pipeline;
+   write the `review:` frontmatter block with any new findings as `verdict:
+   open`; **do NOT request verdicts interactively** — instead return the findings
+   (`id, phase, severity, section, text`) as structured output.
+2. **Subagent runs on a fresh context** — it reads only the doc(s) it is pointed
+   at, writes the `review:` block (and `result_check:` for `check-result`), and
+   returns the findings. No brainstorming/planning bloat enters its context. This
+   is the clean context the user asked for, achieved without `/clear`.
+3. **Verdicts (main session).** If the subagent returns open CRITICAL findings,
+   the main session presents them and collects verdicts. `accepted` / `wontfix` →
+   written to the frontmatter (gate opens — the predicate counts only CRITICAL
+   with `verdict == open`). `fixed` → the user edits the doc body (hash changes)
+   → re-dispatch the subagent to re-validate.
+4. **Retry.** The main session re-invokes the gated skill; the gate re-reads the
+   now-passing state and allows the transition.
+
+**Frontmatter ownership:** the subagent writes the full `review:` block (phases,
+hashes, new findings as `verdict: open`); the main session only patches verdict
+values. Writes are sequential (subagent finishes, then main edits) — no race.
+
+**`check-spec` task source.** `check-spec`'s coverage phase compares the spec
+against "tasks from the conversation" — the one input not derivable from the doc
+alone, and unavailable to a fresh subagent. The main session therefore includes a
+concise requirements/task summary in the dispatch prompt, or points the subagent
+at the spec's `## Acceptance (from intent)` section (carried in by the intent
+skill handoff). Extraction is cheap and stays in the main session; the expensive
+full-doc analysis runs clean in the subagent.
+
+**Subagent failure fallback.** If the subagent dies (terminal error) or returns
+nothing, the main session falls back to running the check inline. A subagent
+failure must not wedge the gate — it only loses the clean-context benefit for
+that run.
+
+The protocol is documented in `CLAUDE.md` (IDD→SDD section); the gate's block
+message references it. The check-runner dispatch is **never gated** — it is not
+one of the five transition skills, and it invokes Read/Bash/Edit (and the Agent
+tool), never a gated `Skill`.
 
 ## `check-result.md` extension
 
@@ -228,17 +289,19 @@ Append a new entry to the existing `PreToolUse` array (the current matchers
 1. Skill not in `GATE_MAP` → allow.
 2. No upstream dir / no matching file → allow (escape).
 3. Internal hook exception → allow (fail-open) + stderr diagnostic.
-4. Validators (`/check-*`) never invoke the `Skill` tool → never gated (no
-   recursion / self-block).
-5. Namespaced vs bare skill name → match on the suffix after the last `:`.
-6. `/check-intent` not yet implemented: the newest intent doc has no `review:`
+4. The check-runner (subagent + verdict collection) never invokes a gated
+   `Skill` — it uses Read/Bash/Edit and the Agent tool → no recursion / self-block.
+5. Subagent dies / returns nothing → main session falls back to running the
+   check inline (clean-context benefit lost for that run, gate not wedged).
+6. Namespaced vs bare skill name → match on the suffix after the last `:`.
+7. `/check-intent` not yet implemented: the newest intent doc has no `review:`
    block → by the predicate the gate would BLOCK `brainstorming`. To degrade
    gracefully until `check-intent` ships, the intent→brainstorm row keys on a
    `review:` block that only `check-intent` writes; if the dependency is absent,
    the operator either implements `check-intent` first (recommended ordering) or
    temporarily omits the `brainstorming` row from `GATE_MAP`. This ordering
    dependency is called out in the plan.
-7. `BLOCK_ON = {"CRITICAL"}` — the single severity knob.
+8. `BLOCK_ON = {"CRITICAL"}` — the single severity knob.
 
 ## Testing / acceptance
 
@@ -282,3 +345,8 @@ Acceptance criteria:
 6. End-to-end: a full intent → spec → plan run where each `/check-*` passes lets
    the chain proceed uninterrupted; skipping a check at any phase blocks the next
    skill until the check passes.
+7. Check-runner: on a block, the validation runs in a dispatched subagent (fresh
+   context — it reads only the target doc), the subagent writes the `review:`
+   block and returns findings, and verdicts are collected in the main session.
+   A simulated subagent failure falls back to an inline check without wedging the
+   gate.
