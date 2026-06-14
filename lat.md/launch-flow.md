@@ -44,10 +44,12 @@ The npx fallback (`npx @anthropic-ai/claude-code`) was removed. Binaries are del
 
 ## Pull-Time Binary Refresh
 
-The native binary `bin/claude.exe` is gitignored (exceeds GitHub's 100MB limit), so `git pull` delivers the version bump in the 6 tracked metadata files but not the executable. Two pieces close the gap, both comparing the lockfile `claudeCodeVersion` against the **real binary** (`claude --version`, not the tracked `package.json`) and reusing `--install-from-lockfile`:
+`bin/claude.exe` is gitignored, so `git pull` delivers the version bump in the tracked metadata but not the executable. Two pieces close the gap.
 
-- **`.githooks/post-merge`** ([[../.githooks/post-merge]]) — proactive, fires after `git pull`. Opt-out via `ICLAUDE_NO_AUTO_UPDATE=1`; guards on the lockfile actually changing in the merge; fail-soft (silent in-sync, warn-only non-interactive, never blocks the pull).
-- **`check_lockfile_changes()`** ([[../lib/lockfile/save.sh#check_lockfile_changes]]) — reactive fallback at iclaude launch, for pulls that bypass git hooks (GUI clients, opt-out, fresh clone before `--repair-isolated`).
+Both compare the lockfile `claudeCodeVersion` against the **real binary** (`claude --version`, not the tracked `package.json`) and reuse `--install-from-lockfile`:
+
+- **`.githooks/post-merge`** — proactive, fires after `git pull`. Opt-out via `ICLAUDE_NO_AUTO_UPDATE=1`; guards on the lockfile actually changing in the merge; fail-soft (silent in-sync, warn-only non-interactive, never blocks the pull).
+- **`check_lockfile_changes()`** (`[[lib/lockfile/save.sh#check_lockfile_changes]]`) — reactive fallback at iclaude launch, for pulls that bypass git hooks (GUI clients, opt-out, fresh clone before `--repair-isolated`).
 
 ## Attribution Header
 
