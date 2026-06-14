@@ -9,6 +9,9 @@ ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck disable=SC1090
 source "$ROOT/lib/lockfile/save.sh"
 
+_TMP_LIST="$(mktemp)"
+trap 'xargs -r rm -rf < "$_TMP_LIST"; rm -f "$_TMP_LIST"' EXIT
+
 # Stubs (defined AFTER source so these definitions win).
 compute_lockfile_hash() { echo "NEWHASH"; }
 update_lockfile_hash()  { echo "UPDATE_HASH_CALLED"; }
@@ -27,6 +30,7 @@ assert_absent()   { if grep -qF "$2" <<<"$1"; then echo "FAIL: $3"; echo "--- ou
 setup_case() {
   local lockver="$1" pkgver="$2" binver="$3" dir pkgdir
   dir="$(mktemp -d)"
+  echo "$dir" >> "$_TMP_LIST"
   ISOLATED_LOCKFILE="$dir/lockfile.json"
   printf '{"claudeCodeVersion":"%s"}\n' "$lockver" > "$ISOLATED_LOCKFILE"
   LOCKFILE_HASH_FILE="$dir/.last-lockfile-hash"
@@ -54,6 +58,23 @@ setup_case "9.9.9" "9.9.9" "9.9.9"
 out="$(check_lockfile_changes </dev/null 2>&1)"
 assert_absent  "$out" "Lockfile has changed" "in-sync binary stays silent"
 assert_contains "$out" "UPDATE_HASH_CALLED"   "in-sync refreshes the stored hash"
+
+# Case 3 (claude.exe fallback): bin/claude absent, claude.exe present and old → warn reached.
+# Verifies the secondary probe path in check_lockfile_changes().
+c3dir="$(mktemp -d)"
+echo "$c3dir" >> "$_TMP_LIST"
+ISOLATED_LOCKFILE="$c3dir/lockfile.json"
+printf '{"claudeCodeVersion":"9.9.9"}\n' > "$ISOLATED_LOCKFILE"
+LOCKFILE_HASH_FILE="$c3dir/.last-lockfile-hash"
+echo "OLDHASH" > "$LOCKFILE_HASH_FILE"
+ISOLATED_NVM_DIR="$c3dir/.nvm-isolated"
+c3pkgdir="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code"
+mkdir -p "$c3pkgdir/bin"
+printf '#!/bin/bash\necho "1.0.0 (Claude Code)"\n' > "$c3pkgdir/bin/claude.exe"
+chmod +x "$c3pkgdir/bin/claude.exe"
+# Do NOT create npm-global/bin/claude — force fallback to claude.exe
+out="$(check_lockfile_changes </dev/null 2>&1)"
+assert_contains "$out" "Lockfile has changed" "claude.exe fallback probe reaches warn"
 
 echo "---"; echo "pass=$pass fail=$fail"
 [[ "$fail" -eq 0 ]]
