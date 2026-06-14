@@ -115,7 +115,9 @@ def evaluate_gate(path, rule):
         return "hash stale (edited after last check)"
 
     if rule["block"] == "result_check":
-        return None  # merge-gate реализуется в Task 4
+        if block.get("verdict") != "OK":
+            return "result_check verdict: %s" % block.get("verdict")
+        return None
 
     # review-based gate: все фазы passed + нет открытых CRITICAL
     for name, ph in (block.get("phases") or {}).items():
