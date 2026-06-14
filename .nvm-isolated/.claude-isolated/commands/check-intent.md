@@ -127,4 +127,48 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 
 Применить exit-критерий из шага 0. Вывести `OK` либо `требует доработки: <N> critical open, <M> warning open`.
 
+## Правила
+
+**Запрещено:**
+- Расширять чек-листы фаз (только закрытый список)
+- Придумывать требования, которых нет ни в intent doc, ни в контексте разговора
+- Редактировать тело intent doc, включая строку `**Status:**` (только guard-finding, не запись). Frontmatter `review:` — единственное исключение, обновляется командой
+- Писать «вероятно подразумевается» без ссылки на текст
+
+## Формат отчёта
+
+```
+## Проверка intent [дата]
+
+### Файл
+- <путь>
+- intent_hash: <sha256:short>
+- prev_hash: <sha256:short>
+
+### Фаза 1: structure — passed | in_progress | skipped
+- Новые findings: N
+  - F-001 [CRITICAL] §X — описание
+
+### Фаза 2: completeness — ...
+### Фаза 3: clarity — ...
+### Фаза 4: consistency — ...
+### Фаза 5: alignment — advisory
+- INFO/WARNING notes (никогда не блокируют вердикт)
+
+### Approval
+- ready to approve | блокировано: N critical open
+
+### Сводка
+- CRITICAL open: N
+- WARNING open: M
+- alignment notes: K
+- Вердикт: OK | требует доработки
+```
+
+В конец отчёта добавить (intent — корень цепи, footer смотрит вперёд):
+```
+---
+Next step: superpowers:brainstorming
+```
+
 $ARGUMENTS
