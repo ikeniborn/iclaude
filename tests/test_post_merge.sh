@@ -9,6 +9,9 @@ if [[ ! -f "$HOOK_SRC" ]]; then
   echo "FAIL: hook not found at $HOOK_SRC"; exit 1
 fi
 
+_TMP_LIST="$(mktemp)"
+trap 'xargs -r rm -rf < "$_TMP_LIST"; rm -f "$_TMP_LIST"' EXIT
+
 pass=0; fail=0
 assert_contains() { # <output> <substr> <name>
   if grep -qF "$2" <<<"$1"; then echo "ok: $3"; pass=$((pass+1));
@@ -45,6 +48,7 @@ make_repo() {
     chmod +x "$repo/.nvm-isolated/npm-global/bin/claude"
   fi
   cp "$HOOK_SRC" "$repo/post-merge"; chmod +x "$repo/post-merge"
+  echo "$repo" >> "$_TMP_LIST"
   echo "$repo"
 }
 

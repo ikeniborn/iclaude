@@ -23,7 +23,7 @@ if git -C "$REPO_ROOT" rev-parse --verify -q ORIG_HEAD >/dev/null 2>&1; then
 elif git -C "$REPO_ROOT" rev-parse --verify -q '@{1}' >/dev/null 2>&1; then
   changed="$(git -C "$REPO_ROOT" diff --name-only '@{1}' HEAD 2>/dev/null)"
 fi
-if [[ -n "$changed" ]] && ! grep -qx '.nvm-isolated-lockfile.json' <<<"$changed"; then
+if [[ -n "$changed" ]] && ! grep -qxF '.nvm-isolated-lockfile.json' <<<"$changed"; then
   exit 0
 fi
 
