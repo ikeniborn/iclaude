@@ -31,6 +31,48 @@ For non-trivial features (new module, new CLI flag, API change, architectural de
 1. `/idd <topic>` — creates intent doc in `docs/superpowers/intents/`
 2. `/brainstorm` — reads intent doc as context (Step 1 picks it up automatically)
 
+### Phase gates & the check-runner protocol
+
+A `PreToolUse` Skill hook (`hooks/idd-gate.py`) blocks each phase transition until
+the upstream artifact has passed its validator. Mapped transitions:
+
+| Skill | Upstream artifact | Validator |
+|-------|-------------------|-----------|
+| `brainstorming` | `intents/*-intent.md` | `/check-intent` |
+| `writing-plans` | `specs/*-design.md` | `/check-spec` |
+| `executing-plans` / `subagent-driven-development` | `plans/*-plan.md` | `/check-plan` |
+| `finishing-a-development-branch` | `plans/*-plan.md` (`result_check`) | `/check-result` |
+
+The gate is **open** when no matching artifact exists (hotfix escape) or when the
+artifact's `review:` / `result_check:` frontmatter shows all phases `passed`, a
+matching body hash, and no open CRITICAL. Otherwise the gate blocks (`exit 2`) with
+a message naming the fix command. The hook fails **open** on any internal error.
+
+**When the gate blocks, do NOT run the check inline — dispatch a clean-context
+subagent:**
+
+1. **Dispatch.** Call the Agent tool: read `commands/check-<X>.md` and execute its
+   algorithm against `<artifact_path>`; run all deterministic phases; compute
+   hashes via the canonical bash pipeline; write the `review:` block (and
+   `result_check:` for `check-result`) with new findings as `verdict: open`; do
+   **not** request verdicts interactively — return the findings (`id, phase,
+   severity, section, text`) as structured output. For `check-spec`, include a
+   concise task/requirements summary in the prompt (the one input not derivable
+   from the artifact alone).
+2. **Subagent runs on a fresh context** — it reads only the target artifact, writes
+   the state block, and returns findings. This is clean-context validation by
+   construction, no `/clear` needed.
+3. **Verdicts (main session).** Present any open CRITICAL findings and collect
+   verdicts. `accepted` / `wontfix` → patch the frontmatter (gate opens — the
+   predicate counts only CRITICAL with `verdict: open`). `fixed` → the user edits
+   the artifact body (hash changes) → re-dispatch the subagent to re-validate.
+4. **Retry.** Re-invoke the gated skill; the gate re-reads the now-passing state and
+   allows the transition.
+
+The check-runner dispatch is **never gated** — it uses Read/Bash/Edit and the Agent
+tool, never a gated `Skill`. If the subagent dies or returns nothing, fall back to
+running the check inline (clean-context benefit lost for that run; gate not wedged).
+
 ## Commands
 
 ### Daily
