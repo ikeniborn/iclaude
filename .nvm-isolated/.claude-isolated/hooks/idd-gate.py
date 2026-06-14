@@ -22,6 +22,7 @@ import sys
 import json
 import os
 import glob
+import subprocess
 
 DOCS_ROOT = "docs/superpowers"
 
@@ -73,9 +74,65 @@ def resolve_candidate(rule):
     return max(matches, key=os.path.getmtime)
 
 
+def body_hash(path):
+    """Хеш тела документа — ИДЕНТИЧНЫЙ пайплайн валидаторов (исключаем дрейф,
+    шеллясь в тот же bash, а не переписывая на Python)."""
+    pipeline = (
+        "awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "
+        '"%s" | sha256sum | cut -c1-16' % path
+    )
+    out = subprocess.run(
+        ["bash", "-c", pipeline],
+        capture_output=True, text=True, check=True,
+    )
+    return out.stdout.strip()
+
+
+def read_frontmatter(path):
+    """YAML-frontmatter между первыми двумя '---'. {} если его нет."""
+    import yaml  # отложенный импорт: отсутствие → исключение → fail-open в main()
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    fm = []
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        fm.append(line)
+    data = yaml.safe_load("\n".join(fm))
+    return data if isinstance(data, dict) else {}
+
+
 def evaluate_gate(path, rule):
-    """Возвращает None, если гейт ОТКРЫТ (allow), либо строку-причину BLOCK.
-    Заглушка: реальный предикат добавляется в Tasks 3–4."""
+    """Возвращает None, если гейт ОТКРЫТ (allow), либо строку-причину BLOCK."""
+    fm = read_frontmatter(path)
+    block = fm.get(rule["block"])
+    if not isinstance(block, dict):
+        return "no %s: block" % rule["block"]
+
+    if block.get(rule["hash_key"]) != body_hash(path):
+        return "hash stale (edited after last check)"
+
+    if rule["block"] == "result_check":
+        return None  # merge-gate реализуется в Task 4
+
+    # review-based gate: все фазы passed + нет открытых CRITICAL
+    for name, ph in (block.get("phases") or {}).items():
+        status = ph.get("status") if isinstance(ph, dict) else None
+        if status != "passed":
+            return "phase %s: %s" % (name, status)
+
+    open_critical = [
+        f.get("id", "?")
+        for f in (block.get("findings") or [])
+        if isinstance(f, dict)
+        and f.get("severity") in BLOCK_ON
+        and f.get("verdict") == "open"
+    ]
+    if open_critical:
+        return "open CRITICAL: " + ", ".join(open_critical)
+
     return None
 
 
