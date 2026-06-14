@@ -147,7 +147,7 @@ def main():
     if data.get("tool_name") != "Skill":
         sys.exit(0)
 
-    skill = normalize_skill(data.get("tool_input", {}).get("skill", ""))
+    skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
     rule = GATE_MAP.get(skill)
     if rule is None:
         sys.exit(0)  # скилл не гейтируется

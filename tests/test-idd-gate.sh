@@ -106,6 +106,7 @@ T=$(mktemp -d); mkdir -p "$T/docs/superpowers/specs"
 assert_exit "не-гейтируемый скилл → 0" "$T" '{"tool_name":"Skill","tool_input":{"skill":"systematic-debugging"}}' 0
 assert_exit "пустая specs/ → 0 (escape)"  "$T" "$SKILL_WP" 0
 assert_exit "битый stdin → 0 (fail-open)" "$T" 'garbage{'   0
+assert_exit "tool_input: null → 0 (fail-open)" "$T" '{"tool_name":"Skill","tool_input":null}' 0
 rm -rf "$T"
 
 echo "idd-gate: review-предикат"
