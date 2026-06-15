@@ -22,6 +22,7 @@ import sys
 import json
 import os
 import glob
+import time
 import subprocess
 
 DOCS_ROOT = "docs/superpowers"
@@ -29,6 +30,10 @@ PLANS_DIR = os.path.join(DOCS_ROOT, "plans")
 
 # Единственный тюнинг строгости: какие severity блокируют переход.
 BLOCK_ON = {"CRITICAL"}
+
+# Recency window for the plan→impl gate: only a plan edited within this many
+# seconds gates code edits; older (stale) drafts pass through. 2h.
+IMPL_GATE_FRESH_SECONDS = 7200
 
 # skill (суффикс после последнего ':') → правило гейта:
 #   dir      — поддиректория docs/superpowers/
@@ -61,6 +66,7 @@ GATE_MAP = {
 
 # Write-trigger rules reuse existing GATE_MAP rows (same predicate, new trigger).
 SPEC_RULE = GATE_MAP["writing-plans"]      # specs/*-design.md, review/spec_hash
+PLAN_RULE = GATE_MAP["executing-plans"]    # plans/*.md, review/plan_hash
 
 
 def normalize_skill(name):
@@ -130,6 +136,11 @@ def _under(path, root):
     return ap == ar or ap.startswith(ar + os.sep)
 
 
+def fresh(path, seconds):
+    """True, если файл изменён не позже `seconds` секунд назад."""
+    return time.time() - os.path.getmtime(path) <= seconds
+
+
 def evaluate_gate(path, rule):
     """Возвращает None, если гейт ОТКРЫТ (allow), либо строку-причину BLOCK."""
     fm = read_frontmatter(path)
@@ -194,6 +205,18 @@ def handle_write(data, tool):
         if reason is None:
             sys.exit(0)
         block(spec, reason, SPEC_RULE["fix"])
+
+    # plan→impl: правка файла вне docs/superpowers/ (любой инструмент).
+    if not _under(path, DOCS_ROOT):
+        plan = resolve_candidate(PLAN_RULE)
+        if plan is None:
+            sys.exit(0)  # нет плана → escape
+        if not fresh(plan, IMPL_GATE_FRESH_SECONDS):
+            sys.exit(0)  # устаревший черновик → не гейтим активную работу
+        reason = evaluate_gate(plan, PLAN_RULE)
+        if reason is None:
+            sys.exit(0)
+        block(plan, reason, PLAN_RULE["fix"])
 
     sys.exit(0)  # specs/intents, правка существующего плана и т.п.
 

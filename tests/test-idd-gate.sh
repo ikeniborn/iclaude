@@ -127,6 +127,29 @@ Plan body content.
 EOF
 }
 
+mk_plan_passed(){ # root → plan with a passing review block (plan→impl → allow)
+  local d="$1/docs/superpowers/plans"; mkdir -p "$d"
+  local f="$d/2026-06-14-fix-plan.md"
+  cat > "$f" <<'EOF'
+---
+review:
+  plan_hash: PLACEHOLDER
+  last_run: 2026-06-14
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings: []
+---
+
+# Plan: fix
+
+Plan body content.
+EOF
+  sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+}
+
 SKILL_WP='{"tool_name":"Skill","tool_input":{"skill":"writing-plans"}}'
 SKILL_WP_NS='{"tool_name":"Skill","tool_input":{"skill":"superpowers:writing-plans"}}'
 SKILL_FIN='{"tool_name":"Skill","tool_input":{"skill":"finishing-a-development-branch"}}'
@@ -203,6 +226,48 @@ rm -rf "$T"
 # no chain.spec, newest spec unvalidated → 2
 T=$(mktemp -d); mk_spec_noreview "$T"
 assert_exit "fallback newest spec unvalidated → 2" "$T" "$(write_json "$T/$PLAN_AT" "$NOCHAIN")" 2
+rm -rf "$T"
+
+echo "idd-gate: plan→impl write trigger"
+PLAN_F="docs/superpowers/plans/2026-06-14-fix-plan.md"
+
+# code edit + fresh unvalidated plan → 2
+T=$(mktemp -d); mk_plan_noresult "$T"   # chain-only plan, no review block, fresh
+assert_exit "Edit code + fresh unvalidated plan → 2" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 2
+
+# Write to a code path is also plan→impl (not mistaken for plan creation) → 2
+assert_exit "Write code + fresh unvalidated plan → 2" "$T" "$(write_json "$T/src/x.py" "print(1)")" 2
+
+# non-transition: editing the plan itself (checkbox tick) is never gated → 0
+assert_exit "Edit existing plan (checkbox) → 0" "$T" "$(edit_json Edit "$T/$PLAN_F")" 0
+
+# non-transition: editing a spec is never gated by plan→impl → 0
+assert_exit "Edit spec → 0" "$T" "$(edit_json Edit "$T/docs/superpowers/specs/x-design.md")" 0
+rm -rf "$T"
+
+# code edit + STALE unvalidated plan → 0 (recency window passed)
+T=$(mktemp -d); mk_plan_noresult "$T"
+touch -d '3 hours ago' "$T/$PLAN_F"
+assert_exit "Edit code + stale unvalidated plan → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
+rm -rf "$T"
+
+# code edit + validated plan → 0
+T=$(mktemp -d); mk_plan_passed "$T"
+assert_exit "Edit code + validated plan → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
+rm -rf "$T"
+
+# code edit + no plan at all → 0 (escape)
+T=$(mktemp -d)
+assert_exit "Edit code + no plan → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
+rm -rf "$T"
+
+# fail-open: a forced internal exception → 0 (spec acceptance #7).
+# The newest plan candidate is a DIRECTORY named *.md → resolve_candidate picks it
+# (glob matches dirs), fresh() passes, then evaluate_gate → read_frontmatter →
+# open(<dir>) raises IsADirectoryError → caught by main's `except Exception` →
+# exit 0. The gate must NEVER block on an internal bug.
+T=$(mktemp -d); mkdir -p "$T/docs/superpowers/plans/2026-06-14-dir-plan.md"
+assert_exit "forced exception (dir candidate) → 0 (fail-open)" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
 rm -rf "$T"
 
 echo "─────────────────────────────"
