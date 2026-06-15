@@ -138,43 +138,51 @@ def evaluate_gate(path, rule):
     return None
 
 
-def main():
-    try:
-        data = json.loads(sys.stdin.read())
-    except (json.JSONDecodeError, ValueError):
-        sys.exit(0)  # битый stdin → fail-open
-
-    if data.get("tool_name") != "Skill":
-        sys.exit(0)
-
-    skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
-    rule = GATE_MAP.get(skill)
-    if rule is None:
-        sys.exit(0)  # скилл не гейтируется
-
-    try:
-        candidate = resolve_candidate(rule)
-        if candidate is None:
-            sys.exit(0)  # нет артефакта → escape
-        reason = evaluate_gate(candidate, rule)
-    except Exception as exc:  # fail-open на любой внутренней ошибке
-        print("idd-gate: внутренняя ошибка, пропускаю (fail-open): %s" % exc,
-              file=sys.stderr)
-        sys.exit(0)
-
-    if reason is None:
-        sys.exit(0)
-
+def block(candidate, reason, fix):
+    """Печатает причину в stderr и завершает с кодом 2 (блокировка)."""
     sys.stderr.write(
         "🚧 IDD gate: %s has not passed validation.\n"
         "Reason: %s\n"
         "Action: dispatch a subagent to run %s on %s (clean-context\n"
         "check-runner protocol), collect verdicts in the main session, "
         "resolve the CRITICAL\n"
-        "findings, then retry the skill invocation.\n"
-        % (candidate, reason, rule["fix"], candidate)
+        "findings, then retry.\n"
+        % (candidate, reason, fix, candidate)
     )
     sys.exit(2)
+
+
+def handle_skill(data):
+    """Gate по вызову Skill (существующий путь IDD→SDD)."""
+    skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
+    rule = GATE_MAP.get(skill)
+    if rule is None:
+        sys.exit(0)  # скилл не гейтируется
+    candidate = resolve_candidate(rule)
+    if candidate is None:
+        sys.exit(0)  # нет артефакта → escape
+    reason = evaluate_gate(candidate, rule)
+    if reason is None:
+        sys.exit(0)
+    block(candidate, reason, rule["fix"])
+
+
+def main():
+    try:
+        data = json.loads(sys.stdin.read())
+    except (json.JSONDecodeError, ValueError):
+        sys.exit(0)  # битый stdin → fail-open
+
+    tool = data.get("tool_name")
+    try:
+        if tool == "Skill":
+            handle_skill(data)
+        else:
+            sys.exit(0)
+    except Exception as exc:  # fail-open на любой внутренней ошибке
+        print("idd-gate: внутренняя ошибка, пропускаю (fail-open): %s" % exc,
+              file=sys.stderr)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
