@@ -1,4 +1,25 @@
 ---
+review:
+  spec_hash: bd526fc2f6b04dd4
+  last_run: 2026-06-15
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: INFO
+      section: Triggers — dispatch by `(tool, path)`
+      section_hash: 1e607295faa0c2c8
+      text: >-
+        The plan→impl trigger is labeled "code edit", but the actual rule matches
+        any path outside docs/superpowers/ (README, lat.md/, config files
+        included). "Code" is a slight misnomer for "non-artifact file"; consider
+        renaming for precision.
+      verdict: fixed
+      verdict_at: 2026-06-15
 chain:
   intent: null
 ---
@@ -42,7 +63,12 @@ The `Skill` triggers stay (belt-and-suspenders for the case where a `Skill` call
 |---|---|---|---|
 | (existing) | `Skill` in `GATE_MAP` | existing `GATE_MAP` row | unchanged |
 | **spec→plan** | `Write` into `docs/superpowers/plans/*.md` (plan creation) | parse the written content's frontmatter → `chain.spec` → validate that exact spec (fallback: newest spec) | `/check-spec` |
-| **plan→impl** | `Write`/`Edit`/`MultiEdit` into a path **outside** `docs/superpowers/` (code) | newest plan, **recency-gated**: if plan mtime older than `IMPL_GATE_FRESH_SECONDS` (default 2h) → allow; else evaluate the plan predicate | `/check-plan` |
+| **plan→impl** | `Write`/`Edit`/`MultiEdit` into a **non-artifact path** (any path outside `docs/superpowers/`) | newest plan, **recency-gated**: if plan mtime older than `IMPL_GATE_FRESH_SECONDS` (default 2h) → allow; else evaluate the plan predicate | `/check-plan` |
+
+**"Non-artifact path"** means any file outside `docs/superpowers/` — source code,
+but also `README`, `lat.md/`, config files, etc. Editing any of them counts as
+entering implementation. (Earlier drafts called this "code edit"; the rule has
+always been path-based, not language-based.)
 
 Non-transition writes pass through (`exit 0`):
 
