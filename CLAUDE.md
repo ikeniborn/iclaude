@@ -43,8 +43,8 @@ plan file, resp. any code edit outside `docs/superpowers/`). Mapped transitions:
 |-------|-------------------|-----------|
 | `brainstorming` | `intents/*-intent.md` | `/check-intent` |
 | `writing-plans` | `specs/*-design.md` | `/check-spec` |
-| `executing-plans` / `subagent-driven-development` | `plans/*-plan.md` | `/check-plan` |
-| `finishing-a-development-branch` | `plans/*-plan.md` (`result_check`) | `/check-result` |
+| `executing-plans` / `subagent-driven-development` | `plans/*.md` | `/check-plan` |
+| `finishing-a-development-branch` | `plans/*.md` (`result_check`) | `/check-result` |
 
 The gate is **open** when no matching artifact exists (hotfix escape) or when the
 upstream artifact's state frontmatter passes its predicate:
