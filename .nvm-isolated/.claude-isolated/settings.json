@@ -127,7 +127,7 @@
         ]
       },
       {
-        "matcher": "Skill",
+        "matcher": "Skill|Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
