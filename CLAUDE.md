@@ -33,8 +33,11 @@ For non-trivial features (new module, new CLI flag, API change, architectural de
 
 ### Phase gates & the check-runner protocol
 
-A `PreToolUse` Skill hook (`hooks/idd-gate.py`) blocks each phase transition until
-the upstream artifact has passed its validator. Mapped transitions:
+A `PreToolUse` hook (`hooks/idd-gate.py`) on `Skill|Write|Edit|MultiEdit` blocks
+each phase transition until the upstream artifact has passed its validator. The
+`intent→spec` transition is caught on the `Skill` call; `spec→plan` and `plan→impl`
+happen inline, so they are caught on the **write** of the downstream artifact (the
+plan file, resp. any code edit outside `docs/superpowers/`). Mapped transitions:
 
 | Skill | Upstream artifact | Validator |
 |-------|-------------------|-----------|
