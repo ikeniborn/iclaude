@@ -45,15 +45,15 @@ GATE_MAP = {
         "block": "review", "hash_key": "spec_hash", "fix": "/check-spec",
     },
     "executing-plans": {
-        "dir": "plans", "glob": "*-plan.md",
+        "dir": "plans", "glob": "*.md",
         "block": "review", "hash_key": "plan_hash", "fix": "/check-plan",
     },
     "subagent-driven-development": {
-        "dir": "plans", "glob": "*-plan.md",
+        "dir": "plans", "glob": "*.md",
         "block": "review", "hash_key": "plan_hash", "fix": "/check-plan",
     },
     "finishing-a-development-branch": {
-        "dir": "plans", "glob": "*-plan.md",
+        "dir": "plans", "glob": "*.md",
         "block": "result_check", "hash_key": "plan_hash", "fix": "/check-result",
     },
 }

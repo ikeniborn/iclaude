@@ -97,9 +97,24 @@ Plan body content.
 EOF
 }
 
+mk_plan_cmd_noreview(){ # root → unvalidated plan whose name does NOT end in -plan.md
+  local d="$1/docs/superpowers/plans"; mkdir -p "$d"
+  cat > "$d/2026-06-14-fix-command.md" <<'EOF'
+---
+chain:
+  intent: null
+---
+
+# Plan: fix
+
+Plan body content.
+EOF
+}
+
 SKILL_WP='{"tool_name":"Skill","tool_input":{"skill":"writing-plans"}}'
 SKILL_WP_NS='{"tool_name":"Skill","tool_input":{"skill":"superpowers:writing-plans"}}'
 SKILL_FIN='{"tool_name":"Skill","tool_input":{"skill":"finishing-a-development-branch"}}'
+SKILL_EP='{"tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
 
 echo "idd-gate: escape & non-gated"
 T=$(mktemp -d); mkdir -p "$T/docs/superpowers/specs"
@@ -137,6 +152,11 @@ assert_exit "нет result_check → 2"        "$T" "$SKILL_FIN" 2
 P=$(mk_plan_result "$T" OK)
 printf '\nextra line\n' >> "$P"
 assert_exit "hash drift (тело изменено) → 2" "$T" "$SKILL_FIN" 2
+rm -rf "$T"
+
+echo "idd-gate: plan glob fix (*.md)"
+T=$(mktemp -d); mk_plan_cmd_noreview "$T"
+assert_exit "*-command.md plan resolves → 2" "$T" "$SKILL_EP" 2
 rm -rf "$T"
 
 echo "─────────────────────────────"
