@@ -73,17 +73,3 @@ For multi-step tasks, state a brief plan:
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 ```
-
-## Maintenance
-
-**After every non-trivial change — update graph and docs.**
-
-After completing any feature, bugfix, or refactor:
-1. Run `graphify` → rebuilds knowledge graph.
-2. Run `update-docs` → runs lat check + updates lat.md/ sections.
-
-Why: stale graph/wiki misleads future sessions; fresh context is cheaper than rediscovery.
-
-- Trivial changes (typo, comment, formatting) — skip.
-- Non-trivial changes (new module, API change, architectural decision) — mandatory.
-- If unsure — update.
