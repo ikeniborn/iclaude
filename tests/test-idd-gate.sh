@@ -11,6 +11,8 @@ fail(){ echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
 # Канонический хеш тела — ТОТ ЖЕ пайплайн, что у валидаторов и хука.
 bodyhash(){ awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$1" | sha256sum | cut -c1-16; }
+write_json(){ printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"%s"}}' "$1" "$2"; }
+edit_json(){ printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "$1" "$2"; }
 
 # Запускает хук в указанном project-root, печатает exit code.
 run(){ ( cd "$1" && printf '%s' "$2" | python3 "$HOOK" >/dev/null 2>&1; echo $? ); }
@@ -48,6 +50,20 @@ chain:
 Body content for hashing.
 EOF
   sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+}
+
+mk_spec_noreview_at(){ # root relpath → unvalidated spec at root/relpath
+  local f="$1/$2"; mkdir -p "$(dirname "$f")"
+  cat > "$f" <<'EOF'
+---
+chain:
+  intent: null
+---
+
+# Design: old
+
+Body content for hashing.
+EOF
 }
 
 mk_spec_noreview(){ # root → спека без review-блока (→ block)
@@ -157,6 +173,36 @@ rm -rf "$T"
 echo "idd-gate: plan glob fix (*.md)"
 T=$(mktemp -d); mk_plan_cmd_noreview "$T"
 assert_exit "*-command.md plan resolves → 2" "$T" "$SKILL_EP" 2
+rm -rf "$T"
+
+echo "idd-gate: spec→plan write trigger"
+PLAN_AT="docs/superpowers/plans/2026-06-15-new.md"
+NOCHAIN="---\nchain:\n  intent: null\n---\n\n# Plan\n\nbody"
+
+# chain.spec → validated spec → 0
+T=$(mktemp -d); mk_spec_passed "$T"
+C="---\nchain:\n  spec: docs/superpowers/specs/2026-06-14-fix-design.md\n---\n\n# Plan\n\nbody"
+assert_exit "chain.spec → passed spec → 0" "$T" "$(write_json "$T/$PLAN_AT" "$C")" 0
+rm -rf "$T"
+
+# chain.spec → unvalidated spec, even though a NEWER validated spec exists → 2
+# (proves chain.spec beats the newest-spec fallback)
+T=$(mktemp -d)
+mk_spec_noreview_at "$T" "docs/superpowers/specs/2026-06-10-old-design.md"
+touch -d '1 hour ago' "$T/docs/superpowers/specs/2026-06-10-old-design.md"
+mk_spec_passed "$T"   # 2026-06-14-fix-design.md is newer
+C="---\nchain:\n  spec: docs/superpowers/specs/2026-06-10-old-design.md\n---\n\n# Plan\n\nbody"
+assert_exit "chain.spec → unvalidated spec → 2" "$T" "$(write_json "$T/$PLAN_AT" "$C")" 2
+rm -rf "$T"
+
+# no chain.spec, newest spec validated → 0
+T=$(mktemp -d); mk_spec_passed "$T"
+assert_exit "fallback newest spec passed → 0" "$T" "$(write_json "$T/$PLAN_AT" "$NOCHAIN")" 0
+rm -rf "$T"
+
+# no chain.spec, newest spec unvalidated → 2
+T=$(mktemp -d); mk_spec_noreview "$T"
+assert_exit "fallback newest spec unvalidated → 2" "$T" "$(write_json "$T/$PLAN_AT" "$NOCHAIN")" 2
 rm -rf "$T"
 
 echo "─────────────────────────────"

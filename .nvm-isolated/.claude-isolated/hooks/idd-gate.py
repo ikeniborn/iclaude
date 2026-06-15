@@ -25,6 +25,7 @@ import glob
 import subprocess
 
 DOCS_ROOT = "docs/superpowers"
+PLANS_DIR = os.path.join(DOCS_ROOT, "plans")
 
 # Единственный тюнинг строгости: какие severity блокируют переход.
 BLOCK_ON = {"CRITICAL"}
@@ -58,6 +59,9 @@ GATE_MAP = {
     },
 }
 
+# Write-trigger rules reuse existing GATE_MAP rows (same predicate, new trigger).
+SPEC_RULE = GATE_MAP["writing-plans"]      # specs/*-design.md, review/spec_hash
+
 
 def normalize_skill(name):
     """Суффикс после последнего ':' ('superpowers:writing-plans' → 'writing-plans')."""
@@ -88,11 +92,9 @@ def body_hash(path):
     return out.stdout.strip()
 
 
-def read_frontmatter(path):
+def _frontmatter_from_lines(lines):
     """YAML-frontmatter между первыми двумя '---'. {} если его нет."""
     import yaml  # отложенный импорт: отсутствие → исключение → fail-open в main()
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.read().splitlines()
     if not lines or lines[0].strip() != "---":
         return {}
     fm = []
@@ -102,6 +104,30 @@ def read_frontmatter(path):
         fm.append(line)
     data = yaml.safe_load("\n".join(fm))
     return data if isinstance(data, dict) else {}
+
+
+def read_frontmatter(path):
+    """YAML-frontmatter файла. {} если его нет."""
+    with open(path, "r", encoding="utf-8") as f:
+        return _frontmatter_from_lines(f.read().splitlines())
+
+
+def resolve_spec_from_chain(content):
+    """Путь к спеке из chain.spec в теле плана (tool_input.content).
+    None, если frontmatter/chain.spec нет или файла нет на диске."""
+    data = _frontmatter_from_lines((content or "").splitlines())
+    chain = data.get("chain")
+    spec = chain.get("spec") if isinstance(chain, dict) else None
+    if spec and os.path.exists(spec):
+        return spec
+    return None
+
+
+def _under(path, root):
+    """True, если path лежит внутри root (оба приводятся к абсолютным от cwd)."""
+    ap = os.path.abspath(path)
+    ar = os.path.abspath(root)
+    return ap == ar or ap.startswith(ar + os.sep)
 
 
 def evaluate_gate(path, rule):
@@ -152,6 +178,26 @@ def block(candidate, reason, fix):
     sys.exit(2)
 
 
+def handle_write(data, tool):
+    """Gate по записи downstream-артефакта (inline-переходы spec→plan, plan→impl)."""
+    path = (data.get("tool_input") or {}).get("file_path")
+    if not path:
+        sys.exit(0)  # нет пути → fail-open
+
+    # spec→plan: создание файла плана (только Write, не Edit).
+    if tool == "Write" and _under(path, PLANS_DIR) and path.endswith(".md"):
+        content = (data.get("tool_input") or {}).get("content")
+        spec = resolve_spec_from_chain(content) or resolve_candidate(SPEC_RULE)
+        if spec is None:
+            sys.exit(0)  # нет спеки → escape
+        reason = evaluate_gate(spec, SPEC_RULE)
+        if reason is None:
+            sys.exit(0)
+        block(spec, reason, SPEC_RULE["fix"])
+
+    sys.exit(0)  # specs/intents, правка существующего плана и т.п.
+
+
 def handle_skill(data):
     """Gate по вызову Skill (существующий путь IDD→SDD)."""
     skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
@@ -177,6 +223,8 @@ def main():
     try:
         if tool == "Skill":
             handle_skill(data)
+        elif tool in ("Write", "Edit", "MultiEdit"):
+            handle_write(data, tool)
         else:
             sys.exit(0)
     except Exception as exc:  # fail-open на любой внутренней ошибке
