@@ -13,6 +13,13 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - Do NOT use tests as a verification step. Verify behavior by running the real code/command and observing output.
 - If a skill (e.g. `test-driven-development`) instructs you to write tests, follow this rule instead and skip the test step.
 
+**ALLOWED (not "tests" — code-correctness checks, encouraged):**
+- Linters and formatters (e.g. `ruff`, `eslint`, `shellcheck`, `bash -n`, `prettier`).
+- Type checkers and static analysis (e.g. `mypy`, `tsc --noEmit`, LSP diagnostics).
+- Syntax / semantic / correctness validation that does not exercise runtime behavior with assertions.
+
+The ban targets **functional tests** (assert runtime behavior). Static code-quality checks are fine and recommended.
+
 **On finding existing tests in the project:**
 - Report them (path + what they test).
 - Recommend deletion.
