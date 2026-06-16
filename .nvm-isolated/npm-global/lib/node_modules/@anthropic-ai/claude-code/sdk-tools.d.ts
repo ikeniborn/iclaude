@@ -149,6 +149,29 @@ export type AgentOutput =
        * Whether the calling agent has Read/Bash tools to check progress
        */
       canReadOutputFile?: boolean;
+    }
+  | {
+      status: "remote_launched";
+      /**
+       * The ID of the remote agent task
+       */
+      taskId: string;
+      /**
+       * The URL of the cloud session
+       */
+      sessionUrl: string;
+      /**
+       * The description of the task
+       */
+      description: string;
+      /**
+       * The prompt for the agent
+       */
+      prompt: string;
+      /**
+       * Path to the output file for checking agent progress
+       */
+      outputFile: string;
     };
 export type FileReadOutput =
   | {
@@ -409,7 +432,7 @@ export interface AgentInput {
    */
   name?: string;
   /**
-   * Team name for spawning. Uses current team context if omitted.
+   * Deprecated; ignored. The session has a single implicit team.
    */
   team_name?: string;
   /**
@@ -417,9 +440,9 @@ export interface AgentInput {
    */
   mode?: "acceptEdits" | "auto" | "bypassPermissions" | "default" | "dontAsk" | "plan";
   /**
-   * Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo.
+   * Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo. "remote" launches the agent in a remote cloud environment (always runs in background; availability is gated).
    */
-  isolation?: "worktree";
+  isolation?: "worktree" | "remote";
 }
 export interface BashInput {
   /**
