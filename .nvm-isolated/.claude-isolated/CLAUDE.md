@@ -8,8 +8,10 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **This rule is absolute. It applies regardless of which skill, tool, agent, or workflow is active — including any skill that mandates TDD or test-first development. No exception, no rationalization.**
 
-- Do NOT create tests of any kind: unit, integration, e2e, snapshot, property, smoke, or test scaffolding/fixtures.
-- Do NOT add or run a testing framework, test runner, or test dependency.
+**What is banned — functional tests only:** code (or test-driven generation) that asserts runtime behavior in a red→green loop — write failing test, then write code until it passes. This includes unit, integration, e2e, snapshot, property, and smoke tests.
+
+- Do NOT create such functional tests, nor test scaffolding/fixtures for them.
+- Do NOT add or run a functional testing framework, test runner, or test dependency (e.g. `vitest`, `jest`, `pytest`, `mocha`; `npm test` when it runs such a suite).
 - Do NOT use tests as a verification step. Verify behavior by running the real code/command and observing output.
 - If a skill (e.g. `test-driven-development`) instructs you to write tests, follow this rule instead and skip the test step.
 
@@ -17,11 +19,12 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - Linters and formatters (e.g. `ruff`, `eslint`, `shellcheck`, `bash -n`, `prettier`).
 - Type checkers and static analysis (e.g. `mypy`, `tsc --noEmit`, LSP diagnostics).
 - Syntax / semantic / correctness validation that does not exercise runtime behavior with assertions.
+- **lat.md test-specs** (spec sections, `require-code-mention`, link/code-ref checks via `lat check`). These describe and validate code↔doc traceability — NOT red→green functional tests. Keep and maintain them.
 
-The ban targets **functional tests** (assert runtime behavior). Static code-quality checks are fine and recommended.
+The ban targets **functional tests** (red→green, assert runtime behavior). Static code-quality checks and lat.md spec-validation are fine and recommended.
 
-**On finding existing tests in the project:**
-- Report them (path + what they test).
+**On finding existing functional tests in the project** (NOT lint, type-check, or lat.md specs):
+- Report them (path + what they assert).
 - Recommend deletion.
 - Offer to delete them as a concrete action — ask for confirmation, then remove on approval.
 
