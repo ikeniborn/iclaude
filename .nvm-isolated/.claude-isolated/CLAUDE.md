@@ -4,6 +4,20 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## No Tests (MANDATORY — overrides everything)
+
+**This rule is absolute. It applies regardless of which skill, tool, agent, or workflow is active — including any skill that mandates TDD or test-first development. No exception, no rationalization.**
+
+- Do NOT create tests of any kind: unit, integration, e2e, snapshot, property, smoke, or test scaffolding/fixtures.
+- Do NOT add or run a testing framework, test runner, or test dependency.
+- Do NOT use tests as a verification step. Verify behavior by running the real code/command and observing output.
+- If a skill (e.g. `test-driven-development`) instructs you to write tests, follow this rule instead and skip the test step.
+
+**On finding existing tests in the project:**
+- Report them (path + what they test).
+- Recommend deletion.
+- Offer to delete them as a concrete action — ask for confirmation, then remove on approval.
+
 ## Getting Started
 
 **Load graph and docs before exploring code — they encode decisions invisible in raw code.**
@@ -62,10 +76,10 @@ Test: every changed line must trace directly to the user's request.
 
 **Define success criteria. Loop until verified.**
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+Transform tasks into verifiable goals (verify by running real code, never by writing tests — see **No Tests**):
+- "Add validation" → "Run the code with invalid inputs, confirm it rejects them"
+- "Fix the bug" → "Reproduce it by running the affected path, confirm the fix removes it"
+- "Refactor X" → "Run X before and after, confirm identical observable behavior"
 
 For multi-step tasks, state a brief plan:
 ```
