@@ -1,3 +1,24 @@
+---
+review:
+  spec_hash: 039ad2f1608a1299
+  last_run: 2026-06-17
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: Diagram Recipes
+      section_hash: ea3f0bcdde085311
+      text: "'tiny inline <script>' — no size/scope criterion for what counts as 'tiny'. Guarded zone already requires logging the structure CSS can't express, so impact is bounded; criterion can be made explicit during writing-skills."
+      verdict: open
+      verdict_at: null
+chain:
+  intent: docs/superpowers/intents/2026-06-17-html-report-skill-intent.md
+---
 # Design: html-report skill
 
 **Date:** 2026-06-17
