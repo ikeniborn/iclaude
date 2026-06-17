@@ -1,3 +1,60 @@
+---
+review:
+  spec_hash: 912ca31ec8396669
+  last_run: 2026-06-17
+  chain:
+    intent: docs/superpowers/intents/2026-06-17-iwiki-intent.md
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  section_hashes:
+    Summary:                                                941f3f12689bbc41
+    Key decisions:                                          4473de6c34f9ee44
+    File layout:                                            abbf7778469c64ea
+    Components:                                             a92f2b86341b4222
+    "Engine (Python + uv) — does ONLY embed + search":      2f897e242d204068
+    "Skills (Claude = brain)":                              4ae03ad686879b1c
+    Commands:                                               ccefe1af2afeb7b5
+    Hooks:                                                  317cb274237ea70c
+    Install:                                                1e868e8afc0c2d54
+    Data flow:                                              55ddbcc270c9e93f
+    "Migration: lat → iwiki":                               69095667429384dc
+    Error handling & stop rules:                            9d743f4618135532
+    Health metrics (from intent):                           c06cb0c4fa34d7cb
+    Out of scope (v1):                                      b80297b960d9a0bf
+    "Verification (no functional tests — project rule)":    ff71d70a00c27785
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: WARNING
+      section: Key decisions
+      section_hash: 4473de6c34f9ee44
+      text: >-
+        The intent's Hard constraint reads "Backend is switchable: Anthropic AND
+        OpenAI-compatible ... for both generation and embeddings." The spec
+        narrows this to OpenAI-compatible only ("No backend enum"). The narrowing
+        is defensible (Anthropic exposes no embeddings endpoint), but the spec
+        does not explicitly note that it drops the Anthropic backend named in the
+        intent. State the divergence (and its rationale) so coverage is traceable.
+      verdict: fixed
+      verdict_at: 2026-06-17
+    - id: F-002
+      phase: consistency
+      severity: INFO
+      section: Health metrics (from intent)
+      section_hash: c06cb0c4fa34d7cb
+      text: >-
+        Index size cap is stated as "~8 MB" in §Components/§Error handling
+        (`status` warns above ~8 MB) but as "≤ ~8 MB" in §Health metrics, while
+        the intent's target is "≤ ~10 MB". All are soft caps and roughly aligned,
+        but the 8 vs 10 MB figures differ between spec and intent. Align on one
+        number or note 8 MB as the tightened spec target.
+      verdict: fixed
+      verdict_at: 2026-06-17
+---
+
 # Design: iwiki — embedding-based documentation agent replacing lat.md
 
 **Date:** 2026-06-17
@@ -25,7 +82,7 @@ git.
 | Ingest semantics | Generate wiki from source (obsidian-ai-wiki style) | Full replacement: produces docs + index, not just an indexer. |
 | Wiki location | `docs/wiki/` — **hard rule** | Single canonical home for all wiki content. |
 | Packaging | In-repo `plugin/iwiki/` + repo-root marketplace | Develop and publish from one place. |
-| External API config | `IWIKI_LLM_BASE_URL` + `IWIKI_LLM_KEY` + `IWIKI_EMBED_MODEL` | OpenAI-compatible endpoint; base URL covers any provider. No backend enum. |
+| External API config | `IWIKI_LLM_BASE_URL` + `IWIKI_LLM_KEY` + `IWIKI_EMBED_MODEL` | OpenAI-compatible endpoint; base URL covers any provider. No backend enum. **Divergence from intent:** the intent named "Anthropic AND OpenAI-compatible" backends; we drop the Anthropic-native path because Anthropic exposes no embeddings endpoint. An Anthropic-compatible gateway is still reachable via `IWIKI_LLM_BASE_URL`. |
 | lat → iwiki migration | No migration — regenerate wiki from source | Clean cutover; no stale hand-written carry-over. |
 
 ## File layout
@@ -177,7 +234,9 @@ One-way cutover, proposal-first (per intent Autonomy Zones).
 - Isolation — everything under `.nvm-isolated/` / the repo; no leaks into other
   projects' `.claude/`.
 - Privacy — document egress to the embedding API is consented, not silent.
-- Repo size — int8 quantization + per-section granularity keep the index ≤ ~8 MB.
+- Repo size — int8 quantization + per-section granularity keep the index ≤ 8 MB.
+  This 8 MB cap is a deliberately tightened spec target (the intent's stated target
+  is ~10 MB); `status` warns above 8 MB.
 - Security hooks keep working — engine never reads secrets, never bypasses hooks.
 - Controllability — read scope configurable via env vars and
   `.iwikiinclude` / `.iwikiexclude`.
