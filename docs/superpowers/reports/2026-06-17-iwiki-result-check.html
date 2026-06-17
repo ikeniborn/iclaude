@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result Check — iwiki plan</title>
+<style>
+:root{
+  --bg:#fafafa; --surface:#ffffff; --fg:#333344;
+  --accent:#5c6bc0; --border:#d0d0e0; --line:#888888;
+  --zebra:#f3f3f8; --ok:#43a047; --warn:#fb8c00; --danger:#e53935; --muted:#777;
+}
+body:has(#theme-toggle:checked){
+  --bg:#1e1e2e; --surface:#313244; --fg:#cdd6f4;
+  --accent:#89b4fa; --border:#45475a; --line:#888888;
+  --zebra:#282838; --ok:#a6e3a1; --warn:#f9e2af; --danger:#f38ba8; --muted:#9399b2;
+}
+body{
+  margin:0; padding:1.5rem;
+  font:16px/1.55 system-ui, sans-serif;
+  background:var(--bg); color:var(--fg);
+  transition:background .3s, color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right; z-index:10;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+.report{ max-width:1000px; margin:0 auto; }
+h1{ color:var(--accent); margin:.2rem 0 .2rem; }
+h2{ color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:.3rem; margin-top:2rem; }
+.sub{ color:var(--muted); margin:.1rem 0 1rem; }
+.verdict{ display:inline-block; padding:.3rem .9rem; border-radius:8px; font-weight:700; letter-spacing:.5px; }
+.verdict.ok{ background:var(--ok); color:#05210a; }
+.cards{ display:flex; flex-wrap:wrap; gap:.8rem; margin:1rem 0; }
+.card{ flex:1 1 130px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.8rem 1rem; text-align:center; }
+.card .n{ font-size:1.8rem; font-weight:700; }
+.card.done .n{ color:var(--ok); } .card.partial .n{ color:var(--warn); } .card.missing .n{ color:var(--danger); }
+.card .l{ color:var(--muted); font-size:.85rem; text-transform:uppercase; letter-spacing:.5px; }
+table{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; margin:.6rem 0; }
+th,td{ text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--border); vertical-align:top; }
+th{ background:var(--zebra); color:var(--accent); }
+tbody tr:nth-child(even){ background:var(--zebra); }
+tbody tr:hover{ background:var(--border); }
+.tag{ font-size:.75rem; font-weight:700; padding:.1rem .5rem; border-radius:5px; white-space:nowrap; }
+.tag.done{ background:var(--ok); color:#05210a; }
+.tag.partial{ background:var(--warn); color:#3a2400; }
+.tag.missing{ background:var(--danger); color:#2a0205; }
+.tag.info{ background:var(--accent); color:#06122b; }
+.tag.warn{ background:var(--warn); color:#3a2400; }
+code{ background:var(--zebra); padding:.05rem .35rem; border-radius:4px; font-size:.88em; }
+.rpt-exp{ border:1px solid var(--border); border-radius:8px; margin:.5rem 0; background:var(--surface); }
+.rpt-exp > summary{ cursor:pointer; padding:.6rem .9rem; font-weight:600; color:var(--accent); }
+.rpt-exp[open] > summary{ border-bottom:1px solid var(--border); }
+.rpt-exp .body{ padding:.6rem .9rem; }
+.chain{ background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.7rem 1rem; font-family:monospace; overflow-x:auto; }
+.chain b{ color:var(--accent); }
+ul.tight{ margin:.3rem 0; padding-left:1.2rem; }
+.meta td:first-child{ color:var(--muted); width:120px; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+
+<main class="report">
+
+<h1>Result Check — iwiki</h1>
+<p class="sub">Сверка реализации плана с цепочкой IDD→SDD · 2026-06-17 · <span class="verdict ok">ВЕРДИКТ: OK</span></p>
+
+<h2>Документы</h2>
+<table class="meta">
+<tbody>
+<tr><td>Plan</td><td><code>docs/superpowers/plans/2026-06-17-iwiki.md</code> (plan_hash <code>31b09baf7273c382</code>)</td></tr>
+<tr><td>Spec</td><td><code>docs/superpowers/specs/2026-06-17-iwiki-design.md</code></td></tr>
+<tr><td>Intent</td><td><code>docs/superpowers/intents/2026-06-17-iwiki-intent.md</code></td></tr>
+<tr><td>Diff base</td><td>диапазон <code>ae144b44~1 … HEAD</code> (план реализован сериями коммитов; <code>git diff HEAD</code> пуст — всё закоммичено). 71 файл изменён, +2079 / −1696.</td></tr>
+</tbody>
+</table>
+
+<h2>Покрытие шагов плана</h2>
+<div class="cards">
+  <div class="card done"><div class="n">18</div><div class="l">DONE</div></div>
+  <div class="card partial"><div class="n">1</div><div class="l">PARTIAL</div></div>
+  <div class="card missing"><div class="n">0</div><div class="l">MISSING</div></div>
+</div>
+
+<table>
+<thead><tr><th>Task</th><th>Статус</th><th>Свидетельство в diff</th></tr></thead>
+<tbody>
+<tr><td>1 · Plugin scaffold + marketplace</td><td><span class="tag done">DONE</span></td><td><code>plugin/iwiki/.claude-plugin/plugin.json</code>, <code>.claude-plugin/marketplace.json</code></td></tr>
+<tr><td>2 · Engine project + config</td><td><span class="tag done">DONE</span></td><td><code>pyproject.toml</code>, <code>__init__.py</code>, <code>config.py</code> (env + stop-rule, include/exclude)</td></tr>
+<tr><td>3 · Markdown chunker</td><td><span class="tag done">DONE</span></td><td><code>chunk.py</code></td></tr>
+<tr><td>4 · Embeddings client</td><td><span class="tag done">DONE</span></td><td><code>embed.py</code></td></tr>
+<tr><td>5 · Index store (JSONL + int8)</td><td><span class="tag done">DONE</span></td><td><code>store.py</code></td></tr>
+<tr><td>6 · Wikilinks parser</td><td><span class="tag done">DONE</span></td><td><code>wikilinks.py</code></td></tr>
+<tr><td>7 · search + related</td><td><span class="tag done">DONE</span></td><td><code>search.py</code>, <code>related.py</code></td></tr>
+<tr><td>8 · CLI __main__</td><td><span class="tag done">DONE</span></td><td><code>__main__.py</code> (index/search/related/status + fnmatch scope)</td></tr>
+<tr><td>9 · Engine e2e smoke</td><td><span class="tag done">DONE</span></td><td>verification-only; <code>docs/wiki/.iwiki/index.jsonl</code> построен → движок отработал</td></tr>
+<tr><td>10 · detect.sh + runner</td><td><span class="tag done">DONE</span></td><td><code>lib/iwiki/detect.sh</code></td></tr>
+<tr><td>11 · install.sh + --install-iwiki</td><td><span class="tag done">DONE</span></td><td><code>lib/iwiki/install.sh</code>, <code>iclaude.sh</code> правлен</td></tr>
+<tr><td>12 · Skill iwiki-query</td><td><span class="tag done">DONE</span></td><td><code>skills/iwiki-query/SKILL.md</code></td></tr>
+<tr><td>13 · Skill iwiki-ingest</td><td><span class="tag done">DONE</span></td><td><code>skills/iwiki-ingest/SKILL.md</code></td></tr>
+<tr><td>14 · Skill iwiki-lint</td><td><span class="tag done">DONE</span></td><td><code>skills/iwiki-lint/SKILL.md</code></td></tr>
+<tr><td>15 · Slash commands</td><td><span class="tag done">DONE</span></td><td><code>commands/iwiki-{query,ingest,lint}.md</code></td></tr>
+<tr><td>16 · UserPromptSubmit hint hook</td><td><span class="tag done">DONE</span></td><td><code>hooks/iwiki-hint.py</code></td></tr>
+<tr><td>17 · Generate docs/wiki + index</td><td><span class="tag done">DONE</span></td><td>20 страниц <code>docs/wiki/*.md</code> + <code>.iwiki/index.jsonl</code> + <code>log.jsonl</code></td></tr>
+<tr><td>18 · No startup regression</td><td><span class="tag done">DONE</span></td><td>verification-only; движок грузится лениво (только в <code>--install-iwiki</code> / skill-путях)</td></tr>
+<tr><td>19 · HUMAN CHECKPOINT — cutover</td><td><span class="tag partial">PARTIAL</span></td><td><code>lib/lat/</code>, <code>lat.md/</code>, lat-скиллы, lat-флаги удалены; <code>CLAUDE.md</code> переписан; <code>.claude_config.example</code> → IWIKI_LLM_*. Под-шаг migrate <code>docs/CONFIGURATION.md</code> — N/A (файл отсутствует)</td></tr>
+</tbody>
+</table>
+
+<h2>Findings</h2>
+
+<details class="rpt-exp">
+<summary><span class="tag info">INFO</span> &nbsp; Task 19 · docs/CONFIGURATION.md отсутствует</summary>
+<div class="body">
+<p><b>Plan:</b> Task 19 Step 6 — «Update <code>.claude_config.example</code> and <code>docs/CONFIGURATION.md</code>: <code>LAT_LLM_*</code> → <code>IWIKI_LLM_*</code>».</p>
+<p><b>Diff:</b> <code>.claude_config.example</code> мигрирован на <code>IWIKI_LLM_*</code> ✓. Файла <code>docs/CONFIGURATION.md</code> в репозитории нет — мигрировать нечего.</p>
+<p><b>Fix options:</b></p>
+<ul class="tight">
+<li>Принять как N/A — целевой файл не существует, миграция config выполнена в единственном существующем месте.</li>
+<li>Если CONFIGURATION.md планировался — создать его с секцией IWIKI_LLM_* (вне рамок этого плана).</li>
+</ul>
+</div>
+</details>
+
+<details class="rpt-exp">
+<summary><span class="tag warn">WARNING</span> &nbsp; Excess: несвязанные с планом изменения в диапазоне</summary>
+<div class="body">
+<p>Диапазон <code>ae144b44~1 … HEAD</code> захватывает чужие коммиты (html-report для check-команд, version bumps, «up»). Файлы вне плана iwiki:</p>
+<ul class="tight">
+<li><code>.nvm-isolated/.claude-isolated/skills/prd-generator/SKILL.md</code></li>
+<li><code>.nvm-isolated/.claude-isolated/skills/prompt-verifier/SKILL.md</code></li>
+</ul>
+<p>Это работа из других задач, попавшая в диапазон, — не дефект реализации плана iwiki.</p>
+</div>
+</details>
+
+<details class="rpt-exp">
+<summary><span class="tag info">INFO</span> &nbsp; Excess: uv.lock</summary>
+<div class="body">
+<p><b>Diff:</b> <code>plugin/iwiki/engine/uv.lock</code> добавлен. Явного шага «создать uv.lock» в плане нет.</p>
+<p><b>Оценка:</b> ожидаемый артефакт <code>uv sync</code> (Task 11). Корректно, не лишнее.</p>
+</div>
+</details>
+
+<h2>Покрытие Intent / Spec</h2>
+
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Покрытие</th></tr></thead>
+<tbody>
+<tr><td><code>/iwiki-ingest</code> создаёт/обновляет страницы + diff</td><td><span class="tag done">✓</span> skill iwiki-ingest (guarded, diff + log)</td></tr>
+<tr><td><code>/iwiki-query</code> отвечает + ссылки на секции</td><td><span class="tag done">✓</span> skill iwiki-query + engine search</td></tr>
+<tr><td>Поиск по смыслу + related articles</td><td><span class="tag done">✓</span> <code>search.py</code> (cosine) + <code>related.py</code> (vector + graph)</td></tr>
+<tr><td><code>lat.md</code> удалён из зависимостей</td><td><span class="tag done">✓</span> cutover (Task 19)</td></tr>
+<tr><td><code>/iwiki-lint</code> отчёт</td><td><span class="tag done">✓</span> skill iwiki-lint (report-only)</td></tr>
+<tr><td>Markdown <code>[[...]]</code> wiki-links</td><td><span class="tag done">✓</span> wikilinks parser + skills</td></tr>
+<tr><td>Граф зависимостей (optional/stretch)</td><td><span class="tag info">N/A</span> Out of scope v1 — допустимо (опционально)</td></tr>
+</tbody>
+</table>
+<p class="sub">Desired Outcomes покрыто: <b>6/6</b> обязательных (1 optional вне scope). Spec requirements (движок / скиллы / команды / install / migration / stop-rules / health metrics): <b>покрыто полностью</b>.</p>
+
+<h2>Сводка</h2>
+<table>
+<tbody>
+<tr><td>CRITICAL</td><td><b>0</b></td></tr>
+<tr><td>WARNING</td><td><b>1</b> (excess из чужих коммитов в диапазоне)</td></tr>
+<tr><td>INFO</td><td><b>2</b> (CONFIGURATION.md N/A · uv.lock)</td></tr>
+<tr><td>MISSING шагов</td><td><b>0</b></td></tr>
+<tr><td>Вердикт</td><td><span class="verdict ok">OK</span></td></tr>
+</tbody>
+</table>
+
+<h2>Цепь</h2>
+<div class="chain">
+<b>intent</b> 2026-06-17-iwiki-intent.md &nbsp;→&nbsp; <b>spec</b> 2026-06-17-iwiki-design.md &nbsp;→&nbsp; <b>plan</b> 2026-06-17-iwiki.md
+</div>
+
+</main>
+</body>
+</html>
