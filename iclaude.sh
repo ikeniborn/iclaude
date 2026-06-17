@@ -115,6 +115,14 @@ if [[ -d "$LIB_DIR/graphify" ]]; then
 fi
 
 #######################################
+# Load iwiki modules (Phase 8.0.1)
+#######################################
+if [[ -d "$LIB_DIR/iwiki" ]]; then
+    source "${LIB_DIR}/iwiki/detect.sh"
+    source "${LIB_DIR}/iwiki/install.sh"
+fi
+
+#######################################
 # Load lat.md modules (Phase 8.5)
 #######################################
 if [[ -d "$LIB_DIR/lat" ]]; then
@@ -563,6 +571,11 @@ fi
             --check-graphify)
                 check_graphify_status
                 exit 0
+                ;;
+            --install-iwiki)
+                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                install_iwiki
+                exit $?
                 ;;
             --install-lat)
                 if [[ "$use_system" == true ]]; then
