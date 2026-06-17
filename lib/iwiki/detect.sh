@@ -16,8 +16,10 @@ detect_iwiki() {
 }
 
 # Run the engine: iwiki_engine_run <args...>
+# Stays in the caller's CWD (so a relative --wiki-dir like "docs/wiki" resolves
+# against the project root); --project points uv at the engine's venv.
 iwiki_engine_run() {
     local uv; uv=$(_iwiki_resolve_uv)
     [[ -z "$uv" ]] && { echo "iwiki: uv not found; run ./iclaude.sh --install-iwiki" >&2; return 1; }
-    ( cd "$(_iwiki_engine_dir)" && "$uv" run python3 -m iwiki_engine "$@" )
+    "$uv" run --project "$(_iwiki_engine_dir)" python3 -m iwiki_engine "$@"
 }
