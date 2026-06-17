@@ -85,6 +85,21 @@ git diff HEAD
    Если frontmatter в плане отсутствует — добавь его в начало файла
    (`---` … `---`), не меняя тело.
 
+### Шаг 8. HTML-отчёт для пользователя
+
+После записи `result_check` вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+
+Передай навыку данные (оба блока обязательны):
+
+1. **Резюме сверки** — документы цепи (plan / spec / intent), база diff.
+2. **Результаты проверки** — покрытие шагов плана (DONE / PARTIAL / MISSING счётчики); таблица findings (`severity`, шаг, Plan / Diff / Fix options); intent / spec coverage (Desired Outcomes N/M, requirements N/M); excess changes; сводка (CRITICAL / WARNING / INFO); вердикт; chain (`intent → spec → plan`).
+
+Параметры артефакта:
+- Выход: `docs/superpowers/reports/<basename плана без .md>-result-check.html` (например `2026-06-17-foo-plan-result-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+
+После записи сообщи пользователю путь к `.html`.
+
 ## Severity
 
 | Severity | Условие |

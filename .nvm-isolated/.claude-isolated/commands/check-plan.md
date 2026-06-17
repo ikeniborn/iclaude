@@ -126,6 +126,21 @@
 
 Применить exit-критерий. Вывод: `OK` либо `требует доработки: <N> critical, <M> warning`.
 
+### Шаг 5. HTML-отчёт для пользователя
+
+После финального вердикта (включая ветку quick-exit `OK (cached, hash match)`) вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+
+Передай навыку данные (оба блока обязательны):
+
+1. **Резюме плана** — шаги/таски с их критериями готовности (DoD).
+2. **Результаты проверки** — по каждой из 5 фаз (structure / coverage / dependencies / verifiability / consistency) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open); финальный вердикт; chain (`intent → spec → plan`, если `intent_path` известен).
+
+Параметры артефакта:
+- Выход: `docs/superpowers/reports/<basename плана без .md>-check.html` (например `2026-06-17-foo-plan-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+
+После записи сообщи пользователю путь к `.html`.
+
 ## Правила
 
 **Запрещено:**

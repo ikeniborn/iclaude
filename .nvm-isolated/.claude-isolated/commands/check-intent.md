@@ -127,6 +127,21 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 
 Применить exit-критерий из шага 0. Вывести `OK` либо `требует доработки: <N> critical open, <M> warning open`.
 
+### Шаг 5. HTML-отчёт для пользователя
+
+После финального вердикта (включая ветку quick-exit `OK (cached, hash match)`) вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+
+Передай навыку данные (оба блока обязательны):
+
+1. **Резюме intent doc** — Objective, Desired Outcomes, Health Metrics, Constraints (steering / hard), Autonomy Zones, Stop Rules.
+2. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
+
+Параметры артефакта:
+- Выход: `docs/superpowers/reports/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+
+После записи сообщи пользователю путь к `.html`.
+
 ## Правила
 
 **Запрещено:**
