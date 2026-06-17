@@ -15,5 +15,42 @@ install_iwiki() {
     fi
     print_info "Syncing iwiki engine (uv) at $dir ..."
     ( cd "$dir" && "$uv" sync ) || { print_error "uv sync failed"; return 1; }
+
+    _iwiki_register_plugin
     print_info "iwiki installed. Configure IWIKI_LLM_BASE_URL / IWIKI_LLM_KEY / IWIKI_EMBED_MODEL in .claude_config."
+}
+
+# Invoke the isolated Claude binary, handling both the native binary and the
+# legacy "node cli.js" form returned by get_nvm_claude_path().
+_iwiki_claude() {
+    local cp="$1"; shift
+    if [[ "$cp" =~ ^node\  ]]; then ( cd "$SCRIPT_DIR" && node "${cp#node }" "$@" )
+    else ( cd "$SCRIPT_DIR" && "$cp" "$@" ); fi
+}
+
+# Register the in-repo marketplace + install the iwiki plugin into the isolated
+# plugins dir so Claude Code loads it. Non-fatal: the engine works via the CLI
+# even if registration fails. Idempotent — skips steps already done.
+_iwiki_register_plugin() {
+    local cp; cp=$(get_nvm_claude_path 2>/dev/null)
+    if [[ -z "$cp" ]]; then
+        print_warning "Claude binary not found — skipping plugin registration (engine still usable via the CLI)."
+        return 0
+    fi
+    if [[ -z "${CLAUDE_CONFIG_DIR:-}" ]]; then
+        print_warning "CLAUDE_CONFIG_DIR not set — skipping plugin registration."
+        return 0
+    fi
+    if ! _iwiki_claude "$cp" plugin marketplace list 2>/dev/null | grep -q "iclaude"; then
+        print_info "Registering iclaude marketplace ($SCRIPT_DIR) ..."
+        _iwiki_claude "$cp" plugin marketplace add "$SCRIPT_DIR" --scope project \
+            || print_warning "marketplace add failed (engine still usable via the CLI)."
+    fi
+    if _iwiki_claude "$cp" plugin list 2>/dev/null | grep -q "iwiki@iclaude"; then
+        print_info "iwiki plugin already registered."
+    else
+        print_info "Installing iwiki plugin into the isolated plugins dir ..."
+        _iwiki_claude "$cp" plugin install iwiki@iclaude --scope project \
+            || print_warning "plugin install failed (engine still usable via the CLI)."
+    fi
 }
