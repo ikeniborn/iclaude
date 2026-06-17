@@ -26,7 +26,9 @@ The optional `skip_isolated` argument (`"true"`) bypasses step 1, forcing use of
 
 ## Claude Binary Detection
 
-`get_nvm_claude_path()` in `lib/nvm/detect.sh` locates the Claude Code binary within the active NVM environment. It searches in two contexts — the current `nvm current` version directory and the `npm prefix -g` path — applying the same priority order in each:
+`get_nvm_claude_path()` in `lib/nvm/detect.sh` locates the Claude Code binary. It first prefers the **isolated install** — `$NPM_CONFIG_PREFIX` (falling back to `$ISOLATED_NVM_DIR/npm-global`), checking `bin/claude`, then `lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`, then that package's `cli.js`. This guarantees the lockfile-pinned isolated binary always wins over an inherited ambient `$NVM_DIR` (e.g. the user's `~/.nvm` loaded from `.bashrc`), which may hold an older Claude — or a stale `.claude-code-*` temp folder from an aborted npm install — that lacks newer flags like `plugin install --scope` and breaks iwiki plugin registration.
+
+Only if the isolated binary is not found (e.g. during first-time bootstrap before install) does it fall back to searching two ambient contexts — the current `nvm current` version directory and the `npm prefix -g` path — applying the same priority order in each:
 
 1. `bin/claude` (standard symlink)
 2. `bin/.claude-*` (temporary binaries, newest by mtime)
