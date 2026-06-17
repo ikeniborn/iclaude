@@ -36,7 +36,7 @@ Two modes are supported, selected by what is stored in `CREDENTIALS_FILE`:
 | `PROXY_CA=/path/to/ca.pem` | Sets `NODE_EXTRA_CA_CERTS`; TLS is verified against the custom CA |
 | `PROXY_INSECURE=true` (default) | Sets `NODE_TLS_REJECT_UNAUTHORIZED=0`; disables TLS verification |
 
-**Security note:** Even in secure mode (`PROXY_CA`), `undici` does not verify the target server's certificate when tunneling HTTPS through a proxy (see [HackerOne #1583680](https://hackerone.com/reports/1583680)). Prefer `--proxy-ca` over `--proxy-insecure` where possible, and see [[config#Configuration Variables]].
+**Security note:** Even in secure mode (`PROXY_CA`), `undici` does not verify the target server's certificate when tunneling HTTPS through a proxy (see [HackerOne #1583680](https://hackerone.com/reports/1583680)). Prefer `--proxy-ca` over `--proxy-insecure` where possible, and see [[config#Environment Variable Export]].
 
 ## Connectivity Test
 
@@ -52,4 +52,4 @@ Two modes are supported, selected by what is stored in `CREDENTIALS_FILE`:
 
 ---
 
-See also: [[oauth#OAuth Token Storage]] (tokens travel through the proxy), [[config#Configuration Variables]] (`PROXY_CA`, `PROXY_INSECURE`), [[launcher]] (where `configure_proxy_from_url` is called at startup).
+See also: [[oauth#Token Storage]] (tokens travel through the proxy), [[config#Environment Variable Export]] (`PROXY_CA`, `PROXY_INSECURE`), [[launcher]] (where `configure_proxy_from_url` is called at startup).

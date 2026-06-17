@@ -10,7 +10,7 @@ The launcher module (`lib/launcher/launch.sh`) is the final stage of iclaude sta
 
 Before selecting a binary, `launch_claude()` performs three housekeeping actions in order:
 
-1. **`_sync_graphify_env_to_settings()`** — writes the current value of `GRAPHIFY_OUT` into the `env` block of `settings.json` so that Bash tool subshells (which do not inherit exported variables) see the same output path as the parent process.
+1. **`_sync_graphify_env_to_settings()`** — writes the current value of `GRAPHIFY_OUT` into the `env` block of `settings.json` so that Bash tool subshells (which do not inherit exported variables) see the same output path as the parent process (see [[graphify]] for the knowledge-graph subsystem itself).
 2. **`unset CHROME_DESKTOP`** — VS Code sets `CHROME_DESKTOP=code.desktop`; leaving it set causes the Claude-in-Chrome extension to open the wrong browser.
 3. **`check_oauth_token`** and **`cleanup_stale_session_env`** — validates OAuth before launch and removes old per-session directories under `$ISOLATED_CONFIG_DIR/session-env/` (empty dirs after 7 days, non-empty after 28 days, configurable via `SESSION_ENV_RETENTION_DAYS`).
 
@@ -36,7 +36,7 @@ When running natively (no microVM), `launch_claude()` locates the Claude Code bi
 2. System paths: `/usr/local/bin/claude`, `/usr/bin/claude`, then `$PATH`.
 3. npm global prefix (`npm prefix -g`), including temporary `.claude-*` binaries.
 
-If none are found, an actionable error is printed and the function exits 1. See [[architecture#Binary Detection]] for the three-step detection order (npm symlink → `bin/claude.exe` native binary → legacy `cli.js`).
+If none are found, an actionable error is printed and the function exits 1. See [[nvm#Claude Binary Detection]] for the three-step detection order (npm symlink → `bin/claude.exe` native binary → legacy `cli.js`).
 
 ## Final Exec
 
@@ -71,4 +71,4 @@ Files excluded from sync: `.nvm-isolated/`, `.git/`, `.claude_config`, `.claude_
 - `start_ccr_server()` / `stop_ccr_server()` — CCR background daemon lifecycle for combined mode.
 - `cleanup_orphaned_pii_proxies()` — sweeps dead PID and port files from previous sessions, rotates session logs older than `PII_LOG_RETENTION_DAYS` (default 7).
 
-See [[pii-proxy]] for the proxy server itself and [[router]] for CCR configuration.
+See [[pii-proxy]] for the proxy server itself, [[router]] for CCR configuration, and [[chrome]] for the Chrome integration toggle.

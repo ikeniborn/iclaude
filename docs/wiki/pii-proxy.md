@@ -126,4 +126,4 @@ When NLP mode is active, `_pii_proxy_download_model()` downloads spaCy models: `
 | `PII_PROXY_SUPERVISE` | `true` | Respawn worker on crash |
 | `ICLAUDE_SESSION_ID` | — | 12-char hex; scopes port files per session |
 
-The proxy respects `HTTPS_PROXY`/`HTTP_PROXY` for upstream connections. SSL verification reads `REQUESTS_CA_BUNDLE` or `NODE_EXTRA_CA_CERTS`; set `NODE_TLS_REJECT_UNAUTHORIZED=0` to disable verification. See [[proxy#Proxy Management]] for CA cert configuration in iclaude.
+The proxy respects `HTTPS_PROXY`/`HTTP_PROXY` for upstream connections. SSL verification reads `REQUESTS_CA_BUNDLE` or `NODE_EXTRA_CA_CERTS`; set `NODE_TLS_REJECT_UNAUTHORIZED=0` to disable verification. See [[proxy#TLS Certificate Handling]] for CA cert configuration in iclaude.

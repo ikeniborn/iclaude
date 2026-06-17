@@ -1,6 +1,6 @@
 # microVM Sandbox (Firecracker)
 
-Runs Claude Code inside a Firecracker microVM for kernel-level process isolation. The VM boots from a pre-built Ubuntu 22.04 rootfs, mounts the isolated NVM environment and the project workspace via virtio-blk block devices, and exposes SSH over a TAP network interface. Claude Code is launched in the guest over SSH, with workspace files synced between host and guest. See [[architecture#Architecture]] for the broader iclaude module structure.
+Runs Claude Code inside a Firecracker microVM for kernel-level process isolation. The VM boots from a pre-built Ubuntu 22.04 rootfs, mounts the isolated NVM environment and the project workspace via virtio-blk block devices, and exposes SSH over a TAP network interface. Claude Code is launched in the guest over SSH, with workspace files synced between host and guest. See [[architecture#Overview]] for the broader iclaude module structure.
 
 ## Guest Topology
 

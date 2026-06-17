@@ -16,3 +16,4 @@
 {"op": "ingest", "source": "lib/graphify", "page": "docs/wiki/graphify.md", "date": "2026-06-17"}
 {"op":"ingest","source":"lib/nvm/detect.sh","page":"docs/wiki/nvm.md","date":"2026-06-17"}
 {"op":"lint-fix","page":"docs/wiki/nvm.md","note":"repoint broken anchors","date":"2026-06-17"}
+{"op":"lint-fix","scope":"broken+orphans","note":"repoint 9 anchors, add 3 inbound links","date":"2026-06-17"}

@@ -51,4 +51,4 @@ The statusline script (not part of this module's source files, but configured by
 - PII proxy indicator: shown when `ICLAUDE_PII_ACTIVE=1` is set by [[launcher#PII Proxy Lifecycle Functions]].
 - Router indicator: suppressed when `ICLAUDE_ROUTER_ACTIVE=1` is set (CCR handles routing display itself).
 
-See [[config]] for the `statusLine` settings key, and [[architecture]] for the module load order that ensures `ISOLATED_CONFIG_DIR` is set before statusline functions are called.
+See [[config]] for the `statusLine` settings key, and [[architecture]] for the module load order that ensures `ISOLATED_CONFIG_DIR` is set before statusline functions are called. See [[ohmyposh]] for the optional Oh My Posh prompt theme, an alternative prompt renderer.

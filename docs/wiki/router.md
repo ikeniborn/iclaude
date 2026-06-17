@@ -6,7 +6,7 @@ Integrates the `@musistudio/claude-code-router` npm package (`ccr` binary) to ro
 
 CCR replaces or supplements the direct Anthropic API connection. When enabled (via `--router`), iclaude launches `ccr` and sets `ANTHROPIC_BASE_URL` to point at the CCR listener. Provider selection and model routing are governed by `router.json`. Claude Code itself is unaware of the redirection.
 
-The router module requires a **real API key** (`sk-ant-api03-...`), not an OAuth token (`sk-ant-oat01-...`). See [[proxy#Proxy Management]] for how the upstream HTTPS proxy interacts with CCR.
+The router module requires a **real API key** (`sk-ant-api03-...`), not an OAuth token (`sk-ant-oat01-...`). See [[proxy#Configuration Entry Point]] for how the upstream HTTPS proxy interacts with CCR.
 
 ## Detection
 
