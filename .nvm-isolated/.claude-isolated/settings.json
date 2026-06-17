@@ -141,8 +141,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js\"",
-            "timeout": 5,
-            "statusMessage": "Loading caveman mode..."
+            "timeout": 5
           }
         ]
       }
@@ -153,8 +152,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js\"",
-            "timeout": 5,
-            "statusMessage": "Tracking caveman mode..."
+            "timeout": 5
           }
         ]
       }
@@ -164,8 +162,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-stats-stop.js\"",
-            "statusMessage": "Refreshing caveman stats..."
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-stats-stop.js\""
           }
         ]
       }
@@ -185,8 +182,16 @@
     "superpowers@claude-plugins-official": true,
     "iwiki@iclaude": true
   },
-  "language": "Russian",
+  "extraKnownMarketplaces": {
+    "iclaude": {
+      "source": {
+        "source": "directory",
+        "path": "/home/ikeniborn/Documents/Project/iclaude"
+      }
+    }
+  },
   "alwaysThinkingEnabled": true,
+  "language": "Russian",
   "effortLevel": "xhigh",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": true,
