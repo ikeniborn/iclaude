@@ -10,6 +10,10 @@ review:
     verifiability: { status: passed }
     consistency:   { status: passed }
   findings: []
+result_check:
+  verdict: OK
+  plan_hash: db208f133e37a242
+  last_run: 2026-06-17
 chain:
   intent: docs/superpowers/intents/2026-06-17-html-report-skill-intent.md
   spec:   docs/superpowers/specs/2026-06-17-html-report-skill-design.md
