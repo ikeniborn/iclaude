@@ -1,0 +1,8 @@
+{
+  "name": "iwiki",
+  "description": "Embedding-based documentation agent: ingest sources into a docs/wiki/, semantic query, and lint. Self-contained replacement for lat.md.",
+  "version": "0.1.0",
+  "author": { "name": "ikeniborn" },
+  "keywords": ["documentation", "embeddings", "wiki", "semantic-search", "knowledge-graph"],
+  "license": "MIT"
+}

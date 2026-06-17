@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "iclaude",
+  "description": "iclaude in-repo plugins",
+  "owner": { "name": "ikeniborn" },
+  "plugins": [
+    {
+      "name": "iwiki",
+      "description": "Embedding-based documentation agent replacing lat.md.",
+      "version": "0.1.0",
+      "source": "./plugin/iwiki",
+      "author": { "name": "ikeniborn" },
+      "category": "documentation"
+    }
+  ]
+}
