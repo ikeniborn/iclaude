@@ -144,11 +144,6 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/
 !.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/**
 
-# EXCEPTION: Allow lat.md package (documentation graph tool, bundled with own deps)
-!.nvm-isolated/npm-global/lib/node_modules/lat.md/
-!.nvm-isolated/npm-global/lib/node_modules/lat.md/**
-!.nvm-isolated/npm-global/bin/lat
-
 # Exclude large binaries exceeding GitHub's 100MB limit
 .nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe
 

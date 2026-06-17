@@ -1,14 +1,13 @@
 # Before starting work
 
-- Invoke `lat-search` skill to find sections relevant to your task. Read them before writing code.
-- Run `lat expand` on user prompts to expand any `[[refs]]` — resolves section names to file locations.
+- Invoke `/iwiki-query` (or the `iwiki:iwiki-query` skill) to find relevant `docs/wiki/` sections before writing code.
 
 # Post-task checklist (REQUIRED — do not skip)
 
 After EVERY task, before responding to the user:
 
-- [ ] Update `lat.md/` if you added or changed any functionality, architecture, tests, or behavior
-- [ ] Invoke `lat-check` skill — all wiki links and code refs must pass
+- [ ] Update `docs/wiki/` via `iwiki:iwiki-ingest` if you changed functionality, architecture, or behavior
+- [ ] Run `/iwiki-lint` — no broken `[[refs]]`, no orphan/stale pages
 
 ---
 
@@ -118,10 +117,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
 ./iclaude.sh --install-graphify       # Install Graphify (uv + Python 3.12 + graphifyy)
-./iclaude.sh --install-lat         # Install lat.md (Node 22 + MCP)
-./iclaude.sh --lat-init            # Initialize lat.md/ in current project
-./iclaude.sh --lat-check           # Check doc link integrity + install pre-commit hook
-./iclaude.sh --check-lat           # Show lat.md status
+./iclaude.sh --install-iwiki          # Install iwiki engine + register plugin
 ./iclaude.sh --install-gsd            # Install GSD framework (npx get-shit-done-cc)
 ./iclaude.sh --check-gsd              # Check GSD installation status
 ./iclaude.sh --install-microvm        # Install Firecracker (~1.4GB)
@@ -138,7 +134,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
 | microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
 | Graphify Knowledge Graph (uv, Python 3.12, graphifyy) | `lib/graphify/` |
-| lat.md Documentation Graph (Node 22, MCP server) | `lib/lat/` |
+| iwiki Documentation Graph (embeddings, in-repo plugin) | `plugin/iwiki/` |
 | GSD Framework (meta-prompting, spec-driven dev) | [docs/superpowers/specs/2026-05-14-gsd-integration-design.md](docs/superpowers/specs/2026-05-14-gsd-integration-design.md) |
 | OAuth Token Management | `lib/oauth/token.sh` |
 | Configuration Variables | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
@@ -225,7 +221,7 @@ Plans saved to `docs/plans/` via `.claude/settings.json`:
 
 ## Architecture
 
-**Version 4.0** — modular bash in `lib/` (18 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify, lat).
+**Version 4.0** — modular bash in `lib/` (18 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify, iwiki).
 
 Source order: Phase 0 (core) → Phase 2–8.1 (feature modules) → Phase 14 (command dispatch).
 
@@ -256,34 +252,23 @@ Before answering questions about this project, invoke **@skill:context-awareness
 
 ---
 
-## lat.md reference
+## iwiki reference
 
-lat.md maintains a structured knowledge graph in `lat.md/` — cross-linked markdown that describes architecture, design decisions, and test specs.
+iwiki maintains an embedding-indexed wiki in `docs/wiki/` — markdown pages with `[[refs]]` cross-links, searched semantically.
 
 ### Commands
+- `/iwiki-query "question"` — semantic search over docs/wiki/, returns an answer + source `[[file#Heading]]` links.
+- `/iwiki-ingest <source-path>` — generate/update a docs/wiki page from a source file/folder, then refresh the index (guarded: shows a diff).
+- `/iwiki-lint` — report broken `[[refs]]`, orphan/stale pages, gaps.
 
+### Config (.claude_config)
 ```bash
-lat locate "Section Name"      # find a section by name (exact, fuzzy)
-lat refs "file#Section"        # find what references a section
-lat search "natural language"  # semantic search (requires LAT_LLM_KEY)
-lat expand "user prompt text"  # expand [[refs]] to resolved locations
-lat check                      # validate all links and code refs
-```
-
-Semantic search (`lat search`) requires `LAT_LLM_KEY` — set it in `.claude_config`:
-```bash
-export LAT_LLM_KEY="sk-..."   # OpenAI key, or vck_... for Vercel AI Gateway
-```
-OpenAI-compatible providers are supported via `LAT_LLM_BASE_URL`:
-```bash
-export LAT_LLM_BASE_URL="https://your-provider/v1"
-export LAT_LLM_KEY="your-key"
+export IWIKI_LLM_BASE_URL="https://your-provider/v1"
+export IWIKI_LLM_KEY="..."
+export IWIKI_EMBED_MODEL="text-embedding-3-small"
+export IWIKI_EMBED_DIMENSIONS="1536"
 ```
 
 ### Syntax
-
-- **Wiki links**: `[[target]]` or `[[target|alias]]` — cross-references between sections or source code (`[[src/foo.sh#functionName]]`)
-- **Code refs**: `# @lat: [[section-id]]` (bash/Python) or `// @lat: [[section-id]]` (JS/TS) — ties source to concepts
-- **Section ids**: `lat.md/path/file#Heading#SubHeading` (full) or `file#Heading` (short when unique)
-
-Every section must have a leading paragraph (≤250 chars) immediately after the heading.
+- Wiki links: `[[target]]` or `[[target|alias]]` — cross-references between docs/wiki pages/sections.
+- Section ids: `docs/wiki/<file>.md#Heading`.

@@ -780,22 +780,21 @@ prdGeneration.toon = {
 
 ---
 
-## lat.md / graph Integration
+## iwiki / graph Integration
 
-Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.lat_initialized`
+Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized`
 и `project_context.graph_initialized` доступны.
 
 ### Query (в Phase 0, после context-awareness)
 
 ```
-IF project_context.lat_initialized == true:
-  Skill(skill="lat-search", args='search "Product Requirements Documents и требования к продуктам"')
-  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
+IF project_context.wiki_initialized == true:
+  Skill(skill="iwiki:iwiki-query", args='Product Requirements Documents и требования к продуктам')
 
   Использовать результат для обогащения Phase 1 Questionnaire:
   - Если найдены похожие требования/цели → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
   - Если найдены success metrics → предложить их как варианты для Q5
-  - Если в lat.md нет данных → продолжить стандартный Questionnaire без изменений
+  - Если в docs/wiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
 IF project_context.graph_initialized == true:
@@ -809,17 +808,15 @@ IF project_context.graph_initialized == true:
 
 ### Record (в Phase 7, после успешной валидации)
 
-lat.md — авторский документационный граф, без авто-ингеста. Накопление знаний =
-ручное создание секции, не индексация файла.
+iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
 
 ```
-IF project_context.lat_initialized == true AND status IN ("success", "partial"):
-  (опционально) Skill(skill="lat-md") → создать/обновить секцию в lat.md/
+IF project_context.wiki_initialized == true AND status IN ("success", "partial"):
+  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу в docs/wiki/
     с целями продукта и целевой аудиторией (что и почему), ссылаясь на docs/prd/
-  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: бизнес-цели и продуктовые паттерны попадают в граф lat.md —
-  доступны для lat-search в следующих PRD.
+  Результат: бизнес-цели и продуктовые паттерны попадают в docs/wiki —
+  доступны для iwiki-query в следующих PRD.
 ```
 
 ---

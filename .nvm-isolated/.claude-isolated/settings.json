@@ -47,7 +47,6 @@
       "Bash(cd:*)",
       "Bash(bash -n:*)",
       "Bash(ssh:*)",
-      "Bash(lat:*)",
       "Bash(source:*)"
     ],
     "deny": [
@@ -158,25 +157,9 @@
             "statusMessage": "Tracking caveman mode..."
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh\" hook claude UserPromptSubmit || true"
-          }
-        ]
       }
     ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[[ -d \"$LAUNCH_DIR/lat.md\" ]] && \"${CLAUDE_CONFIG_DIR}/scripts/lat-runner.sh\" hook claude Stop || true"
-          }
-        ]
-      },
       {
         "hooks": [
           {
@@ -208,10 +191,5 @@
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {
-    "lat": {
-      "type": "stdio",
-      "command": "$CLAUDE_CONFIG_DIR/scripts/lat-mcp-wrapper.sh"
-    }
-  }
+  "mcpServers": {}
 }

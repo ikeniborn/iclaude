@@ -1,17 +1,17 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects lat.md/ documentation graph and graphify knowledge graph, surfacing their summaries as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (lat-search) and NOT for graph queries (graphify-context) — this skill only detects availability + a quick summary.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects docs/wiki/ iwiki documentation graph and graphify knowledge graph, surfacing their summaries as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) and NOT for graph queries (graphify-context) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
 # version: 1.3.0
 # tags: context, detection, project, language, framework, lat, graphify
-# dependencies: [lat-search, graphify-context]
+# dependencies: [iwiki:iwiki-query, graphify-context]
 # files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
 ---
 
 # Context Awareness
 
-Автоматическое определение языка, framework, наличия PRD, документационного графа `lat.md/` и knowledge graph `graphify` в проекте.
+Автоматическое определение языка, framework, наличия PRD, документационного графа `docs/wiki/` и knowledge graph `graphify` в проекте.
 
 ## Когда использовать
 
@@ -60,37 +60,35 @@ JavaScript:
 
 См. `@shared:syntax-commands.json` для mapping language → syntax check command.
 
-### 5. lat.md Detection
+### 5. iwiki Detection
 
-Документационный граф `lat.md/` — cross-linked markdown, описывающий архитектуру,
-дизайн-решения и тест-спеки. Единственный источник документационного контекста проекта.
+Документационный граф `docs/wiki/` — embedding-граф страниц, описывающих архитектуру,
+дизайн-решения и ключевые компоненты. Единственный источник документационного контекста проекта.
 
 ```
-IF exists {CWD}/lat.md/ (директория с .md-файлами):
-  1. Прочитать {CWD}/lat.md/lat.md (корневой индекс)
+IF exists {CWD}/docs/wiki/ (директория с .md-файлами):
+  1. Прочитать {CWD}/docs/wiki/index.md (корневой индекс)
      → извлечь синтезированный обзор проекта (leading paragraph)
-     → извлечь список секций из [[refs]] в блоке "## Sections"
-  2. (опционально, если LAT_LLM_KEY задан и нужен более точный обзор)
-     Skill(skill="lat-search", args='search "ключевые компоненты и архитектура проекта"')
-     → использовать результат как lat_summary вместо корневого индекса
+     → извлечь список страниц из индекса
+  2. (опционально, если нужен более точный обзор)
+     Skill(skill="iwiki:iwiki-query", args='ключевые компоненты и архитектура проекта')
+     → использовать результат как wiki_summary вместо корневого индекса
   3. Добавить в project_context:
-       lat_initialized: true
-       lat_sections: [список id из [[refs]], напр. ["architecture", "proxy", ...]]
-       lat_index_path: "lat.md/lat.md"
-       lat_summary: <обзор из корневого индекса или результат lat-search>
+       wiki_initialized: true
+       wiki_index_path: "docs/wiki/index.md"
+       wiki_summary: <обзор из корневого индекса или результат iwiki-query>
 
 ELSE:
-  lat_initialized: false
-  lat_sections: []
-  lat_index_path: null
-  lat_summary: null
+  wiki_initialized: false
+  wiki_index_path: null
+  wiki_summary: null
 ```
 
 **Назначение:** Централизует проверку доступности документационного графа —
 downstream-навыки (brainstorming, prd-generator) используют
-`project_context.lat_initialized` вместо самостоятельной проверки файла.
-Корневой индекс `lat.md/lat.md` читается напрямую (дёшево, без LLM-ключа);
-`lat-search` оставлен как опциональный точечный поиск по секциям внутри задачи.
+`project_context.wiki_initialized` вместо самостоятельной проверки файла.
+Корневой индекс `docs/wiki/index.md` читается напрямую (дёшево);
+`iwiki:iwiki-query` — опциональный семантический поиск по секциям внутри задачи.
 
 ### 6. Graph Detection (graphify)
 
@@ -121,7 +119,7 @@ ELSE:
 
 **Назначение:** Централизует проверку графа — brainstorming и другие навыки используют
 `project_context.graph_initialized` вместо самостоятельной проверки файлов.
-Дополняет lat.md: lat.md даёт синтезированную прозу (что и почему),
+Дополняет docs/wiki: docs/wiki даёт синтезированную прозу (что и почему),
 граф — структурные связи (как компоненты соединены).
 
 ## Output
@@ -140,10 +138,9 @@ ELSE:
     "prd_path": "docs/prd/" | null,
     "syntax_command": "@shared:syntax-commands[language].syntax",
     "code_style": "pep8|prettier|gofmt|none",
-    "lat_initialized": true|false,
-    "lat_sections": ["architecture", "proxy", "pii-proxy"],
-    "lat_index_path": "lat.md/lat.md" | null,
-    "lat_summary": "синтезированный обзор из lat.md" | null,
+    "wiki_initialized": true|false,
+    "wiki_index_path": "docs/wiki/index.md" | null,
+    "wiki_summary": "синтезированный обзор из docs/wiki" | null,
     "graph_initialized": true|false,
     "graph_fresh": true|false|null,
     "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
@@ -250,7 +247,7 @@ ELSE:
 
 ---
 
-### Example 4: Bash Script Project — без lat.md
+### Example 4: Bash Script Project — без docs/wiki
 
 **Project structure:**
 ```
@@ -273,17 +270,16 @@ ELSE:
     "prd_path": null,
     "syntax_command": "bash -n",
     "code_style": "none",
-    "lat_initialized": false,
-    "lat_sections": [],
-    "lat_index_path": null,
-    "lat_summary": null
+    "wiki_initialized": false,
+    "wiki_index_path": null,
+    "wiki_summary": null
   }
 }
 ```
 
 ---
 
-### Example 4b: Bash Script Project — с инициализированной lat.md
+### Example 4b: Bash Script Project — с инициализированной docs/wiki
 
 **Project structure:**
 ```
@@ -291,14 +287,14 @@ ELSE:
 ├── iclaude.sh
 ├── lib/
 │   └── proxy/...
-├── docs/
-│   ├── PROXY.md
-│   └── ROUTER.md
-└── lat.md/
-    ├── lat.md          ← корневой индекс + [[refs]] на секции
-    ├── architecture.md
-    ├── proxy.md
-    └── pii-proxy.md
+└── docs/
+    ├── PROXY.md
+    ├── ROUTER.md
+    └── wiki/
+        ├── index.md    ← корневой индекс
+        ├── architecture.md
+        ├── proxy.md
+        └── pii-proxy.md
 ```
 
 **Detection result:**
@@ -312,17 +308,16 @@ ELSE:
     "prd_path": null,
     "syntax_command": "bash -n",
     "code_style": "none",
-    "lat_initialized": true,
-    "lat_sections": ["architecture", "launch-flow", "proxy", "pii-proxy", "router", "sandbox", "security", "isolation", "oauth"],
-    "lat_index_path": "lat.md/lat.md",
-    "lat_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки."
+    "wiki_initialized": true,
+    "wiki_index_path": "docs/wiki/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки."
   }
 }
 ```
 
 ---
 
-### Example 4c: Bash Script Project — с lat.md и knowledge graph
+### Example 4c: Bash Script Project — с docs/wiki и knowledge graph
 
 **Project structure:**
 ```
@@ -330,10 +325,10 @@ ELSE:
 ├── iclaude.sh
 ├── lib/
 ├── docs/
-├── lat.md/
-│   ├── lat.md          ← корневой индекс
-│   ├── architecture.md
-│   └── pii-proxy.md
+│   └── wiki/
+│       ├── index.md    ← корневой индекс
+│       ├── architecture.md
+│       └── pii-proxy.md
 └── .graphify/          ← GRAPHIFY_OUT=.graphify for this project
     ├── graph.json      ← 167 nodes · 244 edges
     ├── GRAPH_REPORT.md ← god nodes + communities
@@ -351,10 +346,9 @@ ELSE:
     "prd_path": null,
     "syntax_command": "bash -n",
     "code_style": "none",
-    "lat_initialized": true,
-    "lat_sections": ["architecture", "launch-flow", "proxy", "pii-proxy", "router", "sandbox", "security", "isolation", "oauth"],
-    "lat_index_path": "lat.md/lat.md",
-    "lat_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки.",
+    "wiki_initialized": true,
+    "wiki_index_path": "docs/wiki/index.md",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки.",
     "graph_initialized": true,
     "graph_fresh": null,
     "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
@@ -432,7 +426,7 @@ ELSE:
 - `code-review` - Applies language-specific review rules
 
 **Delegates to:**
-- `lat-search` - Targeted semantic/locate search over `lat.md/` sections (optional, in-task)
+- `iwiki:iwiki-query` - Targeted semantic search over `docs/wiki/` pages (optional, in-task)
 - `graphify-context` - Structural queries over the knowledge graph (god nodes, paths, communities)
 
 **Provides:**
@@ -440,7 +434,7 @@ ELSE:
 - `framework` → Enables framework-specific patterns
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
-- `lat_initialized` / `lat_summary` → Enables doc-graph-aware context without re-checking files
+- `wiki_initialized` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
 - `graph_initialized` / `graph_summary` → Enables structure-aware context without re-checking files
 
 ---
@@ -452,10 +446,14 @@ ELSE:
 
 ## Changelog
 
+### 1.4.0 (2026-06-17)
+- Заменён `lat.md/` detect на `docs/wiki/` detection (читает корневой индекс `docs/wiki/index.md`)
+- Поля `lat_*` → `wiki_*` (`wiki_initialized`, `wiki_index_path`, `wiki_summary`)
+- `graphify` detection дополнен: docs/wiki = проза, graph = структура
+- `lat-search` заменён на `iwiki:iwiki-query` в delegates и dependencies
+
 ### 1.3.0 (2026-06-07)
-- Заменён мёртвый detect `.wiki/` + `llm-wiki` на `lat.md/` detection (читает корневой индекс `lat.md/lat.md`)
-- Поля `wiki_*` → `lat_*` (`lat_initialized`, `lat_sections`, `lat_index_path`, `lat_summary`)
-- `graphify` detection дополнен: lat.md = проза, graph = структура
+- Заменён мёртвый detect `.wiki/` + `llm-wiki` на `lat.md/` detection (читал корневой индекс `lat.md/lat.md`)
 - `lat-search` и `graphify-context` оформлены как delegates; добавлены в dependencies
 
 ### 1.2.0 (2026-02-19)

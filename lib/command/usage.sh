@@ -65,10 +65,7 @@ OPTIONS:
   --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
   --graphify                        Rebuild knowledge graph before launching claude
                                     Output: GRAPHIFY_OUT or graphify-out/ (default)
-  --install-lat                     Install lat.md documentation graph tool (Node 22 + MCP)
-  --lat-init                        Initialize lat.md knowledge graph in current project
-  --lat-check                       Check documentation link integrity (lat check) + install pre-commit hook
-  --check-lat                       Show lat.md installation and project status
+  --install-iwiki                   Install iwiki engine (uv + Python 3.12) and register the plugin
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
                                     Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL
   --chrome                          Enable Chrome browser integration (disabled by default)

@@ -19,11 +19,11 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - Linters and formatters (e.g. `ruff`, `eslint`, `shellcheck`, `bash -n`, `prettier`).
 - Type checkers and static analysis (e.g. `mypy`, `tsc --noEmit`, LSP diagnostics).
 - Syntax / semantic / correctness validation that does not exercise runtime behavior with assertions.
-- **lat.md test-specs** (spec sections, `require-code-mention`, link/code-ref checks via `lat check`). These describe and validate code↔doc traceability — NOT red→green functional tests. Keep and maintain them.
+- **Documentation validation** (`/iwiki-lint`: broken `[[refs]]`, orphan/stale pages, link/code-ref checks over `docs/wiki/`). These validate code↔doc traceability — NOT red→green functional tests. Keep and maintain them.
 
-The ban targets **functional tests** (red→green, assert runtime behavior). Static code-quality checks and lat.md spec-validation are fine and recommended.
+The ban targets **functional tests** (red→green, assert runtime behavior). Static code-quality checks and doc-validation are fine and recommended.
 
-**On finding existing functional tests in the project** (NOT lint, type-check, or lat.md specs):
+**On finding existing functional tests in the project** (NOT lint, type-check, or doc-validation):
 - Report them (path + what they assert).
 - Recommend deletion.
 - Offer to delete them as a concrete action — ask for confirmation, then remove on approval.
@@ -35,7 +35,7 @@ The ban targets **functional tests** (red→green, assert runtime behavior). Sta
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
 1. Run `graphify-context` → loads architecture, dependencies, clusters into context.
-2. Run `update-docs` → checks lat.md/ integrity and updates sections.
+2. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
 
 Skip only when: familiar area, same session.
 

@@ -139,34 +139,32 @@ agent: general-purpose
 - **@schema:output-verify** - Валидация выходных данных (verify mode)
 - **@schema:output-adapt** - Валидация выходных данных (adapt mode)
 
-## lat.md Integration
+## iwiki Integration
 
-Этот скилл не вызывает `context-awareness` — проверяет lat.md напрямую.
+Этот скилл не вызывает `context-awareness` — проверяет docs/wiki напрямую.
 
 ### Query (в начале Step 2 — Analyze Against Rules)
 
 ```
-IF exists("{CWD}/lat.md/"):
-  Skill(skill="lat-search", args='search "паттерны нарушений и best practices форматирования инструкций"')
-  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
+IF exists("{CWD}/docs/wiki/"):
+  Skill(skill="iwiki:iwiki-query", args='паттерны нарушений и best practices форматирования инструкций')
 
   Использовать результат для обогащения Step 2:
-  - Если lat.md содержит задокументированные нарушения → добавить в анализ
-  - Если lat.md содержит принятые стандарты форматирования → учесть при adapt
-  - Если в lat.md нет данных → продолжить стандартный анализ по R1-R7
+  - Если docs/wiki содержит задокументированные нарушения → добавить в анализ
+  - Если docs/wiki содержит принятые стандарты форматирования → учесть при adapt
+  - Если в docs/wiki нет данных → продолжить стандартный анализ по R1-R7
 ```
 
 ### Record (после Step 4 — только в режиме adapt)
 
-lat.md — авторский граф, без авто-ингеста: эталон добавляется ручной секцией.
+iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
 
 ```
-IF exists("{CWD}/lat.md/") AND mode == "adapt" AND violations_found > 0:
-  (опционально) Skill(skill="lat-md") → создать/обновить секцию с примером нарушения
+IF exists("{CWD}/docs/wiki/") AND mode == "adapt" AND violations_found > 0:
+  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу с примером нарушения
     и его исправлением (что и почему), ссылаясь на {verified_file_path}
-  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: примеры нарушений и исправлений попадают в граф lat.md —
+  Результат: примеры нарушений и исправлений попадают в docs/wiki —
   переиспользуются как эталоны при следующих проверках документов.
 ```
 

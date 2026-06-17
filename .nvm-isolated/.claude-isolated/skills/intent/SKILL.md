@@ -22,25 +22,22 @@ IDD owns WHY / WHAT / Outcomes / Constraints. Brainstorm owns HOW (architecture,
 
 ## Process
 
-### Step 0: Load project context via lat.md (if available)
+### Step 0: Load project context via iwiki (if available)
 
-Before asking any questions, check whether `lat_search` MCP tool is available. If yes, load context in parallel:
+Before asking any questions, check whether `docs/wiki/` exists. If yes, load context in parallel:
 
-1. `lat_search <topic>` — existing documentation for this topic
-2. `lat_refs <topic>` — components that reference this area (dependency map)
+1. `Skill(skill="iwiki:iwiki-query", args='<topic>')` — existing documentation for this topic
 
-Store results as **lat_context** for use in Steps 1–6 below.
+Store results as **wiki_context** for use in Steps 1–6 below.
 
 Present to user:
 
 ```
-Context from lat.md:
+Context from docs/wiki:
 [sections found, or "No documentation found for this topic"]
-Components referencing this area:
-[list, or "No dependencies found"]
 ```
 
-If `lat_search` is unavailable or returns no results — skip silently. Do not block or mention the absence.
+If `docs/wiki/` is unavailable or query returns no results — skip silently. Do not block or mention the absence.
 
 ---
 
@@ -48,13 +45,13 @@ If `lat_search` is unavailable or returns no results — skip silently. Do not b
 
 Ask each question **one at a time**. Wait for the user's answer before proceeding. Do not batch.
 
-For each question, if **lat_context** contains relevant information — show it as a hint before asking. If lat_context is empty — ask the plain question.
+For each question, if **wiki_context** contains relevant information — show it as a hint before asking. If wiki_context is empty — ask the plain question.
 
 ---
 
 **Q1 — Objective:** What problem does this solve, and why now?
 
-> *If lat_context has relevant docs:*
+> *If wiki_context has relevant docs:*
 > "From existing documentation on '[topic]': [brief summary — what is already documented, what decisions were made].
 > What exactly needs to change or be added, and why now?"
 
@@ -62,14 +59,14 @@ For each question, if **lat_context** contains relevant information — show it 
 
 **Q2 — Desired Outcomes:** What observable, user-facing states confirm success?
 
-*(No lat enrichment — outcomes are user-defined, not derivable from existing docs.)*
+*(No wiki enrichment — outcomes are user-defined, not derivable from existing docs.)*
 
 ---
 
 **Q3 — Health Metrics:** What must not degrade?
 
-> *If lat_refs returned components:*
-> "These components reference this area: [list from lat_refs].
+> *If wiki_context returned components:*
+> "These components reference this area: [list from wiki_context].
 > Which of them must not break? Which metrics must stay stable?"
 >
 > *(Goodhart's Law: name the metrics that stay stable even if the feature ships.)*
@@ -78,7 +75,7 @@ For each question, if **lat_context** contains relevant information — show it 
 
 **Q4 — Strategic Context:** What systems, modules, or people interact with this? Priority trade-off: trust / speed / cost?
 
-> *If lat_context has architecture sections:*
+> *If wiki_context has architecture sections:*
 > "From the architecture documentation: [relevant fragment].
 > What else interacts with this area? What is the priority — trust / speed / cost?"
 
@@ -86,8 +83,8 @@ For each question, if **lat_context** contains relevant information — show it 
 
 **Q5 — Constraints:** What steering constraints (behavioral guidance) apply? What hard constraints (architectural or forbidden) apply?
 
-> *If lat_context has decisions or constraints sections:*
-> "Existing architectural decisions on this topic: [fragment from lat].
+> *If wiki_context has decisions or constraints sections:*
+> "Existing architectural decisions on this topic: [fragment from docs/wiki].
 > Which of them still hold? What is added as a new constraint?"
 
 ---

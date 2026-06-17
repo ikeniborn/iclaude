@@ -392,42 +392,43 @@ USE_PII_PROXY=false
 # export GRAPHIFY_EXTRA_ARGS="--backend ollama"
 
 # ============================================================================
-#  lat.md (граф документации)
+#  iwiki (embedding-граф документации, плагин в репозитории)
 # ============================================================================
-# lat.md поставляется вместе с репозиторием (git-deliverable). Отдельная
-# установка не нужна — CLI доступен сразу после git clone.
+# iwiki — self-contained замена lat.md: ingest исходников в docs/wiki/,
+# семантический поиск и lint. Движок (Python 3.12 + uv) только эмбеддит текст
+# и ищет по вектору в git-коммитнутом JSONL индексе.
 #
-# Семантический поиск (lat search) требует embedding API ключ.
-# Поддерживаемые провайдеры:
-#   OpenAI          LAT_LLM_KEY="sk-..."
-#   Vercel Gateway  LAT_LLM_KEY="vck_..."
-#   Ollama (local)  LAT_LLM_KEY="ollama"   (без auth, нужен --install-lat)
+# Требуется OpenAI-compatible embeddings API. Без IWIKI_LLM_BASE_URL и
+# IWIKI_LLM_KEY движок останавливается (stop rule) — никакой работы вслепую.
 #
-# Установка: поставляется с репозиторием (git clone = lat готов)
-# Обновить:  ./iclaude.sh --install-lat
-# Статус:    ./iclaude.sh --check-lat
+# Установка: ./iclaude.sh --install-iwiki   (uv sync движка)
+# Использование: /iwiki-query, /iwiki-ingest, /iwiki-lint
 #
-# --- Вариант 1: OpenAI ---
-# export LAT_LLM_KEY="sk-..."
+# --- Вариант 1: OpenAI-compatible (кастомный endpoint) ---
+# export IWIKI_LLM_KEY="sk-..."
+# export IWIKI_LLM_BASE_URL="https://your-provider/v1"
+# export IWIKI_EMBED_MODEL="text-embedding-3-small"   # по умолчанию
+# export IWIKI_EMBED_DIMENSIONS="1536"                # по умолчанию; должно совпадать с моделью
 #
-# --- Вариант 2: OpenAI-compatible (кастомный endpoint) ---
-# export LAT_LLM_KEY="sk-..."
-# export LAT_LLM_BASE_URL="https://your-provider/v1"
-# export LAT_LLM_MODEL="text-embedding-3-small"      # необязательно
-#
-# --- Вариант 3: Ollama (локальный, без API ключа) ---
-# export LAT_LLM_KEY="ollama"
-# export LAT_LLM_BASE_URL="http://localhost:11434/v1" # необязательно, по умолчанию
-# export LAT_LLM_MODEL="nomic-embed-text"             # необязательно, по умолчанию
-# export LAT_LLM_DIMENSIONS="768"
+# --- Вариант 2: Ollama (локальный, без API ключа) ---
+# export IWIKI_LLM_KEY="ollama"
+# export IWIKI_LLM_BASE_URL="http://localhost:11434/v1"
+# export IWIKI_EMBED_MODEL="nomic-embed-text"
+# export IWIKI_EMBED_DIMENSIONS="768"
 # Установить модель: ollama pull nomic-embed-text
 #
-# --- Альтернативы LAT_LLM_KEY ---
-# Путь к файлу с ключом:
-# export LAT_LLM_KEY_FILE="/path/to/key-file"
+# --- Тюнинг (всё необязательно, показаны значения по умолчанию) ---
+# export IWIKI_CHUNK_SIZE="512"          # слов в секции до разбиения на под-чанки
+# export IWIKI_CHUNK_OVERLAP="64"        # перекрытие под-чанков в словах
+# export IWIKI_TOP_K="8"                 # сколько результатов возвращает search
+# export IWIKI_SCORE_THRESHOLD="0.2"     # минимальный косинус для результата
+# export IWIKI_GRAPH_DEPTH="2"           # глубина BFS по [[refs]] в related
 #
-# Команда для получения ключа:
-# export LAT_LLM_KEY_HELPER="pass lat/api-key"
+# --- Ограничение области индексирования (необязательно) ---
+# Glob-паттерны через запятую, либо файлы .iwikiinclude / .iwikiexclude
+# (gitignore-стиль) в корне проекта. include применяется первым, затем exclude.
+# export IWIKI_INCLUDE="docs/wiki/**/*.md"
+# export IWIKI_EXCLUDE="docs/wiki/drafts/*"
 
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)

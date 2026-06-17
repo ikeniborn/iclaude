@@ -123,16 +123,6 @@ if [[ -d "$LIB_DIR/iwiki" ]]; then
 fi
 
 #######################################
-# Load lat.md modules (Phase 8.5)
-#######################################
-if [[ -d "$LIB_DIR/lat" ]]; then
-    source "${LIB_DIR}/lat/detect.sh"
-    source "${LIB_DIR}/lat/install.sh"
-    source "${LIB_DIR}/lat/mcp.sh"
-    source "${LIB_DIR}/lat/check.sh"
-fi
-
-#######################################
 # Load LSP modules (Phase 8.1)
 #######################################
 if [[ -d "$LIB_DIR/lsp" ]]; then
@@ -577,41 +567,6 @@ fi
                 install_iwiki
                 exit $?
                 ;;
-            --install-lat)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-lat"
-                    exit 1
-                fi
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
-                install_lat
-                exit $?
-                ;;
-            --lat-init)
-                if ! detect_lat; then
-                    print_error "lat not installed. Run: ./iclaude.sh --install-lat"
-                    exit 1
-                fi
-                (cd "$LAUNCH_DIR" && "$LAT_BIN" init)
-                _lat_init_exit=$?
-                if [[ $_lat_init_exit -eq 0 ]]; then
-                    echo ""
-                    print_info "Cleaning up per-project artifacts (iclaude manages skill + MCP centrally)..."
-                    cleanup_lat_project_artifacts "$LAUNCH_DIR"
-                fi
-                exit $_lat_init_exit
-                ;;
-            --lat-check)
-                if ! detect_lat; then
-                    print_error "lat not installed. Run: ./iclaude.sh --install-lat"
-                    exit 1
-                fi
-                run_lat_check
-                exit $?
-                ;;
-            --check-lat)
-                check_lat_status
-                exit 0
-                ;;
             --install-gsd)
                 if [[ "$use_system" == true ]]; then
                     print_error "--system cannot be used with --install-gsd"
@@ -820,15 +775,6 @@ fi
     # Rebuild graphify knowledge graph if --graphify flag is set
     if [[ "$USE_GRAPHIFY_FLAG" == true ]]; then
         _graphify_rebuild_graph || print_warning "Graph rebuild failed — continuing without updated graph"
-    fi
-
-    # Auto-detect lat.md and inject MCP config if both CLI and project present
-    if declare -F detect_lat &>/dev/null; then
-        if detect_lat && detect_lat_project; then
-            LAT_ENABLED=true
-            export LAT_ENABLED
-            inject_lat_mcp || print_warning "lat MCP inject failed — continuing"
-        fi
     fi
 
     # Configure isolated config if needed

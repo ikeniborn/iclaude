@@ -15,7 +15,7 @@ After all modules are sourced, the script's inline Phase 15 body (lines 224–10
 3. `GRAPHIFY_OUT` default resolution.
 4. `while [[ $# -gt 0 ]]` argument-parsing loop (`case` on `$1`).
 5. Optional telemetry module load (`lib/telemetry/otel.sh`).
-6. Subsystem activation: Graphify rebuild, lat.md MCP injection, isolated-config setup.
+6. Subsystem activation: Graphify rebuild, isolated-config setup.
 7. Proxy acquisition, validation, and test.
 8. Final pre-launch flag assembly (`--dangerously-skip-permissions`, `--chrome`, `--model`).
 9. `launch_claude "$use_system" "${claude_args[@]}"` — delegates to `lib/launcher/launch.sh`.
@@ -36,7 +36,6 @@ Modules are sourced conditionally (`if [[ -d "$LIB_DIR/<name>" ]]`) so the scrip
 | — | `pii-proxy/` | `detect.sh`, `install.sh`, `status.sh` |
 | 8.0 | `graphify/` | `detect.sh`, `install.sh`, `status.sh` |
 | 8.0.1 | `iwiki/` | `detect.sh`, `install.sh` |
-| 8.5 | `lat/` | `detect.sh`, `install.sh`, `mcp.sh`, `check.sh` |
 | 8.1 | `lsp/` | `install.sh`, `repair.sh`, `status.sh` |
 | 8.2 | `statusline/` | `detect.sh`, `install.sh`, `status.sh` |
 | 8.3 | `ohmyposh/` | `detect.sh`, `install.sh`, `status.sh` |
@@ -55,7 +54,7 @@ After Phase 14, Phase 15 (the inline main body) runs. `lib/telemetry/otel.sh` is
 All CLI argument dispatch is implemented directly in the Phase 15 `while`/`case` loop in `iclaude.sh`, not in `lib/command/dispatch.sh`. The two stubs in `lib/command/` — `parse_cli_arguments()` and `dispatch_command()` — are explicit placeholders marked for a post-v4.0 extraction; they are sourced but never called.
 
 The dispatch pattern is:
-- Flags that perform a one-shot operation (e.g. `--isolated-install`, `--check-router`, `--lat-check`) call their module function and `exit $?` immediately.
+- Flags that perform a one-shot operation (e.g. `--isolated-install`, `--check-router`, `--install-iwiki`) call their module function and `exit $?` immediately.
 - Flags that modify launch behaviour (e.g. `--router`, `--pii-proxy`, `--graphify`, `--model`) set a boolean or string variable and `shift`, deferring actual activation to later in Phase 15.
 - `--` separates iclaude flags from raw Claude Code arguments: everything after `--` is pushed into `claude_args` verbatim.
 - Unrecognised arguments are appended to `claude_args` via the `*` branch, allowing pass-through to Claude Code.

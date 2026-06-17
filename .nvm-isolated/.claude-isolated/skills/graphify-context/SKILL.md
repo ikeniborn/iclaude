@@ -10,7 +10,7 @@ context: fork
 
 # Graphify Context
 
-Query the project knowledge graph for component relationships, key abstractions, and architectural patterns. Complements lat.md: lat.md gives synthesized prose (what & why), graph gives structural connectivity (how parts link).
+Query the project knowledge graph for component relationships, key abstractions, and architectural patterns. Complements docs/wiki: docs/wiki gives synthesized prose (what & why), graph gives structural connectivity (how parts link).
 
 ## Когда использовать
 
@@ -118,7 +118,7 @@ graphify query "<вопрос от пользователя>" --budget 1500 --gr
 
 ## Интеграция с context-awareness
 
-context-awareness вызывает этот навык в Phase 6 (аналогично тому, как Phase 5 детектит lat.md):
+context-awareness вызывает этот навык в Phase 6 (аналогично тому, как Phase 5 детектит docs/wiki):
 
 ```
 IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
@@ -161,4 +161,4 @@ graphify path "PIIProxyHandler" "TestShouldRedact"
 - Граф отсутствует (`{GOUT}/` нет) — нечего запрашивать
 - Проект < 20 файлов — граф добавит шум, не ценность
 - Нужно ПЕРЕСТРОИТЬ граф — используй `/graphify` или `graphify-update`
-- Вопрос не об архитектуре, а о бизнес-логике — используй `lat-search`
+- Вопрос не об архитектуре, а о бизнес-логике — используй `iwiki:iwiki-query`

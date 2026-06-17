@@ -114,13 +114,6 @@ init_environment() {
     export GRAPHIFY_UV_BIN GRAPHIFY_TOOL_DIR GRAPHIFY_PYTHON_DIR
     export GRAPHIFY_EXTRA_ARGS
 
-    # lat.md (Documentation Graph)
-    LAT_ENABLED=false
-    LAT_BIN=""
-    LAT_PROJECT_ROOT=""
-
-    export LAT_ENABLED LAT_BIN LAT_PROJECT_ROOT
-
     # CCR (Claude Code Router) daemon configuration — used in combined PII proxy + router mode
     # CCR_PID: PID of background CCR daemon started by start_ccr_server()
     # CCR_SESSION_OWNED: true if this session started CCR (stop_ccr_server should kill it)

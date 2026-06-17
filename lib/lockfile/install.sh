@@ -106,21 +106,6 @@ install_from_lockfile() {
 			|| print_warning "GSD install failed (non-critical)"
 	fi
 
-	# Install lat.md if version specified in lockfile
-	local lat_version
-	lat_version=$(jq -r '.latVersion // "not installed"' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "not installed")
-
-	if [[ "$lat_version" != "not installed" ]] && [[ "$lat_version" != "unknown" ]]; then
-		echo ""
-		print_info "Installing lat.md version: $lat_version"
-		echo ""
-
-		NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-${ISOLATED_NVM_DIR}/npm-global}" \
-			npm install -g "lat.md@$lat_version" \
-			&& print_success "lat.md installed: $lat_version" \
-			|| print_warning "lat.md install failed (non-critical)"
-	fi
-
 	# Install LSP servers and plugins from lockfile
 	# Check jq dependency
 	if ! command -v jq &>/dev/null; then

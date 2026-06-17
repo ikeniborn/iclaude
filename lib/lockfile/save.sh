@@ -174,13 +174,6 @@ save_isolated_lockfile() {
 		fi
 	fi
 
-	# Detect lat.md version from package.json (offline/instant)
-	local lat_version="not installed"
-	local lat_pkg="${ISOLATED_NVM_DIR}/npm-global/lib/node_modules/lat.md/package.json"
-	if [[ -f "$lat_pkg" ]]; then
-		lat_version=$(grep -oP '"version":\s*"\K[^"]+' "$lat_pkg" 2>/dev/null || echo "unknown")
-	fi
-
 	# Create lockfile using jq for safe JSON generation
 	jq -n \
 		--arg nodeVer "$node_version" \
@@ -196,7 +189,6 @@ save_isolated_lockfile() {
 		--arg instAt "$installed_at" \
 		--arg nvmVer "$nvm_version" \
 		--arg gsdVer "$gsd_version" \
-		--arg latVer "$lat_version" \
 		'{
 			nodeVersion: $nodeVer,
 			claudeCodeVersion: $claudeVer,
@@ -210,8 +202,7 @@ save_isolated_lockfile() {
 			ohMyPoshInstalledAt: $ompInstAt,
 			installedAt: $instAt,
 			nvmVersion: $nvmVer,
-			gsdVersion: $gsdVer,
-			latVersion: $latVer
+			gsdVersion: $gsdVer
 		}' > "$ISOLATED_LOCKFILE"
 
 	chmod 644 "$ISOLATED_LOCKFILE"

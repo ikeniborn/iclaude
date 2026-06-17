@@ -573,34 +573,32 @@ lib/context/sessions.sh|high|Session management
 
 Подробно: `./rules/agent-best-practices.md` §11-13
 
-## lat.md Integration
+## iwiki Integration
 
-Этот скилл не вызывает `context-awareness`, поэтому проверяет lat.md напрямую.
+Этот скилл не вызывает `context-awareness`, поэтому проверяет docs/wiki напрямую.
 
 ### Query (перед началом Questionnaire)
 
 ```
-IF exists("{CWD}/lat.md/"):
-  Skill(skill="lat-search", args='search "паттерны и спецификации Claude Code агентов"')
-  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
+IF exists("{CWD}/docs/wiki/"):
+  Skill(skill="iwiki:iwiki-query", args='паттерны и спецификации Claude Code агентов')
 
   Использовать результат для обогащения Questionnaire:
   - Если найдены похожие агенты → предложить их description/tools как starting point
   - Если найдены рекомендованные model/permissionMode для данного типа → предзаполнить
-  - Если в lat.md нет данных → продолжить стандартный Questionnaire без изменений
+  - Если в docs/wiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
 ### Record (после успешной валидации — Сигнал завершения)
 
-lat.md — авторский граф, без авто-ингеста: спецификация добавляется ручной секцией.
+iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
 
 ```
-IF exists("{CWD}/lat.md/") AND validation_passed:
-  (опционально) Skill(skill="lat-md") → создать/обновить секцию агента в lat.md/
+IF exists("{CWD}/docs/wiki/") AND validation_passed:
+  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу агента в docs/wiki/
     (name, description, tools, permissionMode — что и почему)
-  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: спецификации агентов попадают в граф lat.md —
+  Результат: спецификации агентов попадают в docs/wiki —
   переиспользуются как паттерны при создании следующих агентов.
 ```
 

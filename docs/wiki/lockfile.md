@@ -17,7 +17,7 @@ Additional fields captured:
 - `nodeVersion`, `nvmVersion` — Node.js and NVM versions.
 - `routerVersion` — Claude Code Router version via `$ccr_cmd --version`.
 - `gsdVersion` — read from `$CLAUDE_CONFIG_DIR/.gsd-version` (written by GSD install); falls back to `npm view get-shit-done-cc version`.
-- `latVersion` — read from `lat.md`'s `package.json` under `npm-global`.
+- `latVersion` — read from `lat.md`'s `package.json` under `npm-global` (legacy field; lat was replaced by iwiki).
 - `statusLineEnabled`, `statusLineScript` — result of `detect_statusline`.
 - `ohMyPoshVersion`, `ohMyPoshPlatform`, `ohMyPoshInstalledAt` — Oh My Posh binary version.
 - `installedAt` — UTC timestamp.
@@ -33,7 +33,7 @@ The JSON is written with `jq -n` (safe, no manual string escaping) and then `chm
 3. **Claude Code** — runs `npm install -g @anthropic-ai/claude-code@<claudeCodeVersion>`. Uses the latest version if `claudeCodeVersion` is absent or `"unknown"`.
 4. **Router** — installs `@musistudio/claude-code-router@<routerVersion>` if the field is present and not `"not installed"`.
 5. **GSD** — runs `npx get-shit-done-cc@<gsdVersion> --global` with `CLAUDE_CONFIG_DIR` forwarded, writing a `.gsd-version` marker on success.
-6. **lat.md** — runs `npm install -g lat.md@<latVersion>` with `NPM_CONFIG_PREFIX` forwarded.
+6. **lat.md** (legacy) — ran `npm install -g lat.md@<latVersion>`; lat was replaced by iwiki (no install step in lockfile restore).
 7. **LSP servers** — iterates `lspServers` keys and runs the appropriate `npm install -g <pkg>@<version>`.
 8. **LSP plugins** — iterates `lspPlugins` keys and runs `claude plugin install <plugin> -s project`.
 

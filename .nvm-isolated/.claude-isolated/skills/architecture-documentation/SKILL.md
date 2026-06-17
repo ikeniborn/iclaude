@@ -574,21 +574,20 @@ console.log(`Savings: ${stats.savedPercent}`); // Expected: 30-60%
 
 ---
 
-## lat.md / graph Integration
+## iwiki / graph Integration
 
 Этот скилл получает `project_context` от `context-awareness` (Phase 1 Input).
 
 ### Query (перед Phase 1)
 
 ```
-IF project_context.lat_initialized == true:
-  Skill(skill="lat-search", args='search "архитектурные паттерны и компоненты проекта"')
-  # без LAT_LLM_KEY lat-search сам откатывается на `lat locate`
+IF project_context.wiki_initialized == true:
+  Skill(skill="iwiki:iwiki-query", args='архитектурные паттерны и компоненты проекта')
 
   Использовать результат для обогащения Phase 1:
   - Если известные компоненты уже описаны → уточнить discovery вместо полного scan
   - Если паттерн определён (layered/hexagonal/...) → использовать как отправную точку
-  - Если в lat.md нет ответа → продолжить Phase 1 в стандартном режиме
+  - Если в docs/wiki нет ответа → продолжить Phase 1 в стандартном режиме
 ```
 
 IF project_context.graph_initialized == true:
@@ -602,17 +601,15 @@ IF project_context.graph_initialized == true:
 
 ### Record (после Phase 4)
 
-lat.md — авторский документационный граф, без авто-ингеста: знания добавляются
-ручным созданием секции, а не индексацией файла.
+iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
 
 ```
-IF project_context.lat_initialized == true AND status == "success":
-  (опционально) Skill(skill="lat-md") → создать/обновить секцию архитектуры в lat.md/
+IF project_context.wiki_initialized == true AND status == "success":
+  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу архитектуры в docs/wiki/
     (компоненты, зависимости, паттерны — что и почему), ссылаясь на docs/architecture/
-  Затем Skill(skill="lat-check") → валидировать [[refs]] и code refs
 
-  Результат: знания об архитектуре попадают в граф lat.md —
-  доступны для lat-search в следующих сессиях.
+  Результат: знания об архитектуре попадают в docs/wiki —
+  доступны для iwiki-query в следующих сессиях.
 ```
 
 ---
