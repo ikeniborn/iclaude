@@ -131,10 +131,15 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 
 После финального вердикта (включая ветку quick-exit `OK (cached, hash match)`) вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
 
-Передай навыку данные (оба блока обязательны):
+Цель отчёта: описать **требования и намерения** intent doc и показать **процесс** их достижения схемами, а не только перечислить findings. Передай навыку три блока (все обязательны):
 
-1. **Резюме intent doc** — Objective, Desired Outcomes, Health Metrics, Constraints (steering / hard), Autonomy Zones, Stop Rules.
-2. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
+1. **Резюме требований** — намерения intent doc как требования: Objective, Desired Outcomes, Health Metrics, Constraints (steering / hard), Autonomy Zones, Stop Rules. Каждый Desired Outcome и Constraint — отдельной строкой таблицы.
+2. **Схемы намерений и процесса** (обязательны; используй CSS-диаграммы навыка, SVG-граф — для произвольных рёбер):
+   - **Карта намерения** — block/flow-диаграмма потока `Objective → Desired Outcomes → Health Metrics`: как намерение превращается в наблюдаемый результат и чем измеряется.
+   - **Граф автономии** — block-диаграмма из 4 зон (Full / Guarded / Proposal-first / No autonomy) с пунктами в каждой; пустая зона помечается `N/A`.
+   - **Связь ограничений и результатов** — матрица/таблица или SVG node-edge граф: какие Constraints (steering / hard) ограничивают какие Desired Outcomes.
+   - **Stop Rules** — список критериев `Done when:` как условий завершения процесса.
+3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
 
 Параметры артефакта:
 - Выход: `docs/superpowers/reports/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
