@@ -7,7 +7,7 @@
     {
       "name": "iwiki",
       "description": "Embedding-based documentation agent replacing lat.md.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "./plugin/iwiki",
       "author": { "name": "ikeniborn" },
       "category": "documentation"
