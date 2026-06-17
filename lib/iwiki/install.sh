@@ -41,16 +41,19 @@ _iwiki_register_plugin() {
         print_warning "CLAUDE_CONFIG_DIR not set — skipping plugin registration."
         return 0
     fi
+    # User scope: the plugin is enabled in EVERY project, not just iclaude — the
+    # skills run the bundled engine ($CLAUDE_PLUGIN_ROOT/engine) against the
+    # current project's own docs/wiki/.
     if ! _iwiki_claude "$cp" plugin marketplace list 2>/dev/null | grep -q "iclaude"; then
         print_info "Registering iclaude marketplace ($SCRIPT_DIR) ..."
-        _iwiki_claude "$cp" plugin marketplace add "$SCRIPT_DIR" --scope project \
+        _iwiki_claude "$cp" plugin marketplace add "$SCRIPT_DIR" --scope user \
             || print_warning "marketplace add failed (engine still usable via the CLI)."
     fi
     if _iwiki_claude "$cp" plugin list 2>/dev/null | grep -q "iwiki@iclaude"; then
         print_info "iwiki plugin already registered."
     else
-        print_info "Installing iwiki plugin into the isolated plugins dir ..."
-        _iwiki_claude "$cp" plugin install iwiki@iclaude --scope project \
+        print_info "Installing iwiki plugin (user scope — available in all projects) ..."
+        _iwiki_claude "$cp" plugin install iwiki@iclaude --scope user \
             || print_warning "plugin install failed (engine still usable via the CLI)."
     fi
 }

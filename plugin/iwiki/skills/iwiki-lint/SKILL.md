@@ -14,9 +14,15 @@ Scan `docs/wiki/` and produce a health report. Make NO edits.
 1. **Broken links** — for every `[[target#Heading]]`, confirm the target file and
    `## Heading` exist. List the misses.
 2. **Orphans** — wiki pages no other page links to.
-3. **Stale** — run `iwiki_engine_run --wiki-dir docs/wiki status`; cross-check
-   against `docs/wiki/.iwiki/log.jsonl` to flag pages whose source changed after
-   the last ingest (heuristic — list candidates, do not auto-fix).
+3. **Stale** — run the engine `status` (from the current project root; the engine
+   ships with this plugin, so it works in any project):
+   ```bash
+   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
+     --wiki-dir docs/wiki status
+   ```
+   Cross-check against `docs/wiki/.iwiki/log.jsonl` to flag pages whose source
+   changed after the last ingest (heuristic — list candidates, do not auto-fix).
 4. **Gaps** — top-level source areas (`lib/`, `iclaude.sh`) with no wiki page.
 
 ## Steps

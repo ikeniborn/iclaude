@@ -10,6 +10,10 @@ description: >-
 
 Turn source into a wiki page under `docs/wiki/` (markdown + `[[refs]]`), then index it.
 
+Works in **any project**: the wiki is written to the current project's `docs/wiki/`,
+and the embedding engine ships inside this plugin (`${CLAUDE_PLUGIN_ROOT}/engine`).
+You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
+
 ## Guardrails (autonomy zone: guarded)
 
 - ALWAYS show the diff of the wiki page before/after writing.
@@ -25,10 +29,11 @@ Turn source into a wiki page under `docs/wiki/` (markdown + `[[refs]]`), then in
    One `##` section per concept; lead each section with a ≤250-char paragraph.
    Cross-link related pages with `[[file#Heading]]`.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
-4. Refresh the index:
+4. Refresh the index (run from the current project root):
    ```bash
-   source lib/iwiki/detect.sh
-   iwiki_engine_run --wiki-dir docs/wiki index
+   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
+     --wiki-dir docs/wiki index
    ```
    Expected: `indexed: N chunks (... reused, ... embedded), <bytes>`.
 5. Append an operation record to `docs/wiki/.iwiki/log.jsonl`:
