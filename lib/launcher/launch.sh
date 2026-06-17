@@ -263,13 +263,18 @@ launch_claude() {
             _e_ssh_fallback+=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         fi
 
-        # Detect if guest has rsync (v7+ rootfs). Fallback to tar if absent.
+        # Detect if guest has a WORKING rsync (v7+ rootfs). Fallback to tar otherwise.
+        # We run `rsync --version`, NOT `command -v rsync`: the rootfs injects the host's
+        # rsync binary alone (lib/sandbox/install.sh), but host rsync is dynamically linked
+        # (libpopt.so.0, liblz4, libzstd, ...) and those deps may be absent in the guest —
+        # then the binary exists but exits 127 ("error while loading shared libraries"),
+        # which `command -v` cannot detect. Executing it proves it actually loads and runs.
         local _guest_has_rsync=false
         if ssh -o BatchMode=yes -o LogLevel=ERROR -o ConnectTimeout=5 \
                ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
                -i "$ssh_key" "${_ssh_kh_opts[@]}" \
                "iclaude@${guest_ip}" \
-               'command -v rsync >/dev/null 2>&1' 2>/dev/null; then
+               'rsync --version >/dev/null 2>&1' 2>/dev/null; then
             _guest_has_rsync=true
         fi
 
@@ -298,16 +303,32 @@ launch_claude() {
         # 'full' mode:     bidirectional sync (host→guest at start, guest→host on exit).
         # 'isolated' mode: one-way copy (host→guest at start only); host files remain unchanged.
         local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
+        # tar-over-SSH fallback cannot propagate guest→host DELETIONS (tar only
+        # adds/overwrites; only rsync --delete mirrors removals). Warn in full mode
+        # so this is not a silent data-consistency gap. The fix is a working guest
+        # rsync — run --install-microvm to inject the self-contained rsync bundle.
+        if [[ "$_guest_has_rsync" != "true" && "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_warning "microVM: guest rsync unavailable — using tar-over-SSH; file DELETIONS in the guest will NOT propagate to the host. Run './iclaude.sh --install-microvm' (microVM stopped) to inject a working rsync bundle for full delta sync."
+        fi
         if [[ -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
-            # Exclude heavyweight dirs and secret files from host→guest sync:
+            # Canonical sync excludes — heavyweight dirs, secret files, and guest-only
+            # paths. Shared by ALL sync directions (host→guest here, guest→host in the
+            # periodic and exit-time syncs below) to keep them in lock-step:
             #   .nvm-isolated/           — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
             #   .git/                    — git history: large, rarely needed for claude tool calls
             #   .claude_config           — contains HTTPS_PROXY credentials and API keys
             #   .claude_proxy_credentials — legacy credentials file
             #   .iclaude-guest-env.sh    — may exist in PWD from a previous sync-back; never needed
             #   .iclaude-ssh/            — SSH keys for microVM access
-            # User can add more exclusions via MICRO_VM_SYNC_EXCLUDE (colon-separated paths).
+            #   .claude-guest/           — guest-only Claude config dir (CLAUDE_CONFIG_DIR)
+            #   lost+found/              — ext4 reserved dir, root:root 0700 in the guest image;
+            #                              the non-root guest user cannot opendir it, so a
+            #                              `rsync --delete` scan over it fails with EACCES →
+            #                              exit 23 ("sync had errors") though files transfer.
+            # CRITICAL for guest→host: .git / .nvm-isolated / .claude_config are absent in the
+            # guest, so without these excludes `rsync --delete` on sync-back would WIPE them
+            # from the host. User can add more via MICRO_VM_SYNC_EXCLUDE (colon-separated).
             local _sync_excludes=(
                 "--exclude=./.nvm-isolated"
                 "--exclude=./.git"
@@ -315,6 +336,8 @@ launch_claude() {
                 "--exclude=./.claude_proxy_credentials"
                 "--exclude=./.iclaude-guest-env.sh"
                 "--exclude=./.iclaude-ssh"
+                "--exclude=./.claude-guest"
+                "--exclude=./lost+found"
             )
             if [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]]; then
                 local IFS=':'; local _extra
@@ -323,25 +346,29 @@ launch_claude() {
                 done
                 unset IFS
             fi
+            # rsync-form excludes (--exclude=./.foo → --exclude=.foo), derived once and
+            # reused by the periodic + exit-time guest→host rsyncs below.
+            local _rsync_excludes=()
+            for _excl in "${_sync_excludes[@]}"; do
+                _rsync_excludes+=("${_excl//--exclude=.\//--exclude=}")
+            done
+            # Per-session sync log — rsync/tar stderr lands here so failures are
+            # diagnosable (previously discarded via 2>/dev/null).
+            local _sync_log="/tmp/iclaude-${MICRO_VM_SESSION_ID:-$$}-sync.log"
             if [[ "$_guest_has_rsync" == "true" ]]; then
-                # Build rsync excludes from _sync_excludes (convert --exclude=./.foo → --exclude=.foo)
-                local _rsync_excludes=()
-                for _excl in "${_sync_excludes[@]}"; do
-                    _rsync_excludes+=("${_excl//--exclude=.\//--exclude=}")
-                done
                 rsync -az --delete "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_cmd" \
                     "${MICRO_VM_WORKSPACE_HOSTDIR}/" \
-                    "iclaude@${guest_ip}:/workspace/" 2>/dev/null || \
-                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+                    "iclaude@${guest_ip}:/workspace/" 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files (see ${_sync_log})"
             else
-                tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>/dev/null \
+                tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>>"$_sync_log" \
                     | ssh -T \
                         ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
                         -i "$ssh_key" "${_ssh_kh_opts[@]}" -o LogLevel=ERROR \
                         "iclaude@${guest_ip}" \
-                        'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
-                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+                        'tar -xzf - -C /workspace 2>/dev/null' 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files (see ${_sync_log})"
             fi
         fi
 
@@ -362,6 +389,7 @@ launch_claude() {
                 local _sub_guest_ip="$guest_ip"
                 local _sub_ssh_key="$ssh_key"
                 local _sub_kh_opts=("${_ssh_kh_opts[@]}")
+                local _sub_rsync_excludes=("${_rsync_excludes[@]}")
                 while true; do
                     sleep "$_sync_interval" || break
                     # Stop if FC socket is gone (VM no longer running)
@@ -371,7 +399,7 @@ launch_claude() {
                     touch "$_sync_lock"
                     if [[ "$_sub_guest_has_rsync" == "true" ]]; then
                         rsync -az --delete \
-                            --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                            "${_sub_rsync_excludes[@]}" \
                             -e "$_sub_e_ssh_cmd" \
                             "iclaude@${_sub_guest_ip}:/workspace/" \
                             "${_sub_host_dir}/" 2>/dev/null || true
@@ -434,18 +462,20 @@ launch_claude() {
             print_info "microVM: syncing workspace ← guest..."
             if [[ "$_guest_has_rsync" == "true" ]]; then
                 # Full bidirectional sync (full mode only): --delete propagates guest deletions to host.
+                # Shares _rsync_excludes with the host→guest sync so host-only paths
+                # (.git, .nvm-isolated, .claude_config, ...) are protected from --delete.
                 # Try via ControlMaster first; fallback to direct SSH if master died.
                 rsync -az --delete \
-                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_cmd" \
                     "iclaude@${guest_ip}:/workspace/" \
-                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>>"$_sync_log" || \
                 rsync -az --delete \
-                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_fallback" \
                     "iclaude@${guest_ip}:/workspace/" \
-                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
-                print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync-back had errors — some changes may not persist (see ${_sync_log})"
             else
                 ssh -T \
                     ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \

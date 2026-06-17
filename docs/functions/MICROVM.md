@@ -187,6 +187,8 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 | **Fallback** | Если rsync недоступен в guest (rootfs v6 или ниже) — автоматический откат на tar-over-SSH |
 | **ControlPersist=60** | Мастер-соединение закрывается автоматически через 60s после последнего использования (защита от orphan при SIGKILL) |
 
+> ⚠️ **tar-fallback и удаления.** tar-over-SSH переносит только создание/изменение файлов — `tar -x` **не удаляет**. Удаление файла в guest при tar-fallback **не распространяется** на хост (синхронизируются только создания/правки). Полный delta-sync с переносом удалений даёт только rsync (`--delete`). Если в guest rsync нерабочий (bundle не установлен), launcher выводит предупреждение и советует `--install-microvm`. Корректное удаление guest→host → установите rsync bundle.
+
 **Минимальный интервал sync:**
 - С rsync+ControlMaster (v7 rootfs): **2 секунды** (рекомендуется 5s)
 - Без rsync (v6 rootfs, tar-over-SSH): **20-30 секунд**

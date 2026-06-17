@@ -63,6 +63,8 @@ SHA-256 hashes are stored in `versions.json`. If no hash is present in the file 
 
 **Rootfs state machine** tracks applied upgrades in `rootfs.state`. Current states: `v3` (jq + DNS) → `v4` (CA bundle) → `v5` (/tmp tmpfs fix) → `v6` (resize) → `v7` (rsync for delta sync). `--install-microvm` applies missing upgrades without re-downloading the rootfs image.
 
+**rsync bundle** (`_inject_rootfs_rsync_bundle()`). The guest rsync cannot be a bare copy of the host binary: host (e.g. Ubuntu 24.04 / glibc 2.39) and guest (Ubuntu 22.04 / glibc 2.35) differ, so the host rsync needs `GLIBC_2.38/2.39` symbols and `libpopt.so.0` the guest lacks — it fails with `error while loading shared libraries` (exit 127). Instead a *self-contained bundle* is injected into `/opt/iclaude-rsync/`: the host rsync (`rsync.bin`), its full `ldd` lib closure, AND the host dynamic loader; `/usr/bin/rsync` becomes a wrapper that runs `rsync.bin` via the bundled loader (`--library-path`), isolated from guest libc. This is glibc-version independent and verified to run in an Ubuntu 22.04 / glibc 2.35 guest. The injection is idempotent (a `<rootfs>.rsync-bundle` marker holds the host rsync's sha256) and applied to existing `v7` rootfs images on `--install-microvm` without a state bump. If rsync is missing on the host or the bundle cannot be built, the launcher falls back to tar-over-SSH — see [[launcher#microVM Workspace Sync]].
+
 **Install command:**
 ```bash
 ./iclaude.sh --install-microvm
@@ -79,6 +81,12 @@ Multiple concurrent sessions are supported via a slot model. Each slot is assign
 - Example with default subnet `172.16.0.0/26`: slot 0 → host `172.16.0.1`, guest `172.16.0.2`, `tap-iclaude-1`
 
 Flags that are not meaningful inside the guest (`--chrome`, `--ide`) are stripped before launching Claude Code via SSH.
+
+## Guest Environment & Authentication
+
+`configure_guest_environment()` writes `/workspace/.iclaude-guest-env.sh` (chmod 600, sourced then deleted at launch) carrying the guest's `ANTHROPIC_BASE_URL`, proxy/`NO_PROXY`, model, router, and `CLAUDE_CONFIG_DIR=/workspace/.claude-guest` settings.
+
+Authentication is forwarded explicitly: if the host has `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_AUTH_TOKEN`, or `ANTHROPIC_API_KEY` set (the host typically authenticates via `CLAUDE_CODE_OAUTH_TOKEN` from `.claude_config`, exported by [[config#Environment Variable Export]]), each is escaped via `_sh_escape_val()` and exported into the env file. Without this the guest has no credential — there is no `.credentials.json` file to copy for env-token hosts — and Claude Code reports `Not logged in · Run /login`. The credential-copy step only handles file-based OAuth (`.credentials.json` → `.claude-guest`), so env-token forwarding is the path that makes the guest logged in. See [[launcher#microVM Workspace Sync]] for how `.claude_config` itself is kept out of the synced workspace.
 
 ## Status
 

@@ -55,9 +55,15 @@ exec "${claude_cmd_arr[@]}" "$@"
 - `full` (default): host→guest at start, guest→host at exit. Periodic background sync is available via `MICRO_VM_SYNC_INTERVAL` (seconds; 0 = disabled).
 - `isolated`: host→guest only; guest changes are discarded.
 
-Rsync is used when the guest rootfs includes it (v7+); older rootfs images fall back to tar-over-SSH. The SSH ControlMaster reduces per-operation overhead from ~200 ms to ~5 ms; `ControlPersist=60` auto-closes orphaned connections.
+Rsync is used when the guest has a **working** rsync (v7+ rootfs with the rsync bundle); otherwise sync falls back to tar-over-SSH. Detection runs `rsync --version` in the guest, not `command -v rsync` — a bare-binary injection (older v7) leaves an rsync that exists but exits 127 (`error while loading shared libraries: libpopt.so.0`), so a mere presence check would wrongly pick rsync and every sync would fail. Executing it proves it loads. Current rootfs images ship a self-contained rsync bundle (host binary + lib closure + loader + wrapper under `/opt/iclaude-rsync/`, see [[sandbox#Installation]]) so the probe passes and delta sync is used. The SSH ControlMaster reduces per-operation overhead from ~200 ms to ~5 ms; `ControlPersist=60` auto-closes orphaned connections.
 
-Files excluded from sync: `.nvm-isolated/`, `.git/`, `.claude_config`, `.claude_proxy_credentials`, `.iclaude-guest-env.sh`, `.iclaude-ssh/`. Additional exclusions can be added via `MICRO_VM_SYNC_EXCLUDE` (colon-separated).
+A single canonical exclude list (`_rsync_excludes`, derived once) is shared by **all** sync directions — host→guest start, the periodic background sync, and the guest→host sync-back. Sharing it is load-bearing: host-only paths (`.git/`, `.nvm-isolated/`, `.claude_config`, ...) are absent in the guest, so without the exclude a `rsync --delete` on sync-back would WIPE them from the host. The list also excludes `lost+found` — the guest's fresh ext4 image has a root-owned `lost+found` (mode 0700) that the non-root guest user cannot `opendir`, so a `--delete` scan over it fails with EACCES (rsync exit 23, "workspace sync had errors") even though files transfer fine; excluding it skips the scan.
+
+Files excluded from sync: `.nvm-isolated/`, `.git/`, `.claude_config`, `.claude_proxy_credentials`, `.iclaude-guest-env.sh`, `.iclaude-ssh/`, `.claude-guest/`, `lost+found/`. Additional exclusions can be added via `MICRO_VM_SYNC_EXCLUDE` (colon-separated).
+
+Sync stderr is captured to `/tmp/iclaude-<session-id>-sync.log` (not discarded) so failures are diagnosable; on error the warning names the log path. The guest's auth credential is forwarded separately via the env file, not the workspace sync — see [[sandbox#Guest Environment & Authentication]].
+
+**tar fallback does not propagate deletions.** Only `rsync --delete` mirrors guest→host removals; `tar -x` only adds/overwrites. So on the tar fallback, a file deleted inside the guest is NOT deleted on the host (creates/edits still sync). In `full` mode the launcher emits a warning when it falls back to tar, pointing to `--install-microvm` to inject a working rsync bundle ([[sandbox#Installation]]) — the supported path for delete-aware delta sync.
 
 ## Session Environment Cleanup
 
