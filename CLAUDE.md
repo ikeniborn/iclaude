@@ -56,6 +56,16 @@ upstream artifact's state frontmatter passes its predicate:
 Otherwise the gate blocks (`exit 2`) with a message naming the fix command. The hook
 fails **open** on any internal error.
 
+**Post-artifact nudge (complementary).** A `PostToolUse` hook (`hooks/idd-nudge.py`)
+on `Write` fires when a skill creates an IDD artifact (`intents/*-intent.md`,
+`specs/*-design.md`, `plans/*.md`) and the artifact is **not yet validated** for its
+current body (same predicate as the gate). It injects `additionalContext` suggesting
+the matching `/check-*` — so validation happens right after creation instead of only
+being caught later by the blocking gate. It is **advisory** (never blocks, always
+`exit 0`), stays silent once the artifact passes (so `/check-*` writing frontmatter
+back does not loop), and skips `Edit` (no mid-authoring spam) and `check-result`
+(needs `git diff` — left to the gate via `finishing-a-development-branch`).
+
 **When the gate blocks, do NOT run the check inline — dispatch a clean-context
 subagent:**
 

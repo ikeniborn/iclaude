@@ -137,6 +137,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/idd-nudge.py\""
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
