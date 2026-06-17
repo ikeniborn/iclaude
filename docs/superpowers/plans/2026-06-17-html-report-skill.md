@@ -1,3 +1,19 @@
+---
+review:
+  plan_hash: db208f133e37a242
+  spec_hash: acd7a09e2c309560
+  last_run: 2026-06-17
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings: []
+chain:
+  intent: docs/superpowers/intents/2026-06-17-html-report-skill-intent.md
+  spec:   docs/superpowers/specs/2026-06-17-html-report-skill-design.md
+---
 # html-report Skill Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
