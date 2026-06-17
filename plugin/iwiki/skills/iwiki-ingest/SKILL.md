@@ -31,7 +31,7 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
 4. Refresh the index (run from the current project root):
    ```bash
-   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
    "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
      --wiki-dir docs/wiki index
    ```

@@ -45,7 +45,7 @@ indexes everything. Works in any project — the engine ships with this plugin
 
 4. **Build the index** (from the project root):
    ```bash
-   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
    "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
      --wiki-dir docs/wiki index
    ```

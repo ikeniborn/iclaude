@@ -17,7 +17,7 @@ Scan `docs/wiki/` and produce a health report. Make NO edits.
 3. **Stale** — run the engine `status` (from the current project root; the engine
    ships with this plugin, so it works in any project):
    ```bash
-   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
    "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
      --wiki-dir docs/wiki status
    ```

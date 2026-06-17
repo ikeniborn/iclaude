@@ -23,6 +23,8 @@ Skip only when: familiar area, same session.
 - Run `/iwiki-lint` — no broken `[[refs]]`, no orphan or stale pages.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
+Always invoke iwiki via its **skills** (`iwiki:iwiki-ingest`, `/iwiki-query`, `/iwiki-lint`) — never guess engine subcommands. The `iwiki_engine` CLI exposes ONLY `index | search | related | status` (there is NO `lint` subcommand — lint is skill-side). When unsure of any CLI's subcommands, check `--help` before running.
+
 ## Language Rules
 
 - **Conversations and questions**: Russian — to match user expectations.

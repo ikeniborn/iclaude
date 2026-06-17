@@ -17,7 +17,7 @@ section ids; YOU read those sections and write the answer.
    inside this plugin (`${CLAUDE_PLUGIN_ROOT}/engine`) and searches the current
    project's own `docs/wiki/` — so this works in any project, not just iclaude:
    ```bash
-   UV="$(command -v uv || echo "${CLAUDE_CONFIG_DIR}/../bin/uv")"
+   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
    "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
      --wiki-dir docs/wiki search "<the user's question>"
    ```
