@@ -47,11 +47,11 @@ Modules are sourced conditionally (`if [[ -d "$LIB_DIR/<name>" ]]`) so the scrip
 | 14 | `command/` | `usage.sh`, `parse.sh`, `dispatch.sh` |
 | — | `chrome/` | `detection.sh` |
 
-After Phase 14, Phase 15 (the inline main body) runs. `lib/telemetry/otel.sh` is loaded inside Phase 15, after argument parsing.
+After Phase 14, Phase 15 (the inline main body) runs. `lib/telemetry/otel.sh` (see [[telemetry]]) is loaded inside Phase 15, after argument parsing.
 
 ## Command Dispatch
 
-All CLI argument dispatch is implemented directly in the Phase 15 `while`/`case` loop in `iclaude.sh`, not in `lib/command/dispatch.sh`. The two stubs in `lib/command/` — `parse_cli_arguments()` and `dispatch_command()` — are explicit placeholders marked for a post-v4.0 extraction; they are sourced but never called.
+All CLI argument dispatch is implemented directly in the Phase 15 `while`/`case` loop in `iclaude.sh`, not in `lib/command/dispatch.sh`. The two stubs in `lib/command/` (see [[command]]) — `parse_cli_arguments()` and `dispatch_command()` — are explicit placeholders marked for a post-v4.0 extraction; they are sourced but never called.
 
 The dispatch pattern is:
 - Flags that perform a one-shot operation (e.g. `--isolated-install`, `--check-router`, `--install-iwiki`) call their module function and `exit $?` immediately.

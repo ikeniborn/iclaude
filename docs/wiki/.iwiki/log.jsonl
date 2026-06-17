@@ -17,3 +17,9 @@
 {"op":"ingest","source":"lib/nvm/detect.sh","page":"docs/wiki/nvm.md","date":"2026-06-17"}
 {"op":"lint-fix","page":"docs/wiki/nvm.md","note":"repoint broken anchors","date":"2026-06-17"}
 {"op":"lint-fix","scope":"broken+orphans","note":"repoint 9 anchors, add 3 inbound links","date":"2026-06-17"}
+{"op":"ingest","source":"lib/core","page":"docs/wiki/core.md","date":"2026-06-17"}
+{"op":"ingest","source":"lib/command","page":"docs/wiki/command.md","date":"2026-06-17"}
+{"op":"ingest","source":"lib/iwiki","page":"docs/wiki/iwiki.md","date":"2026-06-17"}
+{"op":"ingest","source":"lib/gsd","page":"docs/wiki/gsd.md","date":"2026-06-17"}
+{"op":"ingest","source":"lib/telemetry","page":"docs/wiki/telemetry.md","date":"2026-06-17"}
+{"op":"ingest","source":"lib/caveman","page":"docs/wiki/caveman.md","date":"2026-06-17"}

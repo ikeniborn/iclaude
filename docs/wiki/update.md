@@ -27,7 +27,7 @@ The sequence is:
 3. `npm install -g @anthropic-ai/claude-code@latest`.
 4. `hash -r` to clear the bash command cache.
 5. Optionally call `repair_vendor_permissions` (if the function is defined) to restore execute bits on vendored binaries such as `rg` that git strips after update.
-6. Optionally call `update_gsd_if_installed` to keep GSD in sync.
+6. Optionally call `update_gsd_if_installed` to keep GSD ([[gsd]]) in sync.
 7. `save_isolated_lockfile` to pin the new version.
 
 ## Cleanup and Symlinks
