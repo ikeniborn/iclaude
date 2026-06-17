@@ -47,7 +47,9 @@
       "Bash(cd:*)",
       "Bash(bash -n:*)",
       "Bash(ssh:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [
       "Read(**/.env)",
