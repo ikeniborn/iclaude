@@ -5,8 +5,11 @@ from the shared custom properties below, so one toggle reskins the whole report.
 
 ## Custom properties + toggle
 
-Place the toggle control as the FIRST element inside `<body>`, before the report, so
-`#theme-toggle:checked ~ *` reaches every sibling.
+Place the toggle control inside `<body>` (typically first, before the report).
+`body:has(#theme-toggle:checked)` flips the palette on `<body>` itself, so the page
+background AND every descendant inherit the new theme. (A sibling selector like
+`#theme-toggle:checked ~ *` would skip `<body>` and the inherited `color`, leaving the
+page background and text stuck on the light palette.)
 
 ```html
 <input type="checkbox" id="theme-toggle" hidden>
@@ -23,8 +26,8 @@ Place the toggle control as the FIRST element inside `<body>`, before the report
   --accent:#5c6bc0; --border:#d0d0e0; --line:#888888;
   --zebra:#f3f3f8; --ok:#43a047; --warn:#fb8c00; --danger:#e53935;
 }
-/* Dark = Catppuccin Mocha; :checked flips the whole palette */
-#theme-toggle:checked ~ *{
+/* Dark = Catppuccin Mocha; :checked flips the whole palette on <body> */
+body:has(#theme-toggle:checked){
   --bg:#1e1e2e; --surface:#313244; --fg:#cdd6f4;
   --accent:#89b4fa; --border:#45475a; --line:#888888;
   --zebra:#282838; --ok:#a6e3a1; --warn:#f9e2af; --danger:#f38ba8;

@@ -94,8 +94,8 @@ Mechanism: pure-CSS checkbox hack. Zero JS for theming.
 ```css
 /* default = light, via CSS custom props on :root */
 :root{ --bg:#fafafa; --fg:#333344; --accent:#5c6bc0; --border:#d0d0e0; --line:#888888; }
-/* :checked flips the whole palette — one toggle, all colors follow */
-#theme-toggle:checked ~ * { --bg:#1e1e2e; --fg:#cdd6f4; --accent:#89b4fa; --border:#45475a; }
+/* :checked flips the whole palette on <body> — one toggle, all colors + page bg follow */
+body:has(#theme-toggle:checked){ --bg:#1e1e2e; --fg:#cdd6f4; --accent:#89b4fa; --border:#45475a; }
 body{ background:var(--bg); color:var(--fg); transition:background .3s,color .3s; }
 ```
 
