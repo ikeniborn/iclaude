@@ -4,30 +4,6 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## No Tests (MANDATORY — overrides everything)
-
-**This rule is absolute. It applies regardless of which skill, tool, agent, or workflow is active — including any skill that mandates TDD or test-first development. No exception, no rationalization.**
-
-**What is banned — functional tests only:** code (or test-driven generation) that asserts runtime behavior in a red→green loop — write failing test, then write code until it passes. This includes unit, integration, e2e, snapshot, property, and smoke tests.
-
-- Do NOT create such functional tests, nor test scaffolding/fixtures for them.
-- Do NOT add or run a functional testing framework, test runner, or test dependency (e.g. `vitest`, `jest`, `pytest`, `mocha`; `npm test` when it runs such a suite).
-- Do NOT use tests as a verification step. Verify behavior by running the real code/command and observing output.
-- If a skill (e.g. `test-driven-development`) instructs you to write tests, follow this rule instead and skip the test step.
-
-**ALLOWED (not "tests" — code-correctness checks, encouraged):**
-- Linters and formatters (e.g. `ruff`, `eslint`, `shellcheck`, `bash -n`, `prettier`).
-- Type checkers and static analysis (e.g. `mypy`, `tsc --noEmit`, LSP diagnostics).
-- Syntax / semantic / correctness validation that does not exercise runtime behavior with assertions.
-- **Documentation validation** (`/iwiki-lint`: broken `[[refs]]`, orphan/stale pages, link/code-ref checks over `docs/wiki/`). These validate code↔doc traceability — NOT red→green functional tests. Keep and maintain them.
-
-The ban targets **functional tests** (red→green, assert runtime behavior). Static code-quality checks and doc-validation are fine and recommended.
-
-**On finding existing functional tests in the project** (NOT lint, type-check, or doc-validation):
-- Report them (path + what they assert).
-- Recommend deletion.
-- Offer to delete them as a concrete action — ask for confirmation, then remove on approval.
-
 ## Getting Started
 
 **Load graph and docs before exploring code — they encode decisions invisible in raw code.**
@@ -38,6 +14,14 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
 2. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
 
 Skip only when: familiar area, same session.
+
+## Keep Docs Current (MANDATORY)
+
+**After every change that alters functionality, architecture, or behavior, update the project docs via iwiki — before responding to the user.**
+
+- Run `iwiki:iwiki-ingest <changed-source>` to regenerate/update the affected `docs/wiki/` page.
+- Run `/iwiki-lint` — no broken `[[refs]]`, no orphan or stale pages.
+- Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
 ## Language Rules
 
@@ -86,7 +70,7 @@ Test: every changed line must trace directly to the user's request.
 
 **Define success criteria. Loop until verified.**
 
-Transform tasks into verifiable goals (verify by running real code, never by writing tests — see **No Tests**):
+Transform tasks into verifiable goals (verify by running real code or tests):
 - "Add validation" → "Run the code with invalid inputs, confirm it rejects them"
 - "Fix the bug" → "Reproduce it by running the affected path, confirm the fix removes it"
 - "Refactor X" → "Run X before and after, confirm identical observable behavior"
