@@ -36,6 +36,41 @@ with open(settings_file, 'w') as f:
 PYEOF
 }
 
+#######################################
+# Mirror guest→host file DELETIONS for the microVM tar-over-SSH sync path.
+#
+# tar -x only adds/overwrites — it cannot remove files deleted in the guest, so on
+# the tar fallback `full`-mode deletions never reach the host. This removes host
+# workspace files that are absent from the guest's file list, giving tar the same
+# delete semantics rsync --delete provides natively (the rsync path does not call
+# this). SAFE: prunes the same protected paths as the sync excludes, deletes only
+# regular files, and is a no-op on an empty list (caller passes a list ONLY from a
+# successful guest scan — never on ssh/find error — so it never mass-deletes).
+#
+# Arguments:
+#   $1 - hostdir: host workspace directory
+#   $2 - guest_list: newline-separated guest-relative file paths ("./path"), from
+#        a successful `find . <prune> -type f -print` over the guest /workspace
+#######################################
+_microvm_mirror_deletions() {
+    local hostdir="$1" guest_list="$2"
+    [[ -d "$hostdir" && -n "$guest_list" ]] || return 0
+    local rel
+    while IFS= read -r rel; do
+        [[ -n "$rel" ]] || continue
+        rm -f -- "${hostdir}/${rel#./}"
+    done < <(comm -23 \
+        <(cd "$hostdir" && find . \( -name .git -o -name .nvm-isolated -o -name .claude_config -o -name .claude_proxy_credentials -o -name .iclaude-guest-env.sh -o -name .iclaude-ssh -o -name .claude-guest -o -name lost+found \) -prune -o -type f -print 2>/dev/null | sort) \
+        <(printf '%s\n' "$guest_list" | sort))
+    # Remove directories left empty by the deletions (best-effort).
+    find "$hostdir" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+}
+
+# Guest /workspace file-list command (relative "./path" entries), protected paths
+# pruned — matches _microvm_mirror_deletions and the rsync/tar sync excludes.
+# Used by the tar guest→host syncs to compute deletions.
+_MICROVM_GUEST_SCAN_CMD='cd /workspace 2>/dev/null && find . \( -name .git -o -name .nvm-isolated -o -name .claude_config -o -name .claude_proxy_credentials -o -name .iclaude-guest-env.sh -o -name .iclaude-ssh -o -name .claude-guest -o -name lost+found \) -prune -o -type f -print 2>/dev/null'
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
@@ -303,12 +338,11 @@ launch_claude() {
         # 'full' mode:     bidirectional sync (host→guest at start, guest→host on exit).
         # 'isolated' mode: one-way copy (host→guest at start only); host files remain unchanged.
         local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
-        # tar-over-SSH fallback cannot propagate guest→host DELETIONS (tar only
-        # adds/overwrites; only rsync --delete mirrors removals). Warn in full mode
-        # so this is not a silent data-consistency gap. The fix is a working guest
-        # rsync — run --install-microvm to inject the self-contained rsync bundle.
+        # tar-over-SSH fallback: deletions are mirrored explicitly (see
+        # _microvm_mirror_deletions) so 'full' mode stays correct, but tar does a full
+        # gzip copy each sync (no delta). Nudge toward the rsync bundle for speed.
         if [[ "$_guest_has_rsync" != "true" && "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
-            print_warning "microVM: guest rsync unavailable — using tar-over-SSH; file DELETIONS in the guest will NOT propagate to the host. Run './iclaude.sh --install-microvm' (microVM stopped) to inject a working rsync bundle for full delta sync."
+            print_info "microVM: guest rsync unavailable — using tar-over-SSH (deletions mirrored; full-copy sync, slower than rsync delta). Run './iclaude.sh --install-microvm' (microVM stopped) to enable the rsync bundle."
         fi
         if [[ -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
@@ -410,6 +444,14 @@ launch_claude() {
                             "iclaude@${_sub_guest_ip}" \
                             'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                             | tar -xzf - -C "${_sub_host_dir}" 2>/dev/null || true
+                        # tar -x cannot remove guest-deleted files — mirror deletions.
+                        local _gl_p
+                        _gl_p=$(ssh -T -o BatchMode=yes \
+                            -o ConnectTimeout=5 -i "$_sub_ssh_key" "${_sub_kh_opts[@]}" -o LogLevel=ERROR \
+                            "iclaude@${_sub_guest_ip}" "$_MICROVM_GUEST_SCAN_CMD" 2>/dev/null)
+                        if [[ $? -eq 0 && -n "$_gl_p" ]]; then
+                            _microvm_mirror_deletions "${_sub_host_dir}" "$_gl_p"
+                        fi
                     fi
                     rm -f "$_sync_lock"
                 done
@@ -488,6 +530,16 @@ launch_claude() {
                     'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                     | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
                 print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+                # tar -x cannot remove files deleted in the guest — mirror deletions
+                # explicitly so 'full' mode propagates removals on the tar fallback.
+                local _gl_back
+                _gl_back=$(ssh -T \
+                    ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
+                    -i "$ssh_key" "${_ssh_kh_opts[@]}" -o ConnectTimeout=10 -o LogLevel=ERROR \
+                    "iclaude@${guest_ip}" "$_MICROVM_GUEST_SCAN_CMD" 2>/dev/null)
+                if [[ $? -eq 0 && -n "$_gl_back" ]]; then
+                    _microvm_mirror_deletions "${MICRO_VM_WORKSPACE_HOSTDIR}" "$_gl_back"
+                fi
             fi
         fi
 

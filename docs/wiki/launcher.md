@@ -63,7 +63,7 @@ Files excluded from sync: `.nvm-isolated/`, `.git/`, `.claude_config`, `.claude_
 
 Sync stderr is captured to `/tmp/iclaude-<session-id>-sync.log` (not discarded) so failures are diagnosable; on error the warning names the log path. The guest's auth credential is forwarded separately via the env file, not the workspace sync — see [[sandbox#Guest Environment & Authentication]].
 
-**tar fallback does not propagate deletions.** Only `rsync --delete` mirrors guest→host removals; `tar -x` only adds/overwrites. So on the tar fallback, a file deleted inside the guest is NOT deleted on the host (creates/edits still sync). In `full` mode the launcher emits a warning when it falls back to tar, pointing to `--install-microvm` to inject a working rsync bundle ([[sandbox#Installation]]) — the supported path for delete-aware delta sync.
+**Deletions on the tar fallback.** `tar -x` only adds/overwrites — it cannot remove files deleted in the guest. So `full` mode would lose guest→host deletions on the tar path. To fix this without rsync, after each tar guest→host sync the launcher fetches the guest's file list (`find` over `/workspace`, same protected-path prune as the sync excludes) and `_microvm_mirror_deletions()` removes host workspace files absent from that list — giving tar the same delete semantics `rsync --delete` provides natively (the rsync path does not call it). It is a no-op unless the guest scan succeeds and returns a non-empty list, so a transient SSH/scan error never mass-deletes host files. The rsync bundle ([[sandbox#Installation]]) is still preferred for speed (delta vs full-copy); the launcher prints an info line nudging `--install-microvm` when it falls back to tar.
 
 ## Session Environment Cleanup
 
