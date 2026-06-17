@@ -1,6 +1,6 @@
 ---
 review:
-  spec_hash: 039ad2f1608a1299
+  spec_hash: acd7a09e2c309560
   last_run: 2026-06-17
   phases:
     structure:    { status: passed }
@@ -12,10 +12,10 @@ review:
       phase: clarity
       severity: WARNING
       section: Diagram Recipes
-      section_hash: ea3f0bcdde085311
-      text: "'tiny inline <script>' — no size/scope criterion for what counts as 'tiny'. Guarded zone already requires logging the structure CSS can't express, so impact is bounded; criterion can be made explicit during writing-skills."
-      verdict: open
-      verdict_at: null
+      section_hash: e94bcae79342a1b3
+      text: "'tiny inline <script>' — no size/scope criterion for what counts as 'tiny'. Fixed: bounded to SVG-only interactivity wiring, no fetch/framework/external code, ~30 lines max; layout comment updated to 'bounded inline JS' for consistency."
+      verdict: fixed
+      verdict_at: 2026-06-17
 chain:
   intent: docs/superpowers/intents/2026-06-17-html-report-skill-intent.md
 ---
@@ -42,7 +42,7 @@ human-readable one. Built on plain HTML + CSS, no frameworks.
     ├── css-diagrams.md           # 4 recipes: table, block/flow, transition/state, C4
     ├── themes.md                 # dark + light palettes + CSS checkbox-hack toggle
     ├── dynamics.md               # <details> expand, :hover highlight, CSS keyframe transitions
-    └── svg-fallback.md           # node-edge graphs / plots via inline SVG (+ tiny inline JS, here only)
+    └── svg-fallback.md           # node-edge graphs / plots via inline SVG (+ bounded inline JS, here only)
 ```
 
 - **Packaging:** thin `SKILL.md` + `references/` (progressive disclosure). `SKILL.md`
@@ -127,9 +127,12 @@ Rules baked into the recipes:
 - **Semantic-first:** `<table>`/`<figure>`/`<details>`, no div-soup.
 - **CSS-first:** grid / flex / borders / pseudo-elements before anything else.
 - **SVG-fallback** (`svg-fallback.md`): only when CSS cannot draw the structure —
-  arbitrary node→edge graphs, free connectors, data plots. Inline `<svg>`; a tiny
-  inline `<script>` is allowed **here only**, and the skill logs the specific
-  structure CSS could not express (guarded zone).
+  arbitrary node→edge graphs, free connectors, data plots. Inline `<svg>`; an inline
+  `<script>` is allowed **here only** and is bounded: it may only wire interactivity
+  for the SVG it accompanies (e.g. node hover-highlight, click-to-expand on a graph
+  node). It must not fetch data, load a framework, reference external code, or exceed
+  ~30 lines. The skill logs the specific structure CSS could not express (guarded
+  zone).
 - Every recipe pulls color from `--bg/--fg/--accent/--border/--line` → auto
   theme-correct, no per-recipe theme code.
 
