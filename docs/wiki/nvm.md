@@ -6,7 +6,7 @@ The nvm module lives in `lib/nvm/` across six files: `setup.sh`, `detect.sh`, `i
 
 All Node.js tooling runs in a self-contained directory at `.nvm-isolated/` (exported as `ISOLATED_NVM_DIR` by `lib/core/init.sh`). This prevents interference with any system-level NVM or Node installation. The global npm prefix is set to `$ISOLATED_NVM_DIR/npm-global` (exported as `NPM_CONFIG_PREFIX`). Claude Code's config directory is `$ISOLATED_NVM_DIR/.claude-isolated` (exported as `ISOLATED_CONFIG_DIR` and, before Claude launches, re-exported as `CLAUDE_CONFIG_DIR`).
 
-See also: [[architecture#Isolation Mechanisms]].
+See also: [[architecture#Isolated Environment]].
 
 ## Environment Setup
 
@@ -70,4 +70,4 @@ The return value is either a bare path (for native binary and symlink cases) or 
 
 ---
 
-See also: [[architecture#Native Binary]], [[lockfile]], [[proxy#Configuration Entry Point]] (proxy used during NVM install), [[oauth#Token Refresh]] (uses `get_nvm_claude_path` to call `claude setup-token`).
+See also: [[architecture#Isolated Environment]], [[lockfile]], [[proxy#Configuration Entry Point]] (proxy used during NVM install), [[oauth#Automatic Token Refresh]] (uses `get_nvm_claude_path` to call `claude setup-token`).
