@@ -1,0 +1,16 @@
+{"op": "ingest", "source": "iclaude.sh,lib/core,lib/command", "page": "docs/wiki/architecture.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/proxy", "page": "docs/wiki/proxy.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/nvm", "page": "docs/wiki/nvm.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/oauth", "page": "docs/wiki/oauth.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/router", "page": "docs/wiki/router.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/lsp", "page": "docs/wiki/lsp.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/config", "page": "docs/wiki/config.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/lockfile", "page": "docs/wiki/lockfile.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/update", "page": "docs/wiki/update.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/launcher", "page": "docs/wiki/launcher.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/statusline", "page": "docs/wiki/statusline.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/chrome", "page": "docs/wiki/chrome.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/ohmyposh", "page": "docs/wiki/ohmyposh.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/pii-proxy", "page": "docs/wiki/pii-proxy.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/sandbox", "page": "docs/wiki/sandbox.md", "date": "2026-06-17"}
+{"op": "ingest", "source": "lib/graphify", "page": "docs/wiki/graphify.md", "date": "2026-06-17"}
