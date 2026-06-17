@@ -1,0 +1,39 @@
+{
+  "description": "iwiki automation — recall the wiki before work (UserPromptSubmit), refresh the index on wiki edits (PostToolUse), and drive a wiki update after source changes (Stop). All fail-soft and individually kill-switchable via IWIKI_AUTO_QUERY / IWIKI_AUTO_REINDEX / IWIKI_AUTO_SYNC = 0.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-recall.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-reindex.py\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-sync.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

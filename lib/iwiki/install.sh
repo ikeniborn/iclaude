@@ -50,7 +50,14 @@ _iwiki_register_plugin() {
             || print_warning "marketplace add failed (engine still usable via the CLI)."
     fi
     if _iwiki_claude "$cp" plugin list 2>/dev/null | grep -q "iwiki@iclaude"; then
-        print_info "iwiki plugin already registered."
+        # Present already: refresh the marketplace + plugin so a bumped version
+        # (e.g. new bundled hooks in hooks/hooks.json) lands in the plugin cache.
+        # Restart required to apply. Non-fatal — engine still works via the CLI.
+        print_info "iwiki plugin present — refreshing to the marketplace version (bundled hooks) ..."
+        _iwiki_claude "$cp" plugin marketplace update iclaude 2>/dev/null \
+            || print_warning "marketplace update failed (continuing)."
+        _iwiki_claude "$cp" plugin update iwiki@iclaude 2>/dev/null \
+            || print_warning "plugin update failed (engine still usable via the CLI)."
     else
         print_info "Installing iwiki plugin (user scope — available in all projects) ..."
         _iwiki_claude "$cp" plugin install iwiki@iclaude --scope user \
