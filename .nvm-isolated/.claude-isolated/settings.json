@@ -92,8 +92,6 @@
       "Bash(shred:*)",
       "Bash(dd:*)",
       "Bash(mkfs:*)",
-      "Bash(docker:*)",
-      "Bash(docker-compose:*)",
       "Bash(sudo:*)",
       "Bash(su:*)",
       "Bash(curl:*)",
