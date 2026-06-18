@@ -2573,10 +2573,6 @@ export interface BashOutput {
    */
   backgroundedByUser?: boolean;
   /**
-   * True if assistant-mode auto-backgrounded a long-running blocking command
-   */
-  assistantAutoBackgrounded?: boolean;
-  /**
    * Flag to indicate if sandbox mode was overridden
    */
   dangerouslyDisableSandbox?: boolean;
