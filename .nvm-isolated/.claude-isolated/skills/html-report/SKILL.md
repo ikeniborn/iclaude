@@ -32,10 +32,16 @@ inline-fetch and do not silently drop the element.
    first** (proposal-first). If a source is unreadable or contradicts the request,
    **halt** — do not fabricate data (trust is the priority).
 3. Pick a recipe per item and read the matching reference file:
-   - tables / block / transition / C4 → `references/css-diagrams.md`
+   - tables / block / transition / C4 / report components (note, badge, lead) → `references/css-diagrams.md`
+   - pipeline / loop / state-machine with labeled, looping, or non-adjacent edges → `references/svg-diagrams.md`
    - any dynamic (expand, hover, animation) → `references/dynamics.md`
    - theme palettes + toggle → `references/themes.md` (always)
    - arbitrary node-edge graph / free connector / data plot → `references/svg-fallback.md`
+
+   **Gold-standard reference** — for a full, polished report that exercises the SVG node
+   grammar, animated connectors, C4, two-axis tables, badges, and `.note` callouts end
+   to end, study `~/Документы/Project/ecom1-agent/docs/agent-architecture.html` before
+   assembling a non-trivial architecture report.
 4. Assemble ONE HTML document:
    - `<head>`: a single inline `<style>` (theme custom-props + recipe CSS + dynamics).
    - `<body>`: semantic HTML5 (`<table>` / `<figure>` / `<details>`), the theme-toggle
@@ -57,6 +63,9 @@ Reject and fix the assembled HTML if any fails:
 - [ ] Exactly one `.html`, no references to sibling files.
 - [ ] Both theme custom-prop sets present AND the toggle control is wired.
 - [ ] Every requested data point and every named diagram is present.
+- [ ] Flows with retry/branch/non-adjacent edges use the `svg-diagrams.md` grammar
+      (node cards + arrow markers), not a flat flex row that drops the loop/branch.
+- [ ] Shared `<defs>` (dropshadow + arrow markers) present if any SVG diagram is used.
 - [ ] File size ≤ 5 MB — if larger, **warn** the user (soft limit).
 
 ## Autonomy Zones

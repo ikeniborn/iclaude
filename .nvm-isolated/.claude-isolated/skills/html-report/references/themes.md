@@ -19,23 +19,33 @@ page background and text stuck on the light palette.)
 </main>
 ```
 
+Carry a full set: `--muted` (secondary text), `--shadow` (rgba for box-/drop-shadows),
+and `-2` darker variants of status colors (`--ok-2 --warn-2 --danger-2`) for text/badges
+that need contrast. `--accent-2` is a deeper accent for gradients/hover.
+
 ```css
 /* Light = default palette on :root */
 :root{
-  --bg:#fafafa; --surface:#ffffff; --fg:#333344;
-  --accent:#5c6bc0; --border:#d0d0e0; --line:#888888;
-  --zebra:#f3f3f8; --ok:#43a047; --warn:#fb8c00; --danger:#e53935;
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
 }
 /* Dark = Catppuccin Mocha; :checked flips the whole palette on <body> */
 body:has(#theme-toggle:checked){
-  --bg:#1e1e2e; --surface:#313244; --fg:#cdd6f4;
-  --accent:#89b4fa; --border:#45475a; --line:#888888;
-  --zebra:#282838; --ok:#a6e3a1; --warn:#f9e2af; --danger:#f38ba8;
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
 }
 body{
-  margin:0; padding:1.5rem;
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
   font:16px/1.55 system-ui, sans-serif;
-  background:var(--bg); color:var(--fg);
+  /* subtle accent-tinted radial wash over the base bg — optional but lifts the page */
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
   transition:background .3s, color .3s;
 }
 .theme-btn{
@@ -47,8 +57,14 @@ body{
 ```
 
 Notes:
-- `--line:#888888` is a mid-tone connector color — legible (~4:1) on both themes. Do
-  not use dark (`#333`) or light (`#ccc`) connectors; they vanish on one theme.
+- `--line` is a mid-tone connector color — legible (~4:1) on both themes. Do not use
+  dark (`#333`) or light (`#ccc`) connectors; they vanish on one theme.
+- **Derive shades, don't hardcode them.** `color-mix(in srgb, var(--accent) 14%, var(--surface))`
+  gives a theme-correct tint for hover rows, note backgrounds, boundary fills — it
+  recomputes on toggle, so you never maintain a second dark value.
+- `--shadow` is an rgba so shadows are visible on both themes; feed it to CSS
+  `box-shadow` AND the SVG `feDropShadow flood-color` (see `svg-diagrams.md`).
 - Light is the default; the toggle has no persistence (no JS/localStorage). The spec
   requires a *working* toggle, not persistence.
-- Keep contrast adequate: body text on `--bg`, headings/accents on `--accent`.
+- Keep contrast adequate: body text on `--bg`, headings/accents on `--accent`, secondary
+  text on `--muted`, status text on the `-2` variants.

@@ -4,6 +4,11 @@ Use ONLY when CSS cannot draw the structure: arbitrary node→edge graphs, free-
 connectors between non-adjacent nodes, or data plots. Everything is inline. When you
 use this fallback, **log** the specific structure CSS could not express (guarded zone).
 
+> For **pipelines, loops, and state machines** (positioned nodes + directional/looping
+> labeled edges), use the structured grammar in `svg-diagrams.md` instead — it has a
+> reusable node-card + arrow-marker + animated-connector system. This file is the
+> lower-level escape for graphs that don't fit that grammar.
+
 ## Inline SVG node-edge graph
 
 SVG colors must reference the theme. CSS custom props DO cascade into inline SVG, so

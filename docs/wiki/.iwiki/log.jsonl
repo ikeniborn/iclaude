@@ -30,3 +30,4 @@
 {"op":"ingest","source":"lib/sandbox/install.sh","page":"docs/wiki/sandbox.md","date":"2026-06-17"}
 {"op":"ingest","source":"lib/launcher/launch.sh","page":"docs/wiki/launcher.md","date":"2026-06-17"}
 {"op":"ingest","source":"lib/launcher/launch.sh","page":"docs/wiki/launcher.md","date":"2026-06-17"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/html-report","page":"docs/wiki/html-report.md","date":"2026-06-18"}
