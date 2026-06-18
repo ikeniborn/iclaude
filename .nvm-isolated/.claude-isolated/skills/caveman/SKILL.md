@@ -72,3 +72,9 @@ Example — destructive op:
 ## Boundaries
 
 Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.
+
+## Language
+
+Compression touches WORDS, not LANGUAGE. Compress in the conversation's language — NEVER switch language (e.g. drift to English) just to compress. If conversation is Russian, terse output stays Russian.
+
+Exceptions (always their normal convention, regardless of conversation language): documentation, code comments, commit messages, PRs → English.

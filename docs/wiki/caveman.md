@@ -27,6 +27,12 @@ The active mode comes from `getDefaultMode()` in `caveman-config.js`, resolved i
 
 Valid modes (`VALID_MODES`): `off`, the three intensity levels `lite`, `full`, `ultra` (terseness increases left to right), the `wenyan-*` variants, and the independent skill-backed modes `commit`, `review`, `compress`. `off` skips activation entirely and removes the flag file. The launcher ([[launcher]]) exports `CAVEMAN_DEFAULT_MODE` to the hook environment when set, so the level is toggled via that env var (or by config file / in-session `/caveman lite|full|ultra`).
 
+## Language Preservation
+
+Caveman compresses words, not language: terse output stays in the conversation's language and never drifts to English just to compress. Documentation, code comments, commit messages, and PRs remain English regardless of conversation language.
+
+This rule lives in three mirrored places so it survives context compaction and competing per-turn style injections: a `## Language` section in `SKILL.md` (the source of truth `caveman-activate.js` filters at runtime), the hardcoded fallback ruleset inside `caveman-activate.js` (used when `SKILL.md` is absent), and the per-turn `additionalContext` reminder emitted by `caveman-mode-tracker.js`. The launcher's project [[config]] (`# Language`) binds the conversation language to Russian here.
+
 ## Status and Removal
 
 `check_caveman()` (`--check-caveman`) reports which of the four hook files and `SKILL.md` are present, the installed `caveman-version`, and the active `CAVEMAN_DEFAULT_MODE`. `remove_caveman()` (`--uninstall-caveman`) deletes the hook files, strips caveman entries from the `SessionStart`/`UserPromptSubmit` blocks of `settings.json` (removing now-empty events), removes `skills/caveman/`, and deletes `caveman-version`.

@@ -123,7 +123,8 @@ process.stdin.on('end', () => {
           hookEventName: "UserPromptSubmit",
           additionalContext: "CAVEMAN MODE ACTIVE (" + activeMode + "). " +
             "Drop articles/filler/pleasantries/hedging. Fragments OK. " +
-            "Code/commits/security: write normal."
+            "Compress in the conversation's language — never switch to English just to compress. " +
+            "Code/commits/security + docs/code comments: write normal (docs/comments in English)."
         }
       }));
     }

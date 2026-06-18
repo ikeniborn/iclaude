@@ -107,7 +107,10 @@ if (skillContent) {
     '## Auto-Clarity\n\n' +
     'Drop caveman for: security warnings, irreversible action confirmations, multi-step sequences where fragment order risks misread, user asks to clarify or repeats question. Resume caveman after clear part done.\n\n' +
     '## Boundaries\n\n' +
-    'Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.';
+    'Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.\n\n' +
+    '## Language\n\n' +
+    'Compression touches WORDS, not LANGUAGE. Compress in the conversation\'s language — NEVER switch language (e.g. drift to English) just to compress. ' +
+    'Exceptions (always English, regardless of conversation language): documentation, code comments, commit messages, PRs.';
 }
 
 // 3. Detect missing statusline config — nudge Claude to help set it up
