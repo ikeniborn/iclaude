@@ -1,21 +1,34 @@
 #!/usr/bin/env python3
-"""Stop hook — keep the wiki current after work, automatically.
+"""Stop hook — batch the reindex and keep the wiki current after work.
 
-When a turn ends with documentable source changes (uncommitted code/docs that a
-wiki page describes, including anything a subagent edited this turn), this drives
-Claude to update the wiki: it blocks the stop once and injects a directive to run
-iwiki-ingest on the changed sources, then /iwiki-lint. Page regeneration needs
-the LLM, so the hook cannot do it itself — it forces the follow-up instead of
-relying on anyone remembering.
+Runs once at the end of a turn and does two things:
 
-Loop-safe: a stamp records the change-set already acted on. The same set never
-blocks twice (ingesting edits the wiki, not the source, so the signature holds),
-so at most one ingest pass per distinct set of source changes — and none once the
-work is committed. Fail-soft and kill-switchable (IWIKI_AUTO_SYNC=0).
+1. **Batched reindex.** If a wiki page changed this session (`wiki_dirty` set by
+   the record hook), run the engine `index` exactly once so semantic search
+   reflects every page edit — without an `index` per edit.
+
+2. **Source-change nag.** Compute the documentable sources this *session* changed
+   and, if any are still undocumented, block the stop once and inject a directive
+   to run iwiki-ingest + /iwiki-lint. Page regeneration needs the LLM, so the
+   hook forces the follow-up rather than relying on anyone remembering.
+
+The change-set is attributed to the session's own actions, not the raw dirty
+tree:
+
+- **− baseline WIP** (improvement F / fewer false positives): files already dirty
+  at SessionStart are subtracted, so pre-existing work-in-progress the agent
+  never touched does not trigger a nag.
+- **+ committed** (catch commit-evasion): sources committed during the session
+  are still flagged, so committing before stop no longer evades the wiki update.
+- **+ explicit edits**: files the record hook saw the agent edit are kept even if
+  they overlap the baseline WIP set.
+
+Loop-safe (C): the same unchanged set re-asks at most MAX_ASK times, then yields
+to avoid wedging the stop; a change in `wiki_sig` between asks counts as "ingest
+happened" and clears the nag. Fail-soft and kill-switchable (IWIKI_AUTO_SYNC=0).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import sys
@@ -23,35 +36,21 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import iwiki_common as iw  # type: ignore[import-not-found]  # noqa: E402
 
-
-def _stamp_path() -> str:
-    ccd = os.environ.get("CLAUDE_CONFIG_DIR")
-    base = os.path.join(ccd, ".cache") if ccd else ".git"
-    try:
-        os.makedirs(base, exist_ok=True)
-    except Exception:
-        base = "."
-    return os.path.join(base, "iwiki-sync.stamp")
+MAX_ASK = 2          # re-ask this many times for an unchanged set, then yield
+REINDEX_TIMEOUT = 90.0
 
 
-def _signature(paths: list[str]) -> str:
-    return hashlib.sha256("\n".join(paths).encode("utf-8")).hexdigest()[:16]
-
-
-def _read_stamp(p: str) -> str:
-    try:
-        with open(p, encoding="utf-8") as f:
-            return f.read().strip()
-    except Exception:
-        return ""
-
-
-def _write_stamp(p: str, sig: str) -> None:
-    try:
-        with open(p, "w", encoding="utf-8") as f:
-            f.write(sig)
-    except Exception:
-        pass
+def _pending(sess: dict) -> list[str]:
+    """Documentable sources this session changed and that still exist:
+    (working ∪ committed) minus pre-existing WIP, plus the agent's explicit
+    edits (so edits to a WIP file are still caught)."""
+    wip = set(sess.get("wip", []))
+    working = set(iw.changed_sources())
+    committed = set(iw.committed_sources(sess.get("head", "")))
+    universe = working | committed
+    git_delta = universe - wip
+    edits_pending = set(sess.get("edits", [])) & universe
+    return sorted(p for p in (git_delta | edits_pending) if os.path.exists(p))
 
 
 def main() -> int:
@@ -61,25 +60,52 @@ def main() -> int:
         json.load(sys.stdin)  # consume payload; the decision is git-driven
     except Exception:
         pass
-
     try:
         iw.cd_project()
         if not iw.wiki_present():
             return 0  # project does not use iwiki → never pester
 
-        sources = iw.changed_sources()
-        stamp = _stamp_path()
-        if not sources:
-            _write_stamp(stamp, "")   # nothing pending → reset
-            return 0
-        sig = _signature(sources)
-        if _read_stamp(stamp) == sig:
-            return 0  # already acted on this exact change-set → allow stop
-        _write_stamp(stamp, sig)      # stamp BEFORE forcing → no infinite loop
+        sess = iw.read_session()
 
-        shown = sources[:12]
-        more = "" if len(sources) == len(shown) else \
-            f"\n  …and {len(sources) - len(shown)} more"
+        # 1. Batched reindex — one pass if any wiki page changed this session.
+        if sess.get("wiki_dirty") and iw.index_exists() \
+                and os.environ.get("IWIKI_AUTO_REINDEX", "1") != "0":
+            iw.run_engine(["index"], REINDEX_TIMEOUT)
+            sess["wiki_dirty"] = False
+            iw.write_session(sess)
+
+        # 2. Source-change nag.
+        pending = _pending(sess)
+        if not pending:
+            sess["asked_sig"] = ""
+            sess["asked_wiki"] = ""
+            sess["count"] = 0
+            iw.write_session(sess)
+            return 0
+
+        sig = iw.signature(pending)
+        wsig = iw.wiki_sig()
+        if sig == sess.get("asked_sig"):
+            if wsig != sess.get("asked_wiki"):
+                # wiki changed since we asked → ingest happened → reconcile.
+                sess["asked_sig"] = ""
+                sess["asked_wiki"] = ""
+                sess["count"] = 0
+                iw.write_session(sess)
+                return 0
+            if sess.get("count", 0) >= MAX_ASK:
+                # Ignored repeatedly → yield so the stop is not wedged.
+                return 0
+            sess["count"] = sess.get("count", 0) + 1
+        else:
+            sess["asked_sig"] = sig
+            sess["count"] = 1
+        sess["asked_wiki"] = wsig
+        iw.write_session(sess)
+
+        shown = pending[:12]
+        more = "" if len(pending) == len(shown) else \
+            f"\n  …and {len(pending) - len(shown)} more"
         listing = "\n".join(f"  - {p}" for p in shown) + more
         reason = (
             "[iwiki] Source changed this turn — update the wiki before finishing "

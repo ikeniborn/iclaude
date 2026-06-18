@@ -1,6 +1,17 @@
 {
-  "description": "iwiki automation — recall the wiki before work (UserPromptSubmit), refresh the index on wiki edits (PostToolUse), and drive a wiki update after source changes (Stop). All fail-soft and individually kill-switchable via IWIKI_AUTO_QUERY / IWIKI_AUTO_REINDEX / IWIKI_AUTO_SYNC = 0.",
+  "description": "iwiki automation — bootstrap + baseline at SessionStart, record edits on PostToolUse, and at Stop batch-reindex any wiki changes then drive a wiki update for sources this session changed. All fail-soft and individually kill-switchable via IWIKI_AUTO_BOOTSTRAP / IWIKI_AUTO_QUERY / IWIKI_AUTO_REINDEX / IWIKI_AUTO_SYNC = 0.",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-bootstrap.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -19,7 +30,7 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-reindex.py\"",
-            "timeout": 120
+            "timeout": 10
           }
         ]
       }
@@ -30,7 +41,7 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/iwiki-sync.py\"",
-            "timeout": 20
+            "timeout": 120
           }
         ]
       }

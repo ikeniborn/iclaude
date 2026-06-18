@@ -429,6 +429,22 @@ USE_PII_PROXY=false
 # (gitignore-стиль) в корне проекта. include применяется первым, затем exclude.
 # export IWIKI_INCLUDE="docs/wiki/**/*.md"
 # export IWIKI_EXCLUDE="docs/wiki/drafts/*"
+#
+# --- Автоматизация (хуки плагина iwiki) — все ON по умолчанию ---
+# Четыре хука держат wiki актуальной без ручных /iwiki-*. Каждый выключается
+# отдельно установкой переменной в 0 (по умолчанию = включён):
+#   IWIKI_AUTO_BOOTSTRAP — SessionStart: фиксирует baseline (отсекает чужой WIP
+#                          от нагов) + подсказывает /iwiki-init на пустом wiki.
+#   IWIKI_AUTO_QUERY     — UserPromptSubmit: семантический recall docs/wiki в
+#                          контекст перед задачей.
+#   IWIKI_AUTO_REINDEX   — PostToolUse→Stop: батч-переиндексация один раз за ход
+#                          после правок страниц wiki.
+#   IWIKI_AUTO_SYNC      — Stop: наг обновить wiki по изменённым ЗА СЕССИЮ
+#                          исходникам (включая закоммиченные), затем /iwiki-lint.
+# export IWIKI_AUTO_BOOTSTRAP="0"   # отключить bootstrap+baseline
+# export IWIKI_AUTO_QUERY="0"       # отключить pre-work recall
+# export IWIKI_AUTO_REINDEX="0"     # отключить авто-переиндексацию
+# export IWIKI_AUTO_SYNC="0"        # отключить post-work наг
 
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)

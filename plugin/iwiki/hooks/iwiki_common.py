@@ -13,8 +13,10 @@ rather than assuming the iclaude repo layout.
 """
 from __future__ import annotations
 
-import os
 import glob
+import hashlib
+import json
+import os
 import shutil
 import subprocess
 
@@ -47,9 +49,9 @@ def cd_project() -> None:
 
 
 def resolve_uv() -> str | None:
-    """uv binary: $GRAPHIFY_UV_BIN, then PATH, then the isolated bin/ (per the
+    """uv binary: $UV_BIN, then PATH, then the isolated bin/ (per the
     iwiki-ingest skill). None if uv is unavailable."""
-    for cand in (os.environ.get("GRAPHIFY_UV_BIN"), shutil.which("uv")):
+    for cand in (os.environ.get("UV_BIN"), shutil.which("uv")):
         if cand and os.path.exists(cand) and os.access(cand, os.X_OK):
             return cand
     ccd = os.environ.get("CLAUDE_CONFIG_DIR")
@@ -116,20 +118,140 @@ def _git(args: list[str]) -> list[str]:
         return []
 
 
+def is_documentable(p: str) -> bool:
+    """A repo-relative path that the wiki should describe: a source ext, outside
+    the wiki/IDD/command/VCS noise. Existence is checked separately by callers."""
+    if not p.endswith(SOURCE_EXTS):
+        return False
+    if p.startswith(EXCLUDE_PREFIXES):
+        return False
+    if any(s in p for s in EXCLUDE_SUBSTR):
+        return False
+    return True
+
+
 def changed_sources() -> list[str]:
     """Documentable source files changed since HEAD (uncommitted, staged, and
     untracked), excluding the wiki/IDD/command/VCS noise. Sorted, deduped."""
     raw = set(_git(["diff", "--name-only", "HEAD"]))
     raw |= set(_git(["ls-files", "--others", "--exclude-standard"]))
-    out = []
-    for p in raw:
-        if not p.endswith(SOURCE_EXTS):
+    return sorted(p for p in raw if is_documentable(p) and os.path.exists(p))
+
+
+def git_head() -> str:
+    """Current HEAD sha, or '' if not a git repo / no commits."""
+    r = _git(["rev-parse", "HEAD"])
+    return r[0] if r else ""
+
+
+def committed_sources(since: str) -> list[str]:
+    """Documentable source files changed in commits `since`..HEAD that still
+    exist — i.e. the agent committed them this session (catches commit-evasion).
+    Empty if `since` is unset, equal to HEAD, or unknown to git."""
+    if not since:
+        return []
+    raw = _git(["diff", "--name-only", f"{since}..HEAD"])
+    return sorted(p for p in raw if is_documentable(p) and os.path.exists(p))
+
+
+def wiki_pages() -> list[str]:
+    """All docs/wiki/*.md pages (repo-relative), excluding the .iwiki index dir."""
+    out: list[str] = []
+    for root, _dirs, files in os.walk(WIKI_DIR):
+        if ".iwiki" in root.split(os.sep):
             continue
-        if p.startswith(EXCLUDE_PREFIXES):
-            continue
-        if any(s in p for s in EXCLUDE_SUBSTR):
-            continue
-        if not os.path.exists(p):
-            continue
-        out.append(p)
-    return sorted(out)
+        for f in files:
+            if f.endswith(".md"):
+                out.append(os.path.join(root, f))
+    return out
+
+
+def wiki_sig() -> str:
+    """A cheap fingerprint of the wiki's current state (page mtimes + index
+    mtime). Changes whenever any page is written or the index is refreshed — the
+    sync hook uses a shift here to detect that an ingest happened between asks."""
+    parts: list[str] = []
+    for p in sorted(wiki_pages()):
+        try:
+            parts.append(f"{p}:{int(os.path.getmtime(p))}")
+        except Exception:
+            pass
+    if index_exists():
+        try:
+            parts.append(f"idx:{int(os.path.getmtime(INDEX_REL))}")
+        except Exception:
+            pass
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
+def has_documentable_source() -> bool:
+    """True if the project has any documentable source file (so a bootstrap nudge
+    is warranted). Uses git's tracked set, falling back to a shallow glob."""
+    for p in _git(["ls-files"]):
+        if is_documentable(p):
+            return True
+    for ext in SOURCE_EXTS:
+        for p in glob.glob(f"*{ext}") + glob.glob(f"lib/**/*{ext}", recursive=True):
+            if is_documentable(p):
+                return True
+    return False
+
+
+def rel_to_project(path: str) -> str:
+    """Normalise a tool-reported file path (often absolute) to a repo-relative
+    path that matches git output. Returns the input unchanged on failure."""
+    if not path:
+        return path
+    try:
+        return os.path.relpath(os.path.abspath(path), os.getcwd())
+    except Exception:
+        return path
+
+
+# --- shared session state (baseline + edit accumulator + nag dedup) ----------
+# One file per session, reset by the SessionStart bootstrap hook. The record
+# hook (PostToolUse) appends edits; the sync hook (Stop) reads it. Keeping it in
+# CLAUDE_CONFIG_DIR/.cache (not the repo) keeps it out of the project's git.
+_SESSION_DEFAULT = {
+    "head": "",          # baseline HEAD at session start
+    "wip": [],           # pre-existing dirty documentable files → not the agent's
+    "edits": [],         # documentable sources the agent edited this session (F)
+    "wiki_dirty": False, # a wiki page changed → needs one batched reindex at Stop
+    "asked_sig": "",     # signature of the last nagged pending set (C dedup)
+    "asked_wiki": "",    # wiki_sig at the last nag (C: detect ingest between asks)
+    "count": 0,          # consecutive nags for the same set (C bound vs wedge)
+}
+
+
+def session_path() -> str:
+    ccd = os.environ.get("CLAUDE_CONFIG_DIR")
+    base = os.path.join(ccd, ".cache") if ccd else ".git"
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        base = "."
+    return os.path.join(base, "iwiki-session.json")
+
+
+def read_session() -> dict:
+    out = dict(_SESSION_DEFAULT)
+    try:
+        with open(session_path(), encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            out.update({k: data[k] for k in _SESSION_DEFAULT if k in data})
+    except Exception:
+        pass
+    return out
+
+
+def write_session(sess: dict) -> None:
+    try:
+        with open(session_path(), "w", encoding="utf-8") as f:
+            json.dump(sess, f)
+    except Exception:
+        pass
+
+
+def signature(paths: list[str]) -> str:
+    return hashlib.sha256("\n".join(paths).encode("utf-8")).hexdigest()[:16]
