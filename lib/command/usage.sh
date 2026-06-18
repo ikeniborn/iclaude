@@ -60,11 +60,6 @@ OPTIONS:
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
   --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
-  --install-graphify                Install graphify knowledge graph tool (uv + Python 3.12 + graphifyy)
-  --install-graphify --force        Force reinstall (removes existing graphify tool dir)
-  --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
-  --graphify                        Rebuild knowledge graph before launching claude
-                                    Output: GRAPHIFY_OUT or graphify-out/ (default)
   --install-iwiki                   Install iwiki engine (uv + Python 3.12) and register the plugin
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
                                     Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL

@@ -255,27 +255,6 @@ Claude Code может читать, изменять и выполнять фа
 | `CLAUDE_CODE_NO_CHROME` | false | Отключить Chrome |
 | `CLAUDE_CODE_MODEL` | claude-4-5-sonnet | Модель |
 
-### Граф знаний проекта (Graphify)
-
-Строит knowledge graph по исходному коду и документации через [graphifyy](https://pypi.org/project/graphifyy/). Используется skill `/graphify` для архитектурных запросов и автоматически подтягивается в `superpowers:brainstorming`.
-
-```bash
-./iclaude.sh --install-graphify    # Установка (uv + graphifyy + skill, ~250MB)
-./iclaude.sh --graphify            # Перестроить граф перед запуском Claude Code
-./iclaude.sh --check-graphify      # Статус: версии, пути, размер
-```
-
-**Конфигурация (`.claude_config`):**
-
-| Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `GRAPHIFY_OUT` | `graphify-out` | Имя выходного каталога графа |
-| `GRAPHIFY_EXTRA_ARGS` | (пусто) | Доп. флаги `graphify update`, например `--no-video` |
-
-Изоляция: `uv` и Python 3.12 в `.nvm-isolated/.claude-isolated/graphify/`. Четыре idempotent-патча (`lib/graphify/patches/`) делают пути в манифесте относительными — граф переносится между машинами через git.
-
-Подробнее: [docs/functions/GRAPHIFY.md](docs/functions/GRAPHIFY.md).
-
 ### Граф документации (iwiki)
 
 Встроенный плагин-агент для поиска и генерации документации на основе эмбеддингов. Вики хранится в `docs/wiki/` (markdown + `[[refs]]`), индекс зафиксирован в `docs/wiki/.iwiki/index.jsonl`. В отличие от ручного подхода lat.md, iwiki **генерирует** страницы `docs/wiki/` из исходников через эмбеддинги.
@@ -415,7 +394,6 @@ echo "export IWIKI_EMBED_MODEL=text-embedding-3-small" >> .claude_config
 
 | Инструмент | Домен |
 |-----------|-------|
-| `graphify` | Граф кода: структура файлов, зависимости, кластеры |
 | `iwiki` | Граф документации: архитектурные решения, WHY, `[[ссылки]]` в `docs/wiki/` |
 | `IDD (/idd)` | Захват намерения до начала проектирования |
 | `GSD (/brainstorm → /check-spec → /check-plan)` | Spec-driven проектирование |
@@ -482,7 +460,6 @@ iclaude.sh
 ├── lib/sandbox/     — Firecracker microVM
 ├── lib/statusline/  — метрики в статуслайне
 ├── lib/launcher/    — запуск Claude Code (финальный вызов)
-├── lib/graphify/    — граф знаний проекта
 ├── lib/iwiki/       — движок документации (iwiki: detect + install)
 ├── plugin/iwiki/    — iwiki плагин (Python-движок + slash-команды)
 └── lib/gsd/         — GSD framework (detect, install, status)
@@ -502,7 +479,6 @@ iclaude.sh
 | PII-маскирование | `docs/functions/PII_MASKING.md` |
 | Статуслайн | `docs/functions/STATUSLINE.md` |
 | microVM | `docs/functions/MICROVM.md` |
-| Граф знаний (Graphify) | `docs/functions/GRAPHIFY.md` |
 | GSD Framework | `docs/superpowers/plans/2026-05-14-gsd-integration.md` |
 | Сжатие токенов (Caveman) | `docs/functions/CAVEMAN.md` |
 | Все команды | `docs/functions/CONFIGURATION.md` |

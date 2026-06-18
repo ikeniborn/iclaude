@@ -780,10 +780,9 @@ prdGeneration.toon = {
 
 ---
 
-## iwiki / graph Integration
+## iwiki Integration
 
-Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized`
-и `project_context.graph_initialized` доступны.
+Этот скилл вызывает `context-awareness` в Phase 0 — `project_context.wiki_initialized` доступен.
 
 ### Query (в Phase 0, после context-awareness)
 
@@ -796,15 +795,6 @@ IF project_context.wiki_initialized == true:
   - Если найдены success metrics → предложить их как варианты для Q5
   - Если в docs/wiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
-
-IF project_context.graph_initialized == true:
-  В раздел "Architecture / Technical Context" PRD:
-  - graph_god_nodes → вставить как "Ключевые компоненты системы" (с числом рёбер)
-  - graph_summary → вставить как структурный обзор архитектуры
-  - graph_communities → упомянуть количество модулей/сообществ
-  IF project_context.graph_fresh === false:
-    Добавить NOTE: "Данные о графе могут быть устаревшими — запусти /graphify --update"
-  # graph_fresh === null означает неизвестно — не предупреждать
 
 ### Record (в Phase 7, после успешной валидации)
 

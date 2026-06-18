@@ -8,11 +8,10 @@ The launcher module (`lib/launcher/launch.sh`) is the final stage of iclaude sta
 
 ## Pre-launch Steps
 
-Before selecting a binary, `launch_claude()` performs three housekeeping actions in order:
+Before selecting a binary, `launch_claude()` performs two housekeeping actions in order:
 
-1. **`_sync_graphify_env_to_settings()`** — writes the current value of `GRAPHIFY_OUT` into the `env` block of `settings.json` so that Bash tool subshells (which do not inherit exported variables) see the same output path as the parent process (see [[graphify]] for the knowledge-graph subsystem itself).
-2. **`unset CHROME_DESKTOP`** — VS Code sets `CHROME_DESKTOP=code.desktop`; leaving it set causes the Claude-in-Chrome extension to open the wrong browser.
-3. **`check_oauth_token`** and **`cleanup_stale_session_env`** — validates OAuth before launch and removes old per-session directories under `$ISOLATED_CONFIG_DIR/session-env/` (empty dirs after 7 days, non-empty after 28 days, configurable via `SESSION_ENV_RETENTION_DAYS`).
+1. **`unset CHROME_DESKTOP`** — VS Code sets `CHROME_DESKTOP=code.desktop`; leaving it set causes the Claude-in-Chrome extension to open the wrong browser.
+2. **`check_oauth_token`** and **`cleanup_stale_session_env`** — validates OAuth before launch and removes old per-session directories under `$ISOLATED_CONFIG_DIR/session-env/` (empty dirs after 7 days, non-empty after 28 days, configurable via `SESSION_ENV_RETENTION_DAYS`).
 
 ## Mode Selection
 

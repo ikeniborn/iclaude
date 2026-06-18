@@ -6,15 +6,15 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 `detect_iwiki()` reports iwiki as available when `uv` resolves and the engine's `pyproject.toml` exists. It is a precondition check, not a launcher.
 
-- `_iwiki_resolve_uv()` prefers `$GRAPHIFY_UV_BIN` (the uv installed by [[graphify]]) and falls back to `uv` on `PATH`.
+- `_iwiki_resolve_uv()` prefers `$UV_BIN` (the isolated `uv` exported by [[core]]) and falls back to `uv` on `PATH`.
 - `_iwiki_engine_dir()` resolves to `${SCRIPT_DIR}/plugin/iwiki/engine` — the in-repo engine project.
 - `detect_iwiki()` returns success only if both `uv` and `<engine-dir>/pyproject.toml` are present.
 
 ## Engine Sync (uv)
 
-`install_iwiki()` (driven by `--install-iwiki`) synchronizes the bundled engine's virtualenv via `uv sync`. It depends on uv, which is provided by [[graphify]] — installation aborts with a hint to run `--install-graphify` if uv is absent.
+`install_iwiki()` (driven by `--install-iwiki`) synchronizes the bundled engine's virtualenv via `uv sync`. It owns its uv dependency: if neither the isolated nor a system `uv` is found, `_iwiki_bootstrap_uv()` downloads the static binary from the astral-sh GitHub release into `${ISOLATED_NVM_DIR}/bin/uv` (honoring `HTTPS_PROXY`/`HTTP_PROXY`/`PROXY_URL`).
 
-- Resolves uv via `_iwiki_resolve_uv()`; if missing, prints an error pointing at `--install-graphify` and returns 1.
+- Resolves uv via `_iwiki_resolve_uv()`; if missing, bootstraps it via `_iwiki_bootstrap_uv()` (returns 1 only if the download fails).
 - Verifies `<engine-dir>/pyproject.toml` exists, then runs `( cd "$dir" && uv sync )`.
 - On success, calls `_iwiki_register_plugin()` and reminds the user to set `IWIKI_LLM_BASE_URL` / `IWIKI_LLM_KEY` / `IWIKI_EMBED_MODEL` in `.claude_config` (see [[config]]).
 
@@ -47,4 +47,4 @@ The plugin bundles four Claude Code hooks (declared in `plugin/iwiki/hooks/hooks
 
 Because hook installation is bundled in the plugin manifest, enabling `iwiki@iclaude` in any project activates this behaviour there too — paths resolve against `CLAUDE_PROJECT_DIR` / `CLAUDE_PLUGIN_ROOT`.
 
-See also: [[graphify]], [[nvm]], [[config]], [[launcher]]
+See also: [[core]], [[nvm]], [[config]], [[launcher]]

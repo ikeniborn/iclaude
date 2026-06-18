@@ -105,14 +105,9 @@ init_environment() {
     export PII_PROXY_PID_FILE
     export PII_PROXY_SERVER_SCRIPT
 
-    # Graphify (Knowledge Graph)
-    GRAPHIFY_UV_BIN="${ISOLATED_NVM_DIR}/bin/uv"
-    GRAPHIFY_TOOL_DIR="${ISOLATED_CONFIG_DIR}/graphify"
-    GRAPHIFY_PYTHON_DIR="${ISOLATED_CONFIG_DIR}/graphify/python"
-    GRAPHIFY_EXTRA_ARGS="${GRAPHIFY_EXTRA_ARGS:-}"
-
-    export GRAPHIFY_UV_BIN GRAPHIFY_TOOL_DIR GRAPHIFY_PYTHON_DIR
-    export GRAPHIFY_EXTRA_ARGS
+    # uv binary (isolated). Used by iwiki engine + hooks.
+    UV_BIN="${ISOLATED_NVM_DIR}/bin/uv"
+    export UV_BIN
 
     # CCR (Claude Code Router) daemon configuration — used in combined PII proxy + router mode
     # CCR_PID: PID of background CCR daemon started by start_ccr_server()

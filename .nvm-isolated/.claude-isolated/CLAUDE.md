@@ -6,12 +6,11 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 ## Getting Started
 
-**Load graph and docs before exploring code — they encode decisions invisible in raw code.**
+**Load docs before exploring code — they encode decisions invisible in raw code.**
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. Run `graphify-context` → loads architecture, dependencies, clusters into context.
-2. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
+1. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
 
 Skip only when: familiar area, same session.
 

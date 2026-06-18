@@ -1,17 +1,17 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects docs/wiki/ iwiki documentation graph and graphify knowledge graph, surfacing their summaries as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) and NOT for graph queries (graphify-context) — this skill only detects availability + a quick summary.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the docs/wiki/ iwiki documentation graph, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.3.0
-# tags: context, detection, project, language, framework, lat, graphify
-# dependencies: [iwiki:iwiki-query, graphify-context]
+# version: 1.4.0
+# tags: context, detection, project, language, framework, lat
+# dependencies: [iwiki:iwiki-query]
 # files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
 ---
 
 # Context Awareness
 
-Автоматическое определение языка, framework, наличия PRD, документационного графа `docs/wiki/` и knowledge graph `graphify` в проекте.
+Автоматическое определение языка, framework, наличия PRD и документационного графа `docs/wiki/` в проекте.
 
 ## Когда использовать
 
@@ -90,38 +90,6 @@ downstream-навыки (brainstorming, prd-generator) используют
 Корневой индекс `docs/wiki/index.md` читается напрямую (дёшево);
 `iwiki:iwiki-query` — опциональный семантический поиск по секциям внутри задачи.
 
-### 6. Graph Detection (graphify)
-
-Сначала resolve выходную директорию (для iclaude `GRAPHIFY_OUT=.graphify`):
-
-```bash
-GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
-```
-
-Проверить наличие knowledge graph в корне проекта:
-
-```
-IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
-  Skill(skill="graphify-context")
-  → добавить результат в project_context:
-       graph_initialized: true
-       graph_god_nodes: [из graph_context.god_nodes]
-       graph_communities: graph_context.communities
-       graph_summary: graph_context.graph_summary
-       graph_fresh: graph_context.fresh если typeof === boolean, иначе null
-
-ELSE:
-  graph_initialized: false
-  graph_god_nodes: []
-  graph_communities: 0
-  graph_summary: null
-```
-
-**Назначение:** Централизует проверку графа — brainstorming и другие навыки используют
-`project_context.graph_initialized` вместо самостоятельной проверки файлов.
-Дополняет docs/wiki: docs/wiki даёт синтезированную прозу (что и почему),
-граф — структурные связи (как компоненты соединены).
-
 ## Output
 
 Используй шаблон: `@template:project-context`
@@ -140,12 +108,7 @@ ELSE:
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
     "wiki_index_path": "docs/wiki/index.md" | null,
-    "wiki_summary": "синтезированный обзор из docs/wiki" | null,
-    "graph_initialized": true|false,
-    "graph_fresh": true|false|null,
-    "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
-    "graph_communities": 0,
-    "graph_summary": "структурный контекст из knowledge graph" | null
+    "wiki_summary": "синтезированный обзор из docs/wiki" | null
   }
 }
 ```
@@ -317,7 +280,7 @@ ELSE:
 
 ---
 
-### Example 4c: Bash Script Project — с docs/wiki и knowledge graph
+### Example 4c: Bash Script Project — с docs/wiki
 
 **Project structure:**
 ```
@@ -329,10 +292,6 @@ ELSE:
 │       ├── index.md    ← корневой индекс
 │       ├── architecture.md
 │       └── pii-proxy.md
-└── .graphify/          ← GRAPHIFY_OUT=.graphify for this project
-    ├── graph.json      ← 167 nodes · 244 edges
-    ├── GRAPH_REPORT.md ← god nodes + communities
-    └── cache/ast/
 ```
 
 **Detection result:**
@@ -348,12 +307,7 @@ ELSE:
     "code_style": "none",
     "wiki_initialized": true,
     "wiki_index_path": "docs/wiki/index.md",
-    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки.",
-    "graph_initialized": true,
-    "graph_fresh": null,
-    "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
-    "graph_communities": 8,
-    "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки."
   }
 }
 ```
@@ -427,7 +381,6 @@ ELSE:
 
 **Delegates to:**
 - `iwiki:iwiki-query` - Targeted semantic search over `docs/wiki/` pages (optional, in-task)
-- `graphify-context` - Structural queries over the knowledge graph (god nodes, paths, communities)
 
 **Provides:**
 - `language` → Enables language-specific tooling
@@ -435,7 +388,6 @@ ELSE:
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
 - `wiki_initialized` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
-- `graph_initialized` / `graph_summary` → Enables structure-aware context without re-checking files
 
 ---
 
@@ -445,6 +397,10 @@ ELSE:
 **License:** MIT
 
 ## Changelog
+
+### 1.4.1 (2026-06-18)
+- Удалён graphify knowledge-graph detection (Phase 6) и поля `graph_*` из output — graphify выпилен из проекта
+- `graphify-context` убран из delegates
 
 ### 1.4.0 (2026-06-17)
 - Заменён `lat.md/` detect на `docs/wiki/` detection (читает корневой индекс `docs/wiki/index.md`)

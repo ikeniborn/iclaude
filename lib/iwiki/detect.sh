@@ -3,7 +3,7 @@
 # Provides: detect_iwiki(), _iwiki_resolve_uv(), iwiki_engine_run()
 
 _iwiki_resolve_uv() {
-    if [[ -x "$GRAPHIFY_UV_BIN" ]]; then echo "$GRAPHIFY_UV_BIN"
+    if [[ -x "$UV_BIN" ]]; then echo "$UV_BIN"
     elif command -v uv &>/dev/null; then command -v uv; fi
 }
 

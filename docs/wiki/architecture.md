@@ -12,13 +12,12 @@ After all modules are sourced, the script's inline Phase 15 body (lines 224–10
 
 1. Variable initialisation (flags, `claude_args` array, `model_value`, etc.).
 2. Persistent-settings load from `CREDENTIALS_FILE` (`.claude_config`) via `grep` regex patterns.
-3. `GRAPHIFY_OUT` default resolution.
-4. `while [[ $# -gt 0 ]]` argument-parsing loop (`case` on `$1`).
-5. Optional telemetry module load (`lib/telemetry/otel.sh`).
-6. Subsystem activation: Graphify rebuild, isolated-config setup.
-7. Proxy acquisition, validation, and test.
-8. Final pre-launch flag assembly (`--dangerously-skip-permissions`, `--chrome`, `--model`).
-9. `launch_claude "$use_system" "${claude_args[@]}"` — delegates to `lib/launcher/launch.sh`.
+3. `while [[ $# -gt 0 ]]` argument-parsing loop (`case` on `$1`).
+4. Optional telemetry module load (`lib/telemetry/otel.sh`).
+5. Subsystem activation: isolated-config setup.
+6. Proxy acquisition, validation, and test.
+7. Final pre-launch flag assembly (`--dangerously-skip-permissions`, `--chrome`, `--model`).
+8. `launch_claude "$use_system" "${claude_args[@]}"` — delegates to `lib/launcher/launch.sh`.
 
 ## Phase and Sourcing Order
 
@@ -34,7 +33,6 @@ Modules are sourced conditionally (`if [[ -d "$LIB_DIR/<name>" ]]`) so the scrip
 | 6 | `oauth/` | `token.sh` |
 | 7 | `router/` | `detect.sh`, `install.sh`, `status.sh` |
 | — | `pii-proxy/` | `detect.sh`, `install.sh`, `status.sh` |
-| 8.0 | `graphify/` | `detect.sh`, `install.sh`, `status.sh` |
 | 8.0.1 | `iwiki/` | `detect.sh`, `install.sh` |
 | 8.1 | `lsp/` | `install.sh`, `repair.sh`, `status.sh` |
 | 8.2 | `statusline/` | `detect.sh`, `install.sh`, `status.sh` |
@@ -55,7 +53,7 @@ All CLI argument dispatch is implemented directly in the Phase 15 `while`/`case`
 
 The dispatch pattern is:
 - Flags that perform a one-shot operation (e.g. `--isolated-install`, `--check-router`, `--install-iwiki`) call their module function and `exit $?` immediately.
-- Flags that modify launch behaviour (e.g. `--router`, `--pii-proxy`, `--graphify`, `--model`) set a boolean or string variable and `shift`, deferring actual activation to later in Phase 15.
+- Flags that modify launch behaviour (e.g. `--router`, `--pii-proxy`, `--model`) set a boolean or string variable and `shift`, deferring actual activation to later in Phase 15.
 - `--` separates iclaude flags from raw Claude Code arguments: everything after `--` is pushed into `claude_args` verbatim.
 - Unrecognised arguments are appended to `claude_args` via the `*` branch, allowing pass-through to Claude Code.
 
@@ -65,7 +63,7 @@ Help text is provided by `show_usage()` in `lib/command/usage.sh`, called on `-h
 
 The five files in `lib/core/` are always sourced first (Phase 0) and provide the foundation all other modules depend on.
 
-**`init.sh` — `init_environment()`**: Sets and exports all global constants immediately after sourcing. Key exports include `LAUNCH_DIR` (the user's `$PWD` at invocation, preserved before any `cd`), `SCRIPT_DIR`, `CREDENTIALS_FILE` (`.claude_config`), `ISOLATED_NVM_DIR` (`.nvm-isolated/`), `CLAUDE_CONFIG_DIR` (`.nvm-isolated/.claude-isolated/`), `ISOLATED_LOCKFILE` (`.nvm-isolated-lockfile.json`), and per-session state for PII proxy (`PII_PROXY_PID_FILE`), Graphify (`GRAPHIFY_UV_BIN`, `GRAPHIFY_TOOL_DIR`), CCR router (`CCR_HOST`, `CCR_PORT`), and microVM (`MICRO_VM_*`). A unique `ICLAUDE_SESSION_ID` (random hex) is generated per process to prevent port and PID file collisions between parallel sessions.
+**`init.sh` — `init_environment()`**: Sets and exports all global constants immediately after sourcing. Key exports include `LAUNCH_DIR` (the user's `$PWD` at invocation, preserved before any `cd`), `SCRIPT_DIR`, `CREDENTIALS_FILE` (`.claude_config`), `ISOLATED_NVM_DIR` (`.nvm-isolated/`), `CLAUDE_CONFIG_DIR` (`.nvm-isolated/.claude-isolated/`), `ISOLATED_LOCKFILE` (`.nvm-isolated-lockfile.json`), and per-session state for PII proxy (`PII_PROXY_PID_FILE`), the isolated uv binary (`UV_BIN`), CCR router (`CCR_HOST`, `CCR_PORT`), and microVM (`MICRO_VM_*`). A unique `ICLAUDE_SESSION_ID` (random hex) is generated per process to prevent port and PID file collisions between parallel sessions.
 
 **`logging.sh`**: Four thin wrappers over `echo -e` that prepend ANSI-coloured symbols: `print_info` (blue ℹ), `print_success` (green ✓), `print_warning` (yellow ⚠), `print_error` (red ✗). All module output goes through these.
 
@@ -81,4 +79,4 @@ The isolated environment lives in `.nvm-isolated/` and provides a self-contained
 
 ## Configuration File
 
-The credentials/config file is `.claude_config` (formerly `.claude_proxy_credentials` — auto-migrated on first run). `init_environment()` sets `CREDENTIALS_FILE` to this path; Phase 15 reads it with `grep` regex patterns to load persistent flags (`USE_PII_PROXY`, `MICRO_VM_ENABLED`, `GRAPHIFY_OUT`, `GRAPHIFY_EXTRA_ARGS`, `NO_ATTRIBUTION_HEADER`, `USE_CHROME`, `CLAUDE_CODE_SKIP_PERMISSIONS`) before argument parsing, so CLI flags can override them. The file is chmod 600 and excluded from git. See [[proxy#Credentials File]] for the full variable reference.
+The credentials/config file is `.claude_config` (formerly `.claude_proxy_credentials` — auto-migrated on first run). `init_environment()` sets `CREDENTIALS_FILE` to this path; Phase 15 reads it with `grep` regex patterns to load persistent flags (`USE_PII_PROXY`, `MICRO_VM_ENABLED`, `NO_ATTRIBUTION_HEADER`, `USE_CHROME`, `CLAUDE_CODE_SKIP_PERMISSIONS`) before argument parsing, so CLI flags can override them. The file is chmod 600 and excluded from git. See [[proxy#Credentials File]] for the full variable reference.

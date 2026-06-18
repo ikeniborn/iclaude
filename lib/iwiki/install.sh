@@ -2,11 +2,44 @@
 # iwiki installation: ensure uv + sync the engine project under .nvm-isolated.
 # Provides: install_iwiki()
 
+# Download the uv binary into the isolated bin/ when neither the isolated nor a
+# system uv is available. Outputs the resolved uv path on success; returns 1 on
+# failure. Honors HTTPS_PROXY/HTTP_PROXY/PROXY_URL for the bootstrap curl.
+_iwiki_bootstrap_uv() {
+    local proxy="${HTTPS_PROXY:-${HTTP_PROXY:-${PROXY_URL:-}}}"
+    local curl_proxy_args=()
+    if [[ -n "$proxy" ]]; then
+        curl_proxy_args=(-x "$proxy")
+        # HTTPS proxy with an EC cert (P-384) trips OpenSSL 1.1.1 parsing; both
+        # flags are required for the bootstrap download.
+        [[ "$proxy" == https://* ]] && curl_proxy_args+=(--proxy-insecure -k)
+    fi
+
+    print_info "uv not found — downloading to ${ISOLATED_NVM_DIR}/bin/ ..." >&2
+    local url="https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz"
+    local tmp; tmp=$(mktemp -d)
+    if ! curl -fsSL "${curl_proxy_args[@]}" -o "$tmp/uv.tar.gz" "$url"; then
+        rm -rf "$tmp"; print_error "Failed to download uv binary (check network/TLS/proxy)"; return 1
+    fi
+    if ! tar -xzf "$tmp/uv.tar.gz" -C "$tmp" --strip-components=1 --wildcards '*/uv' 2>/dev/null; then
+        rm -rf "$tmp"; print_error "Failed to extract uv binary"; return 1
+    fi
+    mkdir -p "${ISOLATED_NVM_DIR}/bin"
+    mv "$tmp/uv" "${ISOLATED_NVM_DIR}/bin/uv"
+    chmod +x "${ISOLATED_NVM_DIR}/bin/uv"
+    rm -rf "$tmp"
+    local uv; uv=$(_iwiki_resolve_uv)
+    if [[ -z "$uv" ]]; then
+        print_error "uv not found after install — TLS or network issue likely. Check proxy settings."; return 1
+    fi
+    print_success "uv installed: $uv" >&2
+    echo "$uv"
+}
+
 install_iwiki() {
     local uv; uv=$(_iwiki_resolve_uv)
     if [[ -z "$uv" ]]; then
-        print_error "uv not found. Install graphify first (./iclaude.sh --install-graphify) — it provides uv."
-        return 1
+        uv=$(_iwiki_bootstrap_uv) || return 1
     fi
     local dir; dir="$(_iwiki_engine_dir)"
     if [[ ! -f "$dir/pyproject.toml" ]]; then

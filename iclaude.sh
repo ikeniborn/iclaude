@@ -106,15 +106,6 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
 fi
 
 #######################################
-# Load Graphify modules (Phase 8.0)
-#######################################
-if [[ -d "$LIB_DIR/graphify" ]]; then
-    source "${LIB_DIR}/graphify/detect.sh"
-    source "${LIB_DIR}/graphify/install.sh"
-    source "${LIB_DIR}/graphify/status.sh"
-fi
-
-#######################################
 # Load iwiki modules (Phase 8.0.1)
 #######################################
 if [[ -d "$LIB_DIR/iwiki" ]]; then
@@ -227,7 +218,6 @@ fi
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
-    USE_GRAPHIFY_FLAG=false
     USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
     NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
@@ -248,28 +238,6 @@ fi
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
-
-        # Match: GRAPHIFY_OUT=.graphify
-        _cfg_graphify_out=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUT[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
-            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
-        if [[ -n "$_cfg_graphify_out" ]]; then
-            GRAPHIFY_OUT=$(echo "$_cfg_graphify_out" | \
-                sed 's/.*GRAPHIFY_OUT[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
-            export GRAPHIFY_OUT
-        fi
-        unset _cfg_graphify_out
-
-        # Match: GRAPHIFY_EXTRA_ARGS="--no-video"
-        _cfg_graphify_args=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_EXTRA_ARGS[[:space:]]*=" \
-            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
-        if [[ -n "$_cfg_graphify_args" ]]; then
-            GRAPHIFY_EXTRA_ARGS=$(echo "$_cfg_graphify_args" | \
-                sed 's/.*GRAPHIFY_EXTRA_ARGS[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
-            export GRAPHIFY_EXTRA_ARGS
-        fi
-        unset _cfg_graphify_args
 
         # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
         _cfg_no_attr=$(grep -E \
@@ -292,9 +260,6 @@ fi
         [[ -n "$_cfg_skip_perm" ]] && skip_permissions=true
         unset _cfg_skip_perm
     fi
-
-    GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
-    export GRAPHIFY_OUT
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -537,31 +502,6 @@ fi
                 USE_ROUTER_FLAG=true
                 shift
                 ;;
-            --graphify)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--graphify is only available in isolated environment"
-                    exit 1
-                fi
-                USE_GRAPHIFY_FLAG=true
-                shift
-                ;;
-            --install-graphify)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-graphify"
-                    echo ""
-                    echo "Graphify is only available in isolated environment"
-                    exit 1
-                fi
-                _gfy_install_force=""
-                [[ "${2:-}" == "--force" ]] && { _gfy_install_force="--force"; shift; }
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
-                install_graphify "$_gfy_install_force"
-                exit $?
-                ;;
-            --check-graphify)
-                check_graphify_status
-                exit 0
-                ;;
             --install-iwiki)
                 [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
                 install_iwiki
@@ -770,11 +710,6 @@ fi
         print_info "Combined mode detected: PII proxy + CCR router chain will be activated"
         print_info "Traffic chain: claude → PII proxy(:${PII_PROXY_PORT:-9000}) → CCR(:${CCR_PORT:-3456}) → providers"
         echo ""
-    fi
-
-    # Rebuild graphify knowledge graph if --graphify flag is set
-    if [[ "$USE_GRAPHIFY_FLAG" == true ]]; then
-        _graphify_rebuild_graph || print_warning "Graph rebuild failed — continuing without updated graph"
     fi
 
     # Configure isolated config if needed

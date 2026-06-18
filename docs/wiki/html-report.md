@@ -28,4 +28,4 @@ The self-validation checklist (run before writing) rejects external `src`/`href`
 
 Autonomy zones override the "don't pause" default: **full** (generating HTML, CSS layout, diagram type) proceeds; **guarded** (inline `<script>`/`<canvas>`/SVG, or nearing 5 MB) proceeds but logs/warns; **proposal-first** (which sources to read, overwriting an existing `docs/reports/` file) asks first; **no-go** (writing/deleting outside `docs/reports/`, fetching any external resource) refuses.
 
-See also: [[architecture]], [[graphify]], [[iwiki]]
+See also: [[architecture]], [[iwiki]]

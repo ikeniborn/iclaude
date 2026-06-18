@@ -29,4 +29,4 @@ Steps:
 
 The `.gsd-version` marker written by `install_gsd` is the source of the `gsdVersion` field in the isolated lockfile. On save, `gsdVersion` is read from `$CLAUDE_CONFIG_DIR/.gsd-version` (falling back to `npm view get-shit-done-cc version`); on restore, GSD is reinstalled via `npx get-shit-done-cc@<gsdVersion> --global` with `CLAUDE_CONFIG_DIR` forwarded, re-writing the marker on success. See [[lockfile]].
 
-See also: [[lockfile]], [[nvm]], [[update]], [[graphify]]
+See also: [[lockfile]], [[nvm]], [[update]]

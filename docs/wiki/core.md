@@ -32,7 +32,7 @@ This ID is woven into per-session state filenames such as `PII_PROXY_PID_FILE` (
 Beyond the core paths, `init_environment()` initializes and exports the variable sets consumed by individual feature modules, each honoring an existing value or a default. These are grouped by feature.
 
 - **PII proxy** — `PII_PROXY_PORT` (`0` = auto-select), `PII_PROXY_PORT_MIN` (`20000`), `PII_PROXY_PORT_MAX` (`40000`), `PII_PROXY_VENV`, `PII_PROXY_LOG_DIR`, `PII_PROXY_PID_DIR`, `PII_PROXY_PID_FILE`, `PII_PROXY_SERVER_SCRIPT`. See [[pii-proxy]].
-- **Graphify** — `GRAPHIFY_UV_BIN`, `GRAPHIFY_TOOL_DIR`, `GRAPHIFY_PYTHON_DIR`, `GRAPHIFY_EXTRA_ARGS`. See [[graphify]].
+- **uv** — `UV_BIN` (`${ISOLATED_NVM_DIR}/bin/uv`), the isolated uv binary consumed by [[iwiki]].
 - **CCR (Claude Code Router)** — `CCR_PID`, `CCR_SESSION_OWNED` (`false`), `CCR_HOST` (`127.0.0.1`), `CCR_PORT` (`3456`). See [[router]].
 - **microVM (Firecracker)** — `MICRO_VM_ENABLED`, `MICRO_VM_BACKEND` (`firecracker`), `MICRO_VM_VCPU`, `MICRO_VM_MEM_MB`, networking (`MICRO_VM_NET_*`), snapshot (`MICRO_VM_SNAPSHOT_*`), image paths (`MICRO_VM_ROOTFS_PATH`, `MICRO_VM_KERNEL_PATH`, `MICRO_VM_BIN_PATH`), and per-session state (`MICRO_VM_PID`, `MICRO_VM_SOCKET`, `MICRO_VM_SESSION_OWNED`, `VIRTIOFSD_PID_NVM`, `VIRTIOFSD_PID_WORKSPACE`). See [[sandbox]].
 

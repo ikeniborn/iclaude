@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), Graphify knowledge graph, and GSD framework.
+**iclaude** is a bash wrapper for launching Claude Code with HTTP/HTTPS proxy, isolated environment, OAuth auto-refresh, Claude Code Router, PII proxy (Presidio NLP), microVM sandbox (Firecracker), iwiki documentation graph, and GSD framework.
 
 Key paths: `.nvm-isolated/` (isolated env), `lib/` (18 bash modules), `docs/` (feature docs).
 
@@ -126,7 +126,6 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 ./iclaude.sh --install-from-lockfile  # Install exact versions from lockfile
 ./iclaude.sh --install-lsp            # Install LSP servers (TypeScript + Python)
 ./iclaude.sh --install-pii-proxy      # Install PII proxy (Python venv + Presidio NLP)
-./iclaude.sh --install-graphify       # Install Graphify (uv + Python 3.12 + graphifyy)
 ./iclaude.sh --install-iwiki          # Install iwiki engine + register plugin
 ./iclaude.sh --install-gsd            # Install GSD framework (npx get-shit-done-cc)
 ./iclaude.sh --check-gsd              # Check GSD installation status
@@ -143,7 +142,6 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/project/.env"}}' \
 | PII Proxy (Presidio NLP, SSE streaming) | [docs/PII_MASKING.md](docs/PII_MASKING.md) |
 | Status Line (context usage, cache, session links) | [docs/STATUSLINE.md](docs/STATUSLINE.md) |
 | microVM Sandbox (Firecracker, virtio-blk+SSH, KVM) | [docs/MICROVM.md](docs/MICROVM.md) |
-| Graphify Knowledge Graph (uv, Python 3.12, graphifyy) | `lib/graphify/` |
 | iwiki Documentation Graph (embeddings, in-repo plugin) | `plugin/iwiki/` |
 | GSD Framework (meta-prompting, spec-driven dev) | [docs/superpowers/specs/2026-05-14-gsd-integration-design.md](docs/superpowers/specs/2026-05-14-gsd-integration-design.md) |
 | OAuth Token Management | `lib/oauth/token.sh` |
@@ -231,7 +229,7 @@ Plans saved to `docs/plans/` via `.claude/settings.json`:
 
 ## Architecture
 
-**Version 4.0** — modular bash in `lib/` (18 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, graphify, iwiki).
+**Version 4.0** — modular bash in `lib/` (17 modules: core, command, proxy, nvm, oauth, router, lsp, config, lockfile, update, launcher, statusline, chrome, ohmyposh, pii-proxy, sandbox, iwiki).
 
 Source order: Phase 0 (core) → Phase 2–8.1 (feature modules) → Phase 14 (command dispatch).
 

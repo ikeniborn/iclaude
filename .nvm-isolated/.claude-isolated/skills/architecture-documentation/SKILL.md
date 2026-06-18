@@ -574,7 +574,7 @@ console.log(`Savings: ${stats.savedPercent}`); // Expected: 30-60%
 
 ---
 
-## iwiki / graph Integration
+## iwiki Integration
 
 Этот скилл получает `project_context` от `context-awareness` (Phase 1 Input).
 
@@ -589,15 +589,6 @@ IF project_context.wiki_initialized == true:
   - Если паттерн определён (layered/hexagonal/...) → использовать как отправную точку
   - Если в docs/wiki нет ответа → продолжить Phase 1 в стандартном режиме
 ```
-
-IF project_context.graph_initialized == true:
-  Использовать graph данные для обогащения Phase 1:
-  - graph_god_nodes → использовать как "Core Components" в arch diagram (самые связанные узлы)
-  - graph_communities → использовать как модульную структуру (community label → module name)
-  - graph_summary → использовать как structural overview paragraph в Phase 1 discovery
-  IF project_context.graph_fresh === false:
-    Добавить NOTE в output: "Architecture graph may be stale — run /graphify --update"
-  # graph_fresh === null означает неизвестно (graphify не пишет commit hash) — не предупреждать
 
 ### Record (после Phase 4)
 
