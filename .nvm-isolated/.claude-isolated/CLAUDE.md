@@ -11,6 +11,13 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
 1. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
+2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
+   ```bash
+   tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
+   ```
+   Depth `-L 2` is chosen for the current project — its `docs/` nests at most 2 directory
+   levels (e.g. `docs/superpowers/specs/`), so level 2 shows the full directory skeleton plus
+   top-level files without flooding context with every leaf file. Raise the level for deeper trees.
 
 Skip only when: familiar area, same session.
 
