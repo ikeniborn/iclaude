@@ -23,6 +23,7 @@ This prevents Claude Code from updating itself; version management is delegated 
 - **Feature flags**: `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`, `CLAUDE_CODE_DISABLE_1M_CONTEXT`, `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`, `CLAUDE_CODE_ENABLE_TASKS`, `CLAUDE_CODE_NO_CHROME`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, `CLAUDE_CODE_OAUTH_TOKEN`
 - **PII proxy**: `PII_PROXY_MASKING_LEVEL`, `PII_PROXY_ENABLE_FALLBACK`, `PII_PROXY_LOG_LEVEL`, `PII_PROXY_MASK_TOKEN` (see [[pii-proxy]])
 - **microVM**: `MICRO_VM_ENABLED`, `MICRO_VM_BACKEND`, `MICRO_VM_VCPU`, `MICRO_VM_MEM_MB`, and nine additional `MICRO_VM_*` variables (see [[sandbox]])
+- **Language**: `ICLAUDE_CHAT_LANG`, `ICLAUDE_DOC_LANG` — conversation and documentation languages read by the caveman hooks (see [[caveman#Language Resolution]])
 
 Only variables that are non-empty (or, for `PII_PROXY_MASK_TOKEN`, set at all via `+x`) are exported, so unset keys in `.claude_config` do not override existing environment values.
 

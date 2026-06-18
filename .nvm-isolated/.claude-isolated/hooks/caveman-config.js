@@ -58,6 +58,39 @@ function getDefaultMode() {
   return 'full';
 }
 
+// Resolve the conversation + documentation languages caveman should enforce.
+//
+//   chat (conversation/responses):
+//     1. ICLAUDE_CHAT_LANG environment variable (from .claude_config, highest priority)
+//     2. settings.json "language" field (the native Claude Code chat-language source)
+//     3. null — caller emits a language-agnostic "match the user's language" rule
+//   doc (documentation / code comments / commit messages / PRs):
+//     1. ICLAUDE_DOC_LANG environment variable
+//     2. "English" (default)
+//
+// Both values are injected into model context, so they are sanitized: stripped of
+// newlines/control chars and length-capped to block injection via a crafted env
+// var or settings file. claudeDir defaults to $CLAUDE_CONFIG_DIR (or ~/.claude).
+function sanitizeLang(value) {
+  return String(value).replace(/[\x00-\x1f\x7f]+/g, ' ').trim().slice(0, 40);
+}
+
+function getLanguages(claudeDir) {
+  const dir = claudeDir || process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+
+  let chat = sanitizeLang(process.env.ICLAUDE_CHAT_LANG || '');
+  if (!chat) {
+    try {
+      const settings = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'));
+      if (typeof settings.language === 'string') chat = sanitizeLang(settings.language);
+    } catch (e) { /* no settings file / no language field — stay language-agnostic */ }
+  }
+
+  const doc = sanitizeLang(process.env.ICLAUDE_DOC_LANG || '') || 'English';
+
+  return { chat: chat || null, doc };
+}
+
 // Symlink-safe flag file write.
 // Uses O_NOFOLLOW where available, writes atomically via temp + rename with
 // 0600 permissions. Protects against local attackers replacing the predictable
@@ -271,4 +304,4 @@ function readHistory(filePath) {
   }
 }
 
-module.exports = { getDefaultMode, getConfigDir, getConfigPath, VALID_MODES, safeWriteFlag, readFlag, appendFlag, readHistory };
+module.exports = { getDefaultMode, getLanguages, getConfigDir, getConfigPath, VALID_MODES, safeWriteFlag, readFlag, appendFlag, readHistory };

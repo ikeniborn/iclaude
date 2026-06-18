@@ -29,9 +29,15 @@ Valid modes (`VALID_MODES`): `off`, the three intensity levels `lite`, `full`, `
 
 ## Language Preservation
 
-Caveman compresses words, not language: terse output stays in the conversation's language and never drifts to English just to compress. Documentation, code comments, commit messages, and PRs remain English regardless of conversation language.
+Caveman compresses words, not language: terse output stays in the conversation's language and never drifts to English just to compress. Documentation, code comments, commit messages, and PRs follow a separate documentation language.
 
-This rule lives in three mirrored places so it survives context compaction and competing per-turn style injections: a `## Language` section in `SKILL.md` (the source of truth `caveman-activate.js` filters at runtime), the hardcoded fallback ruleset inside `caveman-activate.js` (used when `SKILL.md` is absent), and the per-turn `additionalContext` reminder emitted by `caveman-mode-tracker.js`. The launcher's project [[config]] (`# Language`) binds the conversation language to Russian here.
+The generic principle lives in three mirrored places so it survives context compaction and competing per-turn style injections: a `## Language` section in `SKILL.md` (the source of truth `caveman-activate.js` filters at runtime), the hardcoded fallback ruleset inside `caveman-activate.js` (used when `SKILL.md` is absent), and the per-turn `additionalContext` reminder emitted by `caveman-mode-tracker.js`.
+
+## Language Resolution
+
+The exact languages are resolved at runtime by `getLanguages(claudeDir)` in `caveman-config.js` and emitted as a concrete `## Resolved Language` block (by `caveman-activate.js` at session start, and inline in the `caveman-mode-tracker.js` per-turn reminder). Resolution order — conversation language: `ICLAUDE_CHAT_LANG` env → `settings.json` `language` field → null (generic "match the user's language"); documentation language: `ICLAUDE_DOC_LANG` env → `English`.
+
+Both vars are set in `.claude_config` (see [[config]]) and exported to the hook environment by `load_claude_config()` in `lib/config/isolated.sh` (added to its export whitelist). Values are sanitized (control chars stripped, capped at 40 chars) before injection into model context. `ICLAUDE_CHAT_LANG` should be kept in sync with the `settings.json` `language` field, but defaults to it when unset, so leaving the var empty causes no drift.
 
 ## Status and Removal
 

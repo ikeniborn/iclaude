@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { getDefaultMode, safeWriteFlag } = require('./caveman-config');
+const { getDefaultMode, getLanguages, safeWriteFlag } = require('./caveman-config');
 
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 const flagPath = path.join(claudeDir, '.caveman-active');
@@ -110,8 +110,18 @@ if (skillContent) {
     'Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.\n\n' +
     '## Language\n\n' +
     'Compression touches WORDS, not LANGUAGE. Compress in the conversation\'s language — NEVER switch language (e.g. drift to English) just to compress. ' +
-    'Exceptions (always English, regardless of conversation language): documentation, code comments, commit messages, PRs.';
+    'See the ## Resolved Language block below for the exact conversation/documentation languages.';
 }
+
+// 2b. Append the RESOLVED languages so the rule is concrete, not just the generic
+//     "match the conversation language" principle from SKILL.md. Sources:
+//     ICLAUDE_CHAT_LANG / ICLAUDE_DOC_LANG (.claude_config) → settings.json language.
+const { chat, doc } = getLanguages(claudeDir);
+output += '\n\n## Resolved Language\n\n' +
+  (chat
+    ? 'Conversation and all responses: ' + chat + '. Compress in ' + chat + ' — never switch language to compress.'
+    : 'Conversation and all responses: match the user’s language — never switch language to compress.') +
+  ' Documentation, code comments, commit messages, PRs: ' + doc + '.';
 
 // 3. Detect missing statusline config — nudge Claude to help set it up
 try {

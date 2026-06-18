@@ -106,6 +106,11 @@ load_claude_config() {
     [[ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]] && export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
     [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] && export CLAUDE_CODE_OAUTH_TOKEN
 
+    # Export conversation/documentation language so the caveman hooks (node child
+    # processes) can read them via process.env and keep responses in the right language.
+    [[ -n "${ICLAUDE_CHAT_LANG:-}" ]] && export ICLAUDE_CHAT_LANG
+    [[ -n "${ICLAUDE_DOC_LANG:-}" ]] && export ICLAUDE_DOC_LANG
+
     # Export PII proxy configuration so server.py subprocess inherits the values
     [[ -n "${PII_PROXY_MASKING_LEVEL:-}" ]] && export PII_PROXY_MASKING_LEVEL
     [[ -n "${PII_PROXY_ENABLE_FALLBACK:-}" ]] && export PII_PROXY_ENABLE_FALLBACK

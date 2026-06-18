@@ -32,3 +32,5 @@
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/html-report","page":"docs/wiki/html-report.md","date":"2026-06-18"}
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/html-report/SKILL.md","page":"docs/wiki/html-report.md","date":"2026-06-18"}
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/caveman/SKILL.md","page":"docs/wiki/caveman.md","date":"2026-06-18"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/caveman/SKILL.md","page":"docs/wiki/caveman.md","date":"2026-06-19"}
+{"op":"ingest","source":"lib/config/isolated.sh","page":"docs/wiki/config.md","date":"2026-06-19"}

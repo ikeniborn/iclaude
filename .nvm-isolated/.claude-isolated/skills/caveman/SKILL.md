@@ -75,6 +75,6 @@ Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level p
 
 ## Language
 
-Compression touches WORDS, not LANGUAGE. Compress in the conversation's language — NEVER switch language (e.g. drift to English) just to compress. If conversation is Russian, terse output stays Russian.
+Compression touches WORDS, not LANGUAGE. Compress in the conversation's language — NEVER switch language (e.g. drift to English) just to compress.
 
-Exceptions (always their normal convention, regardless of conversation language): documentation, code comments, commit messages, PRs → English.
+The exact conversation and documentation languages are resolved at runtime and injected by the activation hook (see the `## Resolved Language` block). Sources: `ICLAUDE_CHAT_LANG` / `ICLAUDE_DOC_LANG` from `.claude_config`, falling back to `settings.json` `language` for chat and `English` for docs. Documentation, code comments, commit messages, and PRs always follow the documentation language regardless of conversation language.
