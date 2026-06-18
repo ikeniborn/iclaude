@@ -1,6 +1,6 @@
 ---
 name: html-report
-description: "Use when the user asks for a standalone or self-contained HTML report, an offline .html file, a human-readable report that opens by double-click in a browser, expandable/interactive HTML tables, or block / transition / C4 / architectural diagrams rendered in HTML (NOT Mermaid), or a dark/light themed report. Triggers on phrases like 'сделай html-отчёт', 'standalone html report', 'expandable html table', 'C4 diagram as html', 'offline report I can open in browser'. Produces ONE self-contained .html in docs/ with zero external dependencies. NOT for Mermaid diagrams (use mermaid-obsidian) or Mermaid embedded in PRD/architecture docs (use prd-generator / architecture-documentation)."
+description: "Use when the user asks for a standalone or self-contained HTML report, an offline .html file, a human-readable report that opens by double-click in a browser, expandable/interactive HTML tables, or block / transition / C4 / architectural diagrams rendered in HTML (NOT Mermaid), or a dark/light themed report. Triggers on phrases like 'сделай html-отчёт', 'standalone html report', 'expandable html table', 'C4 diagram as html', 'offline report I can open in browser'. Produces ONE self-contained .html in docs/reports/ with zero external dependencies. NOT for Mermaid diagrams (use mermaid-obsidian) or Mermaid embedded in PRD/architecture docs (use prd-generator / architecture-documentation)."
 version: 1.0.0
 ---
 
@@ -21,6 +21,10 @@ producing the human-readable artifact.
 3. **Single self-contained file.** One `.html`, no sibling assets.
 4. **Both themes mandatory.** Every report ships dark AND light palettes plus a
    working toggle (see `references/themes.md`).
+5. **Mandatory output directory.** Every report MUST be written to `docs/reports/`
+   in the project where the skill runs (the current working directory's project
+   root). Create the directory if it does not exist. Never write the report
+   anywhere else.
 
 If faithful display would require an external resource, **escalate** — do not
 inline-fetch and do not silently drop the element.
@@ -49,8 +53,9 @@ inline-fetch and do not silently drop the element.
    - Add an SVG / bounded inline `<script>` block ONLY if a node-edge graph needs it,
      and **log** the specific structure CSS could not express.
 5. **Self-validate** the assembled string (checklist below) BEFORE writing.
-6. Write the file to `docs/`. If the target file already exists, **ask first** before
-   overwriting (proposal-first).
+6. Write the file to `docs/reports/` (create the directory if missing). This is
+   mandatory — reports go nowhere else. If the target file already exists, **ask
+   first** before overwriting (proposal-first).
 7. Report to the user: file path, file size, and any guarded-zone logs (inline script
    used / size warning).
 
@@ -67,6 +72,7 @@ Reject and fix the assembled HTML if any fails:
       (node cards + arrow markers), not a flat flex row that drops the loop/branch.
 - [ ] Shared `<defs>` (dropshadow + arrow markers) present if any SVG diagram is used.
 - [ ] File size ≤ 5 MB — if larger, **warn** the user (soft limit).
+- [ ] Output path is under `docs/reports/` in the current project — never elsewhere.
 
 ## Autonomy Zones
 
@@ -74,8 +80,8 @@ Reject and fix the assembled HTML if any fails:
 |------|--------|
 | Full — generating HTML, choosing CSS layout, picking the diagram type | proceed, no pause |
 | Guarded — using inline `<script>`/`<canvas>`/SVG, or approaching 5 MB | proceed, but **log** the structure CSS can't express / **warn** on size |
-| Proposal-first — which data sources to read; overwriting an existing `docs/` file | **ask before acting** |
-| No-go — writing/deleting any file outside `docs/`; fetching any external resource | **refuse** |
+| Proposal-first — which data sources to read; overwriting an existing `docs/reports/` file | **ask before acting** |
+| No-go — writing/deleting any file outside `docs/reports/`; fetching any external resource | **refuse** |
 
 > These zones OVERRIDE subagent-driven-development's "don't pause" default. Treat
 > proposal-first and no-go points as HUMAN CHECKPOINTS.

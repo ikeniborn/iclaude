@@ -4,7 +4,7 @@
 
 ## Purpose and Hard Constraints
 
-The skill produces a single offline artifact in `docs/`. Four constraints are non-negotiable: **zero-dependency** (no `<script src>`, `<link href>`, CDN, or external images — everything inline), **offline** (must open from `file://`, no localhost/fetch), **single self-contained file** (one `.html`, no sibling assets), and **both themes mandatory** (every report ships dark AND light palettes plus a working toggle). If faithful display would need an external resource, the skill escalates rather than inlining a fetch or silently dropping the element.
+The skill produces a single offline artifact in `docs/reports/`. Five constraints are non-negotiable: **zero-dependency** (no `<script src>`, `<link href>`, CDN, or external images — everything inline), **offline** (must open from `file://`, no localhost/fetch), **single self-contained file** (one `.html`, no sibling assets), **both themes mandatory** (every report ships dark AND light palettes plus a working toggle), and **mandatory output directory** (every report MUST be written to `docs/reports/` in the project where the skill runs — the directory is created if missing, and reports go nowhere else). If faithful display would need an external resource, the skill escalates rather than inlining a fetch or silently dropping the element.
 
 ## Reference Recipes
 
@@ -22,10 +22,10 @@ The SVG grammar (`svg-diagrams.md`) is the high-fidelity path that makes a repor
 
 ## Workflow and Autonomy Zones
 
-The skill parses the request into data points + named diagrams + sources, reads ONLY the named sources (halts rather than fabricating if a source is unreadable or contradicts the request), picks a recipe per item, assembles one HTML document, self-validates against a checklist, then writes to `docs/`.
+The skill parses the request into data points + named diagrams + sources, reads ONLY the named sources (halts rather than fabricating if a source is unreadable or contradicts the request), picks a recipe per item, assembles one HTML document, self-validates against a checklist, then writes to `docs/reports/` (creating the directory if missing).
 
 The self-validation checklist (run before writing) rejects external `src`/`href`/CDN refs, any `<script src>`/`<link rel=stylesheet href>`, sibling-file references, a missing theme set or unwired toggle, dropped data points/diagrams, flat flows that lose a loop/branch edge (should use the SVG grammar), missing shared `<defs>` when SVG is used, and warns over a 5 MB soft limit.
 
-Autonomy zones override the "don't pause" default: **full** (generating HTML, CSS layout, diagram type) proceeds; **guarded** (inline `<script>`/`<canvas>`/SVG, or nearing 5 MB) proceeds but logs/warns; **proposal-first** (which sources to read, overwriting an existing `docs/` file) asks first; **no-go** (writing/deleting outside `docs/`, fetching any external resource) refuses.
+Autonomy zones override the "don't pause" default: **full** (generating HTML, CSS layout, diagram type) proceeds; **guarded** (inline `<script>`/`<canvas>`/SVG, or nearing 5 MB) proceeds but logs/warns; **proposal-first** (which sources to read, overwriting an existing `docs/reports/` file) asks first; **no-go** (writing/deleting outside `docs/reports/`, fetching any external resource) refuses.
 
 See also: [[architecture]], [[graphify]], [[iwiki]]
