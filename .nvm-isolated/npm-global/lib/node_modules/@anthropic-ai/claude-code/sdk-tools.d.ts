@@ -2861,6 +2861,23 @@ export interface ReadMcpResourceOutput {
    * Human-readable error when the server could not read the resource
    */
   error?: string;
+  /**
+   * Direct children when the URI is a directory resource (SEP-2640 resources/directory/read). Subdirectories appear with mimeType "inode/directory".
+   */
+  resources?: {
+    /**
+     * Child resource URI
+     */
+    uri: string;
+    /**
+     * Child resource name
+     */
+    name: string;
+    /**
+     * Child MIME type
+     */
+    mimeType?: string;
+  }[];
 }
 export interface TodoWriteOutput {
   /**
