@@ -24,6 +24,7 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 - Runs `uv run --project "$(_iwiki_engine_dir)" python3 -m iwiki_engine "$@"`.
 - If uv is unresolved, prints `iwiki: uv not found; run ./iclaude.sh --install-iwiki` and returns 1.
+- Subcommands: `index | search | related | status | lint`. `status` and `lint` are **config-free** (no `IWIKI_LLM_*`, no embedding call) — they dispatch before config load. `lint` reports `docs/wiki/` health (broken links, orphans, stale pages) as a JSON object and is a clean no-op (`{"wiki_present": false}`, exit 0) when the project has no wiki, so iwiki never errors in a project that does not use it. The `/iwiki-lint` skill calls this subcommand instead of composing shell.
 
 ## Plugin Registration
 
