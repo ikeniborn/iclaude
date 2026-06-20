@@ -25,6 +25,15 @@ def _pages(wiki_dir: str) -> list[str]:
     return sorted(os.path.normpath(f) for f in files if "/.iwiki/" not in f)
 
 
+def _read(path: str) -> str:
+    """Read a page, fail-soft to '' — a health check must never crash on one
+    unreadable page (permissions / race)."""
+    try:
+        return open(path, encoding="utf-8").read()
+    except Exception:
+        return ""
+
+
 def _headings(content: str) -> set[str]:
     return {m.group(1).strip() for m in _H2.finditer(content)}
 
@@ -79,7 +88,7 @@ def lint(wiki_dir: str) -> dict:
     if not pages:
         return {"wiki_present": False}
 
-    content = {p: open(p, encoding="utf-8").read() for p in pages}
+    content = {p: _read(p) for p in pages}
     headings = {p: _headings(c) for p, c in content.items()}
 
     broken: list[dict] = []
