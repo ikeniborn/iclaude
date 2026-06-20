@@ -14,6 +14,8 @@ import re
 
 from .links import parse_links
 
+# Keep in sync with chunk._H2 — inlined here to avoid importing .chunk, which
+# would transitively pull httpx and break the config-free contract.
 _H2 = re.compile(r"^##\s+(.*?)\s*$", re.MULTILINE)
 
 
