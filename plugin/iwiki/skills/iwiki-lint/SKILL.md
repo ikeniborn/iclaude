@@ -37,7 +37,7 @@ Makes NO edits. The engine ships with this plugin, so this works in any project.
 
 4. **Gaps (advisory, only when `wiki_present` is true).** Optionally note source
    areas with no wiki page. Bound the scan to the set `iwiki-init` uses — immediate
-   subdirs of `src/` / `lib/` / `app/` / `packages/` / `cmd/` plus root entry-point
+   subdirs of `src/` / `lib/` / `app/` / `packages/` / `cmd/` / `internal/` plus root entry-point
    scripts (`*.sh`, `main.*`, `index.*`, `app.*`, `cli.*`) that exist. List
    candidates only; do not treat them as errors.
 
