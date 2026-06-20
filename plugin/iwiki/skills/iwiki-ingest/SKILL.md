@@ -31,6 +31,7 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
 4. Refresh the index (run from the current project root):
    ```bash
+   [ -d docs/wiki ] || { echo "iwiki: no docs/wiki/ here — run /iwiki-init to create one."; exit 0; }
    # Resolve the engine project. CLAUDE_PLUGIN_ROOT is set for hooks but NOT in
    # the Bash tool, so fall back to the in-repo copy, then the newest cached one.
    ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"

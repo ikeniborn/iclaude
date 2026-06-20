@@ -17,6 +17,7 @@ section ids; YOU read those sections and write the answer.
    inside this plugin (`${CLAUDE_PLUGIN_ROOT}/engine`) and searches the current
    project's own `docs/wiki/` — so this works in any project, not just iclaude:
    ```bash
+   [ -d docs/wiki ] || { echo "iwiki: no docs/wiki/ here — run /iwiki-init to create one."; exit 0; }
    # CLAUDE_PLUGIN_ROOT is set for hooks but NOT in the Bash tool — fall back to
    # the in-repo engine, then the newest cached one. Reused by step 4 below.
    ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
