@@ -13,6 +13,7 @@ from .embed import embed_texts, EmbedError
 from .store import (make_record, load_index, save_index, index_bytes)
 from .search import search as do_search
 from .related import related as do_related
+from .lint import lint as do_lint
 
 CAP_BYTES = 8 * 1024 * 1024
 
@@ -71,6 +72,11 @@ def cmd_related(cfg: Config, wiki_dir: str, section_id: str) -> int:
     return 0
 
 
+def cmd_lint(wiki_dir: str) -> int:
+    print(json.dumps(do_lint(wiki_dir), ensure_ascii=False))
+    return 0
+
+
 def cmd_status(wiki_dir: str) -> int:
     recs = load_index(_index_path(wiki_dir))
     size = index_bytes(_index_path(wiki_dir))
@@ -92,10 +98,13 @@ def main() -> int:
     rp = sub.add_parser("related")
     rp.add_argument("section_id")
     sub.add_parser("status")
+    sub.add_parser("lint")
     args = p.parse_args()
     try:
         if args.cmd == "status":
             return cmd_status(args.wiki_dir)
+        if args.cmd == "lint":
+            return cmd_lint(args.wiki_dir)
         cfg = Config.load()
         if args.cmd == "index":
             return cmd_index(cfg, args.wiki_dir)
