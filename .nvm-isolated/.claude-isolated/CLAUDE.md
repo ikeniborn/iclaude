@@ -10,7 +10,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. Run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health.
+1. **If the project has a `docs/wiki/`**, run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health. (No `docs/wiki/` → skip; iwiki is not set up in this project.)
 2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
    ```bash
    tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
@@ -23,13 +23,13 @@ Skip only when: familiar area, same session.
 
 ## Keep Docs Current (MANDATORY)
 
-**After every change that alters functionality, architecture, or behavior, update the project docs via iwiki — before responding to the user.**
+**After every change that alters functionality, architecture, or behavior — and only in a project that already has a `docs/wiki/` — update the project docs via iwiki before responding to the user.**
 
 - Run `iwiki:iwiki-ingest <changed-source>` to regenerate/update the affected `docs/wiki/` page.
 - Run `/iwiki-lint` — no broken `[[refs]]`, no orphan or stale pages.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
-Always invoke iwiki via its **skills** (`iwiki:iwiki-ingest`, `/iwiki-query`, `/iwiki-lint`) — never guess engine subcommands. The `iwiki_engine` CLI exposes ONLY `index | search | related | status` (there is NO `lint` subcommand — lint is skill-side). When unsure of any CLI's subcommands, check `--help` before running.
+Always invoke iwiki via its **skills** (`iwiki:iwiki-ingest`, `/iwiki-query`, `/iwiki-lint`) — never guess engine subcommands. The `iwiki_engine` CLI exposes `index | search | related | status | lint` (`lint` is config-free, like `status`, and is what `/iwiki-lint` calls). When unsure of any CLI's subcommands, check `--help` before running.
 
 ## Language Rules
 
