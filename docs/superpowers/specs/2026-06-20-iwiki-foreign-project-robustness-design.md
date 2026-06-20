@@ -1,3 +1,61 @@
+---
+chain:
+  intent: null
+review:
+  spec_hash: 3802024b5343a98e
+  last_run: 2026-06-20
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: WARNING
+      section: "### 5. Versioning + docs"
+      section_hash: 7a02e5cad1f9885f
+      text: >-
+        Decision 5 says to "update the project CLAUDE.md ... the 'NO lint subcommand'
+        line is obsolete", but that exact line ("CLI exposes ONLY index | search |
+        related | status ... there is NO lint subcommand") lives in the GLOBAL isolated
+        CLAUDE.md (.nvm-isolated/.claude-isolated/CLAUDE.md line 32), not the project
+        CLAUDE.md. The project root CLAUDE.md contains no such enumeration. Section 4
+        edits the same global file but only for the "mandate" steps (lines 7/13/24-29),
+        not line 32. As written the obsolete-line edit is mis-routed and the real line
+        may be left stale. Fix: retarget the line-32 update to the global isolated
+        CLAUDE.md (fold into Section 4) or correct the file reference in Section 5.
+      verdict: accepted
+      verdict_at: 2026-06-20
+      resolution: >-
+        Resolved. Body re-edited: §Design 4 now explicitly targets the global isolated
+        .nvm-isolated/.claude-isolated/CLAUDE.md and adds a bullet to update the stale
+        "exposes ONLY index | search | related | status ... NO lint subcommand"
+        enumeration. §Design 5 now states the correction lives in §Design 4 and that the
+        project root CLAUDE.md needs no such edit (it has no engine-subcommand
+        enumeration). Verified: grep finds the obsolete line only in the global file
+        (line 32), none in the project root CLAUDE.md. Section hash changed
+        78ddd6ffe25bc0c0 -> 7a02e5cad1f9885f.
+    - id: F-002
+      phase: clarity
+      severity: INFO
+      section: "### 2. Skill `iwiki-lint` — rewrite to call the engine"
+      section_hash: 08ef5a33e15ad674
+      text: >-
+        The advisory "gaps" pass is described as "a short heuristic pass over top-level
+        source areas (lib/, root entry-points) with no page" but gives no DoD / explicit
+        boundary for what counts as a top-level source area in an arbitrary project. It
+        is explicitly optional/advisory, so this is informational only — but the term is
+        unbounded for a universal (foreign-project) skill.
+      verdict: accepted
+      verdict_at: 2026-06-20
+      resolution: >-
+        Resolved. §Design 2 now bounds "source area" to the same set iwiki-init uses:
+        immediate subdirs of src/ / lib/ / app/ / packages/ / cmd/ plus root entry-point
+        scripts that exist — so the term is no longer open-ended for a foreign project.
+        Section hash changed 5ca1008da876442f -> 08ef5a33e15ad674.
+---
+
 # iwiki: robustness in projects without docs/wiki/
 
 **Date:** 2026-06-20
@@ -102,8 +160,10 @@ no composed glob.
 - `wiki_present: false` → print one line ("no `docs/wiki/` here — run `/iwiki-init`
   to create one") and stop.
 - **gaps** (advisory) — only when the wiki is present: a short heuristic pass over
-  top-level source areas (`lib/`, root entry-points) with no page. Kept in the
-  skill, clearly optional.
+  top-level source areas with no page. Bounded to the same set `iwiki-init` uses —
+  immediate subdirs of `src/`/`lib/`/`app/`/`packages/`/`cmd/` plus root entry-point
+  scripts that exist — so "source area" is not open-ended in a foreign project.
+  Kept in the skill, clearly optional.
 
 ### 3. Opt-in guards in the other skills
 
@@ -114,10 +174,16 @@ creates it) — left as-is. Hooks already guarded; the bootstrap nudge stays.
 
 ### 4. Global isolated CLAUDE.md mandate
 
-In `~/.../.claude-isolated/CLAUDE.md`, make the "Getting Started" and "Keep Docs
-Current (MANDATORY)" iwiki steps **conditional on `docs/wiki/` existing** in the
-current project. Removes the original trigger in foreign projects. (Editing the
-user's private global instructions — done with explicit consent.)
+In the global isolated `.nvm-isolated/.claude-isolated/CLAUDE.md`:
+
+- Make the "Getting Started" and "Keep Docs Current (MANDATORY)" iwiki steps
+  **conditional on `docs/wiki/` existing** in the current project. Removes the
+  original trigger in foreign projects.
+- Update the now-stale engine-CLI enumeration ("exposes ONLY
+  `index | search | related | status` … there is NO `lint` subcommand"): the engine
+  now exposes `index | search | related | status | lint`, and lint is engine-side.
+
+(Editing the user's private global instructions — done with explicit consent.)
 
 ### 5. Versioning + docs
 
@@ -125,9 +191,9 @@ user's private global instructions — done with explicit consent.)
   cache key is the version, so a bump resyncs the in-cache copy.
 - Update `docs/wiki/iwiki.md` via `iwiki:iwiki-ingest`; run `/iwiki-lint` (now the
   engine subcommand).
-- Update the project `CLAUDE.md` iwiki note: the engine now exposes
-  `index | search | related | status | lint` (the "NO lint subcommand" line is
-  obsolete).
+- The stale "NO lint subcommand" enumeration is corrected in §Design 4 (it lives
+  in the global isolated `CLAUDE.md`, not the project root `CLAUDE.md` — the latter
+  has no engine-subcommand enumeration, so no edit is needed there).
 
 ## Out of scope
 
