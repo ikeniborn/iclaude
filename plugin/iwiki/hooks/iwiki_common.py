@@ -39,13 +39,24 @@ SOURCE_EXTS = (".sh", ".py", ".js", ".ts", ".md")
 
 def cd_project() -> None:
     """chdir to the project root so relative wiki/git paths resolve. Plugin
-    hooks do not guarantee cwd == project dir."""
+    hooks do not guarantee cwd == project dir, and some SessionStart invocations
+    arrive with CLAUDE_PROJECT_DIR unset — fall back to the git toplevel of the
+    current cwd so git/wiki paths still resolve."""
     pd = os.environ.get("CLAUDE_PROJECT_DIR")
     if pd and os.path.isdir(pd):
         try:
             os.chdir(pd)
+            return
         except Exception:
             pass
+    try:
+        p = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                           capture_output=True, text=True, timeout=5)
+        root = p.stdout.strip()
+        if p.returncode == 0 and root and os.path.isdir(root):
+            os.chdir(root)
+    except Exception:
+        pass
 
 
 def resolve_uv() -> str | None:
@@ -62,6 +73,13 @@ def resolve_uv() -> str | None:
     return None
 
 
+def _cache_version_key(engine_path: str) -> tuple:
+    """Sort key from the <version> path segment of a plugin-cache engine dir
+    (.../cache/<market>/iwiki/<version>/engine). Numeric-aware so 0.10 > 0.9."""
+    ver = os.path.basename(os.path.dirname(engine_path))
+    return tuple(int(t) if t.isdigit() else -1 for t in ver.split("."))
+
+
 def engine_dir() -> str | None:
     """The iwiki engine project (has pyproject.toml). Prefers the plugin root
     (CLAUDE_PLUGIN_ROOT/engine), then an in-repo plugin, then the plugin cache.
@@ -73,8 +91,11 @@ def engine_dir() -> str | None:
     cands.append(os.path.join("plugin", "iwiki", "engine"))
     ccd = os.environ.get("CLAUDE_CONFIG_DIR")
     if ccd:
-        cands += glob.glob(os.path.join(ccd, "plugins", "cache", "*", "iwiki",
-                                        "*", "engine"))
+        cache = glob.glob(os.path.join(ccd, "plugins", "cache", "*", "iwiki",
+                                       "*", "engine"))
+        # Newest version first so a stale cached copy never shadows the current one.
+        cache.sort(key=_cache_version_key, reverse=True)
+        cands += cache
     for c in cands:
         if os.path.isfile(os.path.join(c, "pyproject.toml")):
             return c
@@ -213,6 +234,7 @@ def rel_to_project(path: str) -> str:
 # hook (PostToolUse) appends edits; the sync hook (Stop) reads it. Keeping it in
 # CLAUDE_CONFIG_DIR/.cache (not the repo) keeps it out of the project's git.
 _SESSION_DEFAULT = {
+    "session_id": "",    # owning session; baseline reset only on a NEW id (resume-safe)
     "head": "",          # baseline HEAD at session start
     "wip": [],           # pre-existing dirty documentable files → not the agent's
     "edits": [],         # documentable sources the agent edited this session (F)

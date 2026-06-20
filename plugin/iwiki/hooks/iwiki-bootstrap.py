@@ -37,21 +37,33 @@ def main() -> int:
     if os.environ.get("IWIKI_AUTO_BOOTSTRAP", "1") == "0":
         return 0
     try:
-        json.load(sys.stdin)  # consume payload; decision is filesystem-driven
+        payload = json.load(sys.stdin)
     except Exception:
-        pass
+        payload = {}
+    sid = str(payload.get("session_id") or "") if isinstance(payload, dict) else ""
     try:
         iw.cd_project()
-        # 1. Reset the session baseline (fresh work boundary).
-        iw.write_session({
-            "head": iw.git_head(),
-            "wip": iw.changed_sources(),
-            "edits": [],
-            "wiki_dirty": False,
-            "asked_sig": "",
-            "asked_wiki": "",
-            "count": 0,
-        })
+        # 1. Reset the session baseline — but ONLY for a genuinely new session.
+        # SessionStart can re-fire within one session (e.g. resume); the session
+        # id is stable across those re-fires. Re-resetting on every fire would
+        # clobber the Stop hook's dedup (asked_sig/count) and re-arm the nag every
+        # turn, so reset only when the id is new (or no state file yet). Never
+        # overwrite an existing baseline with an empty one when HEAD is unreadable.
+        prev = iw.read_session()
+        exists = os.path.exists(iw.session_path())
+        new_session = (not exists) or (sid != "" and sid != prev.get("session_id", ""))
+        head = iw.git_head()
+        if new_session and (head or not exists):
+            iw.write_session({
+                "session_id": sid,
+                "head": head,
+                "wip": iw.changed_sources(),
+                "edits": [],
+                "wiki_dirty": False,
+                "asked_sig": "",
+                "asked_wiki": "",
+                "count": 0,
+            })
         # 2. Bootstrap nudge.
         pages = iw.wiki_pages() if iw.wiki_present() else []
         if not pages:

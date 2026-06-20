@@ -17,9 +17,13 @@ Scan `docs/wiki/` and produce a health report. Make NO edits.
 3. **Stale** — run the engine `status` (from the current project root; the engine
    ships with this plugin, so it works in any project):
    ```bash
-   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
-   "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
-     --wiki-dir docs/wiki status
+   # CLAUDE_PLUGIN_ROOT is set for hooks but NOT in the Bash tool — fall back to
+   # the in-repo engine, then the newest cached one.
+   ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
+   [ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
+   [ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+   UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+   "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki status
    ```
    Cross-check against `docs/wiki/.iwiki/log.jsonl` to flag pages whose source
    changed after the last ingest (heuristic — list candidates, do not auto-fix).

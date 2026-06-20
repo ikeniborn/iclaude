@@ -36,7 +36,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import iwiki_common as iw  # type: ignore[import-not-found]  # noqa: E402
 
-MAX_ASK = 2          # re-ask this many times for an unchanged set, then yield
+# Re-ask this many times for an unchanged pending set, then yield so the stop is
+# never wedged. Override via IWIKI_SYNC_MAX_ASK (default 2; 0 = ask once, then
+# yield on the next stop). This only bounds re-asks for a *persisted* set — it
+# does not change the single ask emitted whenever the session state is reset.
+try:
+    MAX_ASK = max(0, int(os.environ.get("IWIKI_SYNC_MAX_ASK", "2")))
+except ValueError:
+    MAX_ASK = 2
 REINDEX_TIMEOUT = 90.0
 
 

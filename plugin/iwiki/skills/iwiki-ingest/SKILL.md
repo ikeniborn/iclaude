@@ -31,9 +31,13 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
 4. Refresh the index (run from the current project root):
    ```bash
-   UV="${CLAUDE_CONFIG_DIR}/../bin/uv"; [ -x "$UV" ] || UV="$(command -v uv)"
-   "$UV" run --project "${CLAUDE_PLUGIN_ROOT}/engine" python3 -m iwiki_engine \
-     --wiki-dir docs/wiki index
+   # Resolve the engine project. CLAUDE_PLUGIN_ROOT is set for hooks but NOT in
+   # the Bash tool, so fall back to the in-repo copy, then the newest cached one.
+   ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
+   [ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
+   [ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+   UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+   "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki index
    ```
    Expected: `indexed: N chunks (... reused, ... embedded), <bytes>`.
 5. Append an operation record to `docs/wiki/.iwiki/log.jsonl`:
