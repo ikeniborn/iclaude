@@ -1,3 +1,22 @@
+---
+date: 2026-06-21
+topic: check-reports-subdir-layout
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-21-check-reports-subdir-layout-design.md
+review:
+  plan_hash: e4cc837023793f4f
+  spec_hash: f468f072b9fc86fb
+  last_run: 2026-06-21
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings: []
+---
+
 # Split check-* Reports Into Subdirectories — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
