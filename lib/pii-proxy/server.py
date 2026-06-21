@@ -299,6 +299,28 @@ _presidio_lock = threading.Lock()
 
 log = logging.getLogger('pii-proxy')
 
+# --- Langfuse capture (observer) configuration --------------------------------
+# At normal runtime sys.path[0] is the real lib/pii-proxy dir (Python resolves the
+# executed script's symlink before setting it), so this import resolves. Guard it so
+# alternate load contexts (e.g. importlib.spec_from_file_location in the test suite)
+# degrade to capture-disabled instead of failing the whole module.
+try:
+    import langfuse_emitter as _langfuse  # sibling module (symlinked beside server.py)
+except ImportError:
+    _langfuse = None
+
+_LANGFUSE_CAPTURE = os.environ.get('USE_LANGFUSE_CAPTURE', 'false').lower() == 'true'
+_LANGFUSE_CONFIG = {
+    'host': os.environ.get('LANGFUSE_HOST', ''),
+    'public_key': os.environ.get('LANGFUSE_PUBLIC_KEY', ''),
+    'secret_key': os.environ.get('LANGFUSE_SECRET_KEY', ''),
+}
+_LANGFUSE_PROJECT = os.environ.get('ICLAUDE_PROJECT_ID', 'unknown') or 'unknown'
+# Disable capture (fail-soft) if the emitter is unavailable or the config is incomplete.
+if _LANGFUSE_CAPTURE and (_langfuse is None or not all(_LANGFUSE_CONFIG.values())):
+    log.warning('Langfuse capture enabled but emitter module or LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY unavailable — disabling')
+    _LANGFUSE_CAPTURE = False
+
 
 def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
     """Configure 'pii-proxy' logger directly (not root logger) for reliability."""
@@ -1006,6 +1028,9 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         """
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
+        _do_capture = _LANGFUSE_CAPTURE and '/v1/messages' in self.path and self.command == 'POST'
+        captured = bytearray() if _do_capture else None
+        _cap_streaming = False
         try:
             with _get_http_session().request(
                 method=self.command,
@@ -1022,6 +1047,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 # transfer-encoding / connection (hop-by-hop, not for client).
                 _skip = ('transfer-encoding', 'connection', 'content-encoding', 'content-length')
                 is_streaming = 'text/event-stream' in resp.headers.get('Content-Type', '')
+                _cap_streaming = is_streaming
 
                 if is_streaming:
                     # SSE: status + headers must go out before the first chunk. After
@@ -1035,6 +1061,8 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                     try:
                         for chunk in resp.iter_content(chunk_size=4096):
                             if chunk:
+                                if captured is not None and _langfuse is not None and len(captured) < _langfuse.MAX_CAPTURE_BYTES:
+                                    captured.extend(chunk)
                                 try:
                                     self.wfile.write(chunk)
                                     self.wfile.flush()
@@ -1049,6 +1077,8 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                     # no status line has been emitted yet, so the outer handler still
                     # sends a clean 502 instead of corrupting a started 200 response.
                     content = resp.content  # fully buffered (already decompressed by requests)
+                    if captured is not None and _langfuse is not None:
+                        captured.extend(content[:_langfuse.MAX_CAPTURE_BYTES])
                     self.send_response(resp.status_code)
                     for key, val in resp.headers.items():
                         if key.lower() not in _skip:
@@ -1056,6 +1086,28 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header('Content-Length', str(len(content)))
                     self.end_headers()
                     self.wfile.write(content)
+
+            # Tee the relayed response to the Langfuse observer. Runs only after the
+            # client response is fully written, and is wrapped so nothing here — including
+            # the inline _meta build (os.getcwd() can raise on a deleted cwd) — can reach
+            # the surrounding except → 502 on an already-completed response. capture()
+            # itself is non-raising and async (daemon thread).
+            if _do_capture and captured and _langfuse is not None:
+                try:
+                    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+                    _sid = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
+                    _meta = {
+                        'session_id': _sid,
+                        'project': _LANGFUSE_PROJECT,
+                        'pwd': os.getcwd(),
+                        'upstream_masking_level': MASKING_LEVEL,
+                    }
+                    _langfuse.capture(
+                        bytes(body), bytes(captured), _cap_streaming, _meta,
+                        scrub=lambda t: regex_mask(t)[0], config=_LANGFUSE_CONFIG,
+                    )
+                except Exception as _cap_exc:  # noqa: BLE001 — capture must never affect the relay
+                    log.warning('Langfuse capture setup failed: %s', _cap_exc)
 
         except (_ReqConnError, _ReqTimeout) as exc:
             # Network errors: proxy unreachable, DNS failure, connection refused, timeout
