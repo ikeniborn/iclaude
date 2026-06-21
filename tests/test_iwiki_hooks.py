@@ -27,3 +27,34 @@ def test_is_documentable_excludes_instruction_and_meta_docs():
     # Pre-existing prefix excludes still hold.
     assert iw.is_documentable("docs/wiki/x.md") is False
     assert iw.is_documentable("commands/y.md") is False
+
+
+def test_decide_nag_bounds_stable_sig():
+    # Fresh session, stable sig: "ask" exactly MAX_ASK times (the first ask is
+    # counted), then "yield" on every subsequent call — and it never resets.
+    sess = {}
+    actions = []
+    for _ in range(6):
+        action, sess = iw.decide_nag(sess, "deadbeef", 2)
+        actions.append(action)
+    assert actions == ["ask", "ask", "yield", "yield", "yield", "yield"]
+
+
+def test_decide_nag_max_ask_zero():
+    # MAX_ASK=0 → ask once, then yield forever.
+    sess = {}
+    a1, sess = iw.decide_nag(sess, "x", 0)
+    a2, sess = iw.decide_nag(sess, "x", 0)
+    a3, sess = iw.decide_nag(sess, "x", 0)
+    assert [a1, a2, a3] == ["ask", "yield", "yield"]
+
+
+def test_decide_nag_resets_on_changed_sig():
+    # A different sig resets count to 1 and asks again.
+    sess = {}
+    _, sess = iw.decide_nag(sess, "A", 2)
+    _, sess = iw.decide_nag(sess, "A", 2)
+    action, sess = iw.decide_nag(sess, "B", 2)
+    assert action == "ask"
+    assert sess["asked_sig"] == "B"
+    assert sess["count"] == 1

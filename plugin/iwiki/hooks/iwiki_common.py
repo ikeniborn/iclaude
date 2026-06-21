@@ -289,3 +289,19 @@ def write_session(sess: dict) -> None:
 
 def signature(paths: list[str]) -> str:
     return hashlib.sha256("\n".join(paths).encode("utf-8")).hexdigest()[:16]
+
+
+def decide_nag(sess: dict, sig: str, max_ask: int) -> tuple[str, dict]:
+    """Decide whether the Stop nag should ask again or yield for the pending-set
+    signature `sig`. Returns ("ask" | "yield", sess) with asked_sig/count updated.
+    A stable sig is asked at most max_ask times, then yields — never wedging the
+    stop. No wiki-state input: the bound is purely the ask count, so wiki/index
+    churn between asks can no longer reset it."""
+    if sig == sess.get("asked_sig"):
+        if sess.get("count", 0) >= max_ask:
+            return ("yield", sess)
+        sess["count"] = sess.get("count", 0) + 1
+    else:
+        sess["asked_sig"] = sig
+        sess["count"] = 1
+    return ("ask", sess)
