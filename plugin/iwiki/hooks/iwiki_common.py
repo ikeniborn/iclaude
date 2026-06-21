@@ -199,24 +199,6 @@ def wiki_pages() -> list[str]:
     return out
 
 
-def wiki_sig() -> str:
-    """A cheap fingerprint of the wiki's current state (page mtimes + index
-    mtime). Changes whenever any page is written or the index is refreshed — the
-    sync hook uses a shift here to detect that an ingest happened between asks."""
-    parts: list[str] = []
-    for p in sorted(wiki_pages()):
-        try:
-            parts.append(f"{p}:{int(os.path.getmtime(p))}")
-        except Exception:
-            pass
-    if index_exists():
-        try:
-            parts.append(f"idx:{int(os.path.getmtime(INDEX_REL))}")
-        except Exception:
-            pass
-    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
-
-
 def has_documentable_source() -> bool:
     """True if the project has any documentable source file (so a bootstrap nudge
     is warranted). Uses git's tracked set, falling back to a shallow glob."""
@@ -252,7 +234,6 @@ _SESSION_DEFAULT = {
     "edits": [],         # documentable sources the agent edited this session (F)
     "wiki_dirty": False, # a wiki page changed → needs one batched reindex at Stop
     "asked_sig": "",     # signature of the last nagged pending set (C dedup)
-    "asked_wiki": "",    # wiki_sig at the last nag (C: detect ingest between asks)
     "count": 0,          # consecutive nags for the same set (C bound vs wedge)
 }
 

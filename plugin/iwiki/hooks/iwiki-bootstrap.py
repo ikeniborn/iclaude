@@ -61,7 +61,6 @@ def main() -> int:
                 "edits": [],
                 "wiki_dirty": False,
                 "asked_sig": "",
-                "asked_wiki": "",
                 "count": 0,
             })
         # 2. Bootstrap nudge.
