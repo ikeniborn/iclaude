@@ -87,6 +87,7 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/agents/**
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
 !.nvm-isolated/.claude-isolated/settings.json
+!.nvm-isolated/.claude-isolated/langfuse_emitter.py
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**
 !.nvm-isolated/.claude-isolated/commands/
