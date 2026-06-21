@@ -142,7 +142,7 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
 
 Параметры артефакта:
-- Выход: `docs/superpowers/reports/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Выход: `docs/superpowers/reports/intents/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Создай каталог `docs/superpowers/reports/intents/`, если его нет.
 - Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 

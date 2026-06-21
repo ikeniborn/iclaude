@@ -139,7 +139,7 @@
 3. **Результаты проверки** — по каждой из 5 фаз (structure / coverage / dependencies / verifiability / consistency) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open); финальный вердикт; chain (`intent → spec → plan`, если `intent_path` известен).
 
 Параметры артефакта:
-- Выход: `docs/superpowers/reports/<basename плана без .md>-check.html` (например `2026-06-17-foo-plan-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Выход: `docs/superpowers/reports/plans/<basename плана без .md>-check.html` (например `2026-06-17-foo-plan-check.html`). Создай каталог `docs/superpowers/reports/plans/`, если его нет.
 - Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 

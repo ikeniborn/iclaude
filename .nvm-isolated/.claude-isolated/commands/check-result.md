@@ -95,7 +95,7 @@ git diff HEAD
 2. **Результаты проверки** — покрытие шагов плана (DONE / PARTIAL / MISSING счётчики); таблица findings (`severity`, шаг, Plan / Diff / Fix options); intent / spec coverage (Desired Outcomes N/M, requirements N/M); excess changes; сводка (CRITICAL / WARNING / INFO); вердикт; chain (`intent → spec → plan`).
 
 Параметры артефакта:
-- Выход: `docs/superpowers/reports/<basename плана без .md>-result-check.html` (например `2026-06-17-foo-plan-result-check.html`). Создай каталог `docs/superpowers/reports/`, если его нет.
+- Выход: `docs/superpowers/reports/results/<basename плана без .md>-result-check.html` (например `2026-06-17-foo-plan-result-check.html`). Создай каталог `docs/superpowers/reports/results/`, если его нет.
 - Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 
