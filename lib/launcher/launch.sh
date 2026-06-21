@@ -46,6 +46,31 @@ _microvm_mirror_deletions() {
 # Used by the tar guest→host syncs to compute deletions.
 _MICROVM_GUEST_SCAN_CMD='cd /workspace 2>/dev/null && find . \( -name .git -o -name .nvm-isolated -o -name .claude_config -o -name .claude_proxy_credentials -o -name .iclaude-guest-env.sh -o -name .iclaude-ssh -o -name .claude-guest -o -name lost+found \) -prune -o -type f -print 2>/dev/null'
 
+#######################################
+# Derive a Langfuse-safe project id from a directory.
+# Uses the git toplevel basename (repo name) when $1 is inside a git work tree;
+# otherwise the directory basename. Sanitizes to a tag-safe slug: lowercased,
+# every run of chars outside [a-z0-9._-] collapsed to a single '-', leading and
+# trailing '-' trimmed. Falls back to "unknown" if the result is empty.
+# Arguments:
+#   $1 - directory (defaults to $PWD)
+# Outputs:
+#   slug on stdout
+#######################################
+_derive_project_id() {
+    local dir="${1:-$PWD}" top name
+    top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$top" ]]; then
+        name=$(basename "$top")
+    else
+        name=$(basename "$dir")
+    fi
+    name=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+        | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')
+    [[ -n "$name" ]] || name="unknown"
+    printf '%s' "$name"
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
