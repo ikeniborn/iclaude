@@ -59,6 +59,10 @@ review:
         indentation (8 spaces) before the `except`, and rely on capture()'s
         no-raise contract.
       verdict: fixed
+result_check:
+  verdict: OK
+  plan_hash: 692e951ceecc1011
+  last_run: 2026-06-21
 chain:
   intent: null
   spec: docs/superpowers/specs/2026-06-21-langfuse-nonrouter-capture-design.md
