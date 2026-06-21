@@ -72,26 +72,60 @@ _derive_project_id() {
 }
 
 #######################################
-# Export ICLAUDE_PROJECT_ID for the CCR process (router mode only).
-# The CCR `x-project-id` transformer plugin (.claude-code-router/plugins/x-project-id.js)
-# reads ICLAUDE_PROJECT_ID from its process env and injects it as the "X-Project-Id"
-# header on the upstream request; LiteLLM's project_tagger then emits the Langfuse tag
-# project:<id>. (CCR 2.0.0 DROPS provider-level `headers` from router.json at
-# registerProvider, so the transformer is the only working injection path — see
-# docs/wiki/router.md.) This MUST run before any CCR fork/exec (start_ccr_server or
-# `exec ccr code`) so the daemon inherits the value. An explicit value already present
-# in the environment (e.g. exported from .claude_config) is kept.
-# NOTE: when unset, the plugin emits "unknown" (its own `|| "unknown"` fallback), so
-# router mode always exports a concrete value here to make the tag the real repo name.
+# Export ICLAUDE_PROJECT_ID for the CCR process and/or the Langfuse capture observer.
+# Runs in router mode OR Langfuse-capture mode. The id is the same tag-safe slug both
+# the CCR x-project-id transformer and the PII-proxy Langfuse emitter use as project:<id>.
+# In router mode the CCR `x-project-id` transformer plugin
+# (.claude-code-router/plugins/x-project-id.js) reads ICLAUDE_PROJECT_ID from its process
+# env and injects it as the "X-Project-Id" header on the upstream request; LiteLLM's
+# project_tagger then emits the Langfuse tag project:<id>. (CCR 2.0.0 DROPS provider-level
+# `headers` from router.json at registerProvider, so the transformer is the only working
+# injection path — see docs/wiki/router.md.) In capture mode the PII proxy's Langfuse
+# emitter reads the same value. This MUST run before any CCR/PII-proxy fork/exec so the
+# child inherits the value. An explicit value already present in the environment (e.g.
+# exported from .claude_config) is kept.
+# NOTE: when unset, the router plugin emits "unknown" (its own `|| "unknown"` fallback),
+# so router/capture mode always exports a concrete value here to make the tag the real
+# repo name.
 # Arguments:
-#   $1 - use_router ("true" activates; any other value is a no-op)
+#   $1 - use_router           ("true" activates)
+#   $2 - use_langfuse_capture ("true" activates; optional, defaults to "false")
 #######################################
 _init_project_id() {
-    [[ "${1:-}" == "true" ]] || return 0
+    local use_router="${1:-false}" use_capture="${2:-false}"
+    [[ "$use_router" == "true" || "$use_capture" == "true" ]] || return 0
     if [[ -z "${ICLAUDE_PROJECT_ID:-}" ]]; then
         ICLAUDE_PROJECT_ID="$(_derive_project_id "$PWD")"
     fi
     export ICLAUDE_PROJECT_ID
+}
+
+#######################################
+# Decide whether to start the PII proxy: it serves either masking, Langfuse capture, or both.
+# Returns 0 (start) if either is requested, 1 otherwise.
+# Arguments:
+#   $1 - use_pii_proxy        ("true" if masking requested)
+#   $2 - use_langfuse_capture ("true" if capture requested)
+#######################################
+_should_start_proxy() {
+    [[ "${1:-false}" == "true" || "${2:-false}" == "true" ]]
+}
+
+#######################################
+# Resolve the masking level to FORCE for capture-only sessions. When the proxy is started
+# only for Langfuse capture (no --pii-proxy) and no explicit PII_PROXY_MASKING_LEVEL is set,
+# the proxy runs purely as the auth + capture hop with masking 'off'. Otherwise echo nothing
+# (leave PII_PROXY_MASKING_LEVEL untouched — the proxy applies its own 'standard' default).
+# Arguments:
+#   $1 - use_pii_proxy   ("true" if masking explicitly requested)
+#   $2 - current PII_PROXY_MASKING_LEVEL value (may be empty)
+# Outputs:
+#   "off" to force, or empty string to leave untouched
+#######################################
+_proxy_masking_default() {
+    if [[ "${1:-false}" != "true" && -z "${2:-}" ]]; then
+        printf 'off'
+    fi
 }
 
 launch_claude() {
@@ -115,10 +149,16 @@ launch_claude() {
         use_router=true
     fi
 
-    # Per-project Langfuse attribution: export ICLAUDE_PROJECT_ID before any CCR
-    # fork/exec below (start_ccr_server / `exec ccr code`) so the x-project-id
-    # transformer plugin can inject it as the X-Project-Id header. No-op when router off.
-    _init_project_id "$use_router"
+    # Langfuse non-router capture: a config-only toggle (.claude_config). Skipped in
+    # router mode (LiteLLM already emits to Langfuse there — avoids double traces).
+    local use_langfuse_capture=false
+    if [[ "${USE_LANGFUSE_CAPTURE:-false}" == "true" ]] && [[ "$use_router" != "true" ]]; then
+        use_langfuse_capture=true
+    fi
+
+    # Per-project attribution (router and/or capture): export ICLAUDE_PROJECT_ID before
+    # any CCR or PII-proxy fork so both observers can tag traces project:<repo>.
+    _init_project_id "$use_router" "$use_langfuse_capture"
 
     # Disable x-anthropic-billing-header when routing to third-party backends.
     # The billing hash (cch=) changes every request and invalidates KV cache on
@@ -152,16 +192,24 @@ launch_claude() {
         fi
     fi
 
-    # PII proxy: intercept and mask PII/secrets in Anthropic API traffic
+    # PII proxy: intercept and mask PII/secrets in Anthropic API traffic.
+    # Also started for Langfuse non-router capture, which reuses the proxy as the
+    # auth + capture hop (with masking forced off when masking was not requested).
     local use_pii_proxy=false
-    if [[ "${USE_PII_PROXY_FLAG:-false}" == "true" ]]; then
+    if _should_start_proxy "${USE_PII_PROXY_FLAG:-false}" "$use_langfuse_capture"; then
         if [[ "$skip_isolated" == "true" ]]; then
             # System mode uses host Node.js; PII proxy requires isolated venv — abort (fail-secure)
             print_error "PII proxy is not supported in --system mode (isolated environment only)"
-            print_info "Remove --pii-proxy or omit --system to use PII masking"
+            print_info "Remove --pii-proxy / USE_LANGFUSE_CAPTURE or omit --system to use PII masking or Langfuse capture"
             exit 1
         elif type detect_pii_proxy &>/dev/null && detect_pii_proxy "$skip_isolated"; then
             use_pii_proxy=true
+            # Capture-only (masking not explicitly requested): run the proxy purely as the
+            # auth + Langfuse-capture hop with masking 'off'. Uses the unit-tested helper.
+            # Set BEFORE any start_pii_proxy_server fork below so the proxy inherits it.
+            local _mdef
+            _mdef=$(_proxy_masking_default "${USE_PII_PROXY_FLAG:-false}" "${PII_PROXY_MASKING_LEVEL:-}")
+            [[ -n "$_mdef" ]] && export PII_PROXY_MASKING_LEVEL="$_mdef"
             # Combined mode: PII proxy + CCR router can now work together.
             # Chain: claude → PII proxy(:9000) → CCR(:3456) → providers
             # When both are active, CCR is started as a background daemon (not via exec ccr code).
