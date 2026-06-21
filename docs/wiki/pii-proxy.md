@@ -6,6 +6,8 @@ A local HTTP proxy (`lib/pii-proxy/server.py`) that intercepts `POST /v1/message
 
 The server runs as a `ThreadingHTTPServer` bound to `127.0.0.1` on a dynamic port (range `PII_PROXY_PORT_MIN`–`PII_PROXY_PORT_MAX`, default 20000–40000). Claude Code's `ANTHROPIC_BASE_URL` is redirected to the proxy's local address. The proxy forwards the masked request to `ANTHROPIC_UPSTREAM_URL`, which defaults to the Anthropic API but can be set to a CCR instance for combined routing. See [[router#Combined Mode: PII Proxy + Router]] for that topology.
 
+When `USE_LANGFUSE_CAPTURE` is set, the proxy also acts as a passive capture hop: it tees each relayed `/v1/messages` response and emits a secrets-scrubbed trace to self-hosted Langfuse. See [[langfuse-capture]].
+
 A supervisor process forks a worker child to serve requests. If the worker dies (OOM, crash, signal), the supervisor re-forks it on the same port so the running Claude Code session never encounters a `ConnectionRefused`. The supervisor gives up after more than 5 restarts within 10 seconds. This behavior is controlled by `PII_PROXY_SUPERVISE` (default `true`).
 
 Per-session port files are written to `PII_PROXY_LOG_DIR` as `pii-proxy-<ICLAUDE_SESSION_ID>.port`. Multiple concurrent sessions each run their own proxy instance on distinct ports.

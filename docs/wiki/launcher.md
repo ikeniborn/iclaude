@@ -19,7 +19,7 @@ Three runtime modes are evaluated before binary detection:
 
 - **Router** (`USE_ROUTER_FLAG=true`): calls `detect_router()`, then either `exec ccr code "$@"` (solo) or starts CCR as a background daemon via `start_ccr_server()` (combined mode with PII proxy).
 - **microVM** (`USE_MICRO_VM_FLAG=true`): calls `detect_microvm()`, runs workspace sync (rsync or tar-over-SSH), starts an SSH ControlMaster, and runs claude inside the guest as `iclaude@<guest_ip>` via `ssh`. Flags `--chrome` and `--ide` are stripped from the forwarded argument list because those subsystems run on the host and cannot reach the guest network.
-- **PII proxy** (`USE_PII_PROXY_FLAG=true`): calls `start_pii_proxy_server()`, redirects `ANTHROPIC_BASE_URL` to `http://127.0.0.1:<port>`, and registers a cleanup trap.
+- **PII proxy** (`USE_PII_PROXY_FLAG=true`, or `USE_LANGFUSE_CAPTURE=true` for capture-only): `_should_start_proxy` starts `start_pii_proxy_server()` when masking OR Langfuse capture is requested, redirects `ANTHROPIC_BASE_URL` to `http://127.0.0.1:<port>`, and registers a cleanup trap. For capture-only sessions `_proxy_masking_default` forces `PII_PROXY_MASKING_LEVEL=off` so the proxy runs purely as the auth + capture hop. See [[langfuse-capture#Activation]].
 
 None of these modes are mutually exclusive; `launch_claude()` handles all combinations including microVM + PII + router (three-way chain).
 
@@ -29,7 +29,7 @@ When router mode or `--no-attribution-header` (`NO_ATTRIBUTION_HEADER=true`) is 
 
 ## Per-Project Tagging
 
-In router mode, `launch_claude()` calls `_init_project_id "$use_router"` right after router detection — before any CCR fork/exec — to export `ICLAUDE_PROJECT_ID`. The value is the git toplevel basename (or `$PWD` basename) sanitized to a tag-safe slug by `_derive_project_id()`; an explicit value already in the environment is preserved. CCR's `x-project-id` transformer reads this env var and forwards it as the `X-Project-Id` header, which Langfuse records as `project:<repo-name>`. See [[router#Per-Project Tagging (X-Project-Id → Langfuse)]] for the full chain.
+In router mode OR Langfuse-capture mode, `launch_claude()` calls `_init_project_id "$use_router" "$use_langfuse_capture"` before any CCR or PII-proxy fork — to export `ICLAUDE_PROJECT_ID`. The value is the git toplevel basename (or `$PWD` basename) sanitized to a tag-safe slug by `_derive_project_id()`; an explicit value already in the environment is preserved. CCR's `x-project-id` transformer (router) forwards it as the `X-Project-Id` header, and the PII-proxy Langfuse emitter (capture) uses it directly; both record `project:<repo-name>`. See [[router#Per-Project Tagging (X-Project-Id → Langfuse)]] and [[langfuse-capture]] for the two chains.
 
 ## Binary Detection
 
