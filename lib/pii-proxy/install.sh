@@ -355,6 +355,17 @@ _pii_proxy_install_server() {
     ln -sf "$src_script" "$PII_PROXY_SERVER_SCRIPT"
     chmod 700 "$src_script"
     print_success "Server script: $PII_PROXY_SERVER_SCRIPT → $src_script"
+
+    # Symlink the Langfuse emitter alongside the server. server.py imports it as a
+    # sibling module at runtime (sys.path[0] resolves to the real lib/pii-proxy dir,
+    # since Python resolves the executed script's symlink before setting sys.path).
+    local src_emitter dst_emitter
+    src_emitter="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/langfuse_emitter.py"
+    dst_emitter="$(dirname "$PII_PROXY_SERVER_SCRIPT")/langfuse_emitter.py"
+    if [[ -f "$src_emitter" ]]; then
+        ln -sf "$src_emitter" "$dst_emitter"
+        print_success "Langfuse emitter: $dst_emitter → $src_emitter"
+    fi
 }
 
 #######################################

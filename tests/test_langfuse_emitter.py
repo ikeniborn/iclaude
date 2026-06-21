@@ -2,8 +2,9 @@ import json
 import sys
 from pathlib import Path
 
-# Import the emitter from the isolated config dir.
-EMITTER_DIR = Path(__file__).resolve().parents[1] / ".nvm-isolated" / ".claude-isolated"
+# Import the emitter from its canonical source dir (lib/pii-proxy/), which is where
+# the proxy resolves it at runtime (the isolated-dir copy is an install-time symlink).
+EMITTER_DIR = Path(__file__).resolve().parents[1] / "lib" / "pii-proxy"
 sys.path.insert(0, str(EMITTER_DIR))
 
 import langfuse_emitter as le  # noqa: E402
