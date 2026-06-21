@@ -124,8 +124,12 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Prevent accidental commit of runtime router config
 .claude-code-router/
-# EXCEPTION: Track custom transformer plugins shipped with the repo
+# EXCEPTION: track ONLY the custom transformer plugins shipped with the repo.
+# Re-include the dir for traversal, re-ignore its runtime contents (config.json,
+# *.pid), then re-include the plugins/*.js — so config.json and the PID file stay
+# ignored while x-project-id.js / ollama-reasoning.js are tracked.
 !.nvm-isolated/.claude-isolated/.claude-code-router/
+.nvm-isolated/.claude-isolated/.claude-code-router/*
 !.nvm-isolated/.claude-isolated/.claude-code-router/plugins/
 !.nvm-isolated/.claude-isolated/.claude-code-router/plugins/*.js
 
