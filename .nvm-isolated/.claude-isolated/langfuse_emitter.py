@@ -195,3 +195,66 @@ def build_payload(req: dict, resp: dict, meta: dict, scrub, start_iso: str, end_
             },
         ]
     }
+
+
+import base64
+import threading
+from datetime import datetime, timezone
+
+import requests as _requests
+
+POST_TIMEOUT = (5, 5)  # (connect, read) seconds — bounded, no retry storm
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def post_batch(payload: dict, host: str, public_key: str, secret_key: str) -> bool:
+    """POST the ingestion batch. Returns True on 2xx/207, False on any error. Never raises."""
+    try:
+        token = base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
+        resp = _requests.post(
+            host.rstrip("/") + "/api/public/ingestion",
+            data=json.dumps(payload).encode(),
+            headers={"Authorization": f"Basic {token}", "Content-Type": "application/json"},
+            timeout=POST_TIMEOUT,
+        )
+        if 200 <= resp.status_code < 300:
+            return True
+        log.warning("Langfuse ingestion non-2xx: %s", resp.status_code)
+        return False
+    except Exception as exc:  # noqa: BLE001 — fail-soft by design
+        log.warning("Langfuse ingestion failed: %s", exc)
+        return False
+
+
+def _emit(req_bytes, resp_bytes, is_streaming, meta, scrub, config, start_iso):
+    try:
+        req = parse_request(req_bytes)
+        resp = parse_response(resp_bytes, is_streaming)
+        payload = build_payload(req, resp, meta, scrub, start_iso, _now_iso())
+        post_batch(payload, config["host"], config["public_key"], config["secret_key"])
+    except Exception as exc:  # noqa: BLE001 — capture must never break the proxy
+        log.warning("Langfuse capture error: %s", exc)
+
+
+def capture(req_bytes, resp_bytes, is_streaming, meta, scrub, config):
+    """Spawn a daemon thread to parse, scrub, build and POST. Returns the thread, or None
+    if the thread could not be spawned (e.g. OS thread exhaustion).
+
+    Non-blocking and fail-soft: any error — including spawn failure in the caller thread —
+    is swallowed; the proxied request is never affected.
+    """
+    try:
+        start_iso = _now_iso()
+        t = threading.Thread(
+            target=_emit,
+            args=(req_bytes, resp_bytes, is_streaming, meta, scrub, config, start_iso),
+            daemon=True,
+        )
+        t.start()
+        return t
+    except Exception as exc:  # noqa: BLE001 — fail-soft by design (never break the proxy)
+        log.warning("Langfuse capture spawn failed: %s", exc)
+        return None

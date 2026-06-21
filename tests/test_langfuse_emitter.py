@@ -168,3 +168,71 @@ def test_build_payload_deep_scrubs_tool_use_result_and_system_list():
     assert tu["input"]["command"] == "echo [REDACTED]"
     tr = gen["input"]["messages"][1]["content"][0]
     assert tr["content"][0]["text"] == "out [REDACTED]"
+
+
+def test_post_batch_sends_basic_auth_and_body(monkeypatch):
+    captured = {}
+
+    class _Resp:
+        status_code = 207
+
+        def __init__(self):
+            self.text = "ok"
+
+    def fake_post(url, data=None, headers=None, timeout=None):
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["data"] = data
+        return _Resp()
+
+    monkeypatch.setattr(le._requests, "post", fake_post)
+    ok = le.post_batch({"batch": []}, host="https://lf.example",
+                       public_key="pk", secret_key="sk")
+    assert ok is True
+    assert captured["url"] == "https://lf.example/api/public/ingestion"
+    # base64("pk:sk") == "cGs6c2s="
+    assert captured["headers"]["Authorization"] == "Basic cGs6c2s="
+    assert captured["headers"]["Content-Type"] == "application/json"
+
+
+def test_post_batch_failsoft_on_error(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("langfuse down")
+
+    monkeypatch.setattr(le._requests, "post", boom)
+    # Must NOT raise — returns False.
+    assert le.post_batch({"batch": []}, host="https://lf.example",
+                         public_key="pk", secret_key="sk") is False
+
+
+def test_capture_is_nonblocking_and_swallows_errors(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(le._requests, "post", boom)
+    req_bytes = b'{"model":"m","messages":[{"role":"user","content":"hi"}]}'
+    resp_bytes = (b'event: message_delta\n'
+                  b'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},'
+                  b'"usage":{"output_tokens":1}}\n\n')
+    # Should return immediately and never raise even though POST raises in the thread.
+    t = le.capture(req_bytes, resp_bytes, is_streaming=True,
+                   meta={"session_id": "default", "project": "p", "pwd": "/x",
+                         "upstream_masking_level": "off"},
+                   scrub=lambda s: s,
+                   config={"host": "https://lf.example", "public_key": "pk", "secret_key": "sk"})
+    t.join(timeout=5)
+    assert not t.is_alive()
+
+
+def test_capture_failsoft_when_thread_start_raises(monkeypatch):
+    def boom_start(self):
+        raise RuntimeError("can't start new thread")
+
+    monkeypatch.setattr(le.threading.Thread, "start", boom_start)
+    out = le.capture(b'{"model":"m","messages":[]}', b'', is_streaming=True,
+                     meta={"session_id": "default", "project": "p", "pwd": "/x",
+                           "upstream_masking_level": "off"},
+                     scrub=lambda s: s,
+                     config={"host": "h", "public_key": "pk", "secret_key": "sk"})
+    # Spawn failure in the caller thread must be swallowed, returning None — never raising.
+    assert out is None
