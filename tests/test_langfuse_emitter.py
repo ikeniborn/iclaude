@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -80,3 +81,90 @@ def test_parse_response_json_failsoft_on_malformed():
     r2 = le.parse_response(b"[]", is_streaming=False)
     assert r2["output"] == ""
     assert r2["thinking"] == ""
+
+
+def _fake_scrub(text):
+    # Stand-in for regex_mask(t)[0]: replace a fake secret marker.
+    return text.replace("SECRET123", "[REDACTED]")
+
+
+def test_build_payload_scrubs_both_input_and_output():
+    req = {"model": "m", "system": "sys SECRET123",
+           "messages": [{"role": "user", "content": "key=SECRET123"}], "max_tokens": 8}
+    resp = {"output": "leaked SECRET123 here", "thinking": "private SECRET123 note", "model": "m",
+            "input_tokens": 4, "output_tokens": 6,
+            "cache_creation_input_tokens": 1, "cache_read_input_tokens": 2,
+            "stop_reason": "end_turn", "truncated": False}
+    meta = {"session_id": "abcdef012345", "project": "myrepo", "pwd": "/x",
+            "upstream_masking_level": "off"}
+    payload = le.build_payload(req, resp, meta, scrub=_fake_scrub,
+                               start_iso="2026-06-21T00:00:00Z", end_iso="2026-06-21T00:00:01Z")
+    blob = json.dumps(payload)
+    assert "SECRET123" not in blob          # input + output + thinking all scrubbed
+    assert "[REDACTED]" in blob
+
+    batch = payload["batch"]
+    assert [e["type"] for e in batch] == ["trace-create", "generation-create"]
+    trace = batch[0]["body"]
+    gen = batch[1]["body"]
+    assert trace["sessionId"] == "abcdef012345"
+    assert trace["tags"] == ["project:myrepo"]
+    assert gen["traceId"] == trace["id"]
+    assert gen["usage"] == {"input": 4, "output": 6, "total": 10}
+    assert gen["metadata"]["stop_reason"] == "end_turn"
+    assert gen["metadata"]["cache_creation_input_tokens"] == 1
+    assert gen["metadata"]["thinking"] == "private [REDACTED] note"   # thinking scrubbed → metadata
+    assert gen["model"] == "m"
+
+
+def test_build_payload_handles_missing_session_and_project():
+    req = {"model": "m", "system": None, "messages": [], "max_tokens": None}
+    resp = {"output": "ok", "model": "m", "input_tokens": 1, "output_tokens": 1,
+            "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0,
+            "stop_reason": "end_turn", "truncated": False}
+    meta = {"session_id": "default", "project": "unknown", "pwd": "/x",
+            "upstream_masking_level": "standard"}
+    payload = le.build_payload(req, resp, meta, scrub=lambda t: t,
+                               start_iso="2026-06-21T00:00:00Z", end_iso="2026-06-21T00:00:01Z")
+    assert payload["batch"][0]["body"]["tags"] == ["project:unknown"]
+    assert payload["batch"][0]["body"]["sessionId"] == "default"
+
+
+def test_build_payload_deep_scrubs_tool_use_result_and_system_list():
+    req = {
+        "model": "m",
+        "system": [{"type": "text", "text": "sys SECRET123",
+                    "cache_control": {"type": "ephemeral"}}],
+        "messages": [
+            {"role": "assistant", "content": [
+                {"type": "tool_use", "id": "t1", "name": "bash",
+                 "input": {"command": "echo SECRET123"}},
+            ]},
+            {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "t1",
+                 "content": [{"type": "text", "text": "out SECRET123"}]},
+            ]},
+        ],
+        "max_tokens": 8,
+    }
+    resp = {"output": "ok", "thinking": "", "model": "m",
+            "input_tokens": 1, "output_tokens": 1,
+            "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0,
+            "stop_reason": "end_turn", "truncated": False}
+    meta = {"session_id": "default", "project": "p", "pwd": "/x",
+            "upstream_masking_level": "off"}
+    payload = le.build_payload(req, resp, meta, scrub=_fake_scrub,
+                              start_iso="a", end_iso="b")
+    blob = json.dumps(payload)
+    assert "SECRET123" not in blob   # system-list, tool_use.input, tool_result.content all scrubbed
+    # structure + non-string fields preserved
+    gen = payload["batch"][1]["body"]
+    sys_block = gen["input"]["system"][0]
+    assert sys_block["type"] == "text"
+    assert sys_block["cache_control"] == {"type": "ephemeral"}
+    tu = gen["input"]["messages"][0]["content"][0]
+    assert tu["type"] == "tool_use"
+    assert tu["name"] == "bash"
+    assert tu["input"]["command"] == "echo [REDACTED]"
+    tr = gen["input"]["messages"][1]["content"][0]
+    assert tr["content"][0]["text"] == "out [REDACTED]"

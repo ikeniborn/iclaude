@@ -115,3 +115,83 @@ def parse_response(raw: bytes, is_streaming: bool) -> dict:
     parsed = _parse_sse(raw) if is_streaming else _parse_json(raw)
     parsed["truncated"] = truncated
     return parsed
+
+
+import uuid
+
+
+def _deep_scrub(obj, scrub):
+    """Recursively secrets-scrub every string *value* in a nested structure.
+
+    Walks dicts/lists and applies `scrub` to each string; dict keys are left intact
+    (they are structural). This guarantees credential patterns never reach Langfuse
+    regardless of the Anthropic content shape — string content, text blocks,
+    tool_use.input, nested tool_result.content, or system-as-list with cache_control.
+    """
+    if isinstance(obj, str):
+        return scrub(obj)
+    if isinstance(obj, list):
+        return [_deep_scrub(x, scrub) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _deep_scrub(v, scrub) for k, v in obj.items()}
+    return obj
+
+
+def build_payload(req: dict, resp: dict, meta: dict, scrub, start_iso: str, end_iso: str) -> dict:
+    """Build the Langfuse /api/public/ingestion batch (trace-create + generation-create).
+
+    `scrub` is a callable str->str (the proxy passes regex_mask(t)[0]); it is applied to
+    BOTH the request (system + messages) and the completion output — always, regardless of
+    upstream masking — so Langfuse never stores credential patterns.
+    """
+    trace_id = str(uuid.uuid4())
+    gen_id = str(uuid.uuid4())
+    scrubbed_system = _deep_scrub(req.get("system"), scrub)
+    scrubbed_messages = _deep_scrub(req.get("messages", []), scrub)
+    scrubbed_output = scrub(resp.get("output", "") or "")
+    scrubbed_thinking = scrub(resp.get("thinking", "") or "")
+    in_tok = resp.get("input_tokens", 0) or 0
+    out_tok = resp.get("output_tokens", 0) or 0
+    return {
+        "batch": [
+            {
+                "id": str(uuid.uuid4()),
+                "type": "trace-create",
+                "timestamp": start_iso,
+                "body": {
+                    "id": trace_id,
+                    "name": "claude-code",
+                    "sessionId": meta.get("session_id", "default"),
+                    "tags": [f"project:{meta.get('project', 'unknown')}"],
+                    "metadata": {
+                        "pwd": meta.get("pwd"),
+                        "upstream_masking_level": meta.get("upstream_masking_level"),
+                        "langfuse_scrubbed": True,
+                    },
+                },
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "type": "generation-create",
+                "timestamp": end_iso,
+                "body": {
+                    "id": gen_id,
+                    "traceId": trace_id,
+                    "name": "messages",
+                    "model": resp.get("model") or req.get("model"),
+                    "input": {"system": scrubbed_system, "messages": scrubbed_messages},
+                    "output": scrubbed_output,
+                    "usage": {"input": in_tok, "output": out_tok, "total": in_tok + out_tok},
+                    "startTime": start_iso,
+                    "endTime": end_iso,
+                    "metadata": {
+                        "stop_reason": resp.get("stop_reason"),
+                        "thinking": scrubbed_thinking,
+                        "cache_creation_input_tokens": resp.get("cache_creation_input_tokens", 0),
+                        "cache_read_input_tokens": resp.get("cache_read_input_tokens", 0),
+                        "truncated": resp.get("truncated", False),
+                    },
+                },
+            },
+        ]
+    }
