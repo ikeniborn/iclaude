@@ -15,6 +15,7 @@ eval "$(_extract _derive_project_id)"
 eval "$(_extract _init_project_id)"
 eval "$(_extract _should_start_proxy)"
 eval "$(_extract _proxy_masking_default)"
+eval "$(_extract _should_capture)"
 
 PASS=0; FAIL=0
 assert_eq() { if [[ "$1" == "$2" ]]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); echo "FAIL [$3]: got '$1' want '$2'"; fi; }
@@ -29,6 +30,12 @@ _should_start_proxy "false" "false"; assert_eq "$?" "1" "neither → no start"
 assert_eq "$(_proxy_masking_default "false" "")"        "off" "capture-only → default off"
 assert_eq "$(_proxy_masking_default "true"  "")"        ""    "pii-proxy on → no forced level"
 assert_eq "$(_proxy_masking_default "false" "secrets")" ""    "explicit level honored"
+
+# _should_capture <USE_LANGFUSE_CAPTURE> <use_router> -> rc 0 (capture) / 1 (no). R6: router mode suppresses capture.
+_should_capture "true"  "false"; assert_eq "$?" "0" "capture on, not router → capture"
+_should_capture "true"  "true";  assert_eq "$?" "1" "capture on but router → suppressed (no double traces)"
+_should_capture "false" "false"; assert_eq "$?" "1" "capture off → no capture"
+_should_capture "false" "true";  assert_eq "$?" "1" "capture off + router → no capture"
 
 # _init_project_id widened: capture mode exports the id even when not routing.
 EXP=$(_derive_project_id "$ROOT")

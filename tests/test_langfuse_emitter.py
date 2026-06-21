@@ -115,6 +115,7 @@ def test_build_payload_scrubs_both_input_and_output():
     assert gen["metadata"]["stop_reason"] == "end_turn"
     assert gen["metadata"]["cache_creation_input_tokens"] == 1
     assert gen["metadata"]["thinking"] == "private [REDACTED] note"   # thinking scrubbed → metadata
+    assert gen["metadata"]["max_tokens"] == 8
     assert gen["model"] == "m"
 
 

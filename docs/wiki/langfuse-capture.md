@@ -16,7 +16,7 @@ The emitter scrubs credentials from BOTH the request and the completion before t
 
 ## Ingestion Payload
 
-`build_payload` builds a Langfuse `/api/public/ingestion` batch of two events: a `trace-create` (name `claude-code`, `sessionId`, `tags: ["project:<repo>"]`, metadata `langfuse_scrubbed: true`) and a `generation-create` (model, scrubbed `input.system`/`input.messages`, scrubbed `output`, `usage = {input, output, total=input+output}`, and metadata holding `stop_reason`, scrubbed `thinking`, cache-token counts, and a `truncated` flag). IDs are UUIDv4; timestamps are UTC ISO-8601. `post_batch` POSTs it with HTTP Basic auth (`base64(public_key:secret_key)`).
+`build_payload` builds a Langfuse `/api/public/ingestion` batch of two events: a `trace-create` (name `claude-code`, `sessionId`, `tags: ["project:<repo>"]`, metadata `langfuse_scrubbed: true`) and a `generation-create` (model, scrubbed `input.system`/`input.messages`, scrubbed `output`, `usage = {input, output, total=input+output}`, and metadata holding `stop_reason`, scrubbed `thinking`, `max_tokens`, cache-token counts, and a `truncated` flag). IDs are UUIDv4; timestamps are UTC ISO-8601. `post_batch` POSTs it with HTTP Basic auth (`base64(public_key:secret_key)`).
 
 ## Fail-Soft & Non-Blocking
 
@@ -24,7 +24,7 @@ The emitter scrubs credentials from BOTH the request and the completion before t
 
 ## Activation
 
-The launcher (`lib/launcher/launch.sh`) reads `USE_LANGFUSE_CAPTURE` from `.claude_config`. `_should_start_proxy` starts the PII proxy when masking OR capture is requested; `_proxy_masking_default` forces `PII_PROXY_MASKING_LEVEL=off` for capture-only sessions (no `--pii-proxy`), so the proxy runs purely as the auth + capture hop, unless an explicit level is set. `_init_project_id` is widened to export `ICLAUDE_PROJECT_ID` (the tag-safe slug, shared with the [[router#Per-Project Tagging (X-Project-Id → Langfuse)]] transformer) in router OR capture mode. Capture is disabled in `--system` mode (no isolated venv).
+The launcher (`lib/launcher/launch.sh`) reads `USE_LANGFUSE_CAPTURE` from `.claude_config`. `_should_capture` gates capture on `USE_LANGFUSE_CAPTURE=true` AND non-router mode (router sessions are skipped to avoid double traces). `_should_start_proxy` starts the PII proxy when masking OR capture is requested; `_proxy_masking_default` forces `PII_PROXY_MASKING_LEVEL=off` for capture-only sessions (no `--pii-proxy`), so the proxy runs purely as the auth + capture hop, unless an explicit level is set. `_init_project_id` is widened to export `ICLAUDE_PROJECT_ID` (the tag-safe slug, shared with the [[router#Per-Project Tagging (X-Project-Id → Langfuse)]] transformer) in router OR capture mode. Capture is disabled in `--system` mode (no isolated venv).
 
 ## Configuration Variables
 

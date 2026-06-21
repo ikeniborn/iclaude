@@ -128,6 +128,19 @@ _proxy_masking_default() {
     fi
 }
 
+#######################################
+# Decide whether Langfuse non-router capture is active for this session. Capture is a
+# config-only toggle, deliberately suppressed in router mode (LiteLLM already emits to
+# Langfuse there — avoids double traces).
+# Returns 0 (capture) when USE_LANGFUSE_CAPTURE=true AND not router mode, else 1.
+# Arguments:
+#   $1 - USE_LANGFUSE_CAPTURE value
+#   $2 - use_router ("true" suppresses capture)
+#######################################
+_should_capture() {
+    [[ "${1:-false}" == "true" && "${2:-false}" != "true" ]]
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
@@ -149,12 +162,10 @@ launch_claude() {
         use_router=true
     fi
 
-    # Langfuse non-router capture: a config-only toggle (.claude_config). Skipped in
-    # router mode (LiteLLM already emits to Langfuse there — avoids double traces).
+    # Langfuse non-router capture: a config-only toggle (.claude_config), suppressed in
+    # router mode by _should_capture (LiteLLM already emits to Langfuse there).
     local use_langfuse_capture=false
-    if [[ "${USE_LANGFUSE_CAPTURE:-false}" == "true" ]] && [[ "$use_router" != "true" ]]; then
-        use_langfuse_capture=true
-    fi
+    _should_capture "${USE_LANGFUSE_CAPTURE:-false}" "$use_router" && use_langfuse_capture=true
 
     # Per-project attribution (router and/or capture): export ICLAUDE_PROJECT_ID before
     # any CCR or PII-proxy fork so both observers can tag traces project:<repo>.

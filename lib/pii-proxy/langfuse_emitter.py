@@ -187,6 +187,7 @@ def build_payload(req: dict, resp: dict, meta: dict, scrub, start_iso: str, end_
                     "metadata": {
                         "stop_reason": resp.get("stop_reason"),
                         "thinking": scrubbed_thinking,
+                        "max_tokens": req.get("max_tokens"),
                         "cache_creation_input_tokens": resp.get("cache_creation_input_tokens", 0),
                         "cache_read_input_tokens": resp.get("cache_read_input_tokens", 0),
                         "truncated": resp.get("truncated", False),

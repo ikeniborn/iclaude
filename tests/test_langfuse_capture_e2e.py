@@ -51,6 +51,26 @@ class _Upstream(BaseHTTPRequestHandler):
         pass
 
 
+class _UpstreamJSON(BaseHTTPRequestHandler):
+    """Mock Anthropic: returns a NON-streaming JSON response with a secret in content.
+
+    Exercises the buffered (non-SSE) branch of the proxy's _forward tee.
+    """
+    def do_POST(self):
+        self.rfile.read(int(self.headers.get("content-length", 0) or 0))
+        body = (b'{"model":"claude-sonnet-4-6","stop_reason":"end_turn",'
+                b'"content":[{"type":"text","text":"token ' + SECRET.encode() + b' done"}],'
+                b'"usage":{"input_tokens":3,"output_tokens":5}}')
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
 class _Langfuse(BaseHTTPRequestHandler):
     received = []
 
@@ -132,6 +152,72 @@ def test_capture_forwards_scrubbed_trace_to_langfuse():
         assert types == ["trace-create", "generation-create"]
         assert payload["batch"][0]["body"]["tags"] == ["project:myrepo"]
         # The secret must be scrubbed out of the Langfuse copy of the completion.
+        assert SECRET not in body.decode()
+    finally:
+        proc.terminate()
+        proc.wait(timeout=5)
+        up_srv.shutdown()
+        lf_srv.shutdown()
+
+
+@pytest.mark.skipif(not PROXY.exists(), reason="pii-proxy-server.py missing")
+def test_capture_forwards_scrubbed_buffered_response():
+    # Buffered (non-SSE) branch: a JSON upstream response is fully buffered, teed, scrubbed.
+    _Langfuse.received.clear()
+    up_srv, up_port = _serve(_UpstreamJSON)
+    lf_srv, lf_port = _serve(_Langfuse)
+    proxy_port = _free_port()
+
+    env = dict(os.environ)
+    env.update({
+        "ANTHROPIC_UPSTREAM_URL": f"http://127.0.0.1:{up_port}",
+        "PII_PROXY_PORT": str(proxy_port),
+        "PII_PROXY_MASKING_LEVEL": "off",
+        "PII_PROXY_SUPERVISE": "false",
+        "PII_PROXY_LOG_DIR": "/tmp/lf-e2e-logs",
+        "USE_LANGFUSE_CAPTURE": "true",
+        "LANGFUSE_HOST": f"http://127.0.0.1:{lf_port}",
+        "LANGFUSE_PUBLIC_KEY": "pk-test",
+        "LANGFUSE_SECRET_KEY": "sk-test",
+        "ICLAUDE_PROJECT_ID": "myrepo",
+        "ICLAUDE_SESSION_ID": "abcdef012345",
+    })
+    proc = subprocess.Popen([sys.executable, str(PROXY)], env=env,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        for _ in range(50):
+            try:
+                socket.create_connection(("127.0.0.1", proxy_port), timeout=0.2).close()
+                break
+            except OSError:
+                time.sleep(0.2)
+        else:
+            pytest.fail("proxy did not start")
+
+        import urllib.request
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{proxy_port}/v1/messages",
+            data=b'{"model":"claude-sonnet-4-6","max_tokens":16,'
+                 b'"messages":[{"role":"user","content":"hi"}]}',
+            headers={"Content-Type": "application/json", "x-api-key": "test"},
+        )
+        resp_body = urllib.request.urlopen(req, timeout=10).read()
+        # Client receives the raw buffered JSON (capture never alters the client response).
+        assert SECRET.encode() in resp_body
+
+        for _ in range(25):
+            if _Langfuse.received:
+                break
+            time.sleep(0.2)
+        assert _Langfuse.received, "Langfuse received no ingestion POST"
+        _auth, body = _Langfuse.received[0]
+        payload = json.loads(body)
+        assert [e["type"] for e in payload["batch"]] == ["trace-create", "generation-create"]
+        gen = payload["batch"][1]["body"]
+        # Parsed from the buffered JSON body: model + stop_reason captured.
+        assert gen["model"] == "claude-sonnet-4-6"
+        assert gen["metadata"]["stop_reason"] == "end_turn"
+        # The secret must be scrubbed out of the Langfuse copy of the buffered completion.
         assert SECRET not in body.decode()
     finally:
         proc.terminate()

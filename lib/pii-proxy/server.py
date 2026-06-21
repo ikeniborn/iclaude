@@ -309,6 +309,8 @@ try:
 except ImportError:
     _langfuse = None
 
+# Router-mode exclusion (skip capture when LiteLLM already emits to Langfuse) is enforced
+# by the launcher, which never sets USE_LANGFUSE_CAPTURE in router mode — not re-checked here.
 _LANGFUSE_CAPTURE = os.environ.get('USE_LANGFUSE_CAPTURE', 'false').lower() == 'true'
 _LANGFUSE_CONFIG = {
     'host': os.environ.get('LANGFUSE_HOST', ''),
