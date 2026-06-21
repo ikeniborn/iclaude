@@ -27,6 +27,10 @@ None of these modes are mutually exclusive; `launch_claude()` handles all combin
 
 When router mode or `--no-attribution-header` (`NO_ATTRIBUTION_HEADER=true`) is active and `CLAUDE_CODE_ATTRIBUTION_HEADER` is not already set in the environment, the function exports `CLAUDE_CODE_ATTRIBUTION_HEADER=0`. This prevents the billing hash (`cch=`) that Claude Code appends to each request from invalidating KV cache on proxies and routers.
 
+## Per-Project Tagging
+
+In router mode, `launch_claude()` calls `_init_project_id "$use_router"` right after router detection — before any CCR fork/exec — to export `ICLAUDE_PROJECT_ID`. The value is the git toplevel basename (or `$PWD` basename) sanitized to a tag-safe slug by `_derive_project_id()`; an explicit value already in the environment is preserved. CCR's `x-project-id` transformer reads this env var and forwards it as the `X-Project-Id` header, which Langfuse records as `project:<repo-name>`. See [[router#Per-Project Tagging (X-Project-Id → Langfuse)]] for the full chain.
+
 ## Binary Detection
 
 When running natively (no microVM), `launch_claude()` locates the Claude Code binary in priority order:

@@ -60,6 +60,16 @@ After install, edit `router.json`, export required API keys in `.claude_config`,
 ./iclaude.sh --check-router
 ```
 
+## Per-Project Tagging (X-Project-Id → Langfuse)
+
+Attributes each session's LLM traffic to its repository in self-hosted Langfuse. CCR sends an `X-Project-Id` header to the upstream provider; LiteLLM's `project_tagger` turns it into the trace tag `project:<repo-name>` instead of the default `project:unknown`.
+
+The id is derived and exported **before CCR starts**: `_init_project_id()` in [[launcher#Per-Project Tagging]] (`lib/launcher/launch.sh`, called in `launch_claude()` right after router detection) sets `ICLAUDE_PROJECT_ID` to the git toplevel basename (or `$PWD` basename), sanitized to a tag-safe slug via `_derive_project_id()`. An explicit `ICLAUDE_PROJECT_ID` already in the environment (e.g. `.claude_config`) wins. CCR is forked on the host in every mode, so this host-side export reaches it.
+
+CCR 2.0.0 does **not** forward provider-level `headers` from `router.json` — they are dropped at `registerProvider`. The only working injection path is a **transformer plugin**: `.claude-code-router/plugins/x-project-id.js` implements `transformRequestIn(request, provider)` returning `{ body, config: { headers: { "X-Project-Id": process.env.ICLAUDE_PROJECT_ID || "unknown" } } }`; CCR merges `config.headers` into the upstream request (the same mechanism the built-in `gemini` transformer uses for `x-goog-api-key`). Register it by adding `"x-project-id"` to the provider's `transformer.use` and the plugin path to the top-level `transformers` list.
+
+Hermetic test: `tests/test_x_project_id_forwarding.sh` runs CCR against a mock upstream that records received headers and asserts `X-Project-Id` is forwarded (skip-aware, exit 77 when CCR is absent).
+
 ## Combined Mode: PII Proxy + Router
 
 CCR and the PII proxy can run together. In combined mode traffic flows:
