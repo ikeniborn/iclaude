@@ -48,5 +48,21 @@ PARENT=$(mktemp -d); mkdir -p "$PARENT/@@@"
 assert_eq "$(_derive_project_id "$PARENT/@@@")" "unknown" "empty-after-sanitize fallback"
 rm -rf "$PARENT"
 
-echo "L1 project_id (derive): PASS=$PASS FAIL=$FAIL"
+# ---- _init_project_id ----
+eval "$(_extract _init_project_id)"
+
+# use_router != "true" → no-op: variable stays unset
+( unset ICLAUDE_PROJECT_ID; _init_project_id "false"; [[ -z "${ICLAUDE_PROJECT_ID:-}" ]] ) \
+    && PASS=$((PASS + 1)) || { FAIL=$((FAIL + 1)); echo "FAIL [init: no-op when not router]"; }
+
+# router + unset → derived and EXPORTED (a child process must see it, since CCR is a fork)
+EXP=$(_derive_project_id "$ROOT")
+out=$( cd "$ROOT" && unset ICLAUDE_PROJECT_ID; _init_project_id "true"; bash -c 'printf "%s" "${ICLAUDE_PROJECT_ID:-}"' )
+assert_eq "$out" "$EXP" "init: derives+exports repo id to child"
+
+# router + preset value → preserved (explicit override wins) and exported
+out=$( ICLAUDE_PROJECT_ID="fixed-name"; _init_project_id "true"; bash -c 'printf "%s" "${ICLAUDE_PROJECT_ID:-}"' )
+assert_eq "$out" "fixed-name" "init: preserves preset value"
+
+echo "L1 project_id: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]

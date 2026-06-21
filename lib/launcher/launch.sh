@@ -71,6 +71,27 @@ _derive_project_id() {
     printf '%s' "$name"
 }
 
+#######################################
+# Export ICLAUDE_PROJECT_ID for the CCR process (router mode only).
+# CCR (v2.0.0) deep-interpolates ${ICLAUDE_PROJECT_ID} from its process env into
+# the homelab provider's "X-Project-Id" header (router.json) and forwards it to
+# LiteLLM, whose project_tagger emits the Langfuse tag project:<id>. This MUST run
+# before any CCR fork/exec (start_ccr_server or `exec ccr code`). An explicit value
+# already present in the environment (e.g. exported from .claude_config) is kept.
+# NOTE: an unset value would make CCR send the literal "${ICLAUDE_PROJECT_ID}"
+# string as the header (its interpolator falls back to the raw token, not empty),
+# so router mode always exports a concrete value here.
+# Arguments:
+#   $1 - use_router ("true" activates; any other value is a no-op)
+#######################################
+_init_project_id() {
+    [[ "${1:-}" == "true" ]] || return 0
+    if [[ -z "${ICLAUDE_PROJECT_ID:-}" ]]; then
+        ICLAUDE_PROJECT_ID="$(_derive_project_id "$PWD")"
+    fi
+    export ICLAUDE_PROJECT_ID
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
