@@ -113,6 +113,11 @@ launch_claude() {
         use_router=true
     fi
 
+    # Per-project Langfuse attribution: export ICLAUDE_PROJECT_ID before any CCR
+    # fork/exec below (start_ccr_server / `exec ccr code`) so CCR can interpolate it
+    # into the homelab provider's X-Project-Id header. No-op when router is inactive.
+    _init_project_id "$use_router"
+
     # Disable x-anthropic-billing-header when routing to third-party backends.
     # The billing hash (cch=) changes every request and invalidates KV cache on
     # proxies/routers that treat it as part of the system prompt (Ollama, CCR, Bedrock).
