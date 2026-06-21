@@ -55,9 +55,6 @@
             ]
           ]
         }
-      },
-      "headers": {
-        "X-Project-Id": "${ICLAUDE_PROJECT_ID}"
       }
     }
   ],

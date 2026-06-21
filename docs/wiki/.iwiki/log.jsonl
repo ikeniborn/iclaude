@@ -35,3 +35,4 @@
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/caveman/SKILL.md","page":"docs/wiki/caveman.md","date":"2026-06-19"}
 {"op":"ingest","source":"lib/config/isolated.sh","page":"docs/wiki/config.md","date":"2026-06-19"}
 {"op":"ingest","source":"lib/launcher/launch.sh","page":"router.md+launcher.md","date":"2026-06-21"}
+{"op":"ingest","source":"router-review-fixes","page":"router.md","date":"2026-06-21"}

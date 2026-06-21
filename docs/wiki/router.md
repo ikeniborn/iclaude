@@ -44,7 +44,7 @@ Store provider API keys as shell exports in `.claude_config` (e.g. `export DEEPS
 ./iclaude.sh --install-router
 ```
 
-After install, edit `router.json`, export required API keys in `.claude_config`, then launch with `./iclaude.sh --router`.
+After install, edit `router.json`, export required API keys in `.claude_config`, then launch with `./iclaude.sh --router`. To enable per-project Langfuse tagging on a fresh config, add `"x-project-id"` to your provider's `transformer.use` (the plugin is pre-registered in `router.json.example`'s `transformers` list) — see [[router#Per-Project Tagging (X-Project-Id → Langfuse)]].
 
 ## Status
 

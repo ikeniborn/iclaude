@@ -8,6 +8,10 @@ module.exports = class XProjectId {
   name = "x-project-id";
 
   transformRequestIn(request, provider) {
+    // The derived id (launch.sh _derive_project_id) is already a tag-safe slug.
+    // An explicit ICLAUDE_PROJECT_ID override is passed through verbatim and trusted
+    // (it comes from the operator's local .claude_config); the HTTP client rejects a
+    // malformed header value (e.g. CRLF) rather than allowing header injection.
     return {
       body: request,
       config: {

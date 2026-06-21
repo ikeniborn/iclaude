@@ -73,14 +73,16 @@ _derive_project_id() {
 
 #######################################
 # Export ICLAUDE_PROJECT_ID for the CCR process (router mode only).
-# CCR (v2.0.0) deep-interpolates ${ICLAUDE_PROJECT_ID} from its process env into
-# the homelab provider's "X-Project-Id" header (router.json) and forwards it to
-# LiteLLM, whose project_tagger emits the Langfuse tag project:<id>. This MUST run
-# before any CCR fork/exec (start_ccr_server or `exec ccr code`). An explicit value
-# already present in the environment (e.g. exported from .claude_config) is kept.
-# NOTE: an unset value would make CCR send the literal "${ICLAUDE_PROJECT_ID}"
-# string as the header (its interpolator falls back to the raw token, not empty),
-# so router mode always exports a concrete value here.
+# The CCR `x-project-id` transformer plugin (.claude-code-router/plugins/x-project-id.js)
+# reads ICLAUDE_PROJECT_ID from its process env and injects it as the "X-Project-Id"
+# header on the upstream request; LiteLLM's project_tagger then emits the Langfuse tag
+# project:<id>. (CCR 2.0.0 DROPS provider-level `headers` from router.json at
+# registerProvider, so the transformer is the only working injection path — see
+# docs/wiki/router.md.) This MUST run before any CCR fork/exec (start_ccr_server or
+# `exec ccr code`) so the daemon inherits the value. An explicit value already present
+# in the environment (e.g. exported from .claude_config) is kept.
+# NOTE: when unset, the plugin emits "unknown" (its own `|| "unknown"` fallback), so
+# router mode always exports a concrete value here to make the tag the real repo name.
 # Arguments:
 #   $1 - use_router ("true" activates; any other value is a no-op)
 #######################################
@@ -114,8 +116,8 @@ launch_claude() {
     fi
 
     # Per-project Langfuse attribution: export ICLAUDE_PROJECT_ID before any CCR
-    # fork/exec below (start_ccr_server / `exec ccr code`) so CCR can interpolate it
-    # into the homelab provider's X-Project-Id header. No-op when router is inactive.
+    # fork/exec below (start_ccr_server / `exec ccr code`) so the x-project-id
+    # transformer plugin can inject it as the X-Project-Id header. No-op when router off.
     _init_project_id "$use_router"
 
     # Disable x-anthropic-billing-header when routing to third-party backends.
