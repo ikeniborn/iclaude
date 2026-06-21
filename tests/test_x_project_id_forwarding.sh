@@ -88,7 +88,7 @@ for _ in $(seq 1 25); do
 done
 [[ "$_ok" == "true" ]] || fail "mock upstream did not start on :$MOCK_PORT"
 
-# --- purpose-built router.json: single provider → mock, with the X-Project-Id header ---
+# --- purpose-built config: single provider → mock, using the x-project-id transformer plugin ---
 CCR_HOME="$WORK/ccr-home"
 mkdir -p "$CCR_HOME/.claude-code-router"
 cat > "$CCR_HOME/.claude-code-router/config.json" <<JSON
@@ -96,13 +96,16 @@ cat > "$CCR_HOME/.claude-code-router/config.json" <<JSON
   "PORT": $CCR_PORT,
   "HOST": "$CCR_HOST",
   "LOG": false,
+  "transformers": [
+    { "path": "$REPO_ROOT/.nvm-isolated/.claude-isolated/.claude-code-router/plugins/x-project-id.js" }
+  ],
   "Providers": [
     {
       "name": "mockprov",
       "api_base_url": "http://127.0.0.1:$MOCK_PORT/v1/chat/completions",
       "api_key": "test-key",
       "models": ["mock-model"],
-      "headers": { "X-Project-Id": "\${ICLAUDE_PROJECT_ID}" }
+      "transformer": { "use": ["x-project-id"] }
     }
   ],
   "Router": { "default": "mockprov,mock-model" }

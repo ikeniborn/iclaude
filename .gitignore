@@ -124,6 +124,10 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Prevent accidental commit of runtime router config
 .claude-code-router/
+# EXCEPTION: Track custom transformer plugins shipped with the repo
+!.nvm-isolated/.claude-isolated/.claude-code-router/
+!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/
+!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/*.js
 
 # Backup files (any location, any extension with backup suffix)
 *.backup
