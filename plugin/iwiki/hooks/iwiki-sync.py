@@ -23,9 +23,10 @@ tree:
 - **+ explicit edits**: files the record hook saw the agent edit are kept even if
   they overlap the baseline WIP set.
 
-Loop-safe (C): the same unchanged set re-asks at most MAX_ASK times, then yields
-to avoid wedging the stop; a change in `wiki_sig` between asks counts as "ingest
-happened" and clears the nag. Fail-soft and kill-switchable (IWIKI_AUTO_SYNC=0).
+Loop-safe (C): the same unchanged set re-asks at most MAX_ASK times via the pure
+decide_nag bound, then yields so the stop is never wedged. The bound is the ask
+count alone — no wiki/index state feeds it, so the hook's own reindex can no
+longer reset it. Fail-soft and kill-switchable (IWIKI_AUTO_SYNC=0).
 """
 from __future__ import annotations
 
@@ -85,30 +86,15 @@ def main() -> int:
         pending = _pending(sess)
         if not pending:
             sess["asked_sig"] = ""
-            sess["asked_wiki"] = ""
             sess["count"] = 0
             iw.write_session(sess)
             return 0
 
         sig = iw.signature(pending)
-        wsig = iw.wiki_sig()
-        if sig == sess.get("asked_sig"):
-            if wsig != sess.get("asked_wiki"):
-                # wiki changed since we asked → ingest happened → reconcile.
-                sess["asked_sig"] = ""
-                sess["asked_wiki"] = ""
-                sess["count"] = 0
-                iw.write_session(sess)
-                return 0
-            if sess.get("count", 0) >= MAX_ASK:
-                # Ignored repeatedly → yield so the stop is not wedged.
-                return 0
-            sess["count"] = sess.get("count", 0) + 1
-        else:
-            sess["asked_sig"] = sig
-            sess["count"] = 1
-        sess["asked_wiki"] = wsig
+        action, sess = iw.decide_nag(sess, sig, MAX_ASK)
         iw.write_session(sess)
+        if action == "yield":
+            return 0
 
         shown = pending[:12]
         more = "" if len(pending) == len(shown) else \
