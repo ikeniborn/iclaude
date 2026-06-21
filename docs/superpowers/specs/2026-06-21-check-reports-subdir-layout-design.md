@@ -2,6 +2,17 @@
 date: 2026-06-21
 topic: check-reports-subdir-layout
 status: draft
+chain:
+  intent: null
+review:
+  spec_hash: f468f072b9fc86fb
+  last_run: 2026-06-21
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings: []
 ---
 
 # Design: Split check-* HTML reports into per-artifact subdirectories
