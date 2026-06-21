@@ -36,6 +36,12 @@ EXCLUDE_PREFIXES = (
 EXCLUDE_SUBSTR = ("/.iwiki/", "/.venv/", "/commands/", "/node_modules/")
 SOURCE_EXTS = (".sh", ".py", ".js", ".ts", ".md")
 
+# Agent-instruction files are never wiki source — excluded in ANY directory.
+EXCLUDE_BASENAMES = ("CLAUDE.md", "AGENTS.md", "GEMINI.md")
+# Project meta-docs are not wiki source at the repo ROOT (a subdir README.md may
+# still document a component, so it stays documentable).
+EXCLUDE_ROOT_DOCS = ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE.md")
+
 
 def cd_project() -> None:
     """chdir to the project root so relative wiki/git paths resolve. Plugin
@@ -141,12 +147,18 @@ def _git(args: list[str]) -> list[str]:
 
 def is_documentable(p: str) -> bool:
     """A repo-relative path that the wiki should describe: a source ext, outside
-    the wiki/IDD/command/VCS noise. Existence is checked separately by callers."""
+    the wiki/IDD/command/VCS noise, and not an agent-instruction file (any dir)
+    or a repo-root meta-doc. Existence is checked separately by callers."""
     if not p.endswith(SOURCE_EXTS):
         return False
     if p.startswith(EXCLUDE_PREFIXES):
         return False
     if any(s in p for s in EXCLUDE_SUBSTR):
+        return False
+    base = os.path.basename(p)
+    if base in EXCLUDE_BASENAMES:
+        return False
+    if "/" not in p and base in EXCLUDE_ROOT_DOCS:   # repo-root only (git uses '/')
         return False
     return True
 
