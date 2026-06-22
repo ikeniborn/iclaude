@@ -1,6 +1,15 @@
 ---
 chain:
   intent: null
+review:
+  spec_hash: 957e43fabac45360
+  last_run: 2026-06-22
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings: []
 ---
 
 # Design: session-scoped IDD gate
