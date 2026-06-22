@@ -1,3 +1,76 @@
+---
+review:
+  plan_hash: 54d978aec34d54fd
+  spec_hash: 1a033472e1df25cd
+  last_run: 2026-06-22
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: WARNING
+      section: "Tasks 3 & 4 headings / Area C — C3 (quick-exit + init-state preambles)"
+      section_hash: 312c77a52e76ec83
+      text: >-
+        Spec C3 requires the quick-exit AND init-state preambles to be tightened
+        in wording across check-intent / check-spec / check-plan. The plan applies
+        a quick-exit compression step ONLY in Task 2 (check-spec, Step 2). Task 3
+        (check-plan) and Task 4 (check-intent) list C3 in their headings and commit
+        messages but contain NO quick-exit/init-state tightening step. No task
+        touches the init-state preamble in any of the three commands. C3 is thus
+        PARTIALLY covered (1 of 3 quick-exit blocks, 0 of 3 init-state blocks).
+        Severity WARNING, not CRITICAL: C3 is cosmetic ("tightened in wording";
+        spec preserves structure/conditions/phase-lists/frontmatter shape) and the
+        gate-critical predicate/YAML lives in the unchanged conditions, so no
+        functional or gate behaviour is at risk — but it is still under-coverage of
+        a literal spec MUST.
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: structure
+      severity: WARNING
+      section: "Whole-document body / hashing pipeline applicability"
+      section_hash: 7fdf477ca5cc92f9
+      text: >-
+        At authoring time the plan had NO YAML frontmatter (it opened with the
+        '# check-...' H1). The canonical body-hash pipeline
+        (awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}') counts the markdown
+        '---' task SEPARATORS as frontmatter delimiters: with no real frontmatter,
+        fm>=2 fired at the 2nd separator and plan_hash covered only ~591 of 755
+        lines (Tasks 3-6), silently excluding the Goal, Architecture, Global
+        Constraints, Task 1 and Task 2; the fm<2 whole-file fallback was NOT
+        triggered. Writing this review: frontmatter (delimiters at lines 1 and 72)
+        moves the first two '---' to the real frontmatter, so the body pipeline now
+        correctly captures all 6 tasks (plan_hash 54d978aec34d54fd over the full
+        body) — the immediate defect is mitigated. WARNING (not CRITICAL): the hash
+        was always deterministic/convergent with idd-gate and the plan is fully
+        executable; the residual risk is that the body still contains bare '---'
+        separators, so future hand-edits to the frontmatter must keep it well-formed
+        or the separator-miscount returns. Confirm the '---' task-separator style is
+        intended, or switch body separators to '***'.
+      verdict: open
+      verdict_at: null
+    - id: F-003
+      phase: verifiability
+      severity: INFO
+      section: "Task 4 Step 5 — check-intent D2 verify grep"
+      section_hash: 04fe2e505135494c
+      text: >-
+        Task 4 Step 5's D2 assertion greps a 3-way alternation
+        ('уже пересчитывать\|уже вычисленный\|diff изменившихся секций из Шага 2').
+        Only the third alternative matches the text Step 2 actually writes; the
+        first two are dead branches copied from the pattern. The assertion still
+        passes (expect 1), so this is cosmetic — no DoD gap.
+      verdict: open
+      verdict_at: null
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-22-check-commands-refinement-design.md
+---
 # check-{intent,spec,plan,result} Refinement Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -353,7 +426,7 @@ Replace with:
 5. Все CRITICAL фазы закрыты → `phase.status = passed`, переход; иначе → `in_progress`, остановка с просьбой исправить
 ```
 
-- [ ] **Step 2: Compress the canonical-hashing preamble (C2). Bash verbatim.**
+- [ ] **Step 2: Compress the canonical-hashing + quick-exit preambles (C2, C3). Bash verbatim.**
 
 Find (lines ~9–20):
 
@@ -385,6 +458,35 @@ Replace with:
   ```
 - **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
 - Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
+```
+
+Then tighten the quick-exit preamble (C3). Find (lines ~22–32):
+
+```
+### Шаг 0. Quick exit по state
+
+1. Если файл плана найден и содержит frontmatter с блоком `review:`:
+   - Посчитать sha256 тела плана по каноническому алгоритму (см. выше)
+   - Посчитать sha256 тела связанной спеки по тому же алгоритму
+   - Если `plan_hash == frontmatter.review.plan_hash` И `spec_hash == frontmatter.review.spec_hash` И:
+     - `∀ phase: status == passed`
+     - `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
+     - `count(severity == CRITICAL ∧ verdict == open) == 0`
+   - → вывести `OK (cached, hash match)` и завершить
+2. Иначе — продолжить
+```
+
+Replace with:
+
+```
+### Шаг 0. Quick exit по state
+
+Если у плана есть frontmatter с блоком `review:`, `plan_hash` совпадает с телом плана И `spec_hash` — с телом спеки И:
+- `∀ phase: status == passed`
+- `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
+- `count(severity == CRITICAL ∧ verdict == open) == 0`
+
+→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
 ```
 
 - [ ] **Step 3: Dedup the consistency phase against init-state (D2).**
@@ -438,11 +540,13 @@ grep -c 'Идентична check-spec' "$F"                 # expect 0 (C1 — 
 grep -c 'check-spec' "$F"                            # expect 0 (no cross-file ref at all)
 grep -c "awk 'BEGIN{fm=0}" "$F"                      # expect 1 (bash verbatim)
 grep -c 'ВСЕ хеши считаются ОДИНАКОВО' "$F"          # expect 0 (preamble compressed)
+grep -c 'Если у плана есть frontmatter с блоком' "$F" # expect 1 (C3 quick-exit tightened)
+grep -c '1. Если файл плана найден и содержит frontmatter' "$F"  # expect 0 (old quick-exit gone)
 grep -c 'уже вычисленный в Шаге 2' "$F"              # expect 1 (D2)
 grep -c 'Output path (явный аргумент)' "$F"          # expect 1 (A2)
 ```
 
-Expected: no `check-spec` reference, bash intact, D2 + A2 present.
+Expected: no `check-spec` reference, bash intact, C3 quick-exit + D2 + A2 present.
 
 - [ ] **Step 6: Commit.**
 
@@ -469,7 +573,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: Task 1 skill contract; A2 + D2 pattern from Task 2.
 - Note: check-intent's `consistency` phase ALSO holds contradiction + Status-guard checks — touch ONLY the hash-recompute bullet, leave the rest.
 
-- [ ] **Step 1: Compress the canonical-hashing preamble (C2). Bash verbatim.**
+- [ ] **Step 1: Compress the canonical-hashing + quick-exit preambles (C2, C3). Bash verbatim.**
 
 Find (lines ~9–20):
 
@@ -501,6 +605,36 @@ Replace with:
   ```
 - **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
 - Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
+```
+
+Then tighten the quick-exit preamble (C3) — keep the `alignment` special-case line. Find (lines ~22–32):
+
+```
+### Шаг 0. Quick exit по state
+
+1. Если файл найден и содержит frontmatter с блоком `review:`:
+   - Посчитать sha256 тела документа по каноническому алгоритму (см. выше)
+   - Если `current_hash == frontmatter.review.intent_hash` И все condition'ы выполнены:
+     - `∀ phase ∈ {structure, completeness, clarity, consistency}: status == passed`
+     - `alignment.status == passed` (НЕ пересчитывать — фаза недетерминирована, доверяем прошлому прогону)
+     - `∀ finding ∈ findings: verdict ∈ {accepted, wontfix, fixed}`
+     - `count(severity == CRITICAL ∧ verdict == open) == 0`
+   - → вывести `OK (cached, hash match)` и завершить
+2. Иначе — продолжить
+```
+
+Replace with:
+
+```
+### Шаг 0. Quick exit по state
+
+Если есть frontmatter с блоком `review:` и `current_body_hash == review.intent_hash` И:
+- `∀ phase ∈ {structure, completeness, clarity, consistency}: status == passed`
+- `alignment.status == passed` (НЕ пересчитывать — фаза недетерминирована, доверяем прошлому прогону)
+- `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
+- `count(severity == CRITICAL ∧ verdict == open) == 0`
+
+→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
 ```
 
 - [ ] **Step 2: Dedup ONLY the hash bullet of the consistency phase (D2). Keep contradictions + Status-guard.**
@@ -568,14 +702,16 @@ cd /home/ikeniborn/Documents/Project/iclaude
 F=.nvm-isolated/.claude-isolated/commands/check-intent.md
 grep -c 'ВСЕ хеши считаются ОДИНАКОВО' "$F"          # expect 0 (C2)
 grep -c "awk 'BEGIN{fm=0}" "$F"                      # expect 1 (bash verbatim)
-grep -c 'уже пересчитывать\|уже вычисленный\|diff изменившихся секций из Шага 2' "$F"  # expect 1 (D2)
+grep -c 'Если есть frontmatter с блоком .review.' "$F"  # expect 1 (C3 quick-exit tightened)
+grep -c 'alignment.status == passed' "$F"            # expect 1 (alignment special-case kept in quick-exit)
+grep -c 'diff изменившихся секций из Шага 2' "$F"     # expect 1 (D2)
 grep -c 'Status-guard' "$F"                          # expect 1 (kept — not touched)
 grep -c 'Внутри-док противоречия' "$F"               # expect 1 (kept)
 grep -c 'Constraint × Desired Outcome' "$F"          # expect 1 (B2)
 grep -c 'Output path (явный аргумент)' "$F"          # expect 1 (A2)
 ```
 
-Expected: C2 done, bash intact, D2 hash bullet replaced, Status-guard + contradictions kept, B2 + A2 present.
+Expected: C2 + C3 quick-exit done (alignment line kept), bash intact, D2 hash bullet replaced, Status-guard + contradictions kept, B2 + A2 present.
 
 - [ ] **Step 6: Commit.**
 

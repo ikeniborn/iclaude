@@ -147,8 +147,10 @@ Grouped by area. Each requirement is independently verifiable.
 - **C2.** The canonical-hashing preamble MUST be compressed (collapse the repeated "ALL
   hashes computed identically … else no convergence" + "do not recompute in your head"
   into one line). The bash commands themselves are copied verbatim — NOT changed.
-- **C3.** The quick-exit and init-state preambles MUST be tightened in wording; their
-  structure (conditions, phase lists, frontmatter shape) is preserved unchanged.
+- **C3.** The quick-exit preamble MUST be tightened in wording in check-intent /
+  check-spec / check-plan; its predicate conditions and phase lists are preserved
+  unchanged. The init-state preamble is left as-is — its frontmatter YAML is
+  gate-critical, so compressing it is low-value and higher-risk.
 
 ### Area D — validation-phase redundancy (resolves F-001)
 
