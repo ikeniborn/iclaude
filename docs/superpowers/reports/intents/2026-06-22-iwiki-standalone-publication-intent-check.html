@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка intent: iwiki standalone publication (2026-06-22)</title>
+<style>
+/* ── Themes ─────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1100px;
+  font:16px/1.55 system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%,transparent),transparent),
+    var(--bg);
+  color:var(--fg); transition:background .3s,color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+h1{ font-size:1.45rem; margin:.5rem 0 .25rem; }
+h2{ font-size:1.15rem; margin:2rem 0 .6rem; border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+h3{ font-size:1rem; margin:1.4rem 0 .4rem; color:var(--accent); }
+.lead{ font-size:1.08rem; margin:.3rem 0 .1rem; }
+.sub{ color:var(--muted); font-size:.9rem; margin:.1rem 0 1rem; }
+code{ font-family:ui-monospace,monospace; font-size:.87em;
+  background:color-mix(in srgb,var(--accent) 8%,var(--surface));
+  padding:.1em .35em; border-radius:4px; }
+
+/* ── Note / callout ──────────────────────────────────────────────────────── */
+.note{
+  border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb,var(--accent) 8%,var(--surface));
+  border-radius:0 8px 8px 0; box-shadow:0 1px 8px var(--shadow);
+}
+.note-warn{ border-left-color:var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--surface)); }
+.note-ok{ border-left-color:var(--ok);
+  background:color-mix(in srgb,var(--ok) 8%,var(--surface)); }
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+.badge{
+  display:inline-block; font-size:.72rem; padding:.1rem .55rem;
+  border-radius:999px; border:1px solid var(--border); font-weight:600;
+}
+.badge-ok  { color:var(--ok-2);   border-color:var(--ok);   background:color-mix(in srgb,var(--ok)   10%,var(--surface)); }
+.badge-warn{ color:var(--warn-2); border-color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,var(--surface)); }
+.badge-crit{ color:var(--danger-2); border-color:var(--danger); background:color-mix(in srgb,var(--danger) 10%,var(--surface)); }
+.badge-info{ color:var(--accent); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.badge-open{ color:var(--warn-2); border-color:var(--warn); }
+.badge-na  { color:var(--muted);  border-color:var(--border); }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.rpt-table{
+  border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.88rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow);
+}
+.rpt-table th,.rpt-table td{
+  border-bottom:1px solid var(--border); padding:.48rem .75rem;
+  text-align:left; vertical-align:top;
+}
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb,var(--accent) 12%,var(--surface)); }
+.rpt-table td.center,.rpt-table th.center{ text-align:center; }
+.check{ color:var(--ok); font-weight:700; }
+.dash { color:var(--muted); }
+
+/* ── Details / expand ────────────────────────────────────────────────────── */
+details{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:.7rem 1rem; margin:.7rem 0; box-shadow:0 1px 8px var(--shadow);
+}
+details summary{ cursor:pointer; font-weight:600; color:var(--accent); }
+details[open] summary{ margin-bottom:.55rem; }
+ul.tight li{ margin:.25rem 0; }
+
+/* ── SVG diagrams ────────────────────────────────────────────────────────── */
+figure.diagram{ margin:1.2rem 0; }
+figure.diagram svg{ width:100%; height:auto; display:block; overflow:visible; }
+figcaption{ color:var(--muted); font-size:.82rem; margin-top:.35rem; text-align:center; }
+
+.card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; filter:url(#dropshadow); }
+.node:hover .card{ stroke:var(--accent); stroke-width:2.5; }
+.bar-accent{ fill:var(--accent); } .bar-ok{ fill:var(--ok); }
+.bar-warn{ fill:var(--warn); }     .bar-term{ fill:var(--danger); }
+.t-title{ fill:var(--fg); font:600 13px system-ui,sans-serif; }
+.t-sub  { fill:var(--muted); font:11px system-ui,sans-serif; }
+text{ pointer-events:none; }
+
+.conn  { fill:none; stroke:var(--line); stroke-width:2; }
+.conn-a{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; }
+.flow  { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-dasharray:8 6;
+         animation:dash 1.1s linear infinite; }
+.flow-ok{ fill:none; stroke:var(--ok); stroke-width:2.4; stroke-dasharray:8 6;
+          animation:dash 1.1s linear infinite; }
+@keyframes dash{ to{ stroke-dashoffset:-14; } }
+@media(prefers-reduced-motion:reduce){ .flow,.flow-ok{ animation:none; } }
+
+.lbl-bg{ fill:var(--bg); }
+.lbl   { fill:var(--fg); font:11px system-ui,sans-serif; }
+.boundary-rect{ fill:none; stroke:var(--accent); stroke-width:1.6;
+  stroke-dasharray:7 6; opacity:.85; }
+.zone-bg{ opacity:.06; }
+
+/* ── Phase row colors ────────────────────────────────────────────────────── */
+.ph-passed td:first-child{ border-left:4px solid var(--ok); }
+.ph-warn   td:first-child{ border-left:4px solid var(--warn); }
+
+/* ── Divider / footer ────────────────────────────────────────────────────── */
+.divider{ border:none; border-top:1px solid var(--border); margin:2rem 0; }
+.footer { text-align:center; color:var(--muted); font-size:.85rem; margin-top:2rem; }
+.next-step{
+  display:inline-block; margin-top:.5rem; padding:.4rem 1.2rem;
+  background:var(--accent); color:var(--bg); border-radius:8px; font-weight:600;
+  font-size:.95rem;
+}
+</style>
+</head>
+<body>
+
+<!-- Shared SVG defs for shadow + arrow markers -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
+    <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="var(--shadow)" flood-opacity="1"/>
+  </filter>
+  <marker id="arr"     markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--line)"/></marker>
+  <marker id="arrA"    markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--accent)"/></marker>
+  <marker id="arrOk"   markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--ok)"/></marker>
+  <marker id="arrWarn" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--warn)"/></marker>
+  <marker id="arrTerm" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--danger)"/></marker>
+</defs></svg>
+
+<input type="checkbox" id="theme-toggle" hidden>
+<label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+
+<main class="report">
+
+<p class="lead">Проверка intent — iwiki standalone decoupling + official-marketplace publication (Phase C)</p>
+<p class="sub">
+  Артефакт: <code>docs/superpowers/intents/2026-06-22-iwiki-standalone-publication-intent.md</code> ·
+  intent_hash: <code>94c0041011bf2bb2</code> · 2026-06-22 ·
+  <span class="badge badge-ok">CRITICAL open: 0</span>&nbsp;
+  <span class="badge badge-warn">WARNING open: 3</span>&nbsp;
+  <span class="badge badge-ok">Вердикт: OK</span>
+</p>
+
+<!-- ════════════════════════════════════════════════════════════
+     БЛОК 1: РЕЗЮМЕ ТРЕБОВАНИЙ
+     ════════════════════════════════════════════════════════════ -->
+<h2>1. Резюме требований</h2>
+
+<h3>Objective</h3>
+<div class="note">
+  Отделить плагин iwiki от репозитория iclaude и опубликовать его автономно в официальном
+  маркетплейсе Anthropic claude-code. <strong>Два равнозначных драйвера:</strong>
+  (1) <em>sharing</em> — другие проекты могут устанавливать iwiki прямо из официального маркетплейса;
+  (2) <em>decoupling</em> — iclaude перестаёт включать исходники плагина в сборку и переходит на
+  внешнюю зависимость.
+</div>
+
+<h3>Desired Outcomes</h3>
+<table class="rpt-table">
+  <thead><tr><th>#</th><th>Outcome</th></tr></thead>
+  <tbody>
+    <tr><td>DO-1</td><td>Автономный репозиторий iwiki (отдельный от iclaude) собирает и прогоняет engine-тесты pytest зелёно в собственном CI.</td></tr>
+    <tr><td>DO-2</td><td>В чистом проекте <strong>без iclaude</strong> команды <code>plugin marketplace add &lt;repo&gt;</code> + <code>plugin install</code> работают end-to-end: engine самостоятельно поднимает <code>uv</code>, и навыки/команды <code>/iwiki-*</code> функционируют.</td></tr>
+    <tr><td>DO-3</td><td>Плагин принят в официальном маркетплейсе Anthropic (PR submittted/merged; листинг активен). <em>Внешний фактор — зависит от мейнтейнеров; см. Stop Rules.</em></td></tr>
+    <tr><td>DO-4</td><td>iclaude больше не включает исходники iwiki в сборку; он потребляет опубликованный плагин из маркетплейса. <span class="badge badge-warn">WARNING F-003</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Health Metrics</h3>
+<table class="rpt-table">
+  <thead><tr><th>#</th><th>Метрика</th></tr></thead>
+  <tbody>
+    <tr><td>HM-1</td><td>iwiki продолжает работать внутри iclaude точно так же, как раньше (docs/wiki/, <code>/iwiki-*</code>, четыре автоматических хука) — без регрессий в ходе и после перехода. <span class="badge badge-warn">WARNING F-001</span></td></tr>
+    <tr><td>HM-2</td><td>Engine-тесты pytest Phase-B (27 тестов) остаются зелёными в новом репозитории/CI.</td></tr>
+    <tr><td>HM-3</td><td>Поведение engine и хуков идентично: <code>search/index/lint/related</code> и хуки recall/sync/reindex/bootstrap работают ровно как сегодня (нет drift от decoupling).</td></tr>
+    <tr><td>HM-4</td><td>Существующие установки <code>iwiki@iclaude</code> продолжают работать, или существует явный задокументированный migration path. <span class="badge badge-warn">WARNING F-002</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Constraints</h3>
+<table class="rpt-table">
+  <thead><tr><th>#</th><th>Тип</th><th>Ограничение</th></tr></thead>
+  <tbody>
+    <tr><td>S1</td><td><span class="badge badge-info">Steering</span></td><td>Следовать официальным конвенциям маркетплейса Anthropic (manifest schema, README/LICENSE layout, contributor/disclosure).</td></tr>
+    <tr><td>S2</td><td><span class="badge badge-info">Steering</span></td><td>Демо/пример в standalone-репозитории — generic, не iclaude-специфичный.</td></tr>
+    <tr><td>S3</td><td><span class="badge badge-info">Steering</span></td><td>Decoupling хирургически: перемещать/упаковывать, не переписывать. Минимальные изменения для самодостаточного плагина.</td></tr>
+    <tr><td>H1</td><td><span class="badge badge-crit">Hard</span></td><td>Нулевая зависимость от iclaude. Плагин работает без кода iclaude (<code>lib/</code>, <code>.claude_config</code>); всё через переменные окружения.</td></tr>
+    <tr><td>H2</td><td><span class="badge badge-crit">Hard</span></td><td>Поведение engine без изменений. Decoupling — только упаковка, без изменений логики engine/хуков.</td></tr>
+    <tr><td>H3</td><td><span class="badge badge-crit">Hard</span></td><td>Runtime остаётся <code>httpx</code>-only. Никаких новых runtime-зависимостей; <code>pytest</code> — только dev.</td></tr>
+    <tr><td>H4</td><td><span class="badge badge-crit">Hard</span></td><td>MIT-лицензия сохраняется; правила маркетплейса Anthropic соблюдены (manifest, структура, disclosure).</td></tr>
+  </tbody>
+</table>
+
+<h3>Autonomy Zones</h3>
+<table class="rpt-table">
+  <thead><tr><th>Зона</th><th>Действия</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Full</strong></td><td>Черновики файлов standalone-репозитория на ветке/worktree: README, LICENSE, manifest маркетплейса, CI-конфиг, CHANGELOG, packaging scaffolding.</td></tr>
+    <tr><td><strong>Guarded</strong> (log + verify)</td><td>Реализация самодостаточного <code>uv</code>-bootstrap внутри плагина и packaging, делающий его устанавливаемым без iclaude; каждый шаг верифицируется по health metrics (поведение engine + 27 тестов).</td></tr>
+    <tr><td><strong>Proposal-first</strong></td><td>Решение по структуре/стратегии репозитория (новый репо vs split-with-history, migration path) и <strong>удаление bundled iwiki из iclaude</strong> для перехода на внешнее потребление.</td></tr>
+    <tr><td><strong>No autonomy</strong> (human only)</td><td>Создание публичного GitHub-репозитория, любой PR/submission в официальный маркетплейс Anthropic (push-to-public + необратимый листинг + disclosure).</td></tr>
+  </tbody>
+</table>
+
+<details>
+  <summary>Stop Rules (развернуть)</summary>
+  <ul class="tight">
+    <li><strong>Halt if:</strong> шаг decoupling изменяет поведение engine/хуков, добавляет runtime-зависимость, или ломает собственный iwiki iclaude.</li>
+    <li><strong>Escalate if:</strong> достигается внешнее или структурное действие — создание публичного репо, сабмит в маркетплейс, удаление iclaude-bundle, выбор структуры репозитория.</li>
+    <li><strong>Done when (все условия):</strong>
+      <ul class="tight">
+        <li>CI standalone-репозитория: engine pytest suite зелёный</li>
+        <li>Установка в чистом проекте (без iclaude): <code>/iwiki-*</code> работают через self-bootstrapped <code>uv</code></li>
+        <li>Submission в официальный маркетплейс открыт</li>
+        <li>iclaude потребляет внешний плагин без bundled-исходников</li>
+        <li>Собственный iwiki iclaude + 27 тестов по-прежнему проходят</li>
+      </ul>
+    </li>
+  </ul>
+</details>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════════════════
+     БЛОК 2: СХЕМЫ
+     ════════════════════════════════════════════════════════════ -->
+<h2>2. Схемы намерений и процесса</h2>
+
+<!-- 2a. Карта намерения -->
+<h3>2a. Карта намерения: Objective → Desired Outcomes → Health Metrics</h3>
+<!-- SVG used: nodes are non-adjacent and fan-out from Objective to 2 drivers then to 4 outcomes -->
+<!-- CSS flex cannot express the two-level fan-out with labeled branches -->
+
+<figure class="diagram">
+<svg viewBox="0 0 980 520" role="img" aria-label="Карта намерения: Objective → Desired Outcomes → Health Metrics">
+
+  <!-- Objective node -->
+  <g class="node">
+    <rect class="card" x="340" y="10" width="300" height="62" rx="12"/>
+    <rect class="bar-accent" x="348" y="22" width="5" height="38" rx="2.5"/>
+    <text class="t-title" x="490" y="38" text-anchor="middle">Objective</text>
+    <text class="t-sub"   x="490" y="56" text-anchor="middle">Decouple iwiki · publish to marketplace</text>
+  </g>
+
+  <!-- Two drivers -->
+  <path class="flow" marker-end="url(#arrA)" d="M420,72 L220,132"/>
+  <path class="flow" marker-end="url(#arrA)" d="M560,72 L760,132"/>
+
+  <!-- Driver: Sharing -->
+  <g class="node">
+    <rect class="card" x="80" y="132" width="280" height="56" rx="12"/>
+    <rect class="bar-accent" x="88" y="144" width="5" height="32" rx="2.5"/>
+    <text class="t-title" x="220" y="158" text-anchor="middle">Driver 1: Sharing</text>
+    <text class="t-sub"   x="220" y="174" text-anchor="middle">Other projects install from marketplace</text>
+  </g>
+
+  <!-- Driver: Decoupling -->
+  <g class="node">
+    <rect class="card" x="620" y="132" width="280" height="56" rx="12"/>
+    <rect class="bar-accent" x="628" y="144" width="5" height="32" rx="2.5"/>
+    <text class="t-title" x="760" y="158" text-anchor="middle">Driver 2: Decoupling</text>
+    <text class="t-sub"   x="760" y="174" text-anchor="middle">iclaude uses external plugin, not bundled</text>
+  </g>
+
+  <!-- Desired Outcomes header -->
+  <rect class="lbl-bg" x="395" y="214" width="190" height="18"/>
+  <text class="lbl" x="490" y="227" text-anchor="middle" font-weight="600">Desired Outcomes</text>
+
+  <!-- Fan from drivers to outcomes -->
+  <path class="flow" marker-end="url(#arrA)" d="M220,188 C220,230 110,230 110,242"/>
+  <path class="flow" marker-end="url(#arrA)" d="M220,188 C220,230 360,230 360,242"/>
+  <path class="flow" marker-end="url(#arrA)" d="M760,188 C760,230 620,230 620,242"/>
+  <path class="flow" marker-end="url(#arrA)" d="M760,188 C760,230 870,230 870,242"/>
+
+  <!-- DO-1 -->
+  <g class="node">
+    <rect class="card" x="20" y="242" width="180" height="70" rx="12"/>
+    <rect class="bar-ok" x="28" y="254" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="110" y="270" text-anchor="middle">DO-1</text>
+    <text class="t-sub"   x="110" y="288" text-anchor="middle">Standalone repo CI</text>
+    <text class="t-sub"   x="110" y="302" text-anchor="middle">pytest green</text>
+  </g>
+  <!-- DO-2 -->
+  <g class="node">
+    <rect class="card" x="270" y="242" width="180" height="70" rx="12"/>
+    <rect class="bar-ok" x="278" y="254" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="360" y="270" text-anchor="middle">DO-2</text>
+    <text class="t-sub"   x="360" y="288" text-anchor="middle">Fresh-project install</text>
+    <text class="t-sub"   x="360" y="302" text-anchor="middle">works (no iclaude)</text>
+  </g>
+  <!-- DO-3 -->
+  <g class="node">
+    <rect class="card" x="530" y="242" width="180" height="70" rx="12"/>
+    <rect class="bar-warn" x="538" y="254" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="620" y="270" text-anchor="middle">DO-3</text>
+    <text class="t-sub"   x="620" y="288" text-anchor="middle">Marketplace accepted</text>
+    <text class="t-sub"   x="620" y="302" text-anchor="middle">[external factor]</text>
+  </g>
+  <!-- DO-4 -->
+  <g class="node">
+    <rect class="card" x="780" y="242" width="180" height="70" rx="12"/>
+    <rect class="bar-ok" x="788" y="254" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="870" y="270" text-anchor="middle">DO-4</text>
+    <text class="t-sub"   x="870" y="288" text-anchor="middle">iclaude consumes</text>
+    <text class="t-sub"   x="870" y="302" text-anchor="middle">external plugin</text>
+  </g>
+
+  <!-- Health Metrics header -->
+  <rect class="lbl-bg" x="390" y="345" width="200" height="18"/>
+  <text class="lbl" x="490" y="358" text-anchor="middle" font-weight="600">Health Metrics (верификация)</text>
+
+  <!-- Connectors to HMs -->
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M110,312 C110,355 200,355 200,368"/>
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M360,312 C360,355 390,355 390,368"/>
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M620,312 C620,355 600,355 600,368"/>
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M870,312 C870,355 790,355 790,368"/>
+
+  <!-- HM-1 -->
+  <g class="node">
+    <rect class="card" x="100" y="368" width="220" height="70" rx="12"/>
+    <rect class="bar-warn" x="108" y="380" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="210" y="396" text-anchor="middle">HM-1 ⚠</text>
+    <text class="t-sub"   x="210" y="414" text-anchor="middle">No regressions in iclaude</text>
+    <text class="t-sub"   x="210" y="428" text-anchor="middle">(vague — F-001)</text>
+  </g>
+  <!-- HM-2 -->
+  <g class="node">
+    <rect class="card" x="340" y="368" width="220" height="70" rx="12"/>
+    <rect class="bar-ok" x="348" y="380" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="450" y="396" text-anchor="middle">HM-2</text>
+    <text class="t-sub"   x="450" y="414" text-anchor="middle">27 engine tests green</text>
+    <text class="t-sub"   x="450" y="428" text-anchor="middle">in new repo/CI</text>
+  </g>
+  <!-- HM-3 -->
+  <g class="node">
+    <rect class="card" x="580" y="368" width="220" height="70" rx="12"/>
+    <rect class="bar-ok" x="588" y="380" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="690" y="396" text-anchor="middle">HM-3</text>
+    <text class="t-sub"   x="690" y="414" text-anchor="middle">search/index/lint/related</text>
+    <text class="t-sub"   x="690" y="428" text-anchor="middle">+4 hooks: identical</text>
+  </g>
+  <!-- HM-4 -->
+  <g class="node">
+    <rect class="card" x="820" y="368" width="145" height="70" rx="12"/>
+    <rect class="bar-warn" x="828" y="380" width="5" height="46" rx="2.5"/>
+    <text class="t-title" x="892" y="396" text-anchor="middle">HM-4 ⚠</text>
+    <text class="t-sub"   x="892" y="414" text-anchor="middle">Existing installs</text>
+    <text class="t-sub"   x="892" y="428" text-anchor="middle">work / migr. path (F-002)</text>
+  </g>
+
+</svg>
+<figcaption>Карта намерения: Objective → два драйвера → 4 Desired Outcomes → Health Metrics (верификация). ⚠ = WARNING finding.</figcaption>
+</figure>
+
+<!-- 2b. Граф автономии -->
+<h3>2b. Граф автономии</h3>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 360" role="img" aria-label="Граф автономии: четыре зоны">
+
+  <!-- Full autonomy -->
+  <rect class="boundary-rect" x="10" y="10" width="225" height="320" rx="14"/>
+  <rect class="lbl-bg" x="20" y="3" width="110" height="18"/>
+  <text class="lbl" x="26" y="16" font-weight="700" fill="var(--ok)">Full autonomy</text>
+
+  <g class="node"><rect class="card" x="24" y="28" width="197" height="44" rx="10"/>
+    <rect class="bar-ok" x="32" y="40" width="4" height="20" rx="2"/>
+    <text class="t-title" x="122" y="48" text-anchor="middle">README / LICENSE</text>
+    <text class="t-sub"   x="122" y="62" text-anchor="middle">manifest, CI config</text></g>
+  <g class="node"><rect class="card" x="24" y="82" width="197" height="44" rx="10"/>
+    <rect class="bar-ok" x="32" y="94" width="4" height="20" rx="2"/>
+    <text class="t-title" x="122" y="104" text-anchor="middle">CHANGELOG</text>
+    <text class="t-sub"   x="122" y="118" text-anchor="middle">packaging scaffolding</text></g>
+  <text class="t-sub" x="122" y="148" text-anchor="middle">(reversible · local branch)</text>
+
+  <!-- Guarded -->
+  <rect class="boundary-rect" x="252" y="10" width="225" height="320" rx="14"/>
+  <rect class="lbl-bg" x="262" y="3" width="145" height="18"/>
+  <text class="lbl" x="268" y="16" font-weight="700" fill="var(--warn)">Guarded (log+verify)</text>
+
+  <g class="node"><rect class="card" x="266" y="28" width="197" height="44" rx="10"/>
+    <rect class="bar-warn" x="274" y="40" width="4" height="20" rx="2"/>
+    <text class="t-title" x="364" y="48" text-anchor="middle">uv self-bootstrap</text>
+    <text class="t-sub"   x="364" y="62" text-anchor="middle">inside plugin</text></g>
+  <g class="node"><rect class="card" x="266" y="82" width="197" height="44" rx="10"/>
+    <rect class="bar-warn" x="274" y="94" width="4" height="20" rx="2"/>
+    <text class="t-title" x="364" y="104" text-anchor="middle">Packaging</text>
+    <text class="t-sub"   x="364" y="118" text-anchor="middle">installable w/o iclaude</text></g>
+  <g class="node"><rect class="card" x="266" y="136" width="197" height="44" rx="10"/>
+    <rect class="bar-warn" x="274" y="148" width="4" height="20" rx="2"/>
+    <text class="t-title" x="364" y="157" text-anchor="middle">Verify each step</text>
+    <text class="t-sub"   x="364" y="172" text-anchor="middle">engine + 27 tests</text></g>
+
+  <!-- Proposal-first -->
+  <rect class="boundary-rect" x="494" y="10" width="225" height="320" rx="14"/>
+  <rect class="lbl-bg" x="504" y="3" width="150" height="18"/>
+  <text class="lbl" x="510" y="16" font-weight="700" fill="var(--accent)">Proposal-first</text>
+
+  <g class="node"><rect class="card" x="508" y="28" width="197" height="44" rx="10"/>
+    <rect class="bar-accent" x="516" y="40" width="4" height="20" rx="2"/>
+    <text class="t-title" x="606" y="48" text-anchor="middle">Repo strategy</text>
+    <text class="t-sub"   x="606" y="62" text-anchor="middle">new repo vs split-history</text></g>
+  <g class="node"><rect class="card" x="508" y="82" width="197" height="44" rx="10"/>
+    <rect class="bar-accent" x="516" y="94" width="4" height="20" rx="2"/>
+    <text class="t-title" x="606" y="104" text-anchor="middle">Migration path</text>
+    <text class="t-sub"   x="606" y="118" text-anchor="middle">design</text></g>
+  <g class="node"><rect class="card" x="508" y="136" width="197" height="44" rx="10"/>
+    <rect class="bar-accent" x="516" y="148" width="4" height="20" rx="2"/>
+    <text class="t-title" x="606" y="157" text-anchor="middle">Remove bundled iwiki</text>
+    <text class="t-sub"   x="606" y="172" text-anchor="middle">from iclaude</text></g>
+
+  <!-- No autonomy -->
+  <rect class="boundary-rect" x="736" y="10" width="234" height="320" rx="14"/>
+  <rect class="lbl-bg" x="746" y="3" width="160" height="18"/>
+  <text class="lbl" x="752" y="16" font-weight="700" fill="var(--danger)">No autonomy (human)</text>
+
+  <g class="node"><rect class="card" x="750" y="28" width="206" height="44" rx="10"/>
+    <rect class="bar-term" x="758" y="40" width="4" height="20" rx="2"/>
+    <text class="t-title" x="853" y="48" text-anchor="middle">Create public repo</text>
+    <text class="t-sub"   x="853" y="62" text-anchor="middle">GitHub · irreversible</text></g>
+  <g class="node"><rect class="card" x="750" y="82" width="206" height="44" rx="10"/>
+    <rect class="bar-term" x="758" y="94" width="4" height="20" rx="2"/>
+    <text class="t-title" x="853" y="104" text-anchor="middle">Marketplace submission</text>
+    <text class="t-sub"   x="853" y="118" text-anchor="middle">PR + listing</text></g>
+  <g class="node"><rect class="card" x="750" y="136" width="206" height="44" rx="10"/>
+    <rect class="bar-term" x="758" y="148" width="4" height="20" rx="2"/>
+    <text class="t-title" x="853" y="157" text-anchor="middle">Push-to-public</text>
+    <text class="t-sub"   x="853" y="172" text-anchor="middle">disclosure · listing</text></g>
+
+  <!-- Zone flow: Full → Guarded → Proposal → Human -->
+  <path class="conn-a" marker-end="url(#arrA)" d="M235,172 H248"/>
+  <path class="conn-a" marker-end="url(#arrA)" d="M477,172 H490"/>
+  <path class="conn-a" marker-end="url(#arrA)" d="M719,172 H732"/>
+
+</svg>
+<figcaption>Граф автономии. Направление стрелок = нарастание ограничений. Красная зона — только человек.</figcaption>
+</figure>
+
+<!-- 2c. Матрица Constraint × Desired Outcome -->
+<h3>2c. Матрица Constraint × Desired Outcome</h3>
+<table class="rpt-table">
+  <thead>
+    <tr>
+      <th>Constraint</th>
+      <th class="center">DO-1<br><small>Standalone CI</small></th>
+      <th class="center">DO-2<br><small>Fresh install</small></th>
+      <th class="center">DO-3<br><small>Marketplace</small></th>
+      <th class="center">DO-4<br><small>iclaude external</small></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-info">S1</span> Marketplace conventions</td>
+      <td class="center dash">—</td><td class="center dash">—</td>
+      <td class="center check">✓</td><td class="center dash">—</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">S2</span> Generic demo content</td>
+      <td class="center dash">—</td><td class="center dash">—</td>
+      <td class="center check">✓</td><td class="center dash">—</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">S3</span> Decouple surgically</td>
+      <td class="center check">✓</td><td class="center check">✓</td>
+      <td class="center dash">—</td><td class="center check">✓</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-crit">H1</span> Zero dep on iclaude</td>
+      <td class="center check">✓</td><td class="center check">✓</td>
+      <td class="center dash">—</td><td class="center check">✓</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-crit">H2</span> Engine behavior unchanged</td>
+      <td class="center check">✓</td><td class="center check">✓</td>
+      <td class="center dash">—</td><td class="center check">✓</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-crit">H3</span> Runtime httpx-only</td>
+      <td class="center check">✓</td><td class="center check">✓</td>
+      <td class="center dash">—</td><td class="center dash">—</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-crit">H4</span> MIT license + rules</td>
+      <td class="center dash">—</td><td class="center dash">—</td>
+      <td class="center check">✓</td><td class="center dash">—</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- 2d. Stop Rules -->
+<h3>2d. Stop Rules — условия завершения</h3>
+<figure class="diagram">
+<svg viewBox="0 0 980 280" role="img" aria-label="Stop Rules: HALT, ESCALATE, DONE triggers">
+
+  <!-- HALT -->
+  <rect class="boundary-rect" x="10" y="10" width="300" height="250" rx="14"/>
+  <rect class="lbl-bg" x="20" y="3" width="80" height="18"/>
+  <text class="lbl" x="26" y="16" font-weight="700" fill="var(--danger)">HALT (стоп)</text>
+
+  <g class="node"><rect class="card" x="24" y="26" width="280" height="44" rx="10"/>
+    <rect class="bar-term" x="32" y="38" width="4" height="20" rx="2"/>
+    <text class="t-title" x="164" y="50" text-anchor="middle">Engine/hook behavior changes</text>
+    <text class="t-sub"   x="164" y="64" text-anchor="middle">от шага decoupling</text></g>
+  <g class="node"><rect class="card" x="24" y="80" width="280" height="44" rx="10"/>
+    <rect class="bar-term" x="32" y="92" width="4" height="20" rx="2"/>
+    <text class="t-title" x="164" y="104" text-anchor="middle">Runtime dep added</text>
+    <text class="t-sub"   x="164" y="118" text-anchor="middle">шаг decoupling</text></g>
+  <g class="node"><rect class="card" x="24" y="134" width="280" height="44" rx="10"/>
+    <rect class="bar-term" x="32" y="146" width="4" height="20" rx="2"/>
+    <text class="t-title" x="164" y="158" text-anchor="middle">iclaude iwiki broken</text>
+    <text class="t-sub"   x="164" y="172" text-anchor="middle">собственный iwiki не работает</text></g>
+
+  <!-- ESCALATE -->
+  <rect class="boundary-rect" x="335" y="10" width="305" height="250" rx="14"/>
+  <rect class="lbl-bg" x="345" y="3" width="120" height="18"/>
+  <text class="lbl" x="351" y="16" font-weight="700" fill="var(--warn)">ESCALATE (человек)</text>
+
+  <g class="node"><rect class="card" x="349" y="26" width="280" height="44" rx="10"/>
+    <rect class="bar-warn" x="357" y="38" width="4" height="20" rx="2"/>
+    <text class="t-title" x="489" y="50" text-anchor="middle">Create public repo</text>
+    <text class="t-sub"   x="489" y="64" text-anchor="middle">необратимое действие</text></g>
+  <g class="node"><rect class="card" x="349" y="80" width="280" height="44" rx="10"/>
+    <rect class="bar-warn" x="357" y="92" width="4" height="20" rx="2"/>
+    <text class="t-title" x="489" y="104" text-anchor="middle">Marketplace submission</text>
+    <text class="t-sub"   x="489" y="118" text-anchor="middle">PR + listing</text></g>
+  <g class="node"><rect class="card" x="349" y="134" width="280" height="44" rx="10"/>
+    <rect class="bar-warn" x="357" y="146" width="4" height="20" rx="2"/>
+    <text class="t-title" x="489" y="158" text-anchor="middle">Remove iclaude bundle</text>
+    <text class="t-sub"   x="489" y="172" text-anchor="middle">выбор структуры репо</text></g>
+
+  <!-- DONE -->
+  <rect class="boundary-rect" x="660" y="10" width="310" height="250" rx="14"/>
+  <rect class="lbl-bg" x="670" y="3" width="80" height="18"/>
+  <text class="lbl" x="676" y="16" font-weight="700" fill="var(--ok)">DONE when (все)</text>
+
+  <g class="node"><rect class="card" x="674" y="26" width="280" height="34" rx="8"/>
+    <rect class="bar-ok" x="682" y="36" width="4" height="14" rx="2"/>
+    <text class="t-sub" x="814" y="48" text-anchor="middle">Standalone CI: pytest green</text></g>
+  <g class="node"><rect class="card" x="674" y="70" width="280" height="34" rx="8"/>
+    <rect class="bar-ok" x="682" y="80" width="4" height="14" rx="2"/>
+    <text class="t-sub" x="814" y="92" text-anchor="middle">Fresh install: /iwiki-* via uv</text></g>
+  <g class="node"><rect class="card" x="674" y="114" width="280" height="34" rx="8"/>
+    <rect class="bar-ok" x="682" y="124" width="4" height="14" rx="2"/>
+    <text class="t-sub" x="814" y="136" text-anchor="middle">Marketplace submission opened</text></g>
+  <g class="node"><rect class="card" x="674" y="158" width="280" height="34" rx="8"/>
+    <rect class="bar-ok" x="682" y="168" width="4" height="14" rx="2"/>
+    <text class="t-sub" x="814" y="180" text-anchor="middle">iclaude: external plugin, no bundle</text></g>
+  <g class="node"><rect class="card" x="674" y="202" width="280" height="34" rx="8"/>
+    <rect class="bar-ok" x="682" y="212" width="4" height="14" rx="2"/>
+    <text class="t-sub" x="814" y="224" text-anchor="middle">iclaude iwiki + 27 tests pass</text></g>
+
+</svg>
+<figcaption>Stop Rules. HALT = немедленная остановка. ESCALATE = ждём человека. DONE = все 5 условий выполнены.</figcaption>
+</figure>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════════════════
+     БЛОК 3: РЕЗУЛЬТАТЫ ПРОВЕРКИ
+     ════════════════════════════════════════════════════════════ -->
+<h2>3. Результаты проверки</h2>
+
+<h3>Статус фаз</h3>
+<table class="rpt-table">
+  <thead><tr><th>Фаза</th><th>Статус</th><th>Тип gate</th><th>Findings</th></tr></thead>
+  <tbody>
+    <tr class="ph-passed"><td>1. structure</td>   <td><span class="badge badge-ok">passed</span></td>  <td>CRITICAL gate</td><td>0</td></tr>
+    <tr class="ph-passed"><td>2. completeness</td><td><span class="badge badge-ok">passed</span></td>  <td>CRITICAL gate</td><td>0</td></tr>
+    <tr class="ph-warn">  <td>3. clarity</td>     <td><span class="badge badge-ok">passed</span></td>  <td>CRITICAL gate</td><td>3 WARNING</td></tr>
+    <tr class="ph-passed"><td>4. consistency</td> <td><span class="badge badge-ok">passed</span></td>  <td>CRITICAL gate</td><td>0</td></tr>
+    <tr class="ph-passed"><td>5. alignment</td>   <td><span class="badge badge-ok">passed</span></td>  <td>advisory — не блокирует</td><td>0</td></tr>
+  </tbody>
+</table>
+
+<h3>Findings</h3>
+<table class="rpt-table">
+  <thead><tr><th>ID</th><th>Severity</th><th>Phase</th><th>Section</th><th>Описание</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>F-001</code></td>
+      <td><span class="badge badge-warn">WARNING</span></td>
+      <td>clarity</td>
+      <td>Health Metrics</td>
+      <td>«no regressions» и «exactly as before» — качественные критерии. Метод измерения (какие тесты/проверки) не назван для четырёх автоматических хуков (recall/sync/reindex/bootstrap) и рабочего процесса docs/wiki/ в отдельности. 27-тестовый сьют частично покрывает engine, но не хуки явно.</td>
+      <td><span class="badge badge-warn badge-open">open</span></td>
+    </tr>
+    <tr>
+      <td><code>F-002</code></td>
+      <td><span class="badge badge-warn">WARNING</span></td>
+      <td>clarity</td>
+      <td>Health Metrics</td>
+      <td>«Existing <code>iwiki@iclaude</code> installations keep working» — «keep working» не квантифицировано: не назван тест или smoke-check для верификации существующих установок.</td>
+      <td><span class="badge badge-warn badge-open">open</span></td>
+    </tr>
+    <tr>
+      <td><code>F-003</code></td>
+      <td><span class="badge badge-warn">WARNING</span></td>
+      <td>clarity</td>
+      <td>Desired Outcomes</td>
+      <td>DO-4 («iclaude no longer bundles iwiki's source; it consumes the published plugin from the marketplace») описывает архитектурное/структурное состояние, а не user-facing или операционный результат. Рассмотрите добавление пользователя-ориентированного сигнала (напр.: «пользователи iclaude не замечают изменений в <code>/iwiki-*</code>»).</td>
+      <td><span class="badge badge-warn badge-open">open</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Сводка</h3>
+<div class="note note-ok">
+  <strong>Финальный вердикт: OK</strong> — CRITICAL open: 0 · WARNING open: 3 · alignment notes: 0<br>
+  Три WARNING не блокируют переход intent→spec. Документ готов к следующему шагу.
+</div>
+
+<details>
+  <summary>Детали хеширования</summary>
+  <ul class="tight">
+    <li><strong>intent_hash:</strong> <code>94c0041011bf2bb2</code> (sha256 тела документа, первые 16 символов)</li>
+    <li><strong>Метод:</strong> <code>awk 'BEGIN{fm=0} /^---$/{fm++; next} fm&gt;=2{print}' &lt;FILE&gt; | sha256sum | cut -c1-16</code></li>
+    <li><strong>prev_hash:</strong> н/д (первый прогон, frontmatter не существовал)</li>
+    <li><strong>last_run:</strong> 2026-06-22</li>
+  </ul>
+</details>
+
+<hr class="divider">
+
+<div class="footer">
+  <p>Intent doc — корень цепи IDD→SDD. Upstream-документа нет.</p>
+  <p><strong class="next-step">Next step: superpowers:brainstorming</strong></p>
+  <p style="margin-top:.8rem; color:var(--muted); font-size:.8rem;">
+    Сгенерировано: 2026-06-22 · check-intent · iclaude
+  </p>
+</div>
+
+</main>
+</body>
+</html>

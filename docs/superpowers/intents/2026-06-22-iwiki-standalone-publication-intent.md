@@ -1,3 +1,58 @@
+---
+review:
+  intent_hash: "94c0041011bf2bb2"
+  last_run: "2026-06-22"
+  phases:
+    structure:
+      status: passed
+    completeness:
+      status: passed
+    clarity:
+      status: passed
+    consistency:
+      status: passed
+    alignment:
+      status: passed
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: "Health Metrics"
+      section_hash: "d0c62e3a3392d7e9"
+      text: >
+        "iwiki continues to work inside iclaude exactly as before … no regressions" uses
+        vague criteria. "No regressions" and "exactly as before" are qualitative — the
+        measurement method (which tests, which checks) is not named for this specific bullet.
+        The 27-test suite anchors the engine behavior partially, but the four automation hooks
+        (recall/sync/reindex/bootstrap) and the docs/wiki/ workflow have no explicit test
+        reference here.
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: clarity
+      severity: WARNING
+      section: "Health Metrics"
+      section_hash: "d0c62e3a3392d7e9"
+      text: >
+        "Existing `iwiki@iclaude` installations keep working, or there is an explicit,
+        documented migration path" — "keep working" is not quantified; no test or smoke-check
+        is named to verify this for existing installs.
+      verdict: open
+      verdict_at: null
+    - id: F-003
+      phase: clarity
+      severity: WARNING
+      section: "Desired Outcomes"
+      section_hash: "cb7d69d5eef0e78c"
+      text: >
+        "iclaude no longer bundles iwiki's source; it consumes the published plugin from the
+        marketplace." — this outcome describes an architectural/structural state rather than a
+        user-observable or operational result. Acceptable at intent level, but consider adding
+        a user-facing signal (e.g., "iclaude users experience no change in `/iwiki-*`
+        behavior") to make the outcome fully observable.
+      verdict: open
+      verdict_at: null
+---
 # Intent: iwiki standalone decoupling + official-marketplace publication (Phase C)
 
 **Date:** 2026-06-22
