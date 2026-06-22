@@ -1,3 +1,55 @@
+---
+review:
+  spec_hash: 754ace3c592113af
+  last_run: 2026-06-22
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: WARNING
+      section: "Area C — verbosity reduction (in place, self-containment preserved)"
+      section_hash: 749bdd83d3b94ee0
+      text: >-
+        Task part (a) asks to audit "redundancy when validating prepared
+        documents". The spec addresses redundancy only as restated PROSE
+        (C2/C3 verbosity, C1 self-containment). It does not evaluate whether any
+        validation PHASE or check is itself redundant (e.g. overlapping checks
+        across the 4 phases). Partial coverage of the redundancy axis — confirm
+        prose-level redundancy is the intended scope, or add a requirement.
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: clarity
+      severity: INFO
+      section: "Area C — verbosity reduction (in place, self-containment preserved)"
+      section_hash: 749bdd83d3b94ee0
+      text: >-
+        C2 ("MUST be compressed") and C3 ("MUST be tightened in wording") give
+        no quantified verbosity target. Acceptable: verbosity reduction is
+        qualitative and the Out-of-scope guards + Success criteria bound it
+        (bash verbatim, checklists untouched, git diff scope). No DoD gap that
+        blocks review.
+      verdict: open
+      verdict_at: null
+    - id: F-003
+      phase: clarity
+      severity: INFO
+      section: "Area A — HTML-report contract correctness (priority 1)"
+      section_hash: f66e64edcc83cb50
+      text: >-
+        A3 offers two acceptance outcomes ("Replace it with a pointer ... or
+        remove the line"). Both are valid DoD and Success criteria pins the
+        result ("broken external gold-standard reference is gone"), so this is
+        an acceptable either/or, not an ambiguity.
+      verdict: open
+      verdict_at: null
+chain:
+  intent: null
+---
 # Design: Refinement of `check-{intent,spec,plan,result}` commands
 
 **Status:** draft
@@ -5,7 +57,7 @@
 ## Objective
 
 Improve the four IDD→SDD validator commands in
-`.nvm-isolated/.claude-isolated/commands/` along three axes the audit surfaced:
+`.nvm-isolated/.claude-isolated/commands/` along four axes the audit surfaced:
 
 1. **HTML-report contract correctness** (priority 1) — the Step "HTML report"
    instructions do not align with the `html-report` skill they call.
@@ -13,6 +65,9 @@ Improve the four IDD→SDD validator commands in
    request are uneven across the four documents.
 3. **Verbosity reduction** — trim restated prose without losing review context and
    without breaking each command's self-containment.
+4. **Validation-phase redundancy** — collapse the one place where a validation phase
+   re-does work an earlier step already performed (the original task asks to audit
+   "redundancy when validating", not only restated prose).
 
 Each command is executed by a clean-context subagent that reads exactly ONE command
 file (per the IDD check-runner protocol in `CLAUDE.md`). Self-containment is a
@@ -95,10 +150,34 @@ Grouped by area. Each requirement is independently verifiable.
 - **C3.** The quick-exit and init-state preambles MUST be tightened in wording; their
   structure (conditions, phase lists, frontmatter shape) is preserved unchanged.
 
+### Area D — validation-phase redundancy (resolves F-001)
+
+A focused audit of overlap across the four phases (structure / coverage / clarity /
+consistency), then consolidation of the single real duplicate found.
+
+- **D1 (audit, documented in this spec).** Phase-overlap result: the phases are
+  orthogonal EXCEPT the `consistency` phase, which re-states the section-hash work
+  that init-state (Step 2) already performs — Step 2 computes every section hash and
+  resets stale verdicts, then the `consistency` phase says again "check section hashes
+  — changed since last run". structure (placeholders / broken links), coverage
+  (task↔requirement), clarity (weasel-terms / DoD), and the intent-specific
+  status-guard + contradiction checks are each unique — no consolidation there.
+- **D2 (consolidation).** In check-intent / check-spec / check-plan, the `consistency`
+  phase MUST reference the section-diff already computed in Step 2 rather than
+  re-instructing a fresh hash pass. Reword its checklist from "check section hashes …
+  changed?" to "report the changed-section diff from Step 2 (init-state) and its
+  related findings". The phase still runs and still yields a `passed` status for the
+  gate — only the duplicated hash-recompute instruction is removed. The bash hashing
+  pipeline and the frontmatter contract are unchanged. check-intent's `consistency`
+  contradiction + status-guard checks are NOT touched (they are not duplicates).
+
 ### Out of scope (explicitly not touched)
 
 - Bash commands (executable — any drift breaks the quick-exit hash convergence).
 - Phase checklists (closed lists, "do NOT extend" — anti-hallucination guardrails).
+  Area D is the sole exception: it only REMOVES the duplicated hash-recompute line
+  from the `consistency` phase (a reduction, never an extension), leaving every other
+  check untouched.
 - Artifact bodies, the `review:` / `result_check:` frontmatter contract, and
   `idd-gate.py` compatibility.
 - Cross-file duplication of the hashing block — kept as the deliberate cost of
@@ -116,6 +195,9 @@ Grouped by area. Each requirement is independently verifiable.
 - check-spec's dependency graph is defined with the same node/edge precision as
   check-plan's.
 - The broken external gold-standard reference is gone from the skill.
+- The `consistency` phase in check-intent / check-spec / check-plan no longer
+  re-instructs a fresh section-hash pass — it points at the Step 2 init-state diff;
+  the phase still yields a `passed` status and the frontmatter contract is unchanged.
 - `git diff` touches only the four command files and three spots in
   `html-report/SKILL.md` — nothing else.
 
