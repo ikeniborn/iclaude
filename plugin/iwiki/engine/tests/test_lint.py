@@ -1,3 +1,4 @@
+import json
 import os
 from iwiki_engine.lint import lint
 
@@ -36,3 +37,15 @@ def test_detects_orphan(tmp_path):
         os.path.normpath(os.path.join(wd, "a.md")),
         os.path.normpath(os.path.join(wd, "b.md")),
     }
+
+
+def test_stale_ignores_legacy_and_malformed_log_records(tmp_path):
+    wd = _wiki(tmp_path, {"a.md": "## A\nbody\n"})
+    iwiki = os.path.join(wd, ".iwiki")
+    os.makedirs(iwiki, exist_ok=True)
+    with open(os.path.join(iwiki, "log.jsonl"), "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"op": "init", "scope": "x", "note": "legacy"}) + "\n")
+        fh.write("not json at all\n")
+    out = lint(wd)
+    assert out["wiki_present"] is True
+    assert out["stale"] == []   # records lacking source/page are tolerated, ignored

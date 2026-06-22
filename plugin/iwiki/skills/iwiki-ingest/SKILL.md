@@ -46,6 +46,9 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
    printf '{"op":"ingest","source":"<src>","page":"<page>","date":"<YYYY-MM-DD>"}\n' \
      >> docs/wiki/.iwiki/log.jsonl
    ```
+   Canonical log record: `{op, source, page, date}` (`note` optional). Use exactly
+   these keys — `lint`'s stale check reads `source`/`page` and ignores records
+   missing them. Do not introduce alternative keys (e.g. `scope`).
 6. Report which page changed and the index size (warn if over the 8 MB cap).
 
 ## Stop rule
