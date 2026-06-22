@@ -13,6 +13,10 @@ review:
 chain:
   intent: docs/superpowers/intents/2026-06-17-iwiki-intent.md
   spec:   docs/superpowers/specs/2026-06-22-iwiki-evaluation-improvements-design.md
+result_check:
+  verdict: OK
+  plan_hash: 82f6bc2121fd7241
+  last_run: 2026-06-22
 ---
 
 # iwiki Plugin Improvements (Phase B) Implementation Plan
