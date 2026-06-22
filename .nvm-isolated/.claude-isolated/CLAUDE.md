@@ -74,6 +74,16 @@ When your changes create orphans:
 
 Test: every changed line must trace directly to the user's request.
 
+## Branch Workflow
+
+**Develop on `dev/*`. Branch from main. Merge back only via PR.**
+
+- All development happens on a `dev/*` branch — never commit work directly to the main branch (`master` / `main` / `prod`).
+- Always create the `dev/*` branch from the up-to-date main branch (`master` / `main` / `prod`), not from another feature branch.
+- For parallel work on several tasks, create one git worktree per branch, each worktree named identically to its `dev/*` branch.
+- Close a branch only through a PR into the main branch (`master` / `main` / `prod`) — no direct merges or pushes to main.
+- After the PR is created, remove the branch's worktree — don't leave stale worktrees around.
+
 ## Execution
 
 **Define success criteria. Loop until verified.**
