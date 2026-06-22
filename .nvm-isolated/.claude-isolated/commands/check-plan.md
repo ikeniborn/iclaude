@@ -8,7 +8,7 @@
 
 ### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
 
-ВСЕ хеши считаются ОДИНАКОВО — иначе сходимости не будет (frontmatter живой, меняется каждый прогон).
+Все хеши — одним пайплайном (frontmatter живой, иначе quick-exit не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай.
 
 - **Хеш тела документа** (исключает frontmatter):
   ```bash
@@ -17,19 +17,14 @@
 - **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
 - Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
 
-Команда ОБЯЗАНА запускать эти bash-команды через инструмент Bash. «В уме» не пересчитывать. Любое отклонение ломает quick-exit.
-
 ### Шаг 0. Quick exit по state
 
-1. Если файл плана найден и содержит frontmatter с блоком `review:`:
-   - Посчитать sha256 тела плана по каноническому алгоритму (см. выше)
-   - Посчитать sha256 тела связанной спеки по тому же алгоритму
-   - Если `plan_hash == frontmatter.review.plan_hash` И `spec_hash == frontmatter.review.spec_hash` И:
-     - `∀ phase: status == passed`
-     - `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
-     - `count(severity == CRITICAL ∧ verdict == open) == 0`
-   - → вывести `OK (cached, hash match)` и завершить
-2. Иначе — продолжить
+Если у плана есть frontmatter с блоком `review:`, `plan_hash` совпадает с телом плана И `spec_hash` — с телом спеки И:
+- `∀ phase: status == passed`
+- `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
+- `count(severity == CRITICAL ∧ verdict == open) == 0`
+
+→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
 
 ### Шаг 1. Определи scope
 
@@ -110,17 +105,16 @@
 #### Фаза 5: consistency
 
 Закрытый чек-лист:
-- Сверка хешей секций плана и спеки
+- Использовать diff изменившихся секций плана/спеки, уже вычисленный в Шаге 2 (init-state) — НЕ пересчитывать хеши заново
 - Сводка по изменившимся секциям
 
 ### Логика обработки findings
 
-Идентична check-spec:
 1. Не дублировать existing findings с тем же `section + text + section_hash`
-2. Новые → `id: F-NNN`, `verdict: open`
-3. Записать frontmatter
-4. Отчёт + запрос verdicts
-5. Все CRITICAL закрыты → `passed`, переход; иначе → `in_progress`, остановка
+2. Новые → `id: F-NNN` (монотонно), `phase`, `severity`, `section`, `section_hash`, `text`, `verdict: open`, `verdict_at: null`
+3. Записать обновлённый frontmatter в файл
+4. Отчёт по фазе + запрос verdicts (CRITICAL обязателен: `accepted | wontfix | fixed`; WARNING желателен; INFO опционален)
+5. Все CRITICAL фазы закрыты → `phase.status = passed`, переход; иначе → `in_progress`, остановка с просьбой исправить
 
 ### Шаг 4. Финальный вердикт
 
@@ -138,9 +132,9 @@
    - **Пересечения** — матрица: шаги, затрагивающие один и тот же артефакт/файл (overlap по артефактам), и/или покрытие требований — где одно требование закрывается несколькими шагами либо один шаг закрывает несколько требований (из фазы `coverage`).
 3. **Результаты проверки** — по каждой из 5 фаз (structure / coverage / dependencies / verifiability / consistency) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open); финальный вердикт; chain (`intent → spec → plan`, если `intent_path` известен).
 
-Параметры артефакта:
-- Выход: `docs/superpowers/reports/plans/<basename плана без .md>-check.html` (например `2026-06-17-foo-plan-check.html`). Создай каталог `docs/superpowers/reports/plans/`, если его нет.
-- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+Параметры артефакта (передай навыку явно при вызове):
+- **Output path (явный аргумент):** `docs/superpowers/reports/plans/<basename плана без .md>-check.html` (например `2026-06-17-foo-plan-check.html`). Это caller-supplied путь — навык пишет туда (Full-зона), создаёт каталог `docs/superpowers/reports/plans/` при отсутствии, перезаписывает без подтверждения.
+- **Данные — inline:** три блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 
 После записи сообщи пользователю путь к `.html`.
