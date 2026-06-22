@@ -75,7 +75,7 @@ The five files in `lib/core/` are always sourced first (Phase 0) and provide the
 
 ## Isolated Environment
 
-The isolated environment lives in `.nvm-isolated/` and provides a self-contained Node.js + Claude Code installation that does not interact with the system's global npm. `ISOLATED_NVM_DIR` and `ISOLATED_CONFIG_DIR` (`.nvm-isolated/.claude-isolated/`) are set by `init_environment()` and used by nearly every module. `CLAUDE_CONFIG_DIR` is initialised to `ISOLATED_CONFIG_DIR` and exported before Claude launches, redirecting all Claude Code configuration (credentials, settings, hooks) away from `~/.claude`. See [[nvm#Isolated Environment Overview]] for install, repair, and detection details.
+The isolated environment lives in `.nvm-isolated/` and provides a self-contained Node.js + Claude Code installation that does not interact with the system's global npm. `ISOLATED_NVM_DIR` and `ISOLATED_CONFIG_DIR` (`.nvm-isolated/.claude-isolated/`) are set by `init_environment()` and used by nearly every module. `CLAUDE_CONFIG_DIR` is initialised to `ISOLATED_CONFIG_DIR` and exported before Claude launches, redirecting all Claude Code configuration (credentials, settings, hooks) away from `~/.claude`. The PreToolUse [[security-hooks]] that guard secret material run from this isolated config. See [[nvm#Isolated Environment Overview]] for install, repair, and detection details.
 
 ## Configuration File
 
