@@ -10,6 +10,11 @@ PreToolUse hook — IDD→SDD phase gate.
 выполняет /check-* в субагенте, вердикты собираются в основной сессии.
 Коммуникация — через frontmatter review:/result_check:.
 
+Session scoping — гейт резолвит кандидата ТОЛЬКО среди артефактов, которыми
+владеет текущая сессия (session_id из payload), записанных в ledger
+$CLAUDE_CONFIG_DIR/state/idd-sessions.json. Сессия, не создававшая артефакт,
+не гейтится чужим артефактом. Нет session_id / ledger недоступен → fail-open.
+
 Exit codes:
   0 — разрешить (Skill выполняется)
   2 — заблокировать (Skill не выполняется, Claude получает stderr)
@@ -68,20 +73,115 @@ GATE_MAP = {
 SPEC_RULE = GATE_MAP["writing-plans"]      # specs/*-design.md, review/spec_hash
 PLAN_RULE = GATE_MAP["executing-plans"]    # plans/*.md, review/plan_hash
 
+# ── session-ownership ledger ────────────────────────────────────────────
+LEDGER_MAX_AGE_SECONDS = 7 * 24 * 3600  # prune backstop for stale entries
+ARTIFACT_DIRS = ("intents", "specs", "plans")
+CLAIM_SKILLS = {"executing-plans", "subagent-driven-development"}
+
+
+def ledger_path():
+    """Path to the ownership ledger, or None when CLAUDE_CONFIG_DIR is unset
+    (→ ledger unreachable → every session owns nothing → all gates open)."""
+    cfg = os.environ.get("CLAUDE_CONFIG_DIR")
+    return os.path.join(cfg, "state", "idd-sessions.json") if cfg else None
+
+
+def load_ledger():
+    """Ledger {abspath: {"session", "ts"}}; {} on missing/corrupt (fail-open).
+    Prunes entries whose artifact is gone or older than the max-age backstop."""
+    path = ledger_path()
+    if not path or not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, ValueError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    now = time.time()
+    out = {}
+    for key, val in data.items():
+        if not isinstance(val, dict) or not os.path.exists(key):
+            continue
+        if now - val.get("ts", 0) > LEDGER_MAX_AGE_SECONDS:
+            continue
+        out[key] = val
+    return out
+
+
+def record_owner(path, sid):
+    """Stamp `sid` as owner of `path` (abspath-keyed, last-writer-wins).
+    Atomic write; failures are swallowed (ownership is best-effort)."""
+    lp = ledger_path()
+    if not lp or not sid:
+        return
+    ledger = load_ledger()
+    ledger[os.path.abspath(path)] = {"session": sid, "ts": int(time.time())}
+    try:
+        os.makedirs(os.path.dirname(lp), exist_ok=True)
+        tmp = lp + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(ledger, f)
+        os.replace(tmp, lp)
+    except OSError:
+        pass
+
+
+def owns(path, sid, ledger):
+    """True if `sid` owns `path` per the (pre-loaded) ledger."""
+    if not sid:
+        return False
+    entry = ledger.get(os.path.abspath(path))
+    return isinstance(entry, dict) and entry.get("session") == sid
+
+
+def _is_artifact(path):
+    """True if `path` lies under one of the IDD artifact directories."""
+    return any(_under(path, os.path.join(DOCS_ROOT, d)) for d in ARTIFACT_DIRS)
+
+
+def record_ownership(data, tool, sid):
+    """Stamp ownership for the artifact this call touches (Write/Edit/MultiEdit
+    of an artifact) or claims (executing-plans / subagent-driven-development →
+    the newest plan, so an implementing session is gated by it)."""
+    if tool in ("Write", "Edit", "MultiEdit"):
+        path = (data.get("tool_input") or {}).get("file_path")
+        if path and _is_artifact(path):
+            record_owner(path, sid)
+    elif tool == "Skill":
+        skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
+        if skill in CLAIM_SKILLS:
+            plan = newest_plan()
+            if plan:
+                record_owner(plan, sid)
+
 
 def normalize_skill(name):
     """Суффикс после последнего ':' ('superpowers:writing-plans' → 'writing-plans')."""
     return name.rsplit(":", 1)[-1].strip()
 
 
-def resolve_candidate(rule):
-    """Самый недавно изменённый файл, совпавший с glob в upstream-директории.
-    None, если совпадений нет — escape hatch: hotfix без IDD-доков проходит."""
+def resolve_candidate(rule, sid):
+    """Newest glob-matching artifact OWNED BY `sid`. None if none owned —
+    escape: a session is gated only by artifacts it owns. None with no matches
+    at all is the existing hotfix escape (no IDD docs)."""
     pattern = os.path.join(DOCS_ROOT, rule["dir"], rule["glob"])
     matches = glob.glob(pattern)
     if not matches:
         return None
-    return max(matches, key=os.path.getmtime)
+    ledger = load_ledger()
+    owned = [m for m in matches if owns(m, sid, ledger)]
+    if not owned:
+        return None
+    return max(owned, key=os.path.getmtime)
+
+
+def newest_plan():
+    """Newest plan across the repo, ignoring ownership — used at claim time."""
+    pattern = os.path.join(DOCS_ROOT, PLAN_RULE["dir"], PLAN_RULE["glob"])
+    matches = glob.glob(pattern)
+    return max(matches, key=os.path.getmtime) if matches else None
 
 
 def body_hash(path):
@@ -189,7 +289,7 @@ def block(candidate, reason, fix):
     sys.exit(2)
 
 
-def handle_write(data, tool):
+def handle_write(data, tool, sid):
     """Gate по записи downstream-артефакта (inline-переходы spec→plan, plan→impl)."""
     path = (data.get("tool_input") or {}).get("file_path")
     if not path:
@@ -198,7 +298,7 @@ def handle_write(data, tool):
     # spec→plan: создание файла плана (только Write, не Edit).
     if tool == "Write" and _under(path, PLANS_DIR) and path.endswith(".md"):
         content = (data.get("tool_input") or {}).get("content")
-        spec = resolve_spec_from_chain(content) or resolve_candidate(SPEC_RULE)
+        spec = resolve_spec_from_chain(content) or resolve_candidate(SPEC_RULE, sid)
         if spec is None:
             sys.exit(0)  # нет спеки → escape
         reason = evaluate_gate(spec, SPEC_RULE)
@@ -208,7 +308,7 @@ def handle_write(data, tool):
 
     # plan→impl: правка файла вне docs/superpowers/ (любой инструмент).
     if not _under(path, DOCS_ROOT):
-        plan = resolve_candidate(PLAN_RULE)
+        plan = resolve_candidate(PLAN_RULE, sid)
         if plan is None:
             sys.exit(0)  # нет плана → escape
         if not fresh(plan, IMPL_GATE_FRESH_SECONDS):
@@ -221,13 +321,13 @@ def handle_write(data, tool):
     sys.exit(0)  # specs/intents, правка существующего плана и т.п.
 
 
-def handle_skill(data):
+def handle_skill(data, sid):
     """Gate по вызову Skill (существующий путь IDD→SDD)."""
     skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
     rule = GATE_MAP.get(skill)
     if rule is None:
         sys.exit(0)  # скилл не гейтируется
-    candidate = resolve_candidate(rule)
+    candidate = resolve_candidate(rule, sid)
     if candidate is None:
         sys.exit(0)  # нет артефакта → escape
     reason = evaluate_gate(candidate, rule)
@@ -243,11 +343,13 @@ def main():
         sys.exit(0)  # битый stdin → fail-open
 
     tool = data.get("tool_name")
+    sid = data.get("session_id")
     try:
+        record_ownership(data, tool, sid)
         if tool == "Skill":
-            handle_skill(data)
+            handle_skill(data, sid)
         elif tool in ("Write", "Edit", "MultiEdit"):
-            handle_write(data, tool)
+            handle_write(data, tool, sid)
         else:
             sys.exit(0)
     except Exception as exc:  # fail-open на любой внутренней ошибке

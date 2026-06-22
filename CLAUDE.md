@@ -56,6 +56,13 @@ upstream artifact's state frontmatter passes its predicate:
 Otherwise the gate blocks (`exit 2`) with a message naming the fix command. The hook
 fails **open** on any internal error.
 
+**Session scoping.** The gate resolves candidates only among artifacts the current
+`session_id` owns — recorded in `$CLAUDE_CONFIG_DIR/state/idd-sessions.json` when a
+session writes/edits an artifact or invokes
+`executing-plans`/`subagent-driven-development` (which claims the newest plan). A
+session that produced no IDD artifact is never gated by another session's in-progress
+spec/plan. Missing `session_id` or an unreachable ledger → fail-open.
+
 **Post-artifact nudge (complementary).** A `PostToolUse` hook (`hooks/idd-nudge.py`)
 on `Write` fires when a skill creates an IDD artifact (`intents/*-intent.md`,
 `specs/*-design.md`, `plans/*.md`) and the artifact is **not yet validated** for its
@@ -92,6 +99,24 @@ subagent:**
 The check-runner dispatch is **never gated** — it uses Read/Bash/Edit and the Agent
 tool, never a gated `Skill`. If the subagent dies or returns nothing, fall back to
 running the check inline (clean-context benefit lost for that run; gate not wedged).
+
+## Branch Workflow
+
+Main branch of this repo is **`master`**. Follow the global branch rules
+(`.nvm-isolated/.claude-isolated/CLAUDE.md` → *Branch Workflow*), with these
+iclaude specifics:
+
+- Develop on a `dev/*` branch created from up-to-date `master` — never commit work
+  directly to `master`.
+- For parallel tasks, create one git worktree per `dev/*` branch, each worktree named
+  identically to its branch.
+- Close a branch only via a PR into `master`. After the PR is created, remove the
+  branch's worktree.
+- Pushing `dev` triggers the pre-push hook, which appends a
+  `chore(version): bump patch` commit. Your local `dev` ends up 1 commit ahead of
+  `origin/dev` — this is expected; do **not** re-push to "fix" it.
+
+Use **@skill:git-workflow** for commit messages and PR creation.
 
 ## Commands
 

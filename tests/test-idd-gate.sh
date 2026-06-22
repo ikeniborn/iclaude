@@ -11,11 +11,31 @@ fail(){ echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
 # Канонический хеш тела — ТОТ ЖЕ пайплайн, что у валидаторов и хука.
 bodyhash(){ awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$1" | sha256sum | cut -c1-16; }
-write_json(){ printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"%s"}}' "$1" "$2"; }
-edit_json(){ printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "$1" "$2"; }
 
-# Запускает хук в указанном project-root, печатает exit code.
-run(){ ( cd "$1" && printf '%s' "$2" | python3 "$HOOK" >/dev/null 2>&1; echo $? ); }
+SID_A='sess-A'; SID_B='sess-B'
+
+# write_json file content [sid] ; edit_json tool file [sid]  (sid defaults to SID_A)
+write_json(){ printf '{"session_id":"%s","tool_name":"Write","tool_input":{"file_path":"%s","content":"%s"}}' "${3:-$SID_A}" "$1" "$2"; }
+edit_json(){  printf '{"session_id":"%s","tool_name":"%s","tool_input":{"file_path":"%s"}}' "${3:-$SID_A}" "$1" "$2"; }
+
+# seed_owner root relpath sid — record ownership in the temp-root ledger.
+seed_owner(){
+  python3 - "$1/state/idd-sessions.json" "$1/$2" "$3" <<'PY'
+import json, os, sys, time
+ledger, artifact, sid = sys.argv[1], sys.argv[2], sys.argv[3]
+os.makedirs(os.path.dirname(ledger), exist_ok=True)
+data = {}
+if os.path.exists(ledger):
+    try:
+        with open(ledger) as f: data = json.load(f)
+    except Exception: data = {}
+data[os.path.abspath(artifact)] = {"session": sid, "ts": int(time.time())}
+with open(ledger, "w") as f: json.dump(data, f)
+PY
+}
+
+# Запускает хук в указанном project-root с изолированным ledger; печатает exit code.
+run(){ ( cd "$1" && printf '%s' "$2" | CLAUDE_CONFIG_DIR="$1" python3 "$HOOK" >/dev/null 2>&1; echo $? ); }
 
 assert_exit(){ # label cwd json expected
   local got; got=$(run "$2" "$3")
@@ -25,6 +45,7 @@ assert_exit(){ # label cwd json expected
 # ── fixtures ────────────────────────────────────────────────────────────
 # Хеш считается с PLACEHOLDER в frontmatter, затем подставляется sed'ом:
 # тело (всё после 2-го '---') не меняется, поэтому хеш остаётся валидным.
+# Каждый mk_* регистрирует владение артефактом за $SID_A в ledger temp-root.
 
 mk_spec_passed(){ # root → валидная пройденная спека (writing-plans → allow)
   local d="$1/docs/superpowers/specs"; mkdir -p "$d"
@@ -50,6 +71,7 @@ chain:
 Body content for hashing.
 EOF
   sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+  seed_owner "$1" "docs/superpowers/specs/2026-06-14-fix-design.md" "$SID_A"
 }
 
 mk_spec_noreview_at(){ # root relpath → unvalidated spec at root/relpath
@@ -64,6 +86,7 @@ chain:
 
 Body content for hashing.
 EOF
+  seed_owner "$1" "$2" "$SID_A"
 }
 
 mk_spec_noreview(){ # root → спека без review-блока (→ block)
@@ -78,6 +101,7 @@ chain:
 
 Body content for hashing.
 EOF
+  seed_owner "$1" "docs/superpowers/specs/2026-06-14-fix-design.md" "$SID_A"
 }
 
 mk_plan_result(){ # root verdict → план с result_check (печатает путь)
@@ -96,6 +120,7 @@ result_check:
 Plan body content.
 EOF
   sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+  seed_owner "$1" "docs/superpowers/plans/2026-06-14-fix-plan.md" "$SID_A"
   echo "$f"
 }
 
@@ -111,6 +136,7 @@ chain:
 
 Plan body content.
 EOF
+  seed_owner "$1" "docs/superpowers/plans/2026-06-14-fix-plan.md" "$SID_A"
 }
 
 mk_plan_cmd_noreview(){ # root → unvalidated plan whose name does NOT end in -plan.md
@@ -125,6 +151,7 @@ chain:
 
 Plan body content.
 EOF
+  seed_owner "$1" "docs/superpowers/plans/2026-06-14-fix-command.md" "$SID_A"
 }
 
 mk_plan_passed(){ # root → plan with a passing review block (plan→impl → allow)
@@ -148,12 +175,13 @@ review:
 Plan body content.
 EOF
   sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+  seed_owner "$1" "docs/superpowers/plans/2026-06-14-fix-plan.md" "$SID_A"
 }
 
-SKILL_WP='{"tool_name":"Skill","tool_input":{"skill":"writing-plans"}}'
-SKILL_WP_NS='{"tool_name":"Skill","tool_input":{"skill":"superpowers:writing-plans"}}'
-SKILL_FIN='{"tool_name":"Skill","tool_input":{"skill":"finishing-a-development-branch"}}'
-SKILL_EP='{"tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
+SKILL_WP='{"session_id":"sess-A","tool_name":"Skill","tool_input":{"skill":"writing-plans"}}'
+SKILL_WP_NS='{"session_id":"sess-A","tool_name":"Skill","tool_input":{"skill":"superpowers:writing-plans"}}'
+SKILL_FIN='{"session_id":"sess-A","tool_name":"Skill","tool_input":{"skill":"finishing-a-development-branch"}}'
+SKILL_EP='{"session_id":"sess-A","tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
 
 echo "idd-gate: escape & non-gated"
 T=$(mktemp -d); mkdir -p "$T/docs/superpowers/specs"
@@ -267,7 +295,58 @@ rm -rf "$T"
 # open(<dir>) raises IsADirectoryError → caught by main's `except Exception` →
 # exit 0. The gate must NEVER block on an internal bug.
 T=$(mktemp -d); mkdir -p "$T/docs/superpowers/plans/2026-06-14-dir-plan.md"
+seed_owner "$T" "docs/superpowers/plans/2026-06-14-dir-plan.md" "$SID_A"
 assert_exit "forced exception (dir candidate) → 0 (fail-open)" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
+rm -rf "$T"
+
+echo "idd-gate: session scoping"
+
+# Session B edits code; a FRESH unvalidated plan owned by Session A exists.
+# Session B created nothing IDD-related → must NOT be blocked.
+T=$(mktemp -d); mk_plan_noresult "$T"   # plan owned by SID_A, fresh, unvalidated
+assert_exit "cross-session: B edits code, A owns plan → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh" "$SID_B")" 0
+rm -rf "$T"
+
+# No session_id in payload → cannot scope → escape (fail-open).
+T=$(mktemp -d); mk_plan_noresult "$T"
+assert_exit "no session_id → 0" "$T" '{"tool_name":"Edit","tool_input":{"file_path":"'"$T"'/lib/foo.sh"}}' 0
+rm -rf "$T"
+
+# Corrupt ledger → load_ledger returns {} → owns-nothing → escape.
+T=$(mktemp -d); mk_plan_noresult "$T"
+mkdir -p "$T/state"; printf 'garbage{' > "$T/state/idd-sessions.json"
+assert_exit "corrupt ledger → 0 (fail-open)" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
+rm -rf "$T"
+
+# Claim: a session that owns NO plan invokes executing-plans. The claim stamps
+# the newest plan into its ownership, so the unvalidated plan still gates it.
+T=$(mktemp -d); mk_plan_noresult "$T"   # plan owned by SID_A, unvalidated
+EP_B='{"session_id":"sess-B","tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
+assert_exit "claim: EP by non-owner B → 2" "$T" "$EP_B" 2
+rm -rf "$T"
+
+T=$(mktemp -d); mk_plan_noresult "$T"
+SDD_B='{"session_id":"sess-B","tool_name":"Skill","tool_input":{"skill":"subagent-driven-development"}}'
+assert_exit "claim: subagent-driven by non-owner B → 2" "$T" "$SDD_B" 2
+rm -rf "$T"
+
+# Claim + VALIDATED newest plan → allow. Proves claim records ownership for a
+# non-owner session AND that a passing review then opens the gate.
+T=$(mktemp -d); mk_plan_passed "$T"
+EP_B='{"session_id":"sess-B","tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
+assert_exit "claim: EP by non-owner B, validated plan → 0" "$T" "$EP_B" 0
+rm -rf "$T"
+
+echo "idd-gate: ledger prune"
+# Stale ownership entry (8 days old) is pruned on load → owns-nothing → escape.
+T=$(mktemp -d); mk_plan_noresult "$T"
+python3 - "$T/state/idd-sessions.json" "$T/docs/superpowers/plans/2026-06-14-fix-plan.md" <<'PY'
+import json, os, sys, time
+ledger, art = sys.argv[1], sys.argv[2]
+data = {os.path.abspath(art): {"session": "sess-A", "ts": int(time.time()) - 8*24*3600}}
+with open(ledger, "w") as f: json.dump(data, f)
+PY
+assert_exit "stale ownership pruned → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh")" 0
 rm -rf "$T"
 
 echo "─────────────────────────────"
