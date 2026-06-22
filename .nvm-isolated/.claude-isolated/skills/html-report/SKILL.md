@@ -21,10 +21,10 @@ producing the human-readable artifact.
 3. **Single self-contained file.** One `.html`, no sibling assets.
 4. **Both themes mandatory.** Every report ships dark AND light palettes plus a
    working toggle (see `references/themes.md`).
-5. **Mandatory output directory.** Every report MUST be written to `docs/reports/`
-   in the project where the skill runs (the current working directory's project
-   root). Create the directory if it does not exist. Never write the report
-   anywhere else.
+5. **Output directory.** Default target is `docs/reports/` in the project where the
+   skill runs (the current working directory's project root). If the caller passed an
+   EXPLICIT output path (e.g. an IDD `check-*` command), write to that path instead.
+   Create the target directory if it does not exist. Never invent an unrequested path.
 
 If faithful display would require an external resource, **escalate** — do not
 inline-fetch and do not silently drop the element.
@@ -42,10 +42,10 @@ inline-fetch and do not silently drop the element.
    - theme palettes + toggle → `references/themes.md` (always)
    - arbitrary node-edge graph / free connector / data plot → `references/svg-fallback.md`
 
-   **Gold-standard reference** — for a full, polished report that exercises the SVG node
-   grammar, animated connectors, C4, two-axis tables, badges, and `.note` callouts end
-   to end, study `~/Документы/Project/ecom1-agent/docs/agent-architecture.html` before
-   assembling a non-trivial architecture report.
+   **Gold-standard reference** — for the full SVG node grammar, animated connectors, C4,
+   two-axis tables, badges, and `.note` callouts, study the in-skill `references/`
+   files (`svg-diagrams.md`, `svg-fallback.md`, `css-diagrams.md`) before assembling a
+   non-trivial architecture report.
 4. Assemble ONE HTML document:
    - `<head>`: a single inline `<style>` (theme custom-props + recipe CSS + dynamics).
    - `<body>`: semantic HTML5 (`<table>` / `<figure>` / `<details>`), the theme-toggle
@@ -53,9 +53,11 @@ inline-fetch and do not silently drop the element.
    - Add an SVG / bounded inline `<script>` block ONLY if a node-edge graph needs it,
      and **log** the specific structure CSS could not express.
 5. **Self-validate** the assembled string (checklist below) BEFORE writing.
-6. Write the file to `docs/reports/` (create the directory if missing). This is
-   mandatory — reports go nowhere else. If the target file already exists, **ask
-   first** before overwriting (proposal-first).
+6. Write the file to the target directory — `docs/reports/` by default, or the
+   explicit caller-supplied path when one was passed (create the directory if
+   missing). If the caller passed the path, overwriting that path is **Full** zone
+   (proceed — it is a regenerated artifact). Otherwise, if the target file already
+   exists, **ask first** before overwriting (proposal-first).
 7. Report to the user: file path, file size, and any guarded-zone logs (inline script
    used / size warning).
 
@@ -72,16 +74,16 @@ Reject and fix the assembled HTML if any fails:
       (node cards + arrow markers), not a flat flex row that drops the loop/branch.
 - [ ] Shared `<defs>` (dropshadow + arrow markers) present if any SVG diagram is used.
 - [ ] File size ≤ 5 MB — if larger, **warn** the user (soft limit).
-- [ ] Output path is under `docs/reports/` in the current project — never elsewhere.
+- [ ] Output path is under `docs/reports/` OR equals the explicit caller-supplied path — never an unrequested location.
 
 ## Autonomy Zones
 
 | Zone | Action |
 |------|--------|
-| Full — generating HTML, choosing CSS layout, picking the diagram type | proceed, no pause |
+| Full — generating HTML, choosing CSS layout, picking the diagram type; writing to an output path EXPLICITLY passed by the calling command | proceed, no pause |
 | Guarded — using inline `<script>`/`<canvas>`/SVG, or approaching 5 MB | proceed, but **log** the structure CSS can't express / **warn** on size |
-| Proposal-first — which data sources to read; overwriting an existing `docs/reports/` file | **ask before acting** |
-| No-go — writing/deleting any file outside `docs/reports/`; fetching any external resource | **refuse** |
+| Proposal-first — which data sources to read; overwriting an existing default `docs/reports/` file with no caller path | **ask before acting** |
+| No-go — writing/deleting a file outside `docs/reports/` with NO caller-supplied path; fetching any external resource | **refuse** |
 
 > These zones OVERRIDE subagent-driven-development's "don't pause" default. Treat
 > proposal-first and no-go points as HUMAN CHECKPOINTS.
