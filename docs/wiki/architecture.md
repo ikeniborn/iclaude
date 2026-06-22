@@ -80,3 +80,5 @@ The isolated environment lives in `.nvm-isolated/` and provides a self-contained
 ## Configuration File
 
 The credentials/config file is `.claude_config` (formerly `.claude_proxy_credentials` — auto-migrated on first run). `init_environment()` sets `CREDENTIALS_FILE` to this path; Phase 15 reads it with `grep` regex patterns to load persistent flags (`USE_PII_PROXY`, `MICRO_VM_ENABLED`, `NO_ATTRIBUTION_HEADER`, `USE_CHROME`, `CLAUDE_CODE_SKIP_PERMISSIONS`) before argument parsing, so CLI flags can override them. The file is chmod 600 and excluded from git. See [[proxy#Credentials File]] for the full variable reference.
+
+See also: [[command]], [[launcher]], [[iwiki]], [[html-report]]

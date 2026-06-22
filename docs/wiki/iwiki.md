@@ -25,6 +25,9 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 - Runs `uv run --project "$(_iwiki_engine_dir)" python3 -m iwiki_engine "$@"`.
 - If uv is unresolved, prints `iwiki: uv not found; run ./iclaude.sh --install-iwiki` and returns 1.
 - Subcommands: `index | search | related | status | lint`. `status` and `lint` are **config-free** (no `IWIKI_LLM_*`, no embedding call) — they dispatch before config load. `lint` reports `docs/wiki/` health (broken links, orphans, stale pages) as a JSON object and is a clean no-op (`{"wiki_present": false}`, exit 0) when the project has no wiki, so iwiki never errors in a project that does not use it. The `/iwiki-lint` skill calls this subcommand instead of composing shell.
+- **Code-aware link parsing**: the link parser that `lint` and `related` use ignores `[[...]]` tokens inside Markdown fenced code blocks and inline code spans, so shell `[[ ... ]]` test syntax in documentation never produces false broken-link reports.
+- **Embedding retry**: `index` and `search` wrap embedding API calls with bounded exponential backoff (retries on timeout, connection errors, and HTTP 5xx); 4xx errors fail fast without retrying.
+- **`related` graph hardening**: BFS traversal skips pages whose files cannot be read, so a single unreadable file never aborts the entire related-docs walk.
 
 ## Plugin Registration
 
@@ -39,7 +42,7 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 ## Automation Hooks
 
-The plugin bundles four Claude Code hooks (declared in `plugin/iwiki/hooks/hooks.json`, run from `${CLAUDE_PLUGIN_ROOT}/hooks/`) that keep the wiki consulted and current with no manual `/iwiki-*` step. They share `iwiki_common.py` (engine/uv resolution, git diff, project chdir, and a per-session state file) and are all fail-soft and individually kill-switchable. A hook cannot run a slash command or LLM skill directly, so each either drives the engine CLI deterministically or injects a directive Claude acts on.
+The plugin bundles four Claude Code hooks (declared in `plugin/iwiki/hooks/hooks.json`, run from `${CLAUDE_PLUGIN_ROOT}/hooks/`) that keep the wiki consulted and current with no manual `/iwiki-*` step. They share `iwiki_common.py` (engine/uv resolution, git diff, project chdir, and a per-session state file) and are all fail-soft and individually kill-switchable. The shared session-state reader warns on stderr when the state file exists but cannot be decoded (e.g. truncated JSON), then proceeds with an empty state rather than silently discarding the error. A hook cannot run a slash command or LLM skill directly, so each either drives the engine CLI deterministically or injects a directive Claude acts on.
 
 Engine/uv resolution is layered and **`CLAUDE_PLUGIN_ROOT`-independent**: `engine_dir()` tries the plugin root (only set for hooks), then the in-repo `plugin/iwiki/engine`, then the **newest** cached plugin version (`engine_dir()` sorts the cache glob by version). The `/iwiki-*` skills' bash steps mirror the same fallback, because `CLAUDE_PLUGIN_ROOT` is *not* exported into the Bash tool — relying on it alone expands to `--project /engine` and fails, so the skills must resolve the engine themselves.
 
