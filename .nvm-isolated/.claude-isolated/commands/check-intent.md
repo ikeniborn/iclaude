@@ -8,7 +8,7 @@
 
 ### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
 
-ВСЕ хеши считаются ОДИНАКОВО — иначе сходимости не будет (frontmatter живой, меняется каждый прогон).
+Все хеши — одним пайплайном (frontmatter живой, иначе quick-exit не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай.
 
 - **Хеш тела документа** (исключает frontmatter):
   ```bash
@@ -17,19 +17,15 @@
 - **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
 - Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
 
-Команда ОБЯЗАНА запускать именно эти bash-команды через инструмент Bash. «В уме» не пересчитывать. Любое отклонение ломает quick-exit.
-
 ### Шаг 0. Quick exit по state
 
-1. Если файл найден и содержит frontmatter с блоком `review:`:
-   - Посчитать sha256 тела документа по каноническому алгоритму (см. выше)
-   - Если `current_hash == frontmatter.review.intent_hash` И все condition'ы выполнены:
-     - `∀ phase ∈ {structure, completeness, clarity, consistency}: status == passed`
-     - `alignment.status == passed` (НЕ пересчитывать — фаза недетерминирована, доверяем прошлому прогону)
-     - `∀ finding ∈ findings: verdict ∈ {accepted, wontfix, fixed}`
-     - `count(severity == CRITICAL ∧ verdict == open) == 0`
-   - → вывести `OK (cached, hash match)` и завершить
-2. Иначе — продолжить
+Если есть frontmatter с блоком `review:` и `current_body_hash == review.intent_hash` И:
+- `∀ phase ∈ {structure, completeness, clarity, consistency}: status == passed`
+- `alignment.status == passed` (НЕ пересчитывать — фаза недетерминирована, доверяем прошлому прогону)
+- `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
+- `count(severity == CRITICAL ∧ verdict == open) == 0`
+
+→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
 
 ### Шаг 1. Определи scope
 
@@ -96,7 +92,7 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 #### Фаза 4: consistency (CRITICAL для противоречий)
 
 Закрытый чек-лист (НЕ расширять):
-- Проверка хешей секций: для каждой секции — изменилась ли с прошлого прогона; сводка изменений
+- Использовать diff изменившихся секций из Шага 2 (init-state) — НЕ пересчитывать хеши заново; дать сводку изменений
 - Внутри-док противоречия: constraint против Desired Outcome; Health Metric против Objective → CRITICAL
 - **Status-guard:** если тело содержит `**Status:** approved`, но есть открытый CRITICAL finding → создать finding `[CRITICAL]` «approved, но документ не валиден». Строку `**Status:**` НЕ редактировать — только finding.
 
@@ -137,13 +133,13 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 2. **Схемы намерений и процесса** (обязательны; используй CSS-диаграммы навыка, SVG-граф — для произвольных рёбер):
    - **Карта намерения** — block/flow-диаграмма потока `Objective → Desired Outcomes → Health Metrics`: как намерение превращается в наблюдаемый результат и чем измеряется.
    - **Граф автономии** — block-диаграмма из 4 зон (Full / Guarded / Proposal-first / No autonomy) с пунктами в каждой; пустая зона помечается `N/A`.
-   - **Связь ограничений и результатов** — матрица/таблица или SVG node-edge граф: какие Constraints (steering / hard) ограничивают какие Desired Outcomes.
+   - **Связь ограничений и результатов** — матрица `Constraint × Desired Outcome`: строки — Constraints (steering / hard), столбцы — Desired Outcomes, явная отметка в ячейке там, где constraint ограничивает outcome (пустая ячейка = нет связи).
    - **Stop Rules** — список критериев `Done when:` как условий завершения процесса.
 3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
 
-Параметры артефакта:
-- Выход: `docs/superpowers/reports/intents/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Создай каталог `docs/superpowers/reports/intents/`, если его нет.
-- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+Параметры артефакта (передай навыку явно при вызове):
+- **Output path (явный аргумент):** `docs/superpowers/reports/intents/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Это caller-supplied путь — навык пишет туда (Full-зона), создаёт каталог `docs/superpowers/reports/intents/` при отсутствии, перезаписывает без подтверждения.
+- **Данные — inline:** три блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 
 После записи сообщи пользователю путь к `.html`.
