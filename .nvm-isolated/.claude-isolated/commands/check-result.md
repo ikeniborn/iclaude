@@ -8,15 +8,11 @@
 
 ### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
 
-Хеш тела плана для `result_check.plan_hash` считается ТЕМ ЖЕ пайплайном, что у
-остальных валидаторов и у idd-gate, иначе merge-gate не сойдётся:
+Хеш тела плана для `result_check.plan_hash` — тем же пайплайном, что у остальных валидаторов и у idd-gate (иначе merge-gate не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай:
 
 ```bash
 awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' <PLAN_FILE> | sha256sum | cut -c1-16
 ```
-
-Команда ОБЯЗАНА запускать именно эту bash-команду через инструмент Bash. «В уме»
-не пересчитывать.
 
 ### Шаг 1. Загрузи план
 
@@ -94,9 +90,9 @@ git diff HEAD
 1. **Резюме сверки** — документы цепи (plan / spec / intent), база diff.
 2. **Результаты проверки** — покрытие шагов плана (DONE / PARTIAL / MISSING счётчики); таблица findings (`severity`, шаг, Plan / Diff / Fix options); intent / spec coverage (Desired Outcomes N/M, requirements N/M); excess changes; сводка (CRITICAL / WARNING / INFO); вердикт; chain (`intent → spec → plan`).
 
-Параметры артефакта:
-- Выход: `docs/superpowers/reports/results/<basename плана без .md>-result-check.html` (например `2026-06-17-foo-plan-result-check.html`). Создай каталог `docs/superpowers/reports/results/`, если его нет.
-- Перезаписывать существующий файл **без подтверждения** — это автогенерируемый артефакт команды. Это явный override proposal-first навыка `html-report` для данного пути.
+Параметры артефакта (передай навыку явно при вызове):
+- **Output path (явный аргумент):** `docs/superpowers/reports/results/<basename плана без .md>-result-check.html` (например `2026-06-17-foo-plan-result-check.html`). Это caller-supplied путь — навык пишет туда (Full-зона), создаёт каталог `docs/superpowers/reports/results/` при отсутствии, перезаписывает без подтверждения.
+- **Данные — inline:** оба блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 
 После записи сообщи пользователю путь к `.html`.
