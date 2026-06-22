@@ -305,6 +305,9 @@ echo "idd-gate: session scoping"
 # Session B created nothing IDD-related → must NOT be blocked.
 T=$(mktemp -d); mk_plan_noresult "$T"   # plan owned by SID_A, fresh, unvalidated
 assert_exit "cross-session: B edits code, A owns plan → 0" "$T" "$(edit_json Edit "$T/lib/foo.sh" "$SID_B")" 0
+# Owner-is-gated invariant (made explicit, mirroring the cross-session case): the
+# SAME session that owns the unvalidated plan IS blocked editing code.
+assert_exit "same-session: A edits code, A owns plan → 2" "$T" "$(edit_json Edit "$T/lib/foo.sh" "$SID_A")" 2
 rm -rf "$T"
 
 # No session_id in payload → cannot scope → escape (fail-open).

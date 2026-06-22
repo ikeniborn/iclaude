@@ -120,7 +120,7 @@ def record_owner(path, sid):
     ledger[os.path.abspath(path)] = {"session": sid, "ts": int(time.time())}
     try:
         os.makedirs(os.path.dirname(lp), exist_ok=True)
-        tmp = lp + ".tmp"
+        tmp = "%s.%d.tmp" % (lp, os.getpid())  # per-process temp: no shared-temp race
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(ledger, f)
         os.replace(tmp, lp)
@@ -137,7 +137,10 @@ def owns(path, sid, ledger):
 
 
 def _is_artifact(path):
-    """True if `path` lies under one of the IDD artifact directories."""
+    """True if `path` lies under one of the IDD artifact directories. Directory
+    membership is sufficient — recording is intentionally permissive; a file that
+    does not match a rule's glob simply never becomes a candidate (resolve_candidate
+    re-filters by glob), so a spurious ledger entry is harmless and gets pruned."""
     return any(_under(path, os.path.join(DOCS_ROOT, d)) for d in ARTIFACT_DIRS)
 
 
