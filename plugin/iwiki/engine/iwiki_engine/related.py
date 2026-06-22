@@ -1,6 +1,5 @@
 """Related sections: vector neighbours, with a [[refs]] graph fallback."""
 from __future__ import annotations
-import os
 from .store import Record, dequantize, cosine
 from .links import parse_links
 
