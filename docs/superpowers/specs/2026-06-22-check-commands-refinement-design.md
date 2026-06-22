@@ -1,6 +1,6 @@
 ---
 review:
-  spec_hash: 1a033472e1df25cd
+  spec_hash: 9acbacca2f610f89
   last_run: 2026-06-22
   phases:
     structure:   { status: passed }
@@ -12,7 +12,7 @@ review:
       phase: coverage
       severity: WARNING
       section: "Area C — verbosity reduction (in place, self-containment preserved)"
-      section_hash: f3948c5f88393a24
+      section_hash: a928251016ae430e
       text: >-
         Task part (a) asks to audit "redundancy when validating prepared
         documents". The spec addresses redundancy only as restated PROSE
@@ -26,7 +26,7 @@ review:
       phase: clarity
       severity: INFO
       section: "Area C — verbosity reduction (in place, self-containment preserved)"
-      section_hash: f3948c5f88393a24
+      section_hash: a928251016ae430e
       text: >-
         C2 ("MUST be compressed") and C3 ("MUST be tightened in wording") give
         no quantified verbosity target. Acceptable: verbosity reduction is

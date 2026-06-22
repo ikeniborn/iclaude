@@ -1,7 +1,7 @@
 ---
 review:
-  plan_hash: 54d978aec34d54fd
-  spec_hash: 1a033472e1df25cd
+  plan_hash: d7ae6f9784f3ad1e
+  spec_hash: 9acbacca2f610f89
   last_run: 2026-06-22
   phases:
     structure:     { status: passed }
@@ -13,28 +13,25 @@ review:
     - id: F-001
       phase: coverage
       severity: WARNING
-      section: "Tasks 3 & 4 headings / Area C — C3 (quick-exit + init-state preambles)"
-      section_hash: 312c77a52e76ec83
+      section: "Tasks 2/3/4 — Area C — C3 (quick-exit preamble, init-state out of scope)"
+      section_hash: 247f733577516fa3
       text: >-
-        Spec C3 requires the quick-exit AND init-state preambles to be tightened
-        in wording across check-intent / check-spec / check-plan. The plan applies
-        a quick-exit compression step ONLY in Task 2 (check-spec, Step 2). Task 3
-        (check-plan) and Task 4 (check-intent) list C3 in their headings and commit
-        messages but contain NO quick-exit/init-state tightening step. No task
-        touches the init-state preamble in any of the three commands. C3 is thus
-        PARTIALLY covered (1 of 3 quick-exit blocks, 0 of 3 init-state blocks).
-        Severity WARNING, not CRITICAL: C3 is cosmetic ("tightened in wording";
-        spec preserves structure/conditions/phase-lists/frontmatter shape) and the
-        gate-critical predicate/YAML lives in the unchanged conditions, so no
-        functional or gate behaviour is at risk — but it is still under-coverage of
-        a literal spec MUST.
-      verdict: open
-      verdict_at: null
+        Spec C3 (now narrowed to the quick-exit preamble only — init-state is
+        intentionally left untouched, its frontmatter YAML being gate-critical)
+        requires the quick-exit wording tightened across check-intent / check-spec /
+        check-plan. The plan now covers this in all three commands: Task 2 Step 2
+        ("Tighten the quick-exit preamble (C3)") for check-spec, Task 3 Step 2 and
+        Task 4 Step 1 (each "Compress the canonical-hashing + quick-exit preambles
+        (C2, C3)" with an inline "Then tighten the quick-exit preamble (C3)" rewrite)
+        for check-plan and check-intent. C3 is fully covered; init-state is out of
+        scope per the narrowed spec, so the prior under-coverage no longer applies.
+      verdict: fixed
+      verdict_at: 2026-06-22
     - id: F-002
       phase: structure
       severity: WARNING
       section: "Whole-document body / hashing pipeline applicability"
-      section_hash: 7fdf477ca5cc92f9
+      section_hash: d7ae6f9784f3ad1e
       text: >-
         At authoring time the plan had NO YAML frontmatter (it opened with the
         '# check-...' H1). The canonical body-hash pipeline
@@ -52,21 +49,22 @@ review:
         separators, so future hand-edits to the frontmatter must keep it well-formed
         or the separator-miscount returns. Confirm the '---' task-separator style is
         intended, or switch body separators to '***'.
-      verdict: open
-      verdict_at: null
+      verdict: accepted
+      verdict_at: 2026-06-22
     - id: F-003
       phase: verifiability
       severity: INFO
       section: "Task 4 Step 5 — check-intent D2 verify grep"
-      section_hash: 04fe2e505135494c
+      section_hash: ae0e702a66cde550
       text: >-
-        Task 4 Step 5's D2 assertion greps a 3-way alternation
-        ('уже пересчитывать\|уже вычисленный\|diff изменившихся секций из Шага 2').
-        Only the third alternative matches the text Step 2 actually writes; the
-        first two are dead branches copied from the pattern. The assertion still
-        passes (expect 1), so this is cosmetic — no DoD gap.
-      verdict: open
-      verdict_at: null
+        Task 4 Step 5's D2 assertion previously greped a 3-way alternation
+        ('уже пересчитывать\|уже вычисленный\|diff изменившихся секций из Шага 2')
+        whose first two branches were dead (only the third matches what Step 2
+        writes). The grep is now a single branch ('diff изменившихся секций из
+        Шага 2', expect 1), matching exactly the text the D2 rewrite emits. The
+        dead alternation branches are gone — the assertion is now precise.
+      verdict: fixed
+      verdict_at: 2026-06-22
 chain:
   intent: null
   spec: docs/superpowers/specs/2026-06-22-check-commands-refinement-design.md
