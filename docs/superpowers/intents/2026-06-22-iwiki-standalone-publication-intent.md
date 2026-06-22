@@ -1,6 +1,6 @@
 ---
 review:
-  intent_hash: "94c0041011bf2bb2"
+  intent_hash: "e2fc3e0a361c4eed"
   last_run: "2026-06-22"
   phases:
     structure:
@@ -43,13 +43,13 @@ review:
       phase: clarity
       severity: WARNING
       section: "Desired Outcomes"
-      section_hash: "cb7d69d5eef0e78c"
+      section_hash: "44cac2f3dc4c5580"
       text: >
         "iclaude no longer bundles iwiki's source; it consumes the published plugin from the
-        marketplace." — this outcome describes an architectural/structural state rather than a
-        user-observable or operational result. Acceptable at intent level, but consider adding
-        a user-facing signal (e.g., "iclaude users experience no change in `/iwiki-*`
-        behavior") to make the outcome fully observable.
+        hosted marketplace repo." — this outcome describes an architectural/structural state
+        rather than a user-observable or operational result. Acceptable at intent level, but
+        consider adding a user-facing signal (e.g., "iclaude users experience no change in
+        `/iwiki-*` behavior") to make the outcome fully observable.
       verdict: open
       verdict_at: null
 ---
@@ -60,9 +60,11 @@ review:
 
 ## Objective
 
-Decouple the iwiki plugin from the iclaude repository and publish it standalone to the
-official Anthropic claude-code marketplace. Two drivers carry equal weight: (1) **sharing**
-— let other projects and people install iwiki directly from the official marketplace; and
+Decouple the iwiki plugin from the iclaude repository and publish it standalone through a
+third-party path: its own hosted marketplace repo (`ikeniborn/ai-wiki-plugin`) and the
+Anthropic **community** marketplace. (The curated `claude-plugins-official` marketplace has
+no third-party submission process, so it is not the target.) Two drivers carry equal
+weight: (1) **sharing** — let other projects and people install iwiki directly; and
 (2) **decoupling** — stop iclaude from bundling the plugin's source, consuming it as an
 external dependency instead. Now is the time because Phase A+B
 (spec/plan `2026-06-22-iwiki-evaluation-improvements`, PR #54) matured the plugin: it now
@@ -76,10 +78,13 @@ stand on its own.
 - In a fresh project with **no iclaude present**, `plugin marketplace add <repo>` +
   `plugin install` works end-to-end: the engine self-bootstraps `uv` and the `/iwiki-*`
   skills/commands function.
-- The plugin is accepted in the official Anthropic marketplace (submission PR merged /
-  listing live). *(External factor — depends on the maintainers; see Stop Rules.)*
+- The plugin is published via a third-party path: installable from its own hosted
+  marketplace repo `ikeniborn/ai-wiki-plugin` (fully under our control), and submitted to
+  the Anthropic community marketplace (`anthropics/claude-plugins-community`) via the in-app
+  form + automated review. *(Community acceptance depends on Anthropic's review; the
+  self-hosted repo does not. See Stop Rules.)*
 - iclaude no longer bundles iwiki's source; it consumes the published plugin from the
-  marketplace.
+  hosted marketplace repo.
 
 ## Health Metrics
 
@@ -95,9 +100,10 @@ stand on its own.
 ## Strategic Context
 
 - Interacts with: iclaude (`lib/iwiki/` install + plugin registration, `plugin/iwiki/`
-  source), the Claude Code plugin system, the official Anthropic marketplace
-  (maintainers + submission review), `uv`/astral-sh (bootstrap dependency), and end users in
-  foreign projects.
+  source), the Claude Code plugin system, the hosted marketplace repo
+  `ikeniborn/ai-wiki-plugin`, the Anthropic community marketplace (in-app submission +
+  automated review), `uv`/astral-sh (bootstrap dependency), and end users in foreign
+  projects.
 - Priority trade-off: **trust**. Correctness above all — do not break iclaude's iwiki,
   produce a clean decoupling, and meet the marketplace bar. Slower-but-reliable beats
   fast-but-fragile.
@@ -118,8 +124,10 @@ stand on its own.
 - **Engine behavior unchanged.** Decoupling is packaging-only — no logic changes to the
   engine or hooks (`search`/`index`/`lint`/`related` results identical).
 - **Runtime stays `httpx`-only.** No new runtime dependencies; `pytest` remains dev-only.
-- **MIT license preserved** and the official marketplace's submission rules satisfied
-  (manifest, structure, authoring disclosure).
+- **MIT license preserved** and the marketplace conventions satisfied: a valid
+  `.claude-plugin/marketplace.json` (non-reserved marketplace `name`), `claude plugin
+  validate` clean, and the community submission's validation/safety + authoring-disclosure
+  rules.
 
 ## Autonomy Zones
 
@@ -133,8 +141,7 @@ stand on its own.
   (new repo vs split-with-history, migration path) and **removing the bundled iwiki source
   from iclaude** to consume it externally.
 - **No autonomy (human only):** creating the public GitHub repository, and any
-  PR/submission to the official Anthropic marketplace (push-to-public + irreversible
-  listing + disclosure).
+  submission to the Anthropic community marketplace (push-to-public + listing + disclosure).
 
 > These zones OVERRIDE subagent-driven-development's "continuous execution, don't pause"
 > default. Any task touching proposal-first / no-go decisions is marked HUMAN CHECKPOINT in
@@ -149,6 +156,7 @@ stand on its own.
   structure/strategy.
 - **Done when:** (observable) the standalone repo's CI runs the engine suite green; a
   fresh-project install with **no iclaude** has working `/iwiki-*` via a self-bootstrapped
-  `uv`; the official-marketplace submission is opened (and, dependent on maintainers,
-  accepted); iclaude consumes the external plugin without bundling its source; and iclaude's
-  own iwiki plus the 27 tests still pass.
+  `uv`; the hosted marketplace repo `ikeniborn/ai-wiki-plugin` is live and the community
+  submission is opened (community acceptance dependent on Anthropic review); iclaude consumes
+  the external plugin without bundling its source; and iclaude's own iwiki plus the 27 tests
+  still pass.
