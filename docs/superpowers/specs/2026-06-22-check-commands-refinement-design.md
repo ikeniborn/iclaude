@@ -1,6 +1,6 @@
 ---
 review:
-  spec_hash: 754ace3c592113af
+  spec_hash: 1a033472e1df25cd
   last_run: 2026-06-22
   phases:
     structure:   { status: passed }
@@ -12,7 +12,7 @@ review:
       phase: coverage
       severity: WARNING
       section: "Area C — verbosity reduction (in place, self-containment preserved)"
-      section_hash: 749bdd83d3b94ee0
+      section_hash: f3948c5f88393a24
       text: >-
         Task part (a) asks to audit "redundancy when validating prepared
         documents". The spec addresses redundancy only as restated PROSE
@@ -20,13 +20,13 @@ review:
         validation PHASE or check is itself redundant (e.g. overlapping checks
         across the 4 phases). Partial coverage of the redundancy axis — confirm
         prose-level redundancy is the intended scope, or add a requirement.
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-06-22
     - id: F-002
       phase: clarity
       severity: INFO
       section: "Area C — verbosity reduction (in place, self-containment preserved)"
-      section_hash: 749bdd83d3b94ee0
+      section_hash: f3948c5f88393a24
       text: >-
         C2 ("MUST be compressed") and C3 ("MUST be tightened in wording") give
         no quantified verbosity target. Acceptable: verbosity reduction is
@@ -39,7 +39,7 @@ review:
       phase: clarity
       severity: INFO
       section: "Area A — HTML-report contract correctness (priority 1)"
-      section_hash: f66e64edcc83cb50
+      section_hash: 05ea7d50470517aa
       text: >-
         A3 offers two acceptance outcomes ("Replace it with a pointer ... or
         remove the line"). Both are valid DoD and Success criteria pins the
