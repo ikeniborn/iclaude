@@ -1,6 +1,19 @@
 ---
 chain:
+  intent: null
   spec: docs/superpowers/specs/2026-06-22-session-scoped-idd-gate-design.md
+review:
+  plan_hash: 8bb963fc1edf4ae2
+  spec_hash: 957e43fabac45360
+  last_run: 2026-06-22
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings:
+    - { id: F-001, phase: coverage, severity: WARNING, section: "Task 3 / spec Testing", verdict: fixed, verdict_at: 2026-06-22, text: "Spec test matrix lists 'Claim: executing-plans ... newest plan validated -> 0' (design.md:148), but the plan's claim tests (Task 3) cover only the unvalidated->2 and subagent-variant->2 paths; the validated-newest-plan->0 claim case is not added." }
 ---
 
 # Session-Scoped IDD Gate Implementation Plan
@@ -411,6 +424,15 @@ Then append the second claim skill case and re-run:
 T=$(mktemp -d); mk_plan_noresult "$T"
 SDD_B='{"session_id":"sess-B","tool_name":"Skill","tool_input":{"skill":"subagent-driven-development"}}'
 assert_exit "claim: subagent-driven by non-owner B → 2" "$T" "$SDD_B" 2
+rm -rf "$T"
+
+# Claim + VALIDATED newest plan → allow. Proves claim records ownership for a
+# non-owner session AND that a passing review then opens the gate (spec test
+# matrix: "newest plan validated → 0"). EP_B is redefined here to keep this
+# block self-contained.
+T=$(mktemp -d); mk_plan_passed "$T"
+EP_B='{"session_id":"sess-B","tool_name":"Skill","tool_input":{"skill":"executing-plans"}}'
+assert_exit "claim: EP by non-owner B, validated plan → 0" "$T" "$EP_B" 0
 rm -rf "$T"
 ```
 
