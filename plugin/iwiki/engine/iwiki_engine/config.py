@@ -39,8 +39,8 @@ class Config:
         api_key = getenv(key_var, "").strip()
         if not base_url or not api_key:
             raise ConfigError(
-                f"{url_var} and {key_var} must be set "
-                "(add them to .claude_config). Halting."
+                f"{url_var} and {key_var} must be set as environment variables "
+                "(e.g. exported from .claude_config). Halting."
             )
         if base_url.endswith("/"):
             base_url = base_url[:-1]

@@ -1,6 +1,5 @@
 """Related sections: vector neighbours, with a [[refs]] graph fallback."""
 from __future__ import annotations
-import os
 from .store import Record, dequantize, cosine
 from .links import parse_links
 
@@ -24,9 +23,11 @@ def _graph_neighbours(target_file: str, depth: int) -> list[str]:
     for _ in range(max(0, depth)):
         nxt: list[str] = []
         for f in frontier:
-            if not os.path.exists(f):
+            try:
+                content = open(f, encoding="utf-8").read()
+            except OSError:
                 continue
-            for link in parse_links(open(f, encoding="utf-8").read()):
+            for link in parse_links(content):
                 base = link.split("#", 1)[0]
                 if base and base not in seen:
                     seen.add(base)

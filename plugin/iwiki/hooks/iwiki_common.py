@@ -19,6 +19,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 
 WIKI_DIR = "docs/wiki"
 INDEX_REL = os.path.join(WIKI_DIR, ".iwiki", "index.jsonl")
@@ -255,8 +256,10 @@ def read_session() -> dict:
             data = json.load(f)
         if isinstance(data, dict):
             out.update({k: data[k] for k in _SESSION_DEFAULT if k in data})
-    except Exception:
-        pass
+    except FileNotFoundError:
+        pass  # first run: no state yet — expected, stay silent
+    except Exception as e:
+        print(f"iwiki: ignoring unreadable session state ({e})", file=sys.stderr)
     return out
 
 
