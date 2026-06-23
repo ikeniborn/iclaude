@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result Check — caveman session savings</title>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1d212b; --border: #2a2f3a;
+    --fg: #e6e9ef; --fg-dim: #9aa3b2; --accent: #5cc8ff; --ok: #4ade80;
+    --warn: #fbbf24; --crit: #f87171; --info: #818cf8; --chip: #232834;
+    --shadow: rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f7fa; --panel: #ffffff; --panel-2: #eef1f6; --border: #d7dce5;
+    --fg: #1b2330; --fg-dim: #5a6678; --accent: #0a6ebd; --ok: #15803d;
+    --warn: #b45309; --crit: #b91c1c; --info: #4338ca; --chip: #eef1f6;
+    --shadow: rgba(20,30,50,.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 32px 20px 64px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: .2px; }
+  .sub { color: var(--fg-dim); font-size: 13px; }
+  .verdict {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px; font-weight: 700; font-size: 15px;
+    background: color-mix(in srgb, var(--ok) 18%, transparent);
+    color: var(--ok); border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  }
+  .verdict::before { content: "✔"; font-size: 16px; }
+  .toggle {
+    cursor: pointer; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--fg); border-radius: 8px; padding: 7px 12px; font-size: 13px;
+  }
+  .toggle:hover { border-color: var(--accent); }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 18px; box-shadow: 0 2px 10px var(--shadow);
+  }
+  h2 { font-size: 16px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  h2 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--fg-dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .4px; }
+  tr:last-child td { border-bottom: none; }
+  code { background: var(--chip); padding: 1.5px 6px; border-radius: 5px; font-size: 12.5px;
+    font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+  .counters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .counter {
+    flex: 1 1 120px; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; text-align: center;
+  }
+  .counter .n { font-size: 28px; font-weight: 800; line-height: 1; }
+  .counter .l { font-size: 12px; color: var(--fg-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .counter.done .n { color: var(--ok); }
+  .counter.partial .n { color: var(--warn); }
+  .counter.missing .n { color: var(--crit); }
+  .chip {
+    display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px;
+    font-weight: 600; background: var(--chip); border: 1px solid var(--border);
+  }
+  .chip.done { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+  .badge-num {
+    font-weight: 800; font-size: 20px; color: var(--ok);
+  }
+  .empty {
+    color: var(--fg-dim); font-style: italic; padding: 10px 2px;
+  }
+  .note {
+    background: color-mix(in srgb, var(--info) 12%, transparent);
+    border-left: 3px solid var(--info); border-radius: 6px;
+    padding: 12px 14px; font-size: 13.5px; color: var(--fg);
+  }
+  .chain {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 13px; color: var(--fg-dim);
+  }
+  .chain .node { background: var(--panel-2); border: 1px solid var(--border);
+    padding: 5px 11px; border-radius: 8px; color: var(--fg); }
+  .chain .node.muted { opacity: .55; }
+  .chain .arr { color: var(--accent); font-weight: 700; }
+  .ok-mark { color: var(--ok); font-weight: 700; }
+  .mono-small { font-size: 12px; color: var(--fg-dim); }
+  footer { text-align: center; color: var(--fg-dim); font-size: 12px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Result Check — session-scoped caveman savings</h1>
+      <div class="sub">IDD→SDD сверка цепи · 2026-06-23</div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <span class="verdict">Вердикт: OK</span>
+      <button class="toggle" id="themeBtn" type="button">🌙 Тема</button>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="dot"></span>Резюме сверки</h2>
+    <table>
+      <tr><th style="width:160px">Документ</th><th>Путь / значение</th></tr>
+      <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-06-23-caveman-session-savings.md</code></td></tr>
+      <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-06-23-caveman-session-savings-design.md</code></td></tr>
+      <tr><td>Intent</td><td><span class="empty">не найден (chain.intent: null)</span></td></tr>
+      <tr><td>Diff base</td><td><code>git diff 624252e6..HEAD</code> — вся работа закоммичена; 6 файлов, +193/−16 (машинный <code>docs/wiki/.iwiki/index.jsonl</code> исключён из анализа)</td></tr>
+      <tr><td>plan_hash</td><td><code>ca30004e63fa6aef</code> <span class="ok-mark">= review.plan_hash</span> — тело плана не менялось</td></tr>
+    </table>
+    <div style="margin-top:14px" class="chain">
+      <span class="node muted">intent (нет)</span>
+      <span class="arr">→</span>
+      <span class="node">spec</span>
+      <span class="arr">→</span>
+      <span class="node">plan</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="dot"></span>Покрытие шагов плана</h2>
+    <div class="counters">
+      <div class="counter done"><div class="n">4</div><div class="l">DONE</div></div>
+      <div class="counter partial"><div class="n">0</div><div class="l">PARTIAL</div></div>
+      <div class="counter missing"><div class="n">0</div><div class="l">MISSING</div></div>
+    </div>
+    <table>
+      <tr><th style="width:60px">Статус</th><th style="width:240px">Шаг</th><th>Свидетельство в diff</th><th style="width:96px">Commit</th></tr>
+      <tr>
+        <td><span class="chip done">DONE</span></td>
+        <td>Task 1 — per-session + cumulative-only global suffix</td>
+        <td><code>caveman-stats.js</code> :329–365 (perSession/global writes через <code>safeWriteFlag</code>); <code>tests/…savings.sh</code> t1</td>
+        <td><code>a34b978a</code></td>
+      </tr>
+      <tr>
+        <td><span class="chip done">DONE</span></td>
+        <td>Task 2 — prune per-session suffix &gt;7 дней</td>
+        <td><code>caveman-stats.js</code> <code>pruneOldSessionSuffixes()</code> :289–303 + вызов :365; тест t2</td>
+        <td><code>e96969a4</code></td>
+      </tr>
+      <tr>
+        <td><span class="chip done">DONE</span></td>
+        <td>Task 3 — statusline per-session first, global fallback</td>
+        <td><code>claude-statusline.sh</code> caveman-блок (SESSION_ID-keyed → global fallback → bare icon); тест t3</td>
+        <td><code>8bbbd3c7</code></td>
+      </tr>
+      <tr>
+        <td><span class="chip done">DONE</span></td>
+        <td>Task 4 — wiki через iwiki</td>
+        <td><code>docs/wiki/caveman.md</code> (Statusline Badge) + <code>docs/wiki/statusline.md</code> (per-session-first); индекс обновлён</td>
+        <td><code>21205101</code></td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="dot"></span>Findings</h2>
+    <div class="empty">Findings нет — 0 CRITICAL, 0 WARNING, 0 INFO.</div>
+  </section>
+
+  <section>
+    <h2><span class="dot"></span>Покрытие Intent / Spec</h2>
+    <table>
+      <tr><th style="width:200px">Источник</th><th>Покрытие</th></tr>
+      <tr><td>Desired Outcomes (intent)</td><td><span class="empty">N/A — intent doc отсутствует</span></td></tr>
+      <tr><td>Spec Success Criteria</td><td><span class="badge-num">5 / 5</span></td></tr>
+    </table>
+    <table style="margin-top:12px">
+      <tr><th style="width:60px">#</th><th style="width:280px">Критерий</th><th>Свидетельство</th></tr>
+      <tr><td>1</td><td>Session figure rendered</td><td>t1 — assert <code>⛏ 65.0k · Σ110.1M</code></td></tr>
+      <tr><td>2</td><td>Statusline precedence (cache bypass)</td><td>t3 A/B/C; <code>ICLAUDE_SL_NO_CACHE=1</code> (F-001 fix)</td></tr>
+      <tr><td>3</td><td>Concurrency (own files, shared Σ)</td><td>t1 concurrent assertions</td></tr>
+      <tr><td>4</td><td>Pruning (&gt;7д removed, fresh kept)</td><td>t2</td></tr>
+      <tr><td>5</td><td>Non-caveman session (no badge)</td><td>t3 case D (inactive → no ⛏)</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="dot"></span>Избыточные изменения</h2>
+    <div class="empty">Нет. <code>docs/wiki/.iwiki/log.jsonl</code> и <code>index.jsonl</code> — штатные артефакты iwiki-ingest в рамках Task 4.</div>
+  </section>
+
+  <section>
+    <h2><span class="dot"></span>Сводка</h2>
+    <div class="counters">
+      <div class="counter missing"><div class="n">0</div><div class="l">CRITICAL</div></div>
+      <div class="counter partial"><div class="n">0</div><div class="l">WARNING</div></div>
+      <div class="counter"><div class="n" style="color:var(--info)">0</div><div class="l">INFO</div></div>
+    </div>
+    <div class="note">
+      <b>Примечание.</b> Task 3 содержал 2 отклонения от примерного тест-кода плана
+      (<code>ICLAUDE_SL_NO_CACHE</code> pipe-scoping; needle <code>Σ</code> → <code>⛏ Σ</code>) —
+      оба независимо подтверждены как багфиксы примеров плана и сохраняют intent.
+      Финальный whole-branch review (opus): <span class="ok-mark">Ready to merge = YES</span>,
+      0 Critical / 0 Important.
+    </div>
+  </section>
+
+  <footer>
+    Chain: (intent отсутствует) → spec → plan · Result Check 2026-06-23 · verdict OK
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', 'dark');
+    var btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      btn.textContent = next === 'dark' ? '🌙 Тема' : '☀️ Тема';
+    });
+  })();
+</script>
+</body>
+</html>

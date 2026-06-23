@@ -77,7 +77,7 @@ For Anthropic native sessions only (no router), the script sources `scripts/lib/
 These badges reflect signals written by hooks and [[launcher]]:
 
 - Security `🔒` (block) / `⚠️` (redact) — read from `/tmp/iclaude-security-event.json`, written by `block-secrets.py` / `redact-secrets.py` ([[security-hooks]]), shown for the event's TTL then the flag is cleaned up.
-- Caveman `⛏ <count>` — shown when `$CLAUDE_CONFIG_DIR/.caveman-active` exists; the suffix text comes from `.caveman-statusline-suffix` written by `caveman-stats.js` ([[caveman]]).
+- Caveman `⛏ …` — shown when `$CLAUDE_CONFIG_DIR/.caveman-active` exists. The badge prefers THIS session's pre-rendered suffix `.caveman-statusline-suffix-<SESSION_ID>` (`⛏ <session> · Σ<cumulative>`, keyed by the already-parsed `SESSION_ID`, guarded against empty/`unknown`), falling back to the cumulative-only global `.caveman-statusline-suffix` (`⛏ Σ<cumulative>`, e.g. before the session's first Stop), then to a bare `⛏`. Both files are written by `caveman-stats.js`; the statusline only `cat`s them (`tr -d '\n\r'`) — no savings math in bash ([[caveman]]).
 - PII `🛡 <count>` — shown when `ICLAUDE_PII_ACTIVE=1` and `ICLAUDE_PII_ACTIVE_PORT` are set ([[launcher]] PII lifecycle). It fetches `masked_items_total` from the proxy's `/api/metrics` (30s TTL cache) and wraps the icon in an OSC 8 hyperlink to `ICLAUDE_PII_LOG_PATH` when that file exists. See [[pii-proxy]].
 - microVM `⚡` (full sync) / `⚡🔐` (isolated, sealed) — shown when `ICLAUDE_MICROVM_ACTIVE=1`, hyperlinked to `ICLAUDE_MICROVM_INFO_PATH` (host-side vm-info). See [[sandbox]].
 
