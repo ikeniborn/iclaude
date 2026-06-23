@@ -53,7 +53,12 @@ Both vars are set in `.claude_config` (see [[config]]) and exported verbatim to 
 
 ## Statusline Badge
 
-The [[statusline#Security, Caveman, PII, microVM Badges]] render script shows a caveman badge (`⛏ <count>`) when `$CLAUDE_CONFIG_DIR/.caveman-active` exists. The suffix text is read from `.caveman-statusline-suffix`, written by `caveman-stats.js`. The badge survives the [[statusline#Adaptive Display Modes]] compact tier (dropped only in minimal). When no `statusLine` key is present in `settings.json`, the activation hook injects a one-time setup nudge pointing at `caveman-statusline.sh` (or `.ps1` on Windows).
+The [[statusline#Security, Caveman, PII, microVM Badges]] render script shows a caveman badge when `$CLAUDE_CONFIG_DIR/.caveman-active` exists. `caveman-stats.js` pre-renders the suffix string on every Stop (the `caveman-stats-stop.js` hook re-runs it each turn) so the statusline stays a dumb reader — all savings math and badge formatting (via `humanizeTokens`, the single number formatter) live in JS. Two suffix files are written through the symlink-safe `safeWriteFlag`:
+
+- **Per-session** `.caveman-statusline-suffix-<session_id>` holds `⛏ <session> · Σ<cumulative>` (this session's saved tokens first, the lifetime cumulative after `Σ`; separator `" · "`, U+00B7). It degrades to `⛏ Σ<cumulative>` when the session's savings are 0, and to an empty string when both are 0.
+- **Global** `.caveman-statusline-suffix` is cumulative-only (`⛏ Σ<cumulative>`, or empty when the cumulative is 0) — a fallback the statusline uses before a session's first Stop has written its per-session file.
+
+`pruneOldSessionSuffixes()` runs after the writes and deletes per-session files whose `mtime` is older than 7 days; the trailing `-` in the `.caveman-statusline-suffix-` prefix keeps the global file out of the match, and the helper never throws so a prune failure cannot break stats. The badge survives the [[statusline#Adaptive Display Modes]] compact tier (dropped only in minimal). When no `statusLine` key is present in `settings.json`, the activation hook injects a one-time setup nudge pointing at `caveman-statusline.sh` (or `.ps1` on Windows).
 
 ## Status and Removal
 

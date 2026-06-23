@@ -66,3 +66,5 @@
 {"op":"ingest","source":"lib/statusline","page":"docs/wiki/statusline.md","date":"2026-06-23","note":"full wiki rebuild"}
 {"op":"ingest","source":"lib/telemetry","page":"docs/wiki/telemetry.md","date":"2026-06-23","note":"full wiki rebuild"}
 {"op":"ingest","source":"lib/update","page":"docs/wiki/update.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/hooks/caveman-stats.js","page":"docs/wiki/caveman.md","date":"2026-06-23"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/scripts/claude-statusline.sh","page":"docs/wiki/statusline.md","date":"2026-06-23"}
