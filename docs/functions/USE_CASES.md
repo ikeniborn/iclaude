@@ -122,8 +122,8 @@ Claude Code Router позволяет использовать DeepSeek, OpenRou
 # Редактировать .nvm-isolated/.claude-isolated/router.json
 # (используйте ${VAR_NAME} для API ключей)
 
-# Шаг 3: Экспортировать API ключ
-export DEEPSEEK_API_KEY="your-key-here"
+# Шаг 3: Добавить API ключ в .claude_config
+echo 'ICLAUDE_DEEPSEEK_API_KEY=your-key-here' >> .claude_config
 
 # Шаг 4: Запустить через router (требуется флаг --router)
 ./iclaude.sh --router

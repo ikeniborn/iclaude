@@ -147,10 +147,10 @@ committed index small and git-diffable.
 **Backend config (OpenAI-compatible):**
 
 ```bash
-export IWIKI_LLM_BASE_URL="https://api.openai.com/v1"   # any compatible endpoint
-export IWIKI_LLM_KEY="sk-..."
-export IWIKI_EMBED_MODEL="text-embedding-3-small"
-# optional: IWIKI_EMBED_DIMENSIONS (default 1536)
+ICLAUDE_IWIKI_LLM_BASE_URL="https://api.openai.com/v1"   # any compatible endpoint
+ICLAUDE_IWIKI_LLM_KEY="sk-..."
+ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"
+# optional: ICLAUDE_IWIKI_EMBED_DIMENSIONS (default 1536)
 ```
 
 **Tuning parameters (all optional, sensible defaults):**

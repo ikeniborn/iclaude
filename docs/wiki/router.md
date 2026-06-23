@@ -33,7 +33,7 @@ The router module requires a **real API key** (`sk-ant-api03-...`), not an OAuth
 
 `get_ccr_port()` reads `PORT` and `HOST` from `router.json` using `jq` (falls back to `grep`/`sed`) and exports them as `CCR_HOST` and `CCR_PORT` globals. These defaults are `127.0.0.1` and `3456` when the config is absent.
 
-Store provider API keys as shell exports in `.claude_config` (e.g. `export DEEPSEEK_API_KEY=...`). The `router.json` file itself should use `${VAR}` placeholders so it is safe to commit to git.
+Store provider API keys in `.claude_config` (e.g. `ICLAUDE_DEEPSEEK_API_KEY=...`). The `router.json` file itself should use `${VAR}` placeholders so it is safe to commit to git.
 
 ## Installation
 

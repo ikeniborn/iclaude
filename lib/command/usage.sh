@@ -58,7 +58,7 @@ OPTIONS:
                                     Can be combined with --pii-proxy: traffic goes PII proxy → CCR → providers
   --install-pii-proxy               Install PII proxy (Python venv + Presidio NLP)
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
-  --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
+  --pii-proxy                       Launch with PII/secrets masking proxy (overrides ICLAUDE_USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
   --install-iwiki                   Install iwiki engine (uv + Python 3.12) and register the plugin
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
@@ -81,7 +81,7 @@ OPTIONS:
   --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
                                     Requires prior --install-microvm setup
                                     Can be combined with --pii-proxy: traffic routed through host TAP IP
-                                    Enable permanently: add MICRO_VM_ENABLED=true to .claude_config
+                                    Enable permanently: add ICLAUDE_MICRO_VM_ENABLED=true to .claude_config
   --no-test                         Skip proxy connectivity test
 
 Oh My Posh Commands:
@@ -221,7 +221,7 @@ PII PROXY (MASKING):
   ./iclaude.sh --pii-proxy
 
   # Enable permanently via config
-  echo 'USE_PII_PROXY=true' >> .claude_config
+  echo 'ICLAUDE_USE_PII_PROXY=true' >> .claude_config
 
   # Combined mode: PII masking + CCR router (chain: claude → PII:9000 → CCR:3456 → providers)
   ./iclaude.sh --pii-proxy --router

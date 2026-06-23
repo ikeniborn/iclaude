@@ -257,7 +257,7 @@ docker run -d \
 
 ```bash
 # В файл .claude_config добавить:
-export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic
+ICLAUDE_ANTHROPIC_BASE_URL=http://localhost:3000/anthropic
 
 # Проверить что PasteGuard запущен перед iclaude:
 # curl http://localhost:3000/health
@@ -942,7 +942,7 @@ Anthropic API
 PROXY_URL=https://user:pass@corp-proxy.example.com:8118
 
 # PasteGuard (маскирование PII)
-export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic
+ICLAUDE_ANTHROPIC_BASE_URL=http://localhost:3000/anthropic
 ```
 
 PasteGuard наследует `HTTPS_PROXY` из окружения и использует его для исходящих запросов.
@@ -1053,7 +1053,7 @@ docker run -d \
   ghcr.io/sgasser/pasteguard:eu
 
 # 4. Добавить в .claude_config
-echo "export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic" >> .claude_config
+echo "ICLAUDE_ANTHROPIC_BASE_URL=http://localhost:3000/anthropic" >> .claude_config
 
 # 5. Запустить iclaude
 ./iclaude.sh
@@ -1080,7 +1080,7 @@ docker compose -f docker-compose.pasteguard.yml up -d
 #   model: llama3.2:3b
 
 # 4. Добавить в .claude_config
-echo "export ANTHROPIC_BASE_URL=http://localhost:3000/anthropic" >> .claude_config
+echo "ICLAUDE_ANTHROPIC_BASE_URL=http://localhost:3000/anthropic" >> .claude_config
 ./iclaude.sh
 ```
 
@@ -1295,16 +1295,16 @@ curl http://127.0.0.1:<PORT>/api/metrics
 
 | Переменная | По умолчанию | Описание |
 |------------|--------------|----------|
-| `USE_PII_PROXY` | `false` | Включить прокси автоматически при каждом запуске |
-| `PII_PROXY_MASKING_LEVEL` | `standard` | Уровень маскирования: `off` / `secrets` / `standard` |
-| `PII_PROXY_LOG_LEVEL` | `info` | Уровень логирования: `info` / `debug` |
-| `PII_PROXY_PORT` | `0` (авто) | Фиксированный порт (0 = случайный из диапазона) |
-| `PII_PROXY_PORT_MIN` | `20000` | Нижняя граница диапазона авто-выбора порта |
-| `PII_PROXY_PORT_MAX` | `40000` | Верхняя граница диапазона авто-выбора порта |
-| `PII_PROXY_ENABLE_FALLBACK` | `true` | Regex-fallback если Presidio недоступен |
-| `PII_PROXY_MASK_TOKEN` | `REDACTED` | Токен замены PII (пустая строка = удаление без плейсхолдера) |
+| `ICLAUDE_USE_PII_PROXY` | `false` | Включить прокси автоматически при каждом запуске |
+| `ICLAUDE_PII_PROXY_MASKING_LEVEL` | `standard` | Уровень маскирования: `off` / `secrets` / `standard` |
+| `ICLAUDE_PII_PROXY_LOG_LEVEL` | `info` | Уровень логирования: `info` / `debug` |
+| `ICLAUDE_PII_PROXY_PORT` | `0` (авто) | Фиксированный порт (0 = случайный из диапазона) |
+| `ICLAUDE_PII_PROXY_PORT_MIN` | `20000` | Нижняя граница диапазона авто-выбора порта |
+| `ICLAUDE_PII_PROXY_PORT_MAX` | `40000` | Верхняя граница диапазона авто-выбора порта |
+| `ICLAUDE_PII_PROXY_ENABLE_FALLBACK` | `true` | Regex-fallback если Presidio недоступен |
+| `ICLAUDE_PII_PROXY_MASK_TOKEN` | `REDACTED` | Токен замены PII (пустая строка = удаление без плейсхолдера) |
 
-**Уровни маскирования (`PII_PROXY_MASKING_LEVEL`):**
+**Уровни маскирования (`ICLAUDE_PII_PROXY_MASKING_LEVEL`):**
 
 | Уровень | Что делает | Когда использовать |
 |---------|-----------|-------------------|
@@ -1348,10 +1348,10 @@ PII proxy пишет server log в `$PII_PROXY_LOG_DIR` (`.nvm-isolated/.claude-
 
 ```bash
 # В .claude_config:
-PII_PROXY_LOG_LEVEL=debug
+ICLAUDE_PII_PROXY_LOG_LEVEL=debug
 
 # Или разово:
-./iclaude.sh --pii-proxy  # с PII_PROXY_LOG_LEVEL=debug в .claude_config
+./iclaude.sh --pii-proxy  # с ICLAUDE_PII_PROXY_LOG_LEVEL=debug в .claude_config
 ```
 
 При старте в debug-режиме выводится предупреждение:

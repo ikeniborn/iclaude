@@ -123,7 +123,7 @@ Host OS (Linux + KVM)
 ./iclaude.sh --sandbox-microvm --pii-proxy --router
 
 # Постоянный режим через конфиг
-echo 'MICRO_VM_ENABLED=true' >> .claude_config
+echo 'ICLAUDE_MICRO_VM_ENABLED=true' >> .claude_config
 ```
 
 ### Workspace: конкретный путь
@@ -133,8 +133,8 @@ echo 'MICRO_VM_ENABLED=true' >> .claude_config
 MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project ./iclaude.sh --sandbox-microvm
 
 # Или через .claude_config:
-# MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+# ICLAUDE_MICRO_VM_ENABLED=true
+# ICLAUDE_MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
 ```
 
 ### Workspace: isolated режим
@@ -174,7 +174,7 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 - Host→Guest: `.nvm-isolated/`, `.git/`, `.claude_config`, `.iclaude-guest-env.sh`, `.iclaude-ssh`
 - Guest→Host: `lost+found/`, `.iclaude-guest-env.sh`, `.claude-guest/`
 
-Дополнительные исключения через `MICRO_VM_SYNC_EXCLUDE` (newline-separated patterns).
+Дополнительные исключения через `ICLAUDE_MICRO_VM_SYNC_EXCLUDE` (newline-separated patterns).
 
 ### Механизм синхронизации (SSH ControlMaster + rsync)
 
@@ -212,7 +212,7 @@ MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project \
 
 ```bash
 # .claude_config
-MICRO_VM_SNAPSHOT_ENABLED=true
+ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED=true
 ```
 
 ### UX-сценарий
@@ -255,7 +255,7 @@ ${MICRO_VM_SNAPSHOT_DIR}/        # по умолчанию: .nvm-isolated/.claud
     ...
 ```
 
-**Размер:** rootfs (~500MB sparse) + workspace (~2GB sparse) + vm.mem (`MICRO_VM_MEM_MB` MB).
+**Размер:** rootfs (~500MB sparse) + workspace (~2GB sparse) + vm.mem (`ICLAUDE_MICRO_VM_MEM_MB` MB).
 При дефолтных 2048 MB RAM ≈ **~2.5 GB на снэпшот** (sparse-файлы занимают меньше реального места).
 
 ### Параллельный запуск из одного снэпшота
@@ -319,19 +319,19 @@ rm -rf ~/.../microvm-snapshots/2026-03-08_11-22_npm-build-debugging/
 
 | Переменная | По умолчанию | Описание |
 |-----------|-------------|---------|
-| `MICRO_VM_ENABLED` | `false` | Автоматически использовать microVM при каждом запуске |
-| `MICRO_VM_NET_ENABLED` | `true` | TAP-сеть (NAT через хост). `false` — полная изоляция без сети. При `true` гость получает доступ к интернету через хостовый NAT (iptables MASQUERADE). |
-| `MICRO_VM_NET_SUBNET` | `172.16.0.0/26` | Подсеть для IP-пула слотов (до 31 concurrent сессий) |
-| `MICRO_VM_WORKSPACE_MODE` | `full` | Режим синхронизации: `full`, `isolated` |
-| `MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
-| `MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (colon-separated) |
-| `MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды, только `full` режим). `0` — только при выходе. Минимум 2s (rsync/v7) или 20s (tar/v6). |
-| `MICRO_VM_MEM_MB` | `2048` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
-| `MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ. Значение читается напрямую из `.claude_config` и применяется к конфигурации Firecracker без переопределений. |
-| `MICRO_VM_ROOTFS_SIZE_MB` | `2048` | Размер rootfs образа (vda: OS-диск гостя, `/home`, `/etc`, логи). `--install-microvm` авто-расширяет до этого значения; при запуске VM дополнительно авто-растёт если < 30% свободно. Workspace (файлы проекта) — отдельный диск (vdc), задаётся `MICRO_VM_WORKSPACE_SIZE_MB`. |
-| `MICRO_VM_WORKSPACE_SIZE_MB` | `2048` | Размер workspace образа (vdc: `/workspace` в госте). Sparse-файл — на хосте занимает только фактически использованное место. Пересоздаётся при каждом запуске VM. Для крупных проектов: 8192+. |
-| `MICRO_VM_SNAPSHOT_ENABLED` | `false` | Включить именованные снэпшоты. При запуске показывает список снэпшотов для выбора; при завершении предлагает сохранить |
-| `MICRO_VM_SNAPSHOT_DIR` | `...microvm-snapshots/` | Директория хранения снэпшотов |
+| `ICLAUDE_MICRO_VM_ENABLED` | `false` | Автоматически использовать microVM при каждом запуске |
+| `ICLAUDE_MICRO_VM_NET_ENABLED` | `true` | TAP-сеть (NAT через хост). `false` — полная изоляция без сети. При `true` гость получает доступ к интернету через хостовый NAT (iptables MASQUERADE). |
+| `ICLAUDE_MICRO_VM_NET_SUBNET` | `172.16.0.0/26` | Подсеть для IP-пула слотов (до 31 concurrent сессий) |
+| `ICLAUDE_MICRO_VM_WORKSPACE_MODE` | `full` | Режим синхронизации: `full`, `isolated` |
+| `ICLAUDE_MICRO_VM_WORKSPACE_PATH` | — | Источник workspace для `full` и `isolated` (по умолчанию: `$PWD`) |
+| `ICLAUDE_MICRO_VM_SYNC_EXCLUDE` | — | Дополнительные паттерны исключений (colon-separated) |
+| `ICLAUDE_MICRO_VM_SYNC_INTERVAL` | `0` | Периодическая синхронизация guest→host (секунды, только `full` режим). `0` — только при выходе. Минимум 2s (rsync/v7) или 20s (tar/v6). |
+| `ICLAUDE_MICRO_VM_MEM_MB` | `2048` | Объём RAM гостевой ВМ в МБ. **Рекомендуется: 2048** (Claude Code использует ~600 MB RSS в базовом состоянии, без swap) |
+| `ICLAUDE_MICRO_VM_VCPU` | `2` | Количество vCPU гостевой ВМ. Значение читается напрямую из `.claude_config` и применяется к конфигурации Firecracker без переопределений. |
+| `ICLAUDE_MICRO_VM_ROOTFS_SIZE_MB` | `2048` | Размер rootfs образа (vda: OS-диск гостя, `/home`, `/etc`, логи). `--install-microvm` авто-расширяет до этого значения; при запуске VM дополнительно авто-растёт если < 30% свободно. Workspace (файлы проекта) — отдельный диск (vdc), задаётся `ICLAUDE_MICRO_VM_WORKSPACE_SIZE_MB`. |
+| `ICLAUDE_MICRO_VM_WORKSPACE_SIZE_MB` | `2048` | Размер workspace образа (vdc: `/workspace` в госте). Sparse-файл — на хосте занимает только фактически использованное место. Пересоздаётся при каждом запуске VM. Для крупных проектов: 8192+. |
+| `ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED` | `false` | Включить именованные снэпшоты. При запуске показывает список снэпшотов для выбора; при завершении предлагает сохранить |
+| `ICLAUDE_MICRO_VM_SNAPSHOT_DIR` | `...microvm-snapshots/` | Директория хранения снэпшотов |
 
 ---
 
@@ -529,7 +529,7 @@ username ALL=(ALL) NOPASSWD: ICLAUDE_NET
 
 **Это ожидаемо и корректно** — claude внутри VM должен обращаться к Anthropic API, npm и прочим сервисам. Доступ в интернет не является уязвимостью: он необходим для функционирования.
 
-Для полной изоляции без сети: `MICRO_VM_NET_ENABLED=false` (тогда API недоступен).
+Для полной изоляции без сети: `ICLAUDE_MICRO_VM_NET_ENABLED=false` (тогда API недоступен).
 
 ## Обновление образов
 

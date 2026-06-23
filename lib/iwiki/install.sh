@@ -50,7 +50,7 @@ install_iwiki() {
     ( cd "$dir" && "$uv" sync ) || { print_error "uv sync failed"; return 1; }
 
     _iwiki_register_plugin
-    print_info "iwiki installed. Configure IWIKI_LLM_BASE_URL / IWIKI_LLM_KEY / IWIKI_EMBED_MODEL in .claude_config."
+    print_info "iwiki installed. Configure ICLAUDE_IWIKI_LLM_BASE_URL / ICLAUDE_IWIKI_LLM_KEY / ICLAUDE_IWIKI_EMBED_MODEL in .claude_config."
 }
 
 # Invoke the isolated Claude binary, handling both the native binary and the

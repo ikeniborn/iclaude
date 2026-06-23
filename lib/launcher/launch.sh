@@ -493,7 +493,7 @@ launch_claude() {
         # Periodic background sync (full mode + MICRO_VM_SYNC_INTERVAL > 0).
         # Runs a background loop that pulls /workspace from guest to host every N seconds
         # while claude is running, so changes are visible on host without waiting for exit.
-        # Disabled by default (0); enable via MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
+        # Disabled by default (0); enable via ICLAUDE_MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
         local _sync_interval="${MICRO_VM_SYNC_INTERVAL:-0}"
         local _periodic_sync_pid=""
         if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]] && \
@@ -832,7 +832,7 @@ launch_claude() {
         if [[ "$use_router" != "true" ]]; then
             if ! start_pii_proxy_server "$skip_isolated"; then
                 print_error "PII proxy failed to start — aborting for safety"
-                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                print_info "To launch without masking, remove ICLAUDE_USE_PII_PROXY from .claude_config"
                 exit 1
             fi
             trap 'stop_pii_proxy_server' EXIT INT TERM
@@ -1263,7 +1263,7 @@ print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} 
                 ;;
             *)
                 print_warning "PII proxy: shared proxy failed to start (${_result})"
-                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                print_info "To launch without masking, remove ICLAUDE_USE_PII_PROXY from .claude_config"
                 unset -f _pii_proxy_http_health
                 return 1
                 ;;
