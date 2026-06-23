@@ -1,3 +1,44 @@
+---
+review:
+  plan_hash: 5d7410de10b48a67
+  spec_hash: a02ff76606a6a317
+  last_run: 2026-06-23
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings:
+    - id: F-001
+      phase: verifiability
+      severity: INFO
+      section: "Task 8: Full suite + migration note"
+      section_hash: b30fe1780bb8a166
+      text: >-
+        Step 3 instructs to invoke iwiki-ingest on the changed engine sources but
+        leaves the exact ingest invocation as a prose comment rather than a runnable
+        command; the verifiable command shown is the lint run. Non-blocking — the
+        post-task doc step is intentionally human-driven (per project CLAUDE.md).
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: consistency
+      severity: INFO
+      section: "Task 3: Chunker — title + Overview prefix, Overview excluded (C)"
+      section_hash: 4e5a548ae085cbc7
+      text: >-
+        chunk._lead caps the lead at LEAD_MAX=250 while validate._lead does NOT cap
+        before its long_lead>250 comparison. This is correct-by-design (the chunker
+        truncates for embedding; the validator measures the authored length to flag
+        long_lead) but the two _lead helpers are intentionally non-identical despite
+        sharing a name — worth a keep-in-sync note. No behavioral defect.
+      verdict: open
+      verdict_at: null
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-23-iwiki-section-formation-design.md
+---
 # iwiki section-formation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

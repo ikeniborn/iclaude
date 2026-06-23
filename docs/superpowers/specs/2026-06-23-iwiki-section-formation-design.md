@@ -1,32 +1,13 @@
 ---
 review:
-  spec_hash: d359692ad940a1c6
+  spec_hash: a02ff76606a6a317
   last_run: 2026-06-23
   phases:
     structure:    { status: passed }
     coverage:     { status: passed }
     clarity:      { status: passed }
     consistency:  { status: passed }
-  findings:
-    - id: F-005
-      phase: clarity
-      severity: INFO
-      section: "Testing"
-      section_hash: 2fc6bd8588bd7ed0
-      text: >-
-        §Testing asserts "body word-splitting is unchanged vs. the old slice
-        boundaries". The split *algorithm* (size/overlap arithmetic in
-        _split_section) is indeed unchanged, but the *input* differs: the old code
-        split section_text = "## {heading}\n\n{body}", whose word stream is
-        ["##", <heading words>, <body words>], while §C step 6 splits `body` only.
-        For a multi-chunk section the slice boundaries over the body therefore shift
-        by (1 + heading-word-count) tokens, so the literal "old slice boundaries" are
-        not reproduced. Ambiguous between "algorithm unchanged" (true) and "boundaries
-        unchanged" (false); a DoD test written to the literal wording would fail.
-        Minor; resolved by clarifying the test asserts the splitting *logic*, not
-        identical boundary offsets.
-      verdict: open
-      verdict_at: null
+  findings: []
 chain:
   intent: null
 ---
