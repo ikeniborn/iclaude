@@ -1,3 +1,30 @@
+---
+chain:
+  intent: null
+review:
+  spec_hash: 14b43b138792153d
+  last_run: 2026-06-23
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings:
+    - id: F-001
+      phase: coverage
+      severity: WARNING
+      section: "### B — blocking section-formation validation"
+      section_hash: 9a9f46f4d709799b
+      text: >-
+        Task lists "lead ≤250 chars" among rules to enforce via a BLOCKING
+        PreToolUse hook, but the spec makes long_lead/missing_lead advisory-only
+        (only deep_heading and pre_h2_text block). Defensible — spec gives a
+        rationale (lead nits are not index-correctness bugs) — but it diverges
+        from the literal task scope; surface the deviation.
+      verdict: wontfix
+      verdict_at: 2026-06-23
+---
+
 # iwiki section-formation: depth rule, validation, vector annotation
 
 ## Overview
