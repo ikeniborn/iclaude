@@ -64,7 +64,8 @@ _SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
   (.context_window.used_percentage // 0 | tostring),
   (.session_id // "unknown"),
   (.transcript_path // ""),
-  (.workspace.project_dir // .cwd // "")
+  (.workspace.project_dir // .cwd // ""),
+  (.context_window.current_usage.input_tokens // 0 | tostring)
 ' 2>/dev/null)
 {
     read -r _SD_IS_ANTHROPIC
@@ -79,6 +80,7 @@ _SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
     read -r SESSION_ID
     read -r SESSION_FILE
     read -r PROJECT_DIR
+    read -r _SD_CACHE_INPUT
 } <<< "$_SD_PARSED"
 
 # --- Statusline caching (Variant D) ---
@@ -150,6 +152,19 @@ detect_real_context_window() {
     (( known > reported )) && echo "$known" || echo "$reported"
 }
 
+# Humanize a token count: K for thousands, M for millions (matches the cache split).
+humanize() {
+    local n="${1:-0}"
+    [[ "$n" =~ ^[0-9]+$ ]] || n=0
+    if [[ $n -ge 1000000 ]]; then
+        awk "BEGIN {printf \"%.1fM\", ($n / 1000000.0)}"
+    elif [[ $n -ge 1000 ]]; then
+        awk "BEGIN {printf \"%.0fK\", ($n / 1000.0)}"
+    else
+        printf '%s' "$n"
+    fi
+}
+
 # Parse session data
 # Anthropic fast path: если one-shot parse дал валидные данные — пропускаем весь адаптер.
 # Адаптер нужен только для не-Anthropic провайдеров (Gemini, OpenAI, Ollama via router).
@@ -197,19 +212,21 @@ ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT
 # CACHE_READ, CACHE_CREATION — уже установлены one-shot parse (legacy) или адаптером
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
 
-# Format cache display (show only if >0)
+# Format cache display: per-turn hit-rate % + read/write split (replaces summed count).
 CACHE_DISPLAY=""
 if [[ $TOTAL_CACHE -gt 0 ]]; then
-    # Format: K for thousands, M for millions
-    if [[ $TOTAL_CACHE -ge 1000000 ]]; then
-        CACHE_FMT=$(awk "BEGIN {printf \"%.1fM\", ($TOTAL_CACHE / 1000000.0)}")
-    elif [[ $TOTAL_CACHE -ge 1000 ]]; then
-        CACHE_FMT=$(awk "BEGIN {printf \"%.0fK\", ($TOTAL_CACHE / 1000.0)}")
+    # Uncached input of the current request (per-turn); 0 for non-Anthropic providers.
+    CACHE_INPUT="${_SD_CACHE_INPUT:-0}"
+    [[ "$CACHE_INPUT" =~ ^[0-9]+$ ]] || CACHE_INPUT=0
+    # hit-rate = cache_read / (cache_read + cache_creation + uncached_input)
+    HR_DENOM=$((CACHE_READ + CACHE_CREATION + CACHE_INPUT))
+    if [[ $HR_DENOM -gt 0 ]]; then
+        HIT_RATE=$(awk "BEGIN {printf \"%.0f\", ($CACHE_READ * 100.0 / $HR_DENOM)}")
+        CACHE_DISPLAY=" | 📦 ${HIT_RATE}% · R$(humanize "$CACHE_READ")/W$(humanize "$CACHE_CREATION")"
     else
-        CACHE_FMT="$TOTAL_CACHE"
+        CACHE_DISPLAY=" | 📦 n/a"
     fi
-    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
-    # Clean cache display immediately
+    # Strip any stray newlines so the segment stays on one line.
     CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
 
