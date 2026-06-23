@@ -398,7 +398,7 @@ install_isolated_pii_proxy() {
     print_success "PII-Proxy installed successfully! Mode: $pii_mode"
     echo ""
     print_info "Next steps:"
-    print_info "  1. Enable: add USE_PII_PROXY=true to .claude_config"
+    print_info "  1. Enable: add ICLAUDE_USE_PII_PROXY=true to .claude_config"
     print_info "  2. Launch: ./iclaude.sh --pii-proxy"
     print_info "  3. Status: ./iclaude.sh --check-pii-proxy"
     echo ""

@@ -49,6 +49,7 @@ qr_codes/
 
 # Configuration file (proxy, Claude Code settings, debug flags)
 .claude_config
+.claude_config.bak
 .claude_proxy_credentials  # Legacy filename (for backward compatibility)
 scripts/.claude_config
 scripts/.claude_proxy_credentials  # Legacy

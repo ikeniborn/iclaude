@@ -51,7 +51,7 @@ install_isolated_router() {
 	echo ""
 	print_info "Next steps:"
 	print_info "  1. Edit: $router_config"
-	print_info "  2. Export API keys: export DEEPSEEK_API_KEY=your-key"
+	print_info "  2. Add API keys to .claude_config: ICLAUDE_DEEPSEEK_API_KEY=your-key"
 	print_info "  3. Commit router.json to git (with \${VAR} placeholders)"
 	print_info "  4. Launch: ./iclaude.sh"
 	echo ""
