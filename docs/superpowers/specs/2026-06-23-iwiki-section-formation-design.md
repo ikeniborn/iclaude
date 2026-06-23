@@ -1,3 +1,68 @@
+---
+review:
+  spec_hash: f00fcec4d5716049
+  last_run: 2026-06-23
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: consistency
+      severity: WARNING
+      section: "Requirements > B — blocking section-formation validation"
+      section_hash: 90a093c6bbf0dab2
+      text: >-
+        §B justifies the hook's inline regex by analogy to "iwiki-reindex.py
+        mirroring _H2", but iwiki-reindex.py contains no _H2/## regex at all
+        (verified: it imports iwiki_common and only does edit bookkeeping). The
+        inline-mirror precedent is real in the repo (block-secrets/redact-secrets
+        hooks), but the named example is incorrect and could mislead the implementer.
+      verdict: open
+      verdict_at: null
+    - id: F-002
+      phase: clarity
+      severity: WARNING
+      section: "Testing"
+      section_hash: 2ec92d1513beaf1f
+      text: >-
+        §B defines two blocking conditions (deep_heading, pre_h2_text), and the hook
+        mirrors both regexes inline as a separate code path from the engine validator.
+        The Testing section's hook smoke test exercises only deep_heading (exit 2). The
+        hook's inline pre_h2_text blocking path has no acceptance test; test_validate.py
+        covers pre_h2_text at the validator level but not the hook's mirror. DoD gap on
+        the second blocking path.
+      verdict: open
+      verdict_at: null
+    - id: F-003
+      phase: consistency
+      severity: INFO
+      section: "Background — current behaviour (verified)"
+      section_hash: 4726fa6e02d9c293
+      text: >-
+        §Background lists index.jsonl Record fields as "id, heading, chunk, hash, dim,
+        scale, q", but the actual Record dataclass (store.py) also has a `file` field.
+        Minor inaccuracy in a "(verified)" claim; not load-bearing for the design.
+      verdict: open
+      verdict_at: null
+    - id: F-004
+      phase: clarity
+      severity: INFO
+      section: "Requirements > C — annotation prefix from the authored Overview section"
+      section_hash: 06afe4d09418477f
+      text: >-
+        §C step 1 defines page_title as "the first ^#\\s+ (H1) before the first ##",
+        with fallback only for the absent case. It does not specify behaviour when an
+        H1 appears after the first ## or when multiple H1 lines exist. This is bounded
+        by §B (pre_h2_text blocks any pre-## content except a single H1), so the engine
+        only sees the documented input — acceptable, but the dependency on B for the
+        precondition is implicit.
+      verdict: open
+      verdict_at: null
+chain:
+  intent: null
+---
 # iwiki section-formation: depth rule, validation, vector annotation
 
 ## Overview
@@ -28,8 +93,8 @@ heading parsing that B reuses.
   sub-chunks 1+ lose the heading.
 - `embed.py` embeds exactly `chunk.text` — **no** page title, summary, or parent
   context is mixed in. There is no "whole-article annotation" in section vectors.
-- `index.jsonl` stores per-chunk `Record`s only (`id, heading, chunk, hash, dim,
-  scale, q`); no chunk text and no page-level annotation are persisted. Reuse in
+- `index.jsonl` stores per-chunk `Record`s only (`id, file, heading, chunk, hash,
+  dim, scale, q`); no chunk text and no page-level annotation are persisted. Reuse in
   `cmd_index` is purely per-chunk by `hash`.
 - `lint.py` checks broken `[[refs]]`, orphans, and stale pages only. **No** check of
   heading depth, lead paragraph, dropped pre-`##` text, or a missing Overview.
@@ -64,7 +129,9 @@ LLM call, no new model, no new API endpoint, no cache file — the summary alrea
 lives in the page content as the `## Overview` section.
 
 1. Extract **page_title** once per file: the first `^#\s+` (H1) line before the
-   first `##`; fallback to a humanized form of the file's basename.
+   first `##` (later or duplicate `#` lines are ignored); fallback to a humanized
+   form of the file's basename. B's `pre_h2_text` already constrains pre-`##` content
+   to a single H1, so the engine only sees this documented shape.
 2. Identify the **Overview section**: the `##` section whose heading matches the
    reserved name (default `Overview`, case-insensitive). Its body becomes
    `article_summary`, collapsed to a single line and truncated to
@@ -135,8 +202,9 @@ Blocking hook: new `plugin/iwiki/hooks/iwiki-validate.py`, `PreToolUse` on
 `Write|Edit|MultiEdit`.
 
 - Acts only on paths inside `docs/wiki/` (excluding the `.iwiki/` index dir).
-- Mirrors the heading/lead regexes inline (same convention as `iwiki-reindex.py`
-  mirroring `_H2`), so it needs no engine/`uv` spawn on every edit.
+- Mirrors the heading/lead regexes inline (same convention as `lint.py`, which
+  inlines `chunk._H2` behind a *keep-in-sync* comment to stay stdlib-only), so it
+  needs no engine/`uv` spawn on every edit.
 - **Blocks (exit 2)** only on structural violations that break the index:
   `deep_heading` and `pre_h2_text`. `missing_overview` / `missing_lead` / `long_lead`
   are **advisory** (surfaced via `lint`), not blocking — they are quality nits, not
@@ -176,7 +244,13 @@ the page — the engine only reads the resulting `## Overview` text.
   echo '{"tool_name":"Write","tool_input":{"file_path":"docs/wiki/x.md","content":"## A\n### too deep\n"}}' \
     | python3 plugin/iwiki/hooks/iwiki-validate.py; echo "exit: $?"
   ```
-  Expect a block (exit 2) naming the `deep_heading` violation.
+  Expect a block (exit 2) naming the `deep_heading` violation. A second case covers
+  the other blocking path, `pre_h2_text`:
+  ```bash
+  echo '{"tool_name":"Write","tool_input":{"file_path":"docs/wiki/x.md","content":"# T\n\nstray prose before any section\n\n## A\n"}}' \
+    | python3 plugin/iwiki/hooks/iwiki-validate.py; echo "exit: $?"
+  ```
+  Expect a block (exit 2) naming the `pre_h2_text` violation.
 
 ## Implementation order
 
