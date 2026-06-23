@@ -80,6 +80,49 @@ t2_prune() {
 
 t2_prune
 
+# ---- Task 3: statusline per-session-first, global fallback ----
+t3_statusline_precedence() {
+  echo "[t3] statusline suffix precedence"
+  local tmp; tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  mkdir -p "$tmp/scripts"
+  cp "$STATUSLINE" "$tmp/scripts/claude-statusline.sh"
+  : > "$tmp/settings.json"          # makes the script detect CLAUDE_CONFIG_DIR=$tmp
+  printf 'full' > "$tmp/.caveman-active"
+
+  local sid="sid-c3"
+  # stdin: native Anthropic session, non-zero tokens (avoids the new-session suppression)
+  local stdin_json
+  stdin_json='{"session_id":"'"$sid"'","model":{"display_name":"Opus 4.8"},"cost":{"total_cost_usd":0.5},"context_window":{"total_input_tokens":1000,"total_output_tokens":35000,"context_window_size":200000,"current_usage":{"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"input_tokens":0}}}'
+  run_sl() { printf '%s' "$stdin_json" | ICLAUDE_SL_NO_CACHE=1 bash "$tmp/scripts/claude-statusline.sh" 2>/dev/null; }
+
+  # Case A: per-session file present → badge uses it
+  printf '⛏ 65.0k · Σ110.1M' > "$tmp/.caveman-statusline-suffix-$sid"
+  printf '⛏ Σ110.1M'         > "$tmp/.caveman-statusline-suffix"
+  local outA; outA="$(run_sl)"
+  assert_contains "t3A per-session badge wins" "$outA" "⛏ 65.0k · Σ110.1M"
+
+  # Case B: per-session absent → global fallback
+  rm -f "$tmp/.caveman-statusline-suffix-$sid"
+  local outB; outB="$(run_sl)"
+  assert_contains     "t3B global fallback shown"     "$outB" "⛏ Σ110.1M"
+  assert_not_contains "t3B no session number in fallback" "$outB" "65.0k"
+
+  # Case C: both absent → bare pick
+  rm -f "$tmp/.caveman-statusline-suffix"
+  local outC; outC="$(run_sl)"
+  assert_contains     "t3C bare caveman icon" "$outC" "⛏"
+  assert_not_contains "t3C no Σ when bare"     "$outC" "⛏ Σ"
+
+  # Case D (spec success criterion #5): caveman inactive → no badge at all
+  rm -f "$tmp/.caveman-active"
+  printf '⛏ Σ110.1M' > "$tmp/.caveman-statusline-suffix"
+  local outD; outD="$(run_sl)"
+  assert_not_contains "t3D no caveman badge when inactive" "$outD" "⛏"
+}
+
+t3_statusline_precedence
+
 echo
 [[ $FAILED -eq 0 ]] && echo "ALL TESTS PASSED" || echo "SOME TESTS FAILED"
 exit $FAILED
