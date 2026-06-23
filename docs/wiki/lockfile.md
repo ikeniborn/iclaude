@@ -1,5 +1,7 @@
 # Lockfile
 
+## Overview
+
 The lockfile (`$ISOLATED_LOCKFILE`, resolved to `.nvm-isolated-lockfile.json` at project root) pins exact versions of every component in the isolated environment so the installation can be reproduced deterministically. It is committed to git. See [[update#Isolated Update]] for how the update flow writes the lockfile, and [[nvm]] for the NVM context in which it operates.
 
 ## Save

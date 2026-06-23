@@ -1,5 +1,7 @@
 # OAuth Module
 
+## Overview
+
 The OAuth module is a single file: `lib/oauth/token.sh`. It handles OAuth token inspection, expiration warnings, automatic proactive refresh, and token generation via the `claude setup-token` command.
 
 ## Token Storage

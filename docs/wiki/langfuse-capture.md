@@ -1,5 +1,7 @@
 # Langfuse Non-Router Capture
 
+## Overview
+
 Captures each Claude Code `POST /v1/messages` call (full prompt + completion) on the non-router path and emits it to self-hosted Langfuse as a `project:<repo>`-tagged trace. Both the request and the completion sent to Langfuse are always secrets-scrubbed. It rides the [[pii-proxy]] as a passive observer and is enabled by the `USE_LANGFUSE_CAPTURE` config toggle.
 
 ## Architecture

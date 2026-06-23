@@ -1,6 +1,8 @@
 # Command Module
 
-The command module is the CLI front-end of iclaude: it prints the `--help` text, parses command-line arguments, and routes parsed commands to their handlers. It is the last module sourced (Phase 14 — see [[architecture#Phase and Sourcing Order]] and [[architecture#Command Dispatch]]).
+## Overview
+
+The command module is the CLI front-end of iclaude: it prints the `--help` text, parses command-line arguments, and routes parsed commands to their handlers. It is the last module sourced (Phase 14 — see [[architecture#Phase and Sourcing Order]] and [[architecture#Command Dispatch]]). Covers usage/help text, argument parsing, and command dispatch.
 
 ## Usage / Help Text
 

@@ -1,6 +1,8 @@
 # Core Module
 
-The core module lives in `lib/core/` across five files: `init.sh`, `logging.sh`, `validation.sh`, `json.sh`, and `remaining.sh`. It defines all global environment variables, colored output helpers, dependency/file validators, lockfile JSON accessors, and a set of legacy installation/update utilities sourced first in the launch sequence (Phase 0).
+## Overview
+
+The core module lives in `lib/core/` across five files: `init.sh`, `logging.sh`, `validation.sh`, `json.sh`, and `remaining.sh`. It defines all global environment variables, colored output helpers, dependency/file validators, lockfile JSON accessors, and a set of legacy installation/update utilities sourced first in the launch sequence (Phase 0). Covers environment initialization, per-session isolation, feature variable exports, color/logging helpers, validation, lockfile JSON access, and legacy utilities.
 
 ## Environment Initialization
 

@@ -1,5 +1,7 @@
 # Statusline
 
+## Overview
+
 The statusline module (`lib/statusline/`) provides a custom status bar for Claude Code. The bar is driven by `claude-statusline.sh`, a shell script installed at `$ISOLATED_CONFIG_DIR/scripts/claude-statusline.sh` and wired into Claude Code via the `statusLine` key in `settings.json`.
 
 ## Detection

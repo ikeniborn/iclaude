@@ -1,6 +1,8 @@
 # html-report Skill
 
-`.claude-isolated/skills/html-report/` is a Claude Code skill that generates ONE self-contained `.html` report — opens offline by double-click, zero external dependencies, with styled tables, CSS/SVG diagrams, and a dark/light theme toggle. It is the human-readable counterpart to the machine-format `mermaid-obsidian` skill.
+## Overview
+
+`.claude-isolated/skills/html-report/` is a Claude Code skill that generates ONE self-contained `.html` report — opens offline by double-click, zero external dependencies, with styled tables, CSS/SVG diagrams, and a dark/light theme toggle. It is the human-readable counterpart to the machine-format `mermaid-obsidian` skill. Covers purpose and hard constraints, reference recipes, and workflow/autonomy zones.
 
 ## Purpose and Hard Constraints
 

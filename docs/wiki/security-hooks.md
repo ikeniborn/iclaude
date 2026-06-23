@@ -1,5 +1,7 @@
 # Security Hooks
 
+## Overview
+
 PreToolUse hooks guard secret material before file/Bash tools run, configured in `settings.json` under `$CLAUDE_CONFIG_DIR`. Two layers: `block-secrets.py` denies access to sensitive paths, and a companion `redact-secrets.py` masks secret-shaped content. See [[architecture#Isolated Environment]] for how `CLAUDE_CONFIG_DIR` wires hooks into the isolated config.
 
 ## block-secrets.py

@@ -1,5 +1,7 @@
 # LSP Integration
 
+## Overview
+
 Language Server Protocol support for Claude Code: installs server binaries and Claude Code plugins for TypeScript and Python, repairs plugin registry paths after project moves, and reports installation status with lockfile tracking.
 
 ## Installation

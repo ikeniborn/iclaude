@@ -1,5 +1,7 @@
 # Launcher
 
+## Overview
+
 The launcher module (`lib/launcher/launch.sh`) is the final stage of iclaude startup. It assembles the runtime environment, starts optional subsystems (router, PII proxy, microVM), and hands off to the Claude Code binary via `exec` or SSH.
 
 ## Entry Point

@@ -1,6 +1,8 @@
 # GSD Module
 
-The GSD module (`lib/gsd/`) installs and reports on the GSD ("Get Shit Done") meta-prompting / spec-driven development framework inside the iclaude isolated environment. GSD is distributed as the npm package `get-shit-done-cc` and installs its skills as `gsd-*` directories under `$CLAUDE_CONFIG_DIR/skills/`.
+## Overview
+
+The GSD module (`lib/gsd/`) installs and reports on the GSD ("Get Shit Done") meta-prompting / spec-driven development framework inside the iclaude isolated environment. GSD is distributed as the npm package `get-shit-done-cc` and installs its skills as `gsd-*` directories under `$CLAUDE_CONFIG_DIR/skills/`. Covers detection, installation, status reporting, and lockfile integration.
 
 ## Detection
 

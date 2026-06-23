@@ -1,6 +1,8 @@
 # iwiki Module
 
-Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`).
+## Overview
+
+Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`). Covers detection, engine sync, the engine runner, plugin registration, and the four automation hooks (bootstrap, recall, reindex, sync).
 
 ## Detection
 

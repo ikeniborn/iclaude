@@ -1,5 +1,7 @@
 # Proxy Module
 
+## Overview
+
 The proxy module lives in `lib/proxy/` and is split across four files: `configure.sh`, `credentials.sh`, `git.sh`, and `validate.sh`. Together they handle proxy URL configuration, credential persistence, TLS certificate policy, git integration, and connectivity testing.
 
 ## Configuration Entry Point

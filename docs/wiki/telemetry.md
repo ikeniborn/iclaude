@@ -1,5 +1,7 @@
 # Telemetry Module
 
+## Overview
+
 The telemetry module (`lib/telemetry/otel.sh`) configures OpenTelemetry (OTEL) export for Claude Code, wiring metrics, logs, and resource attributes to an OTLP collector. It is loaded inside Phase 15 after argument parsing (see [[architecture#Phase and Sourcing Order]]), so the `--no-telemetry` flag and `ICLAUDE_NO_TELEMETRY` are already resolved when it runs.
 
 ## Activation
