@@ -13,6 +13,10 @@ review:
     verifiability: { status: passed }
     consistency:   { status: passed }
   findings: []
+result_check:
+  verdict: OK
+  plan_hash: ca30004e63fa6aef
+  last_run: 2026-06-23
 ---
 
 # Session-scoped Caveman Token Savings — Implementation Plan
