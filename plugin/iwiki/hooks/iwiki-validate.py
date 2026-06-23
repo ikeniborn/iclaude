@@ -19,8 +19,11 @@ import os
 import re
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import iwiki_common as iw  # type: ignore[import-not-found]  # noqa: E402
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import iwiki_common as iw  # type: ignore[import-not-found]  # noqa: E402
+except Exception:
+    sys.exit(0)  # cannot load common module — fail open, never wedge an edit
 
 _DEEP = re.compile(r"^#{3,}\s", re.MULTILINE)
 _H1_LINE = re.compile(r"^#\s+\S")
