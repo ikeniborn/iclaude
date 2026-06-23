@@ -176,6 +176,16 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/cache-report.py\""
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

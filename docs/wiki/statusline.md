@@ -2,7 +2,7 @@
 
 ## Overview
 
-The statusline module (`lib/statusline/`) installs and configures a custom Claude Code status bar, rendered by the pre-authored `claude-statusline.sh` script. The bar shows dual context tracking, cache, cost, model, and OSC 8 hyperlinks, plus live badges for [[router]], [[pii-proxy]], [[security-hooks]], [[caveman]], and [[sandbox]] microVM. See [[ohmyposh]] for git rendering.
+The statusline module (`lib/statusline/`) installs and configures a custom Claude Code status bar, rendered by the pre-authored `claude-statusline.sh` script. The bar shows dual context tracking, cache hit-rate, cost, model, and OSC 8 hyperlinks, plus live badges for [[router]], [[pii-proxy]], [[security-hooks]], [[caveman]], and [[sandbox]] microVM. A `SessionEnd` hook also emits an end-of-session cache report. See [[ohmyposh]] for git rendering.
 
 ## Module Layout
 
@@ -50,7 +50,15 @@ The bar shows two figures: `Σ <remaining> ↓` (tokens left until the window fi
 
 ## Cache and Cost
 
-Cache is the sum of `cache_read_input_tokens` and `cache_creation_input_tokens`, shown as `📦 <K/M>` only when above zero (formatted K for thousands, M for millions). Cost comes from `cost.total_cost_usd`, rendered as `$<n.nn>`. Both are sourced from the one-shot jq parse on the Anthropic fast path, or from the provider adapter otherwise.
+Cache health renders as `📦 <hit>% · R<read>/W<write>`, shown only when total cache tokens exceed zero — replacing the earlier summed token count so prefix reuse vs. rewrite is visible at a glance.
+
+The hit-rate is the per-turn share served from cache — `cache_read / (cache_read + cache_creation + input_tokens)`, integer percent; `R`/`W` are the cache-read and cache-creation token volumes (humanized K for thousands, M for millions). A high `%` means the prompt prefix is being reused; a `W` (cache_creation) spike means it was rewritten. Cost comes from `cost.total_cost_usd`, rendered as `$<n.nn>`. Both come from the one-shot jq parse — which now also extracts `current_usage.input_tokens` for the hit-rate denominator — on the Anthropic fast path, or from the provider adapter otherwise.
+
+## Cache Report Hook
+
+A `SessionEnd` hook, `cache-report.py`, writes a cumulative prompt-cache summary for the whole session — pairing the statusline's per-turn view with an end-of-session total.
+
+It reads the session transcript `.jsonl` (path from the hook's stdin), sums `cache_read_input_tokens`, `cache_creation_input_tokens`, `input_tokens`, and `output_tokens` across every `assistant` turn, and computes the cumulative hit-rate `read / (read + creation + input)`. The report — raw integer token counts plus turn count — is written to `$CLAUDE_CONFIG_DIR/logs/cache-report-<session_id>.txt` and best-effort echoed to `/dev/tty` as the session closes. It is Python-stdlib-only and fail-soft: a missing, empty, or malformed transcript, a non-dict payload, or a bad usage value yields exit 0 with no report, never breaking session teardown. Registered under `hooks.SessionEnd` in `settings.json`. See [[security-hooks]] for the PreToolUse hooks.
 
 ## Provider Adapters
 
