@@ -18,16 +18,23 @@ This prevents Claude Code from updating itself; version management is delegated 
 
 ## Environment Variable Export
 
-`load_claude_config` (in `lib/config/isolated.sh`) sources `$CREDENTIALS_FILE` (`.claude_config` by default) and then conditionally exports every supported runtime variable. The full list covers:
+Every variable in `.claude_config` uses a single `ICLAUDE_` prefix and is a bare assignment (no `export`). `lib/config/env-map.sh` is the single config-load chokepoint: `source_iclaude_config` sources `$CREDENTIALS_FILE`, then `apply_iclaude_env_map` strips the prefix and exports the canonical name each built-in tool reads — e.g. `ICLAUDE_ANTHROPIC_API_KEY` → `ANTHROPIC_API_KEY`, `ICLAUDE_PROXY_URL` → `PROXY_URL`, `ICLAUDE_DEEPSEEK_API_KEY` → `DEEPSEEK_API_KEY`.
 
-- **Model selection**: `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_MODEL`, `CLAUDE_CODE_SUBAGENT_MODEL`
-- **Runtime limits**: `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, `CLAUDE_CODE_EFFORT_LEVEL`, `CLAUDE_CODE_SESSION_TIMEOUT`
-- **Feature flags**: `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`, `CLAUDE_CODE_DISABLE_1M_CONTEXT`, `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`, `CLAUDE_CODE_ENABLE_TASKS`, `CLAUDE_CODE_NO_CHROME`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, `CLAUDE_CODE_OAUTH_TOKEN`
-- **PII proxy**: `PII_PROXY_MASKING_LEVEL`, `PII_PROXY_ENABLE_FALLBACK`, `PII_PROXY_LOG_LEVEL`, `PII_PROXY_MASK_TOKEN` (see [[pii-proxy]])
-- **microVM**: `MICRO_VM_ENABLED`, `MICRO_VM_BACKEND`, `MICRO_VM_VCPU`, `MICRO_VM_MEM_MB`, and nine additional `MICRO_VM_*` variables (see [[sandbox]])
-- **Language**: `ICLAUDE_CHAT_LANG`, `ICLAUDE_DOC_LANG` — conversation and documentation languages read by the caveman hooks (see [[caveman#Language Resolution]])
+Translation rules:
 
-Only variables that are non-empty (or, for `PII_PROXY_MASK_TOKEN`, set at all via `+x`) are exported, so unset keys in `.claude_config` do not override existing environment values.
+- Most `ICLAUDE_X` → `export X` (de-prefix), exported only when non-empty, so unset keys do not override the existing environment.
+- A native denylist (`_ICLAUDE_NATIVE_LIST`: `ICLAUDE_CHAT_LANG`, `ICLAUDE_DOC_LANG`, `ICLAUDE_NO_TELEMETRY`, `ICLAUDE_NO_AUTO_UPDATE`, and the runtime `ICLAUDE_PII_ACTIVE` / `ICLAUDE_PII_MASKING_LEVEL` / `ICLAUDE_PII_ACTIVE_PORT` / `ICLAUDE_PII_LOG_PATH`) is kept verbatim — hooks and the statusline read these under the `ICLAUDE_` name (see [[caveman#Language Resolution]], [[pii-proxy]]).
+- An allow-empty set (`_ICLAUDE_ALLOW_EMPTY_LIST`: `ICLAUDE_PII_PROXY_MASK_TOKEN`) is exported even when set-but-empty, preserving the "empty token = no masking" semantic.
+
+All nine `source "$CREDENTIALS_FILE"` sites (in `lib/` and the `iclaude.sh` install paths) route through `source_iclaude_config`. `load_claude_config` (in `lib/config/isolated.sh`) is now a thin wrapper that delegates to it. Internal lib code still reads canonical names (`PROXY_URL`, `MICRO_VM_*`, see [[sandbox]]) — translation re-creates them, so consumers need no change.
+
+## Parse-Time Toggles
+
+`iclaude.sh` reads five toggles by `grep` on the raw config file **before** any `source`, to seed CLI-equivalent flags: `ICLAUDE_USE_PII_PROXY`, `ICLAUDE_MICRO_VM_ENABLED`, `ICLAUDE_NO_ATTRIBUTION_HEADER`, `ICLAUDE_USE_CHROME`, `ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS`. These patterns match the `ICLAUDE_` names directly, since a pre-source grep cannot benefit from the translation layer.
+
+## Legacy Auto-Migration
+
+`migrate_legacy_config` (in `lib/config/env-map.sh`) runs once at boot — after `init_environment` sets `CREDENTIALS_FILE` and before the parse-time grep block. A legacy `.claude_config` (detected by any `export ` line or any non-`ICLAUDE_` active assignment) is rewritten in place: active assignments gain the `ICLAUDE_` prefix and lose `export`, while comments and prose are left untouched. A chmod-600 `.claude_config.bak` backup is written first (via temp file + `mv`), and the rewrite is idempotent — once migrated, the file is no longer detected as legacy.
 
 ## Backup and Restore
 

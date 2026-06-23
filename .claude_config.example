@@ -10,7 +10,11 @@
 # Файл автоматически загружается при запуске ./iclaude.sh
 # Все переменные становятся доступны в окружении Claude Code.
 #
-# Формат: bash-переменные (KEY=value или export KEY=value)
+# Формат: bash-переменные с префиксом ICLAUDE_ (ICLAUDE_KEY=value), без export.
+# Слой трансляции (lib/config/env-map.sh) снимает префикс и экспортирует
+# каноническое имя, которое читают встроенные инструменты.
+# Старый .claude_config (без префикса / с export) мигрируется автоматически
+# при первом запуске (создаётся резервная копия .claude_config.bak).
 # Пустые значения (KEY=) — переменная игнорируется.
 
 # ============================================================
@@ -28,14 +32,14 @@
 #
 # По умолчанию: не задан (прокси не используется).
 # Устанавливается через: ./iclaude.sh --proxy https://[CREDENTIALS]@proxy:8118
-PROXY_URL=
+ICLAUDE_PROXY_URL=
 
 # Отключить проверку TLS-сертификата прокси-сервера.
 # true  — отключить (небезопасно, используйте только в крайнем случае)
 # false — включить (по умолчанию)
 #
 # Альтернатива: PROXY_CA (безопасный способ)
-PROXY_INSECURE=false
+ICLAUDE_PROXY_INSECURE=false
 
 # Путь к CA-сертификату прокси-сервера (PEM-формат).
 # Используется, когда прокси перехватывает HTTPS (corporate MITM proxy).
@@ -44,7 +48,7 @@ PROXY_INSECURE=false
 # По умолчанию: не задан (дополнительный CA-сертификат не устанавливается).
 # Если задан, устанавливает NODE_EXTRA_CA_CERTS автоматически.
 # Предпочтительнее PROXY_INSECURE=true.
-PROXY_CA=
+ICLAUDE_PROXY_CA=
 
 # Список хостов, которые должны обходить прокси (через запятую).
 # Значение по умолчанию (если не задано):
@@ -52,7 +56,7 @@ PROXY_CA=
 #   gitlab.com,bitbucket.org,registry.npmjs.org,nodejs.org
 #
 # Добавьте внутренние хосты, которые не должны идти через прокси.
-NO_PROXY=
+ICLAUDE_NO_PROXY=
 
 # ============================================================
 #  МОДЕЛЬ CLAUDE CODE
@@ -64,21 +68,21 @@ NO_PROXY=
 # По умолчанию (если не задан): claude-sonnet-4-6
 #
 # Устанавливается через: ./iclaude.sh --model claude-sonnet-4-6
-CLAUDE_CODE_MODEL=
+ICLAUDE_CLAUDE_CODE_MODEL=
 
 # Нативная переменная Claude Code для выбора модели по умолчанию.
 # Альтернатива CLAUDE_CODE_MODEL: читается напрямую Claude Code (без флага --model).
 # Если задан и CLAUDE_CODE_MODEL — флаг --model имеет приоритет.
 # По умолчанию (если не задан): claude-sonnet-4-6
 # Пример: claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5-20251001
-ANTHROPIC_MODEL=
+ICLAUDE_ANTHROPIC_MODEL=
 
 # Переопределить alias-маппинг семейств моделей (opus/sonnet/haiku → конкретная версия).
 # Полезно для закрепления точной версии модели без изменения конфигов роутера.
 # По умолчанию: последняя версия соответствующего семейства.
-ANTHROPIC_DEFAULT_OPUS_MODEL=   # По умолчанию: claude-opus-4-6
-ANTHROPIC_DEFAULT_SONNET_MODEL= # По умолчанию: claude-sonnet-4-6
-ANTHROPIC_DEFAULT_HAIKU_MODEL=  # По умолчанию: claude-haiku-4-5-20251001
+ICLAUDE_ANTHROPIC_DEFAULT_OPUS_MODEL=   # По умолчанию: claude-opus-4-6
+ICLAUDE_ANTHROPIC_DEFAULT_SONNET_MODEL= # По умолчанию: claude-sonnet-4-6
+ICLAUDE_ANTHROPIC_DEFAULT_HAIKU_MODEL=  # По умолчанию: claude-haiku-4-5-20251001
 
 # ============================================================
 #  НАСТРОЙКИ CLAUDE CODE
@@ -86,7 +90,7 @@ ANTHROPIC_DEFAULT_HAIKU_MODEL=  # По умолчанию: claude-haiku-4-5-2025
 # Максимальное количество токенов в ответе.
 # По умолчанию: зависит от модели (обычно 8192 или 32768).
 # Увеличьте для длинных генераций кода.
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=
+ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=
 
 # Включить систему задач (Tasks).
 # true  — включить (по умолчанию в iclaude)
@@ -94,49 +98,49 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=
 #
 # Tasks позволяют создавать списки задач (TaskCreate/TaskUpdate/TaskList)
 # и отслеживать прогресс в интерактивном режиме.
-CLAUDE_CODE_ENABLE_TASKS=true
+ICLAUDE_CLAUDE_CODE_ENABLE_TASKS=true
 
 # Отключить интеграцию с Chrome.
 # true  — отключить Chrome-инструменты (mcp__claude-in-chrome__*)
 # false — включить (по умолчанию)
 #
 # Отключается через: ./iclaude.sh --no-chrome
-CLAUDE_CODE_NO_CHROME=
+ICLAUDE_CLAUDE_CODE_NO_CHROME=
 
 # Таймаут сессии в секундах.
 # По умолчанию: не задан (используется таймаут Claude Code по умолчанию).
-CLAUDE_CODE_SESSION_TIMEOUT=
+ICLAUDE_CLAUDE_CODE_SESSION_TIMEOUT=
 
 # Экспериментальная поддержка команд агентов (Agent Teams).
 # true  — включить (нестабильно, экспериментально)
 # false — отключить (по умолчанию)
-CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
+ICLAUDE_CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
 
 # Отдельная модель для субагентов (Task tool, параллельные агенты).
 # По умолчанию: Haiku (быстрый и дешёвый для фоновых подзадач).
 # Пример: claude-sonnet-4-6 — если субагентам нужно более высокое качество.
-CLAUDE_CODE_SUBAGENT_MODEL=
+ICLAUDE_CLAUDE_CODE_SUBAGENT_MODEL=
 
 # Уровень усилий Claude Code (влияет на extended thinking и глубину анализа).
 # low    — быстро, меньше thinking
 # medium — баланс скорости и качества (по умолчанию)
 # high   — максимальное качество, больше thinking (дороже)
-CLAUDE_CODE_EFFORT_LEVEL=
+ICLAUDE_CLAUDE_CODE_EFFORT_LEVEL=
 
 # Отключить extended thinking (adaptive thinking) у Opus/Sonnet 4.6.
 # 1 — отключить (ускоряет ответы, снижает стоимость, отключает глубокий анализ)
 # (оставить пустым — adaptive thinking включён по умолчанию)
-CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=
+ICLAUDE_CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=
 
 # Отключить расширенный контекст (200K context window).
 # 1 — использовать стандартный контекст модели
 # По умолчанию: не задан (расширенный контекст активен)
-CLAUDE_CODE_DISABLE_1M_CONTEXT=
+ICLAUDE_CLAUDE_CODE_DISABLE_1M_CONTEXT=
 
 # Отключить экспериментальные API-фичи (beta endpoints).
 # 1 — только стабильные API (рекомендуется для production-сред)
 # По умолчанию: не задан (experimental betas включены)
-CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
+ICLAUDE_CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 
 # Разрешить Claude Code пропускать подтверждение опасных операций (bypass permissions).
 # true  — передаёт --dangerously-skip-permissions при запуске (аналог флага --no-save)
@@ -144,7 +148,7 @@ CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=
 #
 # ВАЖНО: включайте только в автоматизированных/доверенных средах.
 # Флаг --no-save в командной строке всегда имеет приоритет над этой переменной.
-CLAUDE_CODE_SKIP_PERMISSIONS=false
+ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=false
 
 # ============================================================
 #  ЯЗЫК ОБЩЕНИЯ И ДОКУМЕНТАЦИИ
@@ -174,7 +178,7 @@ ICLAUDE_DOC_LANG=
 #
 # Формат: sk-ant-oat01-... (OAuth subscription token)
 # По умолчанию: не задан (используется .credentials.json)
-CLAUDE_CODE_OAUTH_TOKEN=
+ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN=
 
 # Порог автоматического обновления OAuth токена (в секундах).
 # Если до истечения токена осталось меньше этого значения — токен обновляется при запуске.
@@ -184,12 +188,12 @@ CLAUDE_CODE_OAUTH_TOKEN=
 # Максимальное разумное значение: 2592000 (30 дней)
 #
 # Примеры:
-#   TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
-#   TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
-#   TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
+#   ICLAUDE_TOKEN_REFRESH_THRESHOLD=604800    # 7 дней  (по умолчанию)
+#   ICLAUDE_TOKEN_REFRESH_THRESHOLD=86400     # 1 день  (обновлять позже)
+#   ICLAUDE_TOKEN_REFRESH_THRESHOLD=1209600   # 14 дней (обновлять раньше)
 #
 # Токен действует ~1 год. Ручное обновление: ./iclaude.sh --refresh-token
-# TOKEN_REFRESH_THRESHOLD=
+# ICLAUDE_TOKEN_REFRESH_THRESHOLD=
 
 # ============================================================
 #  ROUTER: API-КЛЮЧИ LLM-ПРОВАЙДЕРОВ
@@ -211,13 +215,13 @@ CLAUDE_CODE_OAUTH_TOKEN=
 #   CCR требует обычный API ключ. Без него используйте Ollama/DeepSeek/OpenRouter.
 # Получить ключ: https://console.anthropic.com/settings/keys
 # Формат: [API_KEY_REDACTED]
-export ANTHROPIC_API_KEY=
+ICLAUDE_ANTHROPIC_API_KEY=
 
 # --- DeepSeek ---
 # Используется в router.json.example (провайдер по умолчанию)
 # Получить ключ: https://platform.deepseek.com/api_keys
 # Формат: [API_KEY_REDACTED]
-export DEEPSEEK_API_KEY=
+ICLAUDE_DEEPSEEK_API_KEY=
 
 # --- OpenRouter ---
 # Агрегатор: 300+ моделей через единый API (GPT, Gemini, Llama, Mistral и др.)
@@ -225,34 +229,34 @@ export DEEPSEEK_API_KEY=
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://openrouter.ai/keys
 # Формат: [API_KEY_REDACTED]
-export OPENROUTER_API_KEY=
+ICLAUDE_OPENROUTER_API_KEY=
 
 # --- Google Gemini ---
 # Используется в router.json.example (gemini-2.5-pro для длинного контекста)
 # По умолчанию: не задан (провайдер не используется без ключа)
 # Получить ключ: https://aistudio.google.com/app/apikey
 # Формат: [GOOGLE_API_KEY]
-export GOOGLE_API_KEY=
+ICLAUDE_GOOGLE_API_KEY=
 
 # --- Groq (опционально) ---
 # Сверхбыстрый inference на специализированном железе (LPU).
 # Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://console.groq.com/keys
 # Формат: gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-export GROQ_API_KEY=
+ICLAUDE_GROQ_API_KEY=
 
 # --- Volcengine (ByteDance, опционально) ---
 # Облако ByteDance: модели Doubao-pro, Doubao-lite.
 # Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://console.volcengine.com/ark
-export VOLCENGINE_API_KEY=
+ICLAUDE_VOLCENGINE_API_KEY=
 
 # --- SiliconFlow (опционально) ---
 # Китайская платформа: Qwen, DeepSeek, GLM через OpenAI-совместимый API.
 # Не включён в дефолтный router.json.example — добавьте вручную при необходимости.
 # Получить ключ: https://cloud.siliconflow.cn/account/ak
 # Формат: [API_KEY_REDACTED]
-export SILICONFLOW_API_KEY=
+ICLAUDE_SILICONFLOW_API_KEY=
 
 # ============================================================
 #  PII PROXY (маскирование PII/секретов в API-трафике)
@@ -274,7 +278,7 @@ export SILICONFLOW_API_KEY=
 # true  — автозапуск прокси при каждом старте claude
 # false — прокси не стартует (можно включить разово: --pii-proxy)
 # По умолчанию: false
-USE_PII_PROXY=false
+ICLAUDE_USE_PII_PROXY=false
 
 # Уровень маскирования PII proxy.
 # Управляет агрессивностью маскирования содержимого API-запросов:
@@ -291,7 +295,7 @@ USE_PII_PROXY=false
 #              Требует установленного Presidio; при отсутствии — fallback на режим secrets.
 #
 # По умолчанию: standard
-# PII_PROXY_MASKING_LEVEL=standard
+# ICLAUDE_PII_PROXY_MASKING_LEVEL=standard
 
 # Уровень логирования PII proxy:
 #   info  — логировать только количество найденных элементов (по умолчанию, без PII-метаданных в логах)
@@ -299,48 +303,48 @@ USE_PII_PROXY=false
 #           лог-файл автоматически удаляется при завершении сессии iclaude.sh)
 #
 # По умолчанию: info
-# PII_PROXY_LOG_LEVEL=debug
+# ICLAUDE_PII_PROXY_LOG_LEVEL=debug
 
 # Срок хранения лог-файлов PII proxy (в днях).
 # Файлы *.log в pii-proxy-logs/ старше этого порога удаляются при запуске iclaude.
 # access.log и ccr-daemon.log не затрагиваются (агрегирующие, не сессионные).
 # По умолчанию: 7
-# PII_LOG_RETENTION_DAYS=7
+# ICLAUDE_PII_LOG_RETENTION_DAYS=7
 
 # Срок хранения директорий session-env/ (в днях).
 # Claude Code создаёт по одной подпапке на каждую сессию.
 # Пустые папки удаляются через SESSION_ENV_RETENTION_DAYS дней.
 # Непустые папки удаляются через SESSION_ENV_RETENTION_DAYS × 4 дней.
 # По умолчанию: 7 (пустые) / 28 (непустые)
-# SESSION_ENV_RETENTION_DAYS=7
+# ICLAUDE_SESSION_ENV_RETENTION_DAYS=7
 
 # Токен замены PII при маскировании (режим standard).
 # Подставляется вместо персональных данных, обнаруженных Presidio NLP.
 # По умолчанию: REDACTED (без скобок — не конфликтует с Markdown ссылками)
 # Пример удаления: PII_PROXY_MASK_TOKEN=""
-# PII_PROXY_MASK_TOKEN="REDACTED"
+# ICLAUDE_PII_PROXY_MASK_TOKEN="REDACTED"
 
 # Диапазон портов для автовыбора PII proxy (по умолчанию 20000–40000).
 # Порт выбирается случайно из диапазона при каждом запуске сессии.
 # Задайте PII_PROXY_PORT=<N> для фиксации конкретного порта (например, для firewall-правил).
-# PII_PROXY_PORT=0
-# PII_PROXY_PORT_MIN=20000
-# PII_PROXY_PORT_MAX=40000
+# ICLAUDE_PII_PROXY_PORT=0
+# ICLAUDE_PII_PROXY_PORT_MIN=20000
+# ICLAUDE_PII_PROXY_PORT_MAX=40000
 
 # Таймауты соединения PII proxy с upstream (в секундах).
 # Раздельные connect/read: connect — установка TCP-соединения, read — ожидание ответа.
 # Read=300 рассчитан на долгие ответы (Opus + extended thinking + большие промпты);
 # при слишком низком значении возможны ложные «502 PII proxy upstream unavailable».
 # По умолчанию: connect=10, read=300
-# PII_PROXY_CONNECT_TIMEOUT=10
-# PII_PROXY_READ_TIMEOUT=300
+# ICLAUDE_PII_PROXY_CONNECT_TIMEOUT=10
+# ICLAUDE_PII_PROXY_READ_TIMEOUT=300
 
 # Супервизор PII proxy: перезапускает рабочий процесс при его гибели (OOM/краш/kill),
 # сохраняя ТОТ ЖЕ порт. Без него зависшая сессия получает «Unable to connect to API
 # (ConnectionRefused)», т.к. ANTHROPIC_BASE_URL фиксируется при старте. Рекомендуется true.
 # При крэш-цикле (>5 перезапусков за 10с) супервизор завершается с ошибкой в логе.
 # По умолчанию: true
-# PII_PROXY_SUPERVISE=true
+# ICLAUDE_PII_PROXY_SUPERVISE=true
 
 # ------------------------------------------------------------
 # Переменные окружения, автоматически экспортируемые при старте
@@ -370,10 +374,10 @@ USE_PII_PROXY=false
 # не задан явно). И запрос, и ответ, отправляемые в Langfuse, ВСЕГДА очищаются от
 # секретов (regex-скраб), независимо от уровня маскирования.
 # Автоматически пропускается в --router режиме (там LiteLLM уже шлёт трейсы в Langfuse).
-# export USE_LANGFUSE_CAPTURE=true
-# export LANGFUSE_HOST="https://langfuse.example"
-# export LANGFUSE_PUBLIC_KEY="pk-lf-..."
-# export LANGFUSE_SECRET_KEY="sk-lf-..."   # секрет — держите .claude_config в chmod 600
+# ICLAUDE_USE_LANGFUSE_CAPTURE=true
+# ICLAUDE_LANGFUSE_HOST="https://langfuse.example"
+# ICLAUDE_LANGFUSE_PUBLIC_KEY="pk-lf-..."
+# ICLAUDE_LANGFUSE_SECRET_KEY="sk-lf-..."   # секрет — держите .claude_config в chmod 600
 
 # ============================================================================
 #  iwiki (embedding-граф документации, плагин в репозитории)
@@ -389,30 +393,30 @@ USE_PII_PROXY=false
 # Использование: /iwiki-query, /iwiki-ingest, /iwiki-lint
 #
 # --- Вариант 1: OpenAI-compatible (кастомный endpoint) ---
-# export IWIKI_LLM_KEY="sk-..."
-# export IWIKI_LLM_BASE_URL="https://your-provider/v1"
-# export IWIKI_EMBED_MODEL="text-embedding-3-small"   # по умолчанию
-# export IWIKI_EMBED_DIMENSIONS="1536"                # по умолчанию; должно совпадать с моделью
+# ICLAUDE_IWIKI_LLM_KEY="sk-..."
+# ICLAUDE_IWIKI_LLM_BASE_URL="https://your-provider/v1"
+# ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"   # по умолчанию
+# ICLAUDE_IWIKI_EMBED_DIMENSIONS="1536"                # по умолчанию; должно совпадать с моделью
 #
 # --- Вариант 2: Ollama (локальный, без API ключа) ---
-# export IWIKI_LLM_KEY="ollama"
-# export IWIKI_LLM_BASE_URL="http://localhost:11434/v1"
-# export IWIKI_EMBED_MODEL="nomic-embed-text"
-# export IWIKI_EMBED_DIMENSIONS="768"
+# ICLAUDE_IWIKI_LLM_KEY="ollama"
+# ICLAUDE_IWIKI_LLM_BASE_URL="http://localhost:11434/v1"
+# ICLAUDE_IWIKI_EMBED_MODEL="nomic-embed-text"
+# ICLAUDE_IWIKI_EMBED_DIMENSIONS="768"
 # Установить модель: ollama pull nomic-embed-text
 #
 # --- Тюнинг (всё необязательно, показаны значения по умолчанию) ---
-# export IWIKI_CHUNK_SIZE="512"          # слов в секции до разбиения на под-чанки
-# export IWIKI_CHUNK_OVERLAP="64"        # перекрытие под-чанков в словах
-# export IWIKI_TOP_K="8"                 # сколько результатов возвращает search
-# export IWIKI_SCORE_THRESHOLD="0.2"     # минимальный косинус для результата
-# export IWIKI_GRAPH_DEPTH="2"           # глубина BFS по [[refs]] в related
+# ICLAUDE_IWIKI_CHUNK_SIZE="512"          # слов в секции до разбиения на под-чанки
+# ICLAUDE_IWIKI_CHUNK_OVERLAP="64"        # перекрытие под-чанков в словах
+# ICLAUDE_IWIKI_TOP_K="8"                 # сколько результатов возвращает search
+# ICLAUDE_IWIKI_SCORE_THRESHOLD="0.2"     # минимальный косинус для результата
+# ICLAUDE_IWIKI_GRAPH_DEPTH="2"           # глубина BFS по [[refs]] в related
 #
 # --- Ограничение области индексирования (необязательно) ---
 # Glob-паттерны через запятую, либо файлы .iwikiinclude / .iwikiexclude
 # (gitignore-стиль) в корне проекта. include применяется первым, затем exclude.
-# export IWIKI_INCLUDE="docs/wiki/**/*.md"
-# export IWIKI_EXCLUDE="docs/wiki/drafts/*"
+# ICLAUDE_IWIKI_INCLUDE="docs/wiki/**/*.md"
+# ICLAUDE_IWIKI_EXCLUDE="docs/wiki/drafts/*"
 #
 # --- Автоматизация (хуки плагина iwiki) — все ON по умолчанию ---
 # Четыре хука держат wiki актуальной без ручных /iwiki-*. Каждый выключается
@@ -425,17 +429,17 @@ USE_PII_PROXY=false
 #                          после правок страниц wiki.
 #   IWIKI_AUTO_SYNC      — Stop: наг обновить wiki по изменённым ЗА СЕССИЮ
 #                          исходникам (включая закоммиченные), затем /iwiki-lint.
-# export IWIKI_AUTO_BOOTSTRAP="0"   # отключить bootstrap+baseline
-# export IWIKI_AUTO_QUERY="0"       # отключить pre-work recall
-# export IWIKI_AUTO_REINDEX="0"     # отключить авто-переиндексацию
-# export IWIKI_AUTO_SYNC="0"        # отключить post-work наг
+# ICLAUDE_IWIKI_AUTO_BOOTSTRAP="0"   # отключить bootstrap+baseline
+# ICLAUDE_IWIKI_AUTO_QUERY="0"       # отключить pre-work recall
+# ICLAUDE_IWIKI_AUTO_REINDEX="0"     # отключить авто-переиндексацию
+# ICLAUDE_IWIKI_AUTO_SYNC="0"        # отключить post-work наг
 #
 # Тюнинг Stop-нага (IWIKI_AUTO_SYNC): сколько раз переспросить про ОДИН И ТОТ ЖЕ
 # неизменившийся набор изменённых исходников, прежде чем уступить (чтобы не
 # заклинить stop). По умолчанию 2. 0 = спросить один раз, затем уступить.
 # Ограничивает повторы только для СОХРАНЁННОГО набора между ходами; полностью
 # выключить наг — через IWIKI_AUTO_SYNC="0".
-# export IWIKI_SYNC_MAX_ASK="2"
+# ICLAUDE_IWIKI_SYNC_MAX_ASK="2"
 
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
@@ -465,16 +469,16 @@ USE_PII_PROXY=false
 # true  — автозапуск VM при каждом старте claude (если KVM доступен)
 # false — отключено (можно включить разово: --sandbox-microvm)
 # По умолчанию: false
-MICRO_VM_ENABLED=false
+ICLAUDE_MICRO_VM_ENABLED=false
 
 # Backend виртуализации.
 # firecracker — единственный поддерживаемый вариант в текущей версии.
 # По умолчанию: firecracker
-# MICRO_VM_BACKEND=firecracker
+# ICLAUDE_MICRO_VM_BACKEND=firecracker
 
 # Количество виртуальных CPU для гостя.
 # Диапазон: 1–8. По умолчанию: 2
-# MICRO_VM_VCPU=2
+# ICLAUDE_MICRO_VM_VCPU=2
 
 # Объём RAM гостя в MiB.
 # Диапазон: 512–8192. По умолчанию: 2048
@@ -486,19 +490,19 @@ MICRO_VM_ENABLED=false
 #   1024 — минимально для тестирования, риск OOM при больших проектах
 #   2048 — дефолт; минимум для стабильной работы
 #   4096 — для крупных монорепозиториев и интенсивного использования
-# MICRO_VM_MEM_MB=2048
+# ICLAUDE_MICRO_VM_MEM_MB=2048
 
 # Включить TAP networking (доступ к сети из гостя через NAT).
 # Требуется для: Anthropic API, прокси, загрузок внутри VM.
 # false — полностью изолированный гость без сети (максимальная безопасность).
 # По умолчанию: true
-# MICRO_VM_NET_ENABLED=true
+# ICLAUDE_MICRO_VM_NET_ENABLED=true
 
 # Имя TAP-интерфейса для слота 0 на хосте.
 # При запуске нескольких concurrent сессий: слот 1 → tap-iclaude-1, слот 2 → tap-iclaude-2 и т.д.
 # Изменяйте только при конфликте с существующими интерфейсами.
 # По умолчанию: tap-iclaude
-# MICRO_VM_NET_TAP_IFACE=tap-iclaude
+# ICLAUDE_MICRO_VM_NET_TAP_IFACE=tap-iclaude
 
 # Пул адресов для гостевых VM в CIDR-нотации.
 # Каждая сессия автоматически получает уникальную пару адресов из этого пула:
@@ -507,22 +511,22 @@ MICRO_VM_ENABLED=false
 #   ...
 # /26 → 31 concurrent сессии; /28 → 7; /30 → 1.
 # По умолчанию: 172.16.0.0/26
-# MICRO_VM_NET_SUBNET=172.16.0.0/26
+# ICLAUDE_MICRO_VM_NET_SUBNET=172.16.0.0/26
 
 # Использовать снэпшоты для быстрого старта VM.
 # true  — повторный запуск ~125ms (снэпшот восстанавливается)
 # false — каждый запуск холодный ~1-2s (без снэпшота)
 # По умолчанию: false
-# MICRO_VM_SNAPSHOT_ENABLED=false
+# ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED=false
 
 # Директория для хранения снэпшотов VM.
 # По умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
-# MICRO_VM_SNAPSHOT_DIR=
+# ICLAUDE_MICRO_VM_SNAPSHOT_DIR=
 
 # Путь к rootfs образу (ext4, Alpine Linux ~30MB).
 # По умолчанию: .nvm-isolated/.claude-isolated/bin/rootfs.ext4
 # Устанавливается автоматически через --install-microvm.
-# MICRO_VM_ROOTFS_PATH=
+# ICLAUDE_MICRO_VM_ROOTFS_PATH=
 
 # Размер rootfs образа в МБ (vda — системный диск гостя: OS, /home, /etc, логи).
 # При запуске --install-microvm rootfs автоматически расширяется до этого значения.
@@ -538,7 +542,7 @@ MICRO_VM_ENABLED=false
 # ВАЖНО: workspace файлы (проект) хранятся в /workspace (vdc = workspace.img),
 #        не в rootfs. Для размера workspace используйте MICRO_VM_WORKSPACE_SIZE_MB.
 # По умолчанию: 2048
-# MICRO_VM_ROOTFS_SIZE_MB=2048
+# ICLAUDE_MICRO_VM_ROOTFS_SIZE_MB=2048
 
 # Размер workspace образа в МБ (vdc — диск для /workspace: файлы проекта).
 # Sparse-файл на хосте: реально занимает только фактически использованное место.
@@ -548,17 +552,17 @@ MICRO_VM_ENABLED=false
 #   8192 — для монорепозиториев и проектов с большими артефактами (node_modules, dist)
 #  20480 — для проектов с моделями ML или большими бинарными данными
 # По умолчанию: 2048
-# MICRO_VM_WORKSPACE_SIZE_MB=2048
+# ICLAUDE_MICRO_VM_WORKSPACE_SIZE_MB=2048
 
 # Путь к ядру Linux для гостя (vmlinux, ~20MB).
 # По умолчанию: .nvm-isolated/.claude-isolated/bin/vmlinux
 # Устанавливается автоматически через --install-microvm.
-# MICRO_VM_KERNEL_PATH=
+# ICLAUDE_MICRO_VM_KERNEL_PATH=
 
 # Уровень логирования Firecracker VMM.
 # debug | info | warn | error
 # По умолчанию: warn
-# MICRO_VM_LOG_LEVEL=warn
+# ICLAUDE_MICRO_VM_LOG_LEVEL=warn
 
 # Отключить проверку TLS-сертификата при загрузке компонентов microVM.
 # Используется как временное решение при ошибке TLS на системах со старым OpenSSL
@@ -567,13 +571,13 @@ MICRO_VM_ENABLED=false
 # false — стандартная загрузка с проверкой TLS-сертификата (по умолчанию)
 # ВАЖНО: используйте только в доверенной сети. Сразу после установки проверьте versions.json.
 # По умолчанию: false
-# MICRO_VM_INSECURE_DOWNLOAD=false
+# ICLAUDE_MICRO_VM_INSECURE_DOWNLOAD=false
 
 # Передавать настройки прокси в гостевую VM.
 # true  — PROXY_URL, PROXY_CA пробрасываются в гостя через TAP (host IP в качестве шлюза)
 # false — гость использует прямое соединение
 # По умолчанию: true
-# MICRO_VM_PROXY_PASS=true
+# ICLAUDE_MICRO_VM_PROXY_PASS=true
 
 # Режим синхронизации рабочего каталога с гостевой VM.
 # Синхронизация выполняется через tar-over-SSH. Секретные файлы всегда исключены из sync:
@@ -590,14 +594,14 @@ MICRO_VM_ENABLED=false
 #            MICRO_VM_WORKSPACE_PATH (или $PWD) — источник для копирования.
 #
 # По умолчанию: full
-# MICRO_VM_WORKSPACE_MODE=full
+# ICLAUDE_MICRO_VM_WORKSPACE_MODE=full
 
 # Источник workspace для режима full.
 # Задаёт директорию, которая синхронизируется в /workspace гостевой VM.
 # Если не задан — используется $PWD (текущий каталог при запуске iclaude.sh).
 # Позволяет работать с конкретным проектом независимо от cwd.
 # Пример: /home/user/projects/my-project
-# MICRO_VM_WORKSPACE_PATH=
+# ICLAUDE_MICRO_VM_WORKSPACE_PATH=
 
 # Интервал периодической синхронизации workspace (guest→host) в секундах.
 # Применяется только в режиме full. При значении 0 (по умолчанию) периодическая
@@ -612,7 +616,7 @@ MICRO_VM_ENABLED=false
 #   0  — только при выходе (по умолчанию, без накладных расходов)
 #   5  — каждые 5 секунд (с rsync+ControlMaster, near-realtime sync)
 #   30 — каждые 30 секунд (tar fallback или баланс нагрузки)
-# MICRO_VM_SYNC_INTERVAL=0
+# ICLAUDE_MICRO_VM_SYNC_INTERVAL=0
 
 # ============================================================
 #  ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ CLAUDE CODE
@@ -626,117 +630,117 @@ MICRO_VM_ENABLED=false
 # Переопределить endpoint API Anthropic (кастомный gateway, локальный прокси).
 # По умолчанию: https://api.anthropic.com
 # Пример: ANTHROPIC_BASE_URL=http://localhost:8080/proxy/anthropic
-# export ANTHROPIC_BASE_URL=
+# ICLAUDE_ANTHROPIC_BASE_URL=
 
 # Альтернативный токен аутентификации для корпоративных AI-gateway.
 # Используется когда gateway не принимает стандартный ANTHROPIC_API_KEY.
-# export ANTHROPIC_AUTH_TOKEN=
+# ICLAUDE_ANTHROPIC_AUTH_TOKEN=
 
 # Дополнительные CA-сертификаты для Node.js (корпоративные PKI).
 # Если используется PROXY_CA — устанавливается автоматически, задавать вручную не нужно.
 # Задайте вручную только если CA нужен без прокси (независимый от PROXY_CA сценарий).
 # Пример: NODE_EXTRA_CA_CERTS=/etc/ssl/certs/corporate-ca.crt
-# export NODE_EXTRA_CA_CERTS=
+# ICLAUDE_NODE_EXTRA_CA_CERTS=
 
 # --- Контекст / Память ---
 
 # Лимит контекстного окна в токенах.
 # По умолчанию: максимум модели (200K для claude-sonnet-4-6).
 # Уменьшите для экономии или при работе с ограниченными провайдерами.
-# CLAUDE_CODE_MAX_CONTEXT_TOKENS=
+# ICLAUDE_CLAUDE_CODE_MAX_CONTEXT_TOKENS=
 
 # Отключить автоматическую память (сохранение контекста между сессиями).
 # 1 — отключить (каждая сессия начинается с чистого листа)
-# CLAUDE_CODE_DISABLE_AUTO_MEMORY=
+# ICLAUDE_CLAUDE_CODE_DISABLE_AUTO_MEMORY=
 
 # Переопределить размер окна для авто-компакции контекста.
 # По умолчанию: зависит от модели (обычно 80% от MAX_CONTEXT_TOKENS).
-# CLAUDE_CODE_AUTO_COMPACT_WINDOW=
+# ICLAUDE_CLAUDE_CODE_AUTO_COMPACT_WINDOW=
 
 # Порог авто-компакции в % заполнения контекста (0–100).
 # По умолчанию: ~95. Уменьшите если компакция происходит слишком поздно.
-# CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=
+# ICLAUDE_CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=
 
 # --- Производительность ---
 
 # Максимальное число параллельных вызовов инструментов.
 # По умолчанию: 10. Уменьшите при проблемах с rate-limit провайдера.
-# CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY=
+# ICLAUDE_CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY=
 
 # Лимит вывода Bash-инструмента в символах.
 # По умолчанию: 30000. Увеличьте для длинных логов.
-# BASH_MAX_OUTPUT_LENGTH=
+# ICLAUDE_BASH_MAX_OUTPUT_LENGTH=
 
 # Лимит токенов при чтении файлов (Read tool).
 # По умолчанию: зависит от модели. Уменьшите для сокращения расхода токенов.
-# CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS=
+# ICLAUDE_CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS=
 
 # Бюджет токенов при extended thinking (работает только с DISABLE_ADAPTIVE_THINKING=1).
 # По умолчанию: 10000. Используйте с Opus/Sonnet 4.6 в режиме фиксированного бюджета.
-# MAX_THINKING_TOKENS=
+# ICLAUDE_MAX_THINKING_TOKENS=
 
 # --- Дисплей / UI ---
 
 # Скрыть рабочую директорию в логотипе при запуске.
 # 1 — скрыть (полезно в shared/demo окружениях)
-# CLAUDE_CODE_HIDE_CWD=
+# ICLAUDE_CLAUDE_CODE_HIDE_CWD=
 
 # Компактный режим вывода (сокращённые сообщения).
 # 1 — включить
-# CLAUDE_CODE_BRIEF=
+# ICLAUDE_CLAUDE_CODE_BRIEF=
 
 # Множитель скорости прокрутки терминала (float, 0.1–20).
 # По умолчанию: 3 в Windows Terminal, 1 иначе.
-# CLAUDE_CODE_SCROLL_SPEED=
+# ICLAUDE_CLAUDE_CODE_SCROLL_SPEED=
 
 # Сохранять truecolor под tmux (предотвращает деградацию до 256 цветов).
 # 1 — включить
-# CLAUDE_CODE_TMUX_TRUECOLOR=
+# ICLAUDE_CLAUDE_CODE_TMUX_TRUECOLOR=
 
 # Уменьшить мерцание при перерисовке терминала.
 # 1 — включить (рекомендуется при мерцании в slow terminal)
-# CLAUDE_CODE_NO_FLICKER=
+# ICLAUDE_CLAUDE_CODE_NO_FLICKER=
 
 # Отключить захват мыши в терминале.
 # 1 — отключить (если мышь мешает выделению текста в терминале)
-# CLAUDE_CODE_DISABLE_MOUSE=
+# ICLAUDE_CLAUDE_CODE_DISABLE_MOUSE=
 
 # --- Сессия ---
 
 # Порог (в минутах) для предложения возобновить предыдущую сессию при запуске.
 # По умолчанию: 5. 0 — никогда не предлагать.
-# CLAUDE_CODE_RESUME_THRESHOLD_MINUTES=
+# ICLAUDE_CLAUDE_CODE_RESUME_THRESHOLD_MINUTES=
 
 # Автоматически возобновлять прерванный ход без запроса подтверждения.
 # 1 — включить (удобно в автоматизированных сценариях)
-# CLAUDE_CODE_RESUME_INTERRUPTED_TURN=
+# ICLAUDE_CLAUDE_CODE_RESUME_INTERRUPTED_TURN=
 
 # --- Провайдеры (Bedrock / Vertex) ---
 
 # Использовать AWS Bedrock вместо Anthropic API.
 # 1 — включить (требует настройки AWS credentials)
-# CLAUDE_CODE_USE_BEDROCK=
+# ICLAUDE_CLAUDE_CODE_USE_BEDROCK=
 
 # Использовать Google Vertex AI вместо Anthropic API.
 # 1 — включить (требует настройки GCP credentials)
-# CLAUDE_CODE_USE_VERTEX=
+# ICLAUDE_CLAUDE_CODE_USE_VERTEX=
 
 # Tier сервиса AWS Bedrock.
 # default  — стандартный tier
 # flex     — гибкий tier (pay-per-token, без резервирования)
 # priority — приоритетный tier (зарезервированные ресурсы)
-# ANTHROPIC_BEDROCK_SERVICE_TIER=default
+# ICLAUDE_ANTHROPIC_BEDROCK_SERVICE_TIER=default
 
 # --- Прочее ---
 
 # Отключить весь нецелевой трафик (телеметрия, аналитика, ping).
 # 1 — отключить (рекомендуется в air-gapped средах)
-# CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=
+# ICLAUDE_CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=
 
 # Управление заголовком атрибуции (x-anthropic-attribution).
 # 0 — отключить заголовок (ускоряет локальные/прокси модели, сохраняет KV-кэш)
 # По умолчанию: 1 (заголовок отправляется)
-# CLAUDE_CODE_ATTRIBUTION_HEADER=
+# ICLAUDE_CLAUDE_CODE_ATTRIBUTION_HEADER=
 
 # ============================================================
 #  ОТЛАДКА
@@ -744,25 +748,25 @@ MICRO_VM_ENABLED=false
 # Включить подробный вывод при запуске claude в launch.sh.
 # 1 — показывать: путь к бинарю, аргументы, переменные окружения
 # (оставить пустым для отключения)
-DEBUG_LAUNCH=
+ICLAUDE_DEBUG_LAUNCH=
 
 # ============================================================
 #  ПРИМЕР МИНИМАЛЬНОЙ КОНФИГУРАЦИИ (только прокси)
 # ============================================================
-# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
-# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+# ICLAUDE_PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
+# ICLAUDE_PROXY_CA=/etc/ssl/company/corporate-ca.crt
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (DeepSeek + Ollama)
 # ============================================================
-# PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
-# PROXY_CA=/etc/ssl/company/corporate-ca.crt
+# ICLAUDE_PROXY_URL=https://[CREDENTIALS]@proxy.company.com:8118
+# ICLAUDE_PROXY_CA=/etc/ssl/company/corporate-ca.crt
 #
-# export DEEPSEEK_API_KEY=[API_KEY_REDACTED]
-# export OPENROUTER_API_KEY=[API_KEY_REDACTED]
-# export GOOGLE_API_KEY=[GOOGLE_API_KEY]
+# ICLAUDE_DEEPSEEK_API_KEY=[API_KEY_REDACTED]
+# ICLAUDE_OPENROUTER_API_KEY=[API_KEY_REDACTED]
+# ICLAUDE_GOOGLE_API_KEY=[GOOGLE_API_KEY]
 #
-# CLAUDE_CODE_ENABLE_TASKS=true
+# ICLAUDE_CLAUDE_CODE_ENABLE_TASKS=true
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С РОУТЕРОМ (Anthropic + Ollama)
@@ -772,47 +776,47 @@ DEBUG_LAUNCH=
 #                           "background": "ollama,qwen2.5:7b", ...}}
 # Провайдер Anthropic в router.json: "api_key": "${ANTHROPIC_API_KEY}" (без UseBearer)
 #
-# export ANTHROPIC_API_KEY=[API_KEY_REDACTED]
+# ICLAUDE_ANTHROPIC_API_KEY=[API_KEY_REDACTED]
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С PII PROXY
 # ============================================================
-# USE_PII_PROXY=true
+# ICLAUDE_USE_PII_PROXY=true
 # # При первом использовании установить: ./iclaude.sh --install-pii-proxy
 # #
 # # Уровень маскирования (по умолчанию: standard — Presidio NLP + regex):
-# # PII_PROXY_MASKING_LEVEL=standard   # полное (NLP + regex) — максимальная защита
-# # PII_PROXY_MASKING_LEVEL=secrets    # только regex — быстро, без NLP
-# # PII_PROXY_MASKING_LEVEL=off        # без маскирования (только для отладки)
+# # ICLAUDE_PII_PROXY_MASKING_LEVEL=standard   # полное (NLP + regex) — максимальная защита
+# # ICLAUDE_PII_PROXY_MASKING_LEVEL=secrets    # только regex — быстро, без NLP
+# # ICLAUDE_PII_PROXY_MASKING_LEVEL=off        # без маскирования (только для отладки)
 # #
 # # Уровень логирования (по умолчанию: info — только счётчик):
-# # PII_PROXY_LOG_LEVEL=debug          # debug: типы найденных сущностей (авто-удаление лога)
+# # ICLAUDE_PII_PROXY_LOG_LEVEL=debug          # debug: типы найденных сущностей (авто-удаление лога)
 # #
 # # Опционально: ограничить диапазон портов (по умолчанию 20000-40000):
-# # PII_PROXY_PORT_MIN=30000
-# # PII_PROXY_PORT_MAX=35000
+# # ICLAUDE_PII_PROXY_PORT_MIN=30000
+# # ICLAUDE_PII_PROXY_PORT_MAX=35000
 
 # ============================================================
 #  ПРИМЕР КОНФИГУРАЦИИ С MICRO-VM
 # ============================================================
 # # Базовый microVM — монтировать текущий проект (по умолчанию):
-# MICRO_VM_ENABLED=true
-# MICRO_VM_VCPU=2
-# MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
-# MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
+# ICLAUDE_MICRO_VM_ENABLED=true
+# ICLAUDE_MICRO_VM_VCPU=2
+# ICLAUDE_MICRO_VM_MEM_MB=2048        # рекомендуемый минимум
+# ICLAUDE_MICRO_VM_SYNC_INTERVAL=5    # near-realtime sync (rsync+ControlMaster, v7 rootfs)
 #
 # # Конкретный путь как источник workspace (независимо от cwd):
-# MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
+# ICLAUDE_MICRO_VM_ENABLED=true
+# ICLAUDE_MICRO_VM_WORKSPACE_PATH=/home/user/projects/my-project
 #
 # # Изоляция: файлы копируются в VM, но изменения не возвращаются на хост:
-# MICRO_VM_ENABLED=true
-# MICRO_VM_WORKSPACE_MODE=isolated
-# MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
+# ICLAUDE_MICRO_VM_ENABLED=true
+# ICLAUDE_MICRO_VM_WORKSPACE_MODE=isolated
+# ICLAUDE_MICRO_VM_NET_ENABLED=false   # опционально: отключить и сеть
 #
 # # С быстрым стартом через снэпшоты:
-# MICRO_VM_ENABLED=true
-# MICRO_VM_SNAPSHOT_ENABLED=true
+# ICLAUDE_MICRO_VM_ENABLED=true
+# ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED=true
 
 # ============================================================
 #  CAVEMAN: TOKEN COMPRESSION (~65-75% output token savings)
@@ -823,10 +827,10 @@ DEBUG_LAUNCH=
 #
 # # Mode (default: full). Reads from process.env.CAVEMAN_DEFAULT_MODE in hook.
 # # off | lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra
-# CAVEMAN_DEFAULT_MODE=full
+# ICLAUDE_CAVEMAN_DEFAULT_MODE=full
 #
 # # Show token savings badge in status line (default: false):
-# CAVEMAN_STATUSLINE=true
+# ICLAUDE_CAVEMAN_STATUSLINE=true
 
 # ============================================================================
 # Telemetry (Claude Code → Grafana)
@@ -836,17 +840,17 @@ DEBUG_LAUNCH=
 
 # --- Вариант A: Локально (та же машина, трафик не выходит наружу) -----------
 # По умолчанию. Collector доступен напрямую на 127.0.0.1:4318, без TLS и auth.
-# OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
+# ICLAUDE_OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
 
 # --- Вариант B: Внешний (iclaude на другой машине → otel.ikeniborn.ru) ------
 # Указать endpoint и credentials (user:password) — lib автоматически сформирует Authorization заголовок.
-# OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.ikeniborn.ru"
-# OTEL_EXPORTER_OTLP_CREDENTIALS="user:[PASSWORD_REDACTED]"
+# ICLAUDE_OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.ikeniborn.ru"
+# ICLAUDE_OTEL_EXPORTER_OTLP_CREDENTIALS="user:[PASSWORD_REDACTED]"
 # Хост endpoint автоматически добавляется в NO_PROXY (otel.sh:patch_no_proxy_for_telemetry).
 
 # Логирование тела user prompt в Loki (1=on, 0=off).
 # Default 1. Установить 0 для приватных сессий без `--no-telemetry`.
-# OTEL_LOG_USER_PROMPTS=1
+# ICLAUDE_OTEL_LOG_USER_PROMPTS=1
 
 # Метка proxy.profile в resource attrs (default: $PROXY_PROFILE из profile loader).
-# PROXY_PROFILE=default
+# ICLAUDE_PROXY_PROFILE=default

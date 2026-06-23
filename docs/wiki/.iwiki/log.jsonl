@@ -38,4 +38,7 @@
 {"op":"ingest","source":"router-review-fixes","page":"router.md","date":"2026-06-21"}
 {"op":"ingest","source":"lib/pii-proxy/langfuse_emitter.py","page":"docs/wiki/langfuse-capture.md","date":"2026-06-21"}
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/hooks/block-secrets.py","page":"docs/wiki/security-hooks.md","date":"2026-06-22"}
+{"op":"ingest","source":"lib/config/env-map.sh","page":"docs/wiki/config.md","date":"2026-06-23"}
+{"op":"ingest","source":"lib/config/isolated.sh","page":"docs/wiki/config.md","date":"2026-06-23"}
+{"op":"ingest","source":"lib/launcher/launch.sh","page":"docs/wiki/launcher.md","date":"2026-06-23","note":"cosmetic hint rename; page content re-verified accurate"}
 {"op":"ingest","source":"plugin/iwiki/engine/iwiki_engine","page":"docs/wiki/iwiki.md","date":"2026-06-23"}

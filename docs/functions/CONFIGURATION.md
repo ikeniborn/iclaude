@@ -2,6 +2,8 @@
 
 Полный справочник по всем командам и настройкам.
 
+> **Note:** All `.claude_config` variables must use the `ICLAUDE_` prefix (e.g. `ICLAUDE_USE_PII_PROXY=true`). Legacy files without the prefix are auto-migrated on first launch with a `.claude_config.bak` backup created automatically.
+
 ---
 
 ## ⚡ Quick Reference

@@ -35,11 +35,16 @@ source "${LIB_DIR}/core/logging.sh"
 source "${LIB_DIR}/core/validation.sh"
 source "${LIB_DIR}/core/json.sh"
 source "${LIB_DIR}/core/remaining.sh"
+source "${LIB_DIR}/config/env-map.sh"
 
 #######################################
 # Initialize environment
 #######################################
 init_environment
+
+# One-time migration of a legacy .claude_config to the ICLAUDE_ namespace.
+# Must run before BOTH the parse-time grep block and any config source.
+migrate_legacy_config
 
 #######################################
 # Load proxy modules (Phase 2)
@@ -225,37 +230,37 @@ fi
 
     # Apply persistent settings from config file (before argument parsing so CLI can override)
     if [[ -f "$CREDENTIALS_FILE" ]]; then
-        # Match: USE_PII_PROXY=true  USE_PII_PROXY="true"  USE_PII_PROXY='true'  export USE_PII_PROXY=true
+        # Match: ICLAUDE_USE_PII_PROXY=true  ICLAUDE_USE_PII_PROXY="true"  ICLAUDE_USE_PII_PROXY='true'  export ICLAUDE_USE_PII_PROXY=true
         _cfg_pii=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?USE_PII_PROXY[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_USE_PII_PROXY[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_pii" ]] && USE_PII_PROXY_FLAG=true
         unset _cfg_pii
 
-        # Match: MICRO_VM_ENABLED=true  MICRO_VM_ENABLED="true"  export MICRO_VM_ENABLED=true
+        # Match: ICLAUDE_MICRO_VM_ENABLED=true  ICLAUDE_MICRO_VM_ENABLED="true"  export ICLAUDE_MICRO_VM_ENABLED=true
         _cfg_microvm=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?MICRO_VM_ENABLED[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_MICRO_VM_ENABLED[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
 
-        # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
+        # Match: ICLAUDE_NO_ATTRIBUTION_HEADER=true  ICLAUDE_NO_ATTRIBUTION_HEADER="true"  export ICLAUDE_NO_ATTRIBUTION_HEADER=true
         _cfg_no_attr=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_no_attr" ]] && NO_ATTRIBUTION_HEADER=true
         unset _cfg_no_attr
 
-        # Match: USE_CHROME=true  USE_CHROME="true"  export USE_CHROME=true
+        # Match: ICLAUDE_USE_CHROME=true  ICLAUDE_USE_CHROME="true"  export ICLAUDE_USE_CHROME=true
         _cfg_chrome=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?USE_CHROME[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_USE_CHROME[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_chrome" ]] && USE_CHROME=true
         unset _cfg_chrome
 
-        # Match: CLAUDE_CODE_SKIP_PERMISSIONS=true  CLAUDE_CODE_SKIP_PERMISSIONS="true"  export CLAUDE_CODE_SKIP_PERMISSIONS=true
+        # Match: ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=true  ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS="true"  export ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=true
         _cfg_skip_perm=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_skip_perm" ]] && skip_permissions=true
         unset _cfg_skip_perm
@@ -503,7 +508,7 @@ fi
                 shift
                 ;;
             --install-iwiki)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_iwiki
                 exit $?
                 ;;
@@ -516,7 +521,7 @@ fi
                 fi
                 _gsd_install_force=""
                 [[ "${2:-}" == "--force" ]] && { _gsd_install_force="--force"; shift; }
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_gsd "$_gsd_install_force"
                 _gsd_rc=$?
                 [[ $_gsd_rc -eq 0 ]] && save_isolated_lockfile
@@ -554,7 +559,7 @@ fi
                     exit 1
                 fi
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_microvm
                 exit $?
                 ;;
@@ -571,7 +576,7 @@ fi
                 fi
                 setup_isolated_config
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_caveman
                 exit $?
                 ;;

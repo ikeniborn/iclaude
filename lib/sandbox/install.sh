@@ -262,7 +262,7 @@ _component_is_current() {
 # Download a file via curl with TLS fallback for old OpenSSL (exit 35).
 # When TLS handshake fails due to unsupported certificate algorithm (common on
 # AltLinux/RHEL with OpenSSL < 3.x), retries with --insecure and warns user.
-# Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS verification unconditionally.
+# Set ICLAUDE_MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS verification unconditionally.
 # Arguments:
 #   $1 - url:    source URL
 #   $2 - output: destination file path
@@ -295,9 +295,9 @@ _curl_download() {
 		echo ""
 		print_warning "TLS error (exit 35): OpenSSL cannot verify a certificate in the chain."
 		print_warning "Retrying with --insecure --proxy-insecure (TLS verification disabled)."
-		print_warning "IMPORTANT: set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256"
+		print_warning "IMPORTANT: set ICLAUDE_MICRO_VM_FC_SHA256 / ICLAUDE_MICRO_VM_KERNEL_SHA256 / ICLAUDE_MICRO_VM_ROOTFS_SHA256"
 		print_warning "  to verify file integrity — without TLS and SHA-256 downloads are unverified."
-		print_warning "Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
+		print_warning "Set ICLAUDE_MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
 		echo ""
 		rm -f "$output"
 		# --proxy-insecure: skip TLS verification for the proxy itself (e.g. ECDSA proxy cert on old OpenSSL).
@@ -829,7 +829,7 @@ install_microvm() {
 			local _fc_hash; _fc_hash=$(_compute_sha256 "$fc_bin") || true
 			if _versions_write_sha256 ".firecracker.${arch}.sha256 = \$h" "$_fc_hash"; then
 				print_info "SHA-256 saved to versions.json (firecracker ${arch}): ${_fc_hash}"
-				print_info "  Pin: export MICRO_VM_FC_SHA256=${_fc_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_FC_SHA256=${_fc_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -844,7 +844,7 @@ install_microvm() {
 			local _vmlinux_hash; _vmlinux_hash=$(_compute_sha256 "$kernel_path") || true
 			if _versions_write_sha256 ".vmlinux.${arch}.sha256 = \$h" "$_vmlinux_hash"; then
 				print_info "SHA-256 saved to versions.json (vmlinux ${arch}): ${_vmlinux_hash}"
-				print_info "  Pin: export MICRO_VM_KERNEL_SHA256=${_vmlinux_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_KERNEL_SHA256=${_vmlinux_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -859,7 +859,7 @@ install_microvm() {
 			local _rootfs_hash; _rootfs_hash=$(_compute_sha256 "$rootfs_path") || true
 			if _versions_write_sha256 ".rootfs.${arch}.sha256 = \$h" "$_rootfs_hash"; then
 				print_info "SHA-256 saved to versions.json (rootfs ${arch}): ${_rootfs_hash}"
-				print_info "  Pin: export MICRO_VM_ROOTFS_SHA256=${_rootfs_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_ROOTFS_SHA256=${_rootfs_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -911,7 +911,7 @@ install_microvm() {
 	print_info "Firecracker: $("$fc_bin" --version 2>/dev/null | head -1 || echo "installed")"
 	echo ""
 	print_info "Next steps:"
-	print_info "  1. Enable: add MICRO_VM_ENABLED=true to .claude_config"
+	print_info "  1. Enable: add ICLAUDE_MICRO_VM_ENABLED=true to .claude_config"
 	print_info "  2. Launch: ./iclaude.sh --sandbox-microvm"
 	print_info "  3. Status: ./iclaude.sh --check-microvm"
 	echo ""

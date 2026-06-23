@@ -270,7 +270,7 @@ When modifying `lib/` modules, invoke **@skill:iclaude-architecture** first.
 1. `.claude_config` — chmod 600, never committed; use `.claude_config.example` as template
 2. Prefer `--proxy-ca` over `--proxy-insecure`
 3. `undici` does not verify target server certs when proxying HTTPS ([HackerOne #1583680](https://hackerone.com/reports/1583680))
-4. Router API keys: store in `.claude_config` as `export DEEPSEEK_API_KEY=...`
+4. Router API keys: store in `.claude_config` as `ICLAUDE_DEEPSEEK_API_KEY=...`
 5. PII Proxy runs on localhost only (127.0.0.1)
 6. CCR requires real API key (`sk-ant-api03-...`), not OAuth token (`sk-ant-oat01-...`)
 
@@ -296,10 +296,10 @@ iwiki maintains an embedding-indexed wiki in `docs/wiki/` — markdown pages wit
 
 ### Config (.claude_config)
 ```bash
-export IWIKI_LLM_BASE_URL="https://your-provider/v1"
-export IWIKI_LLM_KEY="..."
-export IWIKI_EMBED_MODEL="text-embedding-3-small"
-export IWIKI_EMBED_DIMENSIONS="1536"
+ICLAUDE_IWIKI_LLM_BASE_URL="https://your-provider/v1"
+ICLAUDE_IWIKI_LLM_KEY="..."
+ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"
+ICLAUDE_IWIKI_EMBED_DIMENSIONS="1536"
 ```
 
 ### Syntax

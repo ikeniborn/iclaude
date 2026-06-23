@@ -25,7 +25,7 @@ configure_proxy_from_url() {
     # Check if credentials file exists and URL matches
     local skip_save=false
     if [[ -f "$CREDENTIALS_FILE" ]]; then
-        source "$CREDENTIALS_FILE"
+        source_iclaude_config
         if [[ "${PROXY_URL:-}" == "$proxy_url" ]]; then
             # URL matches saved credentials - skip save to preserve PROXY_CA and PROXY_INSECURE
             skip_save=true

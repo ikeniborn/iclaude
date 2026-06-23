@@ -57,7 +57,7 @@ exec "${claude_cmd_arr[@]}" "$@"
 
 `MICRO_VM_WORKSPACE_MODE` controls sync direction:
 
-- `full` (default): host→guest at start, guest→host at exit. Periodic background sync is available via `MICRO_VM_SYNC_INTERVAL` (seconds; 0 = disabled).
+- `full` (default): host→guest at start, guest→host at exit. Periodic background sync is available via `MICRO_VM_SYNC_INTERVAL` (seconds; 0 = disabled), set in `.claude_config` as `ICLAUDE_MICRO_VM_SYNC_INTERVAL` and de-prefixed by the translation layer (see [[config#Environment Variable Export]]).
 - `isolated`: host→guest only; guest changes are discarded.
 
 Rsync is used when the guest has a **working** rsync (v7+ rootfs with the rsync bundle); otherwise sync falls back to tar-over-SSH. Detection runs `rsync --version` in the guest, not `command -v rsync` — a bare-binary injection (older v7) leaves an rsync that exists but exits 127 (`error while loading shared libraries: libpopt.so.0`), so a mere presence check would wrongly pick rsync and every sync would fail. Executing it proves it loads. Current rootfs images ship a self-contained rsync bundle (host binary + lib closure + loader + wrapper under `/opt/iclaude-rsync/`, see [[sandbox#Installation]]) so the probe passes and delta sync is used. The SSH ControlMaster reduces per-operation overhead from ~200 ms to ~5 ms; `ControlPersist=60` auto-closes orphaned connections.
