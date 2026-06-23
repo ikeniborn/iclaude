@@ -1,4 +1,8 @@
 ---
+result_check:
+  verdict: OK
+  plan_hash: 6faa67d9a6c9e5f6
+  last_run: 2026-06-23
 review:
   plan_hash: 6faa67d9a6c9e5f6
   spec_hash: a02ff76606a6a317
