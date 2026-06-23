@@ -1,6 +1,6 @@
 ---
 review:
-  spec_hash: f00fcec4d5716049
+  spec_hash: d359692ad940a1c6
   last_run: 2026-06-23
   phases:
     structure:    { status: passed }
@@ -8,56 +8,23 @@ review:
     clarity:      { status: passed }
     consistency:  { status: passed }
   findings:
-    - id: F-001
-      phase: consistency
-      severity: WARNING
-      section: "Requirements > B — blocking section-formation validation"
-      section_hash: 90a093c6bbf0dab2
-      text: >-
-        §B justifies the hook's inline regex by analogy to "iwiki-reindex.py
-        mirroring _H2", but iwiki-reindex.py contains no _H2/## regex at all
-        (verified: it imports iwiki_common and only does edit bookkeeping). The
-        inline-mirror precedent is real in the repo (block-secrets/redact-secrets
-        hooks), but the named example is incorrect and could mislead the implementer.
-      verdict: open
-      verdict_at: null
-    - id: F-002
+    - id: F-005
       phase: clarity
-      severity: WARNING
+      severity: INFO
       section: "Testing"
-      section_hash: 2ec92d1513beaf1f
+      section_hash: 2fc6bd8588bd7ed0
       text: >-
-        §B defines two blocking conditions (deep_heading, pre_h2_text), and the hook
-        mirrors both regexes inline as a separate code path from the engine validator.
-        The Testing section's hook smoke test exercises only deep_heading (exit 2). The
-        hook's inline pre_h2_text blocking path has no acceptance test; test_validate.py
-        covers pre_h2_text at the validator level but not the hook's mirror. DoD gap on
-        the second blocking path.
-      verdict: open
-      verdict_at: null
-    - id: F-003
-      phase: consistency
-      severity: INFO
-      section: "Background — current behaviour (verified)"
-      section_hash: 4726fa6e02d9c293
-      text: >-
-        §Background lists index.jsonl Record fields as "id, heading, chunk, hash, dim,
-        scale, q", but the actual Record dataclass (store.py) also has a `file` field.
-        Minor inaccuracy in a "(verified)" claim; not load-bearing for the design.
-      verdict: open
-      verdict_at: null
-    - id: F-004
-      phase: clarity
-      severity: INFO
-      section: "Requirements > C — annotation prefix from the authored Overview section"
-      section_hash: 06afe4d09418477f
-      text: >-
-        §C step 1 defines page_title as "the first ^#\\s+ (H1) before the first ##",
-        with fallback only for the absent case. It does not specify behaviour when an
-        H1 appears after the first ## or when multiple H1 lines exist. This is bounded
-        by §B (pre_h2_text blocks any pre-## content except a single H1), so the engine
-        only sees the documented input — acceptable, but the dependency on B for the
-        precondition is implicit.
+        §Testing asserts "body word-splitting is unchanged vs. the old slice
+        boundaries". The split *algorithm* (size/overlap arithmetic in
+        _split_section) is indeed unchanged, but the *input* differs: the old code
+        split section_text = "## {heading}\n\n{body}", whose word stream is
+        ["##", <heading words>, <body words>], while §C step 6 splits `body` only.
+        For a multi-chunk section the slice boundaries over the body therefore shift
+        by (1 + heading-word-count) tokens, so the literal "old slice boundaries" are
+        not reproduced. Ambiguous between "algorithm unchanged" (true) and "boundaries
+        unchanged" (false); a DoD test written to the literal wording would fail.
+        Minor; resolved by clarifying the test asserts the splitting *logic*, not
+        identical boundary offsets.
       verdict: open
       verdict_at: null
 chain:
@@ -235,8 +202,10 @@ the page — the engine only reads the resulting `## Overview` text.
   section lead are present in **every** sub-chunk of a multi-chunk content section;
   the Overview section produces **no** chunks (excluded from the index); the heading
   is present in every sub-chunk; the hash changes when the Overview / title / lead
-  changes; body word-splitting is unchanged vs. the old slice boundaries; a page with
-  no `## Overview` yields no summary line (graceful).
+  changes; the body-splitting *logic* (`_split_section` size/overlap arithmetic) is
+  unchanged — boundaries do shift because the new code splits `body` alone, not
+  `"## {heading}\n\n{body}"`; a page with no `## Overview` yields no summary line
+  (graceful).
 - `plugin/iwiki/engine/tests/test_lint.py` (update): section findings folded into the
   lint report.
 - Hook smoke test (manual, mirrors the `block-secrets` pattern in CLAUDE.md):
