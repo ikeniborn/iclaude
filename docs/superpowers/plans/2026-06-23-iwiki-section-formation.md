@@ -932,10 +932,16 @@ uv run --project plugin/iwiki/engine python3 -m iwiki_engine --wiki-dir docs/wik
 ```
 Expected: `indexed: N chunks (0 reused, N embedded), <bytes>`. Note: this sends content to the embedding API (consented egress); requires `IWIKI_LLM_*` config.
 
-> If the repo's own `docs/wiki/` pages predate the Overview convention, they will now
-> emit `missing_overview` advisories under `/iwiki-lint`. Bringing them into compliance
-> (adding a `## Overview` to each) is follow-up authoring work, out of scope for this
-> plan — flag it to the user rather than rewriting every page here.
+> **Legacy-page rollout (corrected post-execution).** The repo's own `docs/wiki/` pages
+> predated the convention. Beyond the `missing_overview` *advisory*, they also tripped the
+> **BLOCKING** `pre_h2_text` finding (intro prose between the `# H1` and the first `##`) on
+> 23 of 24 pages — so once the Task 7 PreToolUse hook is active, edits to those pages would
+> have been blocked (`exit 2`) until migrated. This was resolved here, not deferred: all 23
+> pages were migrated (fold the intro into a `## Overview` section, leaving only `# H1`
+> before the first `##`) so `validate` now reports **0 blocking findings**. Operators of
+> other repos: either migrate first, or set `IWIKI_VALIDATE_SECTIONS=0` to disable the hook
+> during migration. Remaining `long_lead` advisories (an `## Overview` body may run to
+> `summary_max≈400` while the lead cap is 250) are expected and non-blocking.
 
 - [ ] **Step 3: Post-task docs (per project CLAUDE.md)**
 
