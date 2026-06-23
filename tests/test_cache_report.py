@@ -59,14 +59,38 @@ def test_format_report_has_hitrate_and_split(tmp_path):
 def test_aggregate_missing_transcript_is_empty():
     mod = _load()
     agg = mod.aggregate("/no/such/file.jsonl")
-    assert agg["turns"] == 0
-    assert agg["read"] == 0
+    assert agg == {"read": 0, "creation": 0, "input": 0, "output": 0, "turns": 0}
 
 
-def test_main_missing_transcript_exits_zero(monkeypatch, capsys):
+def test_main_missing_transcript_exits_zero(monkeypatch):
     mod = _load()
     monkeypatch.setattr("sys.stdin",
                         __import__("io").StringIO(json.dumps(
                             {"transcript_path": "/no/such/file.jsonl",
                              "session_id": "x"})))
     assert mod.main() == 0
+
+
+def test_main_non_dict_payload_exits_zero(monkeypatch):
+    mod = _load()
+    for payload in [42, [1, 2, 3]]:
+        monkeypatch.setattr("sys.stdin",
+                            __import__("io").StringIO(json.dumps(payload)))
+        assert mod.main() == 0
+
+
+def test_aggregate_skips_malformed_usage_line(tmp_path):
+    mod = _load()
+    p = tmp_path / "t.jsonl"
+    good = _assistant(100, 0, 0, 10)
+    malformed_value = {"type": "assistant", "message": {"usage": {
+        "cache_read_input_tokens": "n/a",
+        "cache_creation_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+    }}}
+    malformed_usage_type = {"type": "assistant", "message": {"usage": "not-a-dict"}}
+    _write_jsonl(p, [good, malformed_value, malformed_usage_type])
+    agg = mod.aggregate(str(p))
+    assert agg["read"] == 100
+    assert agg["turns"] == 1

@@ -32,11 +32,23 @@ def aggregate(transcript_path):
                     continue
                 if obj.get("type") != "assistant":
                     continue
-                usage = (obj.get("message") or {}).get("usage") or {}
-                agg["read"] += int(usage.get("cache_read_input_tokens", 0) or 0)
-                agg["creation"] += int(usage.get("cache_creation_input_tokens", 0) or 0)
-                agg["input"] += int(usage.get("input_tokens", 0) or 0)
-                agg["output"] += int(usage.get("output_tokens", 0) or 0)
+                message = obj.get("message")
+                if not isinstance(message, dict):
+                    continue
+                usage = message.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                try:
+                    read = int(usage.get("cache_read_input_tokens", 0) or 0)
+                    creation = int(usage.get("cache_creation_input_tokens", 0) or 0)
+                    inp = int(usage.get("input_tokens", 0) or 0)
+                    out = int(usage.get("output_tokens", 0) or 0)
+                except (ValueError, TypeError):
+                    continue
+                agg["read"] += read
+                agg["creation"] += creation
+                agg["input"] += inp
+                agg["output"] += out
                 agg["turns"] += 1
     except OSError:
         return agg
@@ -71,6 +83,8 @@ def main():
         raw = sys.stdin.read()
         data = json.loads(raw) if raw.strip() else {}
     except (ValueError, TypeError):
+        return 0
+    if not isinstance(data, dict):
         return 0
     agg = aggregate(data.get("transcript_path", ""))
     if agg["turns"] == 0:
