@@ -78,6 +78,21 @@ def cmd_lint(wiki_dir: str) -> int:
     return 0
 
 
+def cmd_validate(wiki_dir: str) -> int:
+    from .validate import validate_page
+    files = sorted(glob.glob(os.path.join(wiki_dir, "**", "*.md"), recursive=True))
+    files = [f for f in files if "/.iwiki/" not in f]
+    out = []
+    for p in files:
+        try:
+            c = open(p, encoding="utf-8").read()
+        except Exception:
+            continue
+        out += [{"page": p, **f} for f in validate_page(c)]
+    print(json.dumps({"sections": out}, ensure_ascii=False))
+    return 0
+
+
 def cmd_status(wiki_dir: str) -> int:
     recs = load_index(_index_path(wiki_dir))
     size = index_bytes(_index_path(wiki_dir))
@@ -100,12 +115,15 @@ def main() -> int:
     rp.add_argument("section_id")
     sub.add_parser("status")
     sub.add_parser("lint")
+    sub.add_parser("validate")
     args = p.parse_args()
     try:
         if args.cmd == "status":
             return cmd_status(args.wiki_dir)
         if args.cmd == "lint":
             return cmd_lint(args.wiki_dir)
+        if args.cmd == "validate":
+            return cmd_validate(args.wiki_dir)
         cfg = Config.load()
         if args.cmd == "index":
             return cmd_index(cfg, args.wiki_dir)
