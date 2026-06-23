@@ -116,7 +116,7 @@ install_caveman() {
     fi
 
     # Load proxy credentials (PROXY_URL / PROXY_CA / PROXY_INSECURE from .claude_config)
-    [[ -f "${CREDENTIALS_FILE:-}" ]] && source "$CREDENTIALS_FILE"
+    source_iclaude_config
     # Export HTTPS_PROXY so python3 urllib picks it up automatically (fallback path)
     if [[ -n "${PROXY_URL:-}" ]] && [[ -z "${HTTPS_PROXY:-}" ]]; then
         export HTTPS_PROXY="$PROXY_URL"

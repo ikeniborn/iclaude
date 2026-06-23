@@ -508,7 +508,7 @@ fi
                 shift
                 ;;
             --install-iwiki)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_iwiki
                 exit $?
                 ;;
@@ -521,7 +521,7 @@ fi
                 fi
                 _gsd_install_force=""
                 [[ "${2:-}" == "--force" ]] && { _gsd_install_force="--force"; shift; }
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_gsd "$_gsd_install_force"
                 _gsd_rc=$?
                 [[ $_gsd_rc -eq 0 ]] && save_isolated_lockfile
@@ -559,7 +559,7 @@ fi
                     exit 1
                 fi
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_microvm
                 exit $?
                 ;;
@@ -576,7 +576,7 @@ fi
                 fi
                 setup_isolated_config
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_caveman
                 exit $?
                 ;;

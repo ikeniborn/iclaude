@@ -30,7 +30,7 @@ install_isolated_nvm() {
 	# Load proxy credentials if available (for curl downloads)
 	if [[ -f "$CREDENTIALS_FILE" ]]; then
 		# Source the credentials file directly to get all variables
-		source "$CREDENTIALS_FILE"
+		source_iclaude_config
 		# Export proxy variables for curl
 		if [[ -n "${PROXY_URL:-}" ]]; then
 			export HTTPS_PROXY="$PROXY_URL"
