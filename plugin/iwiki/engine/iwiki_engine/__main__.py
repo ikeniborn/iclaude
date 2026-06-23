@@ -33,7 +33,8 @@ def cmd_index(cfg: Config, wiki_dir: str) -> int:
     files = [f for f in files if not any(fnmatch.fnmatch(f, g) for g in cfg.exclude)]
     for md in files:
         content = open(md, encoding="utf-8").read()
-        chunks.extend(chunk_markdown(md, content, cfg.chunk_size, cfg.chunk_overlap))
+        chunks.extend(chunk_markdown(md, content, cfg.chunk_size,
+                                     cfg.chunk_overlap, cfg.summary_max))
     fresh, reused, to_embed = [], 0, []
     for c in chunks:
         key = c.id + f"#{c.chunk}"
