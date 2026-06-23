@@ -13,6 +13,10 @@ review:
     verifiability: { status: passed }
     consistency:   { status: passed }
   findings: []
+result_check:
+  verdict: OK
+  plan_hash: c70cb7d76fa3de7c
+  last_run: 2026-06-23
 ---
 
 # Cache Observability Implementation Plan
