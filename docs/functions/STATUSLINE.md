@@ -130,7 +130,7 @@ Session JSON → Provider Detection → Adapter → Unified Format → Display
 
 ```bash
 # No provider icon, works exactly as before:
-# Σ 50K | 25K active (12%) | 📦 10K | Sonnet 4.5 | $1.05 | ...
+# Σ 50K | 25K active (12%) | 📦 90% · R9K/W1K | Sonnet 4.5 | $1.05 | ...
 ```
 
 ### Backward Compatibility
@@ -527,13 +527,14 @@ Shows two token metrics:
 
 ### 2. Cache Tokens
 
-Format: `[cache]79K`
+Format: `📦 87% · R1.2M/W12k`
 
-**Calculation:** `cache_read + cache_creation`
+**Calculation:** hit-rate `cache_read / (cache_read + cache_creation + input_tokens)`, integer percent, with the read (`R`) and creation (`W`) token volumes.
 
 **Features:**
-- Format: K for thousands, M for millions
-- Only shown when cache > 0
+- `R`/`W` formatted K for thousands, M for millions; hit-rate shown as `n/a` only if the denominator is 0
+- Only shown when total cache tokens > 0
+- Replaces the earlier summed token count, surfacing prefix reuse (high %) vs. rewrite (`W` = cache_creation spike)
 - Cache tokens are shown SEPARATELY from active context
 - Active context shows only NEW tokens (input + output), excluding cache
 - After `/compact`, active context is LOW (~0.3%) while cache is HIGH (~150K) - this clearly distinguishes new vs reused context
@@ -616,7 +617,7 @@ Claude Code reports `context_window_size: 200000` even for 1M-window models
   full window, e.g. `📊 320K (32%)`. `⚠️` appended if active exceeds the window.
   Derived from real token counts, **not** from `used_percentage` (which Claude Code
   saturates at 100 against its stale 200K value).
-- **📦** — cache tokens (read + creation).
+- **📦** — cache hit-rate % and read/write split, e.g. `📦 86% · R310K/W10K` (`R` = cache_read, `W` = cache_creation; hit-rate = read / (read + creation + input)).
 
 The fixed `🔒 45K` reserved-buffer marker was removed — it was meaningless at 1M.
 
@@ -624,7 +625,7 @@ The fixed `🔒 45K` reserved-buffer marker was removed — it was meaningless a
 
 **Full Mode (≥130 columns)**
 ```
-Σ 680K ↓ | 📊 320K (32%) | 📦 320K | Opus 4.8 | $13.38 🌐 | 📄 | 🧠 | 🔱 test ●2
+Σ 680K ↓ | 📊 320K (32%) | 📦 86% · R310K/W10K | Opus 4.8 | $13.38 🌐 | 📄 | 🧠 | 🔱 test ●2
 ```
 - All components visible without abbreviations
 - Full model name, full router provider
@@ -633,7 +634,7 @@ The fixed `🔒 45K` reserved-buffer marker was removed — it was meaningless a
 
 **Compact Mode (110-129 columns)**
 ```
-Σ 680K ↓ | 📊 320K (32%) | 📦 320K | O4.8 | $13.38 | 🧠
+Σ 680K ↓ | 📊 320K (32%) | 📦 86% · R310K/W10K | O4.8 | $13.38 | 🧠
 ```
 - Smart abbreviations to save space
 - Model abbreviated: "Opus 4.8" → "O4.8"
