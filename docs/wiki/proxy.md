@@ -2,56 +2,49 @@
 
 ## Overview
 
-The proxy module lives in `lib/proxy/` and is split across four files: `configure.sh`, `credentials.sh`, `git.sh`, and `validate.sh`. Together they handle proxy URL configuration, credential persistence, TLS certificate policy, git integration, and connectivity testing.
+`lib/proxy/` (`configure.sh`, `credentials.sh`, `git.sh`, `validate.sh`) handles HTTP/HTTPS/SOCKS5 proxy setup for Claude Code: exporting proxy env vars, persisting credentials in `.claude_config`, TLS certificate policy (custom CA vs. insecure), URL validation with domain→IP resolution, git bypass, and connectivity testing.
 
 ## Configuration Entry Point
 
-`configure_proxy_from_url()` in `lib/proxy/configure.sh` is the single entry point for activating a proxy. It accepts a proxy URL and an optional `NO_PROXY` list, then exports `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`. It also sets either `NODE_EXTRA_CA_CERTS` (secure mode, when `PROXY_CA` points to a valid CA certificate file) or `NODE_TLS_REJECT_UNAUTHORIZED=0` (insecure fallback when `PROXY_INSECURE=true`). Before exporting, it compares the given URL against the saved `CREDENTIALS_FILE`; if the URL already matches, it skips `save_credentials()` to preserve any existing `PROXY_CA` or `PROXY_INSECURE` overrides in the file.
-
-The function calls `configure_git_no_proxy()` at the end. That function is intentionally a no-op: git respects `NO_PROXY` from the environment automatically and global git config is no longer modified (doing so broke other tools).
-
-## Credentials File
-
-`lib/proxy/credentials.sh` manages the config file at `.claude_config` (the path is exported as `CREDENTIALS_FILE` by `lib/core/init.sh`). The file is written with `chmod 600` and stores `PROXY_URL`, `NO_PROXY`, `PROXY_CA`, and `PROXY_INSECURE`. The function `save_credentials()` may convert a domain-based host to an IP address before saving, so the stored URL and the final `HTTPS_PROXY`/`HTTP_PROXY` values can differ from the originally supplied URL.
-
-`load_claude_config()` (also in `credentials.sh`) is called by `lib/nvm/setup.sh` during `setup_isolated_nvm()` to apply any saved proxy and Claude-specific environment variables before Claude Code starts.
-
-> Note: `credentials.sh` is blocked from direct read by the `block-secrets.py` security hook because its filename contains "credentials". The logic is inferred from callers and `lib/core/init.sh`.
-
-## URL Validation and Domain Resolution
-
-`lib/proxy/validate.sh` provides three utilities:
-
-- **`validate_proxy_url()`** — checks `http(s)|socks5://[user:pass@]host:port` format, then calls `is_ip_address()`. Returns 0 for valid IP, 1 for invalid format, 2 for valid-but-domain host.
-- **`is_ip_address()`** — validates IPv4 format and per-octet range (0–255).
-- **`resolve_domain_to_ip()`** — resolves a domain to IPv4 using a fallback chain: `getent` → `host` → `dig` → `nslookup`. Returns the IP on stdout with exit code 0.
-- **`parse_proxy_url()`** — splits a proxy URL into `protocol`, `username`, `password`, `host`, `port` as `key=value` lines suitable for `eval`.
-
-Domain-to-IP conversion is applied by `save_credentials()` when the URL contains a domain rather than an IP, ensuring Node.js (which uses `undici`) connects to a stable address.
+`configure_proxy_from_url()` in `lib/proxy/configure.sh` is the single entry point for activating a proxy. It accepts a proxy URL and an optional `NO_PROXY` list (default: `localhost,127.0.0.1,github.com,githubusercontent.com,gitlab.com,bitbucket.org`), then exports `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`. Before exporting it calls `source_iclaude_config` (the [[config#Environment Variable Export]] chokepoint) to load saved settings; if the supplied URL already equals the saved `PROXY_URL`, it skips `save_credentials()` so existing `PROXY_CA`/`PROXY_INSECURE` overrides survive. It finishes by calling `configure_git_no_proxy()`.
 
 ## TLS Certificate Handling
 
-Two modes are supported, selected by what is stored in `CREDENTIALS_FILE`:
+After exporting the proxy URLs, `configure_proxy_from_url()` selects one of two TLS modes from the loaded config. If `PROXY_CA` is set and points to an existing file, it exports `NODE_EXTRA_CA_CERTS="$PROXY_CA"` (secure mode, TLS verified against the custom CA). Otherwise, if `PROXY_INSECURE` is unset or `true` (the default), it exports `NODE_TLS_REJECT_UNAUTHORIZED=0`, disabling Node/undici TLS verification.
 
 | Variable | Effect |
 |----------|--------|
-| `PROXY_CA=/path/to/ca.pem` | Sets `NODE_EXTRA_CA_CERTS`; TLS is verified against the custom CA |
+| `PROXY_CA=/path/to/ca.pem` (file exists) | Sets `NODE_EXTRA_CA_CERTS`; TLS verified against the custom CA |
 | `PROXY_INSECURE=true` (default) | Sets `NODE_TLS_REJECT_UNAUTHORIZED=0`; disables TLS verification |
 
-**Security note:** Even in secure mode (`PROXY_CA`), `undici` does not verify the target server's certificate when tunneling HTTPS through a proxy (see [HackerOne #1583680](https://hackerone.com/reports/1583680)). Prefer `--proxy-ca` over `--proxy-insecure` where possible, and see [[config#Environment Variable Export]].
+**Security note:** Even in secure mode (`PROXY_CA`), `undici` does not verify the target server's certificate when tunneling HTTPS through a proxy (see [HackerOne #1583680](https://hackerone.com/reports/1583680)). Prefer `--proxy-ca` over `--proxy-insecure` where possible.
+
+## Credentials File
+
+Proxy state is persisted in `.claude_config` (exported as `CREDENTIALS_FILE` by `lib/core/init.sh`), written with `chmod 600` and `.gitignore`-excluded. `lib/proxy/credentials.sh` defines `save_credentials()` (writes `PROXY_URL` + `NO_PROXY`, may convert a domain host to an IP before saving so the stored URL can differ from the input), `load_credentials()`, `clear_credentials()`, and `prompt_proxy_url()` (interactive entry). The file stores variables under the `ICLAUDE_*` prefix (`ICLAUDE_PROXY_URL`, `ICLAUDE_PROXY_CA`, `ICLAUDE_PROXY_INSECURE`, `ICLAUDE_NO_PROXY`); `source_iclaude_config` de-prefixes them to the canonical `PROXY_URL`/`PROXY_CA`/`PROXY_INSECURE`/`NO_PROXY` names that `configure.sh` reads — see [[config#Environment Variable Export]].
+
+> Note: `credentials.sh` is blocked from direct read by the `block-secrets.py` hook (filename contains "credentials"); its function set is verified from callers and grep — see [[security-hooks]].
+
+## Config Loading
+
+Saved proxy/Claude env vars are applied via `load_claude_config()` (defined in `lib/config/isolated.sh`, a thin wrapper over `source_iclaude_config`), invoked by `lib/nvm/setup.sh` during `setup_isolated_nvm()` and by `lib/sandbox/status.sh`. `configure_proxy_from_url()` calls `source_iclaude_config` directly. All paths funnel through the one env-map chokepoint in `lib/config/env-map.sh`, so config is loaded and translated in exactly one place — see [[config]] and [[nvm]].
+
+## URL Validation and Domain Resolution
+
+`lib/proxy/validate.sh` provides the parsing and validation helpers. `validate_proxy_url()` checks the `(http|https|socks5)://[user:pass@]host:port` shape, extracts the host, and returns 0 (valid IP), 1 (invalid format), or 2 (valid but host is a domain). `is_ip_address()` validates IPv4 shape and per-octet 0–255 range. `resolve_domain_to_ip()` resolves a domain to IPv4 via a fallback chain `getent` → `host` → `dig` → `nslookup`, printing the IP on stdout (exit 0 on success). `parse_proxy_url()` splits a URL into `protocol`, `username`, `password`, `host`, `port` as `key=value` lines suitable for `eval`. Domain→IP conversion is applied by `save_credentials()` so undici connects to a stable address.
 
 ## Connectivity Test
 
-`test_proxy()` in `lib/proxy/configure.sh` sends a `curl` request with `-x "$proxy_url"` to the Anthropic API `/v1/models` endpoint. A `200` or `401` response (401 = no API key, but proxy reached the API) is treated as success. Code `000` means the proxy is unreachable or the connection timed out (15 s). Critically, `HTTPS_PROXY` and `HTTP_PROXY` environment variables are explicitly unset before the `curl` call to avoid proxy-through-proxy double-proxying.
+`test_proxy()` in `lib/proxy/configure.sh` sends a `curl` request via `-x "$proxy_url"` (taken from `HTTPS_PROXY`/`HTTP_PROXY`) to `https://api.anthropic.com/v1/models` with `-k -s -m 15`; for `https://` proxies it also adds `--proxy-insecure`. Any non-`000` HTTP code (e.g. 401 = no API key, but the API was reached) is treated as success; `000` means unreachable or timed out (15 s). Critically, `HTTPS_PROXY`/`HTTP_PROXY`/`https_proxy`/`http_proxy` are cleared inline for the call so curl uses only `-x` and does not proxy-through-proxy. OAuth tokens reaching the API travel this same path — see [[oauth#Token Storage]].
 
 ## Git Proxy Backup and Restore
 
-`lib/proxy/git.sh` provides `save_git_proxy_settings()` and `restore_git_proxy()`. These read/write `http.proxy` and `https.proxy` from `git config --global` into `GIT_BACKUP_FILE` (`.claude_git_proxy_backup`, chmod 600). These functions are retained for compatibility with any restore path, but `configure_git_no_proxy()` no longer actually modifies git config — git reads `NO_PROXY` from the environment instead.
+`configure_git_no_proxy()` is intentionally a no-op: git reads `NO_PROXY` from the environment automatically, and global git config is no longer modified (doing so broke other tools). `lib/proxy/git.sh` retains `save_git_proxy_settings()` and `restore_git_proxy()` for compatibility — they back up/restore `http.proxy` and `https.proxy` from `git config --global` via `GIT_BACKUP_FILE` (`.claude_git_proxy_backup`, chmod 600) — but they are not invoked during normal proxy configuration.
 
 ## Display
 
-`display_proxy_info()` prints the active `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY` values. By default passwords are masked via `sed` substitution (`user:****@host`); pass `true` as the first argument to reveal them.
+`display_proxy_info()` prints the active `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`. By default it masks passwords via `sed` (`user:****@host`); pass `true` as the first argument to reveal them. It also notes that git bypasses the proxy for the `NO_PROXY` hosts.
 
 ---
 
-See also: [[oauth#Token Storage]] (tokens travel through the proxy), [[config#Environment Variable Export]] (`PROXY_CA`, `PROXY_INSECURE`), [[launcher]] (where `configure_proxy_from_url` is called at startup).
+See also: [[config#Environment Variable Export]] (`ICLAUDE_PROXY_*` → de-prefixed canonical vars), [[oauth#Token Storage]] (tokens travel through the proxy), [[launcher]] (where `configure_proxy_from_url` runs at startup), [[router]] (CCR proxy interplay), [[sandbox]] (proxy propagation into the microVM), [[security-hooks]] (`credentials.sh` read block).

@@ -42,3 +42,27 @@
 {"op":"ingest","source":"lib/config/isolated.sh","page":"docs/wiki/config.md","date":"2026-06-23"}
 {"op":"ingest","source":"lib/launcher/launch.sh","page":"docs/wiki/launcher.md","date":"2026-06-23","note":"cosmetic hint rename; page content re-verified accurate"}
 {"op":"ingest","source":"plugin/iwiki/engine/iwiki_engine","page":"docs/wiki/iwiki.md","date":"2026-06-23"}
+{"op":"ingest","source":"iclaude.sh","page":"docs/wiki/architecture.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/caveman","page":"docs/wiki/caveman.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/chrome","page":"docs/wiki/chrome.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/command","page":"docs/wiki/command.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/config","page":"docs/wiki/config.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/core","page":"docs/wiki/core.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/gsd","page":"docs/wiki/gsd.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/html-report","page":"docs/wiki/html-report.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"plugin/iwiki","page":"docs/wiki/iwiki.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/pii-proxy/langfuse_emitter.py","page":"docs/wiki/langfuse-capture.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/launcher","page":"docs/wiki/launcher.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/lockfile","page":"docs/wiki/lockfile.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/lsp","page":"docs/wiki/lsp.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/nvm","page":"docs/wiki/nvm.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/oauth","page":"docs/wiki/oauth.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/ohmyposh","page":"docs/wiki/ohmyposh.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/pii-proxy","page":"docs/wiki/pii-proxy.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/proxy","page":"docs/wiki/proxy.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/router","page":"docs/wiki/router.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/sandbox","page":"docs/wiki/sandbox.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":".nvm-isolated/.claude-isolated/hooks","page":"docs/wiki/security-hooks.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/statusline","page":"docs/wiki/statusline.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/telemetry","page":"docs/wiki/telemetry.md","date":"2026-06-23","note":"full wiki rebuild"}
+{"op":"ingest","source":"lib/update","page":"docs/wiki/update.md","date":"2026-06-23","note":"full wiki rebuild"}
