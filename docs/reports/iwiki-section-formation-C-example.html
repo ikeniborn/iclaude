@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iwiki · C — annotation-prefix walkthrough</title>
+<style>
+  :root[data-theme="dark"]{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --ink:#e6edf3; --muted:#9aa7b4;
+    --line:#2b333d; --accent:#58a6ff; --accent2:#7ee787; --warn:#f0a35e; --bad:#ff7b72;
+    --code:#0b0f14; --chip:#22303f; --ovl:#3b2f12; --ovl-ink:#ffd789;
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f6; --ink:#1f2328; --muted:#5a636c;
+    --line:#d8dee4; --accent:#0969da; --accent2:#1a7f37; --warn:#9a6700; --bad:#cf222e;
+    --code:#f3f5f8; --chip:#e4ebf2; --ovl:#fff3cd; --ovl-ink:#7a5b00;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 22px 80px}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}
+  h1{font-size:22px;margin:0 0 4px} h1 small{color:var(--muted);font-weight:400;font-size:14px}
+  h2{font-size:17px;margin:30px 0 10px;padding-top:8px;border-top:1px dashed var(--line)}
+  h3{font-size:14px;margin:18px 0 8px;color:var(--accent)}
+  p{margin:8px 0} .muted{color:var(--muted)}
+  code,pre,.mono{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+    overflow:auto;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  code:not(pre code){background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .toggle{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    border-radius:20px;padding:7px 14px;font-size:13px;white-space:nowrap}
+  .toggle:hover{border-color:var(--accent)}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600}
+  tr:nth-child(even) td{background:var(--panel)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;
+    padding:1px 7px;margin:2px 3px 2px 0;font-size:12px}
+  .chip.ovl{background:var(--ovl);color:var(--ovl-ink);border-color:transparent;font-weight:600}
+  .badge{display:inline-block;border-radius:6px;padding:1px 8px;font-size:11px;font-weight:600}
+  .b-old{background:var(--bad);color:#fff} .b-new{background:var(--accent2);color:#06210f}
+  .b-warn{background:var(--warn);color:#241600} .b-drop{background:#6b7280;color:#fff}
+  .note{border-left:3px solid var(--accent);background:var(--panel);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .note.warn{border-left-color:var(--warn)} .note.bad{border-left-color:var(--bad)}
+  .lead{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px;background:rgba(88,166,255,.12)}
+  .pre-ttl{color:var(--accent2);font-weight:700}
+  .pipe{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0}
+  .pnode{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+    font-size:12px;min-width:96px;text-align:center;align-self:center}
+  .parrow{align-self:center;color:var(--accent);font-size:18px;padding:0 8px}
+  .pnode b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin:10px 0}
+  summary{cursor:pointer;font-weight:600;font-size:13px}
+  .params{font-size:12px;color:var(--muted)}
+  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>iwiki · вариант <span class="pre-ttl">C</span> — статический префикс в векторах<br>
+      <small>title + heading + lead (≤250) перед каждым под-чанком · разбор на тестовой статье</small></h1>
+  </div>
+  <button class="toggle" id="tg" onclick="tt()">◐ Тема</button>
+</header>
+
+<p class="muted">Демо-параметры чанкинга: <code>size=24</code>, <code>overlap=6</code>
+(<code>step=size-overlap=18</code>) — чтобы раздел реально разбился на 2 под-чанка.
+Прод-дефолты: <code>IWIKI_CHUNK_SIZE=512</code>, <code>IWIKI_CHUNK_OVERLAP=64</code>.</p>
+
+<!-- PIPELINE -->
+<div class="pipe">
+  <div class="pnode"><b>вход</b>page.md</div>
+  <div class="parrow">→</div>
+  <div class="pnode"><b>split</b>по <code>^##</code></div>
+  <div class="parrow">→</div>
+  <div class="pnode"><b>на раздел</b>heading·body·lead</div>
+  <div class="parrow">→</div>
+  <div class="pnode"><b>prefix +</b>под-чанки</div>
+  <div class="parrow">→</div>
+  <div class="pnode"><b>embed</b>вектор/чанк</div>
+  <div class="parrow">→</div>
+  <div class="pnode"><b>store</b>Record int8</div>
+</div>
+
+<h2>Тестовая статья (raw)</h2>
+<pre><span class="pre-ttl"># Proxy Management</span>
+
+Intro line before the first H2 — not indexed.
+
+## TLS Handling
+
+The proxy terminates TLS using a local CA injected via NODE_EXTRA_CA_CERTS. Prefer
+--proxy-ca over --proxy-insecure because undici does not verify upstream certificates
+when tunneling HTTPS connections to the target backend server today.
+
+### Edge case
+
+Self-signed upstreams need the CA appended manually.
+
+## OAuth Refresh
+
+Tokens refresh before expiry.</pre>
+
+<h2>Шаг 0 — title + что выпадает</h2>
+<table>
+  <tr><th>Элемент</th><th>Результат</th><th>Почему</th></tr>
+  <tr><td><code>page_title</code></td><td><span class="pre-ttl">Proxy Management</span></td>
+      <td>первая <code>^#&nbsp;</code> строка до первого <code>##</code></td></tr>
+  <tr><td>Intro-строка <span class="badge b-drop">DROP</span></td><td>не индексируется</td>
+      <td>не H1 и до первого <code>##</code> → выпадает. B пометит <code>pre_h2_text</code> → блок.</td></tr>
+  <tr><td><code>## TLS Handling</code> / <code>## OAuth Refresh</code></td><td>границы разделов</td>
+      <td>матчат <code>^##\s+</code></td></tr>
+  <tr><td><code>### Edge case</code></td><td>НЕ граница — сворачивается в body «TLS Handling»</td>
+      <td><code>^##\s+</code> не матчит <code>###</code></td></tr>
+</table>
+
+<h2>Шаг 1 — разбор раздела «TLS Handling»</h2>
+<div class="grid">
+  <div class="card"><h3>heading</h3><code>TLS Handling</code>
+    <h3>body (вкл. <code>### Edge case</code>)</h3>
+    <pre>The proxy terminates TLS ... today.
+
+### Edge case
+
+Self-signed upstreams need the CA appended manually.</pre>
+    <h3>lead = первый абзац body (до пустой строки)</h3>
+    <p class="muted">≈232 знака &lt; 250 → не режется. Текст <code>### Edge case</code> в lead не попадает (он после пустой строки).</p>
+  </div>
+  <div class="card"><h3>prefix</h3>
+    <pre><span class="pre-ttl"># Proxy Management</span>
+## TLS Handling
+<span class="lead">The proxy terminates TLS using a local CA injected via NODE_EXTRA_CA_CERTS. Prefer --proxy-ca over --proxy-insecure because undici does not verify upstream certificates when tunneling HTTPS connections to the target backend server today.</span></pre>
+    <p class="muted"><span class="lead">подсвечено</span> = lead. Формула: <code>"# {title}\n## {heading}\n{lead}"</code>.</p>
+  </div>
+</div>
+
+<h2>Шаг 2 — split body на слова <span class="params">(size=24, overlap=6, step=18)</span></h2>
+<p>Первый абзац = 32 слова. <code>range(0,32,18) → старты 0, 18</code> → <b>2 под-чанка</b>.
+piece0 = <code>words[0:24]</code>, piece1 = <code>words[18:32]</code>. Общие индексы 18–23 = оверлап (6 слов):</p>
+<div class="card" style="font-size:12px">
+  <span class="chip">The</span><span class="chip">proxy</span><span class="chip">terminates</span><span class="chip">TLS</span>
+  <span class="chip">…</span><span class="chip">does</span><span class="chip">not↦18</span>
+  <span class="chip ovl">not</span><span class="chip ovl">verify</span><span class="chip ovl">upstream</span>
+  <span class="chip ovl">certificates</span><span class="chip ovl">when</span><span class="chip ovl">tunneling</span>
+  <span class="chip">HTTPS↤24</span><span class="chip">connections</span><span class="chip">…</span><span class="chip">today.</span>
+  <p class="muted" style="margin:8px 0 0"><span class="chip ovl">жёлтым</span> = 6 слов, общих для piece0 и piece1.</p>
+</div>
+
+<h2>Шаг 3 — финальные строки в embed API</h2>
+<p class="muted"><code>text = prefix + "\n\n" + " ".join(piece)</code> · <code>hash = sha256(text)[:16]</code></p>
+
+<h3>sub-chunk 0 &nbsp;<code>id="docs/wiki/proxy.md#TLS Handling"</code> · <code>chunk=0</code></h3>
+<pre><span class="pre-ttl"># Proxy Management</span>
+## TLS Handling
+<span class="lead">The proxy terminates TLS using a local CA injected via NODE_EXTRA_CA_CERTS. Prefer --proxy-ca over --proxy-insecure because undici does not verify upstream certificates when tunneling HTTPS connections to the target backend server today.</span>
+
+The proxy terminates TLS using a local CA injected via NODE_EXTRA_CA_CERTS. Prefer --proxy-ca over --proxy-insecure because undici does not verify upstream certificates when tunneling</pre>
+
+<h3>sub-chunk 1 &nbsp;<code>chunk=1</code></h3>
+<pre><span class="pre-ttl"># Proxy Management</span>
+## TLS Handling
+<span class="lead">The proxy terminates TLS using a local CA injected via NODE_EXTRA_CA_CERTS. Prefer --proxy-ca over --proxy-insecure because undici does not verify upstream certificates when tunneling HTTPS connections to the target backend server today.</span>
+
+not verify upstream certificates when tunneling HTTPS connections to the target backend server today.</pre>
+
+<h2>Шаг 4 — раздел «OAuth Refresh» (короткий, 1 под-чанк)</h2>
+<pre><span class="pre-ttl"># Proxy Management</span>
+## OAuth Refresh
+<span class="lead">Tokens refresh before expiry.</span>
+
+Tokens refresh before expiry.</pre>
+<div class="note warn"><span class="badge b-warn">мелочь</span> На коротком разделе lead дублирует body
+(безвредно для эмбеддинга). В проде lead ≤250 знаков ≪ 512-словного body — доля мала. Дедуп не делаем.</div>
+
+<h2>OLD vs NEW — что реально меняется</h2>
+<table>
+  <tr><th></th><th>sub-chunk 0 (текст в embed)</th><th>sub-chunk 1 (текст в embed)</th></tr>
+  <tr><td><span class="badge b-old">OLD</span></td>
+      <td><code>## TLS Handling\n\nThe proxy…tunneling</code><br><span class="muted">heading есть, title нет</span></td>
+      <td><code>not verify … today.</code><br><span class="bad">голый фрагмент — ни heading, ни title</span></td></tr>
+  <tr><td><span class="badge b-new">NEW</span></td>
+      <td><code># Proxy Management\n## TLS Handling\n{lead}\n\nThe proxy…</code></td>
+      <td><code># Proxy Management\n## TLS Handling\n{lead}\n\nnot verify…</code></td></tr>
+</table>
+<div class="note"><b>Главный выигрыш — sub-chunk 1+.</b> Раньше «висячий» фрагмент без контекста;
+теперь несёт title + heading + lead → ретривер знает, что это <code>Proxy Management / TLS Handling</code>.
+Побочно чинится потеря heading в под-чанках 1+.</div>
+
+<h2>Усечение lead &gt; 250</h2>
+<pre>input  (300 знаков): "Tokens are refreshed automatically by a background ... [ещё 250+ знаков]"
+lead = input[:250]   # ровно 250 символов, хвост обрезан, без многоточия</pre>
+
+<h2>Reuse / hash при правках</h2>
+<table>
+  <tr><th>Правка</th><th>Меняет prefix?</th><th>Что пере-embed-ится</th></tr>
+  <tr><td>тело <code>### Edge case</code> (не lead)</td><td>нет</td><td>только под-чанки, куда попал изменённый piece</td></tr>
+  <tr><td>lead-абзац «TLS Handling»</td><td>да (этот раздел)</td><td>все под-чанки <b>этого</b> раздела; «OAuth Refresh» цел</td></tr>
+  <tr><td>H1 <code>Proxy Management</code></td><td>да (все разделы)</td><td><b>вся</b> страница</td></tr>
+  <tr><td>первый <code>index</code> после внедрения C</td><td>—</td><td><span class="badge b-warn">разовый</span> все хеши новые → <b>полный</b> пере-embed</td></tr>
+</table>
+
+<details>
+  <summary>Псевдокод <code>chunk_markdown</code> (NEW)</summary>
+<pre>page_title = first_h1(content) or humanize(basename)        # до первого ##
+for section in split_on_h2(content):                        # ^##\s+
+    heading = section.heading
+    body    = section.body                                  # вкл. ###-подзаголовки
+    lead    = first_paragraph(body)[:250]
+    prefix  = f"# {page_title}\n## {heading}\n{lead}".strip()
+    for ci, piece in enumerate(split_words(body, size, overlap)):
+        text = prefix + "\n\n" + " ".join(piece)
+        yield Chunk(file, heading, ci, text, hash=sha256(text)[:16])</pre>
+</details>
+
+<footer>
+  iclaude · ветка <code>dev-iwiki-section-formation</code> · spec
+  <code>docs/superpowers/specs/2026-06-23-iwiki-section-formation-design.md</code> · вариант C.
+  Иллюстрация дизайна (не реализация).
+</footer>
+</div>
+
+<script>
+  function tt(){
+    var r=document.documentElement;
+    r.setAttribute('data-theme', r.getAttribute('data-theme')==='dark'?'light':'dark');
+  }
+</script>
+</body>
+</html>

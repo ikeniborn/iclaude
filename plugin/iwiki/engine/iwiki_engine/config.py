@@ -25,6 +25,7 @@ class Config:
     dimensions: int
     chunk_size: int
     chunk_overlap: int
+    summary_max: int
     top_k: int
     score_threshold: float
     graph_depth: int
@@ -51,6 +52,7 @@ class Config:
             dimensions=int(getenv("IWIKI_EMBED_DIMENSIONS", "1536")),
             chunk_size=int(getenv("IWIKI_CHUNK_SIZE", "512")),
             chunk_overlap=int(getenv("IWIKI_CHUNK_OVERLAP", "64")),
+            summary_max=int(getenv("IWIKI_SUMMARY_MAX_CHARS", "400")),
             top_k=int(getenv("IWIKI_TOP_K", "8")),
             score_threshold=float(getenv("IWIKI_SCORE_THRESHOLD", "0.2")),
             graph_depth=int(getenv("IWIKI_GRAPH_DEPTH", "2")),

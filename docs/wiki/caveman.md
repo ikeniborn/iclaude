@@ -1,6 +1,8 @@
 # Caveman Module
 
-`lib/caveman/install.sh` installs "caveman mode" into the isolated Claude Code environment — a token-compression ruleset that makes Claude reply tersely. It downloads four JS hooks plus a skill file and wires two hook events into the isolated `settings.json` (see [[config]]).
+## Overview
+
+`lib/caveman/install.sh` installs "caveman mode" into the isolated Claude Code environment — a token-compression ruleset that makes Claude reply tersely. It downloads four JS hooks plus a skill file and wires two hook events into the isolated `settings.json` (see [[config]]). Covers installation, hook wiring, activation levels, language preservation, language resolution, and status/removal.
 
 ## Installation
 

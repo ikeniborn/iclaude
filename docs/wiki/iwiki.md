@@ -1,6 +1,8 @@
 # iwiki Module
 
-Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`).
+## Overview
+
+Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`). Covers detection, engine sync, the engine runner, the section-formation rules (`## Overview` prefixing + validation), plugin registration, and the five automation hooks (bootstrap, recall, reindex, sync, validate).
 
 ## Detection
 
@@ -24,10 +26,20 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 - Runs `uv run --project "$(_iwiki_engine_dir)" python3 -m iwiki_engine "$@"`.
 - If uv is unresolved, prints `iwiki: uv not found; run ./iclaude.sh --install-iwiki` and returns 1.
-- Subcommands: `index | search | related | status | lint`. `status` and `lint` are **config-free** (no `IWIKI_LLM_*`, no embedding call) — they dispatch before config load. `lint` reports `docs/wiki/` health (broken links, orphans, stale pages) as a JSON object and is a clean no-op (`{"wiki_present": false}`, exit 0) when the project has no wiki, so iwiki never errors in a project that does not use it. The `/iwiki-lint` skill calls this subcommand instead of composing shell.
+- Subcommands: `index | search | related | status | lint | validate`. `status`, `lint`, and `validate` are **config-free** (no `IWIKI_LLM_*`, no embedding call) — they dispatch before config load. `lint` reports `docs/wiki/` health (broken links, orphans, stale pages, plus a `sections` array of section-formation findings) as a JSON object and is a clean no-op (`{"wiki_present": false}`, exit 0) when the project has no wiki, so iwiki never errors in a project that does not use it. `validate` runs only the section-formation checks (see [[iwiki#Section Formation]]) over every page and prints `{"sections": [...]}`. The `/iwiki-lint` skill calls `lint` instead of composing shell.
 - **Code-aware link parsing**: the link parser that `lint` and `related` use ignores `[[...]]` tokens inside Markdown fenced code blocks and inline code spans, so shell `[[ ... ]]` test syntax in documentation never produces false broken-link reports.
 - **Embedding retry**: `index` and `search` wrap embedding API calls with bounded exponential backoff (retries on timeout, connection errors, and HTTP 5xx); 4xx errors fail fast without retrying.
 - **`related` graph hardening**: BFS traversal skips pages whose files cannot be read, so a single unreadable file never aborts the entire related-docs walk.
+
+## Section Formation
+
+Wiki pages are `##`-only with a mandatory first `## Overview` section. The chunker (`chunk.py`) binds every content section's vectors to whole-article context, and a stdlib validator (`validate.py`) enforces the structure — shared by `lint`, the `validate` subcommand, and a blocking hook.
+
+`chunk_markdown()` treats the first `## Overview` (case-insensitive) as the article summary and **excludes it from the index**. Every other section's sub-chunks are prefixed with `# Title` + the Overview summary + `## Heading` + the section lead (first paragraph), then word-split with overlap — so a section that splits into multiple chunks keeps whole-article and whole-section context in each piece. The summary is capped at `summary_max` (env `IWIKI_SUMMARY_MAX_CHARS`, default 400, see [[config]]); the per-section lead is capped at `LEAD_MAX` (250). `chunk._lead` truncates to 250 for embedding, while `validate._lead` measures the authored length (uncapped) so it can flag an over-long lead — the two helpers are intentionally non-identical and carry keep-in-sync comments for `OVERVIEW_HEADING`/`LEAD_MAX`.
+
+`validate_page()` returns findings `{type, severity, text}` in two tiers. **Blocking** (`severity: block`): `deep_heading` (a `###`-or-deeper heading) and `pre_h2_text` (indexable text before the first `##` other than a single `# H1`). **Advisory** (`severity: advisory`, report-only): `missing_overview`, `missing_lead`, `long_lead`. `lint` folds these into its `sections` array (each carrying the `page`); the config-free `validate` subcommand prints them for the whole wiki without an embedding call.
+
+The blocking subset is mirrored inline by the **`iwiki-validate.py` PreToolUse hook** (see [[iwiki#Automation Hooks]]) so edits are checked without spawning the engine. Authoring rules live in the `iwiki-ingest` and `iwiki-init` skills.
 
 ## Plugin Registration
 
@@ -42,7 +54,7 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 ## Automation Hooks
 
-The plugin bundles four Claude Code hooks (declared in `plugin/iwiki/hooks/hooks.json`, run from `${CLAUDE_PLUGIN_ROOT}/hooks/`) that keep the wiki consulted and current with no manual `/iwiki-*` step. They share `iwiki_common.py` (engine/uv resolution, git diff, project chdir, and a per-session state file) and are all fail-soft and individually kill-switchable. The shared session-state reader warns on stderr when the state file exists but cannot be decoded (e.g. truncated JSON), then proceeds with an empty state rather than silently discarding the error. A hook cannot run a slash command or LLM skill directly, so each either drives the engine CLI deterministically or injects a directive Claude acts on.
+The plugin bundles five Claude Code hooks (declared in `plugin/iwiki/hooks/hooks.json`, run from `${CLAUDE_PLUGIN_ROOT}/hooks/`) that keep the wiki consulted, current, and structurally valid with no manual `/iwiki-*` step. They share `iwiki_common.py` (engine/uv resolution, git diff, project chdir, and a per-session state file) and are all fail-soft and individually kill-switchable. The shared session-state reader warns on stderr when the state file exists but cannot be decoded (e.g. truncated JSON), then proceeds with an empty state rather than silently discarding the error. A hook cannot run a slash command or LLM skill directly, so each either drives the engine CLI deterministically or injects a directive Claude acts on.
 
 Engine/uv resolution is layered and **`CLAUDE_PLUGIN_ROOT`-independent**: `engine_dir()` tries the plugin root (only set for hooks), then the in-repo `plugin/iwiki/engine`, then the **newest** cached plugin version (`engine_dir()` sorts the cache glob by version). The `/iwiki-*` skills' bash steps mirror the same fallback, because `CLAUDE_PLUGIN_ROOT` is *not* exported into the Bash tool — relying on it alone expands to `--project /engine` and fails, so the skills must resolve the engine themselves.
 
@@ -50,6 +62,7 @@ Engine/uv resolution is layered and **`CLAUDE_PLUGIN_ROOT`-independent**: `engin
 - **`iwiki-recall.py` (UserPromptSubmit)** — runs the engine's semantic `search` on the user's prompt and injects the top matching `docs/wiki` sections as context, so relevant docs are present before any task. Skips trivial/slash prompts and an uninitialised wiki; falls back to a one-line `/iwiki-query` nudge on timeout/missing config. Kill switch: `IWIKI_AUTO_QUERY=0`.
 - **`iwiki-reindex.py` (PostToolUse: Write/Edit/MultiEdit)** — cheap bookkeeping, no engine call: records each documentable-source edit into the session `edits` set (the action-attributed signal the Stop nag uses) and flips a `wiki_dirty` flag when a `docs/wiki/*.md` page changes. The actual `index` is deferred and batched once at Stop, so N page edits cost one reindex, not N. Kill switch: `IWIKI_AUTO_REINDEX=0`.
 - **`iwiki-sync.py` (Stop)** — runs the batched `index` once if any wiki page changed this session, then nags about undocumented sources. The change-set is the session's own work: `(uncommitted ∪ committed-this-session) − baseline WIP`, plus the recorded `edits` — so it catches code committed before the stop (no commit-evasion) and excludes pre-existing WIP (no false positives). Agent-instruction files (`CLAUDE.md`/`AGENTS.md`/`GEMINI.md`, any directory) and repo-root meta-docs (`README.md`/`CHANGELOG.md`/…) are excluded from the documentable set, so a committed instruction file never pins the nag. Blocks the stop and injects a directive to run [[iwiki]]'s ingest skill plus `/iwiki-lint`; the same unchanged set re-asks at most `IWIKI_SYNC_MAX_ASK` times (default 2) via the pure `decide_nag` bound, then yields so the stop is never wedged — the bound is the ask count alone, so the hook's own reindex can no longer reset it. State lives in `$CLAUDE_CONFIG_DIR/.cache/iwiki-session.json`. Kill switch: `IWIKI_AUTO_SYNC=0`.
+- **`iwiki-validate.py` (PreToolUse: Write/Edit/MultiEdit)** — blocks (`exit 2`) a write to a `docs/wiki/` page whose *resulting* content has a blocking section-formation violation (`deep_heading` or `pre_h2_text`; see [[iwiki#Section Formation]]). It derives the post-edit content (Write → content; Edit/MultiEdit → applied to the current file) and mirrors the validator's two blocking regexes inline, so it needs no engine/uv spawn per edit. Advisory findings never block. It fails **open** on any internal error — including a guarded module-level import — so it can never wedge an edit. Kill switch: `IWIKI_VALIDATE_SECTIONS=0`.
 
 Because hook installation is bundled in the plugin manifest, enabling `iwiki@iclaude` in any project activates this behaviour there too — paths resolve against `CLAUDE_PROJECT_DIR` / `CLAUDE_PLUGIN_ROOT`.
 

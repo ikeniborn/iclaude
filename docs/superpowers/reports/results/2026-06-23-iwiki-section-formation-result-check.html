@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Result Check — iwiki section-formation — 2026-06-23</title>
+<style>
+/* ── Themes ── */
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
+  transition:background .3s, color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+
+/* ── Typography ── */
+h1{ font-size:1.55rem; margin-bottom:.25rem; }
+h2{ font-size:1.18rem; margin:2rem 0 .6rem; color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:.25rem; }
+h3{ font-size:1rem; margin:1.4rem 0 .4rem; }
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.92rem; }
+code{ background:color-mix(in srgb,var(--accent) 10%,var(--surface)); border-radius:4px; padding:.05rem .35rem; font-size:.88em; }
+
+/* ── Note / callout ── */
+.note{
+  border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow);
+}
+.note.ok{ border-left-color:var(--ok); background:color-mix(in srgb,var(--ok) 8%,var(--surface)); }
+.note.warn{ border-left-color:var(--warn); background:color-mix(in srgb,var(--warn) 8%,var(--surface)); }
+.note.info{ border-left-color:var(--line); background:color-mix(in srgb,var(--line) 8%,var(--surface)); }
+
+/* ── Badges ── */
+.badge{ display:inline-block; font-size:.72rem; font-weight:600; padding:.1rem .55rem; border-radius:999px; border:1px solid; white-space:nowrap; }
+.badge.done { color:var(--ok-2);   border-color:var(--ok);   background:color-mix(in srgb,var(--ok)   12%,var(--surface)); }
+.badge.warn { color:var(--warn-2); border-color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--surface)); }
+.badge.info { color:var(--muted);  border-color:var(--line); background:color-mix(in srgb,var(--line) 12%,var(--surface)); }
+.badge.crit { color:var(--danger-2); border-color:var(--danger); background:color-mix(in srgb,var(--danger) 12%,var(--surface)); }
+.badge.ok   { color:var(--ok-2);   border-color:var(--ok);   background:color-mix(in srgb,var(--ok)   12%,var(--surface)); }
+
+/* ── Table ── */
+.rpt-table{
+  border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow);
+}
+.rpt-table th, .rpt-table td{
+  border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top;
+}
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+
+/* ── Details (expandable) ── */
+details{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:.7rem 1rem; margin:.7rem 0; box-shadow:0 1px 8px var(--shadow);
+}
+details summary{ cursor:pointer; font-weight:600; color:var(--accent); }
+details[open] summary{ margin-bottom:.55rem; }
+ul.tight li{ margin:.28rem 0; }
+
+/* ── Summary scoreboard ── */
+.scoreboard{
+  display:flex; gap:1rem; flex-wrap:wrap; margin:1.2rem 0;
+}
+.score-card{
+  flex:1 1 120px; background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:1rem 1.2rem; text-align:center; box-shadow:0 2px 8px var(--shadow);
+}
+.score-card .num{ font-size:2.2rem; font-weight:700; }
+.score-card .lbl{ font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.score-card.done .num{ color:var(--ok-2); }
+.score-card.crit .num{ color:var(--danger); }
+.score-card.warn .num{ color:var(--warn-2); }
+.score-card.info .num{ color:var(--muted); }
+.score-card.verdict .num{ color:var(--ok-2); font-size:1.5rem; }
+
+/* ── Chain flow ── */
+.rpt-flow{ display:flex; align-items:center; gap:0; margin:1rem 0; flex-wrap:wrap; }
+.rpt-flow .node{
+  background:var(--surface); color:var(--fg);
+  border:1px solid var(--border); border-radius:8px; padding:.5rem .9rem;
+  font-size:.88rem;
+}
+.rpt-flow .node.null-node{ border-style:dashed; color:var(--muted); }
+.rpt-flow .arrow{ flex:0 0 2.5rem; height:2px; background:var(--line); position:relative; }
+.rpt-flow .arrow::after{
+  content:""; position:absolute; right:0; top:-4px;
+  border:5px solid transparent; border-left-color:var(--line);
+}
+
+/* ── Finding card ── */
+.finding{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:.8rem 1rem; margin:.8rem 0; box-shadow:0 1px 8px var(--shadow);
+}
+.finding .f-header{ font-weight:600; margin-bottom:.4rem; }
+.finding .f-row{ display:grid; grid-template-columns:90px 1fr; gap:.3rem .6rem; font-size:.91rem; margin:.25rem 0; }
+.finding .f-label{ color:var(--muted); font-weight:600; font-size:.82rem; text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<input type="checkbox" id="theme-toggle" hidden>
+<label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+
+<main class="report">
+
+<h1>Result Check — iwiki section-formation</h1>
+<p class="lead">Сверка результатов выполнения плана с цепочкой IDD→SDD: spec + plan vs git diff.</p>
+<p class="sub">Дата: 2026-06-23 &nbsp;·&nbsp; Ветка: <code>dev-iwiki-section-formation</code> &nbsp;·&nbsp; Diff base: <code>4a3274e9..HEAD</code> &nbsp;·&nbsp; Файлов изменено: 40 (+642 / -185)</p>
+
+<!-- ── Scoreboard ── -->
+<div class="scoreboard">
+  <div class="score-card done"><div class="num">8</div><div class="lbl">DONE</div></div>
+  <div class="score-card crit"><div class="num">0</div><div class="lbl">PARTIAL</div></div>
+  <div class="score-card crit"><div class="num">0</div><div class="lbl">MISSING</div></div>
+  <div class="score-card crit"><div class="num">0</div><div class="lbl">CRITICAL</div></div>
+  <div class="score-card warn"><div class="num">1</div><div class="lbl">WARNING</div></div>
+  <div class="score-card info"><div class="num">3</div><div class="lbl">INFO</div></div>
+  <div class="score-card verdict"><div class="num">✅ OK</div><div class="lbl">Вердикт</div></div>
+</div>
+
+<div class="note ok"><b>Вердикт: OK</b> — все 8 задач выполнены, spec полностью покрыта, тест-сьют 42/42, <code>validate</code> = 0 blocking findings, lint clean. Нет MISSING/CRITICAL findings.</div>
+
+<!-- ── Documents ── -->
+<h2>Документы цепи</h2>
+<table class="rpt-table">
+  <thead><tr><th>Роль</th><th>Путь</th><th>Статус</th></tr></thead>
+  <tbody>
+    <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-06-23-iwiki-section-formation.md</code></td><td><span class="badge done">найден</span></td></tr>
+    <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-06-23-iwiki-section-formation-design.md</code></td><td><span class="badge done">найден</span></td></tr>
+    <tr><td>Intent</td><td><em>отсутствует (null)</em></td><td><span class="badge info">N/A</span></td></tr>
+    <tr><td>Diff base</td><td><code>git diff 4a3274e9..HEAD</code> — 40 файлов, 12 коммитов</td><td><span class="badge done">OK</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ── Chain ── -->
+<h2>Chain IDD → SDD</h2>
+<figure class="rpt-flow">
+  <div class="node null-node">Intent: null</div>
+  <div class="arrow"></div>
+  <div class="node">Spec<br><small>iwiki-section-formation-design.md</small></div>
+  <div class="arrow"></div>
+  <div class="node">Plan<br><small>2026-06-23-iwiki-section-formation.md</small></div>
+  <div class="arrow"></div>
+  <div class="node" style="border-color:var(--ok);color:var(--ok-2);">Git diff<br><small>4a3274e9..HEAD</small></div>
+</figure>
+
+<!-- ── Plan Step Coverage ── -->
+<h2>Покрытие шагов плана</h2>
+<table class="rpt-table">
+  <thead>
+    <tr>
+      <th>Задача</th>
+      <th>Статус</th>
+      <th>Файлы в diff</th>
+      <th>Коммит</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Task 1</b>: Authoring rules — ##-only + ## Overview mandate (docs)</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>plugin/iwiki/skills/iwiki-ingest/SKILL.md</code><br><code>plugin/iwiki/skills/iwiki-init/SKILL.md</code></td>
+      <td><code>91aec07a</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 2</b>: Config — <code>summary_max</code> (<code>IWIKI_SUMMARY_MAX_CHARS</code>, default 400)</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>config.py</code>, <code>test_config.py</code></td>
+      <td><code>5e5db316</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 3</b>: Chunker — title+Overview prefix, Overview excluded from index</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>chunk.py</code> (rewrite), <code>__main__.py</code> (summary_max pass), <code>test_chunk.py</code> (+6 тестов)</td>
+      <td><code>00bbb115</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 4</b>: Validator module (<code>validate.py</code>, stdlib, blocking+advisory)</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>validate.py</code> (create), <code>test_validate.py</code> (+7 тестов)</td>
+      <td><code>c3e502c7</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 5</b>: Fold validator findings into <code>lint</code></td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>lint.py</code>, <code>test_lint.py</code> (+1 тест)</td>
+      <td><code>429bc07a</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 6</b>: Config-free <code>validate</code> subcommand</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>__main__.py</code></td>
+      <td><code>d2fe7823</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 7</b>: Blocking PreToolUse hook (<code>iwiki-validate.py</code>, fail-open, kill-switch)</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>plugin/iwiki/hooks/iwiki-validate.py</code> (create), <code>hooks.json</code></td>
+      <td><code>5cc56eb1</code> + fix <code>a6e84e51</code></td>
+    </tr>
+    <tr>
+      <td><b>Task 8</b>: Full suite (42/42) + re-index (137 chunks) + migration + post-task docs</td>
+      <td><span class="badge done">DONE</span></td>
+      <td><code>docs/wiki/iwiki.md</code> (updated), 23× <code>docs/wiki/*.md</code> мигрированы, <code>.iwiki/index.jsonl</code> перестроен</td>
+      <td><code>8443f447</code> + <code>98a40320</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── Findings ── -->
+<h2>Findings</h2>
+
+<div class="note ok">Нет CRITICAL findings. Нет MISSING шагов. Нет PARTIAL шагов.</div>
+
+<h3>INFO-findings (не влияют на вердикт)</h3>
+
+<div class="finding">
+  <div class="f-header"><span class="badge info">INFO</span> &nbsp; F-001 (из check-plan) — Task 8 Step 3: prose comment вместо runnable ingest command</div>
+  <div class="f-row"><span class="f-label">Plan</span><span>Шаг 3 предписывает вызов iwiki-ingest на изменённых исходниках, но показывает лишь prose comment, а не командную строку.</span></div>
+  <div class="f-row"><span class="f-label">Diff</span><span><code>docs/wiki/iwiki.md</code> обновлён (коммит <code>98a40320</code>), <code>.iwiki/index.jsonl</code> перестроен (137 chunks). Инgest фактически выполнен — docs актуальны.</span></div>
+  <div class="f-row"><span class="f-label">Оценка</span><span>Не влияет на вердикт — реализация полная; prose comment является пояснением «invoke the skill», а не пропуском шага.</span></div>
+</div>
+
+<div class="finding">
+  <div class="f-header"><span class="badge info">INFO</span> &nbsp; F-002 (из check-plan) — chunk._lead vs validate._lead: намеренное расхождение</div>
+  <div class="f-row"><span class="f-label">Plan</span><span>Обе функции разделяют имя <code>_lead</code>, но <code>chunk</code> обрезает до <code>LEAD_MAX=250</code> (для вложения), <code>validate</code> не обрезает (измеряет авторскую длину).</span></div>
+  <div class="f-row"><span class="f-label">Diff</span><span>Оба файла содержат правильную реализацию согласно spec; keep-in-sync комментарии присутствуют в коде.</span></div>
+  <div class="f-row"><span class="f-label">Оценка</span><span>Корректно по дизайну — chunker усекает для вектора; validator измеряет авторский размер. Не дефект.</span></div>
+</div>
+
+<div class="finding">
+  <div class="f-header"><span class="badge info">INFO</span> &nbsp; test_embed.py — обновление <code>_cfg()</code></div>
+  <div class="f-row"><span class="f-label">Diff</span><span><code>plugin/iwiki/engine/tests/test_embed.py</code> — мелкое исправление тест-хелпера (новый обязательный параметр <code>summary_max</code> после Task 2).</span></div>
+  <div class="f-row"><span class="f-label">Оценка</span><span>Нет соответствующего шага плана, но является прямым следствием Task 2. Ожидаемый maintenance change.</span></div>
+</div>
+
+<!-- ── Excess Changes ── -->
+<h2>Excess Changes</h2>
+
+<div class="finding" style="border-color:var(--warn);">
+  <div class="f-header"><span class="badge warn">WARNING</span> &nbsp; docs/wiki/*.md — миграция 23 унаследованных страниц</div>
+  <div class="f-row"><span class="f-label">Что</span><span>Коммит <code>8443f447</code>: 23 страницы wiki мигрированы на section-formation (добавлен <code>## Overview</code>, убрана проза до первого <code>##</code>).</span></div>
+  <div class="f-row"><span class="f-label">Шаг плана</span><span>Явного шага миграции нет; Task 8 содержит retrospective note (<em>«Legacy-page rollout»</em>), написанный post-factum.</span></div>
+  <div class="f-row"><span class="f-label">Обоснование</span><span>Одобрено пользователем. Без миграции PreToolUse hook (Task 7) блокировал бы редактирование всех 23 страниц (<code>pre_h2_text</code>), делая wiki нерабочей. Технически необходимо и явно одобрено.</span></div>
+  <div class="f-row"><span class="f-label">Оценка</span><span>Excess, но безопасный и одобренный. <span class="badge warn">WARNING</span>, не CRITICAL.</span></div>
+</div>
+
+<details>
+  <summary>Артефакты re-index (INFO)</summary>
+  <ul class="tight">
+    <li><code>docs/wiki/.iwiki/index.jsonl</code> — перестроен полностью (137 chunks, хэши изменились из-за нового prefix). Ожидаемый результат Task 8 Step 2.</li>
+    <li><code>docs/wiki/.iwiki/log.jsonl</code> — обновлён автоматически при re-index. Артефакт.</li>
+  </ul>
+</details>
+
+<!-- ── Spec Coverage ── -->
+<h2>Spec Coverage (A / B / C)</h2>
+<table class="rpt-table">
+  <thead><tr><th>Блок spec</th><th>Описание</th><th>Задачи плана</th><th>Покрытие</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>A</b> — Depth rule + Overview mandate (docs)</td>
+      <td>##-only, ##-Overview, no pre-## content, authoring skills updated</td>
+      <td>Task 1</td>
+      <td><span class="badge done">✓ покрыто</span></td>
+    </tr>
+    <tr>
+      <td><b>C</b> — Annotation prefix from authored Overview</td>
+      <td>chunk.py: title+summary+heading+lead prefix; Overview excluded from index; summary_max config</td>
+      <td>Tasks 2–3</td>
+      <td><span class="badge done">✓ покрыто</span></td>
+    </tr>
+    <tr>
+      <td><b>B</b> — Validator + lint + subcommand + hook</td>
+      <td>validate.py (blocking+advisory); lint fold; validate subcommand (config-free); PreToolUse hook (fail-open, kill-switch)</td>
+      <td>Tasks 4–7</td>
+      <td><span class="badge done">✓ покрыто</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Success Criteria</h3>
+<table class="rpt-table">
+  <thead><tr><th>Критерий</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+  <tbody>
+    <tr><td><code>validate</code> subcommand config-free</td><td><span class="badge done">✓</span></td><td>Task 6, <code>cmd_validate</code> не вызывает <code>Config.load()</code></td></tr>
+    <tr><td>Hook fail-open + kill switch <code>IWIKI_VALIDATE_SECTIONS=0</code></td><td><span class="badge done">✓</span></td><td>Task 7, <code>iwiki-validate.py</code>: <code>except Exception: return 0</code></td></tr>
+    <tr><td>Engine test suite 42/42</td><td><span class="badge done">✓</span></td><td>Task 8 Step 1; подтверждено в ходе выполнения</td></tr>
+    <tr><td><code>validate docs/wiki</code> = 0 blocking findings</td><td><span class="badge done">✓</span></td><td>после миграции 23 страниц (коммит <code>8443f447</code>)</td></tr>
+    <tr><td>Lint: 0 broken / 0 orphans / 0 stale</td><td><span class="badge done">✓</span></td><td>Task 8 Step 3, подтверждено после re-index</td></tr>
+  </tbody>
+</table>
+
+<!-- ── Summary ── -->
+<h2>Сводка</h2>
+<div class="scoreboard">
+  <div class="score-card done"><div class="num">8/8</div><div class="lbl">Задач DONE</div></div>
+  <div class="score-card crit"><div class="num">0</div><div class="lbl">CRITICAL</div></div>
+  <div class="score-card warn"><div class="num">1</div><div class="lbl">WARNING</div></div>
+  <div class="score-card info"><div class="num">3</div><div class="lbl">INFO</div></div>
+  <div class="score-card done"><div class="num">3/3</div><div class="lbl">Spec A/B/C</div></div>
+  <div class="score-card verdict"><div class="num">✅ OK</div><div class="lbl">Вердикт</div></div>
+</div>
+
+<div class="note ok">
+  <b>Вердикт: OK</b><br>
+  Все 8 задач плана полностью выполнены и подтверждены в diff. Spec (блоки A, B, C) покрыта целиком.
+  Тест-сьют 42/42. Команда <code>validate</code> возвращает 0 blocking findings. Lint чист.
+  Единственный WARNING (миграция 23 страниц) — одобренное пользователем расширение, технически
+  необходимое для работы PreToolUse hook. CRITICAL findings отсутствуют.
+</div>
+
+<p class="sub" style="margin-top:2rem;">
+  <b>plan_hash:</b> <code>6faa67d9a6c9e5f6</code> &nbsp;·&nbsp;
+  Chain: <em>Intent: null</em> → <code>docs/superpowers/specs/2026-06-23-iwiki-section-formation-design.md</code> → <code>docs/superpowers/plans/2026-06-23-iwiki-section-formation.md</code>
+</p>
+
+</main>
+</body>
+</html>

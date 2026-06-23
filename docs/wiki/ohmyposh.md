@@ -1,5 +1,7 @@
 # Oh-My-Posh
 
+## Overview
+
 The oh-my-posh module (`lib/ohmyposh/`) manages the oh-my-posh prompt theming binary inside the iclaude isolated environment. When installed, the statusline script picks it up automatically to render the Claude Code status bar with Powerline-style formatting.
 
 ## Platform Detection

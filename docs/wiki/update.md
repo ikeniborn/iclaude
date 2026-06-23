@@ -1,5 +1,7 @@
 # Update
 
+## Overview
+
 Update flow for Claude Code in the isolated environment: detects the installation type (isolated NVM vs. system), performs pre-update cleanup to avoid npm errors, runs `npm install -g @latest`, refreshes the lockfile, and repairs symlinks. See [[lockfile]] for version pinning and [[nvm]] for the NVM setup that underpins the isolated path.
 
 ## Universal Update

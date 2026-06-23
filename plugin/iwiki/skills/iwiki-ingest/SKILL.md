@@ -26,7 +26,19 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
 
 1. Read the source path the user named.
 2. Decide the target wiki page: `docs/wiki/<topic>.md` (create or update).
-   One `##` section per concept; lead each section with a ≤250-char paragraph.
+   Page structure (REQUIRED — the engine and the section-formation hook depend on it):
+   - Use **only `##`** for sections — never `###` or deeper. Deeper headings are not
+     indexed as separate units and the validation hook blocks them; flatten them into
+     the `##` section's prose.
+   - Put **no content before the first `##`** except a single `#` H1 title — text
+     before the first `##` is dropped from the index.
+   - Lead with `# Title`, then a **first `## Overview` section** that summarizes all of
+     the page's sections in ≈≤400 characters. You author this Overview yourself as part
+     of writing the page (no separate summarizer). The engine reuses the Overview body
+     to give every other section's vectors whole-article context, and the Overview
+     section itself is NOT indexed as its own searchable section.
+   - One `##` section per concept; lead each section with a ≤250-char paragraph (it
+     doubles as the section summary that binds the section's chunks).
    Cross-link related pages with `[[file#Heading]]`.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
 4. Refresh the index (run from the current project root):

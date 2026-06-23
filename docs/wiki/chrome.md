@@ -1,10 +1,8 @@
 # Chrome
 
-The Chrome module (`lib/chrome/detection.sh`) provides detection utilities for Chrome browser integration. Chrome integration is **disabled by default** and requires a paid Claude plan, Chrome extension v1.0.36+, and Claude Code CLI v2.0.73+. Enabling it without these prerequisites causes startup errors.
-
 ## Overview
 
-Chrome integration allows Claude Code to control a Chrome browser session via the Claude-in-Chrome extension. The extension connects to the CLI over a local IPC port; the CLI must be running on the same host. When `--chrome` is passed to `iclaude.sh`, the Chrome detection functions are called to verify prerequisites before launch. The flag `--no-chrome` disables the feature explicitly.
+The Chrome module (`lib/chrome/detection.sh`) provides detection utilities for Chrome browser integration. Chrome integration is **disabled by default** and requires a paid Claude plan, Chrome extension v1.0.36+, and Claude Code CLI v2.0.73+. Enabling it without these prerequisites causes startup errors. Chrome integration allows Claude Code to control a Chrome browser session via the Claude-in-Chrome extension. The extension connects to the CLI over a local IPC port; the CLI must be running on the same host. When `--chrome` is passed to `iclaude.sh`, the Chrome detection functions are called to verify prerequisites before launch. The flag `--no-chrome` disables the feature explicitly.
 
 Note: when Claude runs inside a microVM, the `--chrome` flag is stripped by [[launcher#microVM Workspace Sync]] because the extension IPC port is on the host network namespace and the guest cannot reach it without SSH reverse port forwarding.
 

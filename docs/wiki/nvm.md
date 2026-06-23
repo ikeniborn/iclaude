@@ -1,5 +1,7 @@
 # NVM Module
 
+## Overview
+
 The nvm module lives in `lib/nvm/` across six files: `setup.sh`, `detect.sh`, `install.sh`, `repair.sh`, `claude.sh`, and `cleanup.sh`. It manages an isolated Node.js environment under `.nvm-isolated/`, detects and locates the Claude Code binary, and handles installation, repair, and cleanup.
 
 ## Isolated Environment Overview

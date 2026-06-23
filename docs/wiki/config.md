@@ -1,5 +1,7 @@
 # Configuration
 
+## Overview
+
 Configuration management for the isolated Claude Code environment: sets up the project-local `CLAUDE_CONFIG_DIR`, exports runtime environment variables from the credentials file, provides export/import backup, and reports the status of the config directory and the isolated NVM install. See [[architecture]] for how this fits into the startup sequence.
 
 ## Isolated Config Directory

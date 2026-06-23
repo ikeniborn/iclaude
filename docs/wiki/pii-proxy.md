@@ -1,5 +1,7 @@
 # PII Proxy
 
+## Overview
+
 A local HTTP proxy (`lib/pii-proxy/server.py`) that intercepts `POST /v1/messages` requests before they reach the Anthropic API, scans user-authored content for PII and secrets, replaces detected spans with a configurable token (`REDACTED` by default), then forwards the masked request upstream. Operates on `127.0.0.1` only and supports SSE streaming responses.
 
 ## Architecture

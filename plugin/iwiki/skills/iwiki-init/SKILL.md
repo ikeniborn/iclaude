@@ -38,10 +38,12 @@ indexes everything. Works in any project — the engine ships with this plugin
    they decline.
 
 3. **Generate each page.** For every area, follow the `iwiki-ingest` authoring
-   rules: read the real source, write `docs/wiki/<slug>.md` with one `##` section
-   per concept, each section led by a ≤250-char paragraph, cross-linking related
-   pages with `[[<page>#<Heading>]]`. English prose. Accurate to the code — do not
-   invent. Show a brief diff/summary per page as you go.
+   rules: read the real source, write `docs/wiki/<slug>.md` as `# Title` + a first
+   `## Overview` section (≈≤400-char summary of all the page's sections, authored by
+   you) + one `##` section per concept, each led by a ≤250-char paragraph. Use **only
+   `##`** — never `###` or deeper, and no content before the first `##` except the
+   `# Title`. Cross-link related pages with `[[<page>#<Heading>]]`. English prose.
+   Accurate to the code — do not invent. Show a brief diff/summary per page as you go.
 
 4. **Build the index** (from the project root):
    ```bash

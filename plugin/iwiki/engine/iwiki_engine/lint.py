@@ -13,6 +13,7 @@ import os
 import re
 
 from .links import parse_links
+from .validate import validate_page
 
 # Keep in sync with chunk._H2 — inlined here to avoid importing .chunk, which
 # would transitively pull httpx and break the config-free contract.
@@ -112,5 +113,8 @@ def lint(wiki_dir: str) -> dict:
                     broken.append({"page": page, "ref": ref})
 
     orphans = [p for p in pages if not (referenced_by.get(p, set()) - {p})]
+    sections = [{"page": p, **f} for p, c in content.items()
+                for f in validate_page(c)]
     return {"wiki_present": True, "pages": len(pages),
-            "broken": broken, "orphans": orphans, "stale": _stale(wiki_dir)}
+            "broken": broken, "orphans": orphans, "stale": _stale(wiki_dir),
+            "sections": sections}

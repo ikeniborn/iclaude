@@ -41,3 +41,4 @@
 {"op":"ingest","source":"lib/config/env-map.sh","page":"docs/wiki/config.md","date":"2026-06-23"}
 {"op":"ingest","source":"lib/config/isolated.sh","page":"docs/wiki/config.md","date":"2026-06-23"}
 {"op":"ingest","source":"lib/launcher/launch.sh","page":"docs/wiki/launcher.md","date":"2026-06-23","note":"cosmetic hint rename; page content re-verified accurate"}
+{"op":"ingest","source":"plugin/iwiki/engine/iwiki_engine","page":"docs/wiki/iwiki.md","date":"2026-06-23"}
