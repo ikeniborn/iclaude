@@ -49,3 +49,13 @@ def test_stale_ignores_legacy_and_malformed_log_records(tmp_path):
     out = lint(wd)
     assert out["wiki_present"] is True
     assert out["stale"] == []   # records lacking source/page are tolerated, ignored
+
+
+def test_section_findings_folded_into_report(tmp_path):
+    # page with a ### deep heading and no ## Overview → both findings surface
+    wd = _wiki(tmp_path, {"a.md": "## A\nlead.\n\n### deep\nx\n"})
+    out = lint(wd)
+    types = {f["type"] for f in out["sections"]}
+    assert "deep_heading" in types
+    assert "missing_overview" in types
+    assert all("page" in f for f in out["sections"])
