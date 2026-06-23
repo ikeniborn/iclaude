@@ -10,6 +10,10 @@ review:
     verifiability: { status: passed }
     consistency:   { status: passed }
   findings: []
+result_check:
+  verdict: OK
+  plan_hash: feab95670dbc7f1d
+  last_run: 2026-06-23
 chain:
   intent: null
   spec: docs/superpowers/specs/2026-06-23-iwiki-hook-failopen-guard-design.md
