@@ -55,6 +55,31 @@ t1_session_suffix() {
 
 t1_session_suffix
 
+# ---- Task 2: prune per-session suffix files older than 7 days ----
+t2_prune() {
+  echo "[t2] prune stale per-session suffix files"
+  local cc; cc="$(mktemp -d)"
+  trap 'rm -rf "$cc"' RETURN
+
+  printf 'full' > "$cc/.caveman-active"
+  printf '%s\n' '{"type":"assistant","message":{"model":"claude-opus-4-8","usage":{"output_tokens":35000}}}' > "$cc/sess-B.jsonl"
+
+  # a stale per-session file (8 days old) that must be pruned
+  printf '⛏ 1k · Σ1k' > "$cc/.caveman-statusline-suffix-zombie"
+  touch -d '8 days ago' "$cc/.caveman-statusline-suffix-zombie"
+  # the global file is recent and must SURVIVE (no trailing-dash match)
+  printf '⛏ Σ1k' > "$cc/.caveman-statusline-suffix"
+  touch -d '8 days ago' "$cc/.caveman-statusline-suffix"
+
+  CLAUDE_CONFIG_DIR="$cc" node "$STATS" --session-file "$cc/sess-B.jsonl" >/dev/null 2>&1
+
+  [[ -e "$cc/.caveman-statusline-suffix-zombie" ]] && fail "t2 stale per-session file removed" || pass "t2 stale per-session file removed"
+  [[ -e "$cc/.caveman-statusline-suffix" ]] && pass "t2 global file survives (not matched by prune)" || fail "t2 global file survives (not matched by prune)"
+  [[ -e "$cc/.caveman-statusline-suffix-sess-B" ]] && pass "t2 current session file present" || fail "t2 current session file present"
+}
+
+t2_prune
+
 echo
 [[ $FAILED -eq 0 ]] && echo "ALL TESTS PASSED" || echo "SOME TESTS FAILED"
 exit $FAILED

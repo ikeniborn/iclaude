@@ -182,6 +182,25 @@ function humanizeTokens(n) {
   return String(Math.round(n));
 }
 
+// Remove per-session statusline-suffix files older than 7 days so they don't
+// accumulate in the config dir. The trailing '-' in the prefix keeps the global
+// '.caveman-statusline-suffix' (no session id) out of the match. Never throws —
+// a prune failure must not break stats.
+function pruneOldSessionSuffixes(claudeDir) {
+  const MAX_AGE_MS = 7 * 86_400_000;
+  const prefix = '.caveman-statusline-suffix-';
+  const now = Date.now();
+  let names;
+  try { names = fs.readdirSync(claudeDir); } catch { return; }
+  for (const name of names) {
+    if (!name.startsWith(prefix)) continue;
+    const p = path.join(claudeDir, name);
+    try {
+      if (now - fs.statSync(p).mtimeMs > MAX_AGE_MS) fs.unlinkSync(p);
+    } catch {}
+  }
+}
+
 function formatHistory({ sessions, outputTokens, estSavedTokens, estSavedUsd, since }) {
   const sep = '──────────────────────────────────';
   const window = since ? ` (last ${since})` : '';
@@ -342,6 +361,8 @@ function main() {
       path.join(claudeDir, '.caveman-statusline-suffix'),
       agg.estSavedTokens > 0 ? `⛏ Σ${cum}` : ''
     );
+
+    pruneOldSessionSuffixes(claudeDir);
   }
 
   if (share) {
