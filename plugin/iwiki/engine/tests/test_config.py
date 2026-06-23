@@ -11,3 +11,12 @@ def test_missing_config_names_env_vars(monkeypatch):
     assert "IWIKI_LLM_BASE_URL" in msg
     assert "IWIKI_LLM_KEY" in msg
     assert "environment variable" in msg.lower()
+
+
+def test_summary_max_default_and_override(monkeypatch):
+    monkeypatch.setenv("IWIKI_LLM_BASE_URL", "https://x/v1")
+    monkeypatch.setenv("IWIKI_LLM_KEY", "k")
+    monkeypatch.delenv("IWIKI_SUMMARY_MAX_CHARS", raising=False)
+    assert Config.load().summary_max == 400
+    monkeypatch.setenv("IWIKI_SUMMARY_MAX_CHARS", "250")
+    assert Config.load().summary_max == 250
