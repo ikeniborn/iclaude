@@ -325,17 +325,22 @@ if [[ -f "$_SEC_FLAG" ]]; then
     fi
 fi
 
-# Caveman badge — show ⛏ when .caveman-active exists in $CLAUDE_CONFIG_DIR
-# caveman-stats.js writes $CLAUDE_CONFIG_DIR/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
+# Caveman badge — show ⛏ when .caveman-active exists in $CLAUDE_CONFIG_DIR.
+# Prefer THIS session's suffix (⛏ <session> · Σ<cumulative>), written by
+# caveman-stats.js as .caveman-statusline-suffix-<session_id>; fall back to the
+# global cumulative-only .caveman-statusline-suffix (e.g. before the first Stop).
 CAVEMAN_ICON=""
 if [[ -f "$CLAUDE_CONFIG_DIR/.caveman-active" ]]; then
-    _CAVEMAN_SUFFIX_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix"
-    if [[ -f "$_CAVEMAN_SUFFIX_FILE" ]]; then
-        _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_SUFFIX_FILE" 2>/dev/null | tr -d '\n\r')
-        [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
-    else
-        CAVEMAN_ICON=" | ⛏"
+    _CAVEMAN_SUFFIX=""
+    if [[ -n "$SESSION_ID" && "$SESSION_ID" != "unknown" ]]; then
+        _CAVEMAN_PS_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix-${SESSION_ID}"
+        [[ -f "$_CAVEMAN_PS_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_PS_FILE" 2>/dev/null | tr -d '\n\r')
     fi
+    if [[ -z "$_CAVEMAN_SUFFIX" ]]; then
+        _CAVEMAN_GLOBAL_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix"
+        [[ -f "$_CAVEMAN_GLOBAL_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_GLOBAL_FILE" 2>/dev/null | tr -d '\n\r')
+    fi
+    [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
 fi
 
 # PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)

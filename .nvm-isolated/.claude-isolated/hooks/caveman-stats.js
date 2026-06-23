@@ -182,6 +182,25 @@ function humanizeTokens(n) {
   return String(Math.round(n));
 }
 
+// Remove per-session statusline-suffix files older than 7 days so they don't
+// accumulate in the config dir. The trailing '-' in the prefix keeps the global
+// '.caveman-statusline-suffix' (no session id) out of the match. Never throws —
+// a prune failure must not break stats.
+function pruneOldSessionSuffixes(claudeDir) {
+  const MAX_AGE_MS = 7 * 86_400_000;
+  const prefix = '.caveman-statusline-suffix-';
+  const now = Date.now();
+  let names;
+  try { names = fs.readdirSync(claudeDir); } catch { return; }
+  for (const name of names) {
+    if (!name.startsWith(prefix)) continue;
+    const p = path.join(claudeDir, name);
+    try {
+      if (now - fs.statSync(p).mtimeMs > MAX_AGE_MS) fs.unlinkSync(p);
+    } catch {}
+  }
+}
+
 function formatHistory({ sessions, outputTokens, estSavedTokens, estSavedUsd, since }) {
   const sep = '──────────────────────────────────';
   const window = since ? ` (last ${since})` : '';
@@ -319,13 +338,31 @@ function main() {
       est_saved_usd: estSavedUsd,
     }));
 
-    // Statusline suffix: tiny pre-rendered string the shell statusline can
-    // cat without parsing JSONL. Updated on every /caveman-stats run.
-    // Routed through safeWriteFlag — the suffix path is predictable and
-    // user-owned, same symlink-clobber surface as the .caveman-active flag.
+    // Statusline suffixes: tiny pre-rendered strings the shell statusline can
+    // cat without parsing JSONL. The per-session file carries THIS session's
+    // savings first, the lifetime cumulative second (⛏ 12k · Σ110M). The global
+    // file stays cumulative-only — a fallback the statusline uses before a
+    // session's first Stop has written its per-session file. Both go through
+    // safeWriteFlag (predictable, user-owned paths, same symlink-clobber surface
+    // as the .caveman-active flag). agg already includes this session's snapshot,
+    // appended just above, so Σ is the true lifetime total.
     const agg = aggregateHistory(historyPath, null);
-    const suffix = agg.estSavedTokens > 0 ? `⛏ ${humanizeTokens(agg.estSavedTokens)}` : '';
-    safeWriteFlag(path.join(claudeDir, '.caveman-statusline-suffix'), suffix);
+    const cum = humanizeTokens(agg.estSavedTokens);
+    let perSession;
+    if (estSavedTokens > 0) {
+      perSession = `⛏ ${humanizeTokens(estSavedTokens)} · Σ${cum}`;
+    } else if (agg.estSavedTokens > 0) {
+      perSession = `⛏ Σ${cum}`;
+    } else {
+      perSession = '';
+    }
+    safeWriteFlag(path.join(claudeDir, `.caveman-statusline-suffix-${sessionId}`), perSession);
+    safeWriteFlag(
+      path.join(claudeDir, '.caveman-statusline-suffix'),
+      agg.estSavedTokens > 0 ? `⛏ Σ${cum}` : ''
+    );
+
+    pruneOldSessionSuffixes(claudeDir);
   }
 
   if (share) {

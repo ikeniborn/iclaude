@@ -84,6 +84,8 @@ Test: every changed line must trace directly to the user's request.
 - For parallel work on several tasks, create one git worktree per branch.
 - **Worktree naming is mandatory: `wk/<branch>`** — the literal `wk/` prefix followed by the full branch name (segments stay split by `/`). Example: branch `dev/fix-phase1` → worktree `wk/dev/fix-phase1`.
 - After the PR is created, remove the branch's worktree — don't leave stale worktrees around.
+-
+Use **@skill:git-workflow** for commit messages and PR creation.
 
 ## Execution
 
