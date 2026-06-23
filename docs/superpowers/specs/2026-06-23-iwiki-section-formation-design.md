@@ -1,30 +1,3 @@
----
-chain:
-  intent: null
-review:
-  spec_hash: 14b43b138792153d
-  last_run: 2026-06-23
-  phases:
-    structure:   { status: passed }
-    coverage:    { status: passed }
-    clarity:     { status: passed }
-    consistency: { status: passed }
-  findings:
-    - id: F-001
-      phase: coverage
-      severity: WARNING
-      section: "### B — blocking section-formation validation"
-      section_hash: 9a9f46f4d709799b
-      text: >-
-        Task lists "lead ≤250 chars" among rules to enforce via a BLOCKING
-        PreToolUse hook, but the spec makes long_lead/missing_lead advisory-only
-        (only deep_heading and pre_h2_text block). Defensible — spec gives a
-        rationale (lead nits are not index-correctness bugs) — but it diverges
-        from the literal task scope; surface the deviation.
-      verdict: wontfix
-      verdict_at: 2026-06-23
----
-
 # iwiki section-formation: depth rule, validation, vector annotation
 
 ## Overview
@@ -32,15 +5,17 @@ review:
 Three coupled changes around the notion of a well-formed `##` section in
 `docs/wiki/` pages:
 
-- **A** — make the "max depth `##`" norm explicit in the authoring skills (docs).
-- **B** — enforce section-formation rules with a blocking `PreToolUse` hook, plus
-  fold the same checks into `lint` for non-interactive review.
-- **C** — use the section's own structure (page title + heading + lead paragraph)
-  to enrich every sub-chunk embedding, so retrieval has document context in each
-  vector.
+- **A** — make explicit, in the authoring skills (docs), that pages are `##`-only
+  and always lead with a `# Title` + a first `## Overview` section that summarizes
+  all the page's sections.
+- **B** — enforce the structural rules with a blocking `PreToolUse` hook, plus fold
+  the same checks into `lint` for non-interactive review.
+- **C** — give every content section's vectors whole-article context by prefixing
+  each sub-chunk with the page title + the authored `## Overview` body + the section
+  heading + the section lead, before embedding.
 
-The three are sequenced **A → C → B**: C defines the canonical lead/heading parsing
-that B reuses.
+The three are sequenced **A → C → B**: C defines the canonical Overview / lead /
+heading parsing that B reuses.
 
 ## Background — current behaviour (verified)
 
@@ -53,14 +28,17 @@ that B reuses.
   sub-chunks 1+ lose the heading.
 - `embed.py` embeds exactly `chunk.text` — **no** page title, summary, or parent
   context is mixed in. There is no "whole-article annotation" in section vectors.
+- `index.jsonl` stores per-chunk `Record`s only (`id, heading, chunk, hash, dim,
+  scale, q`); no chunk text and no page-level annotation are persisted. Reuse in
+  `cmd_index` is purely per-chunk by `hash`.
 - `lint.py` checks broken `[[refs]]`, orphans, and stale pages only. **No** check of
-  heading depth, lead paragraph, or dropped pre-`##` text.
+  heading depth, lead paragraph, dropped pre-`##` text, or a missing Overview.
 - iwiki hooks (`bootstrap`, `recall`, `reindex`, `sync`) are all fail-soft and
   **never block** an edit.
 
 ## Requirements
 
-### A — explicit depth rule (docs only)
+### A — explicit depth rule + Overview mandate (docs only)
 
 Files: `plugin/iwiki/skills/iwiki-ingest/SKILL.md`,
 `plugin/iwiki/skills/iwiki-init/SKILL.md`.
@@ -68,36 +46,73 @@ Files: `plugin/iwiki/skills/iwiki-ingest/SKILL.md`,
 Add to the authoring rules (next to "One `##` section per concept…"):
 
 - Use **only `##`** for sections. `###` and deeper are not indexed as separate
-  units — they fold into the parent `##` section.
+  units — they fold into the parent `##` section, and **B blocks** their creation.
 - Put **no indexable content before the first `##`**, except a single `#` H1 title.
-  Text before the first `##` is dropped from the index.
+- Every page leads with `# Title` then a **first `## Overview` section** that
+  summarizes all of the page's sections in ≈≤400 characters. The authoring model
+  (the same iclaude/Claude agent that writes the page) authors this Overview as part
+  of normal wiki authoring — **no external/automated summarizer is involved**. The
+  engine reuses the Overview body to give every other section's vectors whole-article
+  context (see C).
 
 No code change. Zero runtime risk.
 
-### C — annotation prefix in section vectors
+### C — annotation prefix from the authored Overview section
 
-File: `plugin/iwiki/engine/iwiki_engine/chunk.py` (refactor `chunk_markdown`).
+File: `plugin/iwiki/engine/iwiki_engine/chunk.py` (refactor `chunk_markdown`). No
+LLM call, no new model, no new API endpoint, no cache file — the summary already
+lives in the page content as the `## Overview` section.
 
 1. Extract **page_title** once per file: the first `^#\s+` (H1) line before the
    first `##`; fallback to a humanized form of the file's basename.
-2. Per section, compute `heading`, `body`, and `lead` = the section's first
-   paragraph (body up to the first blank line), truncated to **≤250 characters**.
-3. Build `prefix = "# {page_title}\n## {heading}\n{lead}"` (strip empties).
-4. Split the **body** (not `section_text`) into words → overlapping sub-chunks with
+2. Identify the **Overview section**: the `##` section whose heading matches the
+   reserved name (default `Overview`, case-insensitive). Its body becomes
+   `article_summary`, collapsed to a single line and truncated to
+   `IWIKI_SUMMARY_MAX_CHARS` (default 400). No Overview section present →
+   `article_summary = ""` (graceful; B/lint flags it).
+3. **Exclude the Overview section from the index** — it yields no chunks / `Record`s
+   of its own; it is consumed *only* as the `article_summary` source. This is fixed
+   in the harness: the authoring rules (A) state the section is not indexed, and
+   `chunk_markdown` skips it when emitting chunks.
+4. Per **content section** (every `##` except Overview), compute `heading`, `body`,
+   and `lead` = the section's first paragraph (body up to the first blank line),
+   truncated to **≤250 characters**. The `lead` doubles as the **section summary**:
+   the per-section digest that binds a split section's sub-chunks together (see
+   Effects).
+5. Build the prefix:
+   `"# {page_title}\n{article_summary}\n## {heading}\n{lead}"` (omit empty lines).
+6. Split the **body** (not `section_text`) into words → overlapping sub-chunks with
    the existing `size`/`overlap` logic (unchanged).
-5. Each sub-chunk's embedded text = `prefix + "\n\n" + " ".join(piece)`.
-6. Hash on the **final** text (`_hash(text)`), so reuse correctly invalidates when
-   the prefix changes.
+7. Each sub-chunk's embedded text = `prefix + "\n\n" + " ".join(piece)`.
+8. Hash on the **final** text (`_hash(text)`), so reuse correctly invalidates when
+   the prefix (title, Overview, or lead) changes.
 
 Effects:
-- Fixes the lost-heading-in-sub-chunks-1+ quirk: every sub-chunk now carries page
-  title + section heading + lead.
-- Reuse is intact within a section. Editing a section's lead re-embeds only that
-  section; editing the page H1 re-embeds the whole page.
+- Every content vector now carries page title + whole-article summary + section
+  heading + section lead. A query distinguishes articles even at the sub-section
+  level — the goal.
+- The Overview section is **not** a search result on its own; its text reaches the
+  index only as the per-section prefix, so article-level queries match the content
+  sections (no redundant "Overview" hits).
+- **Multi-chunk sections stay bound.** The full prefix — `article_summary` (article
+  summary) + `lead` (section summary) + heading — is prepended to **every** sub-chunk
+  of a section, not only sub-chunk 0. When a section exceeds the chunk size and splits
+  into overlapping pieces, all pieces share identical article- and section-level
+  context, so they embed near each other; the word-level `overlap` then bridges
+  adjacent pieces. Two sub-chunks of a section are connected by *section summary +
+  article summary*.
+- Also fixes the lost-heading-in-sub-chunks-1+ quirk: every sub-chunk carries the
+  heading.
+- Reuse: editing a content section re-embeds only that section; editing the
+  `## Overview` changes `article_summary` → re-embeds every content section; editing
+  the H1 re-embeds the whole page.
 - **Migration:** the first `index` after this change is a full re-embed (every hash
   changed). One-time cost — surface it in the ingest/init report.
-- Minor: sub-chunk 0 contains the lead twice (in the prefix and at the start of the
-  body). Harmless for embeddings; not deduplicated.
+- Minor: a content sub-chunk 0 contains its lead twice (in the prefix and at the
+  start of the body); the Overview body may also echo a section's lead. Harmless for
+  embeddings; not deduplicated.
+- Edge: a page with only an Overview and no content sections produces **zero**
+  chunks; lint's advisories surface such degenerate pages.
 
 ### B — blocking section-formation validation
 
@@ -105,12 +120,13 @@ Shared validator (engine, config-free): new
 `plugin/iwiki/engine/iwiki_engine/validate.py`, `validate_page(content) -> list[finding]`,
 stdlib-only (same contract as `lint.py`). Finding types:
 
-| Type | Condition |
-|------|-----------|
-| `deep_heading` | a line matching `^###+\s` |
-| `pre_h2_text` | non-empty content before the first `##`, other than a single `# H1` line |
-| `missing_lead` | a `##` section whose first paragraph is empty |
-| `long_lead` | a section's first paragraph > 250 characters |
+| Type | Condition | Enforcement |
+|------|-----------|-------------|
+| `deep_heading` | a line matching `^###+\s` | **blocks** |
+| `pre_h2_text` | non-empty content before the first `##`, other than a single `# H1` line | **blocks** |
+| `missing_overview` | the first `##` section is not the reserved `Overview` (or none exists) | advisory |
+| `missing_lead` | a `##` section whose first paragraph is empty | advisory |
+| `long_lead` | a section's first paragraph > 250 characters | advisory |
 
 - Fold these findings into `lint.lint()` so they show in `/iwiki-lint`.
 - Add a `validate` subcommand (config-free, like `lint`/`status`).
@@ -122,9 +138,9 @@ Blocking hook: new `plugin/iwiki/hooks/iwiki-validate.py`, `PreToolUse` on
 - Mirrors the heading/lead regexes inline (same convention as `iwiki-reindex.py`
   mirroring `_H2`), so it needs no engine/`uv` spawn on every edit.
 - **Blocks (exit 2)** only on structural violations that break the index:
-  `deep_heading` and `pre_h2_text`. `missing_lead` / `long_lead` are **advisory**
-  (surfaced via `lint`), not blocking — they are quality nits, not index-correctness
-  bugs.
+  `deep_heading` and `pre_h2_text`. `missing_overview` / `missing_lead` / `long_lead`
+  are **advisory** (surfaced via `lint`), not blocking — they are quality nits, not
+  index-correctness bugs.
 - Kill-switch: `IWIKI_VALIDATE_SECTIONS=0`. **Fail-open** on any internal error
   (same posture as `idd-gate.py`).
 - Register in `plugin/iwiki/hooks/hooks.json` under a new `PreToolUse` block.
@@ -132,13 +148,27 @@ Blocking hook: new `plugin/iwiki/hooks/iwiki-validate.py`, `PreToolUse` on
 This deviates from iwiki's "hooks never block" convention — an explicit choice. The
 kill-switch and fail-open posture bound the blast radius.
 
+## Configuration
+
+- `IWIKI_SUMMARY_MAX_CHARS` (default `400`) — cap on the Overview body when used as
+  the per-section annotation prefix.
+- Reserved Overview heading name (default `Overview`, case-insensitive) — a module
+  constant in `chunk.py`/`validate.py` (kept in sync like `_H2`).
+
+No new credentials, model, or endpoint: the existing `IWIKI_LLM_*` embeddings config
+is unchanged, and summary generation is **authoring-time**, done by the agent writing
+the page — the engine only reads the resulting `## Overview` text.
+
 ## Testing
 
-- `plugin/iwiki/engine/tests/test_validate.py` (new): one case per finding type plus
-  a clean page producing no findings.
-- `plugin/iwiki/engine/tests/test_chunk.py` (update): prefix present in **every**
-  sub-chunk; heading present in every sub-chunk; hash changes when title or lead
-  changes; body word-splitting unchanged vs. the old slice boundaries.
+- `plugin/iwiki/engine/tests/test_validate.py` (new): one case per finding type
+  (incl. `missing_overview`) plus a clean page producing no findings.
+- `plugin/iwiki/engine/tests/test_chunk.py` (update): the Overview body **and** the
+  section lead are present in **every** sub-chunk of a multi-chunk content section;
+  the Overview section produces **no** chunks (excluded from the index); the heading
+  is present in every sub-chunk; the hash changes when the Overview / title / lead
+  changes; body word-splitting is unchanged vs. the old slice boundaries; a page with
+  no `## Overview` yields no summary line (graceful).
 - `plugin/iwiki/engine/tests/test_lint.py` (update): section findings folded into the
   lint report.
 - Hook smoke test (manual, mirrors the `block-secrets` pattern in CLAUDE.md):
@@ -150,9 +180,9 @@ kill-switch and fail-open posture bound the blast radius.
 
 ## Implementation order
 
-1. **A** — docs rule in both authoring skills.
-2. **C** — `chunk.py` refactor + `test_chunk.py` update. Defines canonical
-   lead/heading parsing.
+1. **A** — docs rule (depth + Overview mandate) in both authoring skills.
+2. **C** — `chunk.py` refactor + `test_chunk.py` update. Defines canonical Overview /
+   lead / heading parsing.
 3. **B** — `validate.py` + `lint` fold + `validate` subcommand + blocking hook +
    `hooks.json` registration + `test_validate.py` + `test_lint.py` update.
 
@@ -163,7 +193,14 @@ kill-switch and fail-open posture bound the blast radius.
 
 ## Rejected alternatives
 
-- **C: LLM-generated article summary** as the prefix — cost per page, summary
-  storage + staleness, and any page edit forces a full re-embed.
+- **Index-time LLM summarization** — generating the article summary in the engine at
+  `index` time. Rejected: needs a separate chat model (`IWIKI_SUMMARY_MODEL`) and
+  endpoint (the embeddings model cannot generate text), adds per-page cost, and
+  introduces summary staleness/caching. Superseded by the authored `## Overview`
+  section, which costs nothing extra at index time and lives in the page content.
+- **Separate `summaries.jsonl` cache file** — unnecessary once the summary is the
+  authored `## Overview` section read straight from the page.
+- **C: static `lead`-only prefix (no whole-article summary)** — gives section but not
+  article context; superseded by the Overview-based prefix.
 - **B: advisory-only `lint` / `sync`-hook nag** — chosen blocking `PreToolUse`
-  instead, per explicit decision.
+  instead, per explicit decision (structural findings only).
