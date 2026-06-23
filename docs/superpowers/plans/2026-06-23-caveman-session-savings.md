@@ -1,3 +1,20 @@
+---
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-23-caveman-session-savings-design.md
+review:
+  plan_hash: ca30004e63fa6aef
+  spec_hash: 4efe4cc9a04e9765
+  last_run: 2026-06-23
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings: []
+---
+
 # Session-scoped Caveman Token Savings — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
