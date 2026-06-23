@@ -39,10 +39,14 @@ assert_eq "$(probe ANTHROPIC_MODEL ICLAUDE_ANTHROPIC_MODEL=)" "<unset>" "empty i
 # Allow-empty var: set-but-empty IS exported.
 assert_eq "$(probe PII_PROXY_MASK_TOKEN ICLAUDE_PII_PROXY_MASK_TOKEN=)" "" "allow-empty set-but-empty exported"
 
+# Leak regression: the module-level array names must never become env vars.
+assert_eq "$(probe NATIVE ICLAUDE_ANTHROPIC_API_KEY=sk-x)" "<unset>" "NATIVE array not leaked"
+assert_eq "$(probe ALLOW_EMPTY ICLAUDE_ANTHROPIC_API_KEY=sk-x)" "<unset>" "ALLOW_EMPTY array not leaked"
+
 # _in_list direct checks
-_in_list ICLAUDE_CHAT_LANG "${ICLAUDE_NATIVE[@]}" && r=0 || r=1
+_in_list ICLAUDE_CHAT_LANG "${_ICLAUDE_NATIVE_LIST[@]}" && r=0 || r=1
 assert_eq "$r" "0" "_in_list hit"
-_in_list ICLAUDE_PROXY_URL "${ICLAUDE_NATIVE[@]}" && r=0 || r=1
+_in_list ICLAUDE_PROXY_URL "${_ICLAUDE_NATIVE_LIST[@]}" && r=0 || r=1
 assert_eq "$r" "1" "_in_list miss"
 
 echo "env-map: PASS=$PASS FAIL=$FAIL"

@@ -10,13 +10,15 @@
 
 # Native ICLAUDE_* names consumed verbatim (caveman hooks / statusline / runtime).
 # These must NOT be de-prefixed.
-ICLAUDE_NATIVE=(
+# Array names deliberately avoid the ICLAUDE_ prefix so the ${!ICLAUDE_@} sweep
+# in apply_iclaude_env_map never picks them up as config vars.
+_ICLAUDE_NATIVE_LIST=(
     ICLAUDE_CHAT_LANG ICLAUDE_DOC_LANG ICLAUDE_NO_TELEMETRY ICLAUDE_NO_AUTO_UPDATE
     ICLAUDE_PII_ACTIVE ICLAUDE_PII_MASKING_LEVEL ICLAUDE_PII_ACTIVE_PORT ICLAUDE_PII_LOG_PATH
 )
 
 # Translated vars where an empty-but-set value is meaningful (default skips empties).
-ICLAUDE_ALLOW_EMPTY=( ICLAUDE_PII_PROXY_MASK_TOKEN )
+_ICLAUDE_ALLOW_EMPTY_LIST=( ICLAUDE_PII_PROXY_MASK_TOKEN )
 
 # Membership test: is $1 present among the remaining args?
 _in_list() {
@@ -35,12 +37,12 @@ _in_list() {
 apply_iclaude_env_map() {
     local v name
     for v in ${!ICLAUDE_@}; do
-        if _in_list "$v" "${ICLAUDE_NATIVE[@]}"; then
-            [[ -n ${!v:-} ]] && export "$v"
+        if _in_list "$v" "${_ICLAUDE_NATIVE_LIST[@]}"; then
+            [[ -n ${!v:-} ]] && export "$v=${!v}"
             continue
         fi
         name=${v#ICLAUDE_}
-        if _in_list "$v" "${ICLAUDE_ALLOW_EMPTY[@]}"; then
+        if _in_list "$v" "${_ICLAUDE_ALLOW_EMPTY_LIST[@]}"; then
             [[ -n ${!v+x} ]] && export "$name=${!v}"
         else
             [[ -n ${!v:-} ]] && export "$name=${!v}"
@@ -53,7 +55,7 @@ apply_iclaude_env_map() {
 # Safe to call multiple times (idempotent re-export).
 #######################################
 source_iclaude_config() {
-    [[ -f "$CREDENTIALS_FILE" ]] || return 0
+    [[ -f "${CREDENTIALS_FILE:-}" ]] || return 0
     source "$CREDENTIALS_FILE"
     apply_iclaude_env_map
 }
@@ -104,7 +106,7 @@ migrate_legacy_config() {
                 print
             }
         }
-    ' "$f" > "$tmp" 2>/dev/null && mv "$tmp" "$f"; then
+    ' "$f" > "$tmp" && mv "$tmp" "$f"; then
         chmod 600 "$f" 2>/dev/null || true
         print_info "Migrated .claude_config → ICLAUDE_* (backup: $(basename "$bak"))"
     else
