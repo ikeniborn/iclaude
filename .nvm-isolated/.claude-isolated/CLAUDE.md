@@ -79,9 +79,10 @@ Test: every changed line must trace directly to the user's request.
 **Don't commit to main. Develop on a branch. Merge back only via PR.**
 
 - Never commit work directly to the main branch (`master` / `main` / `prod`), and never merge or push to it directly — close every branch through a PR into main.
-- The default branch convention is `dev/*` created from the up-to-date main branch — recommended, not a hard requirement.
-- **If a project's branches don't follow the `dev/*` pattern, always ask first — which branch to base the new branch off, and which branch to open the PR against. Don't assume.**
-- For parallel work on several tasks, create one git worktree per branch, each worktree named identically to its branch.
+- **Branch naming is mandatory: `dev/<name>`, created from the up-to-date main branch.** Words inside `<name>` are joined with `-` (e.g. `dev/fix-phase1`). No exceptions.
+- **If the project has long-lived branches beyond `master` / `main` / `prod`** (e.g. `dev`, `develop`, `staging`, `release/*`), always ask first — which branch to base the new `dev/*` off, and which branch to open the PR against. Don't assume.
+- For parallel work on several tasks, create one git worktree per branch.
+- **Worktree naming is mandatory: `wk/<branch>`** — the literal `wk/` prefix followed by the full branch name (segments stay split by `/`). Example: branch `dev/fix-phase1` → worktree `wk/dev/fix-phase1`.
 - After the PR is created, remove the branch's worktree — don't leave stale worktrees around.
 
 ## Execution
