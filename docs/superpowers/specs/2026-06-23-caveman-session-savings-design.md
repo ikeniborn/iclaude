@@ -1,7 +1,44 @@
 ---
 chain:
   intent: null
-review: {}
+review:
+  spec_hash: 4efe4cc9a04e9765
+  last_run: 2026-06-23
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: "Success criteria"
+      section_hash: 408f3870e430f9b0
+      text: >-
+        Criterion #2 (statusline precedence) prescribes feeding stdin and
+        observing the badge, but claude-statusline.sh caches its rendered
+        output per session for 3s (/tmp/iclaude-sl-cache-${SESSION_ID},
+        _SL_TTL=3, statusline :87-89). An immediate read after writing a
+        suffix file may return a stale cached render. The acceptance test
+        should bypass the cache (ICLAUDE_SL_NO_CACHE=1) or account for the TTL;
+        otherwise the test is flaky. Status-quo behavior, but the DoD does not
+        name the cache.
+      verdict: fixed
+      verdict_at: 2026-06-23
+    - id: F-002
+      phase: clarity
+      severity: INFO
+      section: "C3 — claude-statusline.sh (caveman block, :311-320)"
+      section_hash: c79113ffe879e862
+      text: >-
+        "the extra ` · Σ110M` is ~8 chars; acceptable" asserts the badge
+        survives the compact adaptive tier without stating the tier's width
+        budget or where it is enforced. The claim is plausible but lacks a
+        verifiable bound; consider citing the tier threshold or marking it as
+        an assumption to validate at impl time.
+      verdict: fixed
+      verdict_at: 2026-06-23
 ---
 
 # Design: session-scoped caveman token savings in statusline
@@ -141,9 +178,12 @@ Resolve the suffix with a two-file precedence, using the already-parsed
 3. else: bare `⛏`.
 
 The outer `[[ -f .caveman-active ]]` guard and the `tr -d '\n\r'` cleanup are
-unchanged. The badge keeps surviving the compact adaptive tier (the extra
-` · Σ110M` is ~8 chars; acceptable) and is still dropped in the minimal tier
-(status quo).
+unchanged. Adaptive tiers select the caveman badge by **component membership,
+not width-trimming** (`get_display_mode()`): it is included in the full (≥80
+cols) and compact (40–79 cols) tiers and dropped only in minimal (<40 cols). The
+added ` · Σ110M` therefore does not change whether the badge renders — it widens
+the line but is not subject to per-component truncation (assumption to re-confirm
+at impl time).
 
 ## Edge cases
 
@@ -167,7 +207,9 @@ unchanged. The badge keeps surviving the compact adaptive tier (the extra
    `.caveman-statusline-suffix-<id>` equals `⛏ <expected_session> · Σ<expected_cum>`
    with the expected `humanizeTokens` formatting.
 2. **Statusline precedence.** Feed `claude-statusline.sh` stdin with
-   `session_id=X` and `.caveman-active` present:
+   `session_id=X` and `.caveman-active` present, **bypassing the 3 s per-session
+   render cache** (`ICLAUDE_SL_NO_CACHE=1`; otherwise the cached line at
+   `/tmp/iclaude-sl-cache-<id>` can return a stale badge and the test flakes):
    - per-session file present → badge shows its content;
    - per-session absent, global present → badge shows `⛏ Σ…`;
    - both absent → badge shows bare `⛏`.
