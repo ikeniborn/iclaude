@@ -22,6 +22,7 @@ export type ToolInputSchemas =
   | ListMcpResourcesInput
   | McpInput
   | NotebookEditInput
+  | ReadMcpResourceDirInput
   | ReadMcpResourceInput
   | TodoWriteInput
   | WebFetchInput
@@ -60,6 +61,7 @@ export type ToolOutputSchemas =
   | ListMcpResourcesOutput
   | McpOutput
   | NotebookEditOutput
+  | ReadMcpResourceDirOutput
   | ReadMcpResourceOutput
   | TodoWriteOutput
   | WebFetchOutput
@@ -664,6 +666,16 @@ export interface NotebookEditInput {
    * The type of edit to make (replace, insert, delete). Defaults to replace.
    */
   edit_mode?: "replace" | "insert" | "delete";
+}
+export interface ReadMcpResourceDirInput {
+  /**
+   * The MCP server name
+   */
+  server: string;
+  /**
+   * The directory resource URI to list
+   */
+  uri: string;
 }
 export interface ReadMcpResourceInput {
   /**
@@ -2515,6 +2527,10 @@ export interface ArtifactInput {
    * Existing artifact URL to redeploy to. Pass when the user gives you a URL for an artifact not published in this session; omit for new artifacts or same-session redeploys. Must be an artifact the user owns.
    */
   url?: string;
+  /**
+   * Overwrite without a conflict check. Use only after a 409 when you have reconciled with the other session's version and intend to replace it. Omit (or false) to send baseVersion so a concurrent write 409s instead of being silently clobbered.
+   */
+  force?: boolean;
 }
 export interface PushNotificationInput {
   /**
@@ -2838,6 +2854,29 @@ export interface NotebookEditOutput {
    */
   updated_file: string;
 }
+export interface ReadMcpResourceDirOutput {
+  /**
+   * Direct children of the directory resource. Subdirectories appear with mimeType "inode/directory".
+   */
+  resources: {
+    /**
+     * Child resource URI
+     */
+    uri: string;
+    /**
+     * Child resource name
+     */
+    name: string;
+    /**
+     * Child MIME type
+     */
+    mimeType?: string;
+  }[];
+  /**
+   * Human-readable error when the server could not list the directory
+   */
+  error?: string;
+}
 export interface ReadMcpResourceOutput {
   contents: {
     /**
@@ -2861,23 +2900,6 @@ export interface ReadMcpResourceOutput {
    * Human-readable error when the server could not read the resource
    */
   error?: string;
-  /**
-   * Direct children when the URI is a directory resource (SEP-2640 resources/directory/read). Subdirectories appear with mimeType "inode/directory".
-   */
-  resources?: {
-    /**
-     * Child resource URI
-     */
-    uri: string;
-    /**
-     * Child resource name
-     */
-    name: string;
-    /**
-     * Child MIME type
-     */
-    mimeType?: string;
-  }[];
 }
 export interface TodoWriteOutput {
   /**
