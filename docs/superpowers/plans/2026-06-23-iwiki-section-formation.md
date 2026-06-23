@@ -1,6 +1,6 @@
 ---
 review:
-  plan_hash: 5d7410de10b48a67
+  plan_hash: 6faa67d9a6c9e5f6
   spec_hash: a02ff76606a6a317
   last_run: 2026-06-23
   phases:
@@ -14,7 +14,7 @@ review:
       phase: verifiability
       severity: INFO
       section: "Task 8: Full suite + migration note"
-      section_hash: b30fe1780bb8a166
+      section_hash: ac8e2b892c62b5be
       text: >-
         Step 3 instructs to invoke iwiki-ingest on the changed engine sources but
         leaves the exact ingest invocation as a prose comment rather than a runnable
@@ -26,7 +26,7 @@ review:
       phase: consistency
       severity: INFO
       section: "Task 3: Chunker — title + Overview prefix, Overview excluded (C)"
-      section_hash: 4e5a548ae085cbc7
+      section_hash: 6ffc447bf718332f
       text: >-
         chunk._lead caps the lead at LEAD_MAX=250 while validate._lead does NOT cap
         before its long_lead>250 comparison. This is correct-by-design (the chunker
