@@ -353,3 +353,31 @@ def decide_nag(sess: dict, sig: str, max_ask: int) -> tuple[str, dict]:
         sess["asked_sig"] = sig
         sess["count"] = 1
     return ("ask", sess)
+
+
+def render_pending_listing(pending: list[str], page_map: dict[str, str],
+                           cap: int = 12) -> str:
+    """Render the Stop-nag body, grouping pending sources by their target wiki
+    page so N sources of one page read as one action. Sources with a known page
+    → one line per page; sources with no page yet → one 'new' line. At most
+    `cap` lines, with an '…and N more' overflow tail."""
+    by_page: dict[str, list[str]] = {}
+    new: list[str] = []
+    for p in pending:
+        page = page_map.get(p)
+        if page:
+            by_page.setdefault(page, []).append(p)
+        else:
+            new.append(p)
+    lines: list[str] = []
+    for page in sorted(by_page):
+        srcs = ", ".join(sorted(by_page[page]))
+        lines.append(
+            f"  - {page} is stale — re-run iwiki-ingest (covers: {srcs})")
+    if new:
+        lines.append("  - new, needs a wiki page — run iwiki-ingest: "
+                     + ", ".join(sorted(new)))
+    shown = lines[:cap]
+    more = "" if len(lines) == len(shown) \
+        else f"\n  …and {len(lines) - len(shown)} more"
+    return "\n".join(shown) + more
