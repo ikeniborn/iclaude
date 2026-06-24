@@ -3,12 +3,19 @@
 iwiki_common is stdlib-only (no httpx), so it imports cleanly via a sys.path
 insert of the plugin hooks dir — no engine venv needed.
 """
+import importlib.util
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
                                 "plugin", "iwiki", "hooks"))
 import iwiki_common as iw  # noqa: E402
+
+_SYNC_PATH = os.path.join(os.path.dirname(__file__), "..",
+                          "plugin", "iwiki", "hooks", "iwiki-sync.py")
+_sync_spec = importlib.util.spec_from_file_location("iwiki_sync", _SYNC_PATH)
+sync = importlib.util.module_from_spec(_sync_spec)
+_sync_spec.loader.exec_module(sync)
 
 
 def test_is_documentable_excludes_instruction_and_meta_docs():
@@ -107,3 +114,15 @@ def test_render_pending_listing_caps_overflow():
     out2 = iw.render_pending_listing([f"f{i}.py" for i in range(20)], many, cap=12)
     assert out2.count(" is stale") == 12
     assert "…and 8 more" in out2
+
+
+def test_pending_subtracts_covered(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    for name in ("a.py", "b.py"):
+        (tmp_path / name).write_text("x", encoding="utf-8")
+    monkeypatch.setattr(sync.iw, "changed_sources", lambda: ["a.py", "b.py"])
+    monkeypatch.setattr(sync.iw, "committed_sources", lambda since: [])
+    monkeypatch.setattr(sync.iw, "covered_sources", lambda: {"a.py"})
+    sess = {"wip": [], "head": "", "edits": []}
+    # a.py is covered → only b.py remains pending
+    assert sync._pending(sess) == ["b.py"]
