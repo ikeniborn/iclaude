@@ -17,6 +17,7 @@ import glob
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,21 @@ EXCLUDE_BASENAMES = ("CLAUDE.md", "AGENTS.md", "GEMINI.md")
 # Project meta-docs are not wiki source at the repo ROOT (a subdir README.md may
 # still document a component, so it stays documentable).
 EXCLUDE_ROOT_DOCS = ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE.md")
+
+# Test files are never wiki source — iwiki generates no page for tests, so a
+# changed test could never become "covered" and would nag forever.
+_TEST_SEGMENTS = {"tests", "test", "__tests__", "spec"}
+_TEST_BASENAME_RE = re.compile(
+    r"^(conftest\.py|test_.*\.py|.*_test\.py|.*\.test\.[jt]s|.*\.spec\.[jt]s)$")
+
+
+def _is_test_path(p: str) -> bool:
+    """A repo-relative path that is a test file (test dir segment, or a
+    conventional test basename) — never wiki source."""
+    parts = p.split("/")
+    if any(seg in _TEST_SEGMENTS for seg in parts[:-1]):   # any dir segment
+        return True
+    return bool(_TEST_BASENAME_RE.match(parts[-1]))
 
 
 def cd_project() -> None:
@@ -160,6 +176,8 @@ def is_documentable(p: str) -> bool:
     if base in EXCLUDE_BASENAMES:
         return False
     if "/" not in p and base in EXCLUDE_ROOT_DOCS:   # repo-root only (git uses '/')
+        return False
+    if _is_test_path(p):
         return False
     return True
 

@@ -29,6 +29,24 @@ def test_is_documentable_excludes_instruction_and_meta_docs():
     assert iw.is_documentable("commands/y.md") is False
 
 
+def test_is_documentable_excludes_tests():
+    # Test directories anywhere in the path.
+    assert iw.is_documentable("tests/test_x.py") is False
+    assert iw.is_documentable("tests/api/test_mcp_auth.py") is False
+    assert iw.is_documentable("src/__tests__/foo.ts") is False
+    assert iw.is_documentable("pkg/spec/thing.js") is False
+    # Test-shaped basenames in any directory.
+    assert iw.is_documentable("src/test_foo.py") is False
+    assert iw.is_documentable("pkg/foo_test.py") is False
+    assert iw.is_documentable("conftest.py") is False
+    assert iw.is_documentable("ui/button.test.ts") is False
+    assert iw.is_documentable("ui/button.spec.js") is False
+    # Non-test sources stay documentable (no false exclusion).
+    assert iw.is_documentable("src/paw/main.py") is True
+    assert iw.is_documentable("lib/iwiki/detect.sh") is True
+    assert iw.is_documentable("latest/release.py") is True   # 'latest' != 'test' segment
+
+
 def test_decide_nag_bounds_stable_sig():
     # Fresh session, stable sig: "ask" exactly MAX_ASK times (the first ask is
     # counted), then "yield" on every subsequent call — and it never resets.
