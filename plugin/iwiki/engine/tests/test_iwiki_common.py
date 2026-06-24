@@ -55,7 +55,7 @@ def test_source_page_map_last_record_wins(tmp_path, monkeypatch):
         {"source": "b.py", "page": "docs/wiki/b.md"},  # no "op" → still counts
         {"op": "ingest", "page": "docs/wiki/x.md"},     # no source → skipped
         {"op": "ingest", "source": "c.py"},             # no page → skipped
-        "",                                             # blank line tolerated
+        "",                                             # JSON empty-string / non-dict record skipped
     ])
     assert iwiki_common.source_page_map() == {
         "a.py": "docs/wiki/new.md", "b.py": "docs/wiki/b.md"}

@@ -94,7 +94,7 @@ def test_render_pending_listing_groups_by_page():
         # src/new.py: absent → "new, needs a page"
     }
     out = iw.render_pending_listing(pending, page_map)
-    # 3 sources of mcp.md collapse to ONE line listing all three.
+    # The 2 sources of mcp.md collapse to ONE line listing both.
     assert ("  - docs/wiki/mcp.md is stale — re-run iwiki-ingest "
             "(covers: src/mcp/server.py, src/mcp/tools.py)") in out
     assert "docs/wiki/main.md is stale" in out
