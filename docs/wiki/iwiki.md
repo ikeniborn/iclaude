@@ -39,7 +39,7 @@ Wiki pages are `##`-only with a mandatory first `## Overview` section. The chunk
 
 `validate_page()` returns findings `{type, severity, text}` in two tiers. **Blocking** (`severity: block`): `deep_heading` (a `###`-or-deeper heading) and `pre_h2_text` (indexable text before the first `##` other than a single `# H1`). **Advisory** (`severity: advisory`, report-only): `missing_overview`, `missing_lead`, `long_lead`. `lint` folds these into its `sections` array (each carrying the `page`); the config-free `validate` subcommand prints them for the whole wiki without an embedding call.
 
-The blocking subset is mirrored inline by the **`iwiki-validate.py` PreToolUse hook** (see [[iwiki#Automation Hooks]]) so edits are checked without spawning the engine. Authoring rules live in the `iwiki-ingest` and `iwiki-init` skills.
+The blocking subset is mirrored inline by the **`iwiki-validate.py` PreToolUse hook** (see [[iwiki#Automation Hooks]]) so edits are checked without spawning the engine. Authoring rules live in the `iwiki-ingest` and `iwiki-init` skills. Beyond the enforced structure, `iwiki-ingest` mandates soft, description-sharpening conventions: each section leads with **what it covers and why** (intent, not just mechanics), code symbols (functions, paths, flags, commands, config keys) go in backticks, and headings prefer a recommended vocabulary (`## Purpose`, `## Interface` / `## API`, `## Dependencies`, `## Data flow`, `## Errors`, `## Usage`) over ad-hoc names. These are advisory — neither validated nor blocked.
 
 ## Plugin Registration
 

@@ -37,8 +37,18 @@ You do NOT need iclaude's `lib/` — only the plugin and `IWIKI_LLM_*` config.
      of writing the page (no separate summarizer). The engine reuses the Overview body
      to give every other section's vectors whole-article context, and the Overview
      section itself is NOT indexed as its own searchable section.
-   - One `##` section per concept; lead each section with a ≤250-char paragraph (it
-     doubles as the section summary that binds the section's chunks).
+   - One `##` section per concept; lead each section with a ≤250-char paragraph stating
+     **what the section covers and why it matters** (intent, not just mechanics) — a wiki
+     documents the *what and the why*. This lead doubles as the section summary that binds
+     the section's chunks.
+   - Prefer a **standard section name** where one fits, instead of an ad-hoc heading — a
+     familiar name is a signal, a creative name is noise. Pick the applicable subset;
+     never force-fit a section that does not apply: `## Purpose` (why it exists),
+     `## Interface` / `## API` (public surface — functions, types, flags), `## Dependencies`,
+     `## Data flow`, `## Errors` (failure modes), `## Usage` (how to invoke).
+   - Wrap every code symbol — function name, file path, CLI flag, command, config key —
+     in backticks, never bare prose. Precise references read cleanly and tokenize cleanly
+     for the embedding index.
    Cross-link related pages with `[[file#Heading]]`.
 3. Write/update the page (Write/Edit tool). Show the user the diff.
 4. Refresh the index (run from the current project root):
