@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json as _json
 import os
 import sys
 
@@ -31,3 +32,64 @@ def test_read_session_silent_when_absent(tmp_path, monkeypatch):
         out = iwiki_common.read_session()
     assert out["session_id"] == ""
     assert err.getvalue() == ""   # absent state is normal — stay quiet
+
+
+def _setup_wiki(tmp_path, monkeypatch):
+    """A project tree with docs/wiki/.iwiki/log.jsonl; cwd set to it."""
+    monkeypatch.chdir(tmp_path)
+    log = tmp_path / "docs" / "wiki" / ".iwiki" / "log.jsonl"
+    log.parent.mkdir(parents=True)
+    return log
+
+
+def _write_log(log, records):
+    log.write_text(
+        "".join(_json.dumps(r) + "\n" for r in records), encoding="utf-8")
+
+
+def test_source_page_map_last_record_wins(tmp_path, monkeypatch):
+    log = _setup_wiki(tmp_path, monkeypatch)
+    _write_log(log, [
+        {"op": "ingest", "source": "a.py", "page": "docs/wiki/old.md"},
+        {"op": "ingest", "source": "a.py", "page": "docs/wiki/new.md"},
+        {"source": "b.py", "page": "docs/wiki/b.md"},  # no "op" → still counts
+        {"op": "ingest", "page": "docs/wiki/x.md"},     # no source → skipped
+        {"op": "ingest", "source": "c.py"},             # no page → skipped
+        "",                                             # blank line tolerated
+    ])
+    assert iwiki_common.source_page_map() == {
+        "a.py": "docs/wiki/new.md", "b.py": "docs/wiki/b.md"}
+
+
+def test_source_page_map_missing_or_corrupt_log(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert iwiki_common.source_page_map() == {}          # no log at all
+    log = _setup_wiki(tmp_path, monkeypatch)
+    log.write_text("{not json\n", encoding="utf-8")
+    assert iwiki_common.source_page_map() == {}           # corrupt → {}
+
+
+def test_covered_sources_freshness(tmp_path, monkeypatch):
+    log = _setup_wiki(tmp_path, monkeypatch)
+    src = tmp_path / "a.py"
+    page = tmp_path / "docs" / "wiki" / "a.md"
+    src.write_text("x", encoding="utf-8")
+    page.write_text("y", encoding="utf-8")
+    _write_log(log, [{"op": "ingest", "source": "a.py", "page": "docs/wiki/a.md"}])
+
+    # page newer than source → covered
+    os.utime("a.py", (1000, 1000))
+    os.utime("docs/wiki/a.md", (2000, 2000))
+    assert iwiki_common.covered_sources() == {"a.py"}
+
+    # source edited after ingest (source newer) → not covered (re-staled)
+    os.utime("a.py", (3000, 3000))
+    assert iwiki_common.covered_sources() == set()
+
+
+def test_covered_sources_missing_page_on_disk(tmp_path, monkeypatch):
+    log = _setup_wiki(tmp_path, monkeypatch)
+    (tmp_path / "a.py").write_text("x", encoding="utf-8")
+    # log references a page that does not exist on disk
+    _write_log(log, [{"op": "ingest", "source": "a.py", "page": "docs/wiki/gone.md"}])
+    assert iwiki_common.covered_sources() == set()

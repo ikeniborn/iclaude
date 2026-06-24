@@ -24,6 +24,7 @@ import sys
 
 WIKI_DIR = "docs/wiki"
 INDEX_REL = os.path.join(WIKI_DIR, ".iwiki", "index.jsonl")
+LOG_REL = os.path.join(WIKI_DIR, ".iwiki", "log.jsonl")
 
 # Changed paths under these prefixes are NOT source for the wiki:
 #   the wiki itself, the IDD/SDD artifact chain, command artifacts (excluded
@@ -204,6 +205,51 @@ def committed_sources(since: str) -> list[str]:
         return []
     raw = _git(["diff", "--name-only", f"{since}..HEAD"])
     return sorted(p for p in raw if is_documentable(p) and os.path.exists(p))
+
+
+def source_page_map() -> dict[str, str]:
+    """Map each source → its most recent wiki page from the ingest log
+    (docs/wiki/.iwiki/log.jsonl). Last record wins per source. Same record
+    predicate as the engine's lint._stale: any record carrying both `source`
+    and `page` counts (no `op` filter). Fail-soft → {}."""
+    out: dict[str, str] = {}
+    try:
+        with open(LOG_REL, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except Exception:
+        return out
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+            if not isinstance(rec, dict):
+                continue
+        except Exception:
+            continue
+        src, page = rec.get("source"), rec.get("page")
+        if src and page:
+            out[src] = page          # last record wins
+    return out
+
+
+def covered_sources() -> set[str]:
+    """Sources already covered by a fresh wiki page: the source's most recent
+    page (per source_page_map) exists on disk and is at least as new as the
+    source. The freshness test mtime(page) >= mtime(source) is the exact
+    inverse of lint._stale, so for any (source, page) pair this calls "covered"
+    exactly the pairs lint would not call stale. Fail-soft → empty set (subtract
+    nothing → safe over-nag, bounded by MAX_ASK)."""
+    covered: set[str] = set()
+    for src, page in source_page_map().items():
+        try:
+            if os.path.isfile(src) and os.path.isfile(page) \
+                    and os.path.getmtime(page) >= os.path.getmtime(src):
+                covered.add(src)
+        except Exception:
+            continue
+    return covered
 
 
 def wiki_pages() -> list[str]:
