@@ -79,13 +79,13 @@ Test: every changed line must trace directly to the user's request.
 **Don't commit to main. Develop on a branch. Merge back only via PR.**
 
 - Never commit work directly to the main branch (`master` / `main` / `prod`), and never merge or push to it directly — close every branch through a PR into main.
-- **Branch naming is mandatory: `dev/<name>`, created from the up-to-date main branch.** Words inside `<name>` are joined with `-` (e.g. `dev/fix-phase1`). No exceptions.
-- **If the project has long-lived branches beyond `master` / `main` / `prod`** (e.g. `dev`, `develop`, `staging`, `release/*`), always ask first — which branch to base the new `dev/*` off, and which branch to open the PR against. Don't assume.
-- **When creating a `dev/*` branch, always ask first: create a worktree for it now?** This step is mandatory — never decide silently.
-  - **Yes** → create the branch inside a new worktree `wk/<branch>` and do all the work there.
+- **Branch naming is mandatory: `dev-<name>`, created from the up-to-date main branch.** Words inside `<name>` are joined with `-` (e.g. `dev-fix-phase1`). No exceptions.
+- **If the project has long-lived branches beyond `master` / `main` / `prod`** (e.g. `dev`, `develop`, `staging`, `release/*`), always ask first — which branch to base the new `dev-*` off, and which branch to open the PR against. Don't assume.
+- **When creating a `dev-*` branch, always ask first: create a worktree for it now?** This step is mandatory — never decide silently.
+  - **Yes** → create the branch inside a new worktree `wk-<branch>` and do all the work there.
   - **No** → create the branch in place and keep working in the main worktree.
 - For parallel work on several tasks, create one git worktree per branch.
-- **Worktree naming is mandatory: `wk/<branch>`** — the literal `wk/` prefix followed by the full branch name (segments stay split by `/`). Example: branch `dev/fix-phase1` → worktree `wk/dev/fix-phase1`.
+- **Worktree naming is mandatory: `wk-<branch>`** — the literal `wk-` prefix followed by the full branch name. Example: branch `dev-fix-phase1` → worktree `wk-dev-fix-phase1`.
 - After the PR is created, remove the branch's worktree — don't leave stale worktrees around.
 
 Use **@skill:git-workflow** for commit messages and PR creation.

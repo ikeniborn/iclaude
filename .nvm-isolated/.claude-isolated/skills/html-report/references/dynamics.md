@@ -41,3 +41,25 @@ as informative, not distracting.
 .rpt-target:target{ outline:2px solid var(--accent); animation:flash .8s ease-out; }
 @keyframes flash{ from{ background:var(--accent); } to{ background:transparent; } }
 ```
+
+## Tabbed panes — radio group + `:has`
+
+Zero-JS tabs: a radio group (one shared `name`, so exactly one is `checked`) plus
+`body:has(#tab-…:checked) #pane-…{display:block}` toggles which pane shows. Same
+checkbox-hack as the theme toggle (`themes.md`); the two groups compose without
+interfering.
+
+```html
+<input type="radio" name="tabs" id="tab-a" hidden checked>
+<input type="radio" name="tabs" id="tab-b" hidden>
+<nav><label for="tab-a">A</label><label for="tab-b">B</label></nav>
+<section class="tab-pane" id="pane-a">…</section>
+<section class="tab-pane" id="pane-b">…</section>
+```
+```css
+.tab-pane{ display:none; }
+body:has(#tab-a:checked) #pane-a, body:has(#tab-b:checked) #pane-b{ display:block; }
+```
+
+Full IDD→SDD chain-report merge contract (boundary markers, per-tab update,
+placeholder) → `chain-report.md`.

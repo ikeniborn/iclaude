@@ -137,8 +137,15 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
    - **Stop Rules** — список критериев `Done when:` как условий завершения процесса.
 3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
 
+**Определи `<topic>` (общий ключ цепи — все 4 команды `check-*` должны прийти к одному файлу).** Возьми basename файла intent doc без `.md`, затем:
+1. срежь префикс даты `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
+2. срежь суффикс стадии — `-intent`, `-design` или `-plan` — **если присутствует** (на плане `-plan` опционален: `…-foo.md` и `…-foo-plan.md` дают один `<topic> = foo`);
+3. остаток — `<topic>`.
+**Fallback:** если basename не распознан (нет даты/суффикса по шаблону) — `<topic>` = basename без `.md` как есть. Дату в `<topic>` НЕ включать (стадии цепи могут иметь разные даты).
+
 Параметры артефакта (передай навыку явно при вызове):
-- **Output path (явный аргумент):** `docs/superpowers/reports/intents/<basename intent doc без .md>-check.html` (например `2026-06-17-foo-intent-check.html`). Это caller-supplied путь — навык пишет туда (Full-зона), создаёт каталог `docs/superpowers/reports/intents/` при отсутствии, перезаписывает без подтверждения.
+- **Режим:** `mode: chain`, `tab: intent`. Навык обновит ТОЛЬКО вкладку `intent`; остальные 3 вкладки (Intent / Spec / Plan / Result) сохранит дословно. Если файла нет — создаст все 4 (непройденные — с плейсхолдером «Этап ещё не проверен»).
+- **Output path (явный аргумент):** `docs/superpowers/reports/<topic>-results.html` — единый отчёт цепи, без подкаталога и без префикса даты. Это caller-supplied путь (Full-зона): навык создаёт каталог `docs/superpowers/reports/` при отсутствии; первый запуск создаёт файл с 4 вкладками, повторный — сливает только свою вкладку.
 - **Данные — inline:** три блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
 - Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
 
