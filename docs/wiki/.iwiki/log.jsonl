@@ -70,3 +70,5 @@
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/hooks/cache-report.py","page":"docs/wiki/statusline.md","date":"2026-06-23"}
 {"op":"ingest","source":"plugin/iwiki/hooks/hooks.json","page":"docs/wiki/iwiki.md","date":"2026-06-23"}
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/hooks/caveman-stats.js","page":"docs/wiki/caveman.md","date":"2026-06-23"}
+{"op":"ingest","source":"plugin/iwiki/hooks/iwiki-sync.py","page":"docs/wiki/iwiki.md","date":"2026-06-24"}
+{"op":"ingest","source":"plugin/iwiki/hooks/iwiki_common.py","page":"docs/wiki/iwiki.md","date":"2026-06-24"}

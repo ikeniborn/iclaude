@@ -17,12 +17,14 @@ import glob
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 
 WIKI_DIR = "docs/wiki"
 INDEX_REL = os.path.join(WIKI_DIR, ".iwiki", "index.jsonl")
+LOG_REL = os.path.join(WIKI_DIR, ".iwiki", "log.jsonl")
 
 # Changed paths under these prefixes are NOT source for the wiki:
 #   the wiki itself, the IDD/SDD artifact chain, command artifacts (excluded
@@ -42,6 +44,21 @@ EXCLUDE_BASENAMES = ("CLAUDE.md", "AGENTS.md", "GEMINI.md")
 # Project meta-docs are not wiki source at the repo ROOT (a subdir README.md may
 # still document a component, so it stays documentable).
 EXCLUDE_ROOT_DOCS = ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE.md")
+
+# Test files are never wiki source — iwiki generates no page for tests, so a
+# changed test could never become "covered" and would nag forever.
+_TEST_SEGMENTS = {"tests", "test", "__tests__", "spec"}
+_TEST_BASENAME_RE = re.compile(
+    r"^(conftest\.py|test_.*\.py|.*_test\.py|.*\.test\.[jt]s|.*\.spec\.[jt]s)$")
+
+
+def _is_test_path(p: str) -> bool:
+    """A repo-relative path that is a test file (test dir segment, or a
+    conventional test basename) — never wiki source."""
+    parts = p.split("/")
+    if any(seg in _TEST_SEGMENTS for seg in parts[:-1]):   # any dir segment
+        return True
+    return bool(_TEST_BASENAME_RE.match(parts[-1]))
 
 
 def cd_project() -> None:
@@ -161,6 +178,8 @@ def is_documentable(p: str) -> bool:
         return False
     if "/" not in p and base in EXCLUDE_ROOT_DOCS:   # repo-root only (git uses '/')
         return False
+    if _is_test_path(p):
+        return False
     return True
 
 
@@ -186,6 +205,51 @@ def committed_sources(since: str) -> list[str]:
         return []
     raw = _git(["diff", "--name-only", f"{since}..HEAD"])
     return sorted(p for p in raw if is_documentable(p) and os.path.exists(p))
+
+
+def source_page_map() -> dict[str, str]:
+    """Map each source → its most recent wiki page from the ingest log
+    (docs/wiki/.iwiki/log.jsonl). Last record wins per source. Same record
+    predicate as the engine's lint._stale: any record carrying both `source`
+    and `page` counts (no `op` filter). Fail-soft → {}."""
+    out: dict[str, str] = {}
+    try:
+        with open(LOG_REL, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except Exception:
+        return out
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+            if not isinstance(rec, dict):
+                continue
+        except Exception:
+            continue
+        src, page = rec.get("source"), rec.get("page")
+        if src and page:
+            out[src] = page          # last record wins
+    return out
+
+
+def covered_sources() -> set[str]:
+    """Sources already covered by a fresh wiki page: the source's most recent
+    page (per source_page_map) exists on disk and is at least as new as the
+    source. The freshness test mtime(page) >= mtime(source) is the exact
+    inverse of lint._stale, so for any (source, page) pair this calls "covered"
+    exactly the pairs lint would not call stale. Fail-soft → empty set (subtract
+    nothing → safe over-nag, bounded by MAX_ASK)."""
+    covered: set[str] = set()
+    for src, page in source_page_map().items():
+        try:
+            if os.path.isfile(src) and os.path.isfile(page) \
+                    and os.path.getmtime(page) >= os.path.getmtime(src):
+                covered.add(src)
+        except Exception:
+            continue
+    return covered
 
 
 def wiki_pages() -> list[str]:
@@ -289,3 +353,31 @@ def decide_nag(sess: dict, sig: str, max_ask: int) -> tuple[str, dict]:
         sess["asked_sig"] = sig
         sess["count"] = 1
     return ("ask", sess)
+
+
+def render_pending_listing(pending: list[str], page_map: dict[str, str],
+                           cap: int = 12) -> str:
+    """Render the Stop-nag body, grouping pending sources by their target wiki
+    page so N sources of one page read as one action. Sources with a known page
+    → one line per page; sources with no page yet → one 'new' line. At most
+    `cap` lines, with an '…and N more' overflow tail."""
+    by_page: dict[str, list[str]] = {}
+    new: list[str] = []
+    for p in pending:
+        page = page_map.get(p)
+        if page:
+            by_page.setdefault(page, []).append(p)
+        else:
+            new.append(p)
+    lines: list[str] = []
+    for page in sorted(by_page):
+        srcs = ", ".join(sorted(by_page[page]))
+        lines.append(
+            f"  - {page} is stale — re-run iwiki-ingest (covers: {srcs})")
+    if new:
+        lines.append("  - new, needs a wiki page — run iwiki-ingest: "
+                     + ", ".join(sorted(new)))
+    shown = lines[:cap]
+    more = "" if len(lines) == len(shown) \
+        else f"\n  …and {len(lines) - len(shown)} more"
+    return "\n".join(shown) + more

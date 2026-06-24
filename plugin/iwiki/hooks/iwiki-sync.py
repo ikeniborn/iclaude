@@ -51,14 +51,17 @@ REINDEX_TIMEOUT = 90.0
 def _pending(sess: dict) -> list[str]:
     """Documentable sources this session changed and that still exist:
     (working ∪ committed) minus pre-existing WIP, plus the agent's explicit
-    edits (so edits to a WIP file are still caught)."""
+    edits — then minus sources already covered by a fresh wiki page (the nag
+    clears when the doc work is actually done, not when MAX_ASK runs out)."""
     wip = set(sess.get("wip", []))
     working = set(iw.changed_sources())
     committed = set(iw.committed_sources(sess.get("head", "")))
     universe = working | committed
     git_delta = universe - wip
     edits_pending = set(sess.get("edits", [])) & universe
-    return sorted(p for p in (git_delta | edits_pending) if os.path.exists(p))
+    covered = iw.covered_sources()
+    return sorted(p for p in (git_delta | edits_pending)
+                  if os.path.exists(p) and p not in covered)
 
 
 def main() -> int:
@@ -96,16 +99,13 @@ def main() -> int:
         if action == "yield":
             return 0
 
-        shown = pending[:12]
-        more = "" if len(pending) == len(shown) else \
-            f"\n  …and {len(pending) - len(shown)} more"
-        listing = "\n".join(f"  - {p}" for p in shown) + more
+        listing = iw.render_pending_listing(pending, iw.source_page_map())
         reason = (
             "[iwiki] Source changed this turn — update the wiki before finishing "
             "(docs/wiki/ must stay current):\n" + listing + "\n"
-            "For each changed source, run the iwiki:iwiki-ingest skill to "
-            "regenerate/update its docs/wiki page, then /iwiki-lint. Skip files "
-            "with no documentable behaviour change (pure formatting/typos)."
+            "Re-run the iwiki:iwiki-ingest skill for each stale page (or to create "
+            "a missing one), then /iwiki-lint. Skip files with no documentable "
+            "behaviour change (pure formatting/typos)."
         )
         print(json.dumps({"decision": "block", "reason": reason}))
         return 0
