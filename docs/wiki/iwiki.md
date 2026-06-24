@@ -50,6 +50,7 @@ The blocking subset is mirrored inline by the **`iwiki-validate.py` PreToolUse h
 - Adds the marketplace with `plugin marketplace add "$SCRIPT_DIR" --scope user` (unless `iclaude` already appears in `plugin marketplace list`).
 - Installs with `plugin install iwiki@iclaude --scope user` (unless `iwiki@iclaude` already appears in `plugin list`).
 - When the plugin is already present, refreshes it instead: `plugin marketplace update iclaude` + `plugin update iwiki@iclaude`, so a bumped plugin version (e.g. new bundled hooks) lands in the plugin cache. Restart required to apply.
+- **Version lockstep is load-bearing.** The refresh keys off the version, and the cache lives at `cache/iclaude/iwiki/<version>/`, so a content change that does NOT bump the version (e.g. a new hook script committed under the same `0.6.0`) never resyncs — other projects keep running the frozen snapshot. Two version fields must therefore agree: the plugin's own `plugin/iwiki/.claude-plugin/plugin.json` and its marketplace entry in `.claude-plugin/marketplace.json`. If the marketplace version trails the plugin's (it once froze at `0.4.1` while the plugin reached `0.6.0`), `plugin update` sees nothing newer and the cache can never refresh. `scripts/check-plugin-version-sync.sh` (wired into `.githooks/pre-push`) blocks any push where the two drift.
 - **User scope** means the plugin is enabled in every project, not just iclaude: the skills run the bundled engine (`$CLAUDE_PLUGIN_ROOT/engine`) against each project's own `docs/wiki/`.
 
 ## Automation Hooks

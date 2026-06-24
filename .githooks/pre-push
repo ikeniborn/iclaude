@@ -2,6 +2,12 @@
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 VERSION_FILE="$REPO_ROOT/VERSION"
 
+# Block the push if any marketplace plugin version drifts from its plugin.json
+# (drift freezes the user-scope plugin cache; see the script header).
+if [[ -x "$REPO_ROOT/scripts/check-plugin-version-sync.sh" ]]; then
+  "$REPO_ROOT/scripts/check-plugin-version-sync.sh" || exit 1
+fi
+
 bump_patch=0
 
 while read local_ref local_sha remote_ref remote_sha; do
