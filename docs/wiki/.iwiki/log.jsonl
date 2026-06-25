@@ -78,3 +78,4 @@
 {"op":"ingest","source":".nvm-isolated/.claude-isolated/skills/html-report/references/chain-report.md","page":"docs/wiki/html-report.md","date":"2026-06-25","note":"chain merge contract documented in html-report.md Chain Report section"}
 {"op":"ingest","source":"plugin/iwiki/skills/iwiki-ingest/SKILL.md","page":"docs/wiki/iwiki.md","date":"2026-06-25"}
 {"op":"ingest","source":"plugin/iwiki/README.md","page":"docs/wiki/iwiki.md","date":"2026-06-25","note":".iwikiignore scope filter"}
+{"op":"ingest","source":"plugin/iwiki/hooks/iwiki_common.py","page":"docs/wiki/iwiki.md","date":"2026-06-25","note":".iwikiignore hooks + seed + plugin bump"}

@@ -74,25 +74,34 @@ All optional. Defaults are sensible; change only if you have a reason.
 
 **What gets documented (scope)**
 
-By default the whole project's wiki pages are indexed. Drop pages with a
-`.iwikiignore` file in the project root — same syntax as `.gitignore`:
+By default the whole project is in scope. A single `.iwikiignore` file in the
+project root narrows it — same syntax as `.gitignore`, applied in **two** places:
+
+- **Index**: drops matching `docs/wiki/*.md` pages from the embedding index.
+- **Hooks**: drops matching source files from the "needs a wiki page" nag, so a
+  path you exclude from the index also stops pinning the Stop-hook reminder.
+
+Both match against repo-relative paths. Rules:
 
 - One pattern per line; `#` comments and blank lines are ignored.
 - Real gitignore semantics (via `pathspec`): a bare name matches at any depth,
   a leading `/` anchors to the root, a trailing `/` matches a directory subtree,
   `!` re-includes, and `**` works as in `.gitignore`.
-- Patterns match each generated page's path (e.g. `docs/wiki/command.md`), and
-  the file is read relative to the engine's working directory (the project root
-  it runs in).
+- The file is read relative to the engine's / hook's working directory (the
+  project root). The built-in hard excludes (the wiki itself, tests,
+  `CLAUDE.md`/`AGENTS.md`, repo-root `README.md`, …) always apply on top.
 
 ```gitignore
 # .iwikiignore
-command.md            # drop docs/wiki/command.md at any depth
-docs/wiki/archive/    # drop a subtree
-!docs/wiki/archive/keep.md
+command.md            # drop docs/wiki/command.md (index) at any depth
+experiments/          # ignore a source subtree (no nag, not indexed)
+!docs/wiki/keep.md    # re-include after a broader ignore
 ```
 
-See `.iwikiignore.example` in the repo root for a fuller template.
+A commented template is **seeded automatically** at the project root the first
+time a session starts in a project that has a `docs/wiki/` (idempotent — an
+existing `.iwikiignore` is never touched). See `.iwikiignore.example` for a
+fuller reference.
 
 **Search quality**
 
@@ -141,3 +150,17 @@ export IWIKI_LLM_KEY="sk-..."
 /iwiki-init               # build the wiki once
 /iwiki-query "how does X work?"
 ```
+
+## Versioning
+
+The plugin version lives in two files kept in lockstep — `.claude-plugin/plugin.json`
+and the `iwiki` entry in the repo-root `.claude-plugin/marketplace.json`. They
+**must** match: Claude Code caches user-scope plugins by version, so a drift would
+freeze the cache and stop hook/skill fixes from reaching other projects (the
+`scripts/check-plugin-version-sync.sh` pre-push guard blocks a push on drift).
+
+- **Patch** — bumped automatically. On a push to `dev`, `.githooks/pre-push` runs
+  `scripts/bump-changed-plugins.py`, which bumps the patch of every plugin whose
+  `source` files changed in that push (both files, in lockstep). The bump lands
+  as a local `[skip ci]` commit that ships on the next push.
+- **Minor / major** — bumped manually on request: edit both files together.

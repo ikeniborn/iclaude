@@ -126,6 +126,102 @@ def engine_dir() -> str | None:
     return None
 
 
+IGNORE_FILE = ".iwikiignore"
+
+_PS_SENTINEL: object = object()
+_pathspec_mod: object = _PS_SENTINEL
+
+
+def _pathspec():
+    """Import `pathspec` for the ignore matcher. Hooks run under a bare
+    `python3` that lacks it, so fall back to the engine venv's site-packages
+    (the engine declares pathspec as a dependency). Cached per process; None
+    when unavailable — callers then skip ignore filtering and keep the
+    hard-coded excludes."""
+    global _pathspec_mod
+    if _pathspec_mod is not _PS_SENTINEL:
+        return _pathspec_mod
+    try:
+        import pathspec  # noqa: PLC0415
+        _pathspec_mod = pathspec
+        return _pathspec_mod
+    except Exception:
+        pass
+    _pathspec_mod = None
+    eng = engine_dir()
+    if eng:
+        for sp in glob.glob(os.path.join(eng, ".venv", "lib", "python3.*",
+                                         "site-packages")):
+            if sp not in sys.path:
+                sys.path.append(sp)
+        try:
+            import pathspec  # noqa: PLC0415
+            _pathspec_mod = pathspec
+        except Exception:
+            _pathspec_mod = None
+    return _pathspec_mod
+
+
+_ignore_sentinel: object = object()
+_ignore_spec: object = _ignore_sentinel
+
+
+def source_ignore():
+    """Compiled `.iwikiignore` (gitignore semantics, read at the project root)
+    applied to repo-relative SOURCE paths, so a path the user excludes from the
+    index also stops pinning the 'needs a wiki page' nag. Cached per process.
+    None when pathspec is unavailable, the file is absent, or it holds only
+    comments/blanks. Mirrors `iwiki_engine.config._load_ignore` — keep the
+    'gitignore' style and the include-check in sync."""
+    global _ignore_spec
+    if _ignore_spec is not _ignore_sentinel:
+        return _ignore_spec
+    _ignore_spec = None
+    ps = _pathspec()
+    if ps is None or not os.path.exists(IGNORE_FILE):
+        return _ignore_spec
+    try:
+        with open(IGNORE_FILE, encoding="utf-8") as fh:
+            spec = ps.PathSpec.from_lines("gitignore", fh)
+        if any(p.include is not None for p in spec.patterns):
+            _ignore_spec = spec
+    except Exception:
+        _ignore_spec = None
+    return _ignore_spec
+
+
+_IGNORE_TEMPLATE = """\
+# .iwikiignore — exclude paths from iwiki, using .gitignore syntax.
+#
+# Applies in two places, both matched against repo-relative paths:
+#   - index: skips matching docs/wiki/*.md pages from the embedding index.
+#   - hooks: skips matching source files from the "needs a wiki page" nag.
+#
+# By default every line here is a comment, so the whole project is indexed and
+# every source stays documentable. Uncomment / edit to start excluding.
+#
+# Examples:
+#   docs/wiki/command.md     # drop one generated page from the index
+#   experiments/             # ignore a source subtree (no nag, not indexed)
+#   *.generated.md           # ignore by glob, at any depth
+#   !docs/wiki/keep.md       # re-include after a broader ignore
+"""
+
+
+def seed_ignore() -> bool:
+    """Write a commented `.iwikiignore` template at the project root when none
+    exists. Idempotent — the exclusive-create open never touches an existing
+    file (the user's patterns are preserved). Returns True only when written."""
+    try:
+        with open(IGNORE_FILE, "x", encoding="utf-8") as fh:
+            fh.write(_IGNORE_TEMPLATE)
+        return True
+    except FileExistsError:
+        return False
+    except Exception:
+        return False
+
+
 def wiki_present() -> bool:
     return os.path.isdir(WIKI_DIR)
 
@@ -179,6 +275,9 @@ def is_documentable(p: str) -> bool:
     if "/" not in p and base in EXCLUDE_ROOT_DOCS:   # repo-root only (git uses '/')
         return False
     if _is_test_path(p):
+        return False
+    spec = source_ignore()                           # user's .iwikiignore, last word
+    if spec is not None and spec.match_file(p):
         return False
     return True
 

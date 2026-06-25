@@ -9,6 +9,8 @@ if [[ -x "$REPO_ROOT/scripts/check-plugin-version-sync.sh" ]]; then
 fi
 
 bump_patch=0
+dev_local_sha=""
+dev_remote_sha=""
 
 while read local_ref local_sha remote_ref remote_sha; do
   if [[ "$remote_ref" == "refs/heads/master" ]]; then
@@ -17,17 +19,45 @@ while read local_ref local_sha remote_ref remote_sha; do
   fi
   if [[ "$remote_ref" == "refs/heads/dev" ]]; then
     bump_patch=1
+    dev_local_sha="$local_sha"
+    dev_remote_sha="$remote_sha"
   fi
 done
 
-if [[ "$bump_patch" == "1" ]] && [[ -f "$VERSION_FILE" ]]; then
-  version="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
-  major="${version%%.*}"; rest="${version#*.}"
-  minor="${rest%%.*}"; patch="${rest#*.}"
-  new_patch=$((patch + 1))
-  new_version="${major}.${minor}.${new_patch}"
-  echo "$new_version" > "$VERSION_FILE"
-  git -C "$REPO_ROOT" add "$VERSION_FILE"
-  git -C "$REPO_ROOT" commit --no-verify -m "chore(version): bump patch to ${new_version} [skip ci]"
-  echo "Version bumped: ${version} → ${new_version}"
+if [[ "$bump_patch" == "1" ]]; then
+  staged=0
+  body=""
+
+  # Project-wide patch bump (VERSION).
+  if [[ -f "$VERSION_FILE" ]]; then
+    version="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
+    major="${version%%.*}"; rest="${version#*.}"
+    minor="${rest%%.*}"; patch="${rest#*.}"
+    new_patch=$((patch + 1))
+    new_version="${major}.${minor}.${new_patch}"
+    echo "$new_version" > "$VERSION_FILE"
+    git -C "$REPO_ROOT" add "$VERSION_FILE"
+    staged=1
+    echo "Version bumped: ${version} → ${new_version}"
+  fi
+
+  # Per-plugin patch bump: any marketplace plugin whose source changed in this
+  # push gets plugin.json + marketplace.json bumped in lockstep (minor/major
+  # stay manual). The bump commit lands locally and ships on the NEXT push.
+  if [[ -f "$REPO_ROOT/scripts/bump-changed-plugins.py" ]]; then
+    bumped="$(python3 "$REPO_ROOT/scripts/bump-changed-plugins.py" \
+              "$REPO_ROOT" "$dev_remote_sha" "$dev_local_sha" 2>/dev/null)"
+    if [[ -n "$bumped" ]]; then
+      staged=1
+      while IFS= read -r line; do
+        [[ -n "$line" ]] && { echo "Plugin bumped: ${line}"; body+="- ${line}"$'\n'; }
+      done <<< "$bumped"
+    fi
+  fi
+
+  if [[ "$staged" == "1" ]]; then
+    msg="chore(version): bump patch to ${new_version:-VERSION} [skip ci]"
+    [[ -n "$body" ]] && msg+=$'\n\n'"Plugin patch bumps:"$'\n'"${body}"
+    git -C "$REPO_ROOT" commit --no-verify -m "$msg"
+  fi
 fi
