@@ -1,7 +1,6 @@
 """iwiki-engine CLI: index | search | related | status."""
 from __future__ import annotations
 import argparse
-import fnmatch
 import glob
 import json
 import os
@@ -28,9 +27,8 @@ def cmd_index(cfg: Config, wiki_dir: str) -> int:
     chunks = []
     files = sorted(glob.glob(os.path.join(wiki_dir, "**", "*.md"), recursive=True))
     files = [f for f in files if "/.iwiki/" not in f]
-    if cfg.include:
-        files = [f for f in files if any(fnmatch.fnmatch(f, g) for g in cfg.include)]
-    files = [f for f in files if not any(fnmatch.fnmatch(f, g) for g in cfg.exclude)]
+    if cfg.ignore is not None:
+        files = [f for f in files if not cfg.ignore.match_file(f)]
     for md in files:
         content = open(md, encoding="utf-8").read()
         chunks.extend(chunk_markdown(md, content, cfg.chunk_size,

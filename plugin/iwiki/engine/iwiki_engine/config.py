@@ -3,18 +3,27 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from pathspec import PathSpec
+
 
 class ConfigError(RuntimeError):
     """Raised when required API configuration is absent (intent stop rule)."""
 
 
-def _load_scope(filename: str, env_var: str) -> list[str]:
-    """Glob patterns from a comma-separated env var plus a gitignore-style file."""
-    pats = [p.strip() for p in os.environ.get(env_var, "").split(",") if p.strip()]
-    if os.path.exists(filename):
-        with open(filename, encoding="utf-8") as fh:
-            pats += [ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")]
-    return pats
+def _load_ignore(filename: str) -> PathSpec | None:
+    """Compile a gitignore-style ignore file into a PathSpec.
+
+    Read relative to the engine's working directory (the project root it runs in).
+    Real gitignore semantics via the 'gitignore' style: '/' anchoring, '!'
+    negation, '**', trailing-slash directories, and basename matching. Absent
+    file or no patterns -> None (index the whole project)."""
+    if not os.path.exists(filename):
+        return None
+    with open(filename, encoding="utf-8") as fh:
+        spec = PathSpec.from_lines("gitignore", fh)
+    # Comment/blank-only lines compile to no-op patterns (include is None);
+    # treat a file with no real patterns as "no ignore" to skip the filter pass.
+    return spec if any(p.include is not None for p in spec.patterns) else None
 
 
 @dataclass(frozen=True)
@@ -29,8 +38,7 @@ class Config:
     top_k: int
     score_threshold: float
     graph_depth: int
-    include: list[str]        # glob patterns; empty = include everything
-    exclude: list[str]        # glob patterns applied after include
+    ignore: PathSpec | None   # gitignore-style ignore (.iwikiignore); None = index all
 
     @staticmethod
     def load() -> "Config":
@@ -56,6 +64,5 @@ class Config:
             top_k=int(getenv("IWIKI_TOP_K", "8")),
             score_threshold=float(getenv("IWIKI_SCORE_THRESHOLD", "0.2")),
             graph_depth=int(getenv("IWIKI_GRAPH_DEPTH", "2")),
-            include=_load_scope(".iwikiinclude", "IWIKI_INCLUDE"),
-            exclude=_load_scope(".iwikiexclude", "IWIKI_EXCLUDE"),
+            ignore=_load_ignore(".iwikiignore"),
         )

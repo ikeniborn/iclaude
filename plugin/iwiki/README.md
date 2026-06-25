@@ -74,10 +74,25 @@ All optional. Defaults are sensible; change only if you have a reason.
 
 **What gets documented (scope)**
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `IWIKI_INCLUDE` | *(all)* | Comma-separated globs to include. Also reads a `.iwikiinclude` file. |
-| `IWIKI_EXCLUDE` | *(none)* | Comma-separated globs to exclude (applied after include). Also reads a `.iwikiexclude` file. |
+By default the whole project's wiki pages are indexed. Drop pages with a
+`.iwikiignore` file in the project root — same syntax as `.gitignore`:
+
+- One pattern per line; `#` comments and blank lines are ignored.
+- Real gitignore semantics (via `pathspec`): a bare name matches at any depth,
+  a leading `/` anchors to the root, a trailing `/` matches a directory subtree,
+  `!` re-includes, and `**` works as in `.gitignore`.
+- Patterns match each generated page's path (e.g. `docs/wiki/command.md`), and
+  the file is read relative to the engine's working directory (the project root
+  it runs in).
+
+```gitignore
+# .iwikiignore
+command.md            # drop docs/wiki/command.md at any depth
+docs/wiki/archive/    # drop a subtree
+!docs/wiki/archive/keep.md
+```
+
+See `.iwikiignore.example` in the repo root for a fuller template.
 
 **Search quality**
 

@@ -8,7 +8,7 @@ from iwiki_engine.config import Config
 def _cfg():
     return Config(base_url="http://x", api_key="k", embed_model="m", dimensions=0,
                   chunk_size=512, chunk_overlap=64, summary_max=400, top_k=8,
-                  score_threshold=0.2, graph_depth=2, include=[], exclude=[])
+                  score_threshold=0.2, graph_depth=2, ignore=None)
 
 
 class _Resp:
