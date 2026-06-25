@@ -50,7 +50,37 @@ install_iwiki() {
     ( cd "$dir" && "$uv" sync ) || { print_error "uv sync failed"; return 1; }
 
     _iwiki_register_plugin
+    _iwiki_seed_ignore
     print_info "iwiki installed. Configure ICLAUDE_IWIKI_LLM_BASE_URL / ICLAUDE_IWIKI_LLM_KEY / ICLAUDE_IWIKI_EMBED_MODEL in .claude_config."
+}
+
+# Seed a commented .iwikiignore template at the project root on install/update,
+# so the exclude file is discoverable. Idempotent: an existing file is never
+# touched (the user's patterns survive). The template is all-comments, so the
+# default stays "index the whole project". Keep in sync with the .iwikiignore
+# semantics in plugin/iwiki/hooks/iwiki_common.py (source_ignore) and the
+# engine's iwiki_engine/config.py (_load_ignore).
+_iwiki_seed_ignore() {
+    local root="${LAUNCH_DIR:-$PWD}"
+    local f="$root/.iwikiignore"
+    [[ -e "$f" ]] && return 0
+    cat > "$f" <<'EOF' || return 0
+# .iwikiignore — exclude paths from iwiki, using .gitignore syntax.
+#
+# Applies in two places, both matched against repo-relative paths:
+#   - index: skips matching docs/wiki/*.md pages from the embedding index.
+#   - hooks: skips matching source files from the "needs a wiki page" nag.
+#
+# By default every line here is a comment, so the whole project is indexed and
+# every source stays documentable. Uncomment / edit to start excluding.
+#
+# Examples:
+#   docs/wiki/command.md     # drop one generated page from the index
+#   experiments/             # ignore a source subtree (no nag, not indexed)
+#   *.generated.md           # ignore by glob, at any depth
+#   !docs/wiki/keep.md       # re-include after a broader ignore
+EOF
+    print_info ".iwikiignore template created at $f"
 }
 
 # Invoke the isolated Claude binary, handling both the native binary and the

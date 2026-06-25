@@ -93,3 +93,36 @@ def test_covered_sources_missing_page_on_disk(tmp_path, monkeypatch):
     # log references a page that does not exist on disk
     _write_log(log, [{"op": "ingest", "source": "a.py", "page": "docs/wiki/gone.md"}])
     assert iwiki_common.covered_sources() == set()
+
+
+def _reset_ignore_cache(monkeypatch):
+    """source_ignore() caches per process; clear it so each test re-reads."""
+    monkeypatch.setattr(iwiki_common, "_ignore_spec",
+                        iwiki_common._ignore_sentinel, raising=False)
+
+
+def test_is_documentable_without_ignore_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _reset_ignore_cache(monkeypatch)
+    # No .iwikiignore → unchanged behaviour: a plain source is documentable.
+    assert iwiki_common.is_documentable("lib/foo/bar.py") is True
+
+
+def test_iwikiignore_suppresses_documentable_source(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _reset_ignore_cache(monkeypatch)
+    (tmp_path / ".iwikiignore").write_text(
+        "experiments/\nbar.py\n", encoding="utf-8")
+    # Directory subtree and basename-anywhere patterns drop the source.
+    assert iwiki_common.is_documentable("experiments/x.py") is False
+    assert iwiki_common.is_documentable("lib/foo/bar.py") is False
+    # A path not matched by any pattern stays documentable.
+    assert iwiki_common.is_documentable("lib/foo/keep.py") is True
+
+
+def test_iwikiignore_comment_only_is_noop(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _reset_ignore_cache(monkeypatch)
+    (tmp_path / ".iwikiignore").write_text("# just a comment\n\n", encoding="utf-8")
+    assert iwiki_common.source_ignore() is None
+    assert iwiki_common.is_documentable("lib/foo/bar.py") is True

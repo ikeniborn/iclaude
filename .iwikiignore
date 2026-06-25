@@ -1,0 +1,14 @@
+# .iwikiignore — exclude paths from iwiki, using .gitignore syntax.
+#
+# Applies in two places, both matched against repo-relative paths:
+#   - index: skips matching docs/wiki/*.md pages from the embedding index.
+#   - hooks: skips matching source files from the "needs a wiki page" nag.
+#
+# By default every line here is a comment, so the whole project is indexed and
+# every source stays documentable. Uncomment / edit to start excluding.
+#
+# Examples:
+#   docs/wiki/command.md     # drop one generated page from the index
+#   experiments/             # ignore a source subtree (no nag, not indexed)
+#   *.generated.md           # ignore by glob, at any depth
+#   !docs/wiki/keep.md       # re-include after a broader ignore
