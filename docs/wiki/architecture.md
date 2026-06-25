@@ -13,7 +13,7 @@ Phase 0 is bootstrapped unconditionally: the five `lib/core/` files plus `lib/co
 1. Variable initialisation (flags, `claude_args` array, `model_value`, etc.).
 2. Persistent-settings load from `CREDENTIALS_FILE` (`.claude_config`) via `grep` regex patterns for the boolean launch flags.
 3. `while [[ $# -gt 0 ]]` argument-parsing loop (`case` on `$1`).
-4. Optional telemetry module load (`lib/telemetry/otel.sh`).
+4. `source_iclaude_config` (apply `.claude_config` to the env), then optional telemetry module load (`lib/telemetry/otel.sh`) — config is applied first so `USE_OTEL`/OTLP credentials are resolved when `setup_telemetry()` runs.
 5. Subsystem activation: isolated-config setup; combined PII+router notice.
 6. Proxy acquisition, validation, and test.
 7. Final pre-launch flag assembly (`--dangerously-skip-permissions`, `--chrome`, `--model`).
@@ -45,7 +45,7 @@ Modules are sourced conditionally (`if [[ -d "$LIB_DIR/<name>" ]]`) so the scrip
 | 14 | `command/` | `usage.sh`, `parse.sh`, `dispatch.sh` |
 | — | `chrome/` | `detection.sh` |
 
-After Phase 14, Phase 15 (the inline main body) runs. `lib/telemetry/otel.sh` (see [[telemetry]]) is loaded inside Phase 15, after argument parsing — it is the only module not sourced during the up-front Phase 0–14 block. The `sandbox/` directory also ships `guest-init.sh` and `versions.json` (consumed at runtime by [[sandbox#Runtime (start_microvm)]], not sourced); `pii-proxy/` ships `server.py` and `langfuse_emitter.py`.
+After Phase 14, Phase 15 (the inline main body) runs. `lib/telemetry/otel.sh` (see [[telemetry]]) is loaded inside Phase 15, after argument parsing — it is the only module not sourced during the up-front Phase 0–14 block. `source_iclaude_config` is invoked immediately before it so the de-prefixed `USE_OTEL` / OTLP endpoint / credentials are live when `setup_telemetry()` auto-runs (opt-in telemetry). The `sandbox/` directory also ships `guest-init.sh` and `versions.json` (consumed at runtime by [[sandbox#Runtime (start_microvm)]], not sourced); `pii-proxy/` ships `server.py` and `langfuse_emitter.py`.
 
 ## Command Dispatch
 

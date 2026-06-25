@@ -79,3 +79,7 @@
 {"op":"ingest","source":"plugin/iwiki/skills/iwiki-ingest/SKILL.md","page":"docs/wiki/iwiki.md","date":"2026-06-25"}
 {"op":"ingest","source":"plugin/iwiki/README.md","page":"docs/wiki/iwiki.md","date":"2026-06-25","note":".iwikiignore scope filter"}
 {"op":"ingest","source":"plugin/iwiki/hooks/iwiki_common.py","page":"docs/wiki/iwiki.md","date":"2026-06-25","note":".iwikiignore hooks + seed + plugin bump"}
+{"op":"ingest","source":"docs/wiki/observability.md","page":"docs/wiki/observability.md","date":"2026-06-25"}
+{"op":"ingest","source":"lib/telemetry/otel.sh","page":"docs/wiki/telemetry.md","date":"2026-06-25"}
+{"op":"ingest","source":"lib/telemetry/otel.sh","page":"docs/wiki/observability.md","date":"2026-06-25"}
+{"op":"ingest","source":"iclaude.sh","page":"docs/wiki/architecture.md","date":"2026-06-25"}

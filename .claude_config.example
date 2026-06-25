@@ -835,8 +835,10 @@ ICLAUDE_DEBUG_LAUNCH=
 # ============================================================================
 # Telemetry (Claude Code → Grafana)
 # ============================================================================
-# Полный opt-out (1=disable telemetry, 0/unset=enabled по умолчанию).
-# ICLAUDE_NO_TELEMETRY=0
+# Telemetry is OPT-IN (default OFF). Enable explicitly (symmetric with ICLAUDE_USE_LANGFUSE_CAPTURE):
+# ICLAUDE_USE_OTEL=true
+# Kill-switch / explicit opt-out (overrides USE_OTEL): 1=disable.
+# ICLAUDE_NO_TELEMETRY=1
 
 # --- Вариант A: Локально (та же машина, трафик не выходит наружу) -----------
 # По умолчанию. Collector доступен напрямую на 127.0.0.1:4318, без TLS и auth.
@@ -849,7 +851,8 @@ ICLAUDE_DEBUG_LAUNCH=
 # Хост endpoint автоматически добавляется в NO_PROXY (otel.sh:patch_no_proxy_for_telemetry).
 
 # Логирование тела user prompt в Loki (1=on, 0=off).
-# Default 1. Установить 0 для приватных сессий без `--no-telemetry`.
+# Default 0 (приватность — OTEL-канал без scrubbing; контент промптов уже в Langfuse).
+# Установить 1 осознанно, для forensic-аудита.
 # ICLAUDE_OTEL_LOG_USER_PROMPTS=1
 
 # Метка proxy.profile в resource attrs (default: $PROXY_PROFILE из profile loader).

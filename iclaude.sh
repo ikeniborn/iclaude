@@ -704,6 +704,10 @@ fi
     #######################################
     # Load telemetry module (after arg parsing)
     #######################################
+    # Apply .claude_config to the env BEFORE telemetry setup, so USE_OTEL (opt-in) and
+    # the OTLP endpoint/credentials/log-prompts are resolved when setup_telemetry()
+    # auto-runs at source time. Idempotent (re-applied later by load_credentials/configure).
+    source_iclaude_config
     if [[ -f "${LIB_DIR}/telemetry/otel.sh" ]]; then
         source "${LIB_DIR}/telemetry/otel.sh"
     fi
