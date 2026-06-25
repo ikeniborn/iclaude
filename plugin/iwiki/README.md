@@ -98,10 +98,9 @@ experiments/          # ignore a source subtree (no nag, not indexed)
 !docs/wiki/keep.md    # re-include after a broader ignore
 ```
 
-A commented template is **seeded automatically** at the project root the first
-time a session starts in a project that has a `docs/wiki/` (idempotent — an
-existing `.iwikiignore` is never touched). See `.iwikiignore.example` for a
-fuller reference.
+A commented template is **created on install/update** (`iclaude --install-iwiki`)
+at the project root, idempotent — an existing `.iwikiignore` is never touched.
+See `.iwikiignore.example` for a fuller reference.
 
 **Search quality**
 

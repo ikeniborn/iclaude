@@ -126,17 +126,3 @@ def test_iwikiignore_comment_only_is_noop(tmp_path, monkeypatch):
     (tmp_path / ".iwikiignore").write_text("# just a comment\n\n", encoding="utf-8")
     assert iwiki_common.source_ignore() is None
     assert iwiki_common.is_documentable("lib/foo/bar.py") is True
-
-
-def test_seed_ignore_creates_then_preserves(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    target = tmp_path / ".iwikiignore"
-    assert not target.exists()
-    assert iwiki_common.seed_ignore() is True
-    assert target.exists()
-    body = target.read_text(encoding="utf-8")
-    assert body.startswith("# .iwikiignore")
-    # Idempotent: a second call never touches the existing file.
-    target.write_text("custom\n", encoding="utf-8")
-    assert iwiki_common.seed_ignore() is False
-    assert target.read_text(encoding="utf-8") == "custom\n"

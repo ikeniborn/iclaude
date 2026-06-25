@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """SessionStart hook — bootstrap the wiki and establish the session baseline.
 
-Three jobs at the start of every session:
+Two jobs at the start of every session:
 
 1. **Baseline.** Snapshot the current HEAD and the pre-existing dirty working
    tree into the shared session state. The Stop sync hook subtracts this `wip`
    set so it only ever nags about changes THIS session introduced — never a
    half-finished WIP that was already on disk when the session opened.
 
-2. **Seed `.iwikiignore`.** For a project that already uses iwiki (has a
-   `docs/wiki/`), write a commented `.iwikiignore` template at the project root
-   when none exists, so the exclude file is discoverable. Idempotent.
-
-3. **Bootstrap nudge.** If the project has documentable source but no wiki yet,
+2. **Bootstrap nudge.** If the project has documentable source but no wiki yet,
    nudge `/iwiki-init`; if it has pages but no index, nudge a rebuild. This is
    the one place that surfaces the wiki when it does not exist yet — no other
    trigger fires on an empty `docs/wiki/`.
@@ -67,12 +63,7 @@ def main() -> int:
                 "asked_sig": "",
                 "count": 0,
             })
-        # 2. Seed a commented .iwikiignore template at the project root for
-        # projects that use iwiki (have a wiki), so the exclude file is
-        # discoverable. Idempotent — never touches an existing file.
-        if iw.wiki_present():
-            iw.seed_ignore()
-        # 3. Bootstrap nudge.
+        # 2. Bootstrap nudge.
         pages = iw.wiki_pages() if iw.wiki_present() else []
         if not pages:
             if iw.has_documentable_source():

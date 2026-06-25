@@ -190,38 +190,6 @@ def source_ignore():
     return _ignore_spec
 
 
-_IGNORE_TEMPLATE = """\
-# .iwikiignore — exclude paths from iwiki, using .gitignore syntax.
-#
-# Applies in two places, both matched against repo-relative paths:
-#   - index: skips matching docs/wiki/*.md pages from the embedding index.
-#   - hooks: skips matching source files from the "needs a wiki page" nag.
-#
-# By default every line here is a comment, so the whole project is indexed and
-# every source stays documentable. Uncomment / edit to start excluding.
-#
-# Examples:
-#   docs/wiki/command.md     # drop one generated page from the index
-#   experiments/             # ignore a source subtree (no nag, not indexed)
-#   *.generated.md           # ignore by glob, at any depth
-#   !docs/wiki/keep.md       # re-include after a broader ignore
-"""
-
-
-def seed_ignore() -> bool:
-    """Write a commented `.iwikiignore` template at the project root when none
-    exists. Idempotent — the exclusive-create open never touches an existing
-    file (the user's patterns are preserved). Returns True only when written."""
-    try:
-        with open(IGNORE_FILE, "x", encoding="utf-8") as fh:
-            fh.write(_IGNORE_TEMPLATE)
-        return True
-    except FileExistsError:
-        return False
-    except Exception:
-        return False
-
-
 def wiki_present() -> bool:
     return os.path.isdir(WIKI_DIR)
 
