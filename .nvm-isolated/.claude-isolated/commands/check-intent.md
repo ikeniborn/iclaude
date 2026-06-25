@@ -109,7 +109,7 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 2. Применить чек-лист фазы к телу intent doc
 3. Для каждой потенциальной находки:
    - Если уже существует finding с тем же `section` и совпадающим `text` И `section_hash` не изменился → НЕ дублировать
-   - Иначе — создать новый: `id: F-NNN` (монотонно следующий), `phase`, `severity`, `section`, `section_hash`, `text`, `verdict: open`, `verdict_at: null`
+   - Иначе — создать новый: `id: F-NNN` (монотонно следующий), `phase`, `severity`, `section`, `section_hash`, `fragment` (цитата нарушающего текста из секции, ≤140 симв; `null`, если структурная находка без конкретной строки), `text` (в чём проблема), `fix` (предлагаемое исправление), `verdict: open`, `verdict_at: null`
 4. Записать обновлённый frontmatter в файл
 5. Вывести отчёт по фазе
 6. Запросить у пользователя verdict для новых findings:
@@ -135,7 +135,7 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
    - **Граф автономии** — block-диаграмма из 4 зон (Full / Guarded / Proposal-first / No autonomy) с пунктами в каждой; пустая зона помечается `N/A`.
    - **Связь ограничений и результатов** — матрица `Constraint × Desired Outcome`: строки — Constraints (steering / hard), столбцы — Desired Outcomes, явная отметка в ячейке там, где constraint ограничивает outcome (пустая ячейка = нет связи).
    - **Stop Rules** — список критериев `Done when:` как условий завершения процесса.
-3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `text`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
+3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `fragment`, `text`, `fix`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
 
 **Определи `<topic>` (общий ключ цепи — все 4 команды `check-*` должны прийти к одному файлу).** Возьми basename файла intent doc без `.md`, затем:
 1. срежь префикс даты `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
@@ -154,10 +154,10 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 ## Правила
 
 **Запрещено:**
-- Расширять чек-листы фаз (только закрытый список)
-- Придумывать требования, которых нет ни в intent doc, ни в контексте разговора
-- Редактировать тело intent doc, включая строку `**Status:**` (только guard-finding, не запись). Frontmatter `review:` — единственное исключение, обновляется командой
-- Писать «вероятно подразумевается» без ссылки на текст
+- Расширять чек-листы фаз (только закрытый список) — открытый список делает проверку недетерминированной и ломает hash-cache/quick-exit, тогда findings не воспроизводятся между прогонами
+- Придумывать требования, которых нет ни в intent doc, ни в контексте разговора — валидатор сверяет с источником, а не генерирует; выдуманное требование = ложный finding, который автор не сможет закрыть
+- Редактировать тело intent doc, включая строку `**Status:**` (только guard-finding, не запись) — тело это вход проверки и сигнал для остальных команд цепи; правка инвалидирует хеши и смешивает роли проверяющего и автора. Frontmatter `review:` — единственное исключение, обновляется командой
+- Писать «вероятно подразумевается» без ссылки на текст — finding без якоря в тексте недоказуем и неустраним автором
 
 ## Формат отчёта
 
@@ -171,7 +171,9 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 
 ### Фаза 1: structure — passed | in_progress | skipped
 - Новые findings: N
-  - F-001 [CRITICAL] §X — описание
+  - F-001 [CRITICAL] §X — <text>
+    - fragment: «<цитата>» (или «—» для структурных находок)
+    - fix: <предложение>
 
 ### Фаза 2: completeness — ...
 ### Фаза 3: clarity — ...
