@@ -42,4 +42,4 @@ The launcher (`lib/launcher/launch.sh`) reads `USE_LANGFUSE_CAPTURE` from `.clau
 | `LANGFUSE_SECRET_KEY` | — | Langfuse secret key (Basic-auth password) — keep `.claude_config` at chmod 600 |
 | `ICLAUDE_PROJECT_ID` | derived | Tag-safe repo slug; trace tag is `project:<id>` (falls back to `unknown`) |
 
-If `USE_LANGFUSE_CAPTURE=true` but any of `LANGFUSE_HOST`/`LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` is missing, `server.py` logs a warning and disables capture (fail-soft). See [[pii-proxy#Configuration Variables]] for the shared proxy settings and [[telemetry]] for the broader observability picture.
+If `USE_LANGFUSE_CAPTURE=true` but any of `LANGFUSE_HOST`/`LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` is missing, `server.py` logs a warning and disables capture (fail-soft). See [[pii-proxy#Configuration Variables]] for the shared proxy settings, [[telemetry]] for the OTEL channel, and [[observability]] for how both channels relate (modes, parameters, and the OTEL-vs-Langfuse split).

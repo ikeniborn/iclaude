@@ -7,8 +7,14 @@ command -v log_debug >/dev/null 2>&1 || log_debug() { :; }
 command -v log_warn  >/dev/null 2>&1 || log_warn()  { echo "warn: $*" >&2; }
 
 setup_telemetry() {
+    # Kill-switch (CLI --no-telemetry / explicit opt-out) overrides everything.
     if [[ "${ICLAUDE_NO_TELEMETRY:-0}" == "1" ]]; then
         log_debug "telemetry disabled (ICLAUDE_NO_TELEMETRY=1)"
+        return 0
+    fi
+    # Opt-in: telemetry is OFF unless USE_OTEL=true (symmetric with USE_LANGFUSE_CAPTURE).
+    if [[ "${USE_OTEL:-false}" != "true" ]]; then
+        log_debug "telemetry disabled (USE_OTEL != true)"
         return 0
     fi
 
@@ -34,7 +40,8 @@ setup_telemetry() {
     export CLAUDE_CODE_ENABLE_TELEMETRY=1
     export OTEL_METRICS_EXPORTER=otlp
     export OTEL_LOGS_EXPORTER=otlp
-    export OTEL_LOG_USER_PROMPTS=1
+    # Privacy-safe default 0 (OTEL has no scrubbing); honour a config-provided value.
+    export OTEL_LOG_USER_PROMPTS="${OTEL_LOG_USER_PROMPTS:-0}"
     export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://127.0.0.1:4318}"
     export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
     export OTEL_METRIC_EXPORT_INTERVAL=10000
