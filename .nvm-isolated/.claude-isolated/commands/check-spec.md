@@ -1,55 +1,55 @@
-Проверь спецификацию на соответствие задачам с фазовой моделью и state во frontmatter.
+Check the specification against the tasks, using the phase model and the state in frontmatter.
 
-Поддерживаемые аргументы:
-- Путь к файлу спецификации — если не передан, файл определяется автоматически
-- Задачи берутся из контекста разговора
+Supported arguments:
+- Path to the specification file — if not provided, the file is resolved automatically
+- The tasks are taken from the conversation context
 
-## Алгоритм
+## Algorithm
 
-### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
+### Canonical hashing algorithm (MANDATORY)
 
-Все хеши — одним пайплайном (frontmatter живой, иначе quick-exit не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай.
+All hashes via a single pipeline (frontmatter must stay live, otherwise quick-exit won't match). Run bash through the Bash tool; never recompute "in your head".
 
-- **Хеш тела документа** (исключает frontmatter):
+- **Document body hash** (excludes frontmatter):
   ```bash
   awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' <FILE> | sha256sum | cut -c1-16
   ```
-- **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
-- Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
+- **Section hash** — the section body from a `##`/`###` heading up to the next heading of the same or higher level (exclusive), piped through `sha256sum | cut -c1-16`.
+- If frontmatter is absent (`fm` < 2) — hash the whole file: `sha256sum <FILE> | cut -c1-16`.
 
-### Шаг 0. Quick exit по state
+### Step 0. Quick exit by state
 
-Если есть frontmatter с блоком `review:` и `current_body_hash == review.spec_hash` И:
+If there is frontmatter with a `review:` block and `current_body_hash == review.spec_hash` AND:
 - `∀ phase ∈ phases: status == passed`
 - `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
 - `count(severity == CRITICAL ∧ verdict == open) == 0`
 
-→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
+→ output `OK (cached, hash match)` and finish. Otherwise — continue.
 
-### Шаг 1. Определи scope
+### Step 1. Determine scope
 
-- Если имя/тема задачи известна из контекста — ищи файл по имени в `docs/superpowers/specs/`
-- Если передан путь в `$ARGUMENTS` — работай с указанным файлом
-- Иначе — последний изменённый файл в `docs/superpowers/specs/`
-- Если не найден — сообщи: «Не найдена спецификация. Укажи путь: `/check-spec path/to/spec.md`»
+- If the task name/topic is known from context — find the file by name in `docs/superpowers/specs/`
+- If a path is passed in `$ARGUMENTS` — work with the specified file
+- Otherwise — the most recently modified file in `docs/superpowers/specs/`
+- If not found — report: «Не найдена спецификация. Укажи путь: `/check-spec path/to/spec.md`»
 
-Дополнительно — определи путь к intent doc:
-- Если `$ARGUMENTS` содержит второй путь (к файлу `*intent.md`) — используй его
-- Если intent doc упоминается в контексте разговора — используй его
-- Иначе — извлеки `<topic>` из имени файла спеки (`YYYY-MM-DD-<topic>-design.md`) и выполни:
+Additionally — determine the path to the intent doc:
+- If `$ARGUMENTS` contains a second path (to a `*intent.md` file) — use it
+- If the intent doc is mentioned in the conversation context — use it
+- Otherwise — extract `<topic>` from the spec filename (`YYYY-MM-DD-<topic>-design.md`) and run:
   ```bash
   find docs/superpowers/intents/ -name "*<topic>*intent.md" 2>/dev/null | head -1
   ```
-- Если не найден — запомни `intent_path = null`, продолжай без блокировки
+- If not found — remember `intent_path = null`, continue without blocking
 
-### Шаг 2. Подтверди файл и инициализируй state
+### Step 2. Confirm the file and initialize state
 
-1. Сообщи: «Буду проверять: `<путь>`. Верно?»
-2. После подтверждения:
-   - Прочитать frontmatter. Если блока `review:` нет — инициализировать пустой:
+1. Report: «Буду проверять: `<путь>`. Верно?»
+2. After confirmation:
+   - Read the frontmatter. If there is no `review:` block — initialize an empty one:
      ```yaml
      review:
-       spec_hash: <sha256 тела>
+       spec_hash: <sha256 of the body>
        last_run: <today>
        phases:
          structure:    { status: pending }
@@ -58,104 +58,104 @@
          consistency:  { status: pending }
        findings: []
      ```
-   - Посчитать хеши всех секций (по заголовкам `##`/`###`)
-   - Для каждого существующего finding с `section_hash != current_section_hash` — сбросить `verdict: open`
-   - Обновить `spec_hash` и `last_run`
-   - Если блока `chain:` нет во frontmatter — добавить:
+   - Compute hashes of all sections (by `##`/`###` headings)
+   - For each existing finding whose `section_hash != current_section_hash` — reset `verdict: open`
+   - Update `spec_hash` and `last_run`
+   - If there is no `chain:` block in the frontmatter — add:
      ```yaml
      chain:
-       intent: <intent_path или null>
+       intent: <intent_path or null>
      ```
-   - Если `chain:` уже есть — обновить `chain.intent` до resolved значения
+   - If `chain:` already exists — update `chain.intent` to the resolved value
 
-### Шаг 3. Выполнение фаз
+### Step 3. Phase execution
 
-Фазы выполняются строго последовательно. Фаза N+1 стартует только если в фазе N нет CRITICAL с `verdict: open`.
+Phases run strictly sequentially. Phase N+1 starts only if phase N has no CRITICAL with `verdict: open`.
 
-#### Фаза 1: structure
+#### Phase 1: structure
 
-Закрытый чек-лист (НЕ расширять):
-- Плейсхолдеры: `TODO`, `TBD`, `???`, `FIXME`
-- Битые внутренние ссылки на разделы (§X.Y, [link](#anchor))
-- Нумерация секций (пропуски, дубликаты номеров)
-- Дублирующиеся заголовки секций
+Closed checklist (do NOT extend):
+- Placeholders: `TODO`, `TBD`, `???`, `FIXME`
+- Broken internal section links (§X.Y, [link](#anchor))
+- Section numbering (gaps, duplicate numbers)
+- Duplicate section headings
 
-#### Фаза 2: coverage
+#### Phase 2: coverage
 
-Закрытый чек-лист:
-- Каждая задача из контекста разговора покрыта ≥1 требованием спеки
-- Каждое требование спеки привязано к задаче (нет «лишних»)
-- Противоречия между требованиями (§X говорит A, §Y говорит ¬A)
+Closed checklist:
+- Each task from the conversation context is covered by ≥1 spec requirement
+- Each spec requirement is bound to a task (no "extras")
+- Contradictions between requirements (§X says A, §Y says ¬A)
 
-#### Фаза 3: clarity
+#### Phase 3: clarity
 
-Закрытый чек-лист:
-- Неоднозначные формулировки без критерия: «быстро», «удобно», «при необходимости», «достаточно», «надёжно»
-- Требования без явного DoD / критерия приёмки
-- Несогласованные термины (одна сущность — разные названия)
+Closed checklist:
+- Ambiguous wording without a criterion: «быстро», «удобно», «при необходимости», «достаточно», «надёжно»
+- Requirements without an explicit DoD / acceptance criterion
+- Inconsistent terms (one entity — different names)
 
-#### Фаза 4: consistency
+#### Phase 4: consistency
 
-Закрытый чек-лист:
-- Использовать diff изменившихся секций, уже вычисленный в Шаге 2 (init-state) — НЕ пересчитывать хеши заново
-- Сводка по изменившимся секциям и связанным findings
+Closed checklist:
+- Use the diff of changed sections already computed in Step 2 (init-state) — do NOT recompute hashes
+- Summary of changed sections and related findings
 
-### Логика обработки findings в каждой фазе
+### Finding-handling logic in each phase
 
-1. Прочитать существующие findings этой фазы из frontmatter
-2. Применить чек-лист фазы к телу спеки
-3. Для каждой потенциальной находки:
-   - Если уже существует finding с тем же `section` и совпадающим `text` И `section_hash` не изменился → НЕ дублировать
-   - Иначе — создать новый: `id: F-NNN` (монотонно следующий), `phase`, `severity`, `section`, `section_hash`, `fragment` (цитата нарушающего текста из секции, ≤140 симв; `null`, если структурная находка без конкретной строки), `text` (в чём проблема), `fix` (предлагаемое исправление), `verdict: open`, `verdict_at: null`
-4. Записать обновлённый frontmatter в файл
-5. Вывести отчёт по фазе
-6. Запросить у пользователя verdict для новых findings:
-   - CRITICAL — обязательно (`accepted | wontfix | fixed`)
-   - WARNING — желательно
-   - INFO — опционально
-7. Записать verdicts. Если все CRITICAL фазы закрыты → `phase.status = passed`, переход к следующей
-8. Иначе → `phase.status = in_progress`, остановка с просьбой исправить и перезапустить
+1. Read this phase's existing findings from frontmatter
+2. Apply the phase checklist to the spec body
+3. For each potential finding:
+   - If a finding already exists with the same `section` and matching `text` AND `section_hash` is unchanged → do NOT duplicate
+   - Otherwise — create a new one: `id: F-NNN` (monotonically next), `phase`, `severity`, `section`, `section_hash`, `fragment` (a quote of the offending text from the section, ≤140 chars; `null` for a structural finding without a specific line), `text` (what the problem is), `fix` (proposed fix), `verdict: open`, `verdict_at: null`
+4. Write the updated frontmatter to the file
+5. Output the phase report
+6. Ask the user for a verdict on the new findings:
+   - CRITICAL — mandatory (`accepted | wontfix | fixed`)
+   - WARNING — desirable
+   - INFO — optional
+7. Record the verdicts. If all CRITICAL of the phase are closed → `phase.status = passed`, move to the next
+8. Otherwise → `phase.status = in_progress`, stop and ask to fix and rerun
 
-### Шаг 4. Финальный вердикт
+### Step 4. Final verdict
 
-Применить exit-критерий из шага 0. Вывести `OK` либо `требует доработки: <N> critical open, <M> warning open`.
+Apply the exit criterion from Step 0. Output `OK` or «требует доработки: <N> critical open, <M> warning open».
 
-### Шаг 5. HTML-отчёт для пользователя
+### Step 5. HTML report for the user
 
-После финального вердикта (включая ветку quick-exit `OK (cached, hash match)`) вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+After the final verdict (including the quick-exit branch `OK (cached, hash match)`) invoke the `html-report` skill via the Skill tool (`skill: "html-report"`) and assemble one self-contained `.html` — a human-readable artifact for the user.
 
-Цель отчёта: описать **решение** спецификации схемами и показать **зависимости** его частей графиками, а не только перечислить findings. Передай навыку три блока (все обязательны):
+Report goal: describe the spec's **solution** with diagrams and show the **dependencies** of its parts with graphs, not just list findings. Pass the skill three blocks (all mandatory):
 
-1. **Резюме спецификации** — требования (по секциям) и Success Criteria; каждое требование — отдельной строкой таблицы.
-2. **Схемы решения и зависимостей** (обязательны; используй CSS block/flow или C4-диаграммы навыка, SVG node-edge граф — для произвольных рёбер):
-   - **Схема решения** — block/flow или C4-диаграмма компонентов/модулей решения, описанного спекой, и их связей (data/control flow).
-   - **Граф зависимостей** — SVG node-edge граф: **узлы** — отдельные требования/компоненты спеки (каждый подписан), **рёбра** — направленные «зависит от» / «использует» (A→B = A зависит от B). Подсветить циклы, если граф их содержит.
-   - **Карта покрытия** — матрица/таблица «задача → требование(я) спеки», покрывающие её.
-3. **Результаты проверки** — по каждой из 4 фаз (structure / coverage / clarity / consistency) её `status`; таблица findings (`id`, `severity`, `section`, `fragment`, `text`, `fix`, `verdict`); сводка (CRITICAL open / WARNING open); финальный вердикт; chain (`intent → spec`, если `intent_path` известен).
+1. **Резюме спецификации** — requirements (by section) and Success Criteria; each requirement on its own table row.
+2. **Схемы решения и зависимостей** (mandatory; use the skill's CSS block/flow or C4 diagrams, and an SVG node-edge graph for arbitrary edges):
+   - **Схема решения** — a block/flow or C4 diagram of the components/modules of the solution described by the spec and their links (data/control flow).
+   - **Граф зависимостей** — an SVG node-edge graph: **nodes** are individual spec requirements/components (each labeled), **edges** are directed "depends on" / "uses" (A→B = A depends on B). Highlight cycles if the graph has any.
+   - **Карта покрытия** — a matrix/table "task → spec requirement(s)" that cover it.
+3. **Результаты проверки** — for each of the 4 phases (structure / coverage / clarity / consistency) its `status`; a findings table (`id`, `severity`, `section`, `fragment`, `text`, `fix`, `verdict`); a summary (CRITICAL open / WARNING open); the final verdict; the chain (`intent → spec`, if `intent_path` is known).
 
-**Определи `<topic>` (общий ключ цепи — все 4 команды `check-*` должны прийти к одному файлу).** Возьми basename файла спецификации без `.md`, затем:
-1. срежь префикс даты `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
-2. срежь суффикс стадии — `-intent`, `-design` или `-plan` — **если присутствует** (на плане `-plan` опционален: `…-foo.md` и `…-foo-plan.md` дают один `<topic> = foo`);
-3. остаток — `<topic>`.
-**Fallback:** если basename не распознан (нет даты/суффикса по шаблону) — `<topic>` = basename без `.md` как есть. Дату в `<topic>` НЕ включать (стадии цепи могут иметь разные даты).
+**Determine `<topic>` (the shared chain key — all 4 `check-*` commands must converge on one file).** Take the basename of the specification file without `.md`, then:
+1. strip the date prefix `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
+2. strip the stage suffix — `-intent`, `-design`, or `-plan` — **if present** (on a plan `-plan` is optional: `…-foo.md` and `…-foo-plan.md` both yield one `<topic> = foo`);
+3. the remainder is `<topic>`.
+**Fallback:** if the basename is not recognized (no date/suffix matching the pattern) — `<topic>` = the basename without `.md` as-is. Do NOT include the date in `<topic>` (chain stages may have different dates).
 
-Параметры артефакта (передай навыку явно при вызове):
-- **Режим:** `mode: chain`, `tab: spec`. Навык обновит ТОЛЬКО вкладку `spec`; остальные 3 вкладки (Intent / Spec / Plan / Result) сохранит дословно. Если файла нет — создаст все 4 (непройденные — с плейсхолдером «Этап ещё не проверен»).
-- **Output path (явный аргумент):** `docs/superpowers/reports/<topic>-results.html` — единый отчёт цепи, без подкаталога и без префикса даты. Это caller-supplied путь (Full-зона): навык создаёт каталог `docs/superpowers/reports/` при отсутствии; первый запуск создаёт файл с 4 вкладками, повторный — сливает только свою вкладку.
-- **Данные — inline:** три блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
-- Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
+Artifact parameters (pass them to the skill explicitly):
+- **Mode:** `mode: chain`, `tab: spec`. The skill updates ONLY the `spec` tab; it preserves the other 3 tabs (Intent / Spec / Plan / Result) verbatim. If the file does not exist — it creates all 4 (unvisited ones with the placeholder «Этап ещё не проверен»).
+- **Output path (explicit argument):** `docs/superpowers/reports/<topic>-results.html` — a single chain report, without a subdirectory and without a date prefix. This is a caller-supplied path (Full zone): the skill creates the `docs/superpowers/reports/` directory if absent; the first run creates the file with 4 tabs, a rerun merges only its own tab.
+- **Data — inline:** the three blocks above are passed in the call itself. The skill does NOT read the sources itself and does NOT halt over an "unreadable source" — the data is already provided.
+- Language — Russian: all report text (headings, descriptions, findings, summaries) is in Russian.
 
-После записи сообщи пользователю путь к `.html`.
+After writing, tell the user the path to the `.html`.
 
-## Правила
+## Rules
 
-**Запрещено:**
-- Расширять чек-листы фаз (только закрытый список) — открытый список делает проверку недетерминированной и ломает hash-cache/quick-exit, тогда findings не воспроизводятся между прогонами
-- Придумывать задачи, которых не было в исходном описании — валидатор сверяет спеку с заданными задачами, а не выдумывает их; лишняя задача = ложный finding, который автор не сможет закрыть
-- Редактировать тело спецификации (frontmatter — исключение, обновляется командой) — тело это вход проверки; правка инвалидирует хеши и смешивает роли проверяющего и автора
-- Писать «вероятно подразумевается» без ссылки на текст — finding без якоря в тексте недоказуем и неустраним автором
+**Prohibited:**
+- Extending the phase checklists (closed list only) — an open list makes the check non-deterministic and breaks the hash-cache/quick-exit, so findings are not reproducible between runs
+- Inventing tasks that were not in the original description — the validator checks the spec against the given tasks, it does not invent them; an extra task = a false finding the author cannot close
+- Editing the specification body (frontmatter is the exception, updated by the command) — the body is the check input; editing it invalidates hashes and mixes the reviewer and author roles
+- Writing «вероятно подразумевается» without a reference to the text — a finding without a textual anchor is unprovable and the author cannot resolve it
 
-## Формат отчёта
+## Report format
 
 ```
 ## Проверка спецификации [дата]
@@ -181,7 +181,7 @@
 - Вердикт: OK | требует доработки
 ```
 
-Если `intent_path` известен — добавить в конец отчёта:
+If `intent_path` is known — append to the end of the report:
 ```
 ---
 Previous step: <intent_path>

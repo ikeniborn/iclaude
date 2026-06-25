@@ -1,165 +1,165 @@
-Проверь intent doc (корень цепи IDD→SDD) на самосогласованность с фазовой моделью и state во frontmatter.
+Check the intent doc (root of the IDD→SDD chain) for self-consistency, using the phase model and the state in frontmatter.
 
-Поддерживаемые аргументы:
-- Путь к файлу intent doc — если не передан, файл определяется автоматически
-- Контекст разговора используется advisory-фазой alignment
+Supported arguments:
+- Path to the intent doc file — if not provided, the file is resolved automatically
+- Conversation context is used by the advisory `alignment` phase
 
-## Алгоритм
+## Algorithm
 
-### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
+### Canonical hashing algorithm (MANDATORY)
 
-Все хеши — одним пайплайном (frontmatter живой, иначе quick-exit не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай.
+All hashes via a single pipeline (frontmatter must stay live, otherwise quick-exit won't match). Run bash through the Bash tool; never recompute "in your head".
 
-- **Хеш тела документа** (исключает frontmatter):
+- **Document body hash** (excludes frontmatter):
   ```bash
   awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' <FILE> | sha256sum | cut -c1-16
   ```
-- **Хеш секции** — тело секции от заголовка `##`/`###` до следующего заголовка того же или более высокого уровня (не включая его), пропущенное через `sha256sum | cut -c1-16`.
-- Если frontmatter отсутствует (`fm` < 2) — хеш всего файла: `sha256sum <FILE> | cut -c1-16`.
+- **Section hash** — the section body from a `##`/`###` heading up to the next heading of the same or higher level (exclusive), piped through `sha256sum | cut -c1-16`.
+- If frontmatter is absent (`fm` < 2) — hash the whole file: `sha256sum <FILE> | cut -c1-16`.
 
-### Шаг 0. Quick exit по state
+### Step 0. Quick exit by state
 
-Если есть frontmatter с блоком `review:` и `current_body_hash == review.intent_hash` И:
+If there is frontmatter with a `review:` block and `current_body_hash == review.intent_hash` AND:
 - `∀ phase ∈ {structure, completeness, clarity, consistency}: status == passed`
-- `alignment.status == passed` (НЕ пересчитывать — фаза недетерминирована, доверяем прошлому прогону)
+- `alignment.status == passed` (do NOT recompute — the phase is non-deterministic, trust the previous run)
 - `∀ finding: verdict ∈ {accepted, wontfix, fixed}`
 - `count(severity == CRITICAL ∧ verdict == open) == 0`
 
-→ вывести `OK (cached, hash match)` и завершить. Иначе — продолжить.
+→ output `OK (cached, hash match)` and finish. Otherwise — continue.
 
-### Шаг 1. Определи scope
+### Step 1. Determine scope
 
-- Если передан путь в `$ARGUMENTS` — работай с указанным файлом
-- Иначе, если тема задачи известна из контекста — ищи файл по имени в `docs/superpowers/intents/`
-- Иначе — последний изменённый файл в `docs/superpowers/intents/`
-- Если не найден — сообщи: «Не найден intent doc. Укажи путь: `/check-intent path/to/intent.md`»
+- If a path is passed in `$ARGUMENTS` — work with the specified file
+- Otherwise, if the task topic is known from context — find the file by name in `docs/superpowers/intents/`
+- Otherwise — the most recently modified file in `docs/superpowers/intents/`
+- If not found — report: «Не найден intent doc. Укажи путь: `/check-intent path/to/intent.md`»
 
-Intent doc — **корень цепи IDD→SDD**. Upstream-документа нет, блок `chain:` НЕ добавляется. Footer отчёта смотрит вперёд (на brainstorm), а не назад.
+The intent doc is the **root of the IDD→SDD chain**. There is no upstream document, so the `chain:` block is NOT added. The report footer looks forward (to brainstorm), not backward.
 
-### Шаг 2. Подтверди файл и инициализируй state
+### Step 2. Confirm the file and initialize state
 
-1. Сообщи: «Буду проверять: `<путь>`. Верно?»
-2. После подтверждения:
-   - Прочитать frontmatter. Если блока `review:` нет — инициализировать:
+1. Report: «Буду проверять: `<путь>`. Верно?»
+2. After confirmation:
+   - Read the frontmatter. If there is no `review:` block — initialize:
      ```yaml
      review:
-       intent_hash: <sha256 тела>
+       intent_hash: <sha256 of the body>
        last_run: <today>
        phases:
          structure:    { status: pending }
          completeness: { status: pending }
          clarity:      { status: pending }
          consistency:  { status: pending }
-         alignment:    { status: pending }   # advisory — вне CRITICAL-gate
+         alignment:    { status: pending }   # advisory — outside the CRITICAL gate
        findings: []
      ```
-   - Посчитать хеши всех секций (по заголовкам `##`/`###`)
-   - Для каждого существующего finding с `section_hash != current_section_hash` — сбросить `verdict: open`
-   - Обновить `intent_hash` и `last_run`
-   - Блок `chain:` НЕ добавлять (корень цепи)
-   - Тело intent doc (включая строку `**Status:**`) НЕ редактировать ни при каких условиях
+   - Compute hashes of all sections (by `##`/`###` headings)
+   - For each existing finding whose `section_hash != current_section_hash` — reset `verdict: open`
+   - Update `intent_hash` and `last_run`
+   - Do NOT add a `chain:` block (root of the chain)
+   - Do NOT edit the intent doc body (including the `**Status:**` line) under any circumstances
 
-### Шаг 3. Выполнение фаз
+### Step 3. Phase execution
 
-Фазы выполняются строго последовательно. Фаза N+1 стартует только если в фазе N нет CRITICAL с `verdict: open`. Фаза `alignment` всегда последняя и advisory — не блокирует переход и финальный вердикт.
+Phases run strictly sequentially. Phase N+1 starts only if phase N has no CRITICAL with `verdict: open`. The `alignment` phase is always last and advisory — it does not block the transition or the final verdict.
 
-#### Фаза 1: structure (CRITICAL)
+#### Phase 1: structure (CRITICAL)
 
-Закрытый чек-лист (НЕ расширять):
-- Плейсхолдеры: `TODO`, `TBD`, `???`, `FIXME`
-- Все 7 секций шаблона на месте: Objective, Desired Outcomes, Health Metrics, Strategic Context, Constraints, Autonomy Zones, Stop Rules
-- Пустые буллеты / пустые секции
-- Битые внутренние ссылки на разделы (§X.Y, [link](#anchor))
-- Дублирующиеся заголовки секций
+Closed checklist (do NOT extend):
+- Placeholders: `TODO`, `TBD`, `???`, `FIXME`
+- All 7 template sections present: Objective, Desired Outcomes, Health Metrics, Strategic Context, Constraints, Autonomy Zones, Stop Rules
+- Empty bullets / empty sections
+- Broken internal section links (§X.Y, [link](#anchor))
+- Duplicate section headings
 
-#### Фаза 2: completeness (CRITICAL)
+#### Phase 2: completeness (CRITICAL)
 
-Закрытый чек-лист (НЕ расширять):
-- Каждый constraint привязан к steering XOR hard (не к обоим, не ни к одному)
-- Autonomy Zones покрывают все 4 зоны (Full / Guarded / Proposal-first / No autonomy) либо несут явный N/A для зоны
-- Stop Rules содержит ≥1 критерий `Done when:`
-- Health Metrics непусты
-- Strategic Context содержит и `Interacts with:`, и `Priority trade-off:`
+Closed checklist (do NOT extend):
+- Each constraint is bound to steering XOR hard (not both, not neither)
+- Autonomy Zones cover all 4 zones (Full / Guarded / Proposal-first / No autonomy) or carry an explicit N/A for a zone
+- Stop Rules contain ≥1 `Done when:` criterion
+- Health Metrics are non-empty
+- Strategic Context contains both `Interacts with:` and `Priority trade-off:`
 
-#### Фаза 3: clarity
+#### Phase 3: clarity
 
-Закрытый чек-лист (НЕ расширять):
-- Desired Outcomes наблюдаемы / user-facing, НЕ шаги реализации. Outcome, сформулированный как «implemented / code written / function added» → **CRITICAL**. Наблюдаемый, но размытый → WARNING.
-- `Done when:` — измеримый результат, не «код написан». Если называет акт реализации вместо наблюдаемого результата → **CRITICAL**.
-- Health Metrics измеримы (названная метрика, не настроение) → WARNING.
-- Вагу-термины без критерия: «быстро», «удобно», «надёжно», «достаточно», «при необходимости» → WARNING.
+Closed checklist (do NOT extend):
+- Desired Outcomes are observable / user-facing, NOT implementation steps. An outcome phrased as "implemented / code written / function added" → **CRITICAL**. Observable but vague → WARNING.
+- `Done when:` — a measurable result, not "code written". If it names an act of implementation instead of an observable result → **CRITICAL**.
+- Health Metrics are measurable (a named metric, not a mood) → WARNING.
+- Vague terms without a criterion: «быстро», «удобно», «надёжно», «достаточно», «при необходимости» → WARNING.
 
-#### Фаза 4: consistency (CRITICAL для противоречий)
+#### Phase 4: consistency (CRITICAL for contradictions)
 
-Закрытый чек-лист (НЕ расширять):
-- Использовать diff изменившихся секций из Шага 2 (init-state) — НЕ пересчитывать хеши заново; дать сводку изменений
-- Внутри-док противоречия: constraint против Desired Outcome; Health Metric против Objective → CRITICAL
-- **Status-guard:** если тело содержит `**Status:** approved`, но есть открытый CRITICAL finding → создать finding `[CRITICAL]` «approved, но документ не валиден». Строку `**Status:**` НЕ редактировать — только finding.
+Closed checklist (do NOT extend):
+- Use the diff of changed sections from Step 2 (init-state) — do NOT recompute hashes; provide a summary of changes
+- Intra-doc contradictions: constraint vs Desired Outcome; Health Metric vs Objective → CRITICAL
+- **Status-guard:** if the body contains `**Status:** approved` but there is an open CRITICAL finding → create a `[CRITICAL]` finding «approved, но документ не валиден». Do NOT edit the `**Status:**` line — only the finding.
 
-#### Фаза 5: alignment (advisory — INFO/WARNING, НЕ gate, НЕ пересчитывать при hash-match)
+#### Phase 5: alignment (advisory — INFO/WARNING, NOT a gate, do NOT recompute on hash match)
 
-Закрытый чек-лист (НЕ расширять). Никогда не выдаёт CRITICAL; не блокирует переход фаз и финальный вердикт:
-- Conversation: Objective и Desired Outcomes покрывают исходную задачу, описанную пользователем в разговоре? Есть ли objective, которого пользователь не просил? → INFO
-- lat.md: intent противоречит задокументированному решению, либо Health Metrics игнорируют компоненты, ссылающиеся на эту область (`lat_refs`)? → WARNING. Требует MCP-инструментов `lat_search` / `lat_refs`.
-- Если `lat_search` / `lat_refs` недоступны — пропустить молча (как IDD Step 0). Не блокировать, не упоминать отсутствие.
+Closed checklist (do NOT extend). Never emits CRITICAL; never blocks a phase transition or the final verdict:
+- Conversation: do Objective and Desired Outcomes cover the original task the user described in the conversation? Is there an objective the user did not ask for? → INFO
+- lat.md: does the intent contradict a documented decision, or do Health Metrics ignore components that reference this area (`lat_refs`)? → WARNING. Requires the MCP tools `lat_search` / `lat_refs`.
+- If `lat_search` / `lat_refs` are unavailable — skip silently (like IDD Step 0). Do not block, do not mention the absence.
 
-### Логика обработки findings в каждой фазе
+### Finding-handling logic in each phase
 
-1. Прочитать существующие findings этой фазы из frontmatter
-2. Применить чек-лист фазы к телу intent doc
-3. Для каждой потенциальной находки:
-   - Если уже существует finding с тем же `section` и совпадающим `text` И `section_hash` не изменился → НЕ дублировать
-   - Иначе — создать новый: `id: F-NNN` (монотонно следующий), `phase`, `severity`, `section`, `section_hash`, `fragment` (цитата нарушающего текста из секции, ≤140 симв; `null`, если структурная находка без конкретной строки), `text` (в чём проблема), `fix` (предлагаемое исправление), `verdict: open`, `verdict_at: null`
-4. Записать обновлённый frontmatter в файл
-5. Вывести отчёт по фазе
-6. Запросить у пользователя verdict для новых findings:
-   - CRITICAL — обязательно (`accepted | wontfix | fixed`)
-   - WARNING — желательно
-   - INFO — опционально
-7. Записать verdicts. Если все CRITICAL фазы закрыты → `phase.status = passed`, переход к следующей. Фаза `alignment` не имеет CRITICAL → после прогона всегда `passed`.
-8. Иначе → `phase.status = in_progress`, остановка с просьбой исправить и перезапустить
+1. Read this phase's existing findings from frontmatter
+2. Apply the phase checklist to the intent doc body
+3. For each potential finding:
+   - If a finding already exists with the same `section` and matching `text` AND `section_hash` is unchanged → do NOT duplicate
+   - Otherwise — create a new one: `id: F-NNN` (monotonically next), `phase`, `severity`, `section`, `section_hash`, `fragment` (a quote of the offending text from the section, ≤140 chars; `null` for a structural finding without a specific line), `text` (what the problem is), `fix` (proposed fix), `verdict: open`, `verdict_at: null`
+4. Write the updated frontmatter to the file
+5. Output the phase report
+6. Ask the user for a verdict on the new findings:
+   - CRITICAL — mandatory (`accepted | wontfix | fixed`)
+   - WARNING — desirable
+   - INFO — optional
+7. Record the verdicts. If all CRITICAL of the phase are closed → `phase.status = passed`, move to the next. The `alignment` phase has no CRITICAL → after a run it is always `passed`.
+8. Otherwise → `phase.status = in_progress`, stop and ask to fix and rerun
 
-### Шаг 4. Финальный вердикт
+### Step 4. Final verdict
 
-Применить exit-критерий из шага 0. Вывести `OK` либо `требует доработки: <N> critical open, <M> warning open`.
+Apply the exit criterion from Step 0. Output `OK` or «требует доработки: <N> critical open, <M> warning open».
 
-### Шаг 5. HTML-отчёт для пользователя
+### Step 5. HTML report for the user
 
-После финального вердикта (включая ветку quick-exit `OK (cached, hash match)`) вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+After the final verdict (including the quick-exit branch `OK (cached, hash match)`) invoke the `html-report` skill via the Skill tool (`skill: "html-report"`) and assemble one self-contained `.html` — a human-readable artifact for the user.
 
-Цель отчёта: описать **требования и намерения** intent doc и показать **процесс** их достижения схемами, а не только перечислить findings. Передай навыку три блока (все обязательны):
+Report goal: describe the **requirements and intentions** of the intent doc and show the **process** of achieving them with diagrams, not just list findings. Pass the skill three blocks (all mandatory):
 
-1. **Резюме требований** — намерения intent doc как требования: Objective, Desired Outcomes, Health Metrics, Constraints (steering / hard), Autonomy Zones, Stop Rules. Каждый Desired Outcome и Constraint — отдельной строкой таблицы.
-2. **Схемы намерений и процесса** (обязательны; используй CSS-диаграммы навыка, SVG-граф — для произвольных рёбер):
-   - **Карта намерения** — block/flow-диаграмма потока `Objective → Desired Outcomes → Health Metrics`: как намерение превращается в наблюдаемый результат и чем измеряется.
-   - **Граф автономии** — block-диаграмма из 4 зон (Full / Guarded / Proposal-first / No autonomy) с пунктами в каждой; пустая зона помечается `N/A`.
-   - **Связь ограничений и результатов** — матрица `Constraint × Desired Outcome`: строки — Constraints (steering / hard), столбцы — Desired Outcomes, явная отметка в ячейке там, где constraint ограничивает outcome (пустая ячейка = нет связи).
-   - **Stop Rules** — список критериев `Done when:` как условий завершения процесса.
-3. **Результаты проверки** — по каждой из 5 фаз (structure / completeness / clarity / consistency / alignment) её `status`; таблица findings (`id`, `severity`, `section`, `fragment`, `text`, `fix`, `verdict`); сводка (CRITICAL open / WARNING open / alignment notes); финальный вердикт; intent — корень цепи, footer смотрит вперёд (`Next step: superpowers:brainstorming`).
+1. **Резюме требований** — the intent doc's intentions as requirements: Objective, Desired Outcomes, Health Metrics, Constraints (steering / hard), Autonomy Zones, Stop Rules. Each Desired Outcome and Constraint on its own table row.
+2. **Схемы намерений и процесса** (mandatory; use the skill's CSS diagrams, and an SVG graph for arbitrary edges):
+   - **Карта намерения** — a block/flow diagram of the flow `Objective → Desired Outcomes → Health Metrics`: how the intention turns into an observable result and what measures it.
+   - **Граф автономии** — a block diagram of the 4 zones (Full / Guarded / Proposal-first / No autonomy) with the items in each; an empty zone is marked `N/A`.
+   - **Связь ограничений и результатов** — a `Constraint × Desired Outcome` matrix: rows are Constraints (steering / hard), columns are Desired Outcomes, with an explicit mark in a cell where a constraint limits an outcome (empty cell = no link).
+   - **Stop Rules** — a list of `Done when:` criteria as process-completion conditions.
+3. **Результаты проверки** — for each of the 5 phases (structure / completeness / clarity / consistency / alignment) its `status`; a findings table (`id`, `severity`, `section`, `fragment`, `text`, `fix`, `verdict`); a summary (CRITICAL open / WARNING open / alignment notes); the final verdict; the intent is the root of the chain, the footer looks forward (`Next step: superpowers:brainstorming`).
 
-**Определи `<topic>` (общий ключ цепи — все 4 команды `check-*` должны прийти к одному файлу).** Возьми basename файла intent doc без `.md`, затем:
-1. срежь префикс даты `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
-2. срежь суффикс стадии — `-intent`, `-design` или `-plan` — **если присутствует** (на плане `-plan` опционален: `…-foo.md` и `…-foo-plan.md` дают один `<topic> = foo`);
-3. остаток — `<topic>`.
-**Fallback:** если basename не распознан (нет даты/суффикса по шаблону) — `<topic>` = basename без `.md` как есть. Дату в `<topic>` НЕ включать (стадии цепи могут иметь разные даты).
+**Determine `<topic>` (the shared chain key — all 4 `check-*` commands must converge on one file).** Take the basename of the intent doc file without `.md`, then:
+1. strip the date prefix `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
+2. strip the stage suffix — `-intent`, `-design`, or `-plan` — **if present** (on a plan `-plan` is optional: `…-foo.md` and `…-foo-plan.md` both yield one `<topic> = foo`);
+3. the remainder is `<topic>`.
+**Fallback:** if the basename is not recognized (no date/suffix matching the pattern) — `<topic>` = the basename without `.md` as-is. Do NOT include the date in `<topic>` (chain stages may have different dates).
 
-Параметры артефакта (передай навыку явно при вызове):
-- **Режим:** `mode: chain`, `tab: intent`. Навык обновит ТОЛЬКО вкладку `intent`; остальные 3 вкладки (Intent / Spec / Plan / Result) сохранит дословно. Если файла нет — создаст все 4 (непройденные — с плейсхолдером «Этап ещё не проверен»).
-- **Output path (явный аргумент):** `docs/superpowers/reports/<topic>-results.html` — единый отчёт цепи, без подкаталога и без префикса даты. Это caller-supplied путь (Full-зона): навык создаёт каталог `docs/superpowers/reports/` при отсутствии; первый запуск создаёт файл с 4 вкладками, повторный — сливает только свою вкладку.
-- **Данные — inline:** три блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
-- Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
+Artifact parameters (pass them to the skill explicitly):
+- **Mode:** `mode: chain`, `tab: intent`. The skill updates ONLY the `intent` tab; it preserves the other 3 tabs (Intent / Spec / Plan / Result) verbatim. If the file does not exist — it creates all 4 (unvisited ones with the placeholder «Этап ещё не проверен»).
+- **Output path (explicit argument):** `docs/superpowers/reports/<topic>-results.html` — a single chain report, without a subdirectory and without a date prefix. This is a caller-supplied path (Full zone): the skill creates the `docs/superpowers/reports/` directory if absent; the first run creates the file with 4 tabs, a rerun merges only its own tab.
+- **Data — inline:** the three blocks above are passed in the call itself. The skill does NOT read the sources itself and does NOT halt over an "unreadable source" — the data is already provided.
+- Language — Russian: all report text (headings, descriptions, findings, summaries) is in Russian.
 
-После записи сообщи пользователю путь к `.html`.
+After writing, tell the user the path to the `.html`.
 
-## Правила
+## Rules
 
-**Запрещено:**
-- Расширять чек-листы фаз (только закрытый список) — открытый список делает проверку недетерминированной и ломает hash-cache/quick-exit, тогда findings не воспроизводятся между прогонами
-- Придумывать требования, которых нет ни в intent doc, ни в контексте разговора — валидатор сверяет с источником, а не генерирует; выдуманное требование = ложный finding, который автор не сможет закрыть
-- Редактировать тело intent doc, включая строку `**Status:**` (только guard-finding, не запись) — тело это вход проверки и сигнал для остальных команд цепи; правка инвалидирует хеши и смешивает роли проверяющего и автора. Frontmatter `review:` — единственное исключение, обновляется командой
-- Писать «вероятно подразумевается» без ссылки на текст — finding без якоря в тексте недоказуем и неустраним автором
+**Prohibited:**
+- Extending the phase checklists (closed list only) — an open list makes the check non-deterministic and breaks the hash-cache/quick-exit, so findings are not reproducible between runs
+- Inventing requirements absent from both the intent doc and the conversation context — the validator checks against the source, it does not generate; an invented requirement = a false finding the author cannot close
+- Editing the intent doc body, including the `**Status:**` line (a guard-finding only, not a write) — the body is the check input and the signal for the other chain commands; editing it invalidates hashes and mixes the reviewer and author roles. The `review:` frontmatter is the only exception, updated by the command
+- Writing «вероятно подразумевается» without a reference to the text — a finding without a textual anchor is unprovable and the author cannot resolve it
 
-## Формат отчёта
+## Report format
 
 ```
 ## Проверка intent [дата]
@@ -191,7 +191,7 @@ Intent doc — **корень цепи IDD→SDD**. Upstream-документа 
 - Вердикт: OK | требует доработки
 ```
 
-В конец отчёта добавить (intent — корень цепи, footer смотрит вперёд):
+Append to the end of the report (intent is the root of the chain, the footer looks forward):
 ```
 ---
 Next step: superpowers:brainstorming

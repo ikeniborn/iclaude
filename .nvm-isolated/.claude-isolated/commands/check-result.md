@@ -1,125 +1,125 @@
-Сверь результаты выполнения плана с цепочкой IDD→SDD: intent + spec + plan vs git diff.
+Reconcile the plan's execution results with the IDD→SDD chain: intent + spec + plan vs git diff.
 
-Поддерживаемые аргументы:
-- Путь к файлу плана — обязателен
-- `--since=<ref>` — использовать diff от указанного ref вместо HEAD
+Supported arguments:
+- Path to the plan file — mandatory
+- `--since=<ref>` — use the diff from the given ref instead of HEAD
 
-## Алгоритм
+## Algorithm
 
-### Канонический алгоритм хеширования (ОБЯЗАТЕЛЬНО)
+### Canonical hashing algorithm (MANDATORY)
 
-Хеш тела плана для `result_check.plan_hash` — тем же пайплайном, что у остальных валидаторов и у idd-gate (иначе merge-gate не сойдётся). Запускай bash через инструмент Bash, «в уме» не пересчитывай:
+The plan body hash for `result_check.plan_hash` — via the same pipeline used by the other validators and by idd-gate (otherwise the merge-gate won't match). Run bash through the Bash tool; never recompute "in your head":
 
 ```bash
 awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' <PLAN_FILE> | sha256sum | cut -c1-16
 ```
 
-### Шаг 1. Загрузи план
+### Step 1. Load the plan
 
-- Прочитай файл плана из `$ARGUMENTS`
-- Извлеки `chain.intent` и `chain.spec` из frontmatter
-- Если отсутствуют — извлеки `<topic>` из имени файла плана (`YYYY-MM-DD-<topic>-plan.md`) и выполни:
+- Read the plan file from `$ARGUMENTS`
+- Extract `chain.intent` and `chain.spec` from the frontmatter
+- If absent — extract `<topic>` from the plan filename (`YYYY-MM-DD-<topic>-plan.md`) and run:
   ```bash
   find docs/superpowers/intents/ -name "*<topic>*intent.md" 2>/dev/null | head -1
   find docs/superpowers/specs/   -name "*<topic>*design.md" 2>/dev/null | head -1
   ```
-- Если план не найден — сообщи: «Не найден план. Укажи путь: `/check-result path/to/plan.md`» и остановись
-- Если intent или spec не найдены — предупреди пользователя, продолжай с доступными документами
+- If the plan is not found — report: «Не найден план. Укажи путь: `/check-result path/to/plan.md`» and stop
+- If the intent or spec is not found — warn the user, continue with the available documents
 
-### Шаг 2. Загрузи документы
+### Step 2. Load the documents
 
-- **Intent doc:** прочитай секции Objective, Desired Outcomes, Constraints
-- **Spec:** прочитай секции требований и Success Criteria
-- **План:** прочитай все шаги (и `[ ]`, и `[x]`)
+- **Intent doc:** read the Objective, Desired Outcomes, Constraints sections
+- **Spec:** read the requirements sections and Success Criteria
+- **Plan:** read all steps (both `[ ]` and `[x]`)
 
-### Шаг 3. Получи git diff
+### Step 3. Get the git diff
 
 ```bash
 git diff HEAD
 ```
 
-Если передан `--since=<ref>`: `git diff <ref>`.
+If `--since=<ref>` is passed: `git diff <ref>`.
 
-Если diff пустой — сообщи: «Нет незакоммиченных изменений. Запусти после внесения изменений или передай `--since=<ref>`.»
+If the diff is empty — report: «Нет незакоммиченных изменений. Запусти после внесения изменений или передай `--since=<ref>`.»
 
-### Шаг 4. Сопоставь шаги плана с diff
+### Step 4. Match plan steps against the diff
 
-Для каждого шага плана:
+For each plan step:
 
-1. Извлеки явные пути к файлам из текста шага
-2. Проверь наличие этих файлов в `git diff HEAD`
-3. Для шагов без явных путей — семантическое сопоставление:
-   - `DONE` — изменения в diff чётко и полностью соответствуют описанию шага
-   - `PARTIAL` — diff содержит связанные изменения, но упускает часть описанного действия (например, шаг говорит «переименовать и переписать X», а в diff только переименование)
-   - `MISSING` — никаких свидетельств шага в diff нет
+1. Extract explicit file paths from the step text
+2. Check for those files in `git diff HEAD`
+3. For steps without explicit paths — semantic matching:
+   - `DONE` — the changes in the diff clearly and fully match the step description
+   - `PARTIAL` — the diff contains related changes but misses part of the described action (e.g. the step says "rename and rewrite X" but the diff only renames)
+   - `MISSING` — there is no evidence of the step in the diff
 
-Дополнительно — найди `EXCESS`: изменённые файлы в diff без соответствующего шага плана.
+Additionally — find `EXCESS`: files changed in the diff with no corresponding plan step.
 
-### Шаг 5. Проверь покрытие intent + spec
+### Step 5. Check intent + spec coverage
 
-- Для каждого Desired Outcome из intent doc: отражён ли в diff?
-- Для каждого требования / Success Criterion из spec: отражён ли в diff?
-- Непокрытое → finding со ссылкой на конкретный outcome/требование
+- For each Desired Outcome from the intent doc: is it reflected in the diff?
+- For each requirement / Success Criterion from the spec: is it reflected in the diff?
+- Uncovered → a finding referencing the specific outcome/requirement
 
-### Шаг 6. Сформируй отчёт
+### Step 6. Build the report
 
-### Шаг 7. Запиши state в frontmatter плана
+### Step 7. Write the state into the plan frontmatter
 
-После отчёта впиши машиночитаемый блок в **frontmatter плана** (тело плана НЕ
-трогать — это сигнал прохождения merge-gate для idd-gate).
+After the report, write a machine-readable block into the **plan frontmatter** (do NOT
+touch the plan body — it is the merge-gate pass signal for idd-gate).
 
-1. Посчитай хеш тела плана по каноническому алгоритму (см. выше).
-2. Определи вердикт: `OK`, если CRITICAL findings нет (нет MISSING-шагов);
-   иначе `needs_work`.
-3. Создай блок `result_check:` (или обнови существующий) во frontmatter плана:
+1. Compute the plan body hash via the canonical algorithm (see above).
+2. Determine the verdict: `OK` if there are no CRITICAL findings (no MISSING steps);
+   otherwise `needs_work`.
+3. Create the `result_check:` block (or update the existing one) in the plan frontmatter:
    ```yaml
    result_check:
      verdict: OK | needs_work
-     plan_hash: <хеш тела плана>
+     plan_hash: <plan body hash>
      last_run: <today>
    ```
-   Если frontmatter в плане отсутствует — добавь его в начало файла
-   (`---` … `---`), не меняя тело.
+   If the plan has no frontmatter — add it at the start of the file
+   (`---` … `---`) without changing the body.
 
-### Шаг 8. HTML-отчёт для пользователя
+### Step 8. HTML report for the user
 
-После записи `result_check` вызови навык `html-report` через инструмент Skill (`skill: "html-report"`) и собери один self-contained `.html` — человекочитаемый артефакт для пользователя.
+After writing `result_check`, invoke the `html-report` skill via the Skill tool (`skill: "html-report"`) and assemble one self-contained `.html` — a human-readable artifact for the user.
 
-Передай навыку данные (оба блока обязательны):
+Pass the skill the data (both blocks mandatory):
 
-1. **Резюме сверки** — документы цепи (plan / spec / intent), база diff.
-2. **Результаты проверки** — покрытие шагов плана (DONE / PARTIAL / MISSING счётчики); таблица findings (`severity`, шаг, Plan / Diff / Fix options); intent / spec coverage (Desired Outcomes N/M, requirements N/M); excess changes; сводка (CRITICAL / WARNING / INFO); вердикт; chain (`intent → spec → plan`).
+1. **Резюме сверки** — the chain documents (plan / spec / intent), the diff base.
+2. **Результаты проверки** — plan step coverage (DONE / PARTIAL / MISSING counts); a findings table (`severity`, step, Plan / Diff / Fix options); intent / spec coverage (Desired Outcomes N/M, requirements N/M); excess changes; a summary (CRITICAL / WARNING / INFO); the verdict; the chain (`intent → spec → plan`).
 
-**Определи `<topic>` (общий ключ цепи — все 4 команды `check-*` должны прийти к одному файлу).** Возьми basename файла плана без `.md`, затем:
-1. срежь префикс даты `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
-2. срежь суффикс стадии — `-intent`, `-design` или `-plan` — **если присутствует** (на плане `-plan` опционален: `…-foo.md` и `…-foo-plan.md` дают один `<topic> = foo`);
-3. остаток — `<topic>`.
-**Fallback:** если basename не распознан (нет даты/суффикса по шаблону) — `<topic>` = basename без `.md` как есть. Дату в `<topic>` НЕ включать (стадии цепи могут иметь разные даты).
+**Determine `<topic>` (the shared chain key — all 4 `check-*` commands must converge on one file).** Take the basename of the plan file without `.md`, then:
+1. strip the date prefix `^[0-9]{4}-[0-9]{2}-[0-9]{2}-`;
+2. strip the stage suffix — `-intent`, `-design`, or `-plan` — **if present** (on a plan `-plan` is optional: `…-foo.md` and `…-foo-plan.md` both yield one `<topic> = foo`);
+3. the remainder is `<topic>`.
+**Fallback:** if the basename is not recognized (no date/suffix matching the pattern) — `<topic>` = the basename without `.md` as-is. Do NOT include the date in `<topic>` (chain stages may have different dates).
 
-Параметры артефакта (передай навыку явно при вызове):
-- **Режим:** `mode: chain`, `tab: result`. Навык обновит ТОЛЬКО вкладку `result`; остальные 3 вкладки (Intent / Spec / Plan / Result) сохранит дословно. Если файла нет — создаст все 4 (непройденные — с плейсхолдером «Этап ещё не проверен»).
-- **Output path (явный аргумент):** `docs/superpowers/reports/<topic>-results.html` — единый отчёт цепи, без подкаталога и без префикса даты. Это caller-supplied путь (Full-зона): навык создаёт каталог `docs/superpowers/reports/` при отсутствии; первый запуск создаёт файл с 4 вкладками, повторный — сливает только свою вкладку.
-- **Данные — inline:** оба блока выше переданы в самом вызове. Навык НЕ читает источники сам и НЕ останавливается (halt) из-за «нечитаемого источника» — данные уже предоставлены.
-- Язык — русский: весь текст отчёта (заголовки, описания, findings, сводки) на русском языке.
+Artifact parameters (pass them to the skill explicitly):
+- **Mode:** `mode: chain`, `tab: result`. The skill updates ONLY the `result` tab; it preserves the other 3 tabs (Intent / Spec / Plan / Result) verbatim. If the file does not exist — it creates all 4 (unvisited ones with the placeholder «Этап ещё не проверен»).
+- **Output path (explicit argument):** `docs/superpowers/reports/<topic>-results.html` — a single chain report, without a subdirectory and without a date prefix. This is a caller-supplied path (Full zone): the skill creates the `docs/superpowers/reports/` directory if absent; the first run creates the file with 4 tabs, a rerun merges only its own tab.
+- **Data — inline:** both blocks above are passed in the call itself. The skill does NOT read the sources itself and does NOT halt over an "unreadable source" — the data is already provided.
+- Language — Russian: all report text (headings, descriptions, findings, summaries) is in Russian.
 
-После записи сообщи пользователю путь к `.html`.
+After writing, tell the user the path to the `.html`.
 
 ## Severity
 
-| Severity | Условие |
-|----------|---------|
-| `[CRITICAL]` | Шаг плана полностью отсутствует в diff |
-| `[WARNING]` | Шаг выполнен частично; или избыточные изменения без привязки к плану |
-| `[INFO]` | Семантическое расхождение; outcome из intent частично отражён |
+| Severity | Condition |
+|----------|-----------|
+| `[CRITICAL]` | A plan step is entirely absent from the diff |
+| `[WARNING]` | A step is partially done; or excess changes with no link to the plan |
+| `[INFO]` | A semantic discrepancy; an intent outcome is partially reflected |
 
-## Формат finding
+## Finding format
 
-Каждый finding содержит:
-- **Plan:** что говорит шаг плана
-- **Diff:** что показывает git diff (или «изменений не найдено»)
-- **Fix options:** варианты исправления
+Each finding contains:
+- **Plan:** what the plan step says
+- **Diff:** what the git diff shows (or «изменений не найдено»)
+- **Fix options:** fix options
 
-## Формат отчёта
+## Report format
 
 ```
 ## Result Check [дата]
@@ -161,11 +161,11 @@ Previous step: <plan_path>
 Chain: <intent_path> → <spec_path> → <plan_path>
 ```
 
-## Правила
+## Rules
 
-**Запрещено:**
-- Выдавать finding без ссылки на конкретный шаг плана или outcome — неякорный finding недоказуем и неустраним
-- Запускать code review (синтаксис, безопасность) — это не назначение команды; дублирует `/review` и размывает фокус сверки plan↔diff
-- Писать «вероятно выполнено» без свидетельства в diff — вердикт без свидетельства даёт ложный OK и пропускает невыполненный шаг
+**Prohibited:**
+- Emitting a finding without a reference to a specific plan step or outcome — an unanchored finding is unprovable and the author cannot resolve it
+- Running a code review (syntax, security) — that is not this command's purpose; it duplicates `/review` and dilutes the plan↔diff reconciliation focus
+- Writing «вероятно выполнено» without evidence in the diff — a verdict without evidence yields a false OK and lets an unfinished step slip through
 
 $ARGUMENTS
