@@ -2520,7 +2520,7 @@ export interface ArtifactInput {
    */
   favicon: string;
   /**
-   * Short human-readable name for this version (e.g. "fixed-background"). Shown in the version picker instead of the raw version id.
+   * Short human-readable name for this version, max 60 chars (e.g. "fixed-background"). Shown in the version picker. Not a description — keep it to a few words.
    */
   label?: string;
   /**
