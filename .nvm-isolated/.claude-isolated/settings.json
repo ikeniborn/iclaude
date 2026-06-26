@@ -214,8 +214,8 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "plansDirectory": ".claude/plans",
-  "autoMemoryEnabled": true,
-  "autoDreamEnabled": true,
+  "autoMemoryEnabled": false,
+  "autoDreamEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "mcpServers": {}
 }
