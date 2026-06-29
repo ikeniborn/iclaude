@@ -36,6 +36,16 @@ Always invoke iwiki via its **skills** (`iwiki:iwiki-ingest`, `/iwiki-query`, `/
 - **Conversations and questions**: Russian — to match user expectations.
 - **Documentation and code comments**: English — to keep docs universally readable.
 
+## Copy-Friendly Command Output
+
+**Bash/Python commands the user runs must be copy-pasteable straight from the terminal.**
+
+- Put every runnable command in a fenced code block (```` ```bash ```` / ```` ```python ````) — never inline in prose.
+- No leading indentation inside the fence. The first column is column 1, so copying grabs no stray spaces.
+- One command per line. No trailing whitespace.
+- No shell prompt prefixes (`$`, `>`, `#`) — they get copied too and break paste.
+- Don't wrap long commands with manual line breaks; let the terminal soft-wrap, or use explicit `\` continuations.
+
 ## Think Before Coding
 
 **Don't assume. Surface tradeoffs. Ask when unclear.**
