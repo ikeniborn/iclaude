@@ -1,3 +1,27 @@
+---
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-30-iwiki-content-hash-freshness-port-design.md
+review:
+  plan_hash: af6f9cb06d18e442
+  spec_hash: 46590f57fe2de22d
+  last_run: 2026-06-30
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  section_hashes:
+    "Global Constraints": cd0c2ab82149be39
+    "Task 1: Engine lint — content-hash staleness": feffbf1d93b4b76c
+    "Task 2: Stop-hook — content-hash coverage": 9d143b4eba381e12
+    "Task 3: Skills — write `src_hash` into the ingest log": aa83a99dbad27ea1
+    "Task 4: Full-suite verification": f77a4b2f2a23520e
+    "Notes for the executor": a8f99912e0d5c75c
+  findings: []
+---
+
 # iwiki Content-Hash Freshness Port — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
