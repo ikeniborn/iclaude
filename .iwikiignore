@@ -12,3 +12,6 @@
 #   experiments/             # ignore a source subtree (no nag, not indexed)
 #   *.generated.md           # ignore by glob, at any depth
 #   !docs/wiki/keep.md       # re-include after a broader ignore
+
+# Scratch notes (bug write-ups, investigation memos) are not documentable source.
+docs/notes/
