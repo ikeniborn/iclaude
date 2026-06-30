@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`). Covers detection, engine sync, the engine runner, the section-formation rules (`## Overview` prefixing + validation), plugin registration, and the five automation hooks (bootstrap, recall, reindex, sync, validate).
+Bash integration that installs and detects the **iwiki documentation-graph engine** plus its in-repo Claude Code plugin. It wraps `uv sync` of the bundled Python engine and registers the `iwiki@iclaude` plugin at user scope. The module lives in `lib/iwiki/` (`detect.sh`, `install.sh`). Covers detection, engine sync, the engine runner, the canonical engine entrypoint (`IWIKI_ENGINE_DIR`), the section-formation rules (`## Overview` prefixing + validation), plugin registration, and the five automation hooks (bootstrap, recall, reindex, sync, validate).
 
 ## Detection
 
@@ -32,6 +32,14 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 - **Index scope (`.iwikiignore`)**: by default `index` embeds every `docs/wiki/*.md` page. A `.iwikiignore` file in the project root (read relative to the engine's CWD) drops pages with real `.gitignore` semantics via `pathspec` — `/` anchoring, `!` negation, `**`, trailing-slash directory subtrees, and basename-anywhere matching. `config._load_ignore()` compiles it with the `gitignore` style and returns `None` when the file is absent or holds only comments/blanks, so the filter pass is skipped entirely. Patterns match each generated page's path (e.g. `docs/wiki/command.md`), not the source files. There is no include list — the default is the whole project.
 - **Embedding retry**: `index` and `search` wrap embedding API calls with bounded exponential backoff (retries on timeout, connection errors, and HTTP 5xx); 4xx errors fail fast without retrying.
 - **`related` graph hardening**: BFS traversal skips pages whose files cannot be read, so a single unreadable file never aborts the entire related-docs walk.
+
+## Engine invocation
+
+`IWIKI_ENGINE_DIR` is the canonical entrypoint exported at launch by `source_iclaude_config` (`env-map.sh`) via `iwiki_export_engine_dir` (`lib/iwiki/detect.sh`). The engine is always a Python module (`-m iwiki_engine`), never a `PATH` binary.
+
+- Resolution order: in-repo `plugin/iwiki/engine` (present after `uv sync`) → newest `$CLAUDE_CONFIG_DIR/plugins/cache/*/iwiki/*/engine` (sorted by version, last wins). `IWIKI_ENGINE_DIR` is set only when the resolved dir contains `pyproject.toml`; it is unset otherwise.
+- After `uv sync`, `_iwiki_postsync_check()` (`lib/iwiki/install.sh`) runs a config-free `status` subcommand to verify the venv imported cleanly, then probes `Config.load()` to surface any missing LLM parameters, and prints the resolved dir. Non-fatal: install succeeds even if the probe warns.
+- Skills read `$IWIKI_ENGINE_DIR` as the `--project` argument (see [[iwiki#Engine Runner]] and [[iwiki#Automation Hooks]]). `CLAUDE_PLUGIN_ROOT` is not exported into the Bash tool, so skills must use `IWIKI_ENGINE_DIR` rather than `$CLAUDE_PLUGIN_ROOT/engine`.
 
 ## Section Formation
 
