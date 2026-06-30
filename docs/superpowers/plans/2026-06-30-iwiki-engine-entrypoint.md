@@ -13,6 +13,10 @@ review:
     verifiability: { status: passed }
     consistency:   { status: passed }
   findings: []
+result_check:
+  verdict: OK
+  plan_hash: 8931665f8544a760
+  last_run: 2026-06-30
 ---
 
 # iwiki Engine Entrypoint Implementation Plan

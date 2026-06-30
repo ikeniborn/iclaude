@@ -36,12 +36,18 @@
   code{background:var(--code);padding:.1rem .35rem;border-radius:4px;font-size:.85em}
   pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;overflow:auto;font-size:.82rem}
   .note{background:var(--surface2);border-left:3px solid var(--accent);padding:.7rem 1rem;border-radius:0 8px 8px 0;color:var(--muted)}
+  .note.ok{border-left-color:var(--accent2)}
+  .note.info{border-left-color:var(--info)}
   .badge{display:inline-block;padding:.12rem .5rem;border-radius:999px;font-size:.74rem;font-weight:600;border:1px solid var(--border)}
   .b-pass{color:var(--accent2);border-color:var(--accent2)}
   .b-ok{color:var(--accent2);border-color:var(--accent2)}
   .b-crit{color:var(--crit);border-color:var(--crit)}
   .b-warn{color:var(--warn);border-color:var(--warn)}
   .b-na{color:var(--info);border-color:var(--info)}
+  .b-info{color:var(--info);border-color:var(--info)}
+  .b-done{color:var(--accent2);border-color:var(--accent2)}
+  .b-partial{color:var(--warn);border-color:var(--warn)}
+  .b-missing{color:var(--crit);border-color:var(--crit)}
   nav.chain-tabs{display:flex;gap:.4rem;max-width:1080px;margin:1.2rem auto 0;padding:0 1.6rem;flex-wrap:wrap}
   .chain-tabs label{cursor:pointer;padding:.4rem .9rem;border:1px solid var(--border);
     border-bottom:none;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted);font-size:.9rem}
@@ -74,14 +80,23 @@
   .chain-flow .stage.done{border-color:var(--accent2);color:var(--accent2)}
   .chain-flow .stage.cur{border-color:var(--accent);color:var(--accent);font-weight:650}
   .chain-flow .stage.na{color:var(--info);border-style:dashed}
+  .verdict-banner{display:flex;align-items:center;gap:.8rem;padding:1rem 1.2rem;
+    border-radius:10px;margin:1.2rem 0;background:var(--surface);border:2px solid var(--accent2)}
+  .verdict-banner .v-label{font-size:1.4rem;font-weight:700;color:var(--accent2)}
+  .verdict-banner .v-meta{color:var(--muted);font-size:.85rem}
+  .coverage-bar{display:flex;gap:.3rem;align-items:center;margin:.4rem 0}
+  .cov-pill{padding:.15rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600}
+  .cov-done{background:color-mix(in srgb,var(--accent2) 18%,var(--surface));color:var(--accent2);border:1px solid var(--accent2)}
+  .cov-partial{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn);border:1px solid var(--warn)}
+  .cov-missing{background:color-mix(in srgb,var(--crit) 18%,var(--surface));color:var(--crit);border:1px solid var(--crit)}
 </style>
 </head>
 <body>
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
   <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
     <div>
@@ -543,7 +558,156 @@
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
   <section class="tab-pane" id="pane-result">
-    <p class="note">Этап ещё не проверен.</p>
+    <h2>Result Check — 2026-06-30</h2>
+
+    <div class="verdict-banner">
+      <div class="v-label">OK</div>
+      <div>
+        <div>Полный ран · plan_hash: <code>8931665f8544a760</code> · 2026-06-30</div>
+        <div class="v-meta">CRITICAL: 0 &nbsp; WARNING: 0 &nbsp; INFO: 1 · Все 4 задачи выполнены · Spec §A–§E покрыты 5/5</div>
+      </div>
+    </div>
+
+    <h3>Документы</h3>
+    <table>
+      <thead><tr><th>Роль</th><th>Файл</th></tr></thead>
+      <tbody>
+        <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-06-30-iwiki-engine-entrypoint.md</code></td></tr>
+        <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-06-30-iwiki-engine-entrypoint-design.md</code></td></tr>
+        <tr><td>Intent</td><td><em>отсутствует</em> — chain.intent: null, spec открывает цепочку</td></tr>
+        <tr><td>Diff base</td><td><code>git diff df9c2364^..HEAD</code> · 5 feature commits · 9 файлов изменено</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие шагов плана</h3>
+    <div class="coverage-bar">
+      <span class="cov-pill cov-done">DONE: 4 задачи (все шаги)</span>
+      <span class="cov-pill cov-partial">PARTIAL: 0</span>
+      <span class="cov-pill cov-missing">MISSING: 0</span>
+    </div>
+
+    <table>
+      <thead><tr><th>Задача</th><th>Статус</th><th>Ключевые изменения в diff</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Task 1</strong> — Engine-dir resolver + env-map wiring</td>
+          <td><span class="badge b-done">DONE</span></td>
+          <td>
+            <code>lib/iwiki/detect.sh</code> +12 строк: <code>iwiki_export_engine_dir()</code> после <code>_iwiki_engine_dir</code>.<br>
+            <code>lib/config/env-map.sh</code>: <code>source_iclaude_config</code> перешёл от ранней return к <code>if</code>-блоку + <code>command -v guard + iwiki_export_engine_dir</code> вызов.<br>
+            <code>tests/test_iwiki_engine_entrypoint.sh</code>: создан с 3 Task-1 кейсами (resolver_prefers_in_repo, falls_back_to_newest_cache, envmap_exports_engine_dir).
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Task 2</strong> — Install-time health + parameter preflight</td>
+          <td><span class="badge b-done">DONE</span></td>
+          <td>
+            <code>lib/iwiki/install.sh</code> +30 строк: <code>_iwiki_postsync_check(dir, uv)</code> — health smoke (<code>status</code>) + <code>Config.load()</code> probe + per-var warnings (ICLAUDE_IWIKI_LLM_BASE_URL, ICLAUDE_IWIKI_LLM_KEY, ICLAUDE_IWIKI_EMBED_MODEL) + print dir, <code>return 0</code>.<br>
+            <code>install_iwiki</code>: вызов <code>_iwiki_postsync_check "$dir" "$uv"</code> после <code>uv sync</code>; generic "Configure ICLAUDE_IWIKI_LLM_*" строка удалена.<br>
+            Тесты: <code>test_postsync_params_present</code> + <code>test_postsync_params_missing</code> добавлены в test file.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Task 3</strong> — Canonical «Engine invocation» block в 4 SKILL.md</td>
+          <td><span class="badge b-done">DONE</span></td>
+          <td>
+            Все 4 скилла (iwiki-init, iwiki-ingest, iwiki-query, iwiki-lint): добавлен раздел <code>## Engine invocation (read first)</code> с <code>IWIKI_ENGINE_DIR</code>-первым блоком, fallback chain, fail-loud exit.<br>
+            Prose-фиксы: <code>${CLAUDE_PLUGIN_ROOT}/engine</code> → «resolved via IWIKI_ENGINE_DIR — see Engine invocation above».<br>
+            Де-дуп: дублированный <code>ENG=…/UV=…</code> резолв в step-4 заменён на комментарий <code># $ENG / $UV from "Engine invocation" above:</code>.<br>
+            Регресс-тест <code>test_skills_canonical_block</code>: 4 скилла × 4 ассерта (no command -v, no --help, has IWIKI_ENGINE_DIR, has fail-loud line).
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Task 4</strong> — Document entrypoint in wiki (keep-current)</td>
+          <td><span class="badge b-done">DONE</span></td>
+          <td>
+            <code>docs/wiki/iwiki.md</code>: добавлен раздел <code>## Engine invocation</code> (~6 строк) — IWIKI_ENGINE_DIR канонический entrypoint, порядок резолвинга in-repo → newest cached, <code>_iwiki_postsync_check</code>, cross-link к Engine Runner и Automation Hooks.<br>
+            IWIKI_ENGINE_DIR упоминается 4 раза в файле (проверено: <code>grep -c</code> = 4).<br>
+            <em>Re-index намеренно отложен (user-gated egress) — см. Findings.</em>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <table>
+      <thead><tr><th>#</th><th>Severity</th><th>Шаг</th><th>Plan</th><th>Diff</th><th>Fix options</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><span class="badge b-info">INFO</span></td>
+          <td>Task 4, Step 2 (re-index + lint)</td>
+          <td>«Refresh the index (<code>iwiki:iwiki-ingest</code> on <code>lib/iwiki</code>) + <code>iwiki:iwiki-lint</code>» — план и spec §E оба требуют ingest + lint.</td>
+          <td>Embedding re-index (<code>iwiki_engine index</code> / <code>iwiki:iwiki-ingest</code>) намеренно не запущен — user-gated egress (требует вызова embedding API). Docs/wiki/iwiki.md обновлён на диске (wiki-страница существует); конфигурационно-свободный <code>lint</code> был выполнен (Task 4 step 2 в записях контроллера). Re-index отложен как отдельный user checkpoint.</td>
+          <td>
+            1. Принять: spec §E не устанавливает re-index как acceptance criterion (egress user-gated) — вердикт <strong>OK</strong> не затронут.<br>
+            2. При следующем доступе к embedding API выполнить: <code>iwiki:iwiki-ingest lib/iwiki</code>, затем <code>/iwiki-lint</code>.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие Intent / Spec</h3>
+    <p class="note info">Intent отсутствует (chain.intent: null). Проверка по spec §A–§E.</p>
+    <table>
+      <thead><tr><th>Секция</th><th>Статус</th><th>Свидетельство в diff</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>§A</strong> — канонический <code>IWIKI_ENGINE_DIR</code> auto-resolved at launch</td>
+          <td><span class="badge b-ok">✓</span></td>
+          <td><code>lib/iwiki/detect.sh</code>: <code>iwiki_export_engine_dir()</code> — priority in-repo, fallback newest cached, export only when <code>pyproject.toml</code> exists. <code>lib/config/env-map.sh</code>: <code>source_iclaude_config</code> calls it via <code>command -v</code> guard on every launch.</td>
+        </tr>
+        <tr>
+          <td><strong>§B</strong> — top «Engine invocation» block in 4 skills</td>
+          <td><span class="badge b-ok">✓</span></td>
+          <td>Все 4 SKILL.md: раздел «## Engine invocation (read first)» с IWIKI_ENGINE_DIR-first block, fail-loud exit, prose исправлена, in-step дублирование удалено. Regression grep: 0 совпадений для <code>command -v iwiki_engine</code> / <code>iwiki_engine --help</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>§C</strong> — install health smoke + Config.load() probe + per-var warnings + print dir</td>
+          <td><span class="badge b-ok">✓</span></td>
+          <td><code>lib/iwiki/install.sh</code>: <code>_iwiki_postsync_check</code> — <code>status</code> health check + <code>Config.load()</code> probe + warnings для ICLAUDE_IWIKI_LLM_BASE_URL, ICLAUDE_IWIKI_LLM_KEY, ICLAUDE_IWIKI_EMBED_MODEL + <code>iwiki_export_engine_dir</code> + print dir. Всегда <code>return 0</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>§D</strong> — tests + regression</td>
+          <td><span class="badge b-ok">✓</span></td>
+          <td><code>tests/test_iwiki_engine_entrypoint.sh</code>: 6 тест-функций (resolver ×2 + env-map ×1 + install ×2 + skill regression ×1). Подтверждено контроллером: ALL PASS. Regression grep: clean.</td>
+        </tr>
+        <tr>
+          <td><strong>§E</strong> — docs/wiki/iwiki.md updated + ingest + lint</td>
+          <td><span class="badge b-ok">✓</span></td>
+          <td><code>docs/wiki/iwiki.md</code>: раздел «## Engine invocation» добавлен (4× IWIKI_ENGINE_DIR). Config-free lint пройден. Re-index user-gated — intentional, documented out-of-band (не является gap для acceptance).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Избыточные изменения (EXCESS)</h3>
+    <p class="note ok">Избыточных изменений нет. Все 9 изменённых файлов прямо соответствуют шагам плана (T1→T4 + Final verification).</p>
+
+    <h3>Сводка находок</h3>
+    <table>
+      <thead><tr><th>Уровень</th><th>Количество</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-crit">CRITICAL</span></td><td>0</td></tr>
+        <tr><td><span class="badge b-warn">WARNING</span></td><td>0</td></tr>
+        <tr><td><span class="badge b-info">INFO</span></td><td>1 (embedding re-index user-gated, documented)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage done">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage done">plan ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">result ✓ OK</span>
+    </div>
+    <p class="legend">
+      (нет intent) → <code>docs/superpowers/specs/2026-06-30-iwiki-engine-entrypoint-design.md</code>
+      → <code>docs/superpowers/plans/2026-06-30-iwiki-engine-entrypoint.md</code><br>
+      plan_hash: <code>8931665f8544a760</code> · Задача закрыта в <code>docs/TODO.md</code> как <strong>done</strong> · 2026-06-30
+    </p>
   </section>
   <!-- TAB:result END -->
   </main>
