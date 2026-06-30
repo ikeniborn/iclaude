@@ -83,3 +83,5 @@
 {"op":"ingest","source":"lib/telemetry/otel.sh","page":"docs/wiki/telemetry.md","date":"2026-06-25"}
 {"op":"ingest","source":"lib/telemetry/otel.sh","page":"docs/wiki/observability.md","date":"2026-06-25"}
 {"op":"ingest","source":"iclaude.sh","page":"docs/wiki/architecture.md","date":"2026-06-25"}
+{"op":"ingest","source":"plugin/iwiki/engine/iwiki_engine/lint.py","page":"docs/wiki/iwiki.md","date":"2026-06-30","src_hash":"e7f92f00359231aa","note":"content-hash freshness; index refresh deferred (embedding backend unreachable)"}
+{"op":"ingest","source":"plugin/iwiki/hooks/iwiki_common.py","page":"docs/wiki/iwiki.md","date":"2026-06-30","src_hash":"370cc7461a46b4e5","note":"content-hash freshness; index refresh deferred (embedding backend unreachable)"}
