@@ -24,20 +24,23 @@ IDD owns WHY / WHAT / Outcomes / Constraints. Brainstorm owns HOW (architecture,
 
 ### Step 0: Load project context via iwiki (if available)
 
-Before asking any questions, check whether `docs/wiki/` exists. If yes, load context in parallel:
+Before asking any questions, check the iwiki MCP server. If connected, `wiki_status`;
+if a domain for this project exists, `wiki_bind(read=[<domain>], write=<domain>)` and load
+context in parallel:
 
-1. `Skill(skill="iwiki:iwiki-query", args='<topic>')` — existing documentation for this topic
+1. `wiki_search('<topic>')` — existing documentation for this topic
 
 Store results as **wiki_context** for use in Steps 1–6 below.
 
 Present to user:
 
 ```
-Context from docs/wiki:
+Context from iwiki domain `<name>`:
 [sections found, or "No documentation found for this topic"]
 ```
 
-If `docs/wiki/` is unavailable or query returns no results — skip silently. Do not block or mention the absence.
+If the iwiki MCP server is unavailable, no project domain exists, or the search returns no
+results — skip silently. Do not block or mention the absence.
 
 ---
 
@@ -84,7 +87,7 @@ For each question, if **wiki_context** contains relevant information — show it
 **Q5 — Constraints:** What steering constraints (behavioral guidance) apply? What hard constraints (architectural or forbidden) apply?
 
 > *If wiki_context has decisions or constraints sections:*
-> "Existing architectural decisions on this topic: [fragment from docs/wiki].
+> "Existing architectural decisions on this topic: [fragment from the iwiki domain].
 > Which of them still hold? What is added as a new constraint?"
 
 ---
