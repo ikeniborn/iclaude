@@ -11,19 +11,30 @@ description: >-
 Answer questions over `docs/wiki/` via the embedding engine. The engine returns
 section ids; YOU read those sections and write the answer.
 
+## Engine invocation (read first)
+
+The engine is a **Python module, not a binary on `PATH`** — do not treat it as a
+shell command (probing with `command -v` or `--help` will fail). The launcher
+exports `IWIKI_ENGINE_DIR`; resolve `$ENG` /
+`$UV` once with the block below (it falls back to the in-repo / newest-cached
+engine and exits loud if none is found), then reuse them in the steps:
+
+```bash
+ENG="${IWIKI_ENGINE_DIR:-}"
+[ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
+[ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+[ -f "$ENG/pyproject.toml" ] || { echo "iwiki: engine not found — run ./iclaude.sh --install-iwiki" >&2; exit 1; }
+UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+# Run from the project root (relative --wiki-dir resolves against it):
+"$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki <cmd>
+```
+
 ## Steps
 
-1. Run the engine search from the **current project root**. The engine ships
-   inside this plugin (`${CLAUDE_PLUGIN_ROOT}/engine`) and searches the current
-   project's own `docs/wiki/` — so this works in any project, not just iclaude:
+1. Run the engine search from the **current project root**:
    ```bash
    [ -d docs/wiki ] || { echo "iwiki: no docs/wiki/ here — run /iwiki-init to create one."; exit 0; }
-   # CLAUDE_PLUGIN_ROOT is set for hooks but NOT in the Bash tool — fall back to
-   # the in-repo engine, then the newest cached one. Reused by step 4 below.
-   ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
-   [ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
-   [ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
-   UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+   # $ENG / $UV from "Engine invocation" above:
    "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki search "<the user's question>"
    ```
    This prints JSON: `[{id, file, heading, chunk, score}, ...]`.

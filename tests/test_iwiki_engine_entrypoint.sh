@@ -100,11 +100,25 @@ test_postsync_params_missing() {
     assert_contains "postsync stays non-fatal (RC=0)" "$out" "RC=0"
 }
 
+# ---- Task 3: skill regression ----
+test_skills_canonical_block() {
+    local s f body
+    for s in iwiki-init iwiki-ingest iwiki-query iwiki-lint; do
+        f="$REPO/plugin/iwiki/skills/$s/SKILL.md"
+        body="$(cat "$f")"
+        assert_not_contains "$s: no 'command -v iwiki_engine'" "$body" "command -v iwiki_engine"
+        assert_not_contains "$s: no 'iwiki_engine --help'"     "$body" "iwiki_engine --help"
+        assert_contains     "$s: reads IWIKI_ENGINE_DIR"       "$body" "IWIKI_ENGINE_DIR"
+        assert_contains     "$s: has fail-loud line"           "$body" "engine not found — run ./iclaude.sh --install-iwiki"
+    done
+}
+
 test_resolver_prefers_in_repo
 test_resolver_falls_back_to_newest_cache
 test_envmap_exports_engine_dir
 test_postsync_params_present
 test_postsync_params_missing
+test_skills_canonical_block
 
 echo "----"
 [[ "$fails" -eq 0 ]] && { echo "ALL PASS"; exit 0; } || { echo "$fails FAILED"; exit 1; }

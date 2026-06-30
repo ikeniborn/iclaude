@@ -12,7 +12,26 @@ description: >-
 One-shot bootstrap of `docs/wiki/` for the **current project**. This is a batch
 `iwiki-ingest`: it scans the source tree, generates a wiki page per area, then
 indexes everything. Works in any project — the engine ships with this plugin
-(`${CLAUDE_PLUGIN_ROOT}/engine`) and writes to the current project's `docs/wiki/`.
+(resolved via `IWIKI_ENGINE_DIR` — see **Engine invocation** above) and writes
+to the current project's `docs/wiki/`.
+
+## Engine invocation (read first)
+
+The engine is a **Python module, not a binary on `PATH`** — do not treat it as a
+shell command (probing with `command -v` or `--help` will fail). The launcher
+exports `IWIKI_ENGINE_DIR`; resolve `$ENG` /
+`$UV` once with the block below (it falls back to the in-repo / newest-cached
+engine and exits loud if none is found), then reuse them in the steps:
+
+```bash
+ENG="${IWIKI_ENGINE_DIR:-}"
+[ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
+[ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+[ -f "$ENG/pyproject.toml" ] || { echo "iwiki: engine not found — run ./iclaude.sh --install-iwiki" >&2; exit 1; }
+UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+# Run from the project root (relative --wiki-dir resolves against it):
+"$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki <cmd>
+```
 
 ## Guardrails (autonomy zone: guarded)
 
@@ -47,12 +66,7 @@ indexes everything. Works in any project — the engine ships with this plugin
 
 4. **Build the index** (from the project root):
    ```bash
-   # CLAUDE_PLUGIN_ROOT is set for hooks but NOT in the Bash tool — fall back to
-   # the in-repo engine, then the newest cached one.
-   ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
-   [ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
-   [ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
-   UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+   # $ENG / $UV from "Engine invocation" above:
    "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki index
    ```
    Expected: `indexed: N chunks (... reused, ... embedded), <bytes>` (warn if over

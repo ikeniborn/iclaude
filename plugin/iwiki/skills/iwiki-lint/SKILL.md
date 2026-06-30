@@ -10,16 +10,29 @@ description: >-
 Report `docs/wiki/` health by calling the engine's deterministic `lint` check.
 Makes NO edits. The engine ships with this plugin, so this works in any project.
 
+## Engine invocation (read first)
+
+The engine is a **Python module, not a binary on `PATH`** — do not treat it as a
+shell command (probing with `command -v` or `--help` will fail). The launcher
+exports `IWIKI_ENGINE_DIR`; resolve `$ENG` /
+`$UV` once with the block below (it falls back to the in-repo / newest-cached
+engine and exits loud if none is found), then reuse them in the steps:
+
+```bash
+ENG="${IWIKI_ENGINE_DIR:-}"
+[ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
+[ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+[ -f "$ENG/pyproject.toml" ] || { echo "iwiki: engine not found — run ./iclaude.sh --install-iwiki" >&2; exit 1; }
+UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+# Run from the project root (relative --wiki-dir resolves against it):
+"$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki <cmd>
+```
+
 ## Steps
 
 1. Run the engine `lint` from the current project root:
    ```bash
-   # CLAUDE_PLUGIN_ROOT is set for hooks but NOT in the Bash tool — fall back to
-   # the in-repo engine, then the newest cached one.
-   ENG="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/engine}"
-   [ -f "$ENG/pyproject.toml" ] || ENG="plugin/iwiki/engine"
-   [ -f "$ENG/pyproject.toml" ] || ENG="$(ls -d "$CLAUDE_CONFIG_DIR"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
-   UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CLAUDE_CONFIG_DIR/../bin/uv"
+   # $ENG / $UV from "Engine invocation" above:
    "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki lint
    ```
    This prints one JSON object. It always exits 0 (a real config/engine failure
