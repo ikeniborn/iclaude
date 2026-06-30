@@ -1,3 +1,16 @@
+---
+review:
+  spec_hash: 5583d4ffd01355ef
+  last_run: 2026-06-30
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings: []
+chain:
+  intent: null
+---
 # iwiki: migrate usage to MCP server + decommission in-repo plugin integration
 
 **Date:** 2026-06-30

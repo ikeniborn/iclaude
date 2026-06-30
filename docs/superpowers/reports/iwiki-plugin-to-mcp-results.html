@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iwiki-plugin-to-mcp — отчёт цепочки IDD→SDD</title>
+<style>
+  :root{
+    --bg:#0e1116; --surface:#171b22; --surface2:#1e242d; --border:#2b323c;
+    --fg:#e6edf3; --muted:#9aa6b2; --accent:#58a6ff; --accent2:#3fb950;
+    --warn:#d29922; --crit:#f85149; --info:#8b949e; --code:#1c2128; --shadow:rgba(0,0,0,.45);
+  }
+  body:has(#theme-toggle:checked){
+    --bg:#f6f8fa; --surface:#ffffff; --surface2:#f0f3f6; --border:#d0d7de;
+    --fg:#1f2328; --muted:#57606a; --accent:#0969da; --accent2:#1a7f37;
+    --warn:#9a6700; --crit:#cf222e; --info:#6e7781; --code:#f0f3f6; --shadow:rgba(140,149,159,.2);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;padding:0 0 4rem}
+  header{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.6rem;
+    background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  header h1{font-size:1.15rem;margin:0;font-weight:650}
+  header .sub{color:var(--muted);font-size:.85rem;font-weight:400}
+  .theme-btn{cursor:pointer;border:1px solid var(--border);border-radius:8px;
+    padding:.35rem .6rem;background:var(--surface2);user-select:none;font-size:.95rem}
+  main{max-width:1080px;margin:0 auto;padding:0 1.6rem}
+  h2{font-size:1.25rem;margin:2rem 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+  h3{font-size:1.02rem;margin:1.5rem 0 .6rem;color:var(--accent)}
+  table{border-collapse:collapse;width:100%;margin:.8rem 0;font-size:.88rem}
+  th,td{border:1px solid var(--border);padding:.5rem .65rem;text-align:left;vertical-align:top}
+  th{background:var(--surface2);font-weight:600}
+  tr:nth-child(even) td{background:var(--surface)}
+  code,pre{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+  code{background:var(--code);padding:.1rem .35rem;border-radius:4px;font-size:.85em}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;overflow:auto;font-size:.82rem}
+  .note{background:var(--surface2);border-left:3px solid var(--accent);padding:.7rem 1rem;border-radius:0 8px 8px 0;color:var(--muted)}
+  .note.ok{border-left-color:var(--accent2)}
+  .note.info{border-left-color:var(--info)}
+  .badge{display:inline-block;padding:.12rem .5rem;border-radius:999px;font-size:.74rem;font-weight:600;border:1px solid var(--border)}
+  .b-pass{color:var(--accent2);border-color:var(--accent2)}
+  .b-ok{color:var(--accent2);border-color:var(--accent2)}
+  .b-crit{color:var(--crit);border-color:var(--crit)}
+  .b-warn{color:var(--warn);border-color:var(--warn)}
+  .b-na{color:var(--info);border-color:var(--info)}
+  .b-info{color:var(--info);border-color:var(--info)}
+  nav.chain-tabs{display:flex;gap:.4rem;max-width:1080px;margin:1.2rem auto 0;padding:0 1.6rem;flex-wrap:wrap}
+  .chain-tabs label{cursor:pointer;padding:.4rem .9rem;border:1px solid var(--border);
+    border-bottom:none;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted);font-size:.9rem}
+  .tab-pane{display:none;border:1px solid var(--border);border-radius:0 8px 8px 8px;
+    padding:1.2rem 1.6rem;background:var(--bg)}
+  main>.tab-pane{margin-top:-1px}
+  body:has(#tab-intent:checked) #pane-intent,
+  body:has(#tab-spec:checked)   #pane-spec,
+  body:has(#tab-plan:checked)   #pane-plan,
+  body:has(#tab-result:checked) #pane-result{display:block}
+  body:has(#tab-intent:checked) label[for="tab-intent"],
+  body:has(#tab-spec:checked)   label[for="tab-spec"],
+  body:has(#tab-plan:checked)   label[for="tab-plan"],
+  body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent);border-color:var(--accent);font-weight:650;background:var(--bg)}
+  /* solution flow blocks */
+  .flow{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}
+  .flow-row{display:flex;align-items:stretch;gap:.55rem;flex-wrap:wrap}
+  .node{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:.6rem .8rem;min-width:150px;box-shadow:0 1px 3px var(--shadow)}
+  .node .t{font-weight:650;font-size:.86rem}
+  .node .d{color:var(--muted);font-size:.76rem;margin-top:.2rem}
+  .node.accent{border-color:var(--accent)}
+  .node.warn{border-color:var(--warn)}
+  .arrow{align-self:center;color:var(--accent);font-size:1.1rem;padding:0 .1rem}
+  figure{margin:1rem 0}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:.4rem}
+  .legend{font-size:.78rem;color:var(--muted);margin:.4rem 0}
+  .chain-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.85rem;margin-top:.6rem}
+  .chain-flow .stage{padding:.3rem .7rem;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+  .chain-flow .stage.done{border-color:var(--accent2);color:var(--accent2)}
+  .chain-flow .stage.cur{border-color:var(--accent);color:var(--accent);font-weight:650}
+  .chain-flow .stage.na{color:var(--info);border-style:dashed}
+  .verdict-banner{display:flex;align-items:center;gap:.8rem;padding:1rem 1.2rem;
+    border-radius:10px;margin:1.2rem 0;background:var(--surface);border:2px solid var(--accent2)}
+  .verdict-banner .v-label{font-size:1.4rem;font-weight:700;color:var(--accent2)}
+  .verdict-banner .v-meta{color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+  <input type="checkbox" id="theme-toggle" hidden>
+  <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <header>
+    <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+    <div>
+      <h1>iwiki-plugin-to-mcp</h1>
+      <span class="sub">Отчёт цепочки IDD→SDD · миграция usage на MCP-сервер + вывод плагина из эксплуатации</span>
+    </div>
+  </header>
+  <nav class="chain-tabs">
+    <label for="tab-intent">Intent</label>
+    <label for="tab-spec">Spec</label>
+    <label for="tab-plan">Plan</label>
+    <label for="tab-result">Result</label>
+  </nav>
+  <main>
+  <!-- TAB:intent START -->
+  <section class="tab-pane" id="pane-intent">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:intent END -->
+  <!-- TAB:spec START -->
+  <section class="tab-pane" id="pane-spec">
+
+    <h2>Резюме спецификации</h2>
+    <p class="legend">Источник: <code>docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md</code> · spec_hash <code>5583d4ffd01355ef</code></p>
+    <table>
+      <thead><tr><th>Раздел</th><th>Требование</th></tr></thead>
+      <tbody>
+        <tr><td>Decisions #1</td><td>Двухчастный объём: миграция инструкций <em>и</em> decommission-очистка.</td></tr>
+        <tr><td>Decisions #2</td><td>Детекция через <code>wiki_status</code> (MCP-native) вместо гейта <code>exists docs/wiki/</code>; путь <code>docs/wiki/</code> убирается как концепт повсеместно.</td></tr>
+        <tr><td>Decisions #3</td><td>Полный редизайн интеграционных секций вокруг доменной модели MCP (<code>wiki_status</code> → <code>wiki_bind</code> → типизированные вызовы), не 1:1 замена токенов.</td></tr>
+        <tr><td>Decisions #4</td><td>Cross-domain поиск опционален; по умолчанию — связанный домен проекта. <code>wiki_search(domains/scope)</code> — opt-in note.</td></tr>
+        <tr><td>Decisions #5</td><td>Сохранить только папку <code>plugin/iwiki/</code>; удалить остальную in-repo интеграцию.</td></tr>
+        <tr><td>Decisions #6</td><td>Отключить плагин: <code>settings.json</code> <code>iwiki@iclaude → false</code>; папка остаётся как dormant-архив.</td></tr>
+        <tr><td>MCP vocabulary</td><td>Канонический mapping plugin→MCP для всех операций (detect/bind, search, related, read, write, reindex, health, list, new domain).</td></tr>
+        <tr><td>Detection/bind flow</td><td>Канонический поток <code>wiki_status → wiki_bind(read,write)</code>; домен отсутствует → «не настроен», skip silently.</td></tr>
+        <tr><td>Write flow</td><td>Модель сама авторит markdown → <code>wiki_write_page(domain, slug, markdown, source)</code>; шаг авторинга делается явным.</td></tr>
+        <tr><td>§1.1</td><td>CLAUDE.md (global): «Getting Started» и «Keep Docs Current» — заменить <code>docs/wiki/</code>-гейт и <code>/iwiki-*</code> на MCP-поток + каталог MCP-инструментов.</td></tr>
+        <tr><td>§1.2</td><td>context-awareness/SKILL.md: §5 Detection на <code>wiki_status</code>; поля <code>wiki_domain</code> (new), drop <code>wiki_index_path</code>; frontmatter description; delegates; changelog.</td></tr>
+        <tr><td>§1.3</td><td>intent/SKILL.md: Step 0 гейт → <code>wiki_status</code>; query → <code>wiki_search</code>; «Context from iwiki domain».</td></tr>
+        <tr><td>§1.4–1.6</td><td>agent-builder, prd-generator, prompt-verifier: gate→Query→Record на MCP (<code>wiki_status</code>/<code>wiki_search</code>/<code>wiki_write_page</code>).</td></tr>
+        <tr><td>§2.1</td><td>Install machinery: удалить <code>lib/iwiki/</code>, блок Phase 8.0.1 и <code>--install-iwiki</code> в <code>iclaude.sh</code>, help-строку <code>usage.sh</code>, вызов <code>iwiki_export_engine_dir</code> в <code>env-map.sh</code>, обновить комментарий <code>init.sh</code> (uv bootstrap остаётся).</td></tr>
+        <tr><td>§2.2</td><td>Config: удалить iwiki-блок в <code>.claude_config.example</code>, удалить <code>.iwikiignore</code>.</td></tr>
+        <tr><td>§2.3</td><td>Wiki data: удалить <code>docs/wiki/</code> (контент + <code>.iwiki/</code> индекс).</td></tr>
+        <tr><td>§2.4</td><td>Tests: удалить 4 файла <code>tests/test_iwiki_*</code> (entrypoint, hook_failopen, hooks, lint).</td></tr>
+        <tr><td>§2.5</td><td>Plugin disable: <code>settings.json</code> <code>iwiki@iclaude → false</code>; убрать осиротевшие iwiki hook-записи.</td></tr>
+        <tr><td>§2.6</td><td>README: переписать iwiki-секции на MCP-модель; убрать <code>--install-iwiki</code>, <code>/iwiki-*</code>, <code>docs/wiki/</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Success Criteria</h3>
+    <table>
+      <thead><tr><th>#</th><th>Критерий</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>grep живых usage-директив (<code>iwiki:iwiki-*</code>, <code>/iwiki-*</code>, <code>iwiki_engine</code>, <code>docs/wiki/</code>) по мигрированным инструкциям + README → <strong>ноль</strong> (changelog-история исключена).</td></tr>
+        <tr><td>2</td><td>grep <code>install_iwiki</code>/<code>iwiki_export_engine_dir</code>/<code>--install-iwiki</code>/<code>IWIKI_ENGINE_DIR</code> по <code>lib/</code>, <code>iclaude.sh</code>, <code>usage.sh</code> → <strong>ноль</strong>.</td></tr>
+        <tr><td>3</td><td><code>bash -n</code> по <code>iclaude.sh</code> и всем <code>lib/**/*.sh</code> чисто; <code>./iclaude.sh --help</code> без iwiki и без ошибок.</td></tr>
+        <tr><td>4</td><td><code>lib/iwiki/</code>, <code>.iwikiignore</code>, <code>docs/wiki/</code>, 4 теста — удалены; <code>.claude_config.example</code> без iwiki-блока.</td></tr>
+        <tr><td>5</td><td><code>settings.json</code> имеет <code>iwiki@iclaude: false</code>; без осиротевших iwiki hook-записей.</td></tr>
+        <tr><td>6</td><td>Остаток тест-сьюта проходит (после очистки).</td></tr>
+        <tr><td>7</td><td>Мигрированные поверхности драйвят MCP (detect <code>wiki_status</code>, search <code>wiki_search</code>, write <code>wiki_write_page</code>, health <code>wiki_lint</code>); detect/bind и write-потоки самодостаточны per skill.</td></tr>
+        <tr><td>8</td><td>Папка <code>plugin/iwiki/</code> цела.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Схемы решения и зависимостей</h2>
+
+    <h3>Поток решения (компоненты)</h3>
+    <div class="flow">
+      <div class="flow-row">
+        <div class="node accent"><div class="t">wiki_status</div><div class="d">project_dir, domains, текущий read/write bind</div></div>
+        <span class="arrow">→</span>
+        <div class="node accent"><div class="t">wiki_bind(read,write)</div><div class="d">домен == basename проекта → bind; далее <code>domain</code> опускается</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="t">типизированные вызовы</div><div class="d">search / read / write / related / lint</div></div>
+      </div>
+      <div class="flow-row">
+        <div class="node"><div class="t">wiki_search(query, domains?, scope?)</div><div class="d">default = bound domain; cross-domain — opt-in</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="t">авторинг markdown</div><div class="d">модель сама пишет страницу</div></div>
+        <span class="arrow">→</span>
+        <div class="node warn"><div class="t">wiki_write_page(+ wiki_index?)</div><div class="d">open item: auto-reindex или явный index</div></div>
+      </div>
+      <div class="flow-row">
+        <div class="node"><div class="t">Часть 1 — миграция</div><div class="d">CLAUDE.md + 5 skills драйвят MCP</div></div>
+        <span class="arrow">·</span>
+        <div class="node"><div class="t">Часть 2 — decommission</div><div class="d">lib/iwiki, install-wiring, config, docs/wiki, tests, README</div></div>
+        <span class="arrow">·</span>
+        <div class="node"><div class="t">settings.json</div><div class="d"><code>iwiki@iclaude: false</code> — папка dormant</div></div>
+      </div>
+    </div>
+
+    <h3>Граф зависимостей</h3>
+    <figure>
+      <svg viewBox="0 0 760 400" width="100%" role="img" aria-label="Граф зависимостей требований">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+          </marker>
+          <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+        <style>
+          .gn rect{fill:#171b22;stroke:#2b323c;stroke-width:1.2;rx:8;filter:url(#ds)}
+          .gn.acc rect{stroke:#58a6ff}
+          .gn.warnn rect{stroke:#d29922}
+          .gn text{fill:#e6edf3;font:600 12px sans-serif}
+          .gn .s{fill:#9aa6b2;font:400 10px sans-serif}
+          .ge{stroke:#58a6ff;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+          body:has(#theme-toggle:checked) .gn rect{fill:#fff;stroke:#d0d7de}
+          body:has(#theme-toggle:checked) .gn.acc rect{stroke:#0969da}
+          body:has(#theme-toggle:checked) .gn.warnn rect{stroke:#9a6700}
+          body:has(#theme-toggle:checked) .gn text{fill:#1f2328}
+          body:has(#theme-toggle:checked) .gn .s{fill:#57606a}
+          body:has(#theme-toggle:checked) .ge{stroke:#0969da}
+          body:has(#theme-toggle:checked) #arr path{fill:#0969da}
+        </style>
+        <!-- edges (A -> B = A depends on B) -->
+        <!-- MCP vocabulary (V) is the shared foundation -->
+        <!-- detect/bind flow (DB) -> V -->
+        <path class="ge" d="M360,95 L360,55"/>
+        <!-- write flow (WF) -> V -->
+        <path class="ge" d="M540,110 C500,80 440,55 392,42"/>
+        <!-- Part1 migration (P1) -> DB, WF -->
+        <path class="ge" d="M250,205 C290,175 320,150 345,128"/>
+        <path class="ge" d="M320,210 C400,180 480,150 520,140"/>
+        <!-- Part2 decommission (P2) -> V (removes plugin/CLI side) -->
+        <path class="ge" d="M610,210 C560,150 450,70 392,40"/>
+        <!-- settings disable (SD) -> P2 -->
+        <path class="ge" d="M610,295 L610,250"/>
+        <!-- success criteria (SC) -> P1, P2 -->
+        <path class="ge" d="M300,320 C270,290 250,260 245,240"/>
+        <path class="ge" d="M420,320 C520,300 580,270 600,250"/>
+
+        <g class="gn acc"><rect x="290" y="18" width="140" height="34" rx="8"/><text x="360" y="33" text-anchor="middle">MCP vocabulary (V)</text><text x="360" y="46" text-anchor="middle" class="s">канонический mapping</text></g>
+        <g class="gn"><rect x="290" y="96" width="140" height="36" rx="8"/><text x="360" y="112" text-anchor="middle">detect/bind (DB)</text><text x="360" y="126" text-anchor="middle" class="s">status → bind</text></g>
+        <g class="gn warnn"><rect x="490" y="110" width="140" height="40" rx="8"/><text x="560" y="127" text-anchor="middle">write flow (WF)</text><text x="560" y="142" text-anchor="middle" class="s">author → write (+index?)</text></g>
+        <g class="gn"><rect x="170" y="206" width="160" height="40" rx="8"/><text x="250" y="223" text-anchor="middle">Часть 1: миграция (P1)</text><text x="250" y="238" text-anchor="middle" class="s">CLAUDE.md + 5 skills</text></g>
+        <g class="gn"><rect x="540" y="206" width="150" height="40" rx="8"/><text x="615" y="223" text-anchor="middle">Часть 2: cleanup (P2)</text><text x="615" y="238" text-anchor="middle" class="s">lib/iwiki, config, tests, README</text></g>
+        <g class="gn"><rect x="540" y="296" width="150" height="40" rx="8"/><text x="615" y="313" text-anchor="middle">settings disable (SD)</text><text x="615" y="328" text-anchor="middle" class="s">iwiki@iclaude:false</text></g>
+        <g class="gn"><rect x="290" y="318" width="160" height="40" rx="8"/><text x="370" y="335" text-anchor="middle">Success criteria (SC)</text><text x="370" y="350" text-anchor="middle" class="s">greps · bash -n · file-absence</text></g>
+      </svg>
+      <figcaption>Рёбра направлены «A→B = A зависит от B». Граф ацикличен (DAG) — циклов нет; вершина (V) <code>MCP vocabulary</code> — общий фундамент для detect/bind, write-flow и обеих частей объёма.</figcaption>
+    </figure>
+
+    <h3>Карта покрытия (задача → требование)</h3>
+    <table>
+      <thead><tr><th>Задача (из разговора)</th><th>Покрывающее требование</th></tr></thead>
+      <tbody>
+        <tr><td>1. Миграция usage из плагина в MCP (CLAUDE.md + 5 skills)</td><td>§1.1, §1.2, §1.3, §1.4–1.6; MCP vocabulary; Decisions #1</td></tr>
+        <tr><td>2. Детекция через <code>wiki_status</code>; убрать <code>docs/wiki/</code> как концепт</td><td>Decisions #2; §1.1 (гейт), §1.2 (§5), §1.3 (Step 0), §1.4–1.6 (gate); §2.3 (данные)</td></tr>
+        <tr><td>3. Полный редизайн вокруг доменной модели MCP</td><td>Decisions #3; «Detection/binding flow»; «Write flow»; MCP vocabulary</td></tr>
+        <tr><td>4. Cross-domain поиск опционален (default = bound domain)</td><td>Decisions #4 (<code>wiki_search</code> domains/scope = opt-in note)</td></tr>
+        <tr><td>5. Decommission, сохранив только <code>plugin/iwiki/</code></td><td>§2.1 (install), §2.2 (config), §2.3 (data), §2.4 (tests), §2.6 (README); Decisions #5; «Not touched»</td></tr>
+        <tr><td>6. Отключить плагин в <code>settings.json</code> (folder dormant)</td><td>Decisions #6; §2.5</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Каждая из 6 задач покрыта ≥1 требованием; каждое требование привязано к задаче — лишних требований нет (объём ограничен секцией «Not touched»).</p>
+
+    <h2>Результаты проверки</h2>
+    <table>
+      <thead><tr><th>Фаза</th><th>Статус</th><th>Проверено</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge b-pass">passed</span></td><td>placeholders, broken links, нумерация секций, дубли заголовков</td></tr>
+        <tr><td>coverage</td><td><span class="badge b-pass">passed</span></td><td>6 задач ↔ требования, без лишних, без противоречий</td></tr>
+        <tr><td>clarity</td><td><span class="badge b-pass">passed</span></td><td>нет неоднозначных формулировок; критерии приёмки конкретны (grep/parse/file)</td></tr>
+        <tr><td>consistency</td><td><span class="badge b-pass">passed</span></td><td>терминология MCP единообразна; ссылки на файлы сверены с кодовой базой</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <p class="note ok">Находок нет — все 4 фазы пройдены без замечаний.</p>
+    <table>
+      <thead><tr><th>id</th><th>severity</th><th>section</th><th>fragment</th><th>text</th><th>fix</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td colspan="7" style="text-align:center;color:var(--muted)">— пусто —</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Сводка</h3>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · spec_hash <code>5583d4ffd01355ef</code> · первичный прогон (frontmatter добавлен)</span>
+    </div>
+    <p class="legend">Известный «Open item» о реиндексации <code>wiki_write_page</code> — сознательная implementation-time неизвестность, не TODO-placeholder (не флагуется).</p>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage">plan</span>
+      <span class="arrow">→</span>
+      <span class="stage">result</span>
+    </div>
+    <p class="legend">Интент-документ отсутствует (<code>intent = null</code>) — спецификация открывает цепочку. topic = <code>iwiki-plugin-to-mcp</code>.</p>
+  </section>
+  <!-- TAB:spec END -->
+  <!-- TAB:plan START -->
+  <section class="tab-pane" id="pane-plan">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:plan END -->
+  <!-- TAB:result START -->
+  <section class="tab-pane" id="pane-result">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:result END -->
+  </main>
+</body>
+</html>
