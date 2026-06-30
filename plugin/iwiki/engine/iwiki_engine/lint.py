@@ -8,6 +8,7 @@ an error — this is the fix for the exit-2 seen in foreign projects.
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -48,9 +49,30 @@ def _resolve(slug: str, wiki_dir: str) -> str:
     return os.path.normpath(os.path.join(wiki_dir, t))
 
 
+def _src_hash(src: str) -> str | None:
+    """sha256 of the source's raw bytes, first 16 hex chars. None when the file
+    cannot be read — the caller then falls back to the mtime comparison."""
+    try:
+        with open(src, "rb") as fh:
+            return hashlib.sha256(fh.read()).hexdigest()[:16]
+    except OSError:
+        return None
+
+
+def _fresh(src: str, page: str, src_hash: str | None) -> bool:
+    """Is `page` current for `src`? Content-addressed when the log record
+    carries `src_hash` and the source is readable; otherwise the page is fresh
+    iff it is at least as new as the source by mtime (the prior behaviour)."""
+    if src_hash:
+        cur = _src_hash(src)
+        if cur is not None:
+            return cur == src_hash
+    return os.path.getmtime(page) >= os.path.getmtime(src)
+
+
 def _stale(wiki_dir: str) -> list[dict]:
     """Pages whose source changed after the last ingest, via .iwiki/log.jsonl
-    (mtime-based; no git). Deduped by page, first hit wins."""
+    (content-hash with mtime fallback; no git). Deduped by page, first hit wins."""
     log = os.path.join(wiki_dir, ".iwiki", "log.jsonl")
     if not os.path.isfile(log):
         return []
@@ -73,7 +95,7 @@ def _stale(wiki_dir: str) -> list[dict]:
             continue
         if os.path.isfile(src) and os.path.isfile(page):
             try:
-                if os.path.getmtime(src) > os.path.getmtime(page):
+                if not _fresh(src, page, rec.get("src_hash")):
                     out.append({"page": page, "source": src})
                     seen.add(page)
             except Exception:
