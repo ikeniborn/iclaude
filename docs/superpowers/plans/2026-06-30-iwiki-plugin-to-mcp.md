@@ -35,6 +35,10 @@ review:
 chain:
   intent: null
   spec: docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md
+result_check:
+  verdict: OK
+  plan_hash: f294b61738de89e8
+  last_run: 2026-06-30
 ---
 # iwiki Plugin → MCP Migration + Decommission — Implementation Plan
 

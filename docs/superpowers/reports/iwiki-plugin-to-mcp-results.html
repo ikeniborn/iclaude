@@ -87,8 +87,8 @@
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
   <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
     <div>
@@ -431,7 +431,163 @@
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
   <section class="tab-pane" id="pane-result">
-    <p class="note">Этап ещё не проверен.</p>
+
+    <h2>Резюме сверки</h2>
+    <p class="legend">
+      Plan: <code>docs/superpowers/plans/2026-06-30-iwiki-plugin-to-mcp.md</code> ·
+      plan_hash <code>f294b61738de89e8</code> ·
+      Spec: <code>docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md</code> ·
+      Intent: <span class="badge b-na">n/a</span> — спека открыла цепочку
+    </p>
+    <table>
+      <thead><tr><th>Параметр</th><th>Значение</th></tr></thead>
+      <tbody>
+        <tr><td>Diff base</td><td><code>git diff 434dbd04..HEAD</code> — 47 файлов, +123 / −2821</td></tr>
+        <tr><td>Характер изменений</td><td>Массив намеренных удалений: <code>docs/wiki/</code> + <code>lib/iwiki/</code> + 4 теста + install-wiring + config-блок + README-секции</td></tr>
+        <tr><td>plan_hash</td><td><code>f294b61738de89e8</code></td></tr>
+        <tr><td>result_check verdict</td><td><span class="badge b-ok">OK</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Покрытие шагов плана</h2>
+    <p class="legend">Итого: <span class="badge b-ok">DONE 11</span> · <span class="badge b-warn">PARTIAL 0</span> · <span class="badge b-crit">MISSING 0</span></p>
+    <table>
+      <thead><tr><th>Задача</th><th>Статус</th><th>Подтверждение</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>T1 — live probe (write-flow indexing)</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Выполнен без diff. Подтверждено: <code>wiki_write_page</code> не авто-индексирует — нужен явный <code>wiki_index</code>.</td>
+        </tr>
+        <tr>
+          <td>T2 — CLAUDE.md → MCP</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Getting Started и Keep Docs Current переписаны на MCP-поток; grep live-директив = 0.</td>
+        </tr>
+        <tr>
+          <td>T3 — context-awareness</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Детект через <code>wiki_status</code>; поле переименовано <code>wiki_index_path</code>→<code>wiki_domain</code>; version 1.5.0; deps [].</td>
+        </tr>
+        <tr>
+          <td>T4 — intent: Step 0 → wiki_search</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Step 0 реписан на <code>wiki_status</code> + <code>wiki_search</code>; grep = 0.</td>
+        </tr>
+        <tr>
+          <td>T5 — agent-builder / prd-generator / prompt-verifier → MCP</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Все 3 скилла: gate→<code>wiki_status</code>, query→<code>wiki_search</code>, record→<code>wiki_write_page</code> + <code>wiki_index</code>.</td>
+        </tr>
+        <tr>
+          <td>T6 — settings: iwiki@iclaude → false</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td><code>settings.json</code> содержит <code>iwiki@iclaude: false</code>; осиротевших hook-записей нет.</td>
+        </tr>
+        <tr>
+          <td>T7 — удалён lib/iwiki + --install-iwiki + хвосты</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td><code>lib/iwiki/</code> удалён; <code>iclaude.sh</code> / <code>usage.sh</code> / <code>env-map.sh</code> / <code>init.sh</code> очищены; <code>bash -n</code> и <code>--help</code> чисты.</td>
+        </tr>
+        <tr>
+          <td>T8 — .claude_config.example iwiki-блок + docs/wiki/ удалены</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Config-блок удалён; <code>docs/wiki/</code> — GONE; <code>.iwikiignore</code> — <strong>сохранён</strong>.</td>
+        </tr>
+        <tr>
+          <td>T9 — 4 теста test_iwiki_* удалены</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td><code>tests/test_iwiki_entrypoint</code>, <code>test_iwiki_hook_failopen</code>, <code>test_iwiki_hooks</code>, <code>test_iwiki_lint</code> — GONE.</td>
+        </tr>
+        <tr>
+          <td>T10 — README: iwiki → MCP</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>3 региона (граф документации, workflow, project-tree) переписаны; grep = 0 по <code>/iwiki-*</code>, <code>--install-iwiki</code>, <code>docs/wiki/</code>, <code>lib/iwiki/</code>.</td>
+        </tr>
+        <tr>
+          <td>T11 — финальный verification sweep</td>
+          <td><span class="badge b-ok">DONE</span></td>
+          <td>Все 8 критериев PASS (см. таблицу ниже).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Покрытие Success Criteria</h2>
+    <p class="legend">Источник: спека § Success Criteria · подтверждено Task 11 · 8/8 PASS</p>
+    <table>
+      <thead><tr><th>#</th><th>Критерий</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>0 live legacy-директив (<code>iwiki:iwiki-*</code>, <code>/iwiki-*</code>, <code>iwiki_engine</code>, <code>docs/wiki/</code>) в 6 surface + README</td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>2</td><td>0 dangling shell-символов (<code>install_iwiki</code>, <code>iwiki_export_engine_dir</code>, <code>--install-iwiki</code>, <code>IWIKI_ENGINE_DIR</code>) в <code>lib/</code>, <code>iclaude.sh</code>, <code>usage.sh</code></td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>3</td><td><code>bash -n</code> по <code>iclaude.sh</code> и всем <code>lib/**/*.sh</code> чисто; <code>./iclaude.sh --help</code> без iwiki и без ошибок</td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>4</td><td><code>lib/iwiki/</code>, <code>docs/wiki/</code>, 4 теста — GONE; <code>.claude_config.example</code> без iwiki-блока; <code>.iwikiignore</code> <strong>сохранён</strong></td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>5</td><td><code>settings.json</code> имеет <code>iwiki@iclaude: false</code>; без осиротевших iwiki hook-записей</td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>6</td><td>Тест-провалы только environmental (microvm/ccr/pii — фейлят и на BASE; telemetry 7/7 на HEAD), не от iwiki</td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>7</td><td>MCP-tools драйвят все surface: detect <code>wiki_status</code>, search <code>wiki_search</code>, write <code>wiki_write_page</code>+<code>wiki_index</code>, health <code>wiki_lint</code></td><td><span class="badge b-ok">PASS</span></td></tr>
+        <tr><td>8</td><td><code>plugin/iwiki/</code> intact</td><td><span class="badge b-ok">PASS</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Findings</h2>
+    <table>
+      <thead><tr><th>id</th><th>severity</th><th>section</th><th>текст</th><th>вердикт</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>R-001</td>
+          <td><span class="badge b-info">INFO</span></td>
+          <td>T1 live probe (побочный эффект)</td>
+          <td><code>.iwiki.toml</code> (+2 строки) добавлен сверх исходного плана — привязка проекта к домену <code>iclaude</code>. Возник как побочка T1 probe (перепривязан с throwaway-домена на <code>iclaude</code>). Закоммичен по явному решению пользователя. Согласуется с MCP-моделью. Не дефект.</td>
+          <td><span class="badge b-ok">approved</span></td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td><span class="badge b-ok">CRITICAL 0</span></td>
+          <td>—</td>
+          <td>Критических находок нет.</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td><span class="badge b-ok">WARNING 0</span></td>
+          <td>—</td>
+          <td>Предупреждений нет.</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Избыточные изменения</h3>
+    <p class="note info"><code>.iwiki.toml</code> (+2) — user-approved MCP-binding; не относится к исходным шагам плана. WARNING-уровень снят: одобрено пользователем.</p>
+
+    <h2>Финальная ревью всей ветки (Opus)</h2>
+    <table>
+      <thead><tr><th>Параметр</th><th>Значение</th></tr></thead>
+      <tbody>
+        <tr><td>Ready to merge</td><td><strong>YES</strong></td></tr>
+        <tr><td>Critical</td><td>0</td></tr>
+        <tr><td>Important</td><td>0</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Сводка</h2>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">CRITICAL 0 · WARNING 0 · INFO 1 (R-001 approved) · plan_hash <code>f294b61738de89e8</code> · result_check</span>
+    </div>
+    <p class="legend">Все 11 шагов плана выполнены. Все 8 Success Criteria пройдены. Единственная находка (R-001) — одобрённый пользователем побочный эффект T1, не дефект.</p>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage done">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage done">plan ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">result ✓ OK</span>
+    </div>
+    <p class="legend">Интент отсутствует (<code>intent = null</code>) — спека открыла цепочку. Все три пройденные стадии: OK. Цепочка закрыта. topic = <code>iwiki-plugin-to-mcp</code>.</p>
+
   </section>
   <!-- TAB:result END -->
   </main>
