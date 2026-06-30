@@ -2,7 +2,7 @@
 chain:
   intent: null
 review:
-  spec_hash: f13fca9147a8661a
+  spec_hash: 1efb6dc46e3e1509
   last_run: 2026-06-30
   phases:
     structure:    { status: passed }
@@ -111,12 +111,18 @@ UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CL
 
 In `lib/iwiki/install.sh`, `install_iwiki()` after `uv sync`:
 
-- Run a smoke test: `"$uv" run --project "$dir" python3 -m iwiki_engine status`.
-  If the engine prints `HALT:` (missing `IWIKI_LLM_*` or unreachable backend),
-  surface it loudly — the engine imports but is not yet usable.
-- Replace the single generic "Configure ICLAUDE_IWIKI_LLM_* ..." line with a
-  per-variable warning for each of `ICLAUDE_IWIKI_LLM_BASE_URL`,
-  `ICLAUDE_IWIKI_LLM_KEY`, `ICLAUDE_IWIKI_EMBED_MODEL` that is unset.
+- Engine-health smoke test: `"$uv" run --project "$dir" python3 -m iwiki_engine status`.
+  This subcommand reads only the index — no config, no network — so a clean JSON
+  line proves the venv synced and the module imports. Note: `status` / `lint` /
+  `validate` never call `Config.load()`, so they cannot `HALT:` on missing params;
+  the health check and the parameter check are deliberately separate.
+- Parameter check: probe the engine's own config loader —
+  `"$uv" run --project "$dir" python3 -c "from iwiki_engine.config import Config; Config.load()"`.
+  `Config.load()` raises `ConfigError` (exit 2) when `IWIKI_LLM_BASE_URL` or
+  `IWIKI_LLM_KEY` is missing. On failure, replace the single generic
+  "Configure ICLAUDE_IWIKI_LLM_* ..." line with a per-variable warning:
+  required — `ICLAUDE_IWIKI_LLM_BASE_URL`, `ICLAUDE_IWIKI_LLM_KEY`; optional
+  (defaulted) — `ICLAUDE_IWIKI_EMBED_MODEL` (note the default applies if unset).
 - Call the resolver from (A) and print the final `IWIKI_ENGINE_DIR` so the user
   sees which engine the skills will use.
 
@@ -129,8 +135,9 @@ All of this is non-fatal (install still completes) but visible.
   under `tests/`.
 - Skill smoke: from a scratch dir with no `plugin/iwiki/engine`, the canonical
   block resolves via the cache glob and `... status` runs.
-- Install smoke: with `IWIKI_LLM_*` unset, the install smoke test surfaces
-  `HALT:` and the per-variable warnings fire.
+- Install smoke: `status` prints JSON regardless (no config); with
+  `IWIKI_LLM_BASE_URL` / `IWIKI_LLM_KEY` unset, the `Config.load()` probe exits
+  non-zero and the per-variable warnings fire.
 - Regression: `command -v iwiki_engine` / `iwiki_engine --help` are not
   instructed anywhere — `grep -rn 'command -v iwiki_engine\|iwiki_engine --help' plugin/iwiki/skills`
   returns nothing.
