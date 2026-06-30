@@ -1,3 +1,41 @@
+---
+review:
+  plan_hash: f294b61738de89e8
+  spec_hash: e85d04cbe5e9e7d2
+  last_run: 2026-06-30
+  phases:
+    structure:     { status: passed }
+    coverage:      { status: passed }
+    dependencies:  { status: passed }
+    verifiability: { status: passed }
+    consistency:   { status: passed }
+  findings:
+    - id: F-001
+      phase: verifiability
+      severity: INFO
+      section: "Task 11: Final verification sweep"
+      section_hash: de7b7a5d8a0b2f14
+      fragment: "Run the project's normal test command for the remaining (non-iwiki) tests. Expected: green"
+      text: >-
+        Task 11 Step 6 (success criterion 6) defers to "the project's normal test
+        command", but the repo has no single test runner — tests/ is a flat directory
+        of individual *.sh/*.py scripts with no Makefile or run_tests entrypoint. The
+        step instructs discovery first, so it is executable, but the DoD is not pinned
+        to an exact command/expected output the way the other verify steps are.
+      fix: >-
+        Optional: pin the command (e.g. iterate the non-iwiki tests/ scripts and assert
+        each exits 0) or name the project's actual CI invocation, so the criterion-6
+        check is reproducible. Non-blocking.
+      verdict: fixed
+      verdict_at: 2026-06-30
+      resolution: >-
+        Task 11 Step 6 now pins a concrete command (iterate non-iwiki tests/*.sh and
+        tests/*.py, skip *iwiki*, assert exit 0, echo TESTS_OK) plus a documented
+        fallback for scripts needing a special invocation. DoD is now reproducible.
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md
+---
 # iwiki Plugin → MCP Migration + Decommission — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -736,11 +774,14 @@ Expected: `"iwiki@iclaude": false`.
 
 - [ ] **Step 6: Success criterion 6 — remaining tests pass**
 
-Run the repo's existing test entrypoint (discover it first):
+The repo has no single runner — `tests/` is a flat dir of individual `*.sh`/`*.py` scripts. Run each non-iwiki script and assert exit 0:
 ```bash
-ls tests/ ; grep -rlnE "pytest|bats|\.sh" tests/ | head
+fail=0
+for t in tests/*.sh; do case "$t" in *iwiki*) continue;; esac; bash "$t" >/dev/null 2>&1 || { echo "FAIL $t"; fail=1; }; done
+for t in tests/*.py; do case "$t" in *iwiki*) continue;; esac; python3 "$t" >/dev/null 2>&1 || { echo "FAIL $t"; fail=1; }; done
+[ "$fail" = 0 ] && echo TESTS_OK
 ```
-Run the project's normal test command for the remaining (non-iwiki) tests. Expected: green; the four iwiki tests are absent.
+Expected: no `FAIL …` lines and `TESTS_OK`; the four iwiki tests are absent. (If a script needs a special invocation — e.g. `pytest` — fall back to the project's documented command for that file.)
 
 - [ ] **Step 7: Confirm plugin folder intact (criterion 8)**
 

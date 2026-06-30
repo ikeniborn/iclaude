@@ -86,8 +86,8 @@
 <body>
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
   <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
@@ -291,7 +291,142 @@
   <!-- TAB:spec END -->
   <!-- TAB:plan START -->
   <section class="tab-pane" id="pane-plan">
-    <p class="note">Этап ещё не проверен.</p>
+
+    <h2>Резюме плана</h2>
+    <p class="legend">Источник: <code>docs/superpowers/plans/2026-06-30-iwiki-plugin-to-mcp.md</code> · plan_hash <code>f294b61738de89e8</code> · spec_hash <code>e85d04cbe5e9e7d2</code></p>
+    <table>
+      <thead><tr><th>Задача</th><th>Файлы</th><th>Шаги / DoD</th></tr></thead>
+      <tbody>
+        <tr><td>Task 1 — подтвердить write-flow indexing (live probe)</td><td>нет (только MCP-вызовы)</td><td>6 шагов: create/bind probe-домен → write без index → search (ожид. не найдено) → index → search (ожид. найдено) → record. DoD: правило «write не авто-индексирует» подтверждено на live MCP.</td></tr>
+        <tr><td>Task 2 — CLAUDE.md Getting Started + Keep Docs Current</td><td><code>CLAUDE.md</code></td><td>4 правки (gate, gate-параграф, 2 bullet, engine-CLI параграф) → verify <code>grep -nE "iwiki:iwiki-|/iwiki-query|…|docs/wiki/"</code> = 0 → commit.</td></tr>
+        <tr><td>Task 3 — context-awareness: detect via wiki_status, переименование полей</td><td><code>context-awareness/SKILL.md</code></td><td>7 шагов: §5 блок, output-шаблон, 2 filled + 1 null example, description/delegates/§5-ref, changelog 1.5.0. DoD: verify grep — совпадения только в changelog-истории.</td></tr>
+        <tr><td>Task 4 — intent: Step 0 via MCP</td><td><code>intent/SKILL.md</code></td><td>Rewrite Step 0 → verify <code>grep -nE "iwiki:iwiki-|docs/wiki|/iwiki-"</code> = 0 → commit.</td></tr>
+        <tr><td>Task 5 — agent-builder / prd-generator / prompt-verifier: iwiki → MCP</td><td>3 × <code>SKILL.md</code></td><td>8 шагов (gate→Record на каждый из трёх) → verify grep по всем трём = 0 → commit.</td></tr>
+        <tr><td>Task 6 — disable plugin</td><td><code>settings.json</code></td><td><code>iwiki@iclaude true→false</code>, scan hook-записей, validate JSON (<code>python3 -m json.tool … &amp;&amp; echo OK</code>) → commit.</td></tr>
+        <tr><td>Task 7 — remove install machinery</td><td><code>iclaude.sh</code>, <code>usage.sh</code>, <code>env-map.sh</code>, <code>init.sh</code>, <code>lib/iwiki/</code></td><td>8 шагов (удалить sourcing-блок @114, case @510, usage @63, env-map @62–64, fix init.sh @108, <code>git rm lib/iwiki</code>) → verify grep + <code>bash -n</code> + <code>--help</code> = PARSE_OK/NO_IWIKI_IN_HELP.</td></tr>
+        <tr><td>Task 8 — remove config block + wiki data</td><td><code>.claude_config.example</code>, <code>docs/wiki/</code></td><td>Удалить config-блок @383–442, verify <code>.iwikiignore</code> KEPT, <code>git rm -r docs/wiki</code> → verify GONE + NO_IWIKI_CONFIG.</td></tr>
+        <tr><td>Task 9 — remove iwiki tests</td><td>4 × <code>tests/test_iwiki_*</code></td><td>Подтвердить отсутствие runner-ссылок → <code>git rm</code> 4 файла → verify NO_IWIKI_TESTS.</td></tr>
+        <tr><td>Task 10 — rewrite README iwiki-секции</td><td><code>README.md</code></td><td>3 региона (Граф документации @258, workflow @350, project-tree @463) → verify <code>grep -nE "/iwiki-…|--install-iwiki|docs/wiki/|lib/iwiki/"</code> = 0.</td></tr>
+        <tr><td>Task 11 — финальный verification sweep</td><td>нет</td><td>8 проверок = success criteria 1–8 (greps, <code>bash -n</code>+help, file-absence/retain, settings, remaining tests, plugin intact, probe-домен residue).</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Схемы зависимостей и пересечений</h2>
+
+    <h3>Граф зависимостей задач</h3>
+    <figure>
+      <svg viewBox="0 0 760 320" width="100%" role="img" aria-label="Граф зависимостей задач плана">
+        <defs>
+          <marker id="arrp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+          </marker>
+          <filter id="dsp" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+        <style>
+          .pn rect{fill:#171b22;stroke:#2b323c;stroke-width:1.2;rx:8;filter:url(#dsp)}
+          .pn.acc rect{stroke:#58a6ff}
+          .pn text{fill:#e6edf3;font:600 12px sans-serif}
+          .pn .s{fill:#9aa6b2;font:400 10px sans-serif}
+          .pe{stroke:#58a6ff;stroke-width:1.6;fill:none;marker-end:url(#arrp)}
+          .pe.soft{stroke-dasharray:4 3}
+          body:has(#theme-toggle:checked) .pn rect{fill:#fff;stroke:#d0d7de}
+          body:has(#theme-toggle:checked) .pn.acc rect{stroke:#0969da}
+          body:has(#theme-toggle:checked) .pn text{fill:#1f2328}
+          body:has(#theme-toggle:checked) .pn .s{fill:#57606a}
+          body:has(#theme-toggle:checked) .pe{stroke:#0969da}
+          body:has(#theme-toggle:checked) #arrp path{fill:#0969da}
+        </style>
+        <!-- edges (M -> N = N depends on M's result) -->
+        <!-- T1 (probe) feeds wording of T2 and T5 -->
+        <path class="pe" d="M118,70 C160,110 220,140 250,158"/>
+        <path class="pe" d="M118,70 C260,90 430,120 470,150"/>
+        <!-- T6 (disable) before T7 (remove wiring) -->
+        <path class="pe" d="M548,200 L548,158"/>
+        <!-- all tasks -> T11 (final sweep) -->
+        <path class="pe soft" d="M250,200 C300,250 380,270 420,278"/>
+        <path class="pe soft" d="M470,190 C480,230 470,260 455,272"/>
+        <path class="pe soft" d="M610,200 C600,240 540,268 500,277"/>
+        <path class="pe soft" d="M150,210 C220,260 330,278 360,282"/>
+
+        <g class="pn acc"><rect x="60" y="40" width="120" height="40" rx="8"/><text x="120" y="57" text-anchor="middle">T1 live probe</text><text x="120" y="72" text-anchor="middle" class="s">write-flow indexing</text></g>
+        <g class="pn"><rect x="190" y="158" width="130" height="40" rx="8"/><text x="255" y="175" text-anchor="middle">T2 CLAUDE.md</text><text x="255" y="190" text-anchor="middle" class="s">wording ← T1</text></g>
+        <g class="pn"><rect x="410" y="150" width="130" height="40" rx="8"/><text x="475" y="167" text-anchor="middle">T5 3 skills</text><text x="475" y="182" text-anchor="middle" class="s">wording ← T1</text></g>
+        <g class="pn"><rect x="490" y="200" width="120" height="38" rx="8"/><text x="550" y="223" text-anchor="middle" class="s">T6 disable plugin</text></g>
+        <g class="pn"><rect x="490" y="118" width="120" height="34" rx="8"/><text x="550" y="139" text-anchor="middle" class="s">T7 remove wiring</text></g>
+        <g class="pn"><rect x="60" y="170" width="120" height="36" rx="8"/><text x="120" y="192" text-anchor="middle" class="s">T3 / T4 / T8–T10</text></g>
+        <g class="pn acc"><rect x="350" y="272" width="160" height="38" rx="8"/><text x="430" y="289" text-anchor="middle">T11 final sweep</text><text x="430" y="304" text-anchor="middle" class="s">criteria 1–8 ← всё</text></g>
+      </svg>
+      <figcaption>Рёбра «M→N = N зависит от результата M». Сплошные — жёсткие (T1→T2, T1→T5, T6→T7); пунктир — «после всех правок» (·→T11). Граф ацикличен (DAG); нарушений порядка нет — T1 предшествует зависимым task'ам, T11 — последний.</figcaption>
+    </figure>
+
+    <h3>Матрица пересечений и покрытия</h3>
+    <table>
+      <thead><tr><th>Спец-требование</th><th>Задача плана</th><th>Файл/артефакт</th></tr></thead>
+      <tbody>
+        <tr><td>§1.1 CLAUDE.md</td><td>Task 2</td><td><code>CLAUDE.md</code></td></tr>
+        <tr><td>§1.2 context-awareness</td><td>Task 3</td><td><code>context-awareness/SKILL.md</code></td></tr>
+        <tr><td>§1.3 intent</td><td>Task 4</td><td><code>intent/SKILL.md</code></td></tr>
+        <tr><td>§1.4–1.6 agent-builder/prd-generator/prompt-verifier</td><td>Task 5</td><td>3 × <code>SKILL.md</code></td></tr>
+        <tr><td>§2.1 install machinery</td><td>Task 7</td><td><code>iclaude.sh</code>, <code>usage.sh</code>, <code>env-map.sh</code>, <code>init.sh</code>, <code>lib/iwiki/</code></td></tr>
+        <tr><td>§2.2 config (block remove + .iwikiignore keep)</td><td>Task 8 + Global Constraint</td><td><code>.claude_config.example</code>, <code>.iwikiignore</code> (kept)</td></tr>
+        <tr><td>§2.3 wiki data</td><td>Task 8</td><td><code>docs/wiki/</code></td></tr>
+        <tr><td>§2.4 tests</td><td>Task 9</td><td>4 × <code>tests/test_iwiki_*</code></td></tr>
+        <tr><td>§2.5 plugin disable</td><td>Task 6</td><td><code>settings.json</code></td></tr>
+        <tr><td>§2.6 README</td><td>Task 10</td><td><code>README.md</code></td></tr>
+        <tr><td>Write-flow indexing (resolved)</td><td>Task 1</td><td>live MCP probe</td></tr>
+        <tr><td>Success criteria 1–8</td><td>Task 11</td><td>verification sweep</td></tr>
+        <tr><td>«Not touched» (plugin/iwiki, marketplace.json, uv)</td><td>Global Constraints</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Пересечений по файлам нет: каждый task правит непересекающийся набор файлов (один файл — один владелец); общий sink — Task 11 (только чтение/verify). Каждое спец-требование покрыто ≥1 task'ом; лишних task'ов нет.</p>
+
+    <h2>Результаты проверки</h2>
+    <table>
+      <thead><tr><th>Фаза</th><th>Статус</th><th>Проверено</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge b-pass">passed</span></td><td>нет placeholder'ов; Task 1–11 и Step'ы без пропусков/дублей (find-блоки с «### 5.»/«# Load iwiki» — это содержимое целевых файлов, не заголовки плана)</td></tr>
+        <tr><td>coverage</td><td><span class="badge b-pass">passed</span></td><td>все спец-требования ↔ task'и; лишних нет; field-rename <code>wiki_index_path</code> покрыт (7 вхождений: §5-блок, шаблон, 2 filled + null example, changelog-история — исключена)</td></tr>
+        <tr><td>dependencies</td><td><span class="badge b-pass">passed</span></td><td>DAG, циклов нет; T1→{T2,T5}, T6→T7, всё→T11; артефакты доступны (все целевые файлы существуют, anchor'ы совпали verbatim)</td></tr>
+        <tr><td>verifiability</td><td><span class="badge b-pass">passed</span></td><td>каждый task завершается verify-командой + ожидаемым выводом; find/replace — точный текст; anchor-строки сверены с живыми файлами; Task 11 Step 6 теперь с закреплённой командой (F-001 fixed)</td></tr>
+        <tr><td>consistency</td><td><span class="badge b-pass">passed</span></td><td>имена инструментов единообразны; обе правки спеки отражены (write-flow + <code>wiki_index</code>, <code>.iwikiignore</code> retained)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <table>
+      <thead><tr><th>id</th><th>severity</th><th>section</th><th>fragment</th><th>text</th><th>fix</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>F-001</td>
+          <td><span class="badge b-info">INFO</span></td>
+          <td>Task 11: Final verification sweep</td>
+          <td><code>Run the project's normal test command … Expected: green</code></td>
+          <td>Task 11 Step 6 (критерий 6) отсылал к «обычной тест-команде проекта», но единого раннера нет — <code>tests/</code> плоская директория отдельных <code>*.sh</code>/<code>*.py</code> без Makefile/run_tests. DoD не был закреплён конкретной командой. <strong>Исправлено:</strong> Step 6 теперь итерирует non-iwiki <code>tests/*.sh</code> и <code>tests/*.py</code> (skip <code>*iwiki*</code>), проверяет exit 0, печатает <code>TESTS_OK</code>, с документированным fallback.</td>
+          <td>Закрепить команду (пройти non-iwiki <code>tests/</code> и проверить exit 0 у каждого) либо назвать фактический CI-вызов. Применено.</td>
+          <td><span class="badge b-pass">fixed</span> <span class="legend">2026-06-30</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Сводка</h3>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · INFO open: 0 (F-001 → fixed) · plan_hash <code>f294b61738de89e8</code> · ре-ран (Task 11 Step 6 закреплён)</span>
+    </div>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage done">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">plan ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage">result</span>
+    </div>
+    <p class="legend">Интент отсутствует (<code>intent = null</code>); спека открыла цепочку и пройдена; план валидирован OK (5/5 фаз, 0 critical, 0 открытых INFO — F-001 fixed). topic = <code>iwiki-plugin-to-mcp</code>.</p>
   </section>
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
