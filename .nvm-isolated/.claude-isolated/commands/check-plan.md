@@ -146,6 +146,13 @@ Artifact parameters (pass them to the skill explicitly):
 
 After writing, tell the user the path to the `.html`.
 
+### Step 6. Register the task in docs/TODO.md
+
+After the final verdict (including the quick-exit branch `OK (cached, hash match)`), upsert this chain's task into `docs/TODO.md` — see the **Task Log** section in CLAUDE.md for the table format. Key the row by the `<topic>` determined in Step 5:
+- If `docs/TODO.md` is absent — create it with the header row first.
+- If no row for `<topic>` exists yet — append one with `Status: in-progress`, `Opened: <today>`, marking `Intent`/`Spec` `n/a` if those stages were never checked.
+- Mark `Plan: ✓` when the verdict is `OK` (`–` if it still needs work); keep `Status: in-progress`.
+
 ## Rules
 
 **Prohibited:**

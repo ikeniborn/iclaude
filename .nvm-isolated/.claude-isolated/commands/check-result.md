@@ -104,6 +104,14 @@ Artifact parameters (pass them to the skill explicitly):
 
 After writing, tell the user the path to the `.html`.
 
+### Step 9. Close the task in docs/TODO.md
+
+After the HTML report, update this chain's task in `docs/TODO.md` — see the **Task Log** section in CLAUDE.md for the table format. Key the row by the `<topic>` determined in Step 8:
+- If no row for `<topic>` exists — append one first (upsert), marking unchecked stages `n/a`.
+- On verdict `OK`: set `Result: OK`, `Status: done`, `Closed: <today>`.
+- On verdict `needs_work`: set `Result: needs_work`, keep `Status: in-progress`, leave `Closed` empty.
+- This is the only command that closes a task; do NOT edit the plan body for this — only `docs/TODO.md`.
+
 ## Severity
 
 | Severity | Condition |
