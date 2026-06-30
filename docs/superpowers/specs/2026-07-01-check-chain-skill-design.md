@@ -1,13 +1,23 @@
 ---
 review:
-  spec_hash: 3f288c40648cf504
+  spec_hash: 07190e7ba060f69c
   last_run: 2026-07-01
   phases:
     structure:    { status: passed }
     coverage:     { status: passed }
     clarity:      { status: passed }
     consistency:  { status: passed }
-  findings: []
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: INFO
+      section: "§7"
+      section_hash: ab014600e53bbe38
+      fragment: "expected and handled by the user-review gate below."
+      text: "Dangling forward reference: §7 'Self-nudge' cited a 'user-review gate below', but no such gate/section followed (§8 is Success criteria, §9 Out of scope). The reader could not resolve it."
+      fix: "Drop the trailing clause 'and handled by the user-review gate below', or replace it with a concrete pointer."
+      verdict: fixed
+      verdict_at: 2026-07-01
 chain:
   intent: null
 ---
@@ -232,8 +242,8 @@ remediation strings become `/check-chain <stage>`.
   always fail at `result`.
 - **Backward compatibility**: a bare path argument still works (single-stage, stage
   inferred from the directory).
-- **Self-nudge**: writing this spec triggers `idd-nudge` to suggest `/check-chain spec`
-  on it — expected and handled by the user-review gate below.
+- **Self-nudge**: writing this spec triggers the PostToolUse nudge to suggest validating
+  it — expected; the spec is validated via the check-runner before the plan is written.
 
 ## 8. Success criteria
 
