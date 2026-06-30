@@ -1,6 +1,6 @@
 ---
 review:
-  spec_hash: 5583d4ffd01355ef
+  spec_hash: e85d04cbe5e9e7d2
   last_run: 2026-06-30
   phases:
     structure:   { status: passed }
@@ -23,7 +23,7 @@ source folder (disabled/dormant).
 
 The repo ships an in-project iwiki **plugin** (`plugin/iwiki/`: engine CLI, hooks,
 skills, commands) plus install/activation machinery (`lib/iwiki/`, `--install-iwiki`,
-`.claude_config.example` block, `.iwikiignore`) that stores a documentation graph in
+`.claude_config.example` block) that stores a documentation graph in
 each project's `docs/wiki/` directory. A separate iwiki **MCP server** (project
 `iwiki-personal`, central store at `/home/ikeniborn/Documents/Project/iwiki-personal`)
 now supersedes it through `mcp__iwiki__wiki_*` tools backed by an external,
@@ -78,9 +78,10 @@ markdown itself, then `wiki_write_page(domain, slug, markdown, source=<changed s
 path>)`. The plugin skill generated the page from a source; the MCP tool only persists
 caller-supplied markdown — instructions must make the authoring step explicit.
 
-**Open item (resolve during implementation):** does `wiki_write_page` auto-reindex, or
-must `wiki_index(domain)` follow it? Verify before finalizing write-flow wording. If
-unknown, instructions say "`wiki_write_page`, then `wiki_index` if not yet searchable."
+**Write-flow indexing (resolved):** `wiki_write_page` does NOT auto-index — an explicit
+`wiki_index(domain)` must follow each write. Instructions say: author markdown →
+`wiki_write_page` → `wiki_index`. Confirm this against the live MCP server during
+implementation (write a probe page, search before/after `wiki_index`).
 
 ---
 
@@ -102,7 +103,7 @@ unknown, instructions say "`wiki_write_page`, then `wiki_index` if not yet searc
 **Keep Docs Current** (lines ~25–32):
 - gate `already has a docs/wiki/` → `has a bound iwiki domain (wiki_status)`
 - `iwiki:iwiki-ingest <source>` → author/update markdown → `wiki_write_page(...)`
-  (+ `wiki_index` per open item)
+  (+ `wiki_index`)
 - `/iwiki-lint` → `wiki_lint`
 - the paragraph "Always invoke iwiki via its **skills** … `iwiki_engine` CLI exposes
   index | search | related | status | lint" → replace wholesale with the MCP tool
@@ -136,7 +137,7 @@ Each has an "iwiki Integration" section with the same gate→Query→Record shap
 - gate `exists("{CWD}/docs/wiki/")` → `wiki_status` (project domain bound?)
 - **Query**: `Skill(iwiki:iwiki-query, args=…)` → `wiki_search(query=…)`
 - **Record**: `Skill(iwiki:iwiki-ingest)` → author markdown → `wiki_write_page(domain,
-  slug, markdown, source)` (+ `wiki_index` per open item)
+  slug, markdown, source)` (+ `wiki_index`)
 - Replace the "iwiki — embedding-граф документации в `docs/wiki/`" prose with the MCP
   domain description.
 
@@ -159,7 +160,8 @@ Keep only `plugin/iwiki/`. Remove everything below.
 
 ### 2.2 Config
 - Remove the iwiki block in `.claude_config.example` (lines 383–442).
-- Delete `.iwikiignore` (repo root).
+- **Keep `.iwikiignore`** (repo root) — read by the MCP server to scope what it
+  ingests/indexes; not part of the removed plugin machinery.
 
 ### 2.3 Wiki data
 - Delete `docs/wiki/` (content + `.iwiki/` index). Data now lives in the MCP domain.
@@ -200,8 +202,8 @@ Keep only `plugin/iwiki/`. Remove everything below.
    over `lib/`, `iclaude.sh`, `lib/command/usage.sh` returns **zero**.
 3. `bash -n iclaude.sh` and every `lib/**/*.sh` parse cleanly; `./iclaude.sh --help`
    runs without referencing iwiki and without errors from removed sourcing.
-4. `lib/iwiki/`, `.iwikiignore`, `docs/wiki/`, and the four `tests/test_iwiki_*` files
-   are gone; `.claude_config.example` has no iwiki block.
+4. `lib/iwiki/`, `docs/wiki/`, and the four `tests/test_iwiki_*` files are gone;
+   `.claude_config.example` has no iwiki block; `.iwikiignore` is **retained**.
 5. `settings.json` has `iwiki@iclaude: false`; no orphaned iwiki hook entries.
 6. The remaining test suite passes (run after cleanup).
 7. Migrated surfaces drive the MCP server (detection via `wiki_status`, search via
@@ -214,6 +216,7 @@ Keep only `plugin/iwiki/`. Remove everything below.
 1. Part 1 instruction edits (CLAUDE.md + 5 skills).
 2. Part 2 decommission: disable plugin → remove install wiring → remove config →
    remove `docs/wiki/` → remove tests → README.
-3. Resolve the `wiki_write_page` reindex open item against the live MCP server.
+3. Confirm the write-flow indexing rule (explicit `wiki_index` after `wiki_write_page`)
+   against the live MCP server.
 4. Verify: greps (criteria 1–2), `bash -n` + `--help` (criterion 3), file absence
    (criterion 4), settings (criterion 5), remaining tests (criterion 6).

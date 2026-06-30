@@ -112,7 +112,7 @@
   <section class="tab-pane" id="pane-spec">
 
     <h2>Резюме спецификации</h2>
-    <p class="legend">Источник: <code>docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md</code> · spec_hash <code>5583d4ffd01355ef</code></p>
+    <p class="legend">Источник: <code>docs/superpowers/specs/2026-06-30-iwiki-plugin-to-mcp-design.md</code> · spec_hash <code>e85d04cbe5e9e7d2</code></p>
     <table>
       <thead><tr><th>Раздел</th><th>Требование</th></tr></thead>
       <tbody>
@@ -125,12 +125,13 @@
         <tr><td>MCP vocabulary</td><td>Канонический mapping plugin→MCP для всех операций (detect/bind, search, related, read, write, reindex, health, list, new domain).</td></tr>
         <tr><td>Detection/bind flow</td><td>Канонический поток <code>wiki_status → wiki_bind(read,write)</code>; домен отсутствует → «не настроен», skip silently.</td></tr>
         <tr><td>Write flow</td><td>Модель сама авторит markdown → <code>wiki_write_page(domain, slug, markdown, source)</code>; шаг авторинга делается явным.</td></tr>
+        <tr><td>Write-flow indexing (resolved)</td><td><code>wiki_write_page</code> НЕ авто-индексирует — явный <code>wiki_index(domain)</code> следует за каждой записью (author → write → index); подтвердить на live MCP во время реализации.</td></tr>
         <tr><td>§1.1</td><td>CLAUDE.md (global): «Getting Started» и «Keep Docs Current» — заменить <code>docs/wiki/</code>-гейт и <code>/iwiki-*</code> на MCP-поток + каталог MCP-инструментов.</td></tr>
         <tr><td>§1.2</td><td>context-awareness/SKILL.md: §5 Detection на <code>wiki_status</code>; поля <code>wiki_domain</code> (new), drop <code>wiki_index_path</code>; frontmatter description; delegates; changelog.</td></tr>
         <tr><td>§1.3</td><td>intent/SKILL.md: Step 0 гейт → <code>wiki_status</code>; query → <code>wiki_search</code>; «Context from iwiki domain».</td></tr>
         <tr><td>§1.4–1.6</td><td>agent-builder, prd-generator, prompt-verifier: gate→Query→Record на MCP (<code>wiki_status</code>/<code>wiki_search</code>/<code>wiki_write_page</code>).</td></tr>
         <tr><td>§2.1</td><td>Install machinery: удалить <code>lib/iwiki/</code>, блок Phase 8.0.1 и <code>--install-iwiki</code> в <code>iclaude.sh</code>, help-строку <code>usage.sh</code>, вызов <code>iwiki_export_engine_dir</code> в <code>env-map.sh</code>, обновить комментарий <code>init.sh</code> (uv bootstrap остаётся).</td></tr>
-        <tr><td>§2.2</td><td>Config: удалить iwiki-блок в <code>.claude_config.example</code>, удалить <code>.iwikiignore</code>.</td></tr>
+        <tr><td>§2.2</td><td>Config: удалить iwiki-блок в <code>.claude_config.example</code>; <strong>сохранить <code>.iwikiignore</code></strong> (читается MCP-сервером для scope ingest/index — не часть удаляемой plugin-машинерии).</td></tr>
         <tr><td>§2.3</td><td>Wiki data: удалить <code>docs/wiki/</code> (контент + <code>.iwiki/</code> индекс).</td></tr>
         <tr><td>§2.4</td><td>Tests: удалить 4 файла <code>tests/test_iwiki_*</code> (entrypoint, hook_failopen, hooks, lint).</td></tr>
         <tr><td>§2.5</td><td>Plugin disable: <code>settings.json</code> <code>iwiki@iclaude → false</code>; убрать осиротевшие iwiki hook-записи.</td></tr>
@@ -145,7 +146,7 @@
         <tr><td>1</td><td>grep живых usage-директив (<code>iwiki:iwiki-*</code>, <code>/iwiki-*</code>, <code>iwiki_engine</code>, <code>docs/wiki/</code>) по мигрированным инструкциям + README → <strong>ноль</strong> (changelog-история исключена).</td></tr>
         <tr><td>2</td><td>grep <code>install_iwiki</code>/<code>iwiki_export_engine_dir</code>/<code>--install-iwiki</code>/<code>IWIKI_ENGINE_DIR</code> по <code>lib/</code>, <code>iclaude.sh</code>, <code>usage.sh</code> → <strong>ноль</strong>.</td></tr>
         <tr><td>3</td><td><code>bash -n</code> по <code>iclaude.sh</code> и всем <code>lib/**/*.sh</code> чисто; <code>./iclaude.sh --help</code> без iwiki и без ошибок.</td></tr>
-        <tr><td>4</td><td><code>lib/iwiki/</code>, <code>.iwikiignore</code>, <code>docs/wiki/</code>, 4 теста — удалены; <code>.claude_config.example</code> без iwiki-блока.</td></tr>
+        <tr><td>4</td><td><code>lib/iwiki/</code>, <code>docs/wiki/</code>, 4 теста — удалены; <code>.claude_config.example</code> без iwiki-блока; <code>.iwikiignore</code> <strong>сохранён</strong>.</td></tr>
         <tr><td>5</td><td><code>settings.json</code> имеет <code>iwiki@iclaude: false</code>; без осиротевших iwiki hook-записей.</td></tr>
         <tr><td>6</td><td>Остаток тест-сьюта проходит (после очистки).</td></tr>
         <tr><td>7</td><td>Мигрированные поверхности драйвят MCP (detect <code>wiki_status</code>, search <code>wiki_search</code>, write <code>wiki_write_page</code>, health <code>wiki_lint</code>); detect/bind и write-потоки самодостаточны per skill.</td></tr>
@@ -169,7 +170,7 @@
         <span class="arrow">→</span>
         <div class="node"><div class="t">авторинг markdown</div><div class="d">модель сама пишет страницу</div></div>
         <span class="arrow">→</span>
-        <div class="node warn"><div class="t">wiki_write_page(+ wiki_index?)</div><div class="d">open item: auto-reindex или явный index</div></div>
+        <div class="node accent"><div class="t">wiki_write_page → wiki_index</div><div class="d">не авто-индексирует; явный wiki_index обязателен</div></div>
       </div>
       <div class="flow-row">
         <div class="node"><div class="t">Часть 1 — миграция</div><div class="d">CLAUDE.md + 5 skills драйвят MCP</div></div>
@@ -225,7 +226,7 @@
 
         <g class="gn acc"><rect x="290" y="18" width="140" height="34" rx="8"/><text x="360" y="33" text-anchor="middle">MCP vocabulary (V)</text><text x="360" y="46" text-anchor="middle" class="s">канонический mapping</text></g>
         <g class="gn"><rect x="290" y="96" width="140" height="36" rx="8"/><text x="360" y="112" text-anchor="middle">detect/bind (DB)</text><text x="360" y="126" text-anchor="middle" class="s">status → bind</text></g>
-        <g class="gn warnn"><rect x="490" y="110" width="140" height="40" rx="8"/><text x="560" y="127" text-anchor="middle">write flow (WF)</text><text x="560" y="142" text-anchor="middle" class="s">author → write (+index?)</text></g>
+        <g class="gn acc"><rect x="490" y="110" width="140" height="40" rx="8"/><text x="560" y="127" text-anchor="middle">write flow (WF)</text><text x="560" y="142" text-anchor="middle" class="s">author → write → index</text></g>
         <g class="gn"><rect x="170" y="206" width="160" height="40" rx="8"/><text x="250" y="223" text-anchor="middle">Часть 1: миграция (P1)</text><text x="250" y="238" text-anchor="middle" class="s">CLAUDE.md + 5 skills</text></g>
         <g class="gn"><rect x="540" y="206" width="150" height="40" rx="8"/><text x="615" y="223" text-anchor="middle">Часть 2: cleanup (P2)</text><text x="615" y="238" text-anchor="middle" class="s">lib/iwiki, config, tests, README</text></g>
         <g class="gn"><rect x="540" y="296" width="150" height="40" rx="8"/><text x="615" y="313" text-anchor="middle">settings disable (SD)</text><text x="615" y="328" text-anchor="middle" class="s">iwiki@iclaude:false</text></g>
@@ -271,9 +272,9 @@
     <h3>Сводка</h3>
     <div class="verdict-banner">
       <span class="v-label">OK</span>
-      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · spec_hash <code>5583d4ffd01355ef</code> · первичный прогон (frontmatter добавлен)</span>
+      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · spec_hash <code>e85d04cbe5e9e7d2</code> · ре-ран (правки тела: write-flow indexing resolved, .iwikiignore retained)</span>
     </div>
-    <p class="legend">Известный «Open item» о реиндексации <code>wiki_write_page</code> — сознательная implementation-time неизвестность, не TODO-placeholder (не флагуется).</p>
+    <p class="legend">Ранее открытый «Open item» о реиндексации <code>wiki_write_page</code> теперь <strong>разрешён</strong>: запись не авто-индексирует, явный <code>wiki_index</code> обязателен. <code>.iwikiignore</code> теперь сохраняется (читается MCP-сервером), а не удаляется.</p>
 
     <h3>Цепочка</h3>
     <div class="chain-flow">
