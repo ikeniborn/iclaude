@@ -1,6 +1,6 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the docs/wiki/ iwiki documentation graph, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) — this skill only detects availability + a quick summary.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
 # version: 1.4.0
@@ -62,33 +62,35 @@ JavaScript:
 
 ### 5. iwiki Detection
 
-Документационный граф `docs/wiki/` — embedding-граф страниц, описывающих архитектуру,
-дизайн-решения и ключевые компоненты. Единственный источник документационного контекста проекта.
+Документационный граф проекта живёт в **MCP-сервере iwiki** (внешний central-store,
+адресуется доменами). Единственный источник документационного контекста проекта.
 
 ```
-IF exists {CWD}/docs/wiki/ (директория с .md-файлами):
-  1. Прочитать {CWD}/docs/wiki/index.md (корневой индекс)
-     → извлечь синтезированный обзор проекта (leading paragraph)
-     → извлечь список страниц из индекса
-  2. (опционально, если нужен более точный обзор)
-     Skill(skill="iwiki:iwiki-query", args='ключевые компоненты и архитектура проекта')
-     → использовать результат как wiki_summary вместо корневого индекса
-  3. Добавить в project_context:
+IF MCP-сервер iwiki подключён:
+  1. wiki_status → project_dir, список `domains`, текущая привязка read/write
+  2. Если домен проекта присутствует в `domains` (имя == basename проекта):
+       - не привязан → wiki_bind(read=[<domain>], write=<domain>)
+       - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
+         либо wiki_search('ключевые компоненты и архитектура проекта')
+     Добавить в project_context:
        wiki_initialized: true
-       wiki_index_path: "docs/wiki/index.md"
-       wiki_summary: <обзор из корневого индекса или результат iwiki-query>
+       wiki_domain: "<domain>"
+       wiki_summary: <обзор страницы overview или результат wiki_search>
+  3. Если домена проекта нет:
+       wiki_initialized: false
+       wiki_domain: null
+       wiki_summary: null
 
-ELSE:
+ELSE (сервер не подключён):
   wiki_initialized: false
-  wiki_index_path: null
+  wiki_domain: null
   wiki_summary: null
 ```
 
 **Назначение:** Централизует проверку доступности документационного графа —
 downstream-навыки (brainstorming, prd-generator) используют
-`project_context.wiki_initialized` вместо самостоятельной проверки файла.
-Корневой индекс `docs/wiki/index.md` читается напрямую (дёшево);
-`iwiki:iwiki-query` — опциональный семантический поиск по секциям внутри задачи.
+`project_context.wiki_initialized` вместо самостоятельной проверки.
+`wiki_search` — опциональный семантический поиск по секциям внутри задачи.
 
 ## Output
 
@@ -107,8 +109,8 @@ downstream-навыки (brainstorming, prd-generator) используют
     "syntax_command": "@shared:syntax-commands[language].syntax",
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
-    "wiki_index_path": "docs/wiki/index.md" | null,
-    "wiki_summary": "синтезированный обзор из docs/wiki" | null
+    "wiki_domain": "<имя домена iwiki>" | null,
+    "wiki_summary": "синтезированный обзор из домена iwiki" | null
   }
 }
 ```
@@ -140,7 +142,10 @@ downstream-навыки (brainstorming, prd-generator) используют
     "has_prd": true,
     "prd_path": "docs/prd/",
     "syntax_command": "python -m py_compile",
-    "code_style": "pep8"
+    "code_style": "pep8",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
@@ -171,7 +176,10 @@ downstream-навыки (brainstorming, prd-generator) используют
     "has_prd": true,
     "prd_path": "PRD.md",
     "syntax_command": "tsc --noEmit",
-    "code_style": "prettier"
+    "code_style": "prettier",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
@@ -203,7 +211,10 @@ downstream-навыки (brainstorming, prd-generator) используют
     "has_prd": true,
     "prd_path": "docs/requirements/",
     "syntax_command": "go build -o /dev/null",
-    "code_style": "gofmt"
+    "code_style": "gofmt",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
@@ -234,7 +245,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": false,
-    "wiki_index_path": null,
+    "wiki_domain": null,
     "wiki_summary": null
   }
 }
@@ -272,7 +283,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": true,
-    "wiki_index_path": "docs/wiki/index.md",
+    "wiki_domain": "iclaude",
     "wiki_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки."
   }
 }
@@ -306,7 +317,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": true,
-    "wiki_index_path": "docs/wiki/index.md",
+    "wiki_domain": "iclaude",
     "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки."
   }
 }
@@ -380,14 +391,14 @@ downstream-навыки (brainstorming, prd-generator) используют
 - `code-review` - Applies language-specific review rules
 
 **Delegates to:**
-- `iwiki:iwiki-query` - Targeted semantic search over `docs/wiki/` pages (optional, in-task)
+- iwiki MCP `wiki_search` - Targeted semantic search over the project's iwiki domain (optional, in-task)
 
 **Provides:**
 - `language` → Enables language-specific tooling
 - `framework` → Enables framework-specific patterns
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
-- `wiki_initialized` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
+- `wiki_initialized` / `wiki_domain` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
 
 ---
 
@@ -397,6 +408,10 @@ downstream-навыки (brainstorming, prd-generator) используют
 **License:** MIT
 
 ## Changelog
+
+### 1.5.0 (2026-06-30)
+- iwiki detection switched from `docs/wiki/` files to the iwiki MCP server (`wiki_status`)
+- Output field `wiki_index_path` → `wiki_domain`; `iwiki:iwiki-query` delegate → MCP `wiki_search`
 
 ### 1.4.1 (2026-06-18)
 - Удалён graphify knowledge-graph detection (Phase 6) и поля `graph_*` из output — graphify выпилен из проекта
