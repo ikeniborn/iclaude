@@ -575,30 +575,30 @@ lib/context/sessions.sh|high|Session management
 
 ## iwiki Integration
 
-Этот скилл не вызывает `context-awareness`, поэтому проверяет docs/wiki напрямую.
+Этот скилл не вызывает `context-awareness`, поэтому проверяет домен iwiki (wiki_status) напрямую.
 
 ### Query (перед началом Questionnaire)
 
 ```
-IF exists("{CWD}/docs/wiki/"):
-  Skill(skill="iwiki:iwiki-query", args='паттерны и спецификации Claude Code агентов')
+IF iwiki MCP подключён AND wiki_status сообщает домен проекта (привязать через wiki_bind):
+  wiki_search(query='паттерны и спецификации Claude Code агентов')
 
   Использовать результат для обогащения Questionnaire:
   - Если найдены похожие агенты → предложить их description/tools как starting point
   - Если найдены рекомендованные model/permissionMode для данного типа → предзаполнить
-  - Если в docs/wiki нет данных → продолжить стандартный Questionnaire без изменений
+  - Если в домене iwiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
 ### Record (после успешной валидации — Сигнал завершения)
 
-iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
+iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись страниц через `wiki_write_page` + `wiki_index`.
 
 ```
-IF exists("{CWD}/docs/wiki/") AND validation_passed:
-  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу агента в docs/wiki/
-    (name, description, tools, permissionMode — что и почему)
+IF wiki_status сообщает домен проекта AND validation_passed:
+  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source) → wiki_index(domain)
+    страница агента (name, description, tools, permissionMode — что и почему)
 
-  Результат: спецификации агентов попадают в docs/wiki —
+  Результат: спецификации агентов попадают в домен iwiki —
   переиспользуются как паттерны при создании следующих агентов.
 ```
 
