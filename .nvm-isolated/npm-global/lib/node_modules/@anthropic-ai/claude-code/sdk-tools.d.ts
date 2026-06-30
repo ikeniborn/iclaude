@@ -24,6 +24,7 @@ export type ToolInputSchemas =
   | NotebookEditInput
   | ReadMcpResourceDirInput
   | ReadMcpResourceInput
+  | ReportFindingsInput
   | TodoWriteInput
   | WebFetchInput
   | WebSearchInput
@@ -63,6 +64,7 @@ export type ToolOutputSchemas =
   | NotebookEditOutput
   | ReadMcpResourceDirOutput
   | ReadMcpResourceOutput
+  | ReportFindingsOutput
   | TodoWriteOutput
   | WebFetchOutput
   | WebSearchOutput
@@ -686,6 +688,43 @@ export interface ReadMcpResourceInput {
    * The resource URI to read
    */
   uri: string;
+}
+export interface ReportFindingsInput {
+  /**
+   * Effort level the review ran at
+   */
+  level?: "low" | "medium" | "high" | "xhigh" | "max";
+  /**
+   * Verified findings, most-severe first; empty if none survived
+   *
+   * @maxItems 32
+   */
+  findings: {
+    /**
+     * Repo-relative path of the file the finding is in
+     */
+    file: string;
+    /**
+     * 1-indexed line the finding anchors to
+     */
+    line?: number;
+    /**
+     * One-sentence statement of the defect
+     */
+    summary: string;
+    /**
+     * Concrete inputs/state → wrong output/crash
+     */
+    failure_scenario: string;
+    /**
+     * Set when a verify pass ran; absent on inline-only reviews
+     */
+    verdict?: "CONFIRMED" | "PLAUSIBLE";
+    /**
+     * Set ONLY when re-reporting after applying fixes: what happened to this finding
+     */
+    outcome?: "fixed" | "skipped" | "no_change_needed";
+  }[];
 }
 export interface TodoWriteInput {
   /**
@@ -2527,6 +2566,10 @@ export interface ArtifactInput {
    */
   favicon: string;
   /**
+   * One-sentence subtitle shown on the gallery card. Say what the page is or does.
+   */
+  description?: string;
+  /**
    * Short human-readable name for this version, max 60 chars (e.g. "fixed-background"). Shown in the version picker. Not a description — keep it to a few words.
    */
   label?: string;
@@ -2919,6 +2962,45 @@ export interface ReadMcpResourceOutput {
    * Human-readable error when the server could not read the resource
    */
   error?: string;
+}
+export interface ReportFindingsOutput {
+  /**
+   * Number of findings reported
+   */
+  count: number;
+  /**
+   * Effort level the review ran at
+   */
+  level?: "low" | "medium" | "high" | "xhigh" | "max";
+  /**
+   * Echoed for the result body
+   */
+  findings: {
+    /**
+     * Repo-relative path of the file the finding is in
+     */
+    file: string;
+    /**
+     * 1-indexed line the finding anchors to
+     */
+    line?: number;
+    /**
+     * One-sentence statement of the defect
+     */
+    summary: string;
+    /**
+     * Concrete inputs/state → wrong output/crash
+     */
+    failure_scenario: string;
+    /**
+     * Set when a verify pass ran; absent on inline-only reviews
+     */
+    verdict?: "CONFIRMED" | "PLAUSIBLE";
+    /**
+     * Set ONLY when re-reporting after applying fixes: what happened to this finding
+     */
+    outcome?: "fixed" | "skipped" | "no_change_needed";
+  }[];
 }
 export interface TodoWriteOutput {
   /**
