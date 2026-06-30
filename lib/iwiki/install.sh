@@ -2,6 +2,30 @@
 # iwiki installation: ensure uv + sync the engine project under .nvm-isolated.
 # Provides: install_iwiki()
 
+# Post-sync preflight (non-fatal). $1=engine dir, $2=uv path.
+# 1) Engine health via `status` (no config, no network) — a clean run proves the
+#    venv synced and the module imports. status/lint/validate never call
+#    Config.load(), so they cannot HALT on missing params.
+# 2) Parameter probe via Config.load() — raises (exit 2) when LLM params absent.
+# 3) Print the engine dir the skills will use.
+_iwiki_postsync_check() {
+    local dir="$1" uv="$2"
+    if "$uv" run --project "$dir" python3 -m iwiki_engine status >/dev/null 2>&1; then
+        print_success "iwiki engine OK (module imports, venv synced)."
+    else
+        print_warning "iwiki engine health check failed — re-run ./iclaude.sh --install-iwiki."
+    fi
+    if ! "$uv" run --project "$dir" python3 -c "from iwiki_engine.config import Config; Config.load()" >/dev/null 2>&1; then
+        print_warning "iwiki LLM params missing — set in .claude_config:"
+        [[ -z "${IWIKI_LLM_BASE_URL:-}" ]] && print_warning "  ICLAUDE_IWIKI_LLM_BASE_URL (required)"
+        [[ -z "${IWIKI_LLM_KEY:-}" ]]      && print_warning "  ICLAUDE_IWIKI_LLM_KEY (required)"
+        [[ -z "${IWIKI_EMBED_MODEL:-}" ]]  && print_info    "  ICLAUDE_IWIKI_EMBED_MODEL (optional; default text-embedding-3-small)"
+    fi
+    iwiki_export_engine_dir
+    print_info "iwiki engine: ${IWIKI_ENGINE_DIR:-$dir}"
+    return 0
+}
+
 # Download the uv binary into the isolated bin/ when neither the isolated nor a
 # system uv is available. Outputs the resolved uv path on success; returns 1 on
 # failure. Honors HTTPS_PROXY/HTTP_PROXY/PROXY_URL for the bootstrap curl.
@@ -49,9 +73,11 @@ install_iwiki() {
     print_info "Syncing iwiki engine (uv) at $dir ..."
     ( cd "$dir" && "$uv" sync ) || { print_error "uv sync failed"; return 1; }
 
+    _iwiki_postsync_check "$dir" "$uv"
+
     _iwiki_register_plugin
     _iwiki_seed_ignore
-    print_info "iwiki installed. Configure ICLAUDE_IWIKI_LLM_BASE_URL / ICLAUDE_IWIKI_LLM_KEY / ICLAUDE_IWIKI_EMBED_MODEL in .claude_config."
+    print_info "iwiki installed."
 }
 
 # Seed a commented .iwikiignore template at the project root on install/update,
