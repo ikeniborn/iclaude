@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Цепочка IDD→SDD: iwiki-content-hash-freshness-port</title>
+<style>
+:root{
+  --bg:#0f1419; --surface:#1a212b; --surface2:#222b38; --border:#33404f;
+  --text:#e6edf3; --muted:#8b98a8; --accent:#4ea1ff; --accent2:#7ee787;
+  --ok:#3fb950; --warn:#d29922; --crit:#f85149; --shadow:rgba(0,0,0,.45);
+}
+body:has(#theme-toggle:checked){
+  --bg:#f6f8fa; --surface:#ffffff; --surface2:#eef2f6; --border:#d0d7de;
+  --text:#1f2328; --muted:#5b6470; --accent:#0969da; --accent2:#1a7f37;
+  --ok:#1a7f37; --warn:#9a6700; --crit:#cf222e; --shadow:rgba(140,149,159,.25);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.55; transition:background .2s,color .2s;
+}
+header{
+  display:flex; align-items:center; gap:1rem; padding:1.2rem 1.6rem;
+  border-bottom:1px solid var(--border); background:var(--surface);
+}
+header h1{font-size:1.15rem; margin:0; font-weight:600;}
+.theme-btn{
+  cursor:pointer; user-select:none; font-size:1.1rem; padding:.35rem .6rem;
+  border:1px solid var(--border); border-radius:8px; background:var(--surface2);
+}
+main{max-width:1100px; margin:0 auto; padding:1.4rem 1.6rem 4rem;}
+h2{font-size:1.05rem; margin:1.8rem 0 .8rem; padding-bottom:.3rem; border-bottom:1px solid var(--border);}
+h3{font-size:.95rem; margin:1.4rem 0 .6rem; color:var(--accent);}
+table{width:100%; border-collapse:collapse; margin:.6rem 0 1.2rem; font-size:.86rem;}
+th,td{text-align:left; padding:.5rem .65rem; border:1px solid var(--border); vertical-align:top;}
+th{background:var(--surface2); font-weight:600;}
+tr:nth-child(even) td{background:var(--surface);}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.82em;
+  background:var(--surface2); padding:.1rem .35rem; border-radius:4px;}
+.note{background:var(--surface); border-left:3px solid var(--accent); padding:.7rem 1rem;
+  border-radius:0 6px 6px 0; margin:1rem 0; color:var(--muted);}
+.badge{display:inline-block; padding:.12rem .55rem; border-radius:999px; font-size:.75rem;
+  font-weight:600; border:1px solid;}
+.badge.ok{color:var(--ok); border-color:var(--ok);}
+.badge.warn{color:var(--warn); border-color:var(--warn);}
+.badge.crit{color:var(--crit); border-color:var(--crit);}
+.badge.muted{color:var(--muted); border-color:var(--border);}
+.chain-tabs{display:flex; gap:.3rem; padding:0 1.6rem; margin-top:1rem; flex-wrap:wrap;}
+.chain-tabs label{cursor:pointer; padding:.45rem 1rem; border:1px solid var(--border);
+  border-bottom:none; border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); font-size:.9rem;}
+.tab-pane{display:none; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{display:block;}
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent); border-color:var(--accent); font-weight:600; background:var(--surface2);}
+
+/* Block/flow diagram */
+.flow{display:flex; flex-direction:column; gap:.9rem; margin:1rem 0;}
+.flow-row{display:flex; gap:.9rem; align-items:stretch; flex-wrap:wrap; justify-content:center;}
+.node{background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+  padding:.7rem .9rem; min-width:160px; box-shadow:0 2px 6px var(--shadow);}
+.node .nt{font-weight:600; font-size:.85rem;}
+.node .nd{font-size:.76rem; color:var(--muted); margin-top:.25rem;}
+.node.acc{border-color:var(--accent);}
+.node.ok{border-color:var(--ok);}
+.arrow{align-self:center; color:var(--accent); font-size:1.3rem;}
+svg{max-width:100%; height:auto; display:block; margin:1rem auto; background:var(--surface);
+  border:1px solid var(--border); border-radius:10px;}
+.summary-grid{display:flex; gap:1rem; flex-wrap:wrap; margin:1rem 0;}
+.metric{background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+  padding:.8rem 1.1rem; min-width:140px;}
+.metric .v{font-size:1.5rem; font-weight:700;}
+.metric .l{font-size:.78rem; color:var(--muted);}
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<header>
+  <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+  <h1>Цепочка IDD→SDD — <code>iwiki-content-hash-freshness-port</code></h1>
+</header>
+<nav class="chain-tabs">
+  <label for="tab-intent">Intent</label>
+  <label for="tab-spec">Spec</label>
+  <label for="tab-plan">Plan</label>
+  <label for="tab-result">Result</label>
+</nav>
+<main>
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+  <p class="note">Этап ещё не проверён. Intent-документ для этой цепочки отсутствует — спецификация открывает цепочку (<code>Intent: n/a</code>).</p>
+</section>
+<!-- TAB:intent END -->
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+
+  <h2>1. Резюме спецификации</h2>
+  <p>
+    <strong>Port content-hash freshness from <code>ai-wiki-plugin</code> into <code>plugin/iwiki</code></strong><br>
+    Дата: 2026-06-30 · Статус: approved (design) · Область: только <code>plugin/iwiki</code> ·
+    <code>spec_hash: 46590f57fe2de22d</code>
+  </p>
+
+  <h3>Требования (по секциям)</h3>
+  <table>
+    <thead><tr><th>Секция</th><th>Требование</th></tr></thead>
+    <tbody>
+      <tr><td>§Problem</td><td>Заменить mtime-детекцию устаревания на content-addressed (хеш содержимого источника); устранить ложные «stale» при <code>git reset/checkout</code>, правках в тот же день и копировании файлов.</td></tr>
+      <tr><td>§What ports</td><td>Портировать <strong>только класс 1</strong> (content-hash freshness). НЕ портировать класс 2 (de-specialization: путь движка <code>plugin/iwiki/engine→engine</code>, удаление <code>.claude_config</code>/<code>detect.sh</code>/iclaude-ссылок, sample в <code>test_chunk</code>). НЕ портировать класс 3 (distribution metadata: version bump <code>plugin.json</code>, <code>marketplace.json</code>).</td></tr>
+      <tr><td>§Log record</td><td>Записи ingest/init в <code>docs/wiki/.iwiki/log.jsonl</code> получают опциональный ключ <code>src_hash = sha256(raw bytes).hexdigest()[:16]</code>. Старые записи без ключа работают через mtime. Без миграции/бэкфилла.</td></tr>
+      <tr><td>§Freshness predicate</td><td>Инвариант <code>_fresh(src,page,src_hash)</code>: если <code>src_hash</code> задан И источник читаем → сравнение по хешу; иначе mtime (<code>page≥source</code>). Хелпер <code>_src_hash</code> возвращает <code>None</code> при <code>OSError</code>. Два call-site (<code>lint._stale</code> и <code>iwiki_common.covered_sources</code>) — точные зеркала: <code>_stale = not _fresh</code>, <code>covered = _fresh</code>.</td></tr>
+      <tr><td>§Backward/forward compat</td><td>Старые записи → mtime (идентично текущему). Нечитаемый источник при заданном <code>src_hash</code> → <code>None</code> → mtime fallback. Никогда не падает (fail-soft).</td></tr>
+      <tr><td>§Files changed</td><td>Гибридный подход. <em>copy wholesale</em>: <code>lint.py</code>, <code>test_lint.py</code> (+hashlib, +4 теста), <code>test_iwiki_common.py</code> (+hashlib, +2 теста). <em>surgical edit</em>: <code>hooks/iwiki_common.py</code> (add <code>_src_hash</code>/<code>_fresh</code>/<code>_ingest_records</code>, рефактор <code>source_page_map</code>+<code>covered_sources</code>, СОХРАНИТЬ docstring и кандидат <code>plugin/iwiki/engine</code>), <code>iwiki-ingest/SKILL.md</code> и <code>iwiki-init/SKILL.md</code> (step-5 пишет <code>src_hash</code> через <code>sha256sum|cut -c1-16</code>, СОХРАНИТЬ <code>ENG=plugin/iwiki/engine</code> fallback).</td></tr>
+      <tr><td>§Explicitly NOT touched</td><td><code>config.py</code>, <code>test_chunk.py</code>, docstring+<code>_engine_project</code> пути, skills engine-path fallbacks, <code>plugin.json</code>, <code>marketplace.json</code>, <code>README.md</code>.</td></tr>
+      <tr><td>§Verification</td><td>1) <code>pytest</code> зелёный, включая 6 новых тестов. 2) <code>grep plugin/iwiki/engine</code> в hook+skills — class-2 пути не регрессировали. 3) <code>grep -rn src_hash plugin/iwiki</code> — фича приземлилась в lint, hook, обоих скиллах.</td></tr>
+      <tr><td>§Behavioural checks</td><td>hash match + page mtime OLDER → fresh/covered; hash mismatch + page mtime NEWER → stale/not covered; нет <code>src_hash</code> → mtime behaviour; <code>src_hash</code> есть, но источник нечитаем → mtime fallback.</td></tr>
+      <tr><td>§Out of scope</td><td><code>lib/iwiki</code> (<code>detect.sh</code>/<code>install.sh</code>), любые изменения вне <code>plugin/iwiki</code>, version bump и marketplace metadata.</td></tr>
+      <tr><td>§Workflow note</td><td>База ветки (<code>dev</code> vs <code>master</code>), PR target, <code>wk-dev-*</code> worktree — решения пользователя на kickoff, не предполагаются.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Success Criteria</h3>
+  <table>
+    <thead><tr><th>#</th><th>Критерий приёмки</th></tr></thead>
+    <tbody>
+      <tr><td>SC1</td><td><code>pytest</code> зелёный; 6 новых тестов проходят (4 в <code>test_lint.py</code>, 2 в <code>test_iwiki_common.py</code>).</td></tr>
+      <tr><td>SC2</td><td>class-2 пути (<code>plugin/iwiki/engine</code>) НЕ регрессировали в <code>engine</code>.</td></tr>
+      <tr><td>SC3</td><td><code>src_hash</code> присутствует в <code>lint.py</code>, <code>iwiki_common.py</code>, <code>iwiki-ingest/SKILL.md</code>, <code>iwiki-init/SKILL.md</code>.</td></tr>
+      <tr><td>SC4</td><td>Обратная совместимость: старые записи без <code>src_hash</code> → идентичное mtime-поведение; fail-soft при нечитаемом источнике.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы решения и зависимостей</h2>
+
+  <h3>Схема решения — компоненты и поток данных</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="node acc"><div class="nt">Источник (source file)</div><div class="nd">сырые байты</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="nt">_src_hash(src)</div><div class="nd">sha256(bytes)[:16]; None при OSError</div></div>
+      <div class="arrow">→</div>
+      <div class="node ok"><div class="nt">log.jsonl запись</div><div class="nd">опциональный ключ src_hash</div></div>
+    </div>
+    <div class="flow-row">
+      <div class="node"><div class="nt">skills iwiki-ingest / iwiki-init</div><div class="nd">step-5 пишут запись с src_hash</div></div>
+      <div class="arrow">↑ производят</div>
+    </div>
+    <div class="flow-row">
+      <div class="node acc"><div class="nt">_fresh(src,page,src_hash)</div><div class="nd">ветка hash → сравнение; иначе ветка mtime (page≥source)</div></div>
+    </div>
+    <div class="flow-row">
+      <div class="node"><div class="nt">lint.py · _stale</div><div class="nd">= not _fresh(...) → stale-report</div></div>
+      <div class="arrow">←  зеркала  →</div>
+      <div class="node"><div class="nt">iwiki_common.py · covered_sources</div><div class="nd">= _fresh(...) → Stop-hook nag</div></div>
+    </div>
+    <div class="flow-row">
+      <div class="node ok"><div class="nt">test_lint.py (4)</div><div class="nd">обе ветки + fallback</div></div>
+      <div class="node ok"><div class="nt">test_iwiki_common.py (2)</div><div class="nd">covered_sources</div></div>
+    </div>
+  </div>
+  <p class="note">Ключевой инвариант <code>_fresh</code> + хелпер <code>_src_hash</code> реализованы как <strong>два точных зеркала</strong> в <code>lint.py</code> и <code>iwiki_common.py</code> — общий контракт, без общего модуля.</p>
+
+  <h3>Граф зависимостей (A→B = A зависит от B)</h3>
+  <svg viewBox="0 0 760 420" role="img" aria-label="Граф зависимостей требований">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#4ea1ff"/>
+      </marker>
+      <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+      </filter>
+    </defs>
+    <style>
+      .gn rect{fill:#222b38; stroke:#33404f; rx:8;}
+      .gn.acc rect{stroke:#4ea1ff;}
+      .gn.ok rect{stroke:#3fb950;}
+      .gn text{fill:#e6edf3; font:600 11px sans-serif;}
+      .ge{stroke:#4ea1ff; stroke-width:1.6; fill:none; marker-end:url(#arr);}
+      body:has(#theme-toggle:checked) .gn rect{fill:#eef2f6; stroke:#d0d7de;}
+      body:has(#theme-toggle:checked) .gn.acc rect{stroke:#0969da;}
+      body:has(#theme-toggle:checked) .gn.ok rect{stroke:#1a7f37;}
+      body:has(#theme-toggle:checked) .gn text{fill:#1f2328;}
+      body:has(#theme-toggle:checked) .ge{stroke:#0969da;}
+    </style>
+    <!-- edges -->
+    <path class="ge" d="M170,70 L300,120"/>            <!-- _stale -> _fresh -->
+    <path class="ge" d="M170,170 L300,140"/>           <!-- covered_sources -> _fresh -->
+    <path class="ge" d="M420,130 L540,80"/>            <!-- _fresh -> _src_hash -->
+    <path class="ge" d="M420,135 L540,190"/>           <!-- _fresh -> log record -->
+    <path class="ge" d="M640,90 L680,150 L640,205" />  <!-- _src_hash -> source bytes (curve) -->
+    <path class="ge" d="M610,225 L470,300"/>           <!-- log record -> skills -->
+    <path class="ge" d="M150,300 L300,150"/>           <!-- backward-compat -> _fresh -->
+    <path class="ge" d="M170,360 L150,150"/>           <!-- test_lint -> _fresh region -->
+    <!-- nodes -->
+    <g class="gn acc"><rect x="40" y="50" width="130" height="38"/><text x="58" y="73">_stale (lint.py)</text></g>
+    <g class="gn acc"><rect x="20" y="152" width="170" height="38"/><text x="32" y="175">covered_sources (hook)</text></g>
+    <g class="gn ok"><rect x="300" y="112" width="120" height="40"/><text x="330" y="137">_fresh</text></g>
+    <g class="gn"><rect x="540" y="58" width="100" height="38"/><text x="560" y="81">_src_hash</text></g>
+    <g class="gn"><rect x="612" y="190" width="120" height="38"/><text x="624" y="213">source bytes</text></g>
+    <g class="gn"><rect x="540" y="170" width="120" height="38" style="display:none"/></g>
+    <g class="gn"><rect x="500" y="170" width="150" height="40"/><text x="512" y="195">log record (src_hash)</text></g>
+    <g class="gn"><rect x="360" y="290" width="160" height="40"/><text x="372" y="315">skills ingest/init</text></g>
+    <g class="gn"><rect x="40" y="290" width="150" height="38"/><text x="52" y="313">backward-compat (mtime)</text></g>
+    <g class="gn ok"><rect x="40" y="345" width="150" height="38"/><text x="52" y="368">tests (lint + common)</text></g>
+  </svg>
+  <p class="note">Циклов в графе <strong>нет</strong>. <code>lint._fresh</code> и <code>iwiki_common._fresh</code> — два независимых узла с общим контрактом (зеркала, не цикл).</p>
+
+  <h3>Карта покрытия (задача → требования спецификации)</h3>
+  <table>
+    <thead><tr><th>Задача</th><th>Описание</th><th>Покрывающие требования</th></tr></thead>
+    <tbody>
+      <tr><td>T1</td><td>copy <code>lint.py</code> (add <code>_src_hash</code>/<code>_fresh</code>; <code>_stale</code> uses <code>_fresh</code>)</td><td>§Freshness predicate, §Files changed</td></tr>
+      <tr><td>T2</td><td>copy <code>test_lint.py</code> (+hashlib, 4 теста)</td><td>§Behavioural checks, §Verification(1)</td></tr>
+      <tr><td>T3</td><td>copy <code>test_iwiki_common.py</code> (+hashlib, 2 теста)</td><td>§Behavioural checks, §Verification(1)</td></tr>
+      <tr><td>T4</td><td>surgical edit <code>iwiki_common.py</code> (helpers + рефактор, СОХРАНИТЬ class-2)</td><td>§Freshness predicate, §Files changed, §Verification(2)</td></tr>
+      <tr><td>T5</td><td>surgical edit <code>iwiki-ingest/SKILL.md</code> (step-5 src_hash, СОХРАНИТЬ ENG fallback)</td><td>§Log record, §Files changed, §Verification(3)</td></tr>
+      <tr><td>T6</td><td>surgical edit <code>iwiki-init/SKILL.md</code> (step-5 src_hash, СОХРАНИТЬ ENG fallback)</td><td>§Log record, §Files changed, §Verification(3)</td></tr>
+      <tr><td>T7</td><td>НЕ трогать class-2/class-3</td><td>§Explicitly NOT touched, §Out of scope</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+
+  <h3>Фазы</h3>
+  <table>
+    <thead><tr><th>Фаза</th><th>Статус</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">passed</span></td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">passed</span></td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">passed</span></td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">passed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Findings</h3>
+  <table>
+    <thead><tr><th>id</th><th>severity</th><th>section</th><th>fragment</th><th>text</th><th>fix</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td colspan="7" style="text-align:center; color:var(--muted);">Находок нет — <code>findings: []</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Сводка</h3>
+  <div class="summary-grid">
+    <div class="metric"><div class="v" style="color:var(--crit)">0</div><div class="l">CRITICAL open</div></div>
+    <div class="metric"><div class="v" style="color:var(--warn)">0</div><div class="l">WARNING open</div></div>
+    <div class="metric"><div class="v" style="color:var(--ok)">OK</div><div class="l">Вердикт</div></div>
+  </div>
+
+  <h3>Цепочка</h3>
+  <p>
+    <span class="badge muted">intent: n/a</span> →
+    <span class="badge ok">spec: passed</span> →
+    <span class="badge muted">plan: —</span> →
+    <span class="badge muted">result: —</span>
+  </p>
+  <p class="note">
+    Intent-документ для топика <code>iwiki-content-hash-freshness-port</code> не найден — спецификация <strong>открывает цепочку</strong>.<br>
+    spec: <code>docs/superpowers/specs/2026-06-30-iwiki-content-hash-freshness-port-design.md</code> (review passed).
+  </p>
+
+</section>
+<!-- TAB:spec END -->
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+  <p class="note">Этап ещё не проверён.</p>
+</section>
+<!-- TAB:plan END -->
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+  <p class="note">Этап ещё не проверён.</p>
+</section>
+<!-- TAB:result END -->
+</main>
+</body>
+</html>
