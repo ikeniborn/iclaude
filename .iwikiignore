@@ -14,4 +14,12 @@
 #   !docs/wiki/keep.md       # re-include after a broader ignore
 
 # Scratch notes (bug write-ups, investigation memos) are not documentable source.
-docs/notes/
+docs/superpowers/
+.claude/
+.claude-plugin/
+.githooks/
+.githooks/
+.github/
+.pytest_cache/
+.ruff_cache/
+.superpowers/

@@ -9,8 +9,8 @@
   "Providers": [
     {
       "name": "homelab",
-      "api_base_url": "${MY_PROVIDER_URL}/v1/chat/completions",
-      "api_key": "${MY_PROVIDER_API_KEY}",
+      "api_base_url": "${ROUTER_URL}/v1/chat/completions",
+      "api_key": "${ROUTER_API_KEY}",
       "models": [
         "kimi-k2.6:cloud",
         "deepseek-v4-flash:cloud"
