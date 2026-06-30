@@ -55,9 +55,10 @@ apply_iclaude_env_map() {
 # Safe to call multiple times (idempotent re-export).
 #######################################
 source_iclaude_config() {
-    [[ -f "${CREDENTIALS_FILE:-}" ]] || return 0
-    source "$CREDENTIALS_FILE"
-    apply_iclaude_env_map
+    if [[ -f "${CREDENTIALS_FILE:-}" ]]; then
+        source "$CREDENTIALS_FILE"
+        apply_iclaude_env_map
+    fi
 }
 
 #######################################

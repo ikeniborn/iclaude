@@ -141,30 +141,30 @@ agent: general-purpose
 
 ## iwiki Integration
 
-Этот скилл не вызывает `context-awareness` — проверяет docs/wiki напрямую.
+Этот скилл не вызывает `context-awareness` — проверяет домен iwiki (wiki_status) напрямую.
 
 ### Query (в начале Step 2 — Analyze Against Rules)
 
 ```
-IF exists("{CWD}/docs/wiki/"):
-  Skill(skill="iwiki:iwiki-query", args='паттерны нарушений и best practices форматирования инструкций')
+IF iwiki MCP подключён AND wiki_status сообщает домен проекта (привязать через wiki_bind):
+  wiki_search(query='паттерны нарушений и best practices форматирования инструкций')
 
   Использовать результат для обогащения Step 2:
-  - Если docs/wiki содержит задокументированные нарушения → добавить в анализ
-  - Если docs/wiki содержит принятые стандарты форматирования → учесть при adapt
-  - Если в docs/wiki нет данных → продолжить стандартный анализ по R1-R7
+  - Если домен iwiki содержит задокументированные нарушения → добавить в анализ
+  - Если домен iwiki содержит принятые стандарты форматирования → учесть при adapt
+  - Если в домене iwiki нет данных → продолжить стандартный анализ по R1-R7
 ```
 
 ### Record (после Step 4 — только в режиме adapt)
 
-iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
+iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись страниц через `wiki_write_page` + `wiki_index`.
 
 ```
-IF exists("{CWD}/docs/wiki/") AND mode == "adapt" AND violations_found > 0:
-  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу с примером нарушения
-    и его исправлением (что и почему), ссылаясь на {verified_file_path}
+IF wiki_status сообщает домен проекта AND mode == "adapt" AND violations_found > 0:
+  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source) → wiki_index(domain)
+    пример нарушения и его исправление (что и почему), ссылаясь на {verified_file_path}
 
-  Результат: примеры нарушений и исправлений попадают в docs/wiki —
+  Результат: примеры нарушений и исправлений попадают в домен iwiki —
   переиспользуются как эталоны при следующих проверках документов.
 ```
 

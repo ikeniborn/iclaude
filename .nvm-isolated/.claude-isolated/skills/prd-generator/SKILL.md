@@ -788,25 +788,25 @@ prdGeneration.toon = {
 
 ```
 IF project_context.wiki_initialized == true:
-  Skill(skill="iwiki:iwiki-query", args='Product Requirements Documents и требования к продуктам')
+  wiki_search(query='Product Requirements Documents и требования к продуктам')
 
   Использовать результат для обогащения Phase 1 Questionnaire:
   - Если найдены похожие требования/цели → предзаполнить Q3 (Target Audience), Q4 (Business Goals)
   - Если найдены success metrics → предложить их как варианты для Q5
-  - Если в docs/wiki нет данных → продолжить стандартный Questionnaire без изменений
+  - Если в домене iwiki нет данных → продолжить стандартный Questionnaire без изменений
 ```
 
 ### Record (в Phase 7, после успешной валидации)
 
-iwiki — embedding-граф документации в `docs/wiki/`; наполнение через `iwiki:iwiki-ingest` из исходников.
+iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись страниц через `wiki_write_page` + `wiki_index`.
 
 ```
 IF project_context.wiki_initialized == true AND status IN ("success", "partial"):
-  (опционально) Skill(skill="iwiki:iwiki-ingest") → создать/обновить страницу в docs/wiki/
-    с целями продукта и целевой аудиторией (что и почему), ссылаясь на docs/prd/
+  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source) → wiki_index(domain)
+    цели продукта и целевая аудитория (что и почему), ссылаясь на docs/prd/
 
-  Результат: бизнес-цели и продуктовые паттерны попадают в docs/wiki —
-  доступны для iwiki-query в следующих PRD.
+  Результат: бизнес-цели и продуктовые паттерны попадают в домен iwiki —
+  доступны для wiki_search в следующих PRD.
 ```
 
 ---

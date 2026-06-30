@@ -10,7 +10,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. **If the project has a `docs/wiki/`**, run `/iwiki-query` → retrieve relevant `docs/wiki/` sections; `/iwiki-lint` → check doc health. (No `docs/wiki/` → skip; iwiki is not set up in this project.)
+1. **If the iwiki MCP server is connected**, call `wiki_status`. If it reports a domain bound to this project (convention: domain name == project basename), `wiki_bind(read=[<domain>], write=<domain>)`, then `wiki_search "<task topic>"` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no project domain → skip; iwiki is not set up for this project.)
 2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
    ```bash
    tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
@@ -23,13 +23,13 @@ Skip only when: familiar area, same session.
 
 ## Keep Docs Current (MANDATORY)
 
-**After every change that alters functionality, architecture, or behavior — and only in a project that already has a `docs/wiki/` — update the project docs via iwiki before responding to the user.**
+**After every change that alters functionality, architecture, or behavior — and only when the iwiki MCP server reports a domain bound to this project (`wiki_status`) — update the wiki via the MCP tools before responding to the user.**
 
-- Run `iwiki:iwiki-ingest <changed-source>` to regenerate/update the affected `docs/wiki/` page.
-- Run `/iwiki-lint` — no broken `[[refs]]`, no orphan or stale pages.
+- Author/update the affected page markdown, then `wiki_write_page(domain, slug, markdown, source=<changed-source>)` followed by `wiki_index(domain)` (writes are not auto-indexed).
+- Run `wiki_lint` — no broken `[[refs]]`, no orphan or stale pages.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
-Always invoke iwiki via its **skills** (`iwiki:iwiki-ingest`, `/iwiki-query`, `/iwiki-lint`) — never guess engine subcommands. The `iwiki_engine` CLI exposes `index | search | related | status | lint` (`lint` is config-free, like `status`, and is what `/iwiki-lint` calls). When unsure of any CLI's subcommands, check `--help` before running.
+Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_write_page`, `wiki_index`, `wiki_lint`, `wiki_list_domains`, `wiki_list_pages`, `wiki_create_domain`) — never the old plugin skills or the `iwiki_engine` CLI.
 
 ## Task Log (docs/TODO.md)
 

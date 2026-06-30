@@ -379,68 +379,6 @@ ICLAUDE_USE_PII_PROXY=false
 # ICLAUDE_LANGFUSE_PUBLIC_KEY="pk-lf-..."
 # ICLAUDE_LANGFUSE_SECRET_KEY="sk-lf-..."   # секрет — держите .claude_config в chmod 600
 
-# ============================================================================
-#  iwiki (embedding-граф документации, плагин в репозитории)
-# ============================================================================
-# iwiki — self-contained замена lat.md: ingest исходников в docs/wiki/,
-# семантический поиск и lint. Движок (Python 3.12 + uv) только эмбеддит текст
-# и ищет по вектору в git-коммитнутом JSONL индексе.
-#
-# Требуется OpenAI-compatible embeddings API. Без IWIKI_LLM_BASE_URL и
-# IWIKI_LLM_KEY движок останавливается (stop rule) — никакой работы вслепую.
-#
-# Установка: ./iclaude.sh --install-iwiki   (uv sync движка)
-# Использование: /iwiki-query, /iwiki-ingest, /iwiki-lint
-#
-# --- Вариант 1: OpenAI-compatible (кастомный endpoint) ---
-# ICLAUDE_IWIKI_LLM_KEY="sk-..."
-# ICLAUDE_IWIKI_LLM_BASE_URL="https://your-provider/v1"
-# ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"   # по умолчанию
-# ICLAUDE_IWIKI_EMBED_DIMENSIONS="1536"                # по умолчанию; должно совпадать с моделью
-#
-# --- Вариант 2: Ollama (локальный, без API ключа) ---
-# ICLAUDE_IWIKI_LLM_KEY="ollama"
-# ICLAUDE_IWIKI_LLM_BASE_URL="http://localhost:11434/v1"
-# ICLAUDE_IWIKI_EMBED_MODEL="nomic-embed-text"
-# ICLAUDE_IWIKI_EMBED_DIMENSIONS="768"
-# Установить модель: ollama pull nomic-embed-text
-#
-# --- Тюнинг (всё необязательно, показаны значения по умолчанию) ---
-# ICLAUDE_IWIKI_CHUNK_SIZE="512"          # слов в секции до разбиения на под-чанки
-# ICLAUDE_IWIKI_CHUNK_OVERLAP="64"        # перекрытие под-чанков в словах
-# ICLAUDE_IWIKI_TOP_K="8"                 # сколько результатов возвращает search
-# ICLAUDE_IWIKI_SCORE_THRESHOLD="0.2"     # минимальный косинус для результата
-# ICLAUDE_IWIKI_GRAPH_DEPTH="2"           # глубина BFS по [[refs]] в related
-#
-# --- Ограничение области индексирования (необязательно) ---
-# Glob-паттерны через запятую, либо файлы .iwikiinclude / .iwikiexclude
-# (gitignore-стиль) в корне проекта. include применяется первым, затем exclude.
-# ICLAUDE_IWIKI_INCLUDE="docs/wiki/**/*.md"
-# ICLAUDE_IWIKI_EXCLUDE="docs/wiki/drafts/*"
-#
-# --- Автоматизация (хуки плагина iwiki) — все ON по умолчанию ---
-# Четыре хука держат wiki актуальной без ручных /iwiki-*. Каждый выключается
-# отдельно установкой переменной в 0 (по умолчанию = включён):
-#   IWIKI_AUTO_BOOTSTRAP — SessionStart: фиксирует baseline (отсекает чужой WIP
-#                          от нагов) + подсказывает /iwiki-init на пустом wiki.
-#   IWIKI_AUTO_QUERY     — UserPromptSubmit: семантический recall docs/wiki в
-#                          контекст перед задачей.
-#   IWIKI_AUTO_REINDEX   — PostToolUse→Stop: батч-переиндексация один раз за ход
-#                          после правок страниц wiki.
-#   IWIKI_AUTO_SYNC      — Stop: наг обновить wiki по изменённым ЗА СЕССИЮ
-#                          исходникам (включая закоммиченные), затем /iwiki-lint.
-# ICLAUDE_IWIKI_AUTO_BOOTSTRAP="0"   # отключить bootstrap+baseline
-# ICLAUDE_IWIKI_AUTO_QUERY="0"       # отключить pre-work recall
-# ICLAUDE_IWIKI_AUTO_REINDEX="0"     # отключить авто-переиндексацию
-# ICLAUDE_IWIKI_AUTO_SYNC="0"        # отключить post-work наг
-#
-# Тюнинг Stop-нага (IWIKI_AUTO_SYNC): сколько раз переспросить про ОДИН И ТОТ ЖЕ
-# неизменившийся набор изменённых исходников, прежде чем уступить (чтобы не
-# заклинить stop). По умолчанию 2. 0 = спросить один раз, затем уступить.
-# Ограничивает повторы только для СОХРАНЁННОГО набора между ходами; полностью
-# выключить наг — через IWIKI_AUTO_SYNC="0".
-# ICLAUDE_IWIKI_SYNC_MAX_ASK="2"
-
 # ============================================================
 #  MICRO-VM SANDBOX (Firecracker — изоляция на уровне ядра)
 # ============================================================
