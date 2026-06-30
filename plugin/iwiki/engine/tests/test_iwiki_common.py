@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import io
 import json as _json
 import os
@@ -126,3 +127,30 @@ def test_iwikiignore_comment_only_is_noop(tmp_path, monkeypatch):
     (tmp_path / ".iwikiignore").write_text("# just a comment\n\n", encoding="utf-8")
     assert iwiki_common.source_ignore() is None
     assert iwiki_common.is_documentable("lib/foo/bar.py") is True
+
+
+def test_covered_sources_hash_match_overrides_mtime(tmp_path, monkeypatch):
+    # Cure case mirror of the engine test: page OLDER by mtime but hash matches
+    # → still covered.
+    log = _setup_wiki(tmp_path, monkeypatch)
+    (tmp_path / "a.py").write_text("x", encoding="utf-8")
+    (tmp_path / "docs" / "wiki" / "a.md").write_text("y", encoding="utf-8")
+    h = hashlib.sha256(b"x").hexdigest()[:16]
+    _write_log(log, [
+        {"op": "ingest", "source": "a.py", "page": "docs/wiki/a.md", "src_hash": h}])
+    os.utime("a.py", (3000, 3000))
+    os.utime("docs/wiki/a.md", (1000, 1000))
+    assert iwiki_common.covered_sources() == {"a.py"}
+
+
+def test_covered_sources_hash_mismatch_not_covered(tmp_path, monkeypatch):
+    # Page NEWER by mtime but hash differs → not covered.
+    log = _setup_wiki(tmp_path, monkeypatch)
+    (tmp_path / "a.py").write_text("x", encoding="utf-8")
+    (tmp_path / "docs" / "wiki" / "a.md").write_text("y", encoding="utf-8")
+    _write_log(log, [
+        {"op": "ingest", "source": "a.py", "page": "docs/wiki/a.md",
+         "src_hash": "0000000000000000"}])
+    os.utime("a.py", (1000, 1000))
+    os.utime("docs/wiki/a.md", (2000, 2000))
+    assert iwiki_common.covered_sources() == set()
