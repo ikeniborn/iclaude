@@ -1,17 +1,17 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (iwiki-query) — this skill only detects availability + a quick summary.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.4.0
+# version: 1.5.0
 # tags: context, detection, project, language, framework, lat
-# dependencies: [iwiki:iwiki-query]
+# dependencies: []
 # files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
 ---
 
 # Context Awareness
 
-Автоматическое определение языка, framework, наличия PRD и документационного графа `docs/wiki/` в проекте.
+Автоматическое определение языка, framework, наличия PRD и домена документации iwiki (MCP) для проекта.
 
 ## Когда использовать
 
@@ -221,7 +221,7 @@ downstream-навыки (brainstorming, prd-generator) используют
 
 ---
 
-### Example 4: Bash Script Project — без docs/wiki
+### Example 4: Bash Script Project — без привязанного домена iwiki
 
 **Project structure:**
 ```
@@ -253,7 +253,7 @@ downstream-навыки (brainstorming, prd-generator) используют
 
 ---
 
-### Example 4b: Bash Script Project — с инициализированной docs/wiki
+### Example 4b: Bash Script Project — с привязанным доменом iwiki
 
 **Project structure:**
 ```
@@ -263,12 +263,7 @@ downstream-навыки (brainstorming, prd-generator) используют
 │   └── proxy/...
 └── docs/
     ├── PROXY.md
-    ├── ROUTER.md
-    └── wiki/
-        ├── index.md    ← корневой индекс
-        ├── architecture.md
-        ├── proxy.md
-        └── pii-proxy.md
+    └── ROUTER.md
 ```
 
 **Detection result:**
@@ -291,18 +286,14 @@ downstream-навыки (brainstorming, prd-generator) используют
 
 ---
 
-### Example 4c: Bash Script Project — с docs/wiki
+### Example 4c: Bash Script Project — с привязанным доменом iwiki (минимальный)
 
 **Project structure:**
 ```
 /home/user/iclaude/
 ├── iclaude.sh
 ├── lib/
-├── docs/
-│   └── wiki/
-│       ├── index.md    ← корневой индекс
-│       ├── architecture.md
-│       └── pii-proxy.md
+└── docs/
 ```
 
 **Detection result:**
