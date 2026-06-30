@@ -111,14 +111,6 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
 fi
 
 #######################################
-# Load iwiki modules (Phase 8.0.1)
-#######################################
-if [[ -d "$LIB_DIR/iwiki" ]]; then
-    source "${LIB_DIR}/iwiki/detect.sh"
-    source "${LIB_DIR}/iwiki/install.sh"
-fi
-
-#######################################
 # Load LSP modules (Phase 8.1)
 #######################################
 if [[ -d "$LIB_DIR/lsp" ]]; then
@@ -506,11 +498,6 @@ fi
             --router)
                 USE_ROUTER_FLAG=true
                 shift
-                ;;
-            --install-iwiki)
-                source_iclaude_config
-                install_iwiki
-                exit $?
                 ;;
             --install-gsd)
                 if [[ "$use_system" == true ]]; then

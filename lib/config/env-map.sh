@@ -59,9 +59,6 @@ source_iclaude_config() {
         source "$CREDENTIALS_FILE"
         apply_iclaude_env_map
     fi
-    # Export the canonical iwiki engine dir on every launch (function lives in
-    # lib/iwiki/detect.sh; absent when iwiki is not installed -> silently skip).
-    command -v iwiki_export_engine_dir >/dev/null 2>&1 && iwiki_export_engine_dir
 }
 
 #######################################

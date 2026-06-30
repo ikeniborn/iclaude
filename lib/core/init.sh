@@ -105,7 +105,7 @@ init_environment() {
     export PII_PROXY_PID_FILE
     export PII_PROXY_SERVER_SCRIPT
 
-    # uv binary (isolated). Used by iwiki engine + hooks.
+    # uv binary (isolated). Used by the dormant iwiki plugin engine when run manually.
     UV_BIN="${ISOLATED_NVM_DIR}/bin/uv"
     export UV_BIN
 
