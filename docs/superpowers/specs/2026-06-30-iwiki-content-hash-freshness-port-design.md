@@ -1,3 +1,30 @@
+---
+chain:
+  intent: null
+review:
+  spec_hash: 46590f57fe2de22d
+  last_run: 2026-06-30
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  section_hashes:
+    Problem: da7fa7e0a6482f57
+    "What ports (and only this)": e1eb8c824cfc7b1a
+    "Feature design": 1cbbf81723eeefda
+    "Log record": ad2840cfd8d88d71
+    "Freshness predicate (the invariant)": f1eeb1bd98d8fc33
+    "Backward / forward compatibility": a06261362c60f8b7
+    "Files changed": c990d93165d86ffa
+    "Explicitly NOT touched": 15781caf25f6856a
+    Verification: 30020994ef252c69
+    "Behavioural checks (covered by the new tests)": e084cb43817d7495
+    "Out of scope": e5ffaad14cd7eece
+    "Workflow note": 835cab1ea0494981
+  findings: []
+---
+
 # Port content-hash freshness from `ai-wiki-plugin` into `plugin/iwiki`
 
 **Date:** 2026-06-30

@@ -274,17 +274,35 @@ def committed_sources(since: str) -> list[str]:
     return sorted(p for p in raw if is_documentable(p) and os.path.exists(p))
 
 
-def source_page_map() -> dict[str, str]:
-    """Map each source → its most recent wiki page from the ingest log
-    (docs/wiki/.iwiki/log.jsonl). Last record wins per source. Same record
-    predicate as the engine's lint._stale: any record carrying both `source`
-    and `page` counts (no `op` filter). Fail-soft → {}."""
-    out: dict[str, str] = {}
+def _src_hash(src: str) -> str | None:
+    """sha256 of the source's raw bytes, first 16 hex chars; None if unreadable.
+    Mirror of engine lint._src_hash."""
+    try:
+        with open(src, "rb") as fh:
+            return hashlib.sha256(fh.read()).hexdigest()[:16]
+    except OSError:
+        return None
+
+
+def _fresh(src: str, page: str, src_hash: str | None) -> bool:
+    """Is `page` current for `src`? Content-addressed when the record carries
+    `src_hash` and the source is readable; else mtime (page >= source). The
+    exact mirror of engine lint._fresh."""
+    if src_hash:
+        cur = _src_hash(src)
+        if cur is not None:
+            return cur == src_hash
+    return os.path.getmtime(page) >= os.path.getmtime(src)
+
+
+def _ingest_records():
+    """Yield each well-formed log record (a dict carrying both `source` and
+    `page`) from docs/wiki/.iwiki/log.jsonl, oldest first. Fail-soft → nothing."""
     try:
         with open(LOG_REL, encoding="utf-8") as f:
             lines = f.read().splitlines()
     except Exception:
-        return out
+        return
     for line in lines:
         line = line.strip()
         if not line:
@@ -295,24 +313,35 @@ def source_page_map() -> dict[str, str]:
                 continue
         except Exception:
             continue
-        src, page = rec.get("source"), rec.get("page")
-        if src and page:
-            out[src] = page          # last record wins
+        if rec.get("source") and rec.get("page"):
+            yield rec
+
+
+def source_page_map() -> dict[str, str]:
+    """Map each source → its most recent wiki page from the ingest log
+    (docs/wiki/.iwiki/log.jsonl). Last record wins per source. A record counts
+    when it carries both `source` and `page`. Fail-soft → {}."""
+    out: dict[str, str] = {}
+    for rec in _ingest_records():
+        out[rec["source"]] = rec["page"]          # last record wins
     return out
 
 
 def covered_sources() -> set[str]:
     """Sources already covered by a fresh wiki page: the source's most recent
-    page (per source_page_map) exists on disk and is at least as new as the
-    source. The freshness test mtime(page) >= mtime(source) is the exact
-    inverse of lint._stale, so for any (source, page) pair this calls "covered"
-    exactly the pairs lint would not call stale. Fail-soft → empty set (subtract
-    nothing → safe over-nag, bounded by MAX_ASK)."""
+    log record names a page that exists on disk and is fresh for the source
+    (hash match when the record has `src_hash`, else page mtime >= source).
+    The freshness test is the exact inverse of lint._stale. Fail-soft → empty
+    set (subtract nothing → safe over-nag, bounded by MAX_ASK)."""
+    latest: dict[str, dict] = {}
+    for rec in _ingest_records():
+        latest[rec["source"]] = rec               # last record wins
     covered: set[str] = set()
-    for src, page in source_page_map().items():
+    for src, rec in latest.items():
+        page = rec["page"]
         try:
             if os.path.isfile(src) and os.path.isfile(page) \
-                    and os.path.getmtime(page) >= os.path.getmtime(src):
+                    and _fresh(src, page, rec.get("src_hash")):
                 covered.add(src)
         except Exception:
             continue

@@ -61,12 +61,16 @@ indexes everything. Works in any project — the engine ships with this plugin
 5. **Log the bootstrap.** Append one record per generated page to
    `docs/wiki/.iwiki/log.jsonl`:
    ```bash
-   printf '{"op":"init","source":"<src>","page":"<page>","date":"<YYYY-MM-DD>"}\n' \
+   printf '{"op":"init","source":"<src>","page":"<page>","date":"<YYYY-MM-DD>","src_hash":"%s"}\n' \
+     "$(sha256sum '<src>' | cut -c1-16)" \
      >> docs/wiki/.iwiki/log.jsonl
    ```
-   Canonical log record: `{op, source, page, date}` (`note` optional). Use exactly
-   these keys — `lint`'s stale check reads `source`/`page` and ignores records
-   missing them. Do not introduce alternative keys (e.g. `scope`).
+   Substitute `<src>` (same path in both the `source` field and the `sha256sum`
+   argument), `<page>`, and `<YYYY-MM-DD>` literally; `src_hash` is filled by the
+   shell. Canonical log record: `{op, source, page, date, src_hash}` (`note`
+   optional). `src_hash` is the sha256 of the source's raw bytes, first 16 hex
+   chars — `lint`'s stale check prefers it over mtime. Use exactly these keys;
+   do not introduce alternatives (e.g. `scope`).
 
 6. **Lint + summarize.** Invoke the `iwiki:iwiki-lint` skill (or run the checks)
    and report: pages created, chunk count, index size, and any gaps (source areas
