@@ -83,8 +83,8 @@ svg{max-width:100%; height:auto; display:block; margin:1rem auto; background:var
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <header>
   <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
   <h1>Цепочка IDD→SDD — <code>iwiki-content-hash-freshness-port</code></h1>
@@ -412,7 +412,167 @@ svg{max-width:100%; height:auto; display:block; margin:1rem auto; background:var
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверён.</p>
+
+  <h2>Result Check — 2026-06-30</h2>
+
+  <h3>Документы</h3>
+  <table>
+    <thead><tr><th>Артефакт</th><th>Путь / значение</th></tr></thead>
+    <tbody>
+      <tr><td>План</td><td><code>docs/superpowers/plans/2026-06-30-iwiki-content-hash-freshness-port.md</code></td></tr>
+      <tr><td>Спека</td><td><code>docs/superpowers/specs/2026-06-30-iwiki-content-hash-freshness-port-design.md</code></td></tr>
+      <tr><td>Интент</td><td><span class="badge muted">отсутствует</span> — цепочка открывается спекой (<code>chain.intent: null</code>)</td></tr>
+      <tr><td>Diff base</td><td><code>git diff e86d87af..8113c5b8</code> — 6 файлов изменено</td></tr>
+      <tr><td>Коммиты</td><td>
+        <code>063ef619</code> feat(iwiki): content-hash staleness in engine lint<br>
+        <code>f70f1018</code> feat(iwiki): content-hash coverage in Stop-hook<br>
+        <code>8113c5b8</code> docs(iwiki): record src_hash in ingest/init log steps
+      </td></tr>
+    </tbody>
+  </table>
+
+  <h3>Покрытие шагов плана</h3>
+  <div class="summary-grid">
+    <div class="metric"><div class="v" style="color:var(--ok)">4</div><div class="l">DONE</div></div>
+    <div class="metric"><div class="v" style="color:var(--muted)">0</div><div class="l">PARTIAL</div></div>
+    <div class="metric"><div class="v" style="color:var(--crit)">0</div><div class="l">MISSING</div></div>
+    <div class="metric"><div class="v" style="color:var(--muted)">0</div><div class="l">EXCESS</div></div>
+  </div>
+
+  <table>
+    <thead><tr><th>Задача</th><th>Шаги</th><th>Файлы в diff</th><th>Статус</th><th>Коммит</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Task 1: Engine lint — content-hash staleness</td>
+        <td>1–7</td>
+        <td><code>lint.py</code>, <code>test_lint.py</code></td>
+        <td><span class="badge ok">DONE</span></td>
+        <td><code>063ef619</code></td>
+      </tr>
+      <tr>
+        <td>Task 2: Stop-hook — content-hash coverage</td>
+        <td>1–5</td>
+        <td><code>iwiki_common.py</code>, <code>test_iwiki_common.py</code></td>
+        <td><span class="badge ok">DONE</span></td>
+        <td><code>f70f1018</code></td>
+      </tr>
+      <tr>
+        <td>Task 3: Skills — write <code>src_hash</code> into the ingest log</td>
+        <td>1–4</td>
+        <td><code>iwiki-ingest/SKILL.md</code>, <code>iwiki-init/SKILL.md</code></td>
+        <td><span class="badge ok">DONE</span></td>
+        <td><code>8113c5b8</code></td>
+      </tr>
+      <tr>
+        <td>Task 4: Full-suite verification</td>
+        <td>1–2</td>
+        <td>— (верификация, нет изменений кода)</td>
+        <td><span class="badge ok">DONE</span></td>
+        <td><span class="badge muted">61/61 тестов</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Детали по задачам</h3>
+
+  <table>
+    <thead><tr><th>Задача</th><th>Что реализовано (подтверждено diff'ом)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>T1 · <code>lint.py</code> + <code>test_lint.py</code></td>
+        <td>
+          <ul style="margin:0; padding-left:1.2rem">
+            <li><code>import hashlib</code> добавлен в <code>lint.py</code></li>
+            <li>Функции <code>_src_hash()</code> и <code>_fresh()</code> добавлены перед <code>_stale()</code></li>
+            <li>Docstring <code>_stale</code>: «mtime-based» → «content-hash with mtime fallback»</li>
+            <li>Сравнение: <code>os.path.getmtime(src) &gt; os.path.getmtime(page)</code> → <code>not _fresh(src, page, rec.get("src_hash"))</code></li>
+            <li><code>test_lint.py</code>: <code>import hashlib</code>, хелперы <code>_h</code> и <code>_wiki_with_log</code>, 4 новых теста</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>T2 · <code>iwiki_common.py</code> + <code>test_iwiki_common.py</code></td>
+        <td>
+          <ul style="margin:0; padding-left:1.2rem">
+            <li>Добавлены <code>_src_hash()</code>, <code>_fresh()</code> — точные зеркала engine-версий</li>
+            <li>Добавлен генератор <code>_ingest_records()</code></li>
+            <li><code>source_page_map()</code> рефакторирована через <code>_ingest_records()</code></li>
+            <li><code>covered_sources()</code> рефакторирована: <code>_ingest_records()</code> + <code>_fresh()</code></li>
+            <li><code>hashlib</code> уже был импортирован — не добавлялся повторно ✓</li>
+            <li><code>test_iwiki_common.py</code>: <code>import hashlib</code>, 2 новых теста</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>T3 · <code>iwiki-ingest/SKILL.md</code> + <code>iwiki-init/SKILL.md</code></td>
+        <td>
+          <ul style="margin:0; padding-left:1.2rem">
+            <li>Шаг 5 обоих SKILL.md: <code>printf</code>-блок добавляет <code>"src_hash":"%s"</code> через <code>$(sha256sum '&lt;src&gt;' | cut -c1-16)</code></li>
+            <li>Canonical record note обновлён: <code>{op, source, page, date, src_hash}</code></li>
+            <li>Пути <code>ENG="plugin/iwiki/engine"</code> и iclaude-ссылки не тронуты ✓</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>T4 · Full-suite verification</td>
+        <td>
+          <ul style="margin:0; padding-left:1.2rem">
+            <li>61/61 тестов прошли (подтверждено пользователем)</li>
+            <li>class-2 пути не регрессированы (<code>plugin/iwiki/engine</code> сохранён во всех местах)</li>
+            <li><code>src_hash</code> присутствует в lint, hook и обоих SKILL.md</li>
+            <li><code>.claude_config</code> в <code>config.py</code> не тронут</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Покрытие интента / спеки</h3>
+  <p><span class="badge muted">Интент: n/a</span> — цепочка открывается спекой.</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Требование спеки</th><th>Статус</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>_src_hash</code> и <code>_fresh</code> — точные зеркала в <code>lint.py</code> и <code>iwiki_common.py</code></td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>2</td><td><code>_stale</code> использует <code>_fresh</code> (отчёт = <code>not _fresh(...)</code>)</td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>3</td><td><code>covered_sources</code> использует <code>_fresh</code> — точная инверсия <code>_stale</code></td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>4</td><td><code>src_hash</code> в log-блоке SKILL.md для ingest и init</td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>5</td><td>Backward compatible: записи без <code>src_hash</code> → mtime-путь (неизменное поведение)</td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>6</td><td>iclaude-пути не регрессированы (<code>plugin/iwiki/engine</code> сохранён)</td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>7</td><td>6 новых тестов: 4 в <code>test_lint.py</code> + 2 в <code>test_iwiki_common.py</code></td><td><span class="badge ok">✓ DONE</span></td></tr>
+      <tr><td>8</td><td>НЕ тронуты: <code>config.py</code>, <code>test_chunk.py</code>, <code>plugin.json</code>, <code>marketplace.json</code></td><td><span class="badge ok">✓ DONE</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Избыточные изменения (EXCESS)</h3>
+  <p class="note">Нет — все 6 файлов в diff точно соответствуют задачам плана.</p>
+
+  <h3>Findings</h3>
+  <table>
+    <thead><tr><th>Severity</th><th>Количество</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge crit">CRITICAL</span></td><td>0</td></tr>
+      <tr><td><span class="badge warn">WARNING</span></td><td>0</td></tr>
+      <tr><td><span class="badge muted">INFO</span></td><td>0</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note" style="border-color:var(--ok); background:color-mix(in srgb,var(--ok) 10%,var(--surface)); color:var(--ok)">
+    <strong>Вердикт: OK</strong> — все 4 задачи плана выполнены, все 8 требований спеки покрыты, нет CRITICAL/WARNING/INFO findings. Цепочка готова к слиянию.
+  </div>
+
+  <h3>Цепочка</h3>
+  <p>
+    <span class="badge muted">intent: n/a</span> →
+    <span class="badge ok">spec: passed</span> →
+    <span class="badge ok">plan: passed</span> →
+    <span class="badge ok">result: OK</span>
+  </p>
+  <p class="note">
+    Цепочка: <code>intent (null)</code> → <code>docs/superpowers/specs/2026-06-30-iwiki-content-hash-freshness-port-design.md</code> → <code>docs/superpowers/plans/2026-06-30-iwiki-content-hash-freshness-port.md</code><br>
+    Plan hash: <code>af6f9cb06d18e442</code> · check-result: 2026-06-30
+  </p>
+
 </section>
 <!-- TAB:result END -->
 </main>
