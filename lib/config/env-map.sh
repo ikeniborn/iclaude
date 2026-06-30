@@ -55,9 +55,13 @@ apply_iclaude_env_map() {
 # Safe to call multiple times (idempotent re-export).
 #######################################
 source_iclaude_config() {
-    [[ -f "${CREDENTIALS_FILE:-}" ]] || return 0
-    source "$CREDENTIALS_FILE"
-    apply_iclaude_env_map
+    if [[ -f "${CREDENTIALS_FILE:-}" ]]; then
+        source "$CREDENTIALS_FILE"
+        apply_iclaude_env_map
+    fi
+    # Export the canonical iwiki engine dir on every launch (function lives in
+    # lib/iwiki/detect.sh; absent when iwiki is not installed -> silently skip).
+    command -v iwiki_export_engine_dir >/dev/null 2>&1 && iwiki_export_engine_dir
 }
 
 #######################################

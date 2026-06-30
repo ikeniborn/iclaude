@@ -10,6 +10,18 @@ _iwiki_resolve_uv() {
 # Engine project dir (in-repo plugin).
 _iwiki_engine_dir() { echo "${SCRIPT_DIR}/plugin/iwiki/engine"; }
 
+# Resolve the engine project once and export IWIKI_ENGINE_DIR — the canonical
+# entrypoint the iwiki skills read. Preference: the in-repo engine (always
+# uv-synced by install_iwiki and reachable from any project, since SCRIPT_DIR is
+# the iclaude install) -> newest cached plugin engine. No-op if neither exists.
+iwiki_export_engine_dir() {
+    local dir; dir="$(_iwiki_engine_dir)"
+    if [[ ! -f "$dir/pyproject.toml" ]]; then
+        dir="$(ls -d "${CLAUDE_CONFIG_DIR:-}"/plugins/cache/*/iwiki/*/engine 2>/dev/null | sort -V | tail -1)"
+    fi
+    [[ -f "$dir/pyproject.toml" ]] && export IWIKI_ENGINE_DIR="$dir"
+}
+
 detect_iwiki() {
     local uv; uv=$(_iwiki_resolve_uv)
     [[ -n "$uv" && -f "$(_iwiki_engine_dir)/pyproject.toml" ]]
