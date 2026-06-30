@@ -35,7 +35,7 @@ Bash integration that installs and detects the **iwiki documentation-graph engin
 
 ## Engine invocation
 
-`IWIKI_ENGINE_DIR` is the canonical entrypoint exported at launch by `source_iclaude_config` (`env-map.sh`) via `iwiki_export_engine_dir` (`lib/iwiki/detect.sh`). The engine is always a Python module (`-m iwiki_engine`), never a `PATH` binary.
+`IWIKI_ENGINE_DIR` is the canonical entrypoint exported at launch by `source_iclaude_config` (`lib/config/env-map.sh`) via `iwiki_export_engine_dir` (`lib/iwiki/detect.sh`). The engine is always a Python module (`-m iwiki_engine`), never a `PATH` binary.
 
 - Resolution order: in-repo `plugin/iwiki/engine` (present after `uv sync`) → newest `$CLAUDE_CONFIG_DIR/plugins/cache/*/iwiki/*/engine` (sorted by version, last wins). `IWIKI_ENGINE_DIR` is set only when the resolved dir contains `pyproject.toml`; it is unset otherwise.
 - After `uv sync`, `_iwiki_postsync_check()` (`lib/iwiki/install.sh`) runs a config-free `status` subcommand to verify the venv imported cleanly, then probes `Config.load()` to surface any missing LLM parameters, and prints the resolved dir. Non-fatal: install succeeds even if the probe warns.

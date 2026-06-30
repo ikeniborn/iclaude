@@ -43,7 +43,7 @@ UV="${UV_BIN:-}"; [ -x "$UV" ] || UV="$(command -v uv)"; [ -x "$UV" ] || UV="$CL
    `heading` to locate the `##` section within the file.
 4. For the best match, also fetch related articles:
    ```bash
-   # Reuses $UV and $ENG resolved in step 1 (re-run that block if in a fresh shell).
+   # $ENG / $UV from "Engine invocation" above (re-run that block if in a fresh shell).
    "$UV" run --project "$ENG" python3 -m iwiki_engine --wiki-dir docs/wiki related "<top result id>"
    ```
    Read the `vector` neighbours; if empty, follow the `graph` files.
