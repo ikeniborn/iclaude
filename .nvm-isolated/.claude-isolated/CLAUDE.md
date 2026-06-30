@@ -52,6 +52,19 @@ Purpose: a single human-readable index of what is being worked on and what is do
 - **Create on demand.** If `docs/TODO.md` is absent, the first `check-*` run creates it with the header row, then appends.
 - **Manual rows are allowed.** A task may be added by hand before any `check-*` run; the commands then update the matching `<topic>` row instead of duplicating it.
 
+## Project Status Reports
+
+**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: `docs/TODO.md` (what is being worked on) and the project's iwiki domain (what is documented as true).**
+
+- **Read both first.** Read `docs/TODO.md` for the task index; if the iwiki MCP server reports a domain bound to this project (`wiki_status`), `wiki_bind` then `wiki_search`/`wiki_read_page` for the topic. If iwiki is not set up, report from `docs/TODO.md` alone and say so.
+- **Report shape:** lead with overall state (counts of `in-progress` vs `done` rows, or the specific topic's row), then per-topic detail (stage cells `Intent`/`Spec`/`Plan`/`Result`), then a **Discrepancies** section.
+- **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
+  - Topic is `done` in `docs/TODO.md` but the wiki has no page (or a stale page) covering it.
+  - Wiki documents a feature/behavior that has no matching `<topic>` row in `docs/TODO.md`.
+  - `docs/TODO.md` says a stage passed (`✓` / `Result: OK`) but the wiki still describes the old behavior, or `wiki_lint` flags the topic's page as stale/orphan.
+  - Status, dates, or scope disagree between the two.
+- **No silent reconciliation.** Report discrepancies; do not fix `docs/TODO.md` or the wiki as a side effect of a status request. If none exist, state "TODO and wiki agree" explicitly.
+
 ## Language Rules
 
 - **Conversations and questions**: Russian — to match user expectations.

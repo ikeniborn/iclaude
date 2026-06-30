@@ -1,9 +1,22 @@
+---
+review:
+  spec_hash: 3f288c40648cf504
+  last_run: 2026-07-01
+  phases:
+    structure:    { status: passed }
+    coverage:     { status: passed }
+    clarity:      { status: passed }
+    consistency:  { status: passed }
+  findings: []
+chain:
+  intent: null
+---
 # Design: `check-chain` — unified IDD→SDD chain validator
 
 **Date:** 2026-07-01
 **Topic:** `check-chain-skill`
 **Status:** draft
-**Scope:** replace the four slash commands `commands/check-{intent,spec,plan,result}.md` with a single skill `skills/check-chain/SKILL.md`, and update the two hooks that reference them.
+**Scope:** replace the four slash commands `commands/check-{intent,spec,plan,result}.md` with a single skill `skills/check-chain/SKILL.md`, and consolidate the two hooks `idd-gate.py` + `idd-nudge.py` into a single `hooks/chain-gate.py` (re-wiring `settings.json`).
 
 ## 1. Problem
 
@@ -20,19 +33,30 @@ drift between copies.
 There is also no single entry point to validate the **whole chain** end to end —
 the user must invoke four commands in sequence and remember the order.
 
+The gate side has the same problem: two hooks — `idd-gate.py` (PreToolUse, blocks an
+invalid chain transition) and `idd-nudge.py` (PostToolUse, suggests the validator after
+an artifact is written) — duplicate their path rules, the `body_hash` pipeline,
+frontmatter parsing, the `BLOCK_ON` severity set, and the "is this artifact validated"
+predicate.
+
 ## 2. Goals / Non-goals
 
 **Goals**
 - One source of truth for the shared validator boilerplate.
 - Two run modes from one skill: validate the **whole chain** in one invocation, or
   validate a **single stage**.
-- Preserve every external contract byte-for-byte so the `idd-gate.py` /
-  `idd-nudge.py` hooks, the HTML chain report, and `docs/TODO.md` keep working.
+- One chain-gate hook: merge `idd-gate.py` (PreToolUse block) and `idd-nudge.py`
+  (PostToolUse nudge) into a single `hooks/chain-gate.py` that branches on the hook
+  event, with the shared helpers written once.
+- Preserve every external contract byte-for-byte so the chain-gate hook, the HTML
+  chain report, and `docs/TODO.md` keep working.
 
 **Non-goals**
 - Changing the phase checklists, severities, or the hashing algorithm.
-- Changing the gating *logic* of `idd-gate.py` / `idd-nudge.py` (only the displayed
-  remediation command strings change).
+- Changing the gating / nudge *decisions* — the predicates, severities, candidate
+  selection, session ownership, fail-open behaviour, and recency window are preserved
+  exactly; only the two hook files are merged into one and the remediation strings
+  become `/check-chain <stage>`.
 - Rewriting historical artifacts under `docs/superpowers/{intents,specs,plans,reports}/`.
 
 ## 3. Architecture
@@ -108,6 +132,36 @@ their content. Stage specifics that must survive:
   CRITICAL = a step entirely absent from the diff; WARNING = partial / excess; INFO =
   semantic discrepancy.
 
+### 3.4 Chain-gate hook (`hooks/chain-gate.py`)
+
+`idd-gate.py` (PreToolUse on `Skill|Write|Edit|MultiEdit`, blocks an invalid transition
+with exit 2) and `idd-nudge.py` (PostToolUse on `Write`, suggests the validator via
+`additionalContext`) duplicate their path rules, the `body_hash` pipeline, frontmatter
+parsing, `BLOCK_ON`, and the "is this artifact validated" predicate. They are merged into
+one module `hooks/chain-gate.py`:
+
+- **One set of shared helpers**, written once: the artifact RULES (dir, glob, state
+  block, hash key, `fix` command), `body_hash`, frontmatter parsing, the validation
+  predicate (a `gate_reason(path, rule)` that returns `None` when the gate is open — i.e.
+  the artifact is validated — else a reason string; the nudge's "validated" is simply
+  `gate_reason(...) is None`), the session-ownership ledger, candidate resolution, and
+  the recency window.
+- **`main()` branches on `hook_event_name`** from the payload:
+  - `PreToolUse` → the gate: record ownership, then block (exit 2) on a `Skill` chain
+    transition or a `Write`/`Edit` write-trigger when the relevant upstream artifact is
+    not validated. Decisions identical to today's `idd-gate.py`.
+  - `PostToolUse` → the nudge: on a `Write` that produced an intent / spec / plan
+    artifact not yet validated for its current body, emit the `additionalContext`
+    suggestion (exit 0). Identical to today's `idd-nudge.py` (still does **not** nudge
+    `result` — it needs a diff + a plan path and runs at branch finish).
+- **Fail-open** preserved on both paths (any internal error → exit 0; the gate must never
+  break a real tool call).
+- Every `fix` string lives in the single RULES table and reads `/check-chain <stage>`.
+
+`settings.json` is re-wired so both the PreToolUse (`Skill|Write|Edit|MultiEdit`) and the
+PostToolUse (`Write`) entries call `chain-gate.py`; `idd-gate.py` and `idd-nudge.py` are
+deleted.
+
 ## 4. Run modes
 
 ### 4.1 Whole-chain mode — sequential gate
@@ -137,33 +191,37 @@ writes, HTML tab, TODO cell, footer).
 ## 5. Preserved contracts
 
 - **`review:` frontmatter** — keys `intent_hash` / `spec_hash` / `plan_hash`,
-  `phases.<name>.status`, `findings[].{severity,verdict,...}`. Read by `idd-gate.py`
-  (`handle_skill` / review-based gate) and `idd-nudge.py` (`validated`).
-- **`result_check:` frontmatter** — `verdict` + `plan_hash`. Read by `idd-gate.py`
-  (`finishing-a-development-branch` gate).
-- **Body hash pipeline** — identical to both hooks, so gate/nudge hash comparisons match.
+  `phases.<name>.status`, `findings[].{severity,verdict,...}`. Read by `chain-gate.py`
+  on both paths (the PreToolUse review gate and the PostToolUse nudge predicate).
+- **`result_check:` frontmatter** — `verdict` + `plan_hash`. Read by `chain-gate.py`
+  (PreToolUse `finishing-a-development-branch` gate).
+- **Body hash pipeline** — identical between the skill and the hook, so gate/nudge hash
+  comparisons match.
 - **HTML chain report** — `docs/superpowers/reports/<topic>-results.html`, four tabs.
 - **`docs/TODO.md`** — one row per `<topic>`.
-- **`idd-gate.py` gating logic** — `check-chain` is not a `GATE_MAP` key, so invoking it
-  is never gated; frontmatter edits under `docs/superpowers/` pass `handle_write` via its
-  final `exit 0`, exactly as the current commands' edits do.
+- **Gating logic** — `check-chain` is not a gate-map key, so invoking it is never gated;
+  frontmatter edits under `docs/superpowers/` pass the write-trigger path via its final
+  `exit 0`, exactly as the current commands' edits do.
 
 ## 6. Migration / change-set
 
 | File | Action |
 |---|---|
 | `skills/check-chain/SKILL.md` | **create** — shared core + 4 stage profiles + 2 run modes + arg parsing |
-| `.nvm-isolated/.claude-isolated/hooks/idd-gate.py` | edit `GATE_MAP[*].fix`: `/check-intent`→`/check-chain intent`, `/check-spec`→`/check-chain spec`, `/check-plan`→`/check-chain plan` (×2 rows), `/check-result`→`/check-chain result` |
-| `.nvm-isolated/.claude-isolated/hooks/idd-nudge.py` | edit `ARTIFACT_RULES[*].fix`: intent/spec/plan → `/check-chain <stage>`; update the docstring comment (line ~17) that names `check-result` |
+| `.nvm-isolated/.claude-isolated/hooks/chain-gate.py` | **create** — merged gate + nudge: shared helpers once, `main()` branches on `hook_event_name` (PreToolUse block / PostToolUse nudge); RULES `fix` strings → `/check-chain <stage>` |
+| `.nvm-isolated/.claude-isolated/hooks/idd-gate.py` | **delete** (logic folded into `chain-gate.py`) |
+| `.nvm-isolated/.claude-isolated/hooks/idd-nudge.py` | **delete** (logic folded into `chain-gate.py`) |
+| `.nvm-isolated/.claude-isolated/settings.json` | edit — point the PreToolUse (`Skill|Write|Edit|MultiEdit`) and PostToolUse (`Write`) hook entries at `chain-gate.py` |
 | `.nvm-isolated/.claude-isolated/commands/check-intent.md` | **delete** |
 | `.nvm-isolated/.claude-isolated/commands/check-spec.md` | **delete** |
 | `.nvm-isolated/.claude-isolated/commands/check-plan.md` | **delete** |
 | `.nvm-isolated/.claude-isolated/commands/check-result.md` | **delete** |
 | `.nvm-isolated/.claude-isolated/CLAUDE.md` | sync the Task Log prose (lines ~42, 49–51, 53) that names `/check-intent` etc. to `/check-chain <stage>` — this is the **global** instructions file |
 
-Neither hook's *logic* changes — only the displayed remediation strings. `idd-nudge`
-still intentionally does not nudge `result` (it needs a diff + a plan path and runs at
-branch finish).
+The gate/nudge *decisions* do not change — the predicates, candidate selection, session
+ownership, recency window, fail-open, and the PostToolUse `result` exclusion all carry
+over verbatim into `chain-gate.py`. Only the two files collapse into one and the
+remediation strings become `/check-chain <stage>`.
 
 ## 7. Edge cases / decisions
 
@@ -186,14 +244,20 @@ branch finish).
 3. `grep -rn '/check-intent\|/check-spec\|/check-plan\|/check-result'` over the **live**
    config (`hooks/`, `commands/`, `skills/`, `CLAUDE.md`) returns nothing — every live
    reference now points at `/check-chain <stage>`.
-4. `idd-gate.py` and `idd-nudge.py` still parse, still gate/nudge on the same predicates,
-   and their block/nudge messages name `/check-chain <stage>`.
+4. `chain-gate.py` parses, handles **both** events — PreToolUse (block, exit 2) and
+   PostToolUse (nudge, exit 0) — on the same predicates as the two old hooks, and its
+   block / nudge messages name `/check-chain <stage>`.
 5. The four `commands/check-*.md` files are gone; no skill, hook, or agent references them.
 6. Historical artifacts under `docs/superpowers/{intents,specs,plans,reports}/` are
    untouched.
+7. `idd-gate.py` and `idd-nudge.py` are gone; `settings.json` points both hook events at
+   `chain-gate.py`; the gate still blocks an unvalidated transition and the nudge still
+   fires after an unvalidated artifact write (verifiable by feeding each hook a crafted
+   payload on stdin and checking the exit code / stdout).
 
 ## 9. Out of scope
 
 - Rewriting historical chain documents (they record past runs verbatim).
-- Any change to the phase checklists, severities, hashing, or hook gating logic.
-- `settings.json` hook registration (it references the `.py` paths, not command names).
+- Any change to the phase checklists, severities, hashing, or the gate / nudge
+  *decisions* (predicates, candidate selection, ownership, recency window, fail-open) —
+  these carry over verbatim; only the two hook files merge into one.
