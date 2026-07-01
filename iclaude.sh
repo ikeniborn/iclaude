@@ -36,6 +36,7 @@ source "${LIB_DIR}/core/validation.sh"
 source "${LIB_DIR}/core/json.sh"
 source "${LIB_DIR}/core/remaining.sh"
 source "${LIB_DIR}/config/env-map.sh"
+source "${LIB_DIR}/iwiki/mcp.sh"
 
 #######################################
 # Initialize environment

@@ -823,6 +823,15 @@ launch_claude() {
     local -a claude_cmd_arr
     read -ra claude_cmd_arr <<< "$claude_cmd"
 
+    # Register the iwiki MCP server from the tracked, secret-free mcp/iwiki.json
+    # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so
+    # Claude Code can expand ${IWIKI_COMMAND}/${IWIKI_*} at spawn time. The flag
+    # is added to claude_cmd_arr, so it flows into BOTH launch branches below.
+    # (The microVM path execs earlier and is intentionally not covered.)
+    if iwiki_mcp_enabled; then
+        claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_config_file)" )
+    fi
+
     # Launch Claude Code
     # When PII proxy is active: cannot use exec — EXIT trap would fire before the
     # new process starts, killing the proxy before claude makes its first API call.
