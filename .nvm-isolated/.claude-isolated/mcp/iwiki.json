@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "iwiki": {
+      "type": "stdio",
+      "command": "${IWIKI_COMMAND}",
+      "args": [],
+      "env": {
+        "IWIKI_BASE_DIR":          "${IWIKI_BASE_DIR}",
+        "IWIKI_LLM_BASE_URL":      "${IWIKI_LLM_BASE_URL}",
+        "IWIKI_LLM_KEY":           "${IWIKI_LLM_KEY}",
+        "IWIKI_EMBED_MODEL":       "${IWIKI_EMBED_MODEL:-text-embedding-3-small}",
+        "IWIKI_EMBED_DIMENSIONS":  "${IWIKI_EMBED_DIMENSIONS:-1536}",
+        "IWIKI_CHUNK_SIZE":        "${IWIKI_CHUNK_SIZE:-512}",
+        "IWIKI_CHUNK_OVERLAP":     "${IWIKI_CHUNK_OVERLAP:-64}",
+        "IWIKI_SUMMARY_MAX_CHARS": "${IWIKI_SUMMARY_MAX_CHARS:-400}",
+        "IWIKI_TOP_K":             "${IWIKI_TOP_K:-8}",
+        "IWIKI_SCORE_THRESHOLD":   "${IWIKI_SCORE_THRESHOLD:-0.2}",
+        "IWIKI_GRAPH_DEPTH":       "${IWIKI_GRAPH_DEPTH:-2}"
+      }
+    }
+  }
+}
