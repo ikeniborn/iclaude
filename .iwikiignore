@@ -17,8 +17,8 @@
 .claude/
 .claude-plugin/
 .githooks/
-.githooks/
 .github/
+.nvm-isolated/
 .pytest_cache/
 .ruff_cache/
 .superpowers/

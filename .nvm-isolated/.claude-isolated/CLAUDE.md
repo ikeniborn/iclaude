@@ -35,22 +35,35 @@ Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki
 
 **Every elaboration task that runs through the IDD→SDD chain (intent → spec → plan → result) is tracked as one row in `docs/TODO.md`: opened when work starts, closed when it finishes.**
 
-Purpose: a single human-readable index of what is being worked on and what is done — **one row per chain `<topic>`** (the shared chain key the `check-*` commands converge on), never per finding or per step.
+Purpose: a single human-readable index of what is being worked on and what is done — **one row per chain `<topic>`** (the shared chain key the `/check-chain` skill converges on), never per finding or per step.
 
 - **One file, one table.** `docs/TODO.md` holds a single Markdown table, one row per `<topic>`.
 - **Columns:** `Topic | Status | Intent | Spec | Plan | Result | Opened | Closed | Notes`.
-  - `Status`: `in-progress` while any stage is still open; `done` once `check-result` returns `OK`.
-  - Stage cells (`Intent` / `Spec` / `Plan`): `✓` once that stage's `check-*` passes (verdict `OK`, including a cached quick-exit); `–` if not reached yet; `n/a` if the stage does not exist for this topic (e.g. no intent).
+  - `Status`: `in-progress` while any stage is still open; `done` once `/check-chain result` returns `OK`.
+  - Stage cells (`Intent` / `Spec` / `Plan`): `✓` once that stage's `/check-chain <stage>` passes (verdict `OK`, including a cached quick-exit); `–` if not reached yet; `n/a` if the stage does not exist for this topic (e.g. no intent).
   - `Result`: `OK` / `needs_work` / `–`.
   - `Opened` / `Closed`: ISO date (`YYYY-MM-DD`). `Closed` stays empty until the task is `done`.
   - `Notes`: optional one-line context.
 - **Upsert, never duplicate.** Keyed by `<topic>`: update the matching row in place if it exists, otherwise append a new one.
-- **Lifecycle (driven by the `check-*` commands):**
-  - The first `check-*` run for a topic **opens** the row (`Opened: <today>`, `Status: in-progress`). Normally that is `check-intent`; if there is no intent, `check-spec` opens it and marks `Intent: n/a`.
-  - `check-spec` / `check-plan` mark their own stage cell `✓` and keep `Status: in-progress`.
-  - `check-result` **closes** the row on verdict `OK` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
-- **Create on demand.** If `docs/TODO.md` is absent, the first `check-*` run creates it with the header row, then appends.
-- **Manual rows are allowed.** A task may be added by hand before any `check-*` run; the commands then update the matching `<topic>` row instead of duplicating it.
+- **Lifecycle (driven by the `/check-chain` skill):**
+  - The first `/check-chain <stage>` run for a topic **opens** the row (`Opened: <today>`, `Status: in-progress`). Normally that is `/check-chain intent`; if there is no intent, `/check-chain spec` opens it and marks `Intent: n/a`.
+  - `/check-chain spec` / `/check-chain plan` mark their own stage cell `✓` and keep `Status: in-progress`.
+  - `/check-chain result` **closes** the row on verdict `OK` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
+- **Create on demand.** If `docs/TODO.md` is absent, the first `/check-chain <stage>` run creates it with the header row, then appends.
+- **Manual rows are allowed.** A task may be added by hand before any `/check-chain <stage>` run; the skill then updates the matching `<topic>` row instead of duplicating it.
+
+## Project Status Reports
+
+**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: `docs/TODO.md` (what is being worked on) and the project's iwiki domain (what is documented as true).**
+
+- **Read both first.** Read `docs/TODO.md` for the task index; if the iwiki MCP server reports a domain bound to this project (`wiki_status`), `wiki_bind` then `wiki_search`/`wiki_read_page` for the topic. If iwiki is not set up, report from `docs/TODO.md` alone and say so.
+- **Report shape:** lead with overall state (counts of `in-progress` vs `done` rows, or the specific topic's row), then per-topic detail (stage cells `Intent`/`Spec`/`Plan`/`Result`), then a **Discrepancies** section.
+- **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
+  - Topic is `done` in `docs/TODO.md` but the wiki has no page (or a stale page) covering it.
+  - Wiki documents a feature/behavior that has no matching `<topic>` row in `docs/TODO.md`.
+  - `docs/TODO.md` says a stage passed (`✓` / `Result: OK`) but the wiki still describes the old behavior, or `wiki_lint` flags the topic's page as stale/orphan.
+  - Status, dates, or scope disagree between the two.
+- **No silent reconciliation.** Report discrepancies; do not fix `docs/TODO.md` or the wiki as a side effect of a status request. If none exist, state "TODO and wiki agree" explicitly.
 
 ## Language Rules
 
