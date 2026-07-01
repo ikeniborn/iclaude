@@ -151,8 +151,8 @@ Closed checklist (do NOT extend):
 
 Closed checklist (do NOT extend). Never emits CRITICAL; never blocks a phase transition or the final verdict:
 - Conversation: do Objective and Desired Outcomes cover the original task the user described in the conversation? Is there an objective the user did not ask for? → INFO
-- lat.md: does the intent contradict a documented decision, or do Health Metrics ignore components that reference this area (`lat_refs`)? → WARNING. Requires the MCP tools `lat_search` / `lat_refs`.
-- If `lat_search` / `lat_refs` are unavailable — skip silently (like IDD Step 0). Do not block, do not mention the absence.
+- iwiki: does the intent contradict a documented decision, or do Health Metrics ignore components that reference this area? → WARNING. Requires the iwiki MCP tools `wiki_search` / `wiki_related` (bind the project domain first via `wiki_bind`).
+- If the iwiki MCP server / `wiki_search` are unavailable — skip silently (like IDD Step 0). Do not block, do not mention the absence.
 
 ---
 Next step: superpowers:brainstorming

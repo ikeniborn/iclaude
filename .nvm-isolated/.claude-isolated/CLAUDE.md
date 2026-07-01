@@ -25,11 +25,16 @@ Skip only when: familiar area, same session.
 
 **After every change that alters functionality, architecture, or behavior — and only when the iwiki MCP server reports a domain bound to this project (`wiki_status`) — update the wiki via the MCP tools before responding to the user.**
 
-- Author/update the affected page markdown, then `wiki_write_page(domain, slug, markdown, source=<changed-source>)` followed by `wiki_index(domain)` (writes are not auto-indexed).
+- Pick the write tool by intent — all three auto-reindex the domain and auto-commit the base on success, so no manual `wiki_index` follows:
+  - **New page** → `wiki_write_page(domain, slug, markdown, source=<changed-source>)`. Refuses to overwrite an existing page.
+  - **Existing page** → `wiki_update_page(domain, slug, heading, new_body, source=<changed-source>)`. Rewrites one `##` section in place.
+  - **Stale / removed source** → `wiki_delete_page(domain, slug)`. Drops the page and its vectors.
+- Call `wiki_index(domain)` only to rebuild after out-of-band edits (markdown changed on disk without a tool) or a sync conflict — never as a routine step after a write.
 - Run `wiki_lint` — no broken `[[refs]]`, no orphan or stale pages.
+- Writes auto-commit the base locally; `wiki_sync` publishes those commits to the git remote (pull-rebase-push) — run it only when sharing the base across machines.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
-Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_write_page`, `wiki_index`, `wiki_lint`, `wiki_list_domains`, `wiki_list_pages`, `wiki_create_domain`) — never the old plugin skills or the `iwiki_engine` CLI.
+Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_list_domains`, `wiki_list_pages`, `wiki_write_page`, `wiki_update_page`, `wiki_delete_page`, `wiki_index`, `wiki_create_domain`, `wiki_lint`, `wiki_sync`) — never the old plugin skills or the `iwiki_engine` CLI.
 
 ## Task Log (docs/TODO.md)
 

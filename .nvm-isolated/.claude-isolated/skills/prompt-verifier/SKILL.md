@@ -157,11 +157,11 @@ IF iwiki MCP подключён AND wiki_status сообщает домен пр
 
 ### Record (после Step 4 — только в режиме adapt)
 
-iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись страниц через `wiki_write_page` + `wiki_index`.
+iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись новой страницы через `wiki_write_page` (авто-переиндексация домена и авто-коммит базы).
 
 ```
 IF wiki_status сообщает домен проекта AND mode == "adapt" AND violations_found > 0:
-  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source) → wiki_index(domain)
+  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source)   # авто-переиндексация
     пример нарушения и его исправление (что и почему), ссылаясь на {verified_file_path}
 
   Результат: примеры нарушений и исправлений попадают в домен iwiki —
