@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iwiki-mcp-user-scope — отчёт цепочки IDD→SDD</title>
+<style>
+  :root{
+    --bg:#0e1116; --surface:#171b22; --surface2:#1e242d; --border:#2b323c;
+    --fg:#e6edf3; --muted:#9aa6b2; --accent:#58a6ff; --accent2:#3fb950;
+    --warn:#d29922; --crit:#f85149; --info:#8b949e; --code:#1c2128; --shadow:rgba(0,0,0,.45);
+  }
+  body:has(#theme-toggle:checked){
+    --bg:#f6f8fa; --surface:#ffffff; --surface2:#f0f3f6; --border:#d0d7de;
+    --fg:#1f2328; --muted:#57606a; --accent:#0969da; --accent2:#1a7f37;
+    --warn:#9a6700; --crit:#cf222e; --info:#6e7781; --code:#f0f3f6; --shadow:rgba(140,149,159,.2);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;padding:0 0 4rem}
+  header{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.6rem;
+    background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  header h1{font-size:1.15rem;margin:0;font-weight:650}
+  header .sub{color:var(--muted);font-size:.85rem;font-weight:400}
+  .theme-btn{cursor:pointer;border:1px solid var(--border);border-radius:8px;
+    padding:.35rem .6rem;background:var(--surface2);user-select:none;font-size:.95rem}
+  main{max-width:1080px;margin:0 auto;padding:0 1.6rem}
+  h2{font-size:1.25rem;margin:2rem 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+  h3{font-size:1.02rem;margin:1.5rem 0 .6rem;color:var(--accent)}
+  table{border-collapse:collapse;width:100%;margin:.8rem 0;font-size:.88rem}
+  th,td{border:1px solid var(--border);padding:.5rem .65rem;text-align:left;vertical-align:top}
+  th{background:var(--surface2);font-weight:600}
+  tr:nth-child(even) td{background:var(--surface)}
+  code,pre{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+  code{background:var(--code);padding:.1rem .35rem;border-radius:4px;font-size:.85em}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;overflow:auto;font-size:.82rem}
+  .note{background:var(--surface2);border-left:3px solid var(--accent);padding:.7rem 1rem;border-radius:0 8px 8px 0;color:var(--muted)}
+  .note.ok{border-left-color:var(--accent2)}
+  .note.info{border-left-color:var(--info)}
+  .badge{display:inline-block;padding:.12rem .5rem;border-radius:999px;font-size:.74rem;font-weight:600;border:1px solid var(--border)}
+  .b-pass{color:var(--accent2);border-color:var(--accent2)}
+  .b-ok{color:var(--accent2);border-color:var(--accent2)}
+  .b-crit{color:var(--crit);border-color:var(--crit)}
+  .b-warn{color:var(--warn);border-color:var(--warn)}
+  .b-na{color:var(--info);border-color:var(--info)}
+  .b-info{color:var(--info);border-color:var(--info)}
+  nav.chain-tabs{display:flex;gap:.4rem;max-width:1080px;margin:1.2rem auto 0;padding:0 1.6rem;flex-wrap:wrap}
+  .chain-tabs label{cursor:pointer;padding:.4rem .9rem;border:1px solid var(--border);
+    border-bottom:none;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted);font-size:.9rem}
+  .tab-pane{display:none;border:1px solid var(--border);border-radius:0 8px 8px 8px;
+    padding:1.2rem 1.6rem;background:var(--bg)}
+  main>.tab-pane{margin-top:-1px}
+  body:has(#tab-intent:checked) #pane-intent,
+  body:has(#tab-spec:checked)   #pane-spec,
+  body:has(#tab-plan:checked)   #pane-plan,
+  body:has(#tab-result:checked) #pane-result{display:block}
+  body:has(#tab-intent:checked) label[for="tab-intent"],
+  body:has(#tab-spec:checked)   label[for="tab-spec"],
+  body:has(#tab-plan:checked)   label[for="tab-plan"],
+  body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent);border-color:var(--accent);font-weight:650;background:var(--bg)}
+  .flow{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}
+  .flow-row{display:flex;align-items:stretch;gap:.55rem;flex-wrap:wrap}
+  .node{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:.6rem .8rem;min-width:150px;box-shadow:0 1px 3px var(--shadow)}
+  .node .t{font-weight:650;font-size:.86rem}
+  .node .d{color:var(--muted);font-size:.76rem;margin-top:.2rem}
+  .node.accent{border-color:var(--accent)}
+  .node.warn{border-color:var(--warn)}
+  .arrow{align-self:center;color:var(--accent);font-size:1.1rem;padding:0 .1rem}
+  figure{margin:1rem 0}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:.4rem}
+  .legend{font-size:.78rem;color:var(--muted);margin:.4rem 0}
+  .chain-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.85rem;margin-top:.6rem}
+  .chain-flow .stage{padding:.3rem .7rem;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+  .chain-flow .stage.done{border-color:var(--accent2);color:var(--accent2)}
+  .chain-flow .stage.cur{border-color:var(--accent);color:var(--accent);font-weight:650}
+  .chain-flow .stage.na{color:var(--info);border-style:dashed}
+  .verdict-banner{display:flex;align-items:center;gap:.8rem;padding:1rem 1.2rem;
+    border-radius:10px;margin:1.2rem 0;background:var(--surface);border:2px solid var(--accent2)}
+  .verdict-banner .v-label{font-size:1.4rem;font-weight:700;color:var(--accent2)}
+  .verdict-banner .v-meta{color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+  <input type="checkbox" id="theme-toggle" hidden>
+  <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <header>
+    <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+    <div>
+      <h1>iwiki-mcp-user-scope</h1>
+      <span class="sub">Отчёт цепочки IDD→SDD · регистрация MCP-сервера iwiki через tracked <code>.mcp.json</code> + <code>--mcp-config</code></span>
+    </div>
+  </header>
+  <nav class="chain-tabs">
+    <label for="tab-intent">Intent</label>
+    <label for="tab-spec">Spec</label>
+    <label for="tab-plan">Plan</label>
+    <label for="tab-result">Result</label>
+  </nav>
+  <main>
+  <!-- TAB:intent START -->
+  <section class="tab-pane" id="pane-intent">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:intent END -->
+  <!-- TAB:spec START -->
+  <section class="tab-pane" id="pane-spec">
+
+    <h2>Резюме спецификации</h2>
+    <p class="legend">Источник: <code>docs/superpowers/specs/2026-07-01-iwiki-mcp-user-scope-design.md</code> · spec_hash <code>ff63ddc066677423</code></p>
+    <p class="note info">Цель: зарегистрировать MCP-сервер <code>iwiki</code> версионируемо и <strong>без захардкоженных секретов</strong>, вытягивая все <code>IWIKI_*</code> из единого источника <code>.claude_config</code> (префикс <code>ICLAUDE_IWIKI_*</code>). Бинарь резолвится в абсолютный путь на запуске.</p>
+    <table>
+      <thead><tr><th>Раздел</th><th>Требование</th></tr></thead>
+      <tbody>
+        <tr><td>R1 · Component 1</td><td>Создать secret-free файл <code>.nvm-isolated/.claude-isolated/mcp/iwiki.json</code> в формате <code>.mcp.json</code>; сервер <code>iwiki</code> (stdio), только плейсхолдеры <code>${…}</code>, ноль секретов → безопасно версионировать.</td></tr>
+        <tr><td>R2 · Component 1</td><td>Передать 11 <code>IWIKI_*</code> переменных, что читает сервер: required (<code>LLM_BASE_URL</code>, <code>LLM_KEY</code>, <code>BASE_DIR</code>) плейн <code>${VAR}</code>; optional (<code>EMBED_MODEL</code>, <code>EMBED_DIMENSIONS</code>, <code>CHUNK_SIZE</code>, <code>CHUNK_OVERLAP</code>, <code>SUMMARY_MAX_CHARS</code>, <code>TOP_K</code>, <code>SCORE_THRESHOLD</code>, <code>GRAPH_DEPTH</code>) через <code>${VAR:-&lt;дефолт&gt;}</code>. <code>IWIKI_PROJECT_DIR</code> опущен (cwd = проект).</td></tr>
+        <tr><td>R3 · Component 2</td><td>Резолв бинаря на запуске: <code>IWIKI_COMMAND="${IWIKI_COMMAND:-$(command -v iwiki-mcp)}"</code>; абсолютный путь из <code>PATH</code>, портативно между ПК; опциональный override <code>ICLAUDE_IWIKI_COMMAND</code>. Пусто → сервер не регистрируется.</td></tr>
+        <tr><td>R4 · Component 3</td><td>В native-пути после сборки <code>claude_cmd_arr</code> условно добавить <code>--mcp-config &lt;abs&gt;/mcp/iwiki.json</code> (гард: <code>IWIKI_COMMAND</code> непусто <strong>И</strong> <code>IWIKI_LLM_KEY</code> непусто <strong>И</strong> файл есть). Флаг попадает в обе ветки (PII-proxy и exec). microVM-путь исключён.</td></tr>
+        <tr><td>R5 · Component 4</td><td>Добавить <code>ICLAUDE_IWIKI_BASE_DIR</code> в <code>.claude_config</code> и <code>.claude_config.example</code>; env-map де-префиксит → экспортит <code>IWIKI_BASE_DIR</code>. Опциональный <code>ICLAUDE_IWIKI_COMMAND</code>.</td></tr>
+        <tr><td>R6 · Component 5</td><td>Удалить ручной блок <code>mcpServers.iwiki</code> из <code>.claude.json</code> (файл оставить, Claude им владеет); удалить мёртвый <code>"mcpServers": {}</code> из <code>settings.json</code>.</td></tr>
+        <tr><td>R7 · Component 6</td><td>Снять новый файл из-под бланкет-игнора <code>.claude-isolated/*</code> (<code>!.../mcp/</code> + <code>!.../mcp/**</code>).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Success Criteria</h3>
+    <table>
+      <thead><tr><th>#</th><th>Критерий</th></tr></thead>
+      <tbody>
+        <tr><td>SC1</td><td><code>bash -n launch.sh</code>, <code>lib/iwiki/mcp.sh</code> — синтаксис чистый.</td></tr>
+        <tr><td>SC2</td><td><code>grep IWIKI_LLM_KEY mcp/iwiki.json</code> → только <code>${IWIKI_LLM_KEY}</code>, литерального ключа нет.</td></tr>
+        <tr><td>SC3</td><td>Запуск iclaude → <code>/mcp</code> показывает <code>iwiki</code> connected; вызов <code>mcp__iwiki__*</code> успешен (реальный ключ/URL дошли через раскрытие).</td></tr>
+        <tr><td>SC4</td><td>Бинарь вне <code>PATH</code> → iclaude стартует без ошибки и без сервера.</td></tr>
+        <tr><td>SC5</td><td><code>git status</code> — <code>mcp/iwiki.json</code> tracked, <code>.claude.json</code> остаётся ignored.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Схемы решения и зависимостей</h2>
+
+    <h3>Схема решения (поток данных: источник → сервер)</h3>
+    <div class="flow">
+      <div class="flow-row">
+        <div class="node warn"><div class="t">1 · .claude_config</div><div class="d">ICLAUDE_IWIKI_* · gitignored · секреты</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="t">2 · lib/config/env-map.sh</div><div class="d">source + де-префикс ICLAUDE_IWIKI_X → export IWIKI_X</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="t">3 · окружение iclaude.sh</div><div class="d">IWIKI_BASE_DIR, IWIKI_LLM_KEY, …</div></div>
+      </div>
+      <div class="flow-row">
+        <div class="node accent"><div class="t">4 · lib/launcher/launch.sh</div><div class="d">IWIKI_COMMAND = command -v iwiki-mcp; +--mcp-config .../mcp/iwiki.json в claude_cmd_arr</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="t">5 · claude (exec)</div><div class="d">раскрывает ${IWIKI_*} / ${IWIKI_COMMAND} из окружения</div></div>
+        <span class="arrow">→</span>
+        <div class="node accent"><div class="t">6 · iwiki-mcp (stdio)</div><div class="d">реальные значения в env-блоке; IWIKI_PROJECT_DIR не задан → cwd = проект</div></div>
+      </div>
+      <div class="flow-row">
+        <div class="node"><div class="t">tracked-артефакт: mcp/iwiki.json</div><div class="d">только ${…} · secret-free · читается claude на шаге 5</div></div>
+      </div>
+    </div>
+
+    <h3>Граф зависимостей</h3>
+    <figure>
+      <svg viewBox="0 0 780 340" width="100%" role="img" aria-label="Граф зависимостей требований">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+          </marker>
+          <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+        <style>
+          .gn rect{fill:#171b22;stroke:#2b323c;stroke-width:1.2;filter:url(#ds)}
+          .gn.acc rect{stroke:#58a6ff}
+          .gn.warnn rect{stroke:#d29922}
+          .gn text{fill:#e6edf3;font:600 12px sans-serif}
+          .gn .s{fill:#9aa6b2;font:400 10px sans-serif}
+          .ge{stroke:#58a6ff;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+          body:has(#theme-toggle:checked) .gn rect{fill:#fff;stroke:#d0d7de}
+          body:has(#theme-toggle:checked) .gn.acc rect{stroke:#0969da}
+          body:has(#theme-toggle:checked) .gn.warnn rect{stroke:#9a6700}
+          body:has(#theme-toggle:checked) .gn text{fill:#1f2328}
+          body:has(#theme-toggle:checked) .gn .s{fill:#57606a}
+          body:has(#theme-toggle:checked) .ge{stroke:#0969da}
+          body:has(#theme-toggle:checked) #arr path{fill:#0969da}
+        </style>
+        <!-- edges (A -> B = A зависит от B / использует B) -->
+        <!-- R5 -> env-map -->
+        <path class="ge" d="M390,90 L390,56"/>
+        <!-- R2 -> R5 -->
+        <path class="ge" d="M270,107 L313,109"/>
+        <!-- R1 -> R2 -->
+        <path class="ge" d="M305,176 C280,150 245,138 213,128"/>
+        <!-- R1 -> R3 -->
+        <path class="ge" d="M355,176 C450,150 540,138 575,130"/>
+        <!-- R4 -> R1 -->
+        <path class="ge" d="M325,262 L325,216"/>
+        <!-- R4 -> R7 -->
+        <path class="ge" d="M398,270 C480,245 545,220 575,216"/>
+        <!-- R6 -> R4 -->
+        <path class="ge" d="M498,281 L402,281"/>
+
+        <g class="gn"><rect x="315" y="16" width="150" height="38" rx="8"/><text x="390" y="32" text-anchor="middle">env-map</text><text x="390" y="46" text-anchor="middle" class="s">де-префикс ICLAUDE_→IWIKI_</text></g>
+        <g class="gn"><rect x="120" y="90" width="150" height="38" rx="8"/><text x="195" y="106" text-anchor="middle">R2 · набор перем.</text><text x="195" y="120" text-anchor="middle" class="s">11 IWIKI_*</text></g>
+        <g class="gn"><rect x="315" y="90" width="150" height="38" rx="8"/><text x="390" y="106" text-anchor="middle">R5 · config surface</text><text x="390" y="120" text-anchor="middle" class="s">.claude_config</text></g>
+        <g class="gn"><rect x="520" y="90" width="150" height="38" rx="8"/><text x="595" y="106" text-anchor="middle">R3 · IWIKI_COMMAND</text><text x="595" y="120" text-anchor="middle" class="s">command -v iwiki-mcp</text></g>
+        <g class="gn acc"><rect x="250" y="176" width="150" height="38" rx="8"/><text x="325" y="192" text-anchor="middle">R1 · mcp/iwiki.json</text><text x="325" y="206" text-anchor="middle" class="s">secret-free ${…}</text></g>
+        <g class="gn"><rect x="520" y="176" width="150" height="38" rx="8"/><text x="595" y="192" text-anchor="middle">R7 · .gitignore</text><text x="595" y="206" text-anchor="middle" class="s">un-ignore mcp/</text></g>
+        <g class="gn acc"><rect x="250" y="262" width="150" height="38" rx="8"/><text x="325" y="278" text-anchor="middle">R4 · launch.sh</text><text x="325" y="292" text-anchor="middle" class="s">--mcp-config</text></g>
+        <g class="gn"><rect x="480" y="262" width="160" height="38" rx="8"/><text x="560" y="278" text-anchor="middle">R6 · cleanup</text><text x="560" y="292" text-anchor="middle" class="s">.claude.json / settings.json</text></g>
+      </svg>
+      <figcaption>Рёбра направлены «A→B = A зависит от B / использует B». Граф ацикличен (DAG) — циклов нет. <code>env-map</code> — общий фундамент (R2/R5 берут значения через него). <code>R6</code> (удаление stale-блока) нужен, чтобы <code>--mcp-config</code> не тенился старым определением.</figcaption>
+    </figure>
+
+    <h3>Карта покрытия (задача → требование)</h3>
+    <table>
+      <thead><tr><th>Задача (из разговора)</th><th>Покрывающее требование</th></tr></thead>
+      <tbody>
+        <tr><td>1. Перенести в user scope / не в <code>settings.json</code></td><td>R1, R6</td></tr>
+        <tr><td>2. Проксировать <code>IWIKI_*</code> через <code>ICLAUDE_</code> из <code>.claude_config</code></td><td>R2, R5 (+ env-map, Data Flow)</td></tr>
+        <tr><td>3. Абсолютный путь к бинарю, не относительный</td><td>R3</td></tr>
+        <tr><td>4. Все переменные <code>IWIKI_%</code></td><td>R2 (11 переменных, сверено с README/<code>config.py</code>)</td></tr>
+        <tr><td>5. Чистка <code>settings.json</code> / <code>.claude.json</code></td><td>R6</td></tr>
+        <tr><td>6. Версионируемость secret-free</td><td>R1, R7, SC2, SC5</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Каждая задача покрыта ≥1 требованием; каждое требование привязано к задаче — лишних нет.</p>
+
+    <h2>Результаты проверки</h2>
+    <table>
+      <thead><tr><th>Фаза</th><th>Статус</th><th>Проверено</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge b-pass">passed</span></td><td>placeholders, broken links, нумерация секций (подсекции 1–6 без пропусков), дубли заголовков</td></tr>
+        <tr><td>coverage</td><td><span class="badge b-pass">passed</span></td><td>требования ↔ задачи, без лишних, без противоречий</td></tr>
+        <tr><td>clarity</td><td><span class="badge b-pass">passed</span></td><td>DoD в разделе Testing (5 проверок); термины единообразны (IWIKI_COMMAND, env-map, claude_cmd_arr)</td></tr>
+        <tr><td>consistency</td><td><span class="badge b-pass">passed</span></td><td>набор переменных согласован (11 шт); исправлены 2 расхождения (см. ниже)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <p class="note ok">Находок нет — все 4 фазы пройдены без замечаний.</p>
+    <table>
+      <thead><tr><th>id</th><th>severity</th><th>section</th><th>fragment</th><th>text</th><th>fix</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td colspan="7" style="text-align:center;color:var(--muted)">— пусто —</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">До финализации спеки при верификации набора переменных по вики <code>iwiki-mcp</code> + README + <code>config.py</code> устранены 2 расхождения: (1) добавлен пропущенный <code>IWIKI_SUMMARY_MAX_CHARS</code>; (2) введены <code>${VAR:-&lt;дефолт&gt;}</code> для optional-переменных — <code>config.py</code> парсит их через <code>int(getenv(X,"дефолт"))</code>, дефолт срабатывает только при отсутствии, а пустая строка даёт <code>int("")</code> → краш.</p>
+
+    <h3>Сводка</h3>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · spec_hash <code>ff63ddc066677423</code> · первый прогон</span>
+    </div>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage">plan</span>
+      <span class="arrow">→</span>
+      <span class="stage">result</span>
+    </div>
+    <p class="legend">Интент-документ отсутствует (<code>intent = null</code>) — спецификация открывает цепочку. topic = <code>iwiki-mcp-user-scope</code>.</p>
+  </section>
+  <!-- TAB:spec END -->
+  <!-- TAB:plan START -->
+  <section class="tab-pane" id="pane-plan">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:plan END -->
+  <!-- TAB:result START -->
+  <section class="tab-pane" id="pane-result">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:result END -->
+  </main>
+</body>
+</html>
