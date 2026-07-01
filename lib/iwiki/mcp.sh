@@ -12,13 +12,19 @@
 
 # Absolute path to the tracked, secret-free MCP config file.
 # Lives under the isolated Claude config dir (CLAUDE_CONFIG_DIR).
+# If neither CLAUDE_CONFIG_DIR nor ISOLATED_CONFIG_DIR is set, the path resolves
+# under `/` and won't exist, so iwiki_mcp_enabled silently returns 1 (intended -
+# no hard failure).
 iwiki_mcp_config_file() {
     printf '%s' "${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}/mcp/iwiki.json"
 }
 
 # Resolve the iwiki-mcp executable to an absolute path and export IWIKI_COMMAND.
-# Honors an explicit override (ICLAUDE_IWIKI_COMMAND -> IWIKI_COMMAND via
-# env-map); otherwise resolves it from PATH with `command -v` (absolute path).
+# An explicit override is honored only when IWIKI_COMMAND is a NON-EMPTY value;
+# an unset OR empty IWIKI_COMMAND is treated as absent and resolved from PATH via
+# `command -v` (absolute path). This is intentional: env-map exports IWIKI_COMMAND
+# only when ICLAUDE_IWIKI_COMMAND is non-empty, so an "empty override" never
+# reaches here as an empty-but-set value.
 iwiki_resolve_command() {
     IWIKI_COMMAND="${IWIKI_COMMAND:-$(command -v iwiki-mcp 2>/dev/null)}"
     export IWIKI_COMMAND
