@@ -26,7 +26,10 @@ iwiki_mcp_config_file() {
 # only when ICLAUDE_IWIKI_COMMAND is non-empty, so an "empty override" never
 # reaches here as an empty-but-set value.
 iwiki_resolve_command() {
-    IWIKI_COMMAND="${IWIKI_COMMAND:-$(command -v iwiki-mcp 2>/dev/null)}"
+    # `|| true` keeps the assignment's exit status 0 so a bare call under
+    # `set -e` never aborts when the binary is absent (an empty result then
+    # leaves the enable gate to disable iwiki gracefully).
+    IWIKI_COMMAND="${IWIKI_COMMAND:-$(command -v iwiki-mcp 2>/dev/null || true)}"
     export IWIKI_COMMAND
 }
 
