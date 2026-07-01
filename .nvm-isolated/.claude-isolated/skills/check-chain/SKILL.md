@@ -82,9 +82,51 @@ After the verdict (including the cached quick-exit), invoke the `html-report` sk
 (`skill: "html-report"`) with `mode: chain`, `tab: <stage>`, output
 `docs/superpowers/reports/<topic>-results.html` (one file, four tabs Intent/Spec/Plan/Result;
 update only this stage's tab, preserve the others; create all four if absent with the
-placeholder «Этап ещё не проверен»; data passed inline; all report text in Russian).
+placeholder «Этап ещё не проверен»; all report text in Russian).
 Determine `<topic>`: basename minus `.md`, strip the `^YYYY-MM-DD-` date prefix, strip a
 trailing `-intent`/`-design`/`-plan` suffix if present; fallback to the bare basename.
+
+**Tab content contract (MANDATORY — the report explains the artifact, it is NOT a findings
+dump).** Pass every block below inline in the skill call. The diagram/graph/matrix blocks
+are REQUIRED — never drop a schema to save space; a tab without its schemas is a defect.
+Use the `html-report` grammar: CSS block/flow + C4 (`references/css-diagrams.md`), SVG
+node-edge graphs for arbitrary/looping/non-adjacent edges (`references/svg-diagrams.md`).
+
+- **intent** — three blocks:
+  1. **Резюме требований** — Objective, Desired Outcomes, Health Metrics, Constraints
+     (steering/hard), Autonomy Zones, Stop Rules; each Outcome and Constraint on its own row.
+  2. **Схемы намерений и процесса** (all four): **Карта намерения** — flow
+     `Objective → Desired Outcomes → Health Metrics`; **Граф автономии** — the 4 zones
+     (Full/Guarded/Proposal-first/No autonomy) with their items, empty zone marked `N/A`;
+     **Связь ограничений и результатов** — a `Constraint × Desired Outcome` matrix;
+     **Stop Rules** — the `Done when:` criteria as a list.
+  3. **Результаты проверки** — per-phase status (structure/completeness/clarity/consistency/
+     alignment); findings table (`id, severity, section, fragment, text, fix, verdict`);
+     summary (CRITICAL/WARNING open + alignment notes); verdict; footer
+     `Next step: superpowers:brainstorming`.
+- **spec** — three blocks:
+  1. **Резюме спецификации** — requirements by section + Success Criteria, one row each.
+  2. **Схемы решения и зависимостей** (all three): **Схема решения** — block/flow or C4 of
+     the components/modules and their data/control links; **Граф зависимостей** — SVG
+     node-edge graph, nodes = requirements/components, edges = directed "depends on"/"uses"
+     (A→B = A depends on B), cycles highlighted; **Карта покрытия** — a `task → requirement(s)`
+     matrix.
+  3. **Результаты проверки** — per-phase status (structure/coverage/clarity/consistency);
+     findings table; summary; verdict; chain `intent → spec`.
+- **plan** — three blocks:
+  1. **Резюме плана** — steps/tasks with their DoD, one row each.
+  2. **Схемы зависимостей и пересечений** (both): **Граф зависимостей шагов** — SVG node-edge
+     graph, nodes = steps, edges `M→N` = result of step M used in N (M<N), cycles/order
+     violations highlighted; **Пересечения** — a matrix of steps sharing an artifact/file
+     and/or requirement coverage (one requirement closed by several steps or vice versa).
+  3. **Результаты проверки** — per-phase status (structure/coverage/dependencies/
+     verifiability/consistency); findings table; summary; verdict; chain `intent → spec → plan`.
+- **result** — two blocks:
+  1. **Резюме сверки** — the chain docs (plan/spec/intent) and the diff base.
+  2. **Результаты проверки** — plan step coverage (DONE/PARTIAL/MISSING counts + a per-step
+     table with evidence in the diff); findings table (`severity, step, Plan/Diff/Fix`);
+     intent + spec coverage (Desired Outcomes N/M, requirements N/M); excess changes;
+     summary (CRITICAL/WARNING/INFO); verdict; chain `intent → spec → plan → result`.
 
 ### Step 6 — TODO.md upsert
 
