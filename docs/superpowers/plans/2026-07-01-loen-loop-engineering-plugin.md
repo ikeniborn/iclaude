@@ -4,9 +4,9 @@ chain:
   spec: docs/superpowers/specs/2026-07-01-loen-loop-engineering-plugin-design.md
   plan: docs/superpowers/plans/2026-07-01-loen-loop-engineering-plugin.md
 review:
-  plan_hash: be17d7cb6429664d
+  plan_hash: de236f856df90cec
   last_run: 2026-07-01
-  recheck: { effort: max, verdict: OK, note: "re-verified vs real codebase: hook contract, plugin-enable mechanism, CLAUDE_PLUGIN_ROOT scope, CI" }
+  recheck: { effort: max, verdict: OK, note: "re-verified vs real codebase: hook I/O contract, enable mechanism, CLAUDE_PLUGIN_ROOT scope, CI, marketplace category vocab, hooks.json fail-open format" }
   phases:
     structure:     { status: passed }
     coverage:      { status: passed }
@@ -25,6 +25,8 @@ review:
     - { id: F-009, severity: INFO, verdict: fixed, note: "run-id date via date +%F; docs/loen/current symlink created via Bash before first Write (else hook blocks)" }
     - { id: F-010, severity: INFO, verdict: fixed, note: "README Документация-table row for LOEN.md; executor note on redact-secrets cosmetic masking of os.* in Bash output" }
     - { id: F-101, severity: WARNING, verdict: fixed, note: "stale counts in Task9 note (9 tasks/4 suites -> 10 tasks/5 suites)" }
+    - { id: F-201, severity: WARNING, verdict: fixed, note: "marketplace category 'workflow' not in official vocab -> 'development' (matches superpowers/ralph-loop; category optional/unvalidated)" }
+    - { id: F-202, severity: WARNING, verdict: fixed, note: "hooks.json was bare python3; real plugins (iwiki) use file-guard + exit-normalization + timeout. loop-guard is user-scoped -> a crash must fail-OPEN, only exit 2 blocks. Added iwiki-style command + main() try/except wrapper" }
   verdict: OK
 ---
 # loen — Loop Engineering Plugin Implementation Plan
@@ -124,7 +126,7 @@ Modify `.claude-plugin/marketplace.json` — add a second object to the `plugins
       "version": "0.1.0",
       "source": "./plugin/loen",
       "author": { "name": "ikeniborn" },
-      "category": "workflow"
+      "category": "development"
     }
 ```
 
@@ -630,12 +632,19 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise                 # deliberate allow (exit 0) / block (exit 2)
+    except Exception:
+        sys.exit(0)           # fail-open: a guard crash must never block edits
 ```
 
 - [ ] **Step 4: Create the hook registration**
 
-Create `plugin/loen/hooks/hooks.json`:
+Create `plugin/loen/hooks/hooks.json` (mirrors the in-repo `plugin/iwiki` pattern:
+file-existence guard + exit-code normalization so ONLY a deliberate exit 2 blocks — a
+missing file or a crash fails open — plus a timeout so a hung guard cannot wedge every edit):
 
 ```json
 {
@@ -646,7 +655,8 @@ Create `plugin/loen/hooks/hooks.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/loop-guard.py\""
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/loop-guard.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0",
+            "timeout": 10
           }
         ]
       }
