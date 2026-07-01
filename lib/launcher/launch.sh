@@ -826,9 +826,9 @@ launch_claude() {
     # Register the iwiki MCP server from the tracked, secret-free mcp/iwiki.json
     # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so
     # Claude Code can expand ${IWIKI_COMMAND}/${IWIKI_*} at spawn time. The flag
-    # is added to claude_cmd_arr, so it flows into BOTH launch branches below.
+    # is added to claude_cmd_arr, so it flows into every launch branch below.
     # (The microVM path execs earlier and is intentionally not covered.)
-    if iwiki_mcp_enabled; then
+    if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
         claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_config_file)" )
     fi
 
