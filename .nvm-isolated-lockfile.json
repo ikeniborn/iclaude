@@ -5,13 +5,17 @@
   "lspServers": {
     "pyright": "1.1.408"
   },
-  "lspPlugins": {},
+  "lspPlugins": {
+    "pyright-lsp@claude-plugins-official": "1.0.0",
+    "typescript-lsp@claude-plugins-official": "1.0.0",
+    "gopls-lsp@claude-plugins-official": "1.0.0"
+  },
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-07-01T07:05:53Z",
+  "installedAt": "2026-07-01T20:39:33Z",
   "nvmVersion": "0.39.7",
   "gsdVersion": "not installed"
 }
