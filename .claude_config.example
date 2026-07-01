@@ -795,3 +795,34 @@ ICLAUDE_DEBUG_LAUNCH=
 
 # Метка proxy.profile в resource attrs (default: $PROXY_PROFILE из profile loader).
 # ICLAUDE_PROXY_PROFILE=default
+
+# ============================================================
+#  IWIKI MCP SERVER (semantic docs wiki over MCP)
+# ============================================================
+# The iwiki MCP server (`iwiki-mcp`, installed as a uv/pipx tool on PATH) is
+# registered at launch from the tracked, secret-free
+# .nvm-isolated/.claude-isolated/mcp/iwiki.json via --mcp-config. That file uses
+# ${IWIKI_*} placeholders; the values below are de-prefixed by env-map
+# (ICLAUDE_IWIKI_X -> IWIKI_X) and expanded into the server's env at spawn time.
+# The server is only registered when IWIKI_LLM_KEY is set and `iwiki-mcp`
+# resolves on PATH.
+#
+# Required (server halts without these):
+# ICLAUDE_IWIKI_BASE_DIR="/home/user/wiki"          # shared wiki base dir
+# ICLAUDE_IWIKI_LLM_BASE_URL="https://.../v1"        # OpenAI-compatible embeddings endpoint
+# ICLAUDE_IWIKI_LLM_KEY="..."                        # embeddings API key (secret — keep here, not in git)
+#
+# Embedding model (defaults shown; EMBED_DIMENSIONS must match the model):
+# ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"
+# ICLAUDE_IWIKI_EMBED_DIMENSIONS="1536"
+#
+# Search / indexing tuning (optional; server defaults apply when unset):
+# ICLAUDE_IWIKI_CHUNK_SIZE="512"
+# ICLAUDE_IWIKI_CHUNK_OVERLAP="64"
+# ICLAUDE_IWIKI_SUMMARY_MAX_CHARS="400"
+# ICLAUDE_IWIKI_TOP_K="8"
+# ICLAUDE_IWIKI_SCORE_THRESHOLD="0.2"
+# ICLAUDE_IWIKI_GRAPH_DEPTH="2"
+#
+# Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
+# ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp
