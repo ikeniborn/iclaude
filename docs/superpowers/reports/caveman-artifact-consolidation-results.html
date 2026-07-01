@@ -86,8 +86,8 @@
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
   <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
     <div>
@@ -256,7 +256,59 @@
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
   <section class="tab-pane" id="pane-result">
-    <p class="note">Этап ещё не проверен.</p>
+
+    <h2>Сверка результата (plan ↔ git diff)</h2>
+    <p class="legend">Источник: <code>docs/superpowers/plans/2026-07-01-caveman-artifact-consolidation.md</code> · plan_hash <code>cc6c59c070db82c9</code> · диапазон <code>4b8bf2f6..baedd370</code> (7 коммитов, ветка <code>dev-caveman-artifact-consolidation</code>)</p>
+    <p class="note ok">Все 6 задач реализованы (DONE), 0 EXCESS-файлов, 0 MISSING-шагов. Все цели спеки и тесты покрыты. Финальное whole-branch ревью (opus): <strong>READY TO MERGE</strong> (1 Minor — off-mode пустой <code>.caveman/</code> — исправлен коммитом <code>baedd370</code>).</p>
+
+    <h3>Сверка по задачам</h3>
+    <table>
+      <thead><tr><th>Задача</th><th>Статус</th><th>Свидетельство в diff</th></tr></thead>
+      <tbody>
+        <tr><td>T1 · caveman-paths.js</td><td><span class="badge b-ok">DONE</span></td><td>new <code>caveman-paths.js</code> (91 стр) + <code>test_caveman_paths.sh</code></td></tr>
+        <tr><td>T2 · rewire stats.js</td><td><span class="badge b-ok">DONE</span></td><td>require + удалён локальный prune; history/active/suffix/base через <code>paths.*</code>; t1/t2</td></tr>
+        <tr><td>T3 · activation hooks</td><td><span class="badge b-ok">DONE</span></td><td>activate/mode-tracker/stats-stop → <code>paths.activeFlag</code>; activate → <code>migrateLegacy</code>; new test</td></tr>
+        <tr><td>T4 · SessionEnd cleanup</td><td><span class="badge b-ok">DONE</span></td><td>new <code>caveman-cleanup.js</code> + <code>settings.json</code> SessionEnd (рядом с cache-report.py) + test</td></tr>
+        <tr><td>T5 · statusline.sh</td><td><span class="badge b-ok">DONE</span></td><td><code>CAVEMAN_DIR</code> + чтение <code>.caveman/{active,suffix-*,statusline-suffix}</code>; t3</td></tr>
+        <tr><td>T6 · регрессия + docs</td><td><span class="badge b-ok">DONE</span></td><td>4/4 сьюта green; smoke миграции OK; чистка устаревших комментариев; docs — нечего синкать</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие целей и тестов</h3>
+    <table>
+      <thead><tr><th>Цель / тест</th><th></th><th>Где</th></tr></thead>
+      <tbody>
+        <tr><td>Goal 1 · консолидация в <code>.caveman/</code></td><td><span class="badge b-pass">✓</span></td><td>caveman-paths + 5 переписанных хуков/statusline</td></tr>
+        <tr><td>Goal 2 · SessionEnd delete</td><td><span class="badge b-pass">✓</span></td><td>caveman-cleanup.js + settings.json</td></tr>
+        <tr><td>Goal 3 · age-prune 7→5д</td><td><span class="badge b-pass">✓</span></td><td><code>MAX_AGE_MS=5*86_400_000</code>; старый 7д-prune удалён</td></tr>
+        <tr><td>Goal 4 · сохранить Σ при миграции</td><td><span class="badge b-pass">✓</span></td><td>migrateLegacy (move-if-absent) + <code>t_migrate</code></td></tr>
+        <tr><td>Test (a) корень чист</td><td><span class="badge b-pass">✓</span></td><td>t1 no-legacy-in-root</td></tr>
+        <tr><td>Test (b) SessionEnd delete</td><td><span class="badge b-pass">✓</span></td><td>t_cleanup</td></tr>
+        <tr><td>Test (c) prune &gt;5д/&lt;5д</td><td><span class="badge b-pass">✓</span></td><td>t_prune + t2_prune + cleanup zombie</td></tr>
+        <tr><td>Test (d) миграция</td><td><span class="badge b-pass">✓</span></td><td>t_migrate + t_activate</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <p class="note ok">MISSING/CRITICAL нет. Единственная находка финального ревью (Minor: off-mode создавал пустой <code>.caveman/</code>) исправлена — off-режим теперь пропускает миграцию и чистит legacy-флаг; добавлен тест <code>t_activate_off</code>.</p>
+
+    <h3>Сводка</h3>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">MISSING: 0 · EXCESS: 0 · регрессия 4/4 сьюта green · plan_hash <code>cc6c59c070db82c9</code></span>
+    </div>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage na">spec (self-review)</span>
+      <span class="arrow">→</span>
+      <span class="stage done">plan ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">result ✓ OK</span>
+    </div>
+    <p class="legend">Цепочка закрыта на result = OK. 7 коммитов <code>a7bbe9a6..baedd370</code>, готово к PR в <code>dev</code>. topic = <code>caveman-artifact-consolidation</code>.</p>
   </section>
   <!-- TAB:result END -->
   </main>
