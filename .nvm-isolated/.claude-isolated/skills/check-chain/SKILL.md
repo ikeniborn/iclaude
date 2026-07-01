@@ -6,7 +6,7 @@ description: Use to validate the IDD→SDD chain (intent → spec → plan → r
 # check-chain — unified IDD→SDD chain validator
 
 One skill, two run modes, four stage profiles over one shared core. Replaces the
-former `/check-intent`, `/check-spec`, `/check-plan`, `/check-result` commands.
+former `check-intent`, `check-spec`, `check-plan`, `check-result` commands.
 
 ## Invocation & argument parsing
 
@@ -224,7 +224,7 @@ Closed checklist:
 
 ### result reconciliation
 
-### Step 1. Load the plan
+#### Step 1. Load the plan
 
 - Read the plan file from `$ARGUMENTS`
 - Extract `chain.intent` and `chain.spec` from the frontmatter
@@ -236,13 +236,13 @@ Closed checklist:
 - If the plan is not found — report: «Не найден план. Укажи путь: `/check-chain result path/to/plan.md`» and stop
 - If the intent or spec is not found — warn the user, continue with the available documents
 
-### Step 2. Load the documents
+#### Step 2. Load the documents
 
 - **Intent doc:** read the Objective, Desired Outcomes, Constraints sections
 - **Spec:** read the requirements sections and Success Criteria
 - **Plan:** read all steps (both `[ ]` and `[x]`)
 
-### Step 3. Get the git diff
+#### Step 3. Get the git diff
 
 ```bash
 git diff HEAD
@@ -252,7 +252,7 @@ If `--since=<ref>` is passed: `git diff <ref>`.
 
 If the diff is empty — report: «Нет незакоммиченных изменений. Запусти после внесения изменений или передай `--since=<ref>`.»
 
-### Step 4. Match plan steps against the diff
+#### Step 4. Match plan steps against the diff
 
 For each plan step:
 
@@ -265,15 +265,15 @@ For each plan step:
 
 Additionally — find `EXCESS`: files changed in the diff with no corresponding plan step.
 
-### Step 5. Check intent + spec coverage
+#### Step 5. Check intent + spec coverage
 
 - For each Desired Outcome from the intent doc: is it reflected in the diff?
 - For each requirement / Success Criterion from the spec: is it reflected in the diff?
 - Uncovered → a finding referencing the specific outcome/requirement
 
-### Step 6. Build the report
+#### Step 6. Build the report
 
-### Step 7. Write the state into the plan frontmatter
+#### Step 7. Write the state into the plan frontmatter
 
 After the report, write a machine-readable block into the **plan frontmatter** (do NOT
 touch the plan body — it is the merge-gate pass signal for idd-gate).
@@ -291,7 +291,7 @@ touch the plan body — it is the merge-gate pass signal for idd-gate).
    If the plan has no frontmatter — add it at the start of the file
    (`---` … `---`) without changing the body.
 
-## Severity
+#### Severity
 
 | Severity | Condition |
 |----------|-----------|
