@@ -85,8 +85,8 @@
 <body>
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
   <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
@@ -271,7 +271,135 @@
   <!-- TAB:spec END -->
   <!-- TAB:plan START -->
   <section class="tab-pane" id="pane-plan">
-    <p class="note">Этап ещё не проверен.</p>
+
+    <h2>Резюме плана</h2>
+    <p class="legend">Источник: <code>docs/superpowers/plans/2026-07-01-iwiki-mcp-user-scope.md</code> · plan_hash <code>6bd565410e5df655</code> · spec_hash <code>ff63ddc066677423</code></p>
+    <p class="note info">Стек: Bash + <code>jq</code> + standalone <code>tests/*.sh</code> (PASS/FAIL). Ветка: <code>dev-iwiki-mcp-user-scope</code> (от <code>dev</code>, PR в <code>dev</code>, без worktree). 6 задач, TDD.</p>
+    <table>
+      <thead><tr><th>Задача</th><th>Definition of Done</th></tr></thead>
+      <tbody>
+        <tr><td>T1 · <code>lib/iwiki/mcp.sh</code> helper + unit tests</td><td><code>tests/test_iwiki_mcp.sh</code> → PASS=7 FAIL=0; <code>bash -n</code> чисто. Функции: <code>iwiki_mcp_config_file</code>, <code>iwiki_resolve_command</code> (<code>command -v iwiki-mcp</code> → <code>IWIKI_COMMAND</code>, override <code>ICLAUDE_IWIKI_COMMAND</code>), <code>iwiki_mcp_enabled</code> (гейт: бинарь + <code>IWIKI_LLM_KEY</code> + файл).</td></tr>
+        <tr><td>T2 · tracked <code>mcp/iwiki.json</code> + <code>.gitignore</code></td><td><code>jq empty</code> OK; grep секрета = 0; <code>git check-ignore</code> rc=1 (tracked). 11 <code>IWIKI_*</code> (required плейн, optional <code>${VAR:-дефолт}</code>).</td></tr>
+        <tr><td>T3 · Config surface</td><td><code>ICLAUDE_IWIKI_BASE_DIR</code> в <code>.claude_config</code> → env-map экспортит <code>IWIKI_BASE_DIR</code>; документированный iwiki-блок в <code>.claude_config.example</code>; <code>bash -n</code> OK. (<code>.claude_config</code> gitignored — не коммитится.)</td></tr>
+        <tr><td>T4 · Wire <code>--mcp-config</code></td><td><code>source lib/iwiki/mcp.sh</code> в <code>iclaude.sh</code> (после env-map, ~L38); в <code>launch.sh</code> после <code>claude_cmd_arr</code> (~L824) <code>if iwiki_mcp_enabled</code> → <code>claude_cmd_arr+=(--mcp-config …)</code>; <code>bash -n</code> OK; dry-check печатает флаг. Обе ветки (PII + exec); microVM исключён.</td></tr>
+        <tr><td>T5 · Cleanup</td><td><code>jq del(.mcpServers.iwiki)</code> в <code>.claude.json</code> (gitignored, не коммитится); <code>jq del(.mcpServers)</code> в <code>settings.json</code> (tracked, коммит); <code>jq empty</code> OK; <code>has("mcpServers")=false</code>.</td></tr>
+        <tr><td>T6 · Верификация + wiki refresh + PR</td><td><code>bash -n</code> всё чисто; тест PASS=7; grep <code>IWIKI_LLM_KEY</code> → только плейсхолдер; live <code>/mcp</code> → iwiki connected + <code>wiki_status</code> работает; disabled-path (бинарь вне PATH) стартует без сервера; git: <code>.claude.json</code> ignored / <code>mcp/iwiki.json</code> tracked; <code>wiki_lint</code> без broken refs; PR в <code>dev</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Схемы зависимостей и пересечений</h2>
+
+    <h3>Граф зависимостей задач</h3>
+    <figure>
+      <svg viewBox="0 0 620 220" width="100%" role="img" aria-label="Граф зависимостей задач плана">
+        <defs>
+          <marker id="arrp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+          </marker>
+          <filter id="dsp" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+        <style>
+          .pn rect{fill:#171b22;stroke:#2b323c;stroke-width:1.2;filter:url(#dsp)}
+          .pn.sink rect{stroke:#3fb950}
+          .pn text{fill:#e6edf3;font:600 12px sans-serif}
+          .pn .s{fill:#9aa6b2;font:400 10px sans-serif}
+          .pe{stroke:#58a6ff;stroke-width:1.6;fill:none;marker-end:url(#arrp)}
+          body:has(#theme-toggle:checked) .pn rect{fill:#fff;stroke:#d0d7de}
+          body:has(#theme-toggle:checked) .pn.sink rect{stroke:#1a7f37}
+          body:has(#theme-toggle:checked) .pn text{fill:#1f2328}
+          body:has(#theme-toggle:checked) .pn .s{fill:#57606a}
+          body:has(#theme-toggle:checked) .pe{stroke:#0969da}
+          body:has(#theme-toggle:checked) #arrp path{fill:#0969da}
+        </style>
+        <!-- edges: M -> N = результат M используется в N -->
+        <path class="pe" d="M140,45 C175,50 185,60 210,66"/>
+        <path class="pe" d="M140,102 C175,95 185,85 210,80"/>
+        <path class="pe" d="M330,72 C375,80 395,95 420,102"/>
+        <path class="pe" d="M330,172 C375,160 400,135 422,122"/>
+        <path class="pe" d="M140,172 C260,182 360,140 420,120"/>
+        <path class="pe" d="M140,32 C280,18 380,68 424,100"/>
+        <path class="pe" d="M140,110 C250,120 360,108 420,110"/>
+
+        <g class="pn"><rect x="20" y="20" width="120" height="40" rx="8"/><text x="80" y="37" text-anchor="middle">T1</text><text x="80" y="51" text-anchor="middle" class="s">helper + tests</text></g>
+        <g class="pn"><rect x="20" y="88" width="120" height="40" rx="8"/><text x="80" y="105" text-anchor="middle">T2</text><text x="80" y="119" text-anchor="middle" class="s">mcp/iwiki.json</text></g>
+        <g class="pn"><rect x="20" y="156" width="120" height="40" rx="8"/><text x="80" y="173" text-anchor="middle">T3</text><text x="80" y="187" text-anchor="middle" class="s">config surface</text></g>
+        <g class="pn"><rect x="210" y="52" width="120" height="40" rx="8"/><text x="270" y="69" text-anchor="middle">T4</text><text x="270" y="83" text-anchor="middle" class="s">launch wiring</text></g>
+        <g class="pn"><rect x="210" y="156" width="120" height="40" rx="8"/><text x="270" y="173" text-anchor="middle">T5</text><text x="270" y="187" text-anchor="middle" class="s">cleanup</text></g>
+        <g class="pn sink"><rect x="420" y="90" width="150" height="44" rx="8"/><text x="495" y="109" text-anchor="middle">T6</text><text x="495" y="123" text-anchor="middle" class="s">verify + wiki + PR</text></g>
+      </svg>
+      <figcaption>Рёбра «M→N = результат M используется в N» (M&lt;N). Порядок линейный T1→T2→T3→T4→T5→T6; циклов нет, нарушений порядка нет. <code>T6</code> — вершина-сток (верификация после всех). <code>T4</code> зависит от <code>T1</code> (хелпер) и <code>T2</code> (файл).</figcaption>
+    </figure>
+
+    <h3>Пересечения по артефактам (задача → файл)</h3>
+    <table>
+      <thead><tr><th>Файл</th><th>Задачи</th><th>Tracked?</th></tr></thead>
+      <tbody>
+        <tr><td><code>lib/iwiki/mcp.sh</code></td><td>T1 (create), T4 (source в iclaude.sh)</td><td>да</td></tr>
+        <tr><td><code>mcp/iwiki.json</code></td><td>T2 (create), T4 (ref), T6 (verify)</td><td>да</td></tr>
+        <tr><td><code>.gitignore</code></td><td>T2</td><td>да</td></tr>
+        <tr><td><code>.claude_config</code> / <code>.example</code></td><td>T3</td><td>example — да; config — нет (gitignored)</td></tr>
+        <tr><td><code>iclaude.sh</code> · <code>lib/launcher/launch.sh</code></td><td>T4</td><td>да</td></tr>
+        <tr><td><code>.claude.json</code> · <code>settings.json</code></td><td>T5</td><td>settings — да; .claude.json — нет (gitignored)</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Конфликтов нет: каждый файл создаётся в одной задаче, читается/верифицируется в поздних.</p>
+
+    <h3>Карта покрытия (требование → задача)</h3>
+    <table>
+      <thead><tr><th>Требование спеки</th><th>Задача</th></tr></thead>
+      <tbody>
+        <tr><td>R1 tracked <code>mcp/iwiki.json</code></td><td>T2</td></tr>
+        <tr><td>R2 набор 11 переменных</td><td>T2</td></tr>
+        <tr><td>R3 <code>IWIKI_COMMAND</code></td><td>T1</td></tr>
+        <tr><td>R4 launch wiring</td><td>T4</td></tr>
+        <tr><td>R5 config surface</td><td>T3</td></tr>
+        <tr><td>R6 cleanup</td><td>T5</td></tr>
+        <tr><td>R7 <code>.gitignore</code></td><td>T2</td></tr>
+        <tr><td>SC1–SC5 (bash-n / grep / live /mcp / disabled / git)</td><td>T6 (+ T2.3)</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Каждое требование покрыто ≥1 шагом; лишних продуктовых шагов нет (wiki-refresh/PR — процедурные по CLAUDE.md/workflow).</p>
+
+    <h2>Результаты проверки</h2>
+    <table>
+      <thead><tr><th>Фаза</th><th>Статус</th><th>Проверено</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge b-pass">passed</span></td><td>нет TODO/TBD/???/FIXME; задачи 1–6 без пропусков/дублей</td></tr>
+        <tr><td>coverage</td><td><span class="badge b-pass">passed</span></td><td>R1–R7 + SC1–SC5 покрыты; лишних продуктовых требований нет</td></tr>
+        <tr><td>dependencies</td><td><span class="badge b-pass">passed</span></td><td>порядок T1→…→T6 корректен; циклов нет; артефакты создаются до использования</td></tr>
+        <tr><td>verifiability</td><td><span class="badge b-pass">passed</span></td><td>у каждого шага Run+Expected либо commit-DoD; live/disabled/git проверки конкретны</td></tr>
+        <tr><td>consistency</td><td><span class="badge b-pass">passed</span></td><td>имена функций/переменных единообразны T1/T4/T6</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <p class="note ok">Находок нет — все 5 фаз пройдены без замечаний.</p>
+    <table>
+      <thead><tr><th>id</th><th>severity</th><th>section</th><th>fragment</th><th>text</th><th>fix</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td colspan="7" style="text-align:center;color:var(--muted)">— пусто —</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Сводка</h3>
+    <div class="verdict-banner">
+      <span class="v-label">OK</span>
+      <span class="v-meta">CRITICAL open: 0 · WARNING open: 0 · plan_hash <code>6bd565410e5df655</code> · первый прогон</span>
+    </div>
+
+    <h3>Цепочка</h3>
+    <div class="chain-flow">
+      <span class="stage na">intent (n/a)</span>
+      <span class="arrow">→</span>
+      <span class="stage done">spec ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage cur">plan ✓ OK</span>
+      <span class="arrow">→</span>
+      <span class="stage">result</span>
+    </div>
+    <p class="legend">intent → spec → plan: <code>null → ff63ddc066677423 → 6bd565410e5df655</code>. topic = <code>iwiki-mcp-user-scope</code>.</p>
   </section>
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
