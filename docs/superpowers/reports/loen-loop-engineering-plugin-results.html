@@ -90,8 +90,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
@@ -262,7 +262,114 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">План реализации — 9 TDD-задач: скелет плагина → ассеты → guard → hook → субагенты → skills → docs → прогон.</p>
+  <p class="sub">Вердикт проверки: <span class="badge ok">OK</span> · 0 critical · 3 warning · 1 info · plan_hash <code>3b318b9e0b818f7c</code></p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Создаёт</th><th>DoD (проверка)</th></tr></thead>
+    <tbody>
+      <tr><td>T1 · Plugin skeleton</td><td><code>plugin.json</code> + запись в <code>marketplace.json</code> + README</td><td><code>test_loen_plugin.sh</code>: name/version/source, версия==marketplace</td></tr>
+      <tr><td>T2 · Template assets</td><td><code>loop.template.yaml</code> + <code>state.template.md</code></td><td><code>test_loen_templates.sh</code>: YAML парсится, все ключи контракта</td></tr>
+      <tr><td>T3 · guard_protected.sh</td><td>guard-скрипт (defense-in-depth)</td><td><code>test_loen_guard.sh</code>: protected diff→exit1, clean→exit0</td></tr>
+      <tr><td>T4 · loop-guard hook</td><td><code>loop-guard.py</code> + <code>hooks.json</code></td><td><code>test_loen_hook.py</code>: 9 кейсов (cross-topic/bad-iter/canonical/bootstrap/protected/mutable/no-op)</td></tr>
+      <tr><td>T5 · Субагенты</td><td><code>planner/explorer/verifier.md</code></td><td>frontmatter-lint: name/description/tools/model</td></tr>
+      <tr><td>T6 · loop-delivery</td><td><code>skills/loop-delivery/SKILL.md</code></td><td>skill frontmatter-lint (T7 Step 2)</td></tr>
+      <tr><td>T7 · audit</td><td><code>skills/audit/SKILL.md</code></td><td>skill frontmatter-lint + прогон</td></tr>
+      <tr><td>T8 · Docs</td><td><code>docs/functions/LOEN.md</code> + секция README</td><td>файлы созданы; ссылки корректны</td></tr>
+      <tr><td>T9 · Full run</td><td>прогон 4 сьютов + wiki-страница + TODO</td><td>4×PASS; <code>check-plugin-version-sync.sh</code> exit 0; <code>wiki_lint</code> чист</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+
+  <h3>2.1 Граф зависимостей шагов (M → N: результат M используется в N)</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 700 380" width="100%" role="img" aria-label="граф зависимостей задач плана">
+      <defs>
+        <marker id="parr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path>
+        </marker>
+      </defs>
+      <g stroke="var(--line)" stroke-width="1.7" fill="none" marker-end="url(#parr)">
+        <path d="M350,55 L350,75"></path>
+        <path d="M300,45 C160,70 120,110 120,135"></path>
+        <path d="M320,115 L140,140"></path>
+        <path d="M350,115 L350,140"></path>
+        <path d="M380,115 L560,140"></path>
+        <path d="M560,175 L480,205"></path>
+        <path d="M560,175 L500,205"></path>
+        <path d="M330,115 C270,150 250,180 245,205"></path>
+        <path d="M150,175 L235,208"></path>
+        <path d="M280,225 L440,222"></path>
+        <path d="M350,175 L350,320"></path>
+        <path d="M455,245 L370,282"></path>
+        <path d="M350,305 L350,325"></path>
+      </g>
+      <g font-size="12" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="300" y="15" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="39">T1 skeleton</text></g>
+        <g><rect x="300" y="75" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="99">T2 assets</text></g>
+        <g><rect x="70" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="120" y="159">T3 guard</text></g>
+        <g><rect x="300" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="159">T4 hook</text></g>
+        <g><rect x="510" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="560" y="159">T5 agents</text></g>
+        <g><rect x="180" y="205" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="235" y="229">T6 delivery</text></g>
+        <g><rect x="410" y="205" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="460" y="229">T7 audit</text></g>
+        <g><rect x="300" y="265" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="289">T8 docs</text></g>
+        <g><rect x="300" y="325" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="350" y="349">T9 run</text></g>
+      </g>
+    </svg>
+    <figcaption>DAG, циклов нет; порядок соблюдён (M&lt;N). Ключевые рёбра: T2(schema)→T3/T4/T6, T5(agents)→T6/T7, T3(guard)→T7. Свободный node-edge → SVG-fallback.</figcaption>
+  </figure>
+
+  <h3>2.2 Пересечения (шаги, делящие артефакт)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Артефакт</th><th class="rot">T1</th><th class="rot">T2</th><th class="rot">T3</th><th class="rot">T5</th><th class="rot">T6</th><th class="rot">T7</th><th class="rot">T9</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/test_loen_plugin.sh</code> (append!)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td><code>loop.template.yaml</code></td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td><code>guard_protected.sh</code></td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td><code>marketplace.json</code></td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td><code>docs/TODO.md</code></td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Пересечение-риск:</b> <code>test_loen_plugin.sh</code> дописывается в T1→T5→T7 (append-порядок важен: agents-lint и skills-lint добавляются после создания соответствующих файлов).</div>
+
+  <h2>3. Результаты проверки</h2>
+  <h3>3.1 Статус фаз</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; нумерация T1–T9 без разрывов</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Все MVP-компоненты спеки покрыты; 0 critical-гэпов</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>schema→guard/hook, agents→skills; циклов нет</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>TDD (T1–T4); skills-DoD добавлен (F-004)</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>run-id regex / canonical-пути / symlink-конвенция единообразны</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>severity</th><th>задача</th><th>текст</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge info">INFO</span></td><td>T2/T7</td><td><code>report.template.html</code> из §5 спеки не создаётся — audit рендерит через html-report skill</td><td><span class="badge info">accepted</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge warn">WARNING</span></td><td>T5</td><td>explorer model haiku (override по §5.3); bare-имена агентов vs <code>loen:</code> в таблице спеки</td><td><span class="badge info">accepted</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge warn">WARNING</span></td><td>T7</td><td>Путь guard в audit был <code>${CLAUDE_PLUGIN_ROOT}/../scripts</code> (на уровень выше плагина)</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-004</td><td><span class="badge warn">WARNING</span></td><td>T6/T7</td><td>SKILL.md не имели DoD → добавлен skill frontmatter-lint</td><td><span class="badge ok">fixed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Итог и цепочка</h3>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 3 WARNING (1 fixed, 2… F-003/F-004 fixed, F-002 accepted) · 1 INFO (accepted). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> реализация плана — <code>superpowers:subagent-driven-development</code> (рекомендуется) или <code>executing-plans</code>.</div>
 </section>
 <!-- TAB:plan END -->
 
