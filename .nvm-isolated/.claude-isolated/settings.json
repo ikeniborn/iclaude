@@ -129,7 +129,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/idd-gate.py\""
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/chain-gate.py\""
           }
         ]
       }
@@ -140,7 +140,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/idd-nudge.py\""
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/chain-gate.py\""
           }
         ]
       }
