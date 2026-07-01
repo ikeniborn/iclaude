@@ -30,6 +30,20 @@ t_activate() {
 }
 t_activate
 
+# ---- off-mode SessionStart creates no .caveman/ dir ----
+t_activate_off() {
+  echo "[activate] off-mode SessionStart creates no .caveman/ dir"
+  local cc; cc="$(mktemp -d)"; trap 'rm -rf "$cc"' RETURN
+  # legacy flag present from before the .caveman/ migration existed
+  printf 'full' > "$cc/.caveman-active"
+
+  CLAUDE_CONFIG_DIR="$cc" CAVEMAN_DEFAULT_MODE=off node "$HOOKS_DIR/caveman-activate.js" >/dev/null 2>&1
+
+  [[ -d "$cc/.caveman" ]]        && fail "off-mode creates no .caveman/ dir"   || pass "off-mode creates no .caveman/ dir"
+  [[ -e "$cc/.caveman-active" ]] && fail "off-mode removes legacy root flag"   || pass "off-mode removes legacy root flag"
+}
+t_activate_off
+
 # ---- mode-tracker reads .caveman/active for reinforcement ----
 t_tracker() {
   echo "[tracker] UserPromptSubmit reinforcement reads .caveman/active"

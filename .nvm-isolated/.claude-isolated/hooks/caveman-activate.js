@@ -13,18 +13,23 @@ const { getDefaultMode, getLanguages, safeWriteFlag } = require('./caveman-confi
 const paths = require('./caveman-paths');
 
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-paths.migrateLegacy(claudeDir);
-const flagPath = paths.activeFlag(claudeDir);
+const flagPath = paths.activeFlag(claudeDir); // pure path builder — no dir created
 const settingsPath = path.join(claudeDir, 'settings.json');
 
 const mode = getDefaultMode();
 
-// "off" mode — skip activation entirely, don't write flag or emit rules
+// "off" mode — skip activation entirely, don't write flag, don't emit rules,
+// and don't run migrateLegacy (which would mkdir .caveman/). An off session
+// must leave zero footprint on disk, so we also clean up any legacy flag from
+// before the .caveman/ migration existed.
 if (mode === 'off') {
   try { fs.unlinkSync(flagPath); } catch (e) {}
+  try { fs.unlinkSync(path.join(claudeDir, '.caveman-active')); } catch (e) {}
   process.stdout.write('OK');
   process.exit(0);
 }
+
+paths.migrateLegacy(claudeDir);
 
 // 1. Write flag file (symlink-safe)
 safeWriteFlag(flagPath, mode);
