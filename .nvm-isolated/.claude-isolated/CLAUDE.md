@@ -50,7 +50,7 @@ Purpose: a single human-readable index of what is being worked on and what is do
   - `/check-chain spec` / `/check-chain plan` mark their own stage cell `✓` and keep `Status: in-progress`.
   - `/check-chain result` **closes** the row on verdict `OK` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
 - **Create on demand.** If `docs/TODO.md` is absent, the first `/check-chain <stage>` run creates it with the header row, then appends.
-- **Manual rows are allowed.** A task may be added by hand before any `check-*` run; the skill then updates the matching `<topic>` row instead of duplicating it.
+- **Manual rows are allowed.** A task may be added by hand before any `/check-chain <stage>` run; the skill then updates the matching `<topic>` row instead of duplicating it.
 
 ## Project Status Reports
 
