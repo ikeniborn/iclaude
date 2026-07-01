@@ -4,8 +4,9 @@ chain:
   spec: docs/superpowers/specs/2026-07-01-loen-loop-engineering-plugin-design.md
   plan: docs/superpowers/plans/2026-07-01-loen-loop-engineering-plugin.md
 review:
-  plan_hash: 3b318b9e0b818f7c
+  plan_hash: be17d7cb6429664d
   last_run: 2026-07-01
+  recheck: { effort: max, verdict: OK, note: "re-verified vs real codebase: hook contract, plugin-enable mechanism, CLAUDE_PLUGIN_ROOT scope, CI" }
   phases:
     structure:     { status: passed }
     coverage:      { status: passed }
@@ -17,6 +18,13 @@ review:
     - { id: F-002, severity: WARNING, verdict: accepted, note: "explorer model haiku (overridable per §5.3); agents use bare names (loen: prefix only in spec table) — non-functional" }
     - { id: F-003, severity: WARNING, verdict: fixed, note: "audit act-stage guard path ${CLAUDE_PLUGIN_ROOT}/../scripts corrected to ${CLAUDE_PLUGIN_ROOT}/scripts" }
     - { id: F-004, severity: WARNING, verdict: fixed, note: "added SKILL.md frontmatter lint (Task 7 Step 2); loop-delivery/audit now have a measurable DoD" }
+    - { id: F-005, severity: CRITICAL, verdict: fixed, note: "no plugin-enable step; added Task 10 (enabledPlugins loen@iclaude + --repair-plugins + verify load) — else plugin is dead code" }
+    - { id: F-006, severity: WARNING, verdict: fixed, note: "assets via ${CLAUDE_PLUGIN_ROOT} in skills/subagents (hook-only env); switched to skill base-dir + absolute path to planner" }
+    - { id: F-007, severity: WARNING, verdict: fixed, note: "loop-guard scope parser block-style only; hardened for inline flow lists + planner emits block-style + flow test" }
+    - { id: F-008, severity: WARNING, verdict: fixed, note: "Bash-written artifacts bypass PreToolUse hook; added deterministic check_layout.sh + test, run by audit each stage (R16 closure)" }
+    - { id: F-009, severity: INFO, verdict: fixed, note: "run-id date via date +%F; docs/loen/current symlink created via Bash before first Write (else hook blocks)" }
+    - { id: F-010, severity: INFO, verdict: fixed, note: "README Документация-table row for LOEN.md; executor note on redact-secrets cosmetic masking of os.* in Bash output" }
+    - { id: F-101, severity: WARNING, verdict: fixed, note: "stale counts in Task9 note (9 tasks/4 suites -> 10 tasks/5 suites)" }
   verdict: OK
 ---
 # loen — Loop Engineering Plugin Implementation Plan
@@ -401,16 +409,20 @@ def run(cwd, file_path, tool="Write"):
     return p.returncode
 
 
-def setup_run(root, run_id="2026-07-01-demo", mutable=("src/*",), protected=("datasets/*",)):
+def setup_run(root, run_id="2026-07-01-demo", mutable=("src/*",), protected=("datasets/*",), flow=False):
     d = os.path.join(root, "docs", "loen", run_id)
     os.makedirs(os.path.join(d, "iterations"), exist_ok=True)
     with open(os.path.join(d, "loop.yaml"), "w") as f:
-        f.write("mutable_scope:\n")
-        for g in mutable:
-            f.write(f"  - {g}\n")
-        f.write("protected_scope:\n")
-        for g in protected:
-            f.write(f"  - {g}\n")
+        if flow:  # inline flow-style lists
+            f.write("mutable_scope: [%s]\n" % ", ".join(mutable))
+            f.write("protected_scope: [%s]\n" % ", ".join(protected))
+        else:      # block-style lists
+            f.write("mutable_scope:\n")
+            for g in mutable:
+                f.write(f"  - {g}\n")
+            f.write("protected_scope:\n")
+            for g in protected:
+                f.write(f"  - {g}\n")
     cur = os.path.join(root, "docs", "loen", "current")
     if os.path.islink(cur):
         os.unlink(cur)
@@ -451,6 +463,11 @@ def main():
         check("mutable allow", run(root, os.path.join(root, "src/app.py")), 0)
         check("protected block", run(root, os.path.join(root, "datasets/raw.csv")), 2)
         check("out-of-scope block", run(root, os.path.join(root, "lib/x.sh")), 2)
+
+        # inline flow-style scope must be enforced too
+        setup_run(root, run_id="2026-07-01-flow", mutable=("lib/*",), protected=("secrets/*",), flow=True)
+        check("flow mutable allow", run(root, os.path.join(root, "lib/x.sh")), 0)
+        check("flow protected block", run(root, os.path.join(root, "secrets/k")), 2)
 
     if fails:
         print("FAIL test_loen_hook.py")
@@ -523,8 +540,18 @@ def active_run():
     return None
 
 
+def _inline_list(s):
+    """Parse an inline flow list 'key: [a, b]' -> [a, b]; None if not inline."""
+    m = re.match(r"^[\w-]+:\s*\[(.*)\]\s*$", s)
+    if m is None:
+        return None
+    body = m.group(1).strip()
+    return [x.strip().strip('"').strip("'") for x in body.split(",") if x.strip()] if body else []
+
+
 def load_scope(R):
-    """Return (mutable, protected) glob lists from the active loop.yaml, or ([], [])."""
+    """Return (mutable, protected) glob lists from the active loop.yaml, or ([], []).
+    Handles BOTH block-style lists and inline flow lists ('key: [a, b]')."""
     ly = os.path.join(LOEN_ROOT, R, "loop.yaml") if R else None
     if not ly or not os.path.exists(ly):
         return [], []
@@ -532,11 +559,15 @@ def load_scope(R):
     with open(ly, encoding="utf-8") as f:
         for line in f:
             s = line.rstrip("\n")
-            if re.match(r"^mutable_scope:", s):
-                cur = mutable
-                continue
-            if re.match(r"^protected_scope:", s):
-                cur = protected
+            hit = mutable if re.match(r"^mutable_scope:", s) else \
+                  protected if re.match(r"^protected_scope:", s) else None
+            if hit is not None:
+                inline = _inline_list(s)
+                if inline is None:
+                    cur = hit            # block-style list follows on next lines
+                else:
+                    hit.extend(inline)   # inline flow list on this line
+                    cur = None
                 continue
             if re.match(r"^[A-Za-z_]", s):
                 cur = None
@@ -636,6 +667,76 @@ git add plugin/loen/hooks/ tests/test_loen_hook.py
 git commit -m "feat(loen): loop-guard hook (scope + layout/naming enforcement) + tests"
 ```
 
+- [ ] **Step 7: Write the failing layout-validator test**
+
+The hook guards only `Write|Edit|MultiEdit`. Artifacts written via **Bash** (`git diff > diff.patch`,
+`cmd > gates.log`) bypass it — so `loen:audit` runs a deterministic filesystem validator each
+stage. Create `tests/test_loen_layout.sh`:
+
+```bash
+#!/usr/bin/env bash
+# check_layout.sh must accept a canonical docs/loen/<R>/ tree and reject any non-canonical file.
+set -euo pipefail
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+chk="$repo_root/plugin/loen/scripts/check_layout.sh"
+[[ -f "$chk" ]] || { echo "FAIL: missing $chk" >&2; exit 1; }
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; cd "$tmp"
+R=2026-07-01-demo; run="docs/loen/$R"
+mkdir -p "$run/iterations/iter-01"
+: > "$run/loop.yaml"; : > "$run/state.md"
+: > "$run/iterations/iter-01/diff.patch"; : > "$run/iterations/iter-01/gates.log"
+bash "$chk" "$run" || { echo "FAIL: rejected a canonical layout" >&2; exit 1; }
+: > "$run/scratch.txt"   # non-canonical
+if bash "$chk" "$run"; then echo "FAIL: accepted a non-canonical artifact" >&2; exit 1; fi
+echo "PASS test_loen_layout.sh"
+```
+
+- [ ] **Step 8: Run it to verify it fails**
+
+Run: `bash tests/test_loen_layout.sh`
+Expected: FAIL with `missing .../plugin/loen/scripts/check_layout.sh`
+
+- [ ] **Step 9: Create the layout validator**
+
+Create `plugin/loen/scripts/check_layout.sh`:
+
+```bash
+#!/usr/bin/env bash
+# loen layout validator (deterministic net). Every file under docs/loen/<R>/ must match a
+# canonical path — catches artifacts written via Bash that bypass the PreToolUse hook.
+# Usage: check_layout.sh [run-dir]   (default: resolve docs/loen/current)
+set -euo pipefail
+run="${1:-}"
+if [[ -z "$run" ]]; then
+  [[ -L docs/loen/current ]] || { echo "check_layout: no docs/loen/current" >&2; exit 0; }
+  run="docs/loen/$(basename "$(readlink docs/loen/current)")"
+fi
+R="$(basename "$run")"
+[[ "$R" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$ ]] || { echo "check_layout: bad run-id '$R'" >&2; exit 1; }
+rc=0
+while IFS= read -r f; do
+  rel="${f#"$run"/}"
+  case "$rel" in
+    loop.yaml|plan.md|state.md|pr-summary.md|report.html|experiments.jsonl) ;;
+    iterations/iter-[0-9][0-9]/diff.patch) ;;
+    iterations/iter-[0-9][0-9]/gates.log) ;;
+    iterations/iter-[0-9][0-9]/verifier.md) ;;
+    *) echo "check_layout: non-canonical artifact: $f" >&2; rc=1 ;;
+  esac
+done < <(find "$run" -type f 2>/dev/null)
+[[ $rc -eq 0 ]] && echo "check_layout: OK ($R)"
+exit $rc
+```
+
+- [ ] **Step 10: Make executable, run test, commit**
+
+```bash
+chmod +x plugin/loen/scripts/check_layout.sh
+bash tests/test_loen_layout.sh
+git add plugin/loen/scripts/check_layout.sh tests/test_loen_layout.sh
+git commit -m "feat(loen): deterministic layout validator (catches Bash-written artifacts)"
+```
+
 ---
 
 ## Task 5: Subagents — planner / explorer / verifier
@@ -691,9 +792,10 @@ You run in an isolated context. You do NOT write files. Your entire output is yo
 value: (1) a complete `loop.yaml` (filled from the schema below) and (2) a short numbered
 plan. The worker persists them.
 
-Inputs you are given: the task description and the loop.yaml schema at
-`${CLAUDE_PLUGIN_ROOT}/skills/loop-delivery/assets/loop.template.yaml`. Read the repo to
-fill real values.
+Inputs you are given: the task description and the ABSOLUTE path to the loop.yaml schema
+(the worker passes it in your dispatch prompt — loop-delivery resolves it from its own skill
+directory; do not rely on `${CLAUDE_PLUGIN_ROOT}`, which is only set for hooks). Read the
+repo to fill real values.
 
 Steps:
 1. Read the task and the schema. Read `docs/loen/RUNBOOK.md` if present.
@@ -810,13 +912,18 @@ enforces the layout).
 
 ## Steps
 
-1. **Bootstrap the run.** Compute `run-id = <today>-<topic>`. Create
-   `docs/loen/<run-id>/` and point `docs/loen/current` at it (symlink). Copy the state
-   skeleton from `${CLAUDE_PLUGIN_ROOT}/skills/loop-delivery/assets/state.template.md`
+1. **Bootstrap the run.** Derive `<today>` via `date +%F`; `run-id = <today>-<topic>`.
+   With **Bash** (not the Write tool) create the run dir and the pointer BEFORE any
+   Write-tool artifact — the loop-guard hook blocks docs/loen writes when no run is active:
+   `mkdir -p docs/loen/<run-id>/iterations && ln -sfn <run-id> docs/loen/current`.
+   Copy the state skeleton from this skill's `assets/state.template.md` (the skill base
+   directory is printed when this skill is invoked; `assets/` is a sibling of this SKILL.md)
    into `docs/loen/<run-id>/state.md`.
-2. **Author the contract.** Dispatch the `planner` subagent (isolated) with the task and
-   the schema `${CLAUDE_PLUGIN_ROOT}/skills/loop-delivery/assets/loop.template.yaml`. It
-   returns a filled `loop.yaml` + a plan. Validate the YAML parses, then write
+2. **Author the contract.** Dispatch the `planner` subagent (isolated), passing the task and
+   the ABSOLUTE path to this skill's `assets/loop.template.yaml` (resolved from the skill
+   base directory — not `${CLAUDE_PLUGIN_ROOT}`, which is unset outside hooks). Instruct the
+   planner to emit `mutable_scope`/`protected_scope` as block-style YAML lists. It returns a
+   filled `loop.yaml` + a plan. Validate the YAML parses, then write
    `docs/loen/<run-id>/loop.yaml` and `docs/loen/<run-id>/plan.md`.
 3. **Human approval gate.** Show the contract (scope + budget). Ask the human to approve
    before any edit. Do not proceed without it.
@@ -878,8 +985,10 @@ skill) plus appends to `state.md`.
   non-empty and disjoint; `quality_gates` non-empty; `budget` present; human approval
   recorded. `needs_work` blocks Act.
 - **act** — the latest `iterations/iter-NN/diff.patch` exists and touches only
-  `mutable_scope`; no `protected_scope` path present (cross-check with
-  `${CLAUDE_PLUGIN_ROOT}/scripts/guard_protected.sh` via the run's loop.yaml).
+  `mutable_scope`; no `protected_scope` path present (cross-check with this plugin's
+  `scripts/guard_protected.sh` via the run's loop.yaml, resolved from the skill base dir);
+  and the run dir passes this plugin's `scripts/check_layout.sh` — the deterministic net
+  that catches any Bash-written non-canonical artifact that bypassed the PreToolUse hook.
 - **check** — dispatch the `verifier` subagent (isolated); write its verdict to
   `iterations/iter-NN/verifier.md`; confirm `gates.log` shows the gates ran. `OK` iff the
   verdict is APPROVE and gates are green.
@@ -996,7 +1105,7 @@ are later increments.
 
 - [ ] **Step 2: Add the README section**
 
-Modify `README.md` — insert this subsection after the "Сжатие токенов (Caveman)" section (before "### Обновление и диагностика"):
+Modify `README.md` — (a) insert this subsection after the "Сжатие токенов (Caveman)" section (before "### Обновление и диагностика"); (b) add a row to the "Документация по разделам" table: `| Loop Engineering (loen) | docs/functions/LOEN.md |`.
 
 ```markdown
 ### Loop Engineering (loen)
@@ -1042,9 +1151,10 @@ Run:
 bash tests/test_loen_plugin.sh
 bash tests/test_loen_templates.sh
 bash tests/test_loen_guard.sh
+bash tests/test_loen_layout.sh
 python3 tests/test_loen_hook.py
 ```
-Expected: four `PASS ...` lines, no failures.
+Expected: five `PASS ...` lines, no failures.
 
 - [ ] **Step 2: Verify the plugin version-sync guard passes**
 
@@ -1061,7 +1171,7 @@ loop.yaml contract, hook enforcement, subagent roster>, source="plugin/loen")`, 
 - [ ] **Step 4: Update the TODO row**
 
 Modify the `loen-loop-engineering-plugin` row in `docs/TODO.md` — append to Notes:
-`implementation complete (9 tasks TDD); 4/4 loen test suites green`.
+`implementation complete (10 tasks TDD); 5/5 loen test suites green`.
 
 - [ ] **Step 5: Commit**
 
@@ -1072,14 +1182,66 @@ git commit -m "chore(loen): full test suite green + iwiki page + TODO update"
 
 ---
 
+## Task 10: Enable the plugin + verify it loads
+
+**Files:**
+- Modify: `.nvm-isolated/.claude-isolated/settings.json` (add `loen@iclaude` to `enabledPlugins`)
+
+Building `plugin/loen/` does NOT activate it. Claude Code loads in-repo plugins only when
+they are listed in `enabledPlugins` of the isolated `settings.json` (this is why the `iwiki`
+plugin — absent from that list — is dormant).
+
+- [ ] **Step 1: Ensure the iclaude marketplace path resolves on this machine**
+
+The isolated `settings.json` `extraKnownMarketplaces.iclaude.path` is committed and may point
+at another machine. Run: `./iclaude.sh --repair-plugins`
+Expected: plugin/marketplace paths rewritten to this repo; no error.
+
+- [ ] **Step 2: Enable loen in enabledPlugins**
+
+In `.nvm-isolated/.claude-isolated/settings.json`, add to the `enabledPlugins` object:
+
+```json
+    "loen@iclaude": true
+```
+
+- [ ] **Step 3: Verify the plugin loads (fresh session)**
+
+Enabling requires a NEW Claude Code session to load skills/agents/hooks. Start `./iclaude.sh` and verify:
+- the `loop-delivery` and `loen:audit` skills appear in the skill list;
+- the `planner`/`explorer`/`verifier` subagents are available to the Agent tool;
+- the `loop-guard` hook fires: with `docs/loen/current` set, a Write to a non-canonical
+  `docs/loen/<R>/x` is blocked.
+
+Expected: all load; the hook blocks the non-canonical write.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .nvm-isolated/.claude-isolated/settings.json
+git commit -m "chore(loen): enable loen@iclaude in isolated settings"
+```
+
+---
+
 ## Notes for the executor
 
 - **TDD order matters:** Tasks 1–4 are test-first (real assertions). Tasks 5–8 are content
   artifacts (markdown/JSON) verified by lint + the full run in Task 9.
-- **Do not create `docs/loen/` in this repo as a committed fixture** — the hook tests build
-  their own tempdir fixtures; runtime `docs/loen/` artifacts are produced per loop run and
-  are not part of the plugin.
-- **`${CLAUDE_PLUGIN_ROOT}`** resolves to the installed plugin dir at runtime; in tests use
-  repo-relative paths.
+- **Do not create `docs/loen/` in this repo as a committed fixture** — the hook/layout tests
+  build their own tempdir fixtures; runtime `docs/loen/` artifacts are produced per loop run
+  and are not part of the plugin.
+- **`${CLAUDE_PLUGIN_ROOT}` is set for HOOKS only.** In `hooks.json` it is correct. Inside a
+  SKILL body or a subagent it is NOT reliably set — reference assets/scripts from the skill's
+  printed base directory and pass absolute paths to subagents. Tests use repo-relative paths.
+- **Redaction display artifact:** the always-on `redact-secrets` hook cosmetically masks
+  tokens like `os.path.islink` / `os.symlink` in **Bash output** (a `grep REDACTED` of the
+  file returns nothing — the file is correct). Do NOT "fix" `REDACTED…` seen in `cat`/`grep`
+  output; trust the file and the tests.
+- **Verifier is not a hard FS sandbox:** it has `Bash` to run gates, which may write caches
+  (`__pycache__`, `.pytest_cache`). Acceptable; it must not edit source. For true isolation
+  run it under iclaude microVM (optional, not default).
+- **No test CI:** the repo has no test-running workflow; run the loen suites manually
+  (Task 9). `docs/loen/<run-id>/` artifacts are committed as the loop's audit trail.
 - **No auto-merge.** The loop always ends at a human PR review.
 ```

@@ -359,7 +359,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
   </table>
 
   <h3>3.3 Итог и цепочка</h3>
-  <p><b>SUMMARY:</b> 0 CRITICAL · 3 WARNING (1 fixed, 2… F-003/F-004 fixed, F-002 accepted) · 1 INFO (accepted). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 3 WARNING (F-003/F-004 fixed, F-002 accepted) · 1 INFO (F-001 accepted). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <div class="note"><b>Max-effort ре-check (против реального кода):</b> +7 находок, все закрыты. <span class="badge crit">CRIT</span> <b>F-005</b> — не было шага включения плагина (<code>enabledPlugins</code>) → добавлен Task 10 (иначе плагин мёртв). <b>F-006</b> ассеты через <code>${CLAUDE_PLUGIN_ROOT}</code> (hook-only) → skill base-dir. <b>F-007</b> scope-парсер только block-YAML → держит и flow. <b>F-008</b> Bash-записи обходят хук → детерминированный <code>check_layout.sh</code> (R16-закрытие). <b>F-009/F-010/F-101</b> run-id/symlink ordering, README-row, redact-заметка, stale-счётчики. Three-way canon-path (hook regex == check_layout == spec §4.3) — без дрейфа. <b>VERDICT: OK</b>.</div>
   <figure class="rpt-states">
     <div class="state">Intent <span class="sub">n/a</span></div>
     <div class="edge"></div>
