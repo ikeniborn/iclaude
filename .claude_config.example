@@ -825,4 +825,4 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_GRAPH_DEPTH="2"
 #
 # Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
-# ICLAUDE_IWIKI_COMMAND=
+# ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp
