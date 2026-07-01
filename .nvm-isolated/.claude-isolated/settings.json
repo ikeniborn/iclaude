@@ -52,7 +52,6 @@
       "mcp__iwiki__wiki_write_page"
     ],
     "deny": [
-      "Read(**/.env)",
       "Read(**/.env.local)",
       "Read(**/secrets/**)",
       "Read(**/.aws/**)",
@@ -82,6 +81,7 @@
       "Bash(reboot:*)"
     ],
     "ask": [
+      "Read(**/.env)",
       "Bash(cp:*)",
       "Bash(mv:*)",
       "Bash(rm:*)",
