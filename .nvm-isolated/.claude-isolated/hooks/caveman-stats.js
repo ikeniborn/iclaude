@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { readFlag, appendFlag, readHistory, safeWriteFlag } = require('./caveman-config');
+const paths = require('./caveman-paths');
 
 // Mean per-task savings from benchmarks/results/*.json (avg_savings: 65 across
 // 10 tasks, sonnet-4-20250514). Only 'full' has measured data; lite / ultra /
@@ -182,25 +183,6 @@ function humanizeTokens(n) {
   return String(Math.round(n));
 }
 
-// Remove per-session statusline-suffix files older than 7 days so they don't
-// accumulate in the config dir. The trailing '-' in the prefix keeps the global
-// '.caveman-statusline-suffix' (no session id) out of the match. Never throws —
-// a prune failure must not break stats.
-function pruneOldSessionSuffixes(claudeDir) {
-  const MAX_AGE_MS = 7 * 86_400_000;
-  const prefix = '.caveman-statusline-suffix-';
-  const now = Date.now();
-  let names;
-  try { names = fs.readdirSync(claudeDir); } catch { return; }
-  for (const name of names) {
-    if (!name.startsWith(prefix)) continue;
-    const p = path.join(claudeDir, name);
-    try {
-      if (now - fs.statSync(p).mtimeMs > MAX_AGE_MS) fs.unlinkSync(p);
-    } catch {}
-  }
-}
-
 function formatHistory({ sessions, outputTokens, estSavedTokens, estSavedUsd, since }) {
   const sep = '──────────────────────────────────';
   const window = since ? ` (last ${since})` : '';
@@ -298,7 +280,7 @@ function main() {
   const sinceArg = sinceIdx !== -1 ? args[sinceIdx + 1] : null;
 
   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-  const historyPath = path.join(claudeDir, '.caveman-history.jsonl');
+  const historyPath = paths.history(claudeDir);
 
   // Lifetime aggregation paths short-circuit before we need a live session.
   if (all || sinceArg) {
@@ -320,7 +302,7 @@ function main() {
   }
 
   const parsed = parseSession(sessionFile);
-  const mode = readFlag(path.join(claudeDir, '.caveman-active'));
+  const mode = readFlag(paths.activeFlag(claudeDir));
 
   // Append a snapshot of this session's totals to the lifetime log. Multiple
   // /caveman-stats calls in one session emit multiple lines for the same
@@ -356,13 +338,13 @@ function main() {
     } else {
       perSession = '';
     }
-    safeWriteFlag(path.join(claudeDir, `.caveman-statusline-suffix-${sessionId}`), perSession);
+    safeWriteFlag(paths.sessionSuffix(claudeDir, sessionId), perSession);
     safeWriteFlag(
-      path.join(claudeDir, '.caveman-statusline-suffix'),
+      paths.baseSuffix(claudeDir),
       agg.estSavedTokens > 0 ? `⛏ Σ${cum}` : ''
     );
 
-    pruneOldSessionSuffixes(claudeDir);
+    paths.pruneSessionSuffixes(claudeDir);
   }
 
   if (share) {

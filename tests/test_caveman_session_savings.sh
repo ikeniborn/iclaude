@@ -23,59 +23,68 @@ assert_not_contains() { # desc haystack needle
 
 # ---- Task 1: per-session composed suffix + cumulative-only global ----
 t1_session_suffix() {
-  echo "[t1] per-session composed suffix"
+  echo "[t1] per-session composed suffix (in .caveman/)"
   local cc; cc="$(mktemp -d)"
   trap 'rm -rf "$cc"' RETURN
+  mkdir -p "$cc/.caveman"
 
   # caveman active in 'full' mode (ratio 0.65)
-  printf 'full' > "$cc/.caveman-active"
+  printf 'full' > "$cc/.caveman/active"
   # pre-seed history with a prior session worth 110.0M saved tokens
-  printf '%s\n' '{"ts":1,"session_id":"old-session","mode":"full","model":"claude-opus-4-8","output_tokens":59230000,"est_saved_tokens":110000000,"est_saved_usd":0}' > "$cc/.caveman-history.jsonl"
+  printf '%s\n' '{"ts":1,"session_id":"old-session","mode":"full","model":"claude-opus-4-8","output_tokens":59230000,"est_saved_tokens":110000000,"est_saved_usd":0}' > "$cc/.caveman/history.jsonl"
   # synthetic session: 35000 output tokens, opus → est_saved = round(35000/0.35)-35000 = 65000
   printf '%s\n' '{"type":"assistant","message":{"model":"claude-opus-4-8","usage":{"output_tokens":35000}}}' > "$cc/sess-A.jsonl"
 
   CLAUDE_CONFIG_DIR="$cc" node "$STATS" --session-file "$cc/sess-A.jsonl" >/dev/null 2>&1
 
   local per glob
-  per="$(cat "$cc/.caveman-statusline-suffix-sess-A" 2>/dev/null)"
-  glob="$(cat "$cc/.caveman-statusline-suffix" 2>/dev/null)"
+  per="$(cat "$cc/.caveman/suffix-sess-A" 2>/dev/null)"
+  glob="$(cat "$cc/.caveman/statusline-suffix" 2>/dev/null)"
   # cumulative = 110000000 + 65000 = 110065000 → humanizeTokens → "110.1M"
   assert_eq "t1 per-session = session · cumulative" "⛏ 65.0k · Σ110.1M" "$per"
   assert_eq "t1 global = cumulative-only"           "⛏ Σ110.1M"        "$glob"
 
-  # concurrency (spec success criterion #3): a second session writes its OWN
-  # per-session file; the first session's file is left untouched.
+  # root stays clean — no legacy files leak into the config root
+  [[ -e "$cc/.caveman-statusline-suffix-sess-A" ]] && fail "t1 no legacy file in root" || pass "t1 no legacy file in root"
+  [[ -e "$cc/.caveman-history.jsonl" ]]            && fail "t1 history not in root"    || pass "t1 history not in root"
+
+  # concurrency: a second session writes its OWN per-session file; first untouched.
   printf '%s\n' '{"type":"assistant","message":{"model":"claude-opus-4-8","usage":{"output_tokens":350000}}}' > "$cc/sess-C.jsonl"
   CLAUDE_CONFIG_DIR="$cc" node "$STATS" --session-file "$cc/sess-C.jsonl" >/dev/null 2>&1
   # sess-C est_saved = round(350000/0.35)-350000 = 650000 → "650.0k"
   # cumulative now = 110000000 + 65000 + 650000 = 110715000 → "110.7M"
-  assert_eq "t1 concurrent session has its own file" "⛏ 650.0k · Σ110.7M" "$(cat "$cc/.caveman-statusline-suffix-sess-C" 2>/dev/null)"
-  assert_eq "t1 first session file untouched by 2nd" "⛏ 65.0k · Σ110.1M"  "$(cat "$cc/.caveman-statusline-suffix-sess-A" 2>/dev/null)"
+  assert_eq "t1 concurrent session has its own file" "⛏ 650.0k · Σ110.7M" "$(cat "$cc/.caveman/suffix-sess-C" 2>/dev/null)"
+  assert_eq "t1 first session file untouched by 2nd" "⛏ 65.0k · Σ110.1M"  "$(cat "$cc/.caveman/suffix-sess-A" 2>/dev/null)"
 }
 
 t1_session_suffix
 
 # ---- Task 2: prune per-session suffix files older than 7 days ----
 t2_prune() {
-  echo "[t2] prune stale per-session suffix files"
+  echo "[t2] prune stale per-session suffix files (>5 days)"
   local cc; cc="$(mktemp -d)"
   trap 'rm -rf "$cc"' RETURN
+  mkdir -p "$cc/.caveman"
 
-  printf 'full' > "$cc/.caveman-active"
+  printf 'full' > "$cc/.caveman/active"
   printf '%s\n' '{"type":"assistant","message":{"model":"claude-opus-4-8","usage":{"output_tokens":35000}}}' > "$cc/sess-B.jsonl"
 
-  # a stale per-session file (8 days old) that must be pruned
-  printf '⛏ 1k · Σ1k' > "$cc/.caveman-statusline-suffix-zombie"
-  touch -d '8 days ago' "$cc/.caveman-statusline-suffix-zombie"
-  # the global file is recent and must SURVIVE (no trailing-dash match)
-  printf '⛏ Σ1k' > "$cc/.caveman-statusline-suffix"
-  touch -d '8 days ago' "$cc/.caveman-statusline-suffix"
+  # a stale per-session file (6 days old, > 5) that must be pruned
+  printf '⛏ 1k · Σ1k' > "$cc/.caveman/suffix-zombie"
+  touch -d '6 days ago' "$cc/.caveman/suffix-zombie"
+  # a recent per-session file (4 days old, < 5) that must SURVIVE
+  printf '⛏ 2k · Σ2k' > "$cc/.caveman/suffix-fresh"
+  touch -d '4 days ago' "$cc/.caveman/suffix-fresh"
+  # the base file is old but must SURVIVE (no 'suffix-' prefix match)
+  printf '⛏ Σ1k' > "$cc/.caveman/statusline-suffix"
+  touch -d '9 days ago' "$cc/.caveman/statusline-suffix"
 
   CLAUDE_CONFIG_DIR="$cc" node "$STATS" --session-file "$cc/sess-B.jsonl" >/dev/null 2>&1
 
-  [[ -e "$cc/.caveman-statusline-suffix-zombie" ]] && fail "t2 stale per-session file removed" || pass "t2 stale per-session file removed"
-  [[ -e "$cc/.caveman-statusline-suffix" ]] && pass "t2 global file survives (not matched by prune)" || fail "t2 global file survives (not matched by prune)"
-  [[ -e "$cc/.caveman-statusline-suffix-sess-B" ]] && pass "t2 current session file present" || fail "t2 current session file present"
+  [[ -e "$cc/.caveman/suffix-zombie" ]]        && fail "t2 stale (6d) per-session file removed" || pass "t2 stale (6d) per-session file removed"
+  [[ -e "$cc/.caveman/suffix-fresh" ]]         && pass "t2 recent (4d) per-session file kept"   || fail "t2 recent (4d) per-session file kept"
+  [[ -e "$cc/.caveman/statusline-suffix" ]]    && pass "t2 base file survives (not matched)"    || fail "t2 base file survives (not matched)"
+  [[ -e "$cc/.caveman/suffix-sess-B" ]]        && pass "t2 current session file present"        || fail "t2 current session file present"
 }
 
 t2_prune
