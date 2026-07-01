@@ -94,7 +94,7 @@ For each question, if **wiki_context** contains relevant information — show it
 
 **Q6 — Autonomy & Stop Rules:** For each decision type, which autonomy zone applies: full / guarded / proposal-first / no-go? What conditions halt, escalate, or mark completion?
 
-*(No lat enrichment — autonomy policy is defined by the user per feature.)*
+*(No iwiki enrichment — autonomy policy is defined by the user per feature.)*
 
 ---
 
@@ -200,7 +200,7 @@ This is the IDD payoff superpowers does not provide: verify the RESULT against i
 
 - **"It's a small change"** — A new CLI flag is a CLI API change. Still run IDD. Intent docs take 5 minutes and prevent hours of misaligned work.
 - **"Let me ask one clarifying question and proceed"** — Asking scope is not capturing intent. Scope answers WHAT; intent captures WHY, outcomes, and stop conditions.
-- **"lat not available"** — Skip Step 0 silently. Never block IDD or mention the absence of lat context. The process works without it.
+- **"iwiki not available"** — Skip Step 0 silently. Never block IDD or mention the absence of iwiki context. The process works without it.
 - **"subagent-driven said not to stop"** — The intent doc's Autonomy Zones override continuous-execution. A no-go / proposal-first decision means halt and escalate.
 - **"Tests are green, so it's done"** — Green tests are not a completed outcome. Done is determined by Outcome Verification against Desired Outcomes, not by a test run.
 - **"Brainstorm already asked about the goal"** — If the intent doc is approved, brainstorm does not re-ask WHY/WHAT/Outcomes/Constraints. Duplicate questions mean the intent doc never reached brainstorm (see handoff).
