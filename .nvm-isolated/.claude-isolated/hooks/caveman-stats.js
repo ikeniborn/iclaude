@@ -326,7 +326,7 @@ function main() {
     // file stays cumulative-only — a fallback the statusline uses before a
     // session's first Stop has written its per-session file. Both go through
     // safeWriteFlag (predictable, user-owned paths, same symlink-clobber surface
-    // as the .caveman-active flag). agg already includes this session's snapshot,
+    // as the .caveman/active flag). agg already includes this session's snapshot,
     // appended just above, so Σ is the true lifetime total.
     const agg = aggregateHistory(historyPath, null);
     const cum = humanizeTokens(agg.estSavedTokens);

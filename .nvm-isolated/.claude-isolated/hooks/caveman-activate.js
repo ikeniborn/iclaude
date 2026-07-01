@@ -2,7 +2,7 @@
 // caveman — Claude Code SessionStart activation hook
 //
 // Runs on every session start:
-//   1. Writes flag file at $CLAUDE_CONFIG_DIR/.caveman-active (statusline reads this)
+//   1. Writes flag file at $CLAUDE_CONFIG_DIR/.caveman/active (statusline reads this)
 //   2. Emits caveman ruleset as hidden SessionStart context
 //   3. Detects missing statusline config and emits setup nudge
 
