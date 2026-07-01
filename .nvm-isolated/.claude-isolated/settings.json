@@ -184,6 +184,10 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/cache-report.py\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-cleanup.js\""
           }
         ]
       }

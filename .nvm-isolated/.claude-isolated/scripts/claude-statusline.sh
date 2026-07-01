@@ -325,19 +325,20 @@ if [[ -f "$_SEC_FLAG" ]]; then
     fi
 fi
 
-# Caveman badge — show ⛏ when .caveman-active exists in $CLAUDE_CONFIG_DIR.
+# Caveman badge — show ⛏ when active flag exists in $CLAUDE_CONFIG_DIR/.caveman/.
 # Prefer THIS session's suffix (⛏ <session> · Σ<cumulative>), written by
-# caveman-stats.js as .caveman-statusline-suffix-<session_id>; fall back to the
-# global cumulative-only .caveman-statusline-suffix (e.g. before the first Stop).
+# caveman-stats.js as .caveman/suffix-<session_id>; fall back to the global
+# cumulative-only .caveman/statusline-suffix (e.g. before the first Stop).
 CAVEMAN_ICON=""
-if [[ -f "$CLAUDE_CONFIG_DIR/.caveman-active" ]]; then
+CAVEMAN_DIR="$CLAUDE_CONFIG_DIR/.caveman"
+if [[ -f "$CAVEMAN_DIR/active" ]]; then
     _CAVEMAN_SUFFIX=""
     if [[ -n "$SESSION_ID" && "$SESSION_ID" != "unknown" ]]; then
-        _CAVEMAN_PS_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix-${SESSION_ID}"
+        _CAVEMAN_PS_FILE="$CAVEMAN_DIR/suffix-${SESSION_ID}"
         [[ -f "$_CAVEMAN_PS_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_PS_FILE" 2>/dev/null | tr -d '\n\r')
     fi
     if [[ -z "$_CAVEMAN_SUFFIX" ]]; then
-        _CAVEMAN_GLOBAL_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix"
+        _CAVEMAN_GLOBAL_FILE="$CAVEMAN_DIR/statusline-suffix"
         [[ -f "$_CAVEMAN_GLOBAL_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_GLOBAL_FILE" 2>/dev/null | tr -d '\n\r')
     fi
     [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
