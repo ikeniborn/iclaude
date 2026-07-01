@@ -36,6 +36,18 @@ Skip only when: familiar area, same session.
 
 Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_list_domains`, `wiki_list_pages`, `wiki_write_page`, `wiki_update_page`, `wiki_delete_page`, `wiki_index`, `wiki_create_domain`, `wiki_lint`, `wiki_sync`) — never the old plugin skills or the `iwiki_engine` CLI.
 
+## Keep README Current (MANDATORY)
+
+**After every change that alters functionality, behavior, usage, or setup — if the project has a `README.md` (and/or a localized `docs/README.ru.md`) — update it in the same task, before responding to the user.**
+
+These files are the entry point for two audiences at once: business users who need to know what the project does and why it's useful, and technical specialists who need to know how to install, configure, and run it. Keep them true to the current code.
+
+- **Scope of the update.** Reflect the change in whichever of these the file covers: what the project does and its value (business framing), features and capabilities, install / setup / configuration steps, usage instructions and examples, commands, flags, environment variables, and any versions or requirements you touched.
+- **Both files stay in sync.** If both `README.md` and `docs/README.ru.md` exist, apply the same content change to both. `README.md` follows the documentation language (English); `docs/README.ru.md` is the Russian translation of the same information — keep them equivalent, only the language differs.
+- **Only when they exist.** Do not create a `README.md` or `docs/README.ru.md` that the project does not already have unless the user asks. If only one of the two exists, update that one.
+- **This is separate from the iwiki wiki.** The wiki (above) is internal/semantic documentation; the README files are the public, human-facing docs. Updating one does not exempt you from the other — do both when both apply.
+- **Skip only for changes that touch no functionality, behavior, usage, or setup** (typo, comment, internal formatting).
+
 ## Task Log (docs/TODO.md)
 
 **Every elaboration task that runs through the IDD→SDD chain (intent → spec → plan → result) is tracked as one row in `docs/TODO.md`: opened when work starts, closed when it finishes.**
