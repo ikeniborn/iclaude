@@ -35,22 +35,22 @@ Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki
 
 **Every elaboration task that runs through the IDD→SDD chain (intent → spec → plan → result) is tracked as one row in `docs/TODO.md`: opened when work starts, closed when it finishes.**
 
-Purpose: a single human-readable index of what is being worked on and what is done — **one row per chain `<topic>`** (the shared chain key the `check-*` commands converge on), never per finding or per step.
+Purpose: a single human-readable index of what is being worked on and what is done — **one row per chain `<topic>`** (the shared chain key the `/check-chain` skill converges on), never per finding or per step.
 
 - **One file, one table.** `docs/TODO.md` holds a single Markdown table, one row per `<topic>`.
 - **Columns:** `Topic | Status | Intent | Spec | Plan | Result | Opened | Closed | Notes`.
-  - `Status`: `in-progress` while any stage is still open; `done` once `check-result` returns `OK`.
-  - Stage cells (`Intent` / `Spec` / `Plan`): `✓` once that stage's `check-*` passes (verdict `OK`, including a cached quick-exit); `–` if not reached yet; `n/a` if the stage does not exist for this topic (e.g. no intent).
+  - `Status`: `in-progress` while any stage is still open; `done` once `/check-chain result` returns `OK`.
+  - Stage cells (`Intent` / `Spec` / `Plan`): `✓` once that stage's `/check-chain <stage>` passes (verdict `OK`, including a cached quick-exit); `–` if not reached yet; `n/a` if the stage does not exist for this topic (e.g. no intent).
   - `Result`: `OK` / `needs_work` / `–`.
   - `Opened` / `Closed`: ISO date (`YYYY-MM-DD`). `Closed` stays empty until the task is `done`.
   - `Notes`: optional one-line context.
 - **Upsert, never duplicate.** Keyed by `<topic>`: update the matching row in place if it exists, otherwise append a new one.
-- **Lifecycle (driven by the `check-*` commands):**
-  - The first `check-*` run for a topic **opens** the row (`Opened: <today>`, `Status: in-progress`). Normally that is `check-intent`; if there is no intent, `check-spec` opens it and marks `Intent: n/a`.
-  - `check-spec` / `check-plan` mark their own stage cell `✓` and keep `Status: in-progress`.
-  - `check-result` **closes** the row on verdict `OK` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
-- **Create on demand.** If `docs/TODO.md` is absent, the first `check-*` run creates it with the header row, then appends.
-- **Manual rows are allowed.** A task may be added by hand before any `check-*` run; the commands then update the matching `<topic>` row instead of duplicating it.
+- **Lifecycle (driven by the `/check-chain` skill):**
+  - The first `/check-chain <stage>` run for a topic **opens** the row (`Opened: <today>`, `Status: in-progress`). Normally that is `/check-chain intent`; if there is no intent, `/check-chain spec` opens it and marks `Intent: n/a`.
+  - `/check-chain spec` / `/check-chain plan` mark their own stage cell `✓` and keep `Status: in-progress`.
+  - `/check-chain result` **closes** the row on verdict `OK` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
+- **Create on demand.** If `docs/TODO.md` is absent, the first `/check-chain <stage>` run creates it with the header row, then appends.
+- **Manual rows are allowed.** A task may be added by hand before any `check-*` run; the skill then updates the matching `<topic>` row instead of duplicating it.
 
 ## Project Status Reports
 
