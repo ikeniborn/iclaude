@@ -216,6 +216,5 @@
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
-  "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {}
+  "skipDangerousModePermissionPrompt": true
 }
