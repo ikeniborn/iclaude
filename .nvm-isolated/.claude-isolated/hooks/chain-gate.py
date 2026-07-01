@@ -168,17 +168,6 @@ def newest_plan():
 
 
 def body_hash(path):
-    # First check if file has frontmatter; if not, hash entire file
-    with open(path, "r", encoding="utf-8") as f:
-        first_line = f.readline().strip()
-    if first_line != "---":
-        # No frontmatter; hash entire file as the "body"
-        with open(path, "rb") as f:
-            content = f.read()
-        import hashlib
-        return hashlib.sha256(content).hexdigest()[:16]
-
-    # Has frontmatter; use canonical pipeline
     pipeline = (
         "awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "
         '"%s" | sha256sum | cut -c1-16' % path
