@@ -1,6 +1,6 @@
 ---
-name: intent
-description: Use BEFORE superpowers:brainstorming for any non-trivial work (new module, CLI flag, API change, arch decision). Triggers on "/idd", "capture intent", "intent doc". If brainstorming would start on non-trivial work without an approved intent doc in docs/superpowers/intents/, run IDD first. Brainstorm proceeds only when intent Status: approved.
+name: fix-intent
+description: Use BEFORE superpowers:brainstorming for any non-trivial work (new module, CLI flag, API change, arch decision). Triggers on "/fix-intent", "/idd", "capture intent", "intent doc". If brainstorming would start on non-trivial work without an approved intent doc in docs/superpowers/intents/, run IDD first. Brainstorm proceeds only when intent Status: approved.
 ---
 
 # IDD — Intent-Driven Design

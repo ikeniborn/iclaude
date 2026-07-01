@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 
-HOOK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chain-gate.py")
+HOOK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "hooks", "chain-gate.py")
 
 
 def body_hash(path):
