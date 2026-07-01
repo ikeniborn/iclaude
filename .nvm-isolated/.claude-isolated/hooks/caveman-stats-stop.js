@@ -14,6 +14,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const paths = require('./caveman-paths');
 
 let input = '';
 process.stdin.on('data', (chunk) => { input += chunk; });
@@ -21,7 +22,7 @@ process.stdin.on('end', () => {
   try {
     const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
     // Cheap guard: skip entirely when caveman isn't active.
-    if (!fs.existsSync(path.join(claudeDir, '.caveman-active'))) return;
+    if (!fs.existsSync(paths.activeFlag(claudeDir))) return;
 
     let data = {};
     try { data = JSON.parse(input); } catch {}

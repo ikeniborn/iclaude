@@ -7,13 +7,14 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { getDefaultMode, getLanguages, safeWriteFlag, readFlag, VALID_MODES } = require('./caveman-config');
+const paths = require('./caveman-paths');
 
 // Modes handled by their own slash commands (/caveman-commit, etc.) — not
 // selectable via /caveman <arg>.
 const INDEPENDENT_MODES = new Set(['commit', 'review', 'compress']);
 
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const flagPath = path.join(claudeDir, '.caveman-active');
+const flagPath = paths.activeFlag(claudeDir);
 
 let input = '';
 process.stdin.on('data', chunk => { input += chunk; });
