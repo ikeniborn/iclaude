@@ -48,7 +48,8 @@
       "Bash(ssh:*)",
       "Bash(source:*)",
       "Bash(docker:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "mcp__iwiki__wiki_write_page"
     ],
     "deny": [
       "Read(**/.env)",
@@ -199,8 +200,7 @@
     "playwright@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "iwiki@iclaude": false
+    "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "iclaude": {
