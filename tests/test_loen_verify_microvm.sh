@@ -106,4 +106,61 @@ snap="$tmp/snap"
 [[ -f "$snap/docs/loen/2026-07-02-demo/iterations/iter-01/gates.log" ]] || fail "gates.log missing in snapshot"
 [[ "$(readlink "$snap/docs/loen/current")" == "2026-07-02-demo" ]] || fail "docs/loen/current symlink wrong"
 
-echo "PASS test_loen_verify_microvm.sh (unit: preflight + extract + snapshot)"
+# --- check: contract guard + preflight gate (no VM needed) ---
+
+# contract without microvm isolation → check must refuse (exit 1), not boot anything
+if out=$("$V" check "$run" iter-01 2>&1); then
+    fail "check must refuse a contract that is not verifier_isolation: microvm"
+fi
+echo "$out" | grep -q "use the subagent dispatch instead" || fail "check refusal message missing"
+
+# microvm contract but missing prerequisites → non-zero, no VM attempted
+printf 'name: 2026-07-02-demo\nverifier_isolation: microvm\n' > "$run/loop.yaml"
+if LOEN_KVM_DEV=/nonexistent-kvm ISOLATED_CONFIG_DIR="$tmp/empty-cfg" \
+        "$V" check "$run" iter-01 2>/dev/null; then
+    fail "check must fail preflight without prerequisites"
+fi
+
+# missing iteration dir → usage error
+if "$V" check "$run" iter-99 2>/dev/null; then
+    fail "check must reject a missing iteration dir"
+fi
+
+echo "PASS test_loen_verify_microvm.sh (unit: preflight + extract + snapshot + check guards)"
+
+# --- integration e2e (real Firecracker guest; repo convention: auto-SKIP without KVM) ---
+# Additionally gated behind ICLAUDE_LOEN_E2E=1: it boots a VM and spends API tokens.
+if [[ ! -r /dev/kvm ]]; then
+    echo "SKIP e2e: /dev/kvm absent"
+elif [[ "${ICLAUDE_LOEN_E2E:-0}" != "1" ]]; then
+    echo "SKIP e2e: set ICLAUDE_LOEN_E2E=1 to run (boots a microVM + calls the API)"
+else
+    # Fingerprints must bracket the toy run's WHOLE lifetime (created below, removed
+    # before the post-capture), so pre is taken before mkdir.
+    pre=$( { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | sha256sum; } | sha256sum )
+    e2e_run="docs/loen/2026-07-02-loen-e2e-toy"
+    mkdir -p "$e2e_run/iterations/iter-01"
+    cat > "$e2e_run/loop.yaml" <<'YAML'
+name: 2026-07-02-loen-e2e-toy
+mode: delivery
+objective: "toy: README.md exists at repo root"
+verifier_isolation: microvm
+mutable_scope: ["README.md"]
+protected_scope: ["iclaude.sh"]
+quality_gates: ["test -f README.md"]
+budget: { max_iterations: 1 }
+YAML
+    printf 'toy diff\n' > "$e2e_run/iterations/iter-01/diff.patch"
+    printf '$ test -f README.md\nexit 0\n' > "$e2e_run/iterations/iter-01/gates.log"
+    if "$V" check "$e2e_run" iter-01; then
+        [[ -s "$e2e_run/iterations/iter-01/verifier.md" ]] || fail "e2e: verifier.md not written"
+        grep -qE '^VERDICT: (APPROVE|REJECT)$' "$e2e_run/iterations/iter-01/verifier.md" \
+            || fail "e2e: verifier.md has no VERDICT"
+        echo "PASS e2e: isolated verdict produced"
+    else
+        fail "e2e: verify_microvm.sh check failed"
+    fi
+    rm -rf "$e2e_run"
+    post=$( { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | sha256sum; } | sha256sum )
+    [[ "$pre" == "$post" ]] || fail "e2e: host tree changed across the isolated verify"
+fi
