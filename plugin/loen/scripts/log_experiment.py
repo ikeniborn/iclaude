@@ -9,6 +9,7 @@ stream; the verifier re-checks it against metrics.jsonl."""
 import json
 import re
 import sys
+from typing import NoReturn
 
 REQUIRED = {
     "baseline": ["type", "ts", "eval_command", "metrics"],
@@ -19,7 +20,7 @@ REQUIRED = {
 ITER = re.compile(r"^iter-\d{2}$")
 
 
-def fail(msg):
+def fail(msg) -> NoReturn:
     sys.stderr.write("log_experiment: " + msg + "\n")
     sys.exit(1)
 
@@ -53,8 +54,10 @@ def main():
             fail("files_changed must be a list")
         if not isinstance(rec["metrics_before"], dict):
             fail("metrics_before must be an object")
-        # metrics_after / delta may be null on a failed eval (recorded, reverted)
-        if rec["metrics_after"] is not None and not isinstance(rec["metrics_after"], dict):
+        # metrics_after / delta may be null on a failed eval
+        # (the experiment is recorded, then reverted)
+        ma = rec["metrics_after"]
+        if ma is not None and not isinstance(ma, dict):
             fail("metrics_after must be an object or null")
     with open(target, "a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
