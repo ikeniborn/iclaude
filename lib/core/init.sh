@@ -32,8 +32,11 @@ init_environment() {
     # Determine script directory
     SCRIPT_DIR="${SCRIPT_DIR:-$(resolve_script_directory)}"
 
-    # Wrapper version (from VERSION file; fallback to "dev")
-    ICLAUDE_VERSION="$(cat "${SCRIPT_DIR}/VERSION" 2>/dev/null | tr -d '[:space:]')"
+    # Wrapper version (from VERSION file; fallback to "dev").
+    # `|| true` keeps a missing VERSION from killing the boot under
+    # `set -euo pipefail` — the $() would otherwise propagate cat's exit 1
+    # before the fallback line below can run.
+    ICLAUDE_VERSION="$(cat "${SCRIPT_DIR}/VERSION" 2>/dev/null | tr -d '[:space:]' || true)"
     [[ -z "$ICLAUDE_VERSION" ]] && ICLAUDE_VERSION="dev"
     export ICLAUDE_VERSION
 
