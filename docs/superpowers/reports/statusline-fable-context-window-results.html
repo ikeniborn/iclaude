@@ -103,8 +103,8 @@ text{ pointer-events:none; }
 <body>
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
   <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
@@ -259,7 +259,101 @@ text{ pointer-events:none; }
   <!-- TAB:spec END -->
   <!-- TAB:plan START -->
   <section class="tab-pane" id="pane-plan">
-    <p class="note">Этап ещё не проверен.</p>
+
+    <h2>1. Резюме плана</h2>
+    <p class="lead">6 задач TDD: red → green → commit для каждого фикса, затем живая проверка + документация + PR.</p>
+    <table class="rpt-table">
+      <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+      <tbody>
+        <tr><td>Task 1</td><td>Падающий регрессионный тест маппинга окна: <code>tests/test_statusline_context_window.sh</code>, 5 кейсов (Fable/Mythos/Sonnet 5/Opus/Haiku), синтетический JSON → скрипт</td><td>Тест падает на кейсе Fable: <code>(114%) ⚠️</code>, exit 1</td></tr>
+        <tr><td>Task 2</td><td>Фикс <code>detect_real_context_window()</code>: <code>*fable*|*mythos*</code> → 1M, <code>*sonnet*5*</code> → 1M; коммит</td><td><code>PASS test_statusline_context_window.sh</code>, exit 0</td></tr>
+        <tr><td>Task 3</td><td>Падающие кейсы hit-rate: floor 99.56% → 99%; полный хит → 100%</td><td>Тест падает: <code>📦 100%</code> вместо <code>📦 99%</code>, exit 1</td></tr>
+        <tr><td>Task 4</td><td>Фикс округления: <code>int()</code> вместо <code>%.0f</code> в строке <code>HIT_RATE</code>; коммит</td><td>Все кейсы PASS, exit 0</td></tr>
+        <tr><td>Task 5</td><td>Живая проверка Fable-сессии (сброс /tmp-кэша statusline), проверка README, обновление iwiki-домена <code>iclaude</code>, полный прогон тестов</td><td>Живая строка без <code>⚠️</code>; <code>wiki_lint</code> без broken refs/orphan/stale; тесты зелёные</td></tr>
+        <tr><td>Task 6</td><td>Проверка неприкосновенности stale-копии, <code>/check-chain result</code>, push + PR в <code>dev</code></td><td><code>git diff --stat dev -- .nvm-isolated/scripts/</code> пуст; result_check OK; URL PR</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Схемы зависимостей и пересечений</h2>
+
+    <h3>2.1 Граф зависимостей шагов</h3>
+    <figure class="diagram">
+    <svg viewBox="0 0 920 300" role="img" aria-label="Граф зависимостей задач: цепочка T1→T2→T3→T4→T5→T6, плюс T2→T5 и T4→T5">
+      <!-- top row: TDD chain -->
+      <g class="node"><rect class="card" x="20"  y="40" width="130" height="60" rx="12"/><rect class="bar-warn"   x="28"  y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="85"  y="66" text-anchor="middle">T1 · тест red</text><text class="t-sub" x="85"  y="84" text-anchor="middle">окно · 5 кейсов</text></g>
+      <g class="node"><rect class="card" x="200" y="40" width="130" height="60" rx="12"/><rect class="bar-ok"     x="208" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="265" y="66" text-anchor="middle">T2 · Fix 1</text><text class="t-sub" x="265" y="84" text-anchor="middle">маппинг → green</text></g>
+      <g class="node"><rect class="card" x="380" y="40" width="130" height="60" rx="12"/><rect class="bar-warn"   x="388" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="445" y="66" text-anchor="middle">T3 · тест red</text><text class="t-sub" x="445" y="84" text-anchor="middle">hit-rate floor</text></g>
+      <g class="node"><rect class="card" x="560" y="40" width="130" height="60" rx="12"/><rect class="bar-ok"     x="568" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="625" y="66" text-anchor="middle">T4 · Fix 2</text><text class="t-sub" x="625" y="84" text-anchor="middle">int() → green</text></g>
+      <g class="node"><rect class="card" x="740" y="40" width="130" height="60" rx="12"/><rect class="bar-accent" x="748" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="805" y="66" text-anchor="middle">T5 · verify+docs</text><text class="t-sub" x="805" y="84" text-anchor="middle">live · iwiki · README</text></g>
+      <g class="node"><rect class="card" x="380" y="190" width="330" height="60" rx="12"/><rect class="bar-accent" x="388" y="202" width="5" height="36" rx="2.5"/><text class="t-title" x="545" y="216" text-anchor="middle">T6 · result check + PR → dev</text><text class="t-sub" x="545" y="234" text-anchor="middle">stale-копия нетронута · /check-chain result</text></g>
+      <!-- chain edges -->
+      <path class="conn" marker-end="url(#arr)" d="M150,70 H193"/>
+      <path class="conn" marker-end="url(#arr)" d="M330,70 H373"/>
+      <path class="conn" marker-end="url(#arr)" d="M510,70 H553"/>
+      <path class="conn" marker-end="url(#arr)" d="M690,70 H733"/>
+      <!-- fixes feed the live check -->
+      <path class="conn-a" marker-end="url(#arrA)" d="M265,100 C265,150 600,30 740,58"/>
+      <path class="conn-a" marker-end="url(#arrA)" d="M625,100 C650,120 720,110 745,100"/>
+      <!-- everything lands in T6 -->
+      <path class="conn" marker-end="url(#arr)" d="M805,100 C805,160 730,190 717,196"/>
+      <rect class="lbl-bg" x="470" y="150" width="150" height="18"/>
+      <text class="lbl" x="545" y="163" text-anchor="middle">M→N: результат M нужен N</text>
+    </svg>
+    <figcaption>Строгая цепочка T1→T2→T3→T4→T5→T6; фиксы T2/T4 дополнительно питают живую проверку T5. Циклов и нарушений порядка нет.</figcaption>
+    </figure>
+
+    <h3>2.2 Пересечения (артефакты × задачи, требования × задачи)</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Артефакт / требование</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th></tr></thead>
+      <tbody>
+        <tr><td><code>claude-statusline.sh</code> (активный)</td><td>—</td><td>✓ hunk 1</td><td>—</td><td>✓ hunk 2</td><td>читает</td><td>—</td></tr>
+        <tr><td><code>tests/test_statusline_context_window.sh</code></td><td>✓ создаёт</td><td>гонит</td><td>✓ дополняет</td><td>гонит</td><td>гонит</td><td>—</td></tr>
+        <tr><td>iwiki <code>iclaude</code> / README</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>spec §1a+§2 (окно 1M)</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>spec §1b+§3 (hit-rate floor)</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>spec §4 (stale-копия вне скоупа)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓ step 1</td></tr>
+        <tr><td>spec §5 (верификация, 7 кейсов)</td><td>✓ 5</td><td>—</td><td>✓ 2</td><td>—</td><td>✓ live</td><td>—</td></tr>
+        <tr><td>spec §6 (поставка)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓ docs</td><td>✓ PR</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Результаты проверки</h2>
+    <table class="rpt-table">
+      <thead><tr><th>Фаза</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>coverage</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>dependencies</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>verifiability</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>consistency</td><td><span class="badge ok">passed</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <table class="rpt-table">
+      <thead><tr><th>id</th><th>severity</th><th>фаза</th><th>секция</th><th>описание</th><th>fix</th><th>вердикт</th></tr></thead>
+      <tbody>
+        <tr><td>F-001</td><td><span class="badge info">INFO</span></td><td>coverage</td><td>File structure</td>
+            <td>Spec §4 покрывался только запретительной заметкой, без проверяемого шага.</td>
+            <td>Добавлен Task 6 Step 1: <code>git diff --stat dev -- .nvm-isolated/scripts/</code> → пусто.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+        <tr><td>F-002</td><td><span class="badge info">INFO</span></td><td>consistency</td><td>Task 4</td>
+            <td>Точный якорь строки 224 сместился бы после Task 2 (+2 строки).</td>
+            <td>Якорь → ~224 (≈226 после Task 2) + поиск по содержимому <code>HIT_RATE</code>.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+        <tr><td>F-003</td><td><span class="badge info">INFO</span></td><td>verifiability</td><td>Task 5</td>
+            <td>Шаг <code>wiki_lint</code> не фиксировал ожидаемый результат.</td>
+            <td>Дописано ожидание: без broken refs, orphan/stale для страницы statusline.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note ok">
+      <b>Вердикт: OK.</b> CRITICAL open: 0 · WARNING open: 0 · INFO: 3 (все fixed).<br>
+      <code>plan_hash: b1014ea02c62c526</code> · проверено 2026-07-02.
+    </div>
+    <p class="sub">Цепочка: intent → spec → plan — intent отсутствует (<b>n/a</b>), spec OK (<code>6f903a264cfdff20</code>), plan валиден.</p>
+
   </section>
   <!-- TAB:plan END -->
   <!-- TAB:result START -->

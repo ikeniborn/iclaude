@@ -6,10 +6,14 @@ review:
   spec_hash: 6f903a264cfdff20
   last_run: 2026-07-02
   phases:
-    structure: passed
-    coverage: passed
-    clarity: passed
-    consistency: passed
+    structure:
+      status: passed
+    coverage:
+      status: passed
+    clarity:
+      status: passed
+    consistency:
+      status: passed
   findings:
     - id: F-001
       phase: coverage
