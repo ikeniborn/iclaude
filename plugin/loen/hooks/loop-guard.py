@@ -29,7 +29,7 @@ def canon_patterns(R):
         re.compile(rf"^docs/loen/{Rq}/pr-summary\.md$"),
         re.compile(rf"^docs/loen/{Rq}/report\.html$"),
         re.compile(rf"^docs/loen/{Rq}/experiments\.jsonl$"),
-        re.compile(rf"^docs/loen/{Rq}/iterations/iter-\d{{2}}/(diff\.patch|gates\.log|verifier\.md)$"),
+        re.compile(rf"^docs/loen/{Rq}/iterations/iter-\d{{2}}/(diff\.patch|gates\.log|verifier\.md|metrics\.jsonl)$"),
     ]
 
 
@@ -121,7 +121,7 @@ def main():
         block(
             f"non-canonical loen artifact path: {path}\n"
             f"  expected: docs/loen/{R}/{{loop.yaml,plan.md,state.md,pr-summary.md,report.html,experiments.jsonl}}\n"
-            f"  or:       docs/loen/{R}/iterations/iter-NN/{{diff.patch,gates.log,verifier.md}}"
+            f"  or:       docs/loen/{R}/iterations/iter-NN/{{diff.patch,gates.log,verifier.md,metrics.jsonl}}"
         )
 
     # outside docs/loen/ -> scope enforcement, only when a loop is active

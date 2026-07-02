@@ -60,6 +60,12 @@ def main():
         # malformed iteration name -> block
         check("bad iter name",
               run(root, os.path.join(base, "iterations/iter-1/verifier.md")), 2)
+        # research mode: canonical per-iteration metrics stream -> allow
+        check("canonical iter metrics.jsonl",
+              run(root, os.path.join(base, "iterations/iter-03/metrics.jsonl")), 0)
+        # malformed iter segment with metrics.jsonl -> block
+        check("bad iter metrics.jsonl",
+              run(root, os.path.join(base, "iterations/iter-3/metrics.jsonl")), 2)
         # non-canonical loen path -> block
         check("non-canonical loen", run(root, os.path.join(base, "notes.txt")), 2)
         # cross-topic write -> block
