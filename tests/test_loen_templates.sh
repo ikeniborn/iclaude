@@ -17,6 +17,8 @@ missing = [k for k in required if k not in d]
 assert not missing, f"loop.template.yaml missing keys: {missing}"
 assert isinstance(d["mutable_scope"], list) and isinstance(d["protected_scope"], list)
 assert isinstance(d["budget"], dict) and "max_iterations" in d["budget"]
+assert "eval_command" in d, "loop.template.yaml missing eval_command"
+assert "max_experiments" in d["budget"], "budget missing max_experiments"
 print("OK loop.template.yaml schema")
 PY
 echo "PASS test_loen_templates.sh"

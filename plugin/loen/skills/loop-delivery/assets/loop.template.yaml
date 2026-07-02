@@ -6,11 +6,13 @@ context_sources: []         # docs/files the worker must read first
 mutable_scope: []           # globs the worker MAY edit
 protected_scope: []         # globs the worker MUST NOT edit (guard/hook read these)
 quality_gates: []           # commands that must exit 0 (verifiers)
+eval_command: ""            # research mode: fixed eval; appends JSONL to $LOEN_METRICS_PATH (empty in delivery/repair)
 metrics:
   primary: []
   secondary: []
 budget:
   max_iterations: 3
+  max_experiments: 5        # research mode budget (governs instead of max_iterations there)
   max_wall_time_minutes: 90
   max_cost_usd: 5
 stop_conditions: []         # e.g. "all quality gates pass"
