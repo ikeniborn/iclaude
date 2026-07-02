@@ -28,7 +28,9 @@ layout, contract, audit gates, subagents, and hook. Shared templates live at
    + exit code into `docs/loen/<run-id>/iterations/iter-01/gates.log`. For a suspected
    flaky failure run the command up to 3 times (attempts recorded in `state.md`); any
    failing run counts as reproduced. **No reproduction → stop and report** — never "fix"
-   what cannot be reproduced.
+   what cannot be reproduced. Python targets: purge `__pycache__` (or point
+   `PYTHONPYCACHEPREFIX` at a temp dir) before repro, inversion, and gate runs — a stale
+   `.pyc` of identical size and mtime second can mask the fix or the failure.
 4. **Isolate + minimal fix.** The smallest diff that makes the failing command pass. Save
    `iterations/iter-NN/diff.patch` (`git diff > …`, `iter-NN` zero-padded). Every non-test
    hunk must be required for the failing command to pass; tests change only by ADDING the
