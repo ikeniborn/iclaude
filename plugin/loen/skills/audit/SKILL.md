@@ -1,16 +1,17 @@
 ---
 name: audit
-description: Validate a loen loop stage (plan|act|check|result), gate progression, and regenerate the human-readable docs/loen/<run-id>/report.html via the html-report skill. Mirrors check-chain for the execution loop.
+description: Validate a loen loop stage (plan|act|check|result), gate progression, and regenerate the human-readable docs/loen/<run-id>/report.html via the html-report skill. Mode-aware — extra checks for repair and research contracts. Mirrors check-chain for the execution loop.
 ---
 
 # loen:audit — loop stage validator + live report
 
 Invoke as `loen:audit <stage>` where `stage ∈ plan | act | check | result`. Read the active
-run from `docs/loen/current`. Every stage returns a verdict `OK` / `needs_work`, gates the
-next stage, and **regenerates `docs/loen/<run-id>/report.html`** (via the `html-report`
+run from `docs/loen/current` and `mode` from its `loop.yaml`
+(`delivery | repair | research`). Every stage returns a verdict `OK` / `needs_work`, gates
+the next stage, and **regenerates `docs/loen/<run-id>/report.html`** (via the `html-report`
 skill) plus appends to `state.md`.
 
-## Stage checks
+## Stage checks (all modes)
 
 - **plan** — `loop.yaml` parses; `objective` measurable; `mutable_scope`/`protected_scope`
   non-empty and disjoint; `quality_gates` non-empty; `budget` present; human approval
@@ -27,14 +28,53 @@ skill) plus appends to `state.md`.
   iteration. On `OK`: finalize `report.html`, ensure `pr-summary.md` exists, and mark the
   `docs/TODO.md` row (`Result: OK`, `Status: done`, `Closed: <today>`) keyed by `<topic>`.
 
+## Mode: repair — additional checks
+
+- **plan** — `quality_gates` include the failing command recorded in the Baseline section
+  of `state.md` at bootstrap.
+- **check** — when the diff claims a NEW/extended regression test, `gates.log` carries the
+  worker's logged inversion evidence (stash the fix → the regression test FAILS → pop →
+  it PASSES).
+- **result** — regression coverage evidenced in the final diff: case (a) a new/extended
+  test, or case (b) the originally-failing test itself — the verifier states which case
+  applies; the originally-failing command exits 0; the diff is minimal (every non-test
+  hunk required for that command to pass).
+- **verifier dispatch prompt** carries the repair checklist: regression coverage case
+  (a/b), validation of the LOGGED inversion evidence, minimal-diff confirmation. The
+  verifier stays read-only — it never mutates the tree.
+
+## Mode: research — additional checks
+
+- **plan** — `eval_command` non-empty; EXACTLY ONE `metrics.primary` entry of the form
+  `<name>:max` or `<name>:min`; `stop_conditions` carry one
+  `target: <primary-name> <op> <number>` line (`<op>` ∈ `>=`/`<=` matching the direction)
+  and only well-formed `tolerance: <name> regression <= <number>[%]` lines;
+  `protected_scope` COVERS the eval assets (the `eval_command` script, eval datasets,
+  ground truth) — non-empty alone is not enough.
+- **check** — gates green (they run on every experiment);
+  `iterations/iter-NN/metrics.jsonl` has exactly one `summary` line; `experiments.jsonl`
+  has this iteration's record; for every `keep` decision the verifier RE-RUNS
+  `eval_command` — exporting `LOEN_METRICS_PATH` to a throwaway temp path, never appending
+  to canonical artifacts — and confirms the claimed delta. `revert` records are trusted
+  as logged.
+- **result** — kept changes are metric-backed (primary improved in its declared direction,
+  secondaries within their stated tolerances) OR the budget is exhausted with a
+  best-result report; the `experiments.jsonl` stream is consistent end-to-end with the
+  per-iteration `metrics.jsonl` summaries.
+- **verifier dispatch prompt** carries the research checklist: delta re-check via a
+  throwaway `LOEN_METRICS_PATH`, stream cross-check (`experiments.jsonl` vs
+  `metrics.jsonl`), protected eval assets untouched. The verifier stays read-only.
+
 ## report.html (every stage)
 
 Invoke the `html-report` skill targeting `docs/loen/<run-id>/report.html` with: the
 contract (`loop.yaml`), an iterations table (diff summary, gates pass/fail, verifier
-verdict), metrics before/after (research mode), budget spend, current stage/verdict, and
-handoff reasons. Self-contained, opens by double-click.
+verdict), metrics before/after — in research mode an experiments table (hypothesis,
+before/after, delta, decision) — budget spend, current stage/verdict, and handoff
+reasons. Self-contained, opens by double-click.
 
 ## Rules
+
 - Never edit the diff you are judging. Never weaken a gate to pass.
 - All writes land at canonical `docs/loen/<run-id>/` paths (the loop-guard hook enforces
   this); the report is `report.html`, nothing else.
