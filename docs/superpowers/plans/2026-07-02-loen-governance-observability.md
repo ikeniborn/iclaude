@@ -17,6 +17,11 @@ review:
     - { id: F-002, phase: coverage, severity: INFO, verdict: wontfix, note: "Task 1 Step 5 flake8 lint is bound to no spec §7 item — kept as explicitly-labeled repo convention (post-PR #76), non-functional" }
     - { id: F-003, phase: consistency, severity: INFO, verdict: fixed, note: "VERDICT/HANDOFF regex in Task 1 code added \\b + whitespace tolerance vs the Global Constraints pins → pins amended to record the deliberate tolerances (code unchanged)" }
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: 7d93418989614184
+  last_run: 2026-07-03
+  note: "diff base f4e1cb75 (origin/dev)..75936950 (6 commits): 5/5 tasks DONE, 0 PARTIAL/MISSING, 0 unexplained excess (3 chain artifacts + final-review fix 75936950 read_lines UnicodeDecodeError, approved deviation); spec §2-§7,§9 covered 7/7; 9/9 suites + version-sync + JSON-OK smoke re-run green by clean-context runner; iwiki Components/Artifact model/Roadmap verified updated; final whole-branch review (fable): READY TO MERGE Yes"
 ---
 # loen backlog step 4 — governance / observability — Implementation Plan
 
