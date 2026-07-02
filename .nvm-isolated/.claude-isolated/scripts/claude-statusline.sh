@@ -142,9 +142,11 @@ detect_real_context_window() {
     local model="$1" reported="${2:-200000}" known=0
     case "${model,,}" in
         *haiku*) known=200000 ;;                                  # Haiku 4.5 = 200K
+        *fable*|*mythos*) known=1000000 ;;                        # Claude 5 family = 1M
         *opus*|*sonnet*)
             case "${model,,}" in
                 *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
+                *sonnet*5*) known=1000000 ;;                      # Sonnet 5 = 1M
                 *) known=0 ;;                                     # 4.0/4.1 → reported
             esac ;;
     esac
