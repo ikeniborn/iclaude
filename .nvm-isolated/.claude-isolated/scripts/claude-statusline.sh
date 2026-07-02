@@ -223,7 +223,8 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     # hit-rate = cache_read / (cache_read + cache_creation + uncached_input)
     HR_DENOM=$((CACHE_READ + CACHE_CREATION + CACHE_INPUT))
     if [[ $HR_DENOM -gt 0 ]]; then
-        HIT_RATE=$(awk "BEGIN {printf \"%.0f\", ($CACHE_READ * 100.0 / $HR_DENOM)}")
+        # Floor, not round: 100% must mean a fully cached request.
+        HIT_RATE=$(awk "BEGIN {printf \"%d\", int($CACHE_READ * 100.0 / $HR_DENOM)}")
         CACHE_DISPLAY=" | 📦 ${HIT_RATE}% · R$(humanize "$CACHE_READ")/W$(humanize "$CACHE_CREATION")"
     else
         CACHE_DISPLAY=" | 📦 n/a"

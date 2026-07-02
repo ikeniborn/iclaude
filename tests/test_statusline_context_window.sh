@@ -53,4 +53,14 @@ out="$(run_sl "Haiku 4.5" 100000 100000 0 0)"
 out="$(run_sl "Sonnet 3.5" 100000 100000 0 0)"
 [[ "$out" == *"(50%)"* ]]  || fail "Sonnet 3.5: expected (50%) of 200K window, got: $out"
 
+# --- cache hit-rate floor (spec §3) ---
+
+# 457000/(457000+2000) = 99.56% → must render 99% (floor), not 100% (round)
+out="$(run_sl "Opus4.8" 459000 457000 2000 0)"
+[[ "$out" == *"📦 99%"* ]]  || fail "hit-rate floor: expected 📦 99%, got: $out"
+
+# Fully cached request (creation=0, uncached input=0) → exactly 100%
+out="$(run_sl "Opus4.8" 457000 457000 0 0)"
+[[ "$out" == *"📦 100%"* ]] || fail "hit-rate full: expected 📦 100%, got: $out"
+
 echo "PASS test_statusline_context_window.sh"
