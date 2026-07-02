@@ -136,6 +136,16 @@ def main():
         check("empty mutable exit 1", rc == 1)
         check("empty mutable no stdout", out == "")
 
+        # empty protected_scope -> exit 0, clause omitted (F-004)
+        rc, out, _ = run([write(root, DELIVERY.replace(
+            "protected_scope:\n  - docs/**",
+            "protected_scope: []", 1))])
+        check("empty protected exit 0", rc == 0)
+        check("empty protected clause omitted",
+              "do not modify" not in out)
+        check("empty protected keeps budget clause",
+              "stop after 3 failed attempts" in out)
+
         # research without a target: line -> exit 1, empty stdout
         rc, out, _ = run([write(root, RESEARCH.replace(
             '  - "target: acc >= 0.9"', "  - never regress", 1))])
