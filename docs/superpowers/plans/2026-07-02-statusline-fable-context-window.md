@@ -47,6 +47,10 @@ review:
       fix: "Дописано ожидание: без broken [[refs]], orphan/stale для страницы statusline."
       verdict: fixed
       verdict_at: 2026-07-02
+result_check:
+  verdict: OK
+  plan_hash: b1014ea02c62c526
+  last_run: 2026-07-02
 ---
 # Statusline Claude 5 Context Window Implementation Plan
 

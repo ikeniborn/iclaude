@@ -104,8 +104,8 @@ text{ pointer-events:none; }
   <input type="checkbox" id="theme-toggle" hidden>
   <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
   <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
   <header>
     <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
     <h1>statusline-fable-context-window</h1>
@@ -358,7 +358,64 @@ text{ pointer-events:none; }
   <!-- TAB:plan END -->
   <!-- TAB:result START -->
   <section class="tab-pane" id="pane-result">
-    <p class="note">Этап ещё не проверен.</p>
+    <h2>Сверка результата (result check)</h2>
+    <p class="lead">Диф ветки сверен с планом и спекой: <b>6/6 задач DONE</b>, 0 PARTIAL, 0 MISSING. Вердикт: <span class="badge ok">OK</span></p>
+
+    <h3>Резюме сверки</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+      <tbody>
+        <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-statusline-fable-context-window.md</code> (plan_hash <code>b1014ea02c62c526</code>)</td></tr>
+        <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-02-statusline-fable-context-window-design.md</code> (spec_hash <code>6f903a264cfdff20</code>)</td></tr>
+        <tr><td>Intent</td><td>n/a — <code>chain.intent = null</code>, цепочку открыла спека</td></tr>
+        <tr><td>Diff-база</td><td>merge-base с <code>dev</code> = <code>b089c676</code> → HEAD <code>e91447b2</code>; ветка <code>dev-fix-statusline-context-window</code>, 6 коммитов; feature-коммиты: <code>b4985e6d</code>, <code>2d51cdf8</code>, <code>e91447b2</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие шагов плана</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Шаг</th><th>Статус</th><th>Свидетельство в дифе / evidence</th></tr></thead>
+      <tbody>
+        <tr><td>Task 1 — failing-тест window mapping</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_statusline_context_window.sh</code> в дифе (+66 строк, mode 100755); RED: <code>FAIL Fable … (114%) ⚠️</code>, exit 1</td></tr>
+        <tr><td>Task 2 — fix <code>detect_real_context_window()</code></td><td><span class="badge ok">DONE</span></td><td>арм <code>*fable*|*mythos*</code> → 1M в скрипте; коммит <code>b4985e6d</code> с заданным планом сообщением; отклонение (INFO): <code>*sonnet*5*</code> → <code>*sonnet?5*</code> — review-fix против ложного срабатывания на «Sonnet 3.5», + 8-й тест-кейс</td></tr>
+        <tr><td>Task 3 — failing-тест hit-rate floor</td><td><span class="badge ok">DONE</span></td><td>кейсы <code>📦 99%</code> / <code>📦 100%</code> в тесте; RED: FAIL floor case, exit 1</td></tr>
+        <tr><td>Task 4 — floor fix</td><td><span class="badge ok">DONE</span></td><td><code>HIT_RATE</code> через awk <code>int()</code>; коммит <code>e91447b2</code>; GREEN: 8/8 PASS</td></tr>
+        <tr><td>Task 5 — live verify + docs</td><td><span class="badge ok">DONE</span></td><td>live Fable: «Σ 887K ↓ | 📊 113K (11%) | 📦 98% · R112K/W1K», без ⚠️; README без правок (grep пуст); wiki-страница <code>iclaude/statusline</code> создана (вне репо, iwiki-personal <code>68d7207</code>+<code>cc2f4d3</code>), wiki_lint чист; регрессия: bash-тест 8/8 + pytest <code>test_statusline_cache.py</code> 2 passed</td></tr>
+        <tr><td>Task 6 — result check + PR</td><td><span class="badge ok">DONE</span></td><td>Step 1 guard: <code>git diff --stat dev -- .nvm-isolated/scripts/</code> пуст; Step 2 — этот прогон (<code>result_check: OK</code> записан во frontmatter); Step 3 push+PR выполняется сразу после проверки (INFO pending, дифа не порождает)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Находки</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Severity</th><th>Шаг</th><th>Plan</th><th>Diff</th><th>Fix / решение</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge" style="color:var(--warn-2);border-color:var(--warn)">WARNING</span></td><td>EXCESS</td><td>нет шага</td><td>коммит <code>2531d37d</code> «up»: <code>specs/2026-07-02-loen-repair-autoresearch-design.md</code> (+166), <code>reports/loen-repair-autoresearch-results.html</code> (+6)</td><td>не связан с планом, был на ветке до SDD-сессии; кода/тестов не трогает — принято</td></tr>
+        <tr><td><span class="badge info">INFO</span></td><td>Task 2</td><td>глоб <code>*sonnet*5*</code></td><td><code>*sonnet?5*</code> + кейс «Sonnet 3.5»=200K</td><td>adjudicated review-fix; независимо верифицирован финальным ревью (13 форм имён)</td></tr>
+        <tr><td><span class="badge info">INFO</span></td><td>Task 6 Step 3</td><td>push + <code>gh pr create</code></td><td>нет (remote-операция)</td><td>выполняется сразу после result-check по порядку плана</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие intent и spec</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Источник</th><th>Покрытие</th><th>Детали</th></tr></thead>
+      <tbody>
+        <tr><td>Intent (Desired Outcomes)</td><td>n/a</td><td>интента нет — цепочку открыла спека</td></tr>
+        <tr><td>Spec §1 — проблема</td><td>✓</td><td>обе проблемы воспроизведены тестом (114% ⚠️; 100% при W≠0)</td></tr>
+        <tr><td>Spec §2 — маппинг окна</td><td>✓</td><td>fable/mythos/sonnet-5 → 1M; haiku → 200K; opus/sonnet 4.x без изменений; router-модели → reported</td></tr>
+        <tr><td>Spec §3 — hit-rate floor</td><td>✓</td><td><code>int()</code> вместо <code>%.0f</code>; 100% только при полностью кэшированном запросе</td></tr>
+        <tr><td>Spec §4 — out of scope</td><td>✓</td><td>stale-копия <code>.nvm-isolated/scripts/</code> нетронута (guard пуст)</td></tr>
+        <tr><td>Spec §5 — verification</td><td>✓</td><td>все 7 тест-кейсов + 8-й дополнительный («Sonnet 3.5»); manual live check выполнен</td></tr>
+        <tr><td>Spec §6 — delivery</td><td>✓</td><td>ветка от <code>dev</code> ✓; wiki ✓; README n/a ✓; PR — сразу после проверки</td></tr>
+      </tbody>
+    </table>
+
+    <p class="sub">Excess-изменения: 1 (см. WARNING). Chain-артефакты в дифе (план, спека, TODO.md, этот HTML-отчёт) — ожидаемы, не excess.</p>
+
+    <div class="note ok">
+      <b>Итог:</b> CRITICAL 0 / WARNING 1 / INFO 2 → вердикт <b>OK</b>.
+      Финальное whole-branch ревью (opus): READY TO MERGE — YES.
+    </div>
+    <p class="sub">Цепочка: intent (n/a) → spec ✓ → plan ✓ → result <b>OK</b>. Строка в <code>docs/TODO.md</code> закрыта (Status: done, Closed: 2026-07-02).</p>
   </section>
   <!-- TAB:result END -->
 </body>
