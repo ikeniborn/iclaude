@@ -1,0 +1,45 @@
+# Loop Engineering (loen)
+
+`loen` is an in-repo Claude Code plugin (`plugin/loen/`, marketplace `iclaude`) that runs a
+controlled `Plan → Act → Check → Report` agent loop with an independent verifier.
+
+## Install
+
+The plugin ships with the repo. Enable it at user scope through the plugin system
+(marketplace `iclaude`, plugin `loen`). It installs to
+`.nvm-isolated/.claude-isolated/plugins/cache/iclaude/loen/<version>/`.
+
+## Use
+
+- `/loop-delivery <task>` — the executor. The `planner` subagent fills a `loop.yaml`
+  contract, you approve scope + budget, the worker makes the smallest diff, `quality_gates`
+  + the independent `verifier` check it, and a report is produced.
+- `loen:audit plan|act|check|result` — validate a stage, gate progression, and regenerate
+  `docs/loen/<run-id>/report.html`.
+
+## Artifacts
+
+All results live under `docs/loen/<run-id>/` (run-id = `<YYYY-MM-DD>-<topic>`):
+
+| Path | Content |
+|---|---|
+| `loop.yaml` | the contract (planner-filled, human-approved) |
+| `plan.md` | the step plan |
+| `state.md` | append-only attempt/decision log |
+| `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` | per-iteration evidence |
+| `report.html` | consolidated human-readable report |
+| `pr-summary.md` | PR-ready summary |
+
+Templates ship inside the plugin (not scaffolded into the project). A PreToolUse hook
+(`loop-guard.py`) hard-enforces the layout/naming within the active topic and the loop's
+`mutable_scope`/`protected_scope`. It is a no-op in non-loop repos.
+
+## Subagents
+
+`planner` (opus), `explorer` (haiku), `verifier` (sonnet) — all read-only, isolated
+context; the worker (main session) is the single writer.
+
+## Scope
+
+MVP ships delivery + verifier + guard. `loop-repair` / `loop-autoresearch` and governance
+are later increments.

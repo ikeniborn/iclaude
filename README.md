@@ -317,6 +317,25 @@ Claude Code может читать, изменять и выполнять фа
 
 Подробнее: [docs/functions/CAVEMAN.md](docs/functions/CAVEMAN.md).
 
+### Loop Engineering (loen)
+
+Плагин `loen` (`plugin/loen/`, маркетплейс `iclaude`) запускает управляемую петлю
+`Plan → Act → Check → Report` с независимым verifier. Задача описывается машиночитаемым
+контрактом `loop.yaml`; worker делает минимальный diff; детерминированные gates и
+subagent `verifier` подтверждают результат; отчёт собирается в `docs/loen/<run-id>/report.html`.
+
+```bash
+# В сессии:
+/loop-delivery <task>              # выполнить петлю (planner → апрув → act → verifier → отчёт)
+/loen:audit plan|act|check|result  # проверить стадию + обновить report.html
+```
+
+**Артефакты:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/,
+report.html, pr-summary.md). Шаблоны — ассеты плагина. Хук `loop-guard.py` жёстко
+контролирует раскладку/именование и scope; в не-loop репозиториях — no-op.
+
+Подробнее: [docs/functions/LOEN.md](docs/functions/LOEN.md).
+
 ### Обновление и диагностика
 
 ```bash
@@ -454,6 +473,7 @@ iclaude.sh
 | microVM | `docs/functions/MICROVM.md` |
 | GSD Framework | `docs/superpowers/plans/2026-05-14-gsd-integration.md` |
 | Сжатие токенов (Caveman) | `docs/functions/CAVEMAN.md` |
+| Loop Engineering (loen) | `docs/functions/LOEN.md` |
 | Все команды | `docs/functions/CONFIGURATION.md` |
 | Примеры сценариев | `docs/functions/USE_CASES.md` |
 | Телеметрия | `docs/functions/TELEMETRY.md` |
