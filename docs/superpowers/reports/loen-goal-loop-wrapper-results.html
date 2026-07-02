@@ -90,9 +90,9 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen backlog step 2 — /goal + /loop wrapper</h1>
@@ -203,13 +203,134 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">План реализации шага 2 бэклога loen: 5 задач (TDD, bite-sized) — детерминированный <b>make_goal.py</b>, тонкий скилл <b>loop-goal</b>, bump 0.3.0, документация, iwiki + PR.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>76107995c8033aec</code> · 2026-07-02 · runner: clean-context subagent · артефакт: <code>docs/superpowers/plans/2026-07-02-loen-goal-loop-wrapper.md</code></p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+    <tbody>
+      <tr><td>Task 1</td><td><code>make_goal.py</code> — детерминированный генератор /goal-строки (TDD: <code>tests/test_loen_goal.py</code>, plain-script конвенция репо)</td><td>PASS test_loen_goal.py: формы delivery/repair/research, 6 negative-кейсов (вкл. unknown mode, non-integer budget), default path <code>docs/loen/current/loop.yaml</code>; регрессия test_loen_experiment.py + test_loen_plugin.sh зелёные; commit</td></tr>
+      <tr><td>Task 2</td><td><code>skills/loop-goal/SKILL.md</code> (4 шага: preconditions → generate → evidence-first briefing → /loop-рецепт; guardrails) + lint-список в <code>tests/test_loen_plugin.sh</code></td><td>«OK skill loop-goal» + PASS test_loen_plugin.sh; commit</td></tr>
+      <tr><td>Task 3</td><td>Bump версии 0.2.1→0.3.0 в <code>plugin.json</code> И <code>marketplace.json</code></td><td><code>check-plugin-version-sync.sh</code> + test_loen_plugin.sh зелёные; commit</td></tr>
+      <tr><td>Task 4</td><td>Документация: <code>docs/functions/LOEN.md</code> (Use bullet + Scope), <code>plugin/loen/README.md</code>, корневой <code>README.md</code> (RU, строка <code>/loen:loop-goal</code>)</td><td>Тесты зелёные; commit</td></tr>
+      <tr><td>Task 5</td><td>iwiki Components → финальный прогон 8 сьютов → PR в <code>dev</code> → iwiki Roadmap («done (0.3.0, PR #&lt;N&gt; opened)») → wiki_lint</td><td>Все сьюты PASS; PR открыт; wiki_lint чистый</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+  <h3>2.1 Граф зависимостей шагов</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 720 250" width="100%" role="img" aria-label="граф зависимостей задач плана">
+      <defs><marker id="awp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#awp)">
+        <path d="M140,92 L190,92"></path>
+        <path d="M320,92 L370,92"></path>
+        <path d="M500,92 C530,92 535,112 553,120"></path>
+        <path d="M320,202 C440,202 500,165 553,142"></path>
+        <path d="M75,70 C230,15 470,15 600,68"></path>
+        <path d="M255,70 C360,30 520,35 615,68"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="10" y="70" width="130" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="75" y="88">Task 1</text><text x="75" y="102" font-size="9" fill="var(--muted)">make_goal.py + тест</text></g>
+        <g><rect x="190" y="70" width="130" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="255" y="88">Task 2</text><text x="255" y="102" font-size="9" fill="var(--muted)">loop-goal + lint</text></g>
+        <g><rect x="370" y="70" width="130" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="435" y="88">Task 3</text><text x="435" y="102" font-size="9" fill="var(--muted)">bump 0.3.0</text></g>
+        <g><rect x="190" y="180" width="130" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="255" y="198">Task 4</text><text x="255" y="212" font-size="9" fill="var(--muted)">доки (LOEN/README)</text></g>
+        <g><rect x="555" y="68" width="150" height="76" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="630" y="86">Task 5</text><text x="630" y="100" font-size="9" fill="var(--muted)">wiki → сьюты → PR</text><text x="630" y="113" font-size="9" fill="var(--muted)">→ Roadmap(PR#) → lint</text><text x="630" y="132" font-size="9" fill="var(--ok-2)">Step 3 PR → Step 4 wiki</text></g>
+      </g>
+    </svg>
+    <figcaption>T1→T2 (скилл зовёт CLI из <code>&lt;skill-base&gt;/../../scripts/</code>), T2→T3 (lint нового скилла до бампа), T1/T2→T5 (имена в wiki и финальном прогоне), T3→T5 (версия 0.3.0 в wiki), T4→T5 (доки до PR). Внутри Task 5: PR открывается ДО записи Roadmap — исправление CRITICAL F-001. DAG, циклов нет.</figcaption>
+  </figure>
+  <h3>2.2 Пересечения (общие артефакты / покрытие)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Артефакт / требование</th><th class="rot">Task 1</th><th class="rot">Task 2</th><th class="rot">Task 3</th><th class="rot">Task 4</th><th class="rot">Task 5</th></tr></thead>
+    <tbody>
+      <tr><td><code>make_goal.py</code></td><td class="y">создаёт</td><td class="y">вызывает</td><td class="n">·</td><td class="y">документирует</td><td class="y">wiki</td></tr>
+      <tr><td><code>tests/test_loen_plugin.sh</code></td><td class="y">запускает</td><td class="y">правит</td><td class="y">запускает</td><td class="y">запускает</td><td class="y">запускает</td></tr>
+      <tr><td><code>plugin.json</code> + <code>marketplace.json</code></td><td class="n">·</td><td class="n">·</td><td class="y">правит</td><td class="n">·</td><td class="y">sync-check</td></tr>
+      <tr><td>Имя <code>/loen:loop-goal</code></td><td class="n">·</td><td class="y">создаёт</td><td class="n">·</td><td class="y">документирует</td><td class="y">wiki</td></tr>
+      <tr><td>Spec §6 (тесты)</td><td class="y">test_loen_goal.py</td><td class="y">lint list</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">Требование §6 намеренно закрыто двумя задачами (Task 1 — новый сьют, Task 2 — расширение lint-списка).</p>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; нумерация задач/шагов сплошная; дубликатов заголовков нет</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Spec §1–§9 покрыты; 3 INFO (осознанные расширения — см. findings)</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>После фикса F-001 (порядок PR → Roadmap внутри Task 5); циклов нет</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>После фикса F-002; у каждого шага команда проверки + ожидаемый вывод</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Имена/пути/версия 0.3.0 согласованы между задачами; противоречий нет</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>фаза</th><th>sev</th><th>секция</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td>dependencies</td><td><span class="badge crit">CRIT</span></td><td>Task 5</td><td>Шаг wiki-Roadmap потреблял номер PR до создания PR (и утверждал «merged») → переупорядочено: сьюты → PR → Roadmap, текст «PR #&lt;N&gt; opened»</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td>verifiability</td><td><span class="badge warn">WARN</span></td><td>Task 1, Step 2</td><td>Ожидание падения теста неточно: четыре «no stdout»-чека проходят при отсутствии скрипта → ожидание исправлено</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-003</td><td>coverage</td><td><span class="badge info">INFO</span></td><td>Global Constraints</td><td>Доп. условия отказа (unknown mode, non-integer budget) не покрывались тестами → добавлены 2 negative-кейса</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-004</td><td>coverage</td><td><span class="badge info">INFO</span></td><td>Global Constraints</td><td>Пустой <code>protected_scope</code> → опускание клаузы: решение уровня плана (Self-Review), ратифицировать на ревью</td><td><span class="badge info">wontfix</span></td></tr>
+      <tr><td>F-005</td><td>coverage</td><td><span class="badge info">INFO</span></td><td>Task 4</td><td>Правка Scope-секции LOEN.md шире spec §7 — осознанный doc-sync по правилу актуальности доков CLAUDE.md</td><td><span class="badge info">wontfix</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 1 CRITICAL (fixed) · 1 WARNING (fixed) · 3 INFO (1 fixed, 2 wontfix) · открытых 0. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> выполнение плана — <code>superpowers:subagent-driven-development</code> (рекомендуется) или <code>superpowers:executing-plans</code>; затем <code>/check-chain result</code>.</div>
 </section>
 <!-- TAB:plan END -->
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка реализации с планом: 4 задачи в диффе полностью, Task 5 частично (wiki/PR — внешние шаги по дизайну плана). Вердикт: <span class="badge ok">OK</span>.</p>
+  <p class="sub">result_check 2026-07-02 · plan_hash <code>76107995c8033aec</code> · runner: clean-context subagent · дифф <code>fb00e0bc..d5fc329c</code> (5 коммитов реализации)</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ</th><th>Путь</th></tr></thead>
+    <tbody>
+      <tr><td>Intent</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-02-loen-goal-loop-wrapper-design.md</code> (OK, 03c23b55e19a4704)</td></tr>
+      <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-loen-goal-loop-wrapper.md</code> (OK, 76107995c8033aec)</td></tr>
+      <tr><td>База диффа</td><td><code>fb00e0bc</code> (коммит плановых артефактов) → HEAD</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие шагов плана: 4 DONE · 1 PARTIAL (по дизайну) · 0 MISSING</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Evidence в диффе</th></tr></thead>
+    <tbody>
+      <tr><td>Task 1: make_goal.py + test_loen_goal.py</td><td><span class="badge ok">DONE</span></td><td>Коммиты 5564f2cf, 080bb469, d5fc329c; код побайтово по плану + 2 согласованных отклонения (NoReturn, F-004 тест)</td></tr>
+      <tr><td>Task 2: loop-goal SKILL.md + lint</td><td><span class="badge ok">DONE</span></td><td>Коммит a379d41f; SKILL.md точное совпадение; test_loen_plugin.sh:49 — loop-goal в lint-списке</td></tr>
+      <tr><td>Task 3: bump 0.3.0</td><td><span class="badge ok">DONE</span></td><td>Коммит 507ae950; оба манифеста, iwiki-запись не тронута</td></tr>
+      <tr><td>Task 4: доки (LOEN.md, README×2)</td><td><span class="badge ok">DONE</span></td><td>Коммит 5f0f11d3; все 4 текстовых блока побайтово</td></tr>
+      <tr><td>Task 5: wiki → сьюты → PR → Roadmap → lint</td><td><span class="badge warn">PARTIAL</span></td><td>Steps 1–2, 5 DONE (wiki Components проверен live, 8/8 сьютов PASS, wiki_lint чистый); Steps 3–4 (PR, Roadmap) — external/pending на момент проверки, выполняются после result_check по порядку плана (фикс F-001)</td></tr>
+    </tbody>
+  </table>
+  <h3>2.2 Findings</h3>
+  <table class="rpt-table">
+    <thead><tr><th>sev</th><th>шаг</th><th>Plan / Diff / Fix</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge info">INFO</span></td><td>Task 5, Steps 3–4</td><td>PR и wiki-Roadmap ещё не выполнены — ожидаемо: план сам ставит их ПОСЛЕ result-проверки (порядок sweep → PR → Roadmap); fix не нужен, шаги выполняются следом</td></tr>
+    </tbody>
+  </table>
+  <h3>2.3 Покрытие intent + spec</h3>
+  <p>Intent: n/a. Spec: 6/7 блоков требований полностью в диффе (§2 генератор + валидация, §3 скилл 1–4, §4 guardrails, §5 delivery, §6 тесты, §8 out-of-scope соблюдён); §7 process obligations — частично (доки + wiki Components готовы; Roadmap/PR pending by design). Излишних изменений (EXCESS): 0 — все 9 файлов диффа принадлежат задачам 1–4.</p>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 1 INFO (pending-by-design). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Финал:</b> whole-branch review (fable) — READY TO MERGE YES, 0 Critical/Important; PR в <code>dev</code> открывается следом; строка <code>docs/TODO.md</code> закрыта (done, 2026-07-02).</div>
 </section>
 <!-- TAB:result END -->
 </body>

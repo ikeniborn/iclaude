@@ -25,6 +25,10 @@ The plugin ships with the repo. Enable it at user scope through the plugin syste
   `scripts/log_experiment.py`.
 - `loen:audit plan|act|check|result` — validate a stage (mode-aware), gate progression,
   and regenerate `docs/loen/<run-id>/report.html`.
+- `/loen:loop-goal` — optional accelerator: print a ready-to-paste, evidence-first
+  `/goal` string generated deterministically from the active, approved `loop.yaml`
+  (`scripts/make_goal.py`), plus a session-scoped `/loop` polling recipe for
+  long-running gates. Never bootstraps a run, never submits `/goal` itself.
 
 ## Artifacts
 
@@ -57,5 +61,6 @@ the `fable` alias the model falls back per harness rules.
 ## Scope
 
 Shipped: delivery (`loop-delivery`), repair (`loop-repair`), research
-(`loop-autoresearch`), verifier, guard. `/goal`+`/loop` wrapping, verifier microVM
-isolation, and governance/observability are later increments.
+(`loop-autoresearch`), verifier, guard, `/goal`+`/loop` wrapping (`loop-goal` +
+`make_goal.py`). Verifier microVM isolation and governance/observability are later
+increments.

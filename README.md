@@ -330,6 +330,7 @@ subagent `verifier` подтверждают результат; отчёт со
 /loop-repair <описание падения>    # починка: воспроизвести → изолировать → минимальный фикс → регресс-тест
 /loop-autoresearch <цель-метрика>  # исследование: baseline → гипотеза → изменение → фикс. eval → keep/revert
 /loen:audit plan|act|check|result  # проверить стадию (mode-aware) + обновить report.html
+/loen:loop-goal                    # опционально: evidence-first строка /goal из одобренного loop.yaml + рецепт /loop
 ```
 
 **Артефакты:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/,

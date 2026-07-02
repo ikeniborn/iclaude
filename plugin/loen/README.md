@@ -13,6 +13,10 @@ against a machine-readable `loop.yaml` contract, judged by an independent verifi
   logging every experiment to `experiments.jsonl` (mode `research`).
 - `loen:audit <stage>` — validate a stage (`plan|act|check|result`), mode-aware, and
   regenerate the human-readable `docs/loen/<run-id>/report.html`.
+- `/loen:loop-goal` — optional: generate a ready-to-paste, evidence-first `/goal`
+  string from the active approved `loop.yaml` (deterministic `scripts/make_goal.py`),
+  with a session-scoped `/loop` polling recipe for long-running gates. Never
+  bootstraps a run, never submits `/goal` itself.
 
 All results live under `docs/loen/<run-id>/`. Templates ship inside the plugin.
 A PreToolUse hook hard-enforces the artifact layout/naming and the loop's mutable/protected
