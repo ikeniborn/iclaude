@@ -142,9 +142,11 @@ detect_real_context_window() {
     local model="$1" reported="${2:-200000}" known=0
     case "${model,,}" in
         *haiku*) known=200000 ;;                                  # Haiku 4.5 = 200K
+        *fable*|*mythos*) known=1000000 ;;                        # Claude 5 family = 1M
         *opus*|*sonnet*)
             case "${model,,}" in
                 *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
+                *sonnet?5*) known=1000000 ;;                      # Sonnet 5 = 1M ("5" right after "sonnet"; not "Sonnet 3.5")
                 *) known=0 ;;                                     # 4.0/4.1 → reported
             esac ;;
     esac
@@ -221,7 +223,8 @@ if [[ $TOTAL_CACHE -gt 0 ]]; then
     # hit-rate = cache_read / (cache_read + cache_creation + uncached_input)
     HR_DENOM=$((CACHE_READ + CACHE_CREATION + CACHE_INPUT))
     if [[ $HR_DENOM -gt 0 ]]; then
-        HIT_RATE=$(awk "BEGIN {printf \"%.0f\", ($CACHE_READ * 100.0 / $HR_DENOM)}")
+        # Floor, not round: 100% must mean a fully cached request.
+        HIT_RATE=$(awk "BEGIN {printf \"%d\", int($CACHE_READ * 100.0 / $HR_DENOM)}")
         CACHE_DISPLAY=" | 📦 ${HIT_RATE}% · R$(humanize "$CACHE_READ")/W$(humanize "$CACHE_CREATION")"
     else
         CACHE_DISPLAY=" | 📦 n/a"
