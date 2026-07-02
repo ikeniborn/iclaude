@@ -3,8 +3,9 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-02-loen-repair-autoresearch-design.md
 review:
-  spec_hash: 57df8606707c9dcd
+  spec_hash: c89a55b6b54f2411
   last_run: 2026-07-02
+  recheck: { effort: max, verdict: OK, note: "functional-completeness re-check vs methodology + real MVP code (2 parallel clean-context reviewers): 27 findings G-01..G-17 + I-01..I-10 (5 CRITICAL, 9 WARNING, 13 INFO incl. overlaps) — ALL closed in-spec. Key closures: §4.2a checkpoint/revert mechanics (commit-per-keep, diff vs last kept state excl. docs/loen, git apply -R); §4.3 single primary <name>:max|min + target:/tolerance: grammar + default no-regression; §5.5 mode-specific agent behavior in dispatch prompts; §2 asset/bootstrap reuse via ../loop-delivery/assets/; §3 stash-inversion evidence by worker, verifier stays read-only; baseline-failure stop; gates run per experiment; plugin README + LOEN.md roster sync. Roster confirmed by user: planner=fable, verifier=opus, explorer=haiku." }
   phases:
     structure:    { status: passed }
     coverage:     { status: passed }
@@ -28,7 +29,7 @@ review:
 
 - **Topic:** `loen-repair-autoresearch`
 - **Date:** 2026-07-02
-- **Status:** design approved (brainstorming); subagent model roster pending user confirmation (§7); ready for implementation planning
+- **Status:** design approved (brainstorming); subagent model roster confirmed by user (§7); functional-completeness re-check applied (G-01..G-17, I-01..I-10 closed); ready for implementation planning
 - **Parent spec:** `docs/superpowers/specs/2026-07-01-loen-loop-engineering-plugin-design.md` (MVP, shipped via PR #72)
 - **Source methodology:** `docs/superpowers/notes/final_loop_engineering_methodology.md` (§2 loop types, §7.3 AutoResearch)
 - **Scope of this spec:** increment 2 of the loen backlog — the `loop-repair` and `loop-autoresearch` skills. Backlog steps 2–4 (`/goal`+`/loop` wrapper, verifier microVM, governance) stay deferred.
@@ -57,6 +58,13 @@ Each skill adds only its own cycle and rules. No new subagents.
   `plugin.json` and `marketplace.json` (enforced by `check-plugin-version-sync.sh`).
 - Two new skill directories: `plugin/loen/skills/loop-repair/SKILL.md` and
   `plugin/loen/skills/loop-autoresearch/SKILL.md`.
+- **Asset + bootstrap reuse (no copies, no drift):** both new skills resolve the shared
+  templates via `<skill-base>/../loop-delivery/assets/` (single source — the templates stay
+  under `loop-delivery/`, which §5.2 modifies once). The bootstrap contract (Bash
+  `mkdir -p … && ln -sfn` BEFORE any Write-tool artifact, run-id regex, state-template copy)
+  is REFERENCED from `loop-delivery/SKILL.md` steps 1–3, not re-authored: each new SKILL.md
+  states "bootstrap identical to loop-delivery steps 1–3, with `mode: repair|research`" plus
+  its own deltas only.
 - One new deterministic script: `plugin/loen/scripts/log_experiment.py` (§5.3).
 - Zero new hard dependencies; publishable posture unchanged.
 
@@ -64,24 +72,37 @@ Each skill adds only its own cycle and rules. No new subagents.
 
 Invoked as `/loen:loop-repair <failure description>`. Methodology §2 row "Repair loop".
 
+- **Failing command — source of truth.** The failing command comes from the user's
+  invocation; the worker records it in `state.md` (Baseline section) at bootstrap, BEFORE
+  `loen:audit plan`. The plan stage then deterministically checks that this recorded command
+  appears among `quality_gates`.
 - **Reproduce-first.** Iteration `iter-01` MUST start by reproducing the failure BEFORE any
   edit: run the failing command, capture output + exit code into
-  `iterations/iter-01/gates.log` and record the repro command in `state.md`. No reproduction →
-  stop and report (never "fix" what cannot be reproduced).
+  `iterations/iter-01/gates.log`. For suspected flaky failures the repro step may run the
+  command up to 3 times (attempts recorded in `state.md`); any failing run counts as
+  reproduced. No reproduction → stop and report (never "fix" what cannot be reproduced).
 - **Contract specifics.** `planner` fills `loop.yaml` with `mode: repair`, a narrow
   `mutable_scope` (the failing area + its tests), and `quality_gates` that include the
   originally-failing command.
 - **Done condition (gates `loen:audit result`):**
   1. the originally-failing command exits 0 (evidence in the final `gates.log`);
-  2. a **regression test is present in the diff** (verifier confirms: a new/extended test that
-     fails on the pre-fix code and passes on the fixed code);
+  2. **regression coverage evidenced** — either (a) a new/extended test in the diff, or
+     (b) the originally-failing test IS the regression test; the verifier states which case
+     applies. For case (a) the **worker** produces inversion evidence into `gates.log`:
+     `git stash push -- <fix files>` → run the regression test (must fail) →
+     `git stash pop` → run it again (must pass). The verifier validates the LOGGED evidence
+     and stays read-only — it never mutates the tree;
   3. the diff is minimal — no changes to tests except adding the regression test, and the
      verifier confirms every non-test hunk is required for the originally-failing command to
      pass;
   4. verifier `APPROVE`.
+- **PR summary.** `pr-summary.md` of a successful repair MUST state the root cause and a
+  rollback note (methodology §9.2 verifier expectation).
 - **Budget:** default `budget.max_iterations: 3` (methodology default for repair). Exhausted →
   stop, report root-cause analysis + best attempt + blocker.
 - **No new artifacts.** `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` suffice.
+  The research streams (`metrics.jsonl`, `experiments.jsonl`) are simply absent in
+  delivery/repair: the hook allows them, no audit stage requires or reads them.
 
 ## 4. loop-autoresearch (mode: research)
 
@@ -93,21 +114,28 @@ loop" and §7.3.
 1. **Baseline.** After the human approves `loop.yaml`, run `eval_command` once BEFORE any
    change, targeting `iterations/iter-00/metrics.jsonl` (`iter-00` is reserved for the
    baseline; experiments start at `iter-01` — the existing `iter-\d{2}` canon regex already
-   covers it). Log the result as the first `experiments.jsonl` record (`type: baseline`).
-   No separate `baseline.json` — the baseline is an event in the stream.
+   covers it). The baseline run doubles as the eval-contract compliance check: it MUST exit 0
+   and yield exactly one `summary` line, otherwise STOP and report (broken/non-compliant
+   eval; zero experiments run) — the research analog of repair's no-reproduction stop. Log
+   the result as the first `experiments.jsonl` record (`type: baseline`). No separate
+   `baseline.json` — the baseline is an event in the stream.
 2. **Hypothesis.** Propose ONE hypothesis with a predicted metric movement and risk; record it
    in `state.md`.
 3. **One bounded change.** The smallest diff testing that hypothesis. One main variable per
    experiment.
-4. **Fixed eval.** Run `eval_command` (fixed command, dataset, seed and model version; any
-   deviation from the fixed setup MUST be logged in the experiment record). It appends metric
-   events to `iterations/iter-NN/metrics.jsonl` (§4.2).
+4. **Fixed eval + gates.** Run the contract's `quality_gates` (including
+   `guard_protected.sh`) into `iterations/iter-NN/gates.log` — correctness and the protected
+   data guard fire on EVERY experiment — then run `eval_command` (fixed command, dataset,
+   seed and model version; any deviation from the fixed setup MUST be logged in the
+   experiment record). Eval appends metric events to `iterations/iter-NN/metrics.jsonl`
+   (§4.2).
 5. **Compare + decide.** `metrics_before` = the metrics of the last KEPT state (the baseline
-   while nothing is kept yet); `delta` is computed against it. Keep iff the primary metric
-   improves without secondary regression beyond the numeric tolerances stated in
-   `stop_conditions` (tolerances MUST be numeric lines there, so the verifier compares
-   numbers, not prose); otherwise revert the change. Failed experiments are logged, never
-   silently discarded — they are useful data.
+   while nothing is kept yet); `delta` is computed against it. Keep iff gates are green AND
+   the single primary metric (§4.3) improves in its declared direction without secondary
+   regression beyond the tolerances declared in `stop_conditions` (grammar in §4.3;
+   secondaries WITHOUT a tolerance line default to "no regression allowed"); a tie on the
+   primary is NOT an improvement → revert. Failed experiments are logged, never silently
+   discarded — they are useful data.
 6. **Log.** Append the experiment record to `experiments.jsonl` via `log_experiment.py`
    (§5.3), update `state.md`, proceed to the next hypothesis or stop.
 
@@ -129,12 +157,52 @@ loop" and §7.3.
      "metrics_after": {...}, "delta": {...}, "decision": "keep"|"revert",
      "risks": ..., "next_hypothesis": ...}` (methodology §7.3 required-output set;
      `metrics_before` = last kept state per §4.1 step 5; one experiment = one `iter-NN`).
+- **Eval-contract compliance is a pre-loop responsibility.** Adapting an existing eval to
+  append JSONL to `$LOEN_METRICS_PATH` happens BEFORE the loop (by the human, or by the
+  worker before contract approval). The sanctioned adapter is a thin wrapper command living
+  OUTSIDE `protected_scope`; the real eval script and data stay protected. The `iter-00`
+  baseline run is the compliance check (§4.1 step 1).
+- Optional record field `predicted` (`{"<name>": <number>}` — the hypothesis' predicted
+  movement, §4.1 step 2): cheap predicted-vs-actual signal for later stream analysis.
 - Rejected alternatives: parsing eval stdout (breaks on any stray output, incl. redact hooks);
   free-form worker interpretation (worker becomes the judge of its own numbers).
+
+### 4.2a Checkpoint and revert mechanics (per-experiment diff attribution)
+
+Without checkpoints, `git diff` becomes cumulative after the first kept experiment — later
+`diff.patch` files would mix kept changes with the current one, breaking attribution,
+`files_changed`, and selective revert. Therefore:
+
+- The research loop starts from a **clean committed tree** (uncommitted user changes → stop
+  and ask, as MVP).
+- **After every KEEP decision** the worker commits the kept change (message convention:
+  `loen(research): keep iter-NN — <short hypothesis>`), so HEAD always equals the last kept
+  state.
+- **`diff.patch` = `git diff HEAD -- . ':(exclude)docs/loen'`** — the current bounded change
+  only, relative to the last kept state, excluding run artifacts. Captured BEFORE the
+  keep/revert decision executes; the `diff.patch` of a reverted experiment is never deleted
+  (evidence).
+- **Revert = `git apply -R iterations/iter-NN/diff.patch`** — deterministic inverse of
+  exactly this experiment's change; run artifacts are excluded from the patch, so streams
+  and logs survive reverts.
 
 ### 4.3 Hard rules (encoded in SKILL.md, checked by verifier)
 
 - One main variable per experiment.
+- **Exactly ONE primary metric with an explicit direction.** In research mode
+  `metrics.primary` MUST contain exactly one entry of the form `<name>:max` or `<name>:min`
+  (`<name>` matches a key in the eval `summary.metrics`). Multi-objective research is out of
+  scope — a composite metric computed by the eval script is the supported form. Enforced at
+  `loen:audit plan`.
+- **Tolerance grammar (machine-checkable).** Secondary tolerances are lines in
+  `stop_conditions` of the form `tolerance: <name> regression <= <number>[%]` — relative to
+  `metrics_before`, direction taken from the metric's natural sense recorded by the planner
+  as `<name>:max|min` in `metrics.secondary`. A secondary WITHOUT a tolerance line defaults
+  to "no regression allowed".
+- **Numeric success target.** `stop_conditions` MUST contain one line
+  `target: <primary-name> <op> <number>` (`<op>` ∈ `>=`/`<=` matching the direction);
+  reaching it stops the run successfully BEFORE `max_experiments`. Enforced at
+  `loen:audit plan`.
 - Eval data, ground truth, and the eval script are **`protected_scope`** — the `planner` MUST
   list them there in research mode; `loen:audit plan` fails a research contract whose
   `protected_scope` does not cover the eval assets (the `eval_command` script, eval datasets,
@@ -152,7 +220,8 @@ loop" and §7.3.
 ### 5.1 Hook + layout validator (+1 canonical path, three-way sync)
 
 Add `docs/loen/<R>/iterations/iter-NN/metrics.jsonl` to the canonical set in ALL THREE places
-that must not drift: `loop-guard.py` `canon_patterns()`, `scripts/check_layout.sh` case list,
+that must not drift: `loop-guard.py` `canon_patterns()` (extend the iter-file alternation)
+PLUS the hook's human-facing block-message path listing, `scripts/check_layout.sh` case list,
 and the layout table in docs. `experiments.jsonl` is already canonical.
 
 ### 5.2 Template `loop.template.yaml`
@@ -160,7 +229,9 @@ and the layout table in docs. `experiments.jsonl` is already canonical.
 Add two optional keys, present in the template with explanatory trailing comments (NOT
 commented out — the template must still parse with them, §9): `eval_command: ""` (research
 mode: command that appends JSONL metrics) and `budget.max_experiments: 5` (research mode
-budget). Delivery/repair contracts may omit both.
+budget). Delivery/repair contracts may omit both. `state.template.md` is deliberately
+unchanged — its free-form append-only Attempts section already accommodates hypothesis /
+prediction / decision lines (a decision, not an oversight).
 
 ### 5.3 `scripts/log_experiment.py` (new, deterministic)
 
@@ -175,13 +246,32 @@ Reads `mode` from the active `loop.yaml`; existing checks stay, per-mode additio
 
 | Stage | repair | research |
 |---|---|---|
-| plan | `quality_gates` include the failing command | `eval_command` non-empty; `metrics.primary` non-empty; `protected_scope` covers the eval assets (eval script, datasets, ground truth) |
+| plan | `quality_gates` include the failing command recorded in `state.md` at bootstrap (§3) | `eval_command` non-empty; exactly one `metrics.primary` entry `<name>:max\|min`; `stop_conditions` carry a `target:` line and valid `tolerance:` lines (§4.3 grammar); `protected_scope` covers the eval assets (eval script, datasets, ground truth) |
 | act | unchanged (+ `check_layout.sh` knows `metrics.jsonl`) | unchanged |
-| check | gates green | `iterations/iter-NN/metrics.jsonl` has a `summary` line; `experiments.jsonl` has this iter's record; verifier re-runs `eval_command` for every `keep` decision and confirms the claimed delta (`revert` records are trusted as logged) |
+| check | gates green; inversion evidence in `gates.log` when a new regression test is claimed (§3) | gates green (run per experiment, §4.1 step 4); `iterations/iter-NN/metrics.jsonl` has a `summary` line; `experiments.jsonl` has this iter's record; verifier re-runs `eval_command` for every `keep` decision — exporting `LOEN_METRICS_PATH` to a throwaway temp path, never appending to canonical artifacts — and confirms the claimed delta (`revert` records are trusted as logged) |
 | result | regression test evidenced in the final diff; originally-failing command green | kept changes are metric-backed (primary improved, secondary within stated tolerance) OR budget exhausted with best-result report; stream consistent end-to-end |
 
 `report.html` gains an experiments table (hypothesis, before/after, delta, decision) in
 research mode — rendered by the same `html-report` flow.
+
+### 5.5 Agent dispatch contracts (where mode-specific instructions live)
+
+`planner.md`/`verifier.md`/`explorer.md` bodies stay mode-blind (their §7 model frontmatter
+is the only file edit). Mode-specific behavior rides the DISPATCH PROMPTS — the MVP
+precedent (`loop-delivery/SKILL.md` already instructs the planner inline):
+
+- **`loop-repair/SKILL.md` planner dispatch** MUST instruct: narrow `mutable_scope` (failing
+  area + its tests); the recorded failing command among `quality_gates`; block-style scope
+  lists (`guard_protected.sh` parses block-style only); leave `eval_command` empty.
+- **`loop-autoresearch/SKILL.md` planner dispatch** MUST instruct: fill `eval_command`;
+  exactly one `metrics.primary` entry `<name>:max|min` + directions on secondaries;
+  `target:`/`tolerance:` lines per §4.3; eval assets into `protected_scope`;
+  `budget.max_experiments`; block-style scope lists.
+- **`audit/SKILL.md` verifier dispatch** carries the per-mode checklist: repair — regression
+  coverage case (a/b) + logged inversion evidence + minimal-diff confirmation; research —
+  delta re-check via throwaway `LOEN_METRICS_PATH`, stream cross-check
+  (`experiments.jsonl` vs `metrics.jsonl`), protected eval assets untouched. The verifier
+  remains read-only in both modes.
 
 ## 6. Data flow (research mode, end-to-end)
 
@@ -203,9 +293,9 @@ research mode — rendered by the same `html-report` flow.
 Repair mode differs only in the cycle core: reproduce first, minimal fix, regression test —
 same artifacts, same gates.
 
-## 7. Subagent roster update — PENDING USER CONFIRMATION
+## 7. Subagent roster update — CONFIRMED BY USER
 
-Recommended defaults (frontmatter `model:` — always overridable):
+Confirmed defaults (frontmatter `model:` — always overridable):
 
 | Subagent | MVP model | Spec 2 default | Rationale |
 |---|---|---|---|
@@ -215,8 +305,8 @@ Recommended defaults (frontmatter `model:` — always overridable):
 
 Compatibility note: on Claude Code versions without the `fable` alias the frontmatter model
 falls back per harness rules and can be overridden; the publishable plugin keeps working.
-If the user prefers maximum compatibility, the roster stays as-is and this section shrinks to
-"no change" — one-line edit at spec review.
+File changes: `agents/planner.md` + `agents/verifier.md` frontmatter `model:` lines, and the
+Subagents section of `docs/functions/LOEN.md` synced to the new roster (§10).
 
 ## 8. Error handling
 
@@ -246,8 +336,9 @@ Extends the existing flat `tests/` suites (shell + python, repo convention):
 ## 10. Process obligations (per CLAUDE.md)
 
 - Bump `plugin.json` + `marketplace.json` to 0.2.0.
-- Update `docs/functions/LOEN.md` + the README "Loop Engineering (loen)" section (RU) with the
-  two new loops.
+- Update `docs/functions/LOEN.md` (two new loops + Subagents roster sync per §7) + the README
+  "Loop Engineering (loen)" section (RU) + **`plugin/loen/README.md`** (skill catalogue —
+  ships inside the 0.2.0 package, must not go stale).
 - Update the iwiki `iclaude/loen-plugin` page (Components, Artifact model, loop.yaml contract,
   Roadmap and backlog: step 1 → done when shipped) + `wiki_lint`.
 - `docs/TODO.md` row `loen-repair-autoresearch` (already opened 2026-07-02).
@@ -257,8 +348,14 @@ Extends the existing flat `tests/` suites (shell + python, repo convention):
 - `/goal` + `/loop` wrapping (backlog step 2, `loen-goal-loop-wrapper`).
 - Verifier microVM FS isolation (backlog step 3, `loen-verifier-microvm`) — iclaude already
   ships a microVM integration; reuse is a separate spec.
-- Governance / observability (backlog step 4, `loen-governance-observability`).
+- Governance / observability (backlog step 4, `loen-governance-observability`), including
+  the methodology's scheduled `loop-repair-triage` automation (§7.5 there) — an
+  automation/governance concern, not a loop skill.
 - Langfuse/traces for experiments — `experiments.jsonl` is the offline-friendly substitute.
+- Held-out validation of durable improvements (methodology §10.1/§12) — beyond a bounded
+  research run; the human PR review owns it.
+- Multi-objective research (several primary metrics) — composite metric in the eval script
+  is the supported form (§4.3).
 
 ## 12. Resolved decisions log
 
@@ -275,6 +372,17 @@ Extends the existing flat `tests/` suites (shell + python, repo convention):
    without them.
 7. Canonical-path set grows by exactly one (`metrics.jsonl`), synced three-way
    (hook / check_layout / docs).
-8. Subagent model roster: planner→fable, verifier→opus recommended — **pending user
-   confirmation** (§7).
+8. Subagent model roster **confirmed by user**: planner→fable, verifier→opus,
+   explorer=haiku (§7).
 9. Plugin version 0.2.0; publishable posture unchanged.
+10. Checkpoint/revert mechanics (completeness re-check G-01): commit after every keep;
+    `diff.patch` = diff vs last kept state excluding `docs/loen`; revert =
+    `git apply -R` of exactly that patch; reverted evidence never deleted (§4.2a).
+11. Research decision rule made computable (G-02/G-03/G-06/G-07): exactly one primary
+    `<name>:max|min`; `target:` + `tolerance:` grammar in `stop_conditions`; unlisted
+    secondaries = no regression allowed; tie = revert (§4.3).
+12. Mode-specific agent behavior rides DISPATCH PROMPTS, not agent-body edits (I-01/I-02);
+    new skills reuse loop-delivery assets via `../loop-delivery/assets/` and reference its
+    bootstrap steps (I-03) (§2, §5.5).
+13. Regression-test evidence: worker-produced stash-inversion log validated by a read-only
+    verifier; regression coverage may be the originally-failing test itself (G-10/G-11).
