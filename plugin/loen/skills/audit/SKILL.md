@@ -15,15 +15,31 @@ skill) plus appends to `state.md`.
 
 - **plan** — `loop.yaml` parses; `objective` measurable; `mutable_scope`/`protected_scope`
   non-empty and disjoint; `quality_gates` non-empty; `budget` present; human approval
-  recorded. `needs_work` blocks Act.
+  recorded. `verifier_isolation`, when present, MUST be `subagent` or `microvm` — validate
+  it AND the host capability with this plugin's
+  `scripts/verify_microvm.sh preflight <run-dir>/loop.yaml` (resolved from the skill base
+  dir): `microvm` on a host without KVM/Firecracker/images → `needs_work` with the
+  script's "install microVM support or drop to `verifier_isolation: subagent`" hint. No
+  silent downgrade at plan time. `needs_work` blocks Act.
 - **act** — the latest `iterations/iter-NN/diff.patch` exists and touches only
   `mutable_scope`; no `protected_scope` path present (cross-check with this plugin's
   `scripts/guard_protected.sh` via the run's loop.yaml, resolved from the skill base dir);
   and the run dir passes this plugin's `scripts/check_layout.sh` — the deterministic net
   that catches any Bash-written non-canonical artifact that bypassed the PreToolUse hook.
-- **check** — dispatch the `verifier` subagent (isolated); write its verdict to
-  `iterations/iter-NN/verifier.md`; confirm `gates.log` shows the gates ran. `OK` iff the
-  verdict is APPROVE and gates are green.
+- **check** — dispatch the verifier per the contract's `verifier_isolation` key
+  (`subagent` when absent). `subagent` → dispatch the `verifier` subagent (isolated),
+  exactly the MVP path. `microvm` → write the mode-specific checklist (the same text the
+  subagent dispatch prompt would carry) to a temp file OUTSIDE the run dir, then run this
+  plugin's `scripts/verify_microvm.sh check <run-dir> <iter-NN> <checklist-file>`
+  (resolved from the skill base dir): it snapshots the tree, runs the verifier headless
+  inside an iclaude Firecracker microVM, and writes the returned text to
+  `iterations/iter-NN/verifier.md` unchanged — downstream consumers are agnostic to where
+  the verdict was produced. A non-zero exit (VM boot/provision failure, silent host
+  fallback, missing verdict, host-tree tripwire) → verdict `needs_work` quoting the
+  script's failure log path — NEVER fall back to the in-session subagent; the human may
+  edit the contract to `subagent` to proceed un-isolated. In both dispatch modes the
+  verdict lands at `iterations/iter-NN/verifier.md`; confirm `gates.log` shows the gates
+  ran. `OK` iff the verdict is APPROVE and gates are green.
 - **result** — every plan step is done, gates green, verifier APPROVE across the final
   iteration. On `OK`: finalize `report.html`, ensure `pr-summary.md` exists, and mark the
   `docs/TODO.md` row (`Result: OK`, `Status: done`, `Closed: <today>`) keyed by `<topic>`.
