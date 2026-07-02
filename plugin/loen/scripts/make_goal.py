@@ -13,6 +13,7 @@ stop condition, missing mode budget. Line-oriented YAML reading
 mirrors hooks/loop-guard.py — stdlib only, no PyYAML."""
 import re
 import sys
+from typing import NoReturn
 
 DEFAULT_PATH = "docs/loen/current/loop.yaml"
 LIST_KEYS = ("quality_gates", "mutable_scope", "protected_scope",
@@ -22,7 +23,7 @@ TARGET = re.compile(
 EVIDENCE = "Claude prints each command's output summary as evidence"
 
 
-def fail(msg):
+def fail(msg) -> NoReturn:
     sys.stderr.write("make_goal: " + msg + "\n")
     sys.exit(1)
 
