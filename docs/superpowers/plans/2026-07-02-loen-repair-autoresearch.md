@@ -14,6 +14,11 @@ review:
     consistency:   { status: passed }
   findings: []
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: 7b470086758ff5dd
+  last_run: 2026-07-02
+  note: "diff base dev...HEAD (11 commits): 10/10 in-repo tasks DONE, 0 PARTIAL, 0 MISSING, 0 unexplained excess; task 11 (iwiki loen-plugin) applied via MCP, wiki_lint clean; 6/6 test suites PASS; full spec coverage §2-§10"
 ---
 # loen spec 2 — loop-repair + loop-autoresearch — Implementation Plan
 

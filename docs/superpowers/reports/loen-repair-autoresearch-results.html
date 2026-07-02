@@ -91,8 +91,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen spec 2 — loop-repair + loop-autoresearch</h1>
@@ -381,7 +381,57 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка результата: план (11 задач) ↔ diff ветки <code>dev-loen-repair-autoresearch</code> относительно базы <code>dev</code> (11 коммитов, 22 файла, +1649/−30). Плагин loen поднят до <b>0.2.0</b>.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>7b470086758ff5dd</code> · 2026-07-02 · прогон: clean-context subagent (check-runner)</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+    <tbody>
+      <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-loen-repair-autoresearch.md</code></td></tr>
+      <tr><td>Спека (chain.spec)</td><td><code>docs/superpowers/specs/2026-07-02-loen-repair-autoresearch-design.md</code></td></tr>
+      <tr><td>Intent (chain.intent)</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>База diff</td><td><code>git diff dev...HEAD</code> — коммиты <code>c2025d48…e0ce8438</code>; незакоммиченные посторонние изменения рабочего дерева вне охвата</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие шагов плана: 10 DONE · 0 PARTIAL · 0 MISSING (+1 внешняя)</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Вердикт</th><th>Доказательство в diff</th></tr></thead>
+    <tbody>
+      <tr><td>T1 log_experiment.py + тест</td><td><span class="badge ok">DONE</span></td><td><code>plugin/loen/scripts/log_experiment.py</code> (новый), <code>tests/test_loen_experiment.py</code>; коммит <code>99244a8b</code></td></tr>
+      <tr><td>T2 loop-guard: канон metrics.jsonl</td><td><span class="badge ok">DONE</span></td><td>альтернация iter-файлов + block message; +2 кейса hook-теста; <code>f86291a6</code></td></tr>
+      <tr><td>T3 check_layout: case metrics.jsonl</td><td><span class="badge ok">DONE</span></td><td>case-строка + кейсы accept/reject в layout-тесте; <code>bb0d42e5</code></td></tr>
+      <tr><td>T4 шаблон: eval_command + max_experiments</td><td><span class="badge ok">DONE</span></td><td>активные ключи с trailing-комментами + 2 assert-а; <code>632c0ffe</code></td></tr>
+      <tr><td>T5 скилл loop-repair</td><td><span class="badge ok">DONE</span></td><td><code>skills/loop-repair/SKILL.md</code> + линт-список; <code>8dfb6412</code></td></tr>
+      <tr><td>T6 скилл loop-autoresearch</td><td><span class="badge ok">DONE</span></td><td><code>skills/loop-autoresearch/SKILL.md</code> + линт-список; <code>7e906ea0</code></td></tr>
+      <tr><td>T7 audit mode-aware</td><td><span class="badge ok">DONE</span></td><td>секции Mode: repair / Mode: research + verifier dispatch чек-листы; <code>ebb83ab2</code></td></tr>
+      <tr><td>T8 ростер fable/opus + LOEN.md</td><td><span class="badge ok">DONE</span></td><td><code>model:</code>-строки planner/verifier + Subagents-секция; <code>10f64f9b</code></td></tr>
+      <tr><td>T9 документация (LOEN.md, 2×README)</td><td><span class="badge ok">DONE</span></td><td>Use/Artifacts/Scope + каталоги команд + RU-секция; <code>282b3a4a</code></td></tr>
+      <tr><td>T10 версия 0.2.0</td><td><span class="badge ok">DONE</span></td><td>plugin.json + marketplace.json 0.1.0→0.2.0; <code>e0ce8438</code></td></tr>
+      <tr><td>T11 iwiki loen-plugin + wiki_lint</td><td><span class="badge info">external</span></td><td>Вне git diff: 5 секций обновлены через MCP (Components, Artifact model, contract, Subagents, Roadmap); wiki_lint — broken/stale/missing_source пусты</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Находки</h3>
+  <p class="note">Замечаний нет: 0 CRITICAL · 0 WARNING. INFO: T11 — wiki-задача вне diff, проверена в основной сессии (wiki_lint чист); излишние файлы diff — только артефакты цепочки (план, отчёт, строка TODO), объяснены процессом.</p>
+
+  <h3>2.3 Покрытие спеки и тестовые доказательства</h3>
+  <p>Разделы спеки §2–§10 — <b>15/15 отражены в diff</b> (§11 out-of-scope корректно отсутствует). Сьюты: <code>test_loen_experiment.py</code>, <code>test_loen_hook.py</code>, <code>test_loen_layout.sh</code>, <code>test_loen_templates.sh</code>, <code>test_loen_plugin.sh</code>, <code>test_loen_guard.sh</code> — <b>6/6 PASS</b> (exit 0), плюс <code>check-plugin-version-sync.sh</code> зелёный.</p>
+
+  <h3>2.4 Итог и цепочка</h3>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 2 INFO (закрыты). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> PR <code>dev-loen-repair-autoresearch → dev</code>, ревью человеком. Строка <code>docs/TODO.md</code> закрыта (Status: done, Closed: 2026-07-02).</div>
 </section>
 <!-- TAB:result END -->
 </body>
