@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""loen loop-guard — deterministic PreToolUse guard for Write|Edit|MultiEdit.
+"""loen loop-guard — deterministic PreToolUse guard for
+Write|Edit|MultiEdit.
 
-A. Layout/naming enforcement for writes under docs/loen/ (within the active topic).
-B. Scope enforcement elsewhere (protected_scope / mutable_scope from the active loop.yaml).
+A. Layout/naming enforcement for writes under docs/loen/ (within the
+   active topic).
+B. Scope enforcement elsewhere (protected_scope / mutable_scope from
+   the active loop.yaml).
 
-No-op when there is no active loop (docs/loen/current absent) for non-loen paths.
-Composes with the always-on secret-blocking hooks (separate).
-Exit 0 = allow. Exit 2 = block (reason on stderr)."""
+No-op when there is no active loop (docs/loen/current absent) for
+non-loen paths. Composes with the always-on secret-blocking hooks
+(separate). Exit 0 = allow. Exit 2 = block (reason on stderr)."""
 import fnmatch
 import json
 import os
@@ -16,6 +19,8 @@ import sys
 LOEN_ROOT = "docs/loen"
 CURRENT = os.path.join(LOEN_ROOT, "current")
 RUN_ID = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$")
+
+ITER_FILES = r"(diff\.patch|gates\.log|verifier\.md|metrics\.jsonl)"
 
 
 def canon_patterns(R):
@@ -29,36 +34,42 @@ def canon_patterns(R):
         re.compile(rf"^docs/loen/{Rq}/pr-summary\.md$"),
         re.compile(rf"^docs/loen/{Rq}/report\.html$"),
         re.compile(rf"^docs/loen/{Rq}/experiments\.jsonl$"),
-        re.compile(rf"^docs/loen/{Rq}/iterations/iter-\d{{2}}/(diff\.patch|gates\.log|verifier\.md|metrics\.jsonl)$"),
+        re.compile(
+            rf"^docs/loen/{Rq}/iterations/iter-\d{{2}}/{ITER_FILES}$"),
     ]
 
 
 def rel(path):
     try:
-        return os.path.relpath(os.path.abspath(path), os.getcwd()).replace(os.sep, "/")
+        p = os.path.relpath(os.path.abspath(path), os.getcwd())
+        return p.replace(os.sep, "/")
     except Exception:
         return path
 
 
 def active_run():
-    """Return the active run-id from the docs/loen/current symlink, or None."""
+    """Return the run-id from the docs/loen/current symlink, or None."""
     if os.path.islink(CURRENT):
         return os.path.basename(os.readlink(CURRENT).rstrip("/"))
     return None
 
 
 def _inline_list(s):
-    """Parse an inline flow list 'key: [a, b]' -> [a, b]; None if not inline."""
+    """Parse 'key: [a, b]' -> [a, b]; None if not an inline flow list."""
     m = re.match(r"^[\w-]+:\s*\[(.*)\]\s*$", s)
     if m is None:
         return None
     body = m.group(1).strip()
-    return [x.strip().strip('"').strip("'") for x in body.split(",") if x.strip()] if body else []
+    if not body:
+        return []
+    return [x.strip().strip('"').strip("'")
+            for x in body.split(",") if x.strip()]
 
 
 def load_scope(R):
-    """Return (mutable, protected) glob lists from the active loop.yaml, or ([], []).
-    Handles BOTH block-style lists and inline flow lists ('key: [a, b]')."""
+    """Return (mutable, protected) glob lists from the active loop.yaml,
+    or ([], []). Handles BOTH block-style lists and inline flow lists
+    ('key: [a, b]')."""
     ly = os.path.join(LOEN_ROOT, R, "loop.yaml") if R else None
     if not ly or not os.path.exists(ly):
         return [], []
@@ -66,14 +77,18 @@ def load_scope(R):
     with open(ly, encoding="utf-8") as f:
         for line in f:
             s = line.rstrip("\n")
-            hit = mutable if re.match(r"^mutable_scope:", s) else \
-                  protected if re.match(r"^protected_scope:", s) else None
+            if re.match(r"^mutable_scope:", s):
+                hit = mutable
+            elif re.match(r"^protected_scope:", s):
+                hit = protected
+            else:
+                hit = None
             if hit is not None:
                 inline = _inline_list(s)
                 if inline is None:
-                    cur = hit            # block-style list follows on next lines
+                    cur = hit          # block-style list on next lines
                 else:
-                    hit.extend(inline)   # inline flow list on this line
+                    hit.extend(inline)  # inline flow list on this line
                     cur = None
                 continue
             if re.match(r"^[A-Za-z_]", s):
@@ -102,26 +117,32 @@ def main():
     R = active_run()
 
     if path == "docs/loen/current":
-        sys.exit(0)  # bootstrap: setting the active-run pointer is always allowed
+        # bootstrap: setting the active-run pointer is always allowed
+        sys.exit(0)
     if path == "docs/loen/RUNBOOK.md":
         sys.exit(0)
 
     if path.startswith("docs/loen/"):
         if R is None:
-            block("no active loop (docs/loen/current missing); bootstrap the run first")
+            block("no active loop (docs/loen/current missing); "
+                  "bootstrap the run first")
         m = re.match(r"^docs/loen/([^/]+)/", path)
         seg = m.group(1) if m else ""
         if not RUN_ID.match(seg):
-            block(f"malformed run-id segment '{seg}' (expected <YYYY-MM-DD>-<topic>)")
+            block(f"malformed run-id segment '{seg}' "
+                  f"(expected <YYYY-MM-DD>-<topic>)")
         if seg != R:
-            block(f"cross-topic write: '{seg}' != active run '{R}' — stay within the active topic")
+            block(f"cross-topic write: '{seg}' != active run '{R}' — "
+                  f"stay within the active topic")
         for pat in canon_patterns(R):
             if pat.match(path):
                 sys.exit(0)
         block(
             f"non-canonical loen artifact path: {path}\n"
-            f"  expected: docs/loen/{R}/{{loop.yaml,plan.md,state.md,pr-summary.md,report.html,experiments.jsonl}}\n"
-            f"  or:       docs/loen/{R}/iterations/iter-NN/{{diff.patch,gates.log,verifier.md,metrics.jsonl}}"
+            f"  expected: docs/loen/{R}/{{loop.yaml,plan.md,state.md,"
+            f"pr-summary.md,report.html,experiments.jsonl}}\n"
+            f"  or:       docs/loen/{R}/iterations/iter-NN/"
+            f"{{diff.patch,gates.log,verifier.md,metrics.jsonl}}"
         )
 
     # outside docs/loen/ -> scope enforcement, only when a loop is active
@@ -140,6 +161,6 @@ if __name__ == "__main__":
     try:
         main()
     except SystemExit:
-        raise                 # deliberate allow (exit 0) / block (exit 2)
+        raise             # deliberate allow (exit 0) / block (exit 2)
     except Exception:
-        sys.exit(0)           # fail-open: a guard crash must never block edits
+        sys.exit(0)       # fail-open: guard crash must never block edits

@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
-"""Unit tests for log_experiment.py — the deterministic experiments.jsonl writer.
-Exit 0 = exactly one line appended; exit 1 = rejected, target untouched."""
-import json, os, subprocess, sys, tempfile
+"""Unit tests for log_experiment.py — the deterministic
+experiments.jsonl writer. Exit 0 = exactly one line appended;
+exit 1 = rejected, target untouched."""
+import json
+import os
+import subprocess
+import sys
+import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(REPO, "plugin", "loen", "scripts", "log_experiment.py")
+SCRIPT = os.path.join(REPO, "plugin", "loen", "scripts",
+                      "log_experiment.py")
 
 BASELINE = {"type": "baseline", "ts": "2026-07-02T10:00:00Z",
             "eval_command": "make eval", "metrics": {"acc": 0.81}}
-EXPERIMENT = {"type": "experiment", "ts": "2026-07-02T11:00:00Z", "iter": "iter-01",
+EXPERIMENT = {"type": "experiment", "ts": "2026-07-02T11:00:00Z",
+              "iter": "iter-01",
               "hypothesis": "larger retrieval window improves acc",
-              "files_changed": ["src/retrieval.py"], "eval_command": "make eval",
-              "metrics_before": {"acc": 0.81}, "metrics_after": {"acc": 0.84},
+              "files_changed": ["src/retrieval.py"],
+              "eval_command": "make eval",
+              "metrics_before": {"acc": 0.81},
+              "metrics_after": {"acc": 0.84},
               "delta": {"acc": 0.03}, "decision": "keep",
               "risks": "none", "next_hypothesis": "tune threshold"}
 
@@ -33,6 +42,7 @@ def lines(target):
 
 def main():
     fails = []
+
     def check(name, cond):
         if not cond:
             fails.append(name)
