@@ -59,6 +59,51 @@ _capability_check() {
     fi
 }
 
+# Build the disposable tree copy the guest will judge. Content contract (spec §5.1):
+# HEAD + tracked staged+unstaged changes + the run's evidence artifacts; untracked files
+# and everything outside the repo are excluded. out_dir must be OUTSIDE any git repo.
+_snapshot() {
+    local repo="$1" run_dir="$2" out="$3"
+    git -C "$repo" rev-parse --show-toplevel >/dev/null 2>&1 || {
+        echo "verify_microvm: not a git repo: ${repo}" >&2; return 1; }
+    [[ -f "$run_dir/loop.yaml" ]] || {
+        echo "verify_microvm: run dir has no loop.yaml: ${run_dir}" >&2; return 1; }
+    mkdir -p "$out"
+
+    # 1. Tracked tree at HEAD.
+    git -C "$repo" archive --format=tar HEAD | tar -xf - -C "$out"
+
+    # 2. Tracked staged+unstaged changes on top (binary-safe). Untracked excluded.
+    local patch
+    patch=$(mktemp /tmp/loen-verify-XXXXXX.patch)
+    git -C "$repo" diff HEAD --binary --no-color > "$patch"
+    if [[ -s "$patch" ]]; then
+        git -C "$out" apply --whitespace=nowarn "$patch"
+    fi
+    rm -f "$patch"
+
+    # 3. The run's evidence artifacts + the current symlink the verifier body expects.
+    local run_id iter_dir f dest
+    run_id=$(basename "$run_dir")
+    dest="$out/docs/loen/$run_id"
+    mkdir -p "$dest"
+    cp "$run_dir/loop.yaml" "$dest/loop.yaml"
+    for iter_dir in "$run_dir"/iterations/iter-[0-9][0-9]; do
+        [[ -d "$iter_dir" ]] || continue
+        mkdir -p "$dest/iterations/$(basename "$iter_dir")"
+        for f in diff.patch gates.log metrics.jsonl; do
+            if [[ -f "$iter_dir/$f" ]]; then
+                cp "$iter_dir/$f" "$dest/iterations/$(basename "$iter_dir")/$f"
+            fi
+        done
+    done
+    if [[ -f "$run_dir/experiments.jsonl" ]]; then
+        cp "$run_dir/experiments.jsonl" "$dest/experiments.jsonl"
+    fi
+    ln -sfn "$run_id" "$out/docs/loen/current"
+    echo "verify_microvm: snapshot ready at ${out}"
+}
+
 cmd_preflight() {
     local contract="${1:-}" isolation="subagent"
     if [[ -n "$contract" ]]; then
@@ -89,6 +134,7 @@ cmd_extract() {
 
 case "${1:-}" in
     preflight) shift; cmd_preflight "$@" ;;
+    snapshot)  shift; [[ $# -eq 3 ]] || usage; _snapshot "$@" ;;
     extract)   shift; cmd_extract "$@" ;;
     *) usage ;;
 esac

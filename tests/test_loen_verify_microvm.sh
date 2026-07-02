@@ -74,4 +74,36 @@ if grep -q 'noise' <<<"$r"; then fail "extract leaked launcher noise"; fi
 r=$("$V" extract "$tmp/empty.log")
 [[ -z "$r" ]] || fail "extract of markerless log must be empty"
 
-echo "PASS test_loen_verify_microvm.sh (unit: preflight + extract)"
+# --- snapshot builder ---
+
+repo="$tmp/repo"
+mkdir -p "$repo/src"
+git -C "$repo" init -q
+printf 'v1\n' > "$repo/tracked.txt"
+printf 'a\n'  > "$repo/src/app.txt"
+git -C "$repo" add .
+git -C "$repo" -c user.email=t@t -c user.name=t commit -q -m base
+printf 'v2-unstaged\n' > "$repo/tracked.txt"                       # tracked, unstaged
+printf 'new-staged\n'  > "$repo/staged-new.txt"
+git -C "$repo" add staged-new.txt                                  # tracked, staged
+printf 'secret\n' > "$repo/untracked.txt"                          # untracked → EXCLUDED
+
+run="$repo/docs/loen/2026-07-02-demo"
+mkdir -p "$run/iterations/iter-01"
+printf 'name: 2026-07-02-demo\n' > "$run/loop.yaml"
+printf 'diff-evidence\n'  > "$run/iterations/iter-01/diff.patch"
+printf 'gates ok\n'       > "$run/iterations/iter-01/gates.log"
+
+snap="$tmp/snap"
+"$V" snapshot "$repo" "$run" "$snap" >/dev/null || fail "snapshot build failed"
+
+[[ "$(cat "$snap/tracked.txt")" == "v2-unstaged" ]]  || fail "unstaged tracked change missing in snapshot"
+[[ "$(cat "$snap/staged-new.txt")" == "new-staged" ]] || fail "staged new file missing in snapshot"
+[[ "$(cat "$snap/src/app.txt")" == "a" ]]             || fail "HEAD content missing in snapshot"
+[[ ! -e "$snap/untracked.txt" ]]                      || fail "untracked file leaked into snapshot"
+[[ ! -e "$snap/.git" ]]                               || fail ".git leaked into snapshot"
+[[ -f "$snap/docs/loen/2026-07-02-demo/loop.yaml" ]]  || fail "run loop.yaml missing in snapshot"
+[[ -f "$snap/docs/loen/2026-07-02-demo/iterations/iter-01/gates.log" ]] || fail "gates.log missing in snapshot"
+[[ "$(readlink "$snap/docs/loen/current")" == "2026-07-02-demo" ]] || fail "docs/loen/current symlink wrong"
+
+echo "PASS test_loen_verify_microvm.sh (unit: preflight + extract + snapshot)"
