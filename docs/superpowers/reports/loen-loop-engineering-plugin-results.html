@@ -91,8 +91,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen — Loop Engineering Plugin</h1>
@@ -376,7 +376,70 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка результата: реализация плагина <b>loen</b> полностью соответствует плану — 10/10 задач DONE, 0 PARTIAL, 0 MISSING.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · 0 critical · 1 warning · 2 info · plan_hash <code>de236f856df90cec</code> · last_run 2026-07-02</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+    <tbody>
+      <tr><td>Intent</td><td><span class="badge info">n/a</span> — цепочку открывает спека</td></tr>
+      <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-01-loen-loop-engineering-plugin-design.md</code> <span class="badge ok">OK</span></td></tr>
+      <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-07-01-loen-loop-engineering-plugin.md</code> <span class="badge ok">OK</span></td></tr>
+      <tr><td>Diff base</td><td><code>eb855bf6..15b9c6e5</code> — PR #72 <code>dev-loen-plugin</code> → <code>dev</code> (26 файлов, +2746/−2)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие шагов плана — 10 DONE / 0 PARTIAL / 0 MISSING</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Доказательство в diff / рантайме</th></tr></thead>
+    <tbody>
+      <tr><td>T1 · Plugin skeleton + marketplace</td><td><span class="badge ok">DONE</span></td><td><code>plugin.json</code>, <code>marketplace.json</code> (+8), <code>plugin/loen/README.md</code>, <code>test_loen_plugin.sh</code>; коммит <code>fb46a66f</code></td></tr>
+      <tr><td>T2 · Template assets</td><td><span class="badge ok">DONE</span></td><td><code>loop.template.yaml</code> (+20), <code>state.template.md</code> (+10), <code>test_loen_templates.sh</code>; коммит <code>5fb5692a</code></td></tr>
+      <tr><td>T3 · guard_protected.sh</td><td><span class="badge ok">DONE</span></td><td><code>guard_protected.sh</code> (+41), <code>test_loen_guard.sh</code>; коммит <code>6aa66ed6</code></td></tr>
+      <tr><td>T4 · loop-guard hook + layout-validator</td><td><span class="badge ok">DONE</span></td><td><code>loop-guard.py</code> (+145), <code>hooks.json</code> (+16), <code>check_layout.sh</code> (+25), <code>test_loen_hook.py</code> (+87), <code>test_loen_layout.sh</code>; коммиты <code>3d2da63e</code>, <code>12eacf47</code></td></tr>
+      <tr><td>T5 · Субагенты planner/explorer/verifier</td><td><span class="badge ok">DONE</span></td><td><code>agents/{planner,explorer,verifier}.md</code>; frontmatter-lint OK; коммит <code>51f985eb</code></td></tr>
+      <tr><td>T6 · skill loop-delivery</td><td><span class="badge ok">DONE</span></td><td><code>skills/loop-delivery/SKILL.md</code> (+52); коммиты <code>610ba09f</code>, <code>1d11f3ff</code></td></tr>
+      <tr><td>T7 · skill audit</td><td><span class="badge ok">DONE</span></td><td><code>skills/audit/SKILL.md</code> (+40) + skill-lint; коммит <code>33852e37</code></td></tr>
+      <tr><td>T8 · Docs LOEN.md + README</td><td><span class="badge ok">DONE</span></td><td><code>docs/functions/LOEN.md</code> (+45), <code>README.md</code> (+20); коммит <code>ed206c9e</code></td></tr>
+      <tr><td>T9 · Full run + wiki + TODO</td><td><span class="badge ok">DONE</span></td><td>Ре-верифицировано 2026-07-02: 5/5 сьютов PASS, version-sync exit 0; wiki-страница <code>iclaude/loen-plugin</code> существует; строка TODO обновлена; коммит <code>7e5d759e</code></td></tr>
+      <tr><td>T10 · Enable plugin + verify load</td><td><span class="badge ok">DONE</span></td><td><code>enabledPlugins."loen@iclaude": true</code>; рантайм: скиллы <code>loen:audit</code>/<code>loen:loop-delivery</code> и агенты <code>loen:planner/explorer/verifier</code> загружены в живой сессии; коммит <code>993c789a</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>severity</th><th>шаг</th><th>Plan / Diff / Fix</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge warn">WARNING</span></td><td>excess</td><td><code>settings.json</code>: <code>model: opus → fable</code> приехало в PR #72 — пользовательская настройка вне плана; безвредно, откат не требуется</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td>excess</td><td>Chain-process артефакты в diff (plan, spec, report HTML, строка TODO) — ожидаемы по §14 спеки (process obligations)</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td>T9</td><td>Smoke на toy-fixture (§13 спеки) заменён load-verify из T10 Step 3; рантайм-доказательство загрузки получено в живой сессии</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Покрытие intent + spec</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Источник</th><th>Покрытие</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>Intent · Desired Outcomes</td><td><span class="badge info">n/a</span></td><td>Intent отсутствует (цепочка открыта спекой)</td></tr>
+      <tr><td>Spec · MVP-требования (§2–§14)</td><td><span class="badge ok">100%</span></td><td>Skeleton, loop-delivery, audit, 3 субагента, hook, guard, ассеты, тесты, docs/wiki/TODO — всё в diff</td></tr>
+      <tr><td>Spec · F-001 (report.template.html)</td><td><span class="badge info">accepted</span></td><td>Ассет не собран — рендер через <code>html-report</code> skill (§12), принято на этапе plan</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.4 Итог и цепочка</h3>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 1 WARNING (excess, принят) · 2 INFO. Evidence: 5/5 тест-сьютов PASS + <code>check-plugin-version-sync.sh</code> exit 0 + плагин включён и загружается. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Цепочка закрыта.</b> Строка <code>loen-loop-engineering-plugin</code> в <code>docs/TODO.md</code>: <code>Result: OK</code>, <code>Status: done</code>, <code>Closed: 2026-07-02</code>. Следующий инкремент: spec 2 — <code>loop-repair</code> + <code>loop-autoresearch</code>.</div>
 </section>
 <!-- TAB:result END -->
 </body>

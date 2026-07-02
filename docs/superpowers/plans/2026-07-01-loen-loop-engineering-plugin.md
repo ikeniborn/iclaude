@@ -28,6 +28,16 @@ review:
     - { id: F-201, severity: WARNING, verdict: fixed, note: "marketplace category 'workflow' not in official vocab -> 'development' (matches superpowers/ralph-loop; category optional/unvalidated)" }
     - { id: F-202, severity: WARNING, verdict: fixed, note: "hooks.json was bare python3; real plugins (iwiki) use file-guard + exit-normalization + timeout. loop-guard is user-scoped -> a crash must fail-OPEN, only exit 2 blocks. Added iwiki-style command + main() try/except wrapper" }
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: de236f856df90cec
+  last_run: 2026-07-02
+  diff_base: "eb855bf6..15b9c6e5 (PR #72 dev-loen-plugin)"
+  steps: { done: 10, partial: 0, missing: 0 }
+  findings:
+    - { severity: WARNING, step: excess, note: "settings.json model opus->fable rode along in PR #72 — user setting, not a plan step; harmless, no revert" }
+    - { severity: INFO, step: excess, note: "chain-process artifacts in diff (plan/spec/report HTML/TODO row) — expected per spec §14 process obligations" }
+    - { severity: INFO, step: "Task 9", note: "spec §13 toy-fixture smoke replaced by Task 10 Step 3 load-verify; runtime evidence: loen skills/agents/hook loaded in live session" }
 ---
 # loen — Loop Engineering Plugin Implementation Plan
 
