@@ -45,4 +45,22 @@ print(f"OK agent {name}")
 PY
 done
 
+# --- skill frontmatter lint ---
+for s in loop-delivery audit; do
+  f="plugin/loen/skills/$s/SKILL.md"
+  [[ -f "$f" ]] || fail "missing skill $f"
+  python3 - "$f" "$s" <<'PY'
+import sys, re
+f, name = sys.argv[1], sys.argv[2]
+t = open(f, encoding="utf-8").read()
+m = re.match(r"^---\n(.*?)\n---\n", t, re.S)
+assert m, f"{f}: missing frontmatter"
+fm = m.group(1)
+for key in ("name:", "description:"):
+    assert key in fm, f"{f}: frontmatter missing {key}"
+assert re.search(rf"^name:\s*{name}\s*$", fm, re.M), f"{f}: name != {name}"
+print(f"OK skill {name}")
+PY
+done
+
 echo "PASS test_loen_plugin.sh"
