@@ -18,6 +18,11 @@ review:
     - { id: F-003, phase: verifiability, severity: INFO, verdict: fixed, note: "Task 7 Step 6 gained grep checks confirming all four doc inserts landed" }
     - { id: F-004, phase: consistency, severity: INFO, verdict: fixed, note: "version-sync enforcement now cites check-plugin-version-sync.sh (spec §7) alongside test_loen_plugin.sh" }
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: f3ee32ae09a8a797
+  last_run: 2026-07-02
+  note: "diff base dev...HEAD (8 commits): 7/7 tasks DONE, 0 PARTIAL/MISSING, 0 unexplained excess (3 chain artifacts); spec §4-§10 covered 9/9, frozen surfaces untouched; 7/7 verifications + 4 doc greps green by clean-context runner; e2e ALSO run live at implementation time (ICLAUDE_LOEN_E2E=1): real Firecracker guest, VERDICT: APPROVE, host tree fingerprint unchanged; wiki Roadmap row deferred until PR number exists"
 ---
 # loen backlog step 3 — verifier microVM isolation — Implementation Plan
 

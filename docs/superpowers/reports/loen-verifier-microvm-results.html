@@ -91,8 +91,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen backlog step 3 — verifier microVM isolation</h1>
@@ -293,7 +293,54 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка реализации с планом/спекой: ветка <code>dev-loen-verifier-microvm</code>, diff base <code>dev...HEAD</code> (8 коммитов, f6208d64..02fcad9f). Плагин loen 0.4.0.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>f3ee32ae09a8a797</code> · 2026-07-02 · runner: clean-context subagent (check-runner protocol)</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+    <tbody>
+      <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-07-02-loen-verifier-microvm.md</code> (7 задач, check-plan OK)</td></tr>
+      <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-02-loen-verifier-microvm-design.md</code> (check-spec OK)</td></tr>
+      <tr><td>Intent</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>Diff base</td><td><code>git diff dev...HEAD</code> — 8 коммитов, рабочее дерево чистое</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие задач плана: 7 DONE / 0 PARTIAL / 0 MISSING</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Evidence в diff</th></tr></thead>
+    <tbody>
+      <tr><td>T1 ключ контракта</td><td><span class="badge ok">DONE</span></td><td><code>loop.template.yaml</code> +1, пин в <code>test_loen_templates.sh</code> (692d22df)</td></tr>
+      <tr><td>T2 preflight + extract</td><td><span class="badge ok">DONE</span></td><td><code>verify_microvm.sh</code> (755): <code>_read_isolation</code>/<code>_capability_check</code>/sentinel-awk (c86bdacb)</td></tr>
+      <tr><td>T3 snapshot</td><td><span class="badge ok">DONE</span></td><td><code>_snapshot</code>: archive HEAD + binary diff + артефакты + symlink; 8 ассертов (1256cbdd)</td></tr>
+      <tr><td>T4 check + e2e</td><td><span class="badge ok">DONE</span></td><td><code>cmd_check</code> с 3 tripwire + gated e2e; <b>e2e прогнан вживую</b>: реальный guest, VERDICT: APPROVE, дерево хоста неизменно (392b73df)</td></tr>
+      <tr><td>T5 audit-диспатч</td><td><span class="badge ok">DONE</span></td><td><code>audit/SKILL.md</code> plan+check bullets по плану дословно (1e611382)</td></tr>
+      <tr><td>T6 бамп 0.4.0</td><td><span class="badge ok">DONE</span></td><td>оба манифеста; version-sync exit 0 (b03fc4e3)</td></tr>
+      <tr><td>T7 доки + wiki</td><td><span class="badge ok">DONE</span></td><td>4 repo-дока + wiki Components/contract (02fcad9f + MCP); Roadmap — отложен до номера PR (записанный deferral)</td></tr>
+    </tbody>
+  </table>
+  <h3>2.2 Покрытие спеки и excess</h3>
+  <p>Spec §4–§10: <b>9/9</b> разделов покрыты; замороженные поверхности (§6: <code>agents/verifier.md</code>, <code>loop-guard.py</code>, <code>check_layout.sh</code>) в diff отсутствуют. Excess: 3 файла — все объяснённые chain-артефакты (план, TODO-строка, этот отчёт).</p>
+  <table class="rpt-table">
+    <thead><tr><th>sev</th><th>Finding</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge info">INFO</span></td><td>Wiki Roadmap row #3 → «done (0.4.0, PR #N)» отложен до создания PR — закрыть после открытия PR</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td><code>test_loen_verify_microvm.sh</code> в git mode 100644 (сиблинги 755); всюду вызывается через <code>bash</code> — безвредно</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td>3 explained excess (chain-артефакты) — действий не требуют</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td><code>test_microvm.sh</code>: 30 passed / 2 failed — оба падения pre-existing на <code>dev</code> (env-чувствительные дефолты), к diff отношения не имеют</td></tr>
+    </tbody>
+  </table>
+  <p><b>Верификация:</b> 7/7 команд PASS (templates, plugin, verify_microvm unit, layout, guard, hook, version-sync) + 4 doc-grep OK + wiki_lint чист (0 broken/stale). <b>Live e2e:</b> Firecracker guest забутился (PID 110756), verifier (opus) независимо перегнал gate внутри VM, структурированный APPROVE, fingerprint дерева хоста неизменен.</p>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 4 INFO. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> PR в <code>dev</code> (finishing-a-development-branch) → после открытия PR обновить wiki Roadmap row #3.</div>
 </section>
 <!-- TAB:result END -->
 </body>
