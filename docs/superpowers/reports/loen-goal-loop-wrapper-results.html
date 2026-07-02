@@ -91,8 +91,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen backlog step 2 — /goal + /loop wrapper</h1>
@@ -288,7 +288,49 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка реализации с планом: 4 задачи в диффе полностью, Task 5 частично (wiki/PR — внешние шаги по дизайну плана). Вердикт: <span class="badge ok">OK</span>.</p>
+  <p class="sub">result_check 2026-07-02 · plan_hash <code>76107995c8033aec</code> · runner: clean-context subagent · дифф <code>fb00e0bc..d5fc329c</code> (5 коммитов реализации)</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ</th><th>Путь</th></tr></thead>
+    <tbody>
+      <tr><td>Intent</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-02-loen-goal-loop-wrapper-design.md</code> (OK, 03c23b55e19a4704)</td></tr>
+      <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-loen-goal-loop-wrapper.md</code> (OK, 76107995c8033aec)</td></tr>
+      <tr><td>База диффа</td><td><code>fb00e0bc</code> (коммит плановых артефактов) → HEAD</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие шагов плана: 4 DONE · 1 PARTIAL (по дизайну) · 0 MISSING</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Evidence в диффе</th></tr></thead>
+    <tbody>
+      <tr><td>Task 1: make_goal.py + test_loen_goal.py</td><td><span class="badge ok">DONE</span></td><td>Коммиты 5564f2cf, 080bb469, d5fc329c; код побайтово по плану + 2 согласованных отклонения (NoReturn, F-004 тест)</td></tr>
+      <tr><td>Task 2: loop-goal SKILL.md + lint</td><td><span class="badge ok">DONE</span></td><td>Коммит a379d41f; SKILL.md точное совпадение; test_loen_plugin.sh:49 — loop-goal в lint-списке</td></tr>
+      <tr><td>Task 3: bump 0.3.0</td><td><span class="badge ok">DONE</span></td><td>Коммит 507ae950; оба манифеста, iwiki-запись не тронута</td></tr>
+      <tr><td>Task 4: доки (LOEN.md, README×2)</td><td><span class="badge ok">DONE</span></td><td>Коммит 5f0f11d3; все 4 текстовых блока побайтово</td></tr>
+      <tr><td>Task 5: wiki → сьюты → PR → Roadmap → lint</td><td><span class="badge warn">PARTIAL</span></td><td>Steps 1–2, 5 DONE (wiki Components проверен live, 8/8 сьютов PASS, wiki_lint чистый); Steps 3–4 (PR, Roadmap) — external/pending на момент проверки, выполняются после result_check по порядку плана (фикс F-001)</td></tr>
+    </tbody>
+  </table>
+  <h3>2.2 Findings</h3>
+  <table class="rpt-table">
+    <thead><tr><th>sev</th><th>шаг</th><th>Plan / Diff / Fix</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge info">INFO</span></td><td>Task 5, Steps 3–4</td><td>PR и wiki-Roadmap ещё не выполнены — ожидаемо: план сам ставит их ПОСЛЕ result-проверки (порядок sweep → PR → Roadmap); fix не нужен, шаги выполняются следом</td></tr>
+    </tbody>
+  </table>
+  <h3>2.3 Покрытие intent + spec</h3>
+  <p>Intent: n/a. Spec: 6/7 блоков требований полностью в диффе (§2 генератор + валидация, §3 скилл 1–4, §4 guardrails, §5 delivery, §6 тесты, §8 out-of-scope соблюдён); §7 process obligations — частично (доки + wiki Components готовы; Roadmap/PR pending by design). Излишних изменений (EXCESS): 0 — все 9 файлов диффа принадлежат задачам 1–4.</p>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 1 INFO (pending-by-design). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Финал:</b> whole-branch review (fable) — READY TO MERGE YES, 0 Critical/Important; PR в <code>dev</code> открывается следом; строка <code>docs/TODO.md</code> закрыта (done, 2026-07-02).</div>
 </section>
 <!-- TAB:result END -->
 </body>

@@ -19,6 +19,10 @@ review:
     - { id: F-004, phase: coverage, severity: INFO, verdict: wontfix, note: "empty protected_scope omits the clause — plan-level decision documented in Self-Review; ratify at review" }
     - { id: F-005, phase: coverage, severity: INFO, verdict: wontfix, note: "LOEN.md Scope-section edit beyond spec §7 — conscious doc-sync per CLAUDE.md docs-currency rule" }
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: 76107995c8033aec
+  last_run: 2026-07-02
 ---
 # loen /goal + /loop Wrapper Implementation Plan
 
