@@ -62,6 +62,10 @@ def main():
         # bootstrap: setting the current pointer is always allowed
         check("bootstrap current allow",
               run(root, os.path.join(root, "docs/loen/current")), 0)
+        # top-level governance dashboard: allowed like RUNBOOK.md,
+        # even with no active loop
+        check("governance.html allow (no loop)",
+              run(root, os.path.join(root, "docs/loen/governance.html")), 0)
 
         R = setup_run(root)
         base = os.path.join(root, "docs", "loen", R)
@@ -86,6 +90,12 @@ def main():
         # non-canonical loen path -> block
         check("non-canonical loen",
               run(root, os.path.join(base, "notes.txt")), 2)
+        # governance.html stays allowed with an active loop; only the
+        # .html dashboard is canonical at top level
+        check("governance.html allow (active loop)",
+              run(root, os.path.join(root, "docs/loen/governance.html")), 0)
+        check("governance.txt block",
+              run(root, os.path.join(root, "docs/loen/governance.txt")), 2)
         # cross-topic write -> block
         check("cross-topic",
               run(root, os.path.join(
