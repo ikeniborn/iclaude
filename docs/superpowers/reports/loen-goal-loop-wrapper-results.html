@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>loen backlog step 2 — IDD→SDD chain · goal-loop-wrapper</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg); transition:background .3s, color .3s;
+}
+h1{ font-size:1.5rem; margin:.2rem 0 .2rem; }
+h2{ font-size:1.15rem; margin:1.6rem 0 .5rem; color:var(--accent-2); }
+h3{ font-size:1rem; margin:1.1rem 0 .4rem; }
+.theme-btn{ position:sticky; top:.5rem; float:right; cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.95rem; }
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); position:sticky; top:0; }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+.matrix td.y{ color:var(--ok-2); font-weight:700; text-align:center; }
+.matrix td.n{ color:var(--muted); text-align:center; }
+.matrix th.rot{ font-size:.78rem; }
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.warn{ color:var(--warn-2); border-color:var(--warn); }
+.badge.info{ color:var(--accent-2); border-color:var(--accent); }
+.badge.crit{ color:var(--danger-2); border-color:var(--danger); }
+.rpt-c4 .boundary{ border:1.6px dashed var(--accent); border-radius:12px; padding:1.8rem 1rem 1rem;
+  margin:.7rem 0; position:relative; display:flex; flex-wrap:wrap; gap:.6rem;
+  background:color-mix(in srgb, var(--accent) 5%, transparent); }
+.rpt-c4 .boundary::before{ content:attr(data-label); position:absolute; top:-.7rem; left:.9rem;
+  background:var(--bg); padding:0 .45rem; font-size:.8rem; color:var(--accent); font-weight:600; }
+.rpt-c4 .comp{ background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:.55rem .85rem; min-width:6rem; font-size:.83rem; box-shadow:0 1px 6px var(--shadow);
+  border-left:4px solid var(--accent); }
+.rpt-c4 .comp b{ color:var(--accent); }
+.rpt-c4 .comp .sub{ font-size:.72rem; }
+figure.rpt-graph{ margin:1rem 0; text-align:center; }
+figure.rpt-graph figcaption{ font-size:.8rem; color:var(--muted); margin-top:.3rem; }
+.rpt-states{ display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:1rem 0; }
+.rpt-states .state{ border:2px solid var(--border); border-radius:999px; padding:.4rem .9rem;
+  background:var(--surface); font-size:.85rem; }
+.rpt-states .state.ok{ border-color:var(--ok); }
+.rpt-states .edge{ flex:0 0 2.4rem; height:2px; background:var(--line); position:relative; }
+.rpt-states .edge::after{ content:""; position:absolute; right:0; top:-4px;
+  border:5px solid transparent; border-left-color:var(--line); }
+/* tabs */
+.chain-tabs{ display:flex; gap:.3rem; margin:1rem 0 0; flex-wrap:wrap; }
+.chain-tabs label{ cursor:pointer; padding:.4rem .9rem; border:1px solid var(--border); border-bottom:none;
+  border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); }
+.tab-pane{ display:none; border:1px solid var(--border); border-radius:0 10px 10px 10px;
+  padding:1rem 1.2rem; background:color-mix(in srgb,var(--surface) 60%, transparent); }
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{ display:block; }
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); border-color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
+<header>
+  <h1>loen backlog step 2 — /goal + /loop wrapper</h1>
+  <p class="sub">Цепочка IDD→SDD · тема <code>loen-goal-loop-wrapper</code> · источник: <code>docs/superpowers/specs/2026-07-02-loen-goal-loop-wrapper-design.md</code></p>
+</header>
+<nav class="chain-tabs">
+  <label for="tab-intent">Intent</label>
+  <label for="tab-spec">Spec</label>
+  <label for="tab-plan">Plan</label>
+  <label for="tab-result">Result</label>
+</nav>
+
+
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+  <p class="note">Этап ещё не проверен (цепочка открыта спекой, intent: n/a).</p>
+</section>
+<!-- TAB:intent END -->
+
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+  <p class="lead">Спека шага 2 бэклога loen: опциональный акселератор — тонкий скилл <b>loop-goal</b> + детерминированный генератор <b>make_goal.py</b>, оборачивающие одобренный <code>loop.yaml</code> в evidence-first строку нативного <code>/goal</code> и рецепт <code>/loop</code>-поллинга.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>03c23b55e19a4704</code> · 2026-07-02 · defaults выбраны при AFK пользователя (overridable)</p>
+
+  <h2>1. Резюме спецификации</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Раздел</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
+    <tbody>
+      <tr><td>§2</td><td><code>make_goal.py</code>: /goal-строка ТОЛЬКО из полей контракта; delivery/repair — gates+scope+budget-клаузы; research — target-клауза + max_experiments</td><td><code>test_loen_goal.py</code>: содержимое строки по фикстурам</td></tr>
+      <tr><td>§2</td><td>Валидация: нет файла / пустые gates / research без target / пустой mutable_scope → exit 1, пустой stdout</td><td>4 negative-кейса в тесте</td></tr>
+      <tr><td>§3</td><td>Скилл loop-goal: активный run + апрув + audit plan OK обязательны; /goal НИКОГДА не сабмитится скиллом — только человеком</td><td>Текст SKILL.md; skill-lint</td></tr>
+      <tr><td>§3</td><td>Evidence-first брифинг (§6.2 методологии) рядом со строкой; /loop-рецепт с session-scoped предупреждением</td><td>Текст SKILL.md</td></tr>
+      <tr><td>§4</td><td>Обёртка не ослабляет протокол: стадии audit, hook, human gate без изменений; обратных зависимостей нет</td><td>Диффа в существующих скиллах нет</td></tr>
+      <tr><td>§5–6</td><td>Только 2 новых файла; minor bump обоих манифестов; тесты loen_goal + lint</td><td>version-sync + PASS сьютов</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы решения и зависимостей</h2>
+  <h3>2.1 Схема решения</h3>
+  <figure class="rpt-c4">
+    <div class="boundary" data-label="Новое в шаге 2">
+      <div class="comp"><b>loop-goal</b><br><span class="sub">SKILL · прекондиции + брифинг</span></div>
+      <div class="comp"><b>make_goal.py</b><br><span class="sub">детерм. генератор /goal-строки</span></div>
+    </div>
+    <div class="boundary" data-label="Переиспользуется (без правок)">
+      <div class="comp"><b>loop.yaml</b><br><span class="sub">одобренный контракт</span></div>
+      <div class="comp"><b>loen:audit plan</b><br><span class="sub">прекондиция OK</span></div>
+      <div class="comp"><b>/goal (native)</b><br><span class="sub">сабмитит человек</span></div>
+      <div class="comp"><b>/loop (skill)</b><br><span class="sub">session-scoped поллинг</span></div>
+    </div>
+  </figure>
+  <h3>2.2 Граф зависимостей</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 700 170" width="100%" role="img" aria-label="зависимости wrapper">
+      <defs><marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#aw)">
+        <path d="M150,50 L210,50"></path><path d="M350,50 L410,50"></path>
+        <path d="M150,130 C180,110 190,70 208,56"></path><path d="M550,50 L600,50"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="10" y="30" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="80" y="54">loop-goal (skill)</text></g>
+        <g><rect x="10" y="110" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="80" y="134">loen:audit plan OK</text></g>
+        <g><rect x="210" y="30" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="280" y="54">make_goal.py</text></g>
+        <g><rect x="410" y="30" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="480" y="48">/goal-строка</text><text x="480" y="61" font-size="9" fill="var(--muted)">evidence-first</text></g>
+        <g><rect x="600" y="30" width="90" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="645" y="54">человек</text></g>
+      </g>
+    </svg>
+    <figcaption>loop-goal требует audit plan OK, зовёт make_goal.py (читает loop.yaml), строка уходит человеку — скилл не сабмитит /goal. DAG, циклов нет.</figcaption>
+  </figure>
+  <h3>2.3 Карта покрытия</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Задача (из диалога)</th><th class="rot">§2</th><th class="rot">§3</th><th class="rot">§4</th><th class="rot">§5–6</th></tr></thead>
+    <tbody>
+      <tr><td>Опциональный /goal+/loop акселератор над loop-delivery (§15 родителя)</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>Default: тонкий skill + детерминированный генератор</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>1 WARNING (CJK-символ «每») — исправлен; нумерация 1–9 без разрывов</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Задача покрыта; extras нет; §6.2 методологии и §15 родителя без противоречий</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">PASS</span></td><td>2 INFO; термины стабильны</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Пути/ключи сверены с реальным плагином (template-ключи, /loop-скилл среды)</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>sev</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge warn">WARN</span></td><td>«string每 run» → «string each run»</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge info">INFO</span></td><td>«/goal`//`/loop» → одиночный разделитель</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge info">INFO</span></td><td>§9 ссылки на шаги §3 списком — читаемо</td><td><span class="badge info">wontfix</span></td></tr>
+      <tr><td>F-004</td><td><span class="badge info">INFO</span></td><td>Интервал /loop контекстно-зависим by design</td><td><span class="badge info">wontfix</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 1 WARNING (fixed) · 3 INFO. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Plan <span class="sub">pending</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> ревью спеки пользователем (defaults выбраны при AFK) → <code>superpowers:writing-plans</code>.</div>
+</section>
+<!-- TAB:spec END -->
+
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:plan END -->
+
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:result END -->
+</body>
+</html>
