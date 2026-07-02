@@ -14,8 +14,17 @@ The plugin ships with the repo. Enable it at user scope through the plugin syste
 - `/loop-delivery <task>` — the executor. The `planner` subagent fills a `loop.yaml`
   contract, you approve scope + budget, the worker makes the smallest diff, `quality_gates`
   + the independent `verifier` check it, and a report is produced.
-- `loen:audit plan|act|check|result` — validate a stage, gate progression, and regenerate
-  `docs/loen/<run-id>/report.html`.
+- `/loop-repair <failure description>` — fix a failing test / CI / regression:
+  reproduce first, isolate, minimal fix, regression test (mode `repair`,
+  `budget.max_iterations`, default 3).
+- `/loop-autoresearch <metric goal>` — improve one numeric metric:
+  baseline → hypothesis → one bounded change → fixed eval → compare → keep/revert
+  (mode `research`, `budget.max_experiments`, default 5). Metrics travel as JSONL:
+  the eval appends to `$LOEN_METRICS_PATH` (per-iteration `metrics.jsonl`); every
+  experiment is a record in `experiments.jsonl`, appended by the deterministic
+  `scripts/log_experiment.py`.
+- `loen:audit plan|act|check|result` — validate a stage (mode-aware), gate progression,
+  and regenerate `docs/loen/<run-id>/report.html`.
 
 ## Artifacts
 
@@ -27,6 +36,8 @@ All results live under `docs/loen/<run-id>/` (run-id = `<YYYY-MM-DD>-<topic>`):
 | `plan.md` | the step plan |
 | `state.md` | append-only attempt/decision log |
 | `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` | per-iteration evidence |
+| `iterations/iter-NN/metrics.jsonl` | research: eval JSONL events + one `summary` line (baseline lives in `iter-00`) |
+| `experiments.jsonl` | research: run-level experiment stream (baseline + one record per experiment) |
 | `report.html` | consolidated human-readable report |
 | `pr-summary.md` | PR-ready summary |
 
@@ -45,5 +56,6 @@ the `fable` alias the model falls back per harness rules.
 
 ## Scope
 
-MVP ships delivery + verifier + guard. `loop-repair` / `loop-autoresearch` and governance
-are later increments.
+Shipped: delivery (`loop-delivery`), repair (`loop-repair`), research
+(`loop-autoresearch`), verifier, guard. `/goal`+`/loop` wrapping, verifier microVM
+isolation, and governance/observability are later increments.
