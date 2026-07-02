@@ -16,6 +16,11 @@ exploit — он атакует **guest kernel**, а не хостовую ОС.
 
 Полный threat model: [docs/SANDBOX_ANALYSIS.md](SANDBOX_ANALYSIS.md)
 
+**Use case — loen verifier:** плагин `loen` (см. [docs/functions/LOEN.md](LOEN.md),
+раздел "Hardening") умеет запускать своего loop-верификатора headless внутри этой
+microVM над одноразовым снапшотом дерева (`verifier_isolation: microvm` в `loop.yaml`) —
+судья не имеет канала записи на хост.
+
 ---
 
 ## Архитектура v2
