@@ -114,7 +114,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
   <p class="lead">Спека инкремента 2 плагина <b>loen</b>: скиллы <b>loop-repair</b> и <b>loop-autoresearch</b> как специализации над петлёй MVP — repair-цикл с regression-гейтом и research-цикл с JSONL-потоком метрик.</p>
-  <p class="sub">Вердикт проверки: <span class="badge ok">OK</span> · 0 critical · 5 warning (fixed) · 6 info (fixed) · body_hash <code>57df8606707c9dcd</code> · 2026-07-02</p>
+  <p class="sub">Вердикт проверки: <span class="badge ok">OK</span> · check-spec: 0 critical · 5 warning + 6 info (fixed) · completeness re-check: 27 находок (5 CRITICAL) — все закрыты · body_hash <code>c89a55b6b54f2411</code> · 2026-07-02</p>
 
   <h2>1. Резюме спецификации</h2>
   <table class="rpt-table">
@@ -132,7 +132,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
       <tr><td>§5.1 hook</td><td>+1 канон-путь <code>iter-NN/metrics.jsonl</code>, three-way sync (hook / check_layout / docs)</td><td>Тесты hook+layout зелёные; дрейфа нет</td></tr>
       <tr><td>§5.3 writer</td><td><code>log_experiment.py</code>: валидация ключей по type, append одной строки, отказ на мусоре</td><td><code>test_loen_experiment.py</code>: valid → append; invalid → exit 1, файл нетронут</td></tr>
       <tr><td>§5.4 audit</td><td>Mode-aware проверки стадий; verifier перегоняет eval для каждого keep</td><td>Таблица стадий §5.4; report.html + experiments-таблица в research</td></tr>
-      <tr><td>§7 roster</td><td>planner→fable, verifier→opus, explorer=haiku — <b>pending user confirmation</b></td><td>Frontmatter default, переопределяем; однострочная правка при ревью</td></tr>
+      <tr><td>§7 roster</td><td>planner→fable, verifier→opus, explorer=haiku — <b>подтверждено пользователем</b></td><td>Frontmatter model: в planner.md/verifier.md + синк Subagents-секции LOEN.md</td></tr>
       <tr><td>§9/§10</td><td>Расширение 4 сьютов + новый experiment-тест; LOEN.md/README/wiki/TODO</td><td>Все сьюты PASS; version-sync 0.2.0; wiki_lint чист</td></tr>
     </tbody>
   </table>
@@ -233,7 +233,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
   <h3>3.3 Итог и цепочка</h3>
   <p><b>SUMMARY:</b> 0 CRITICAL · 5 WARNING (fixed) · 6 INFO (fixed). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
-  <div class="note"><b>Открытый пункт (не блокирует):</b> §7 — ростер моделей субагентов (planner→fable, verifier→opus) ждёт подтверждения пользователя; однострочная правка при ревью спеки.</div>
+  <div class="note"><b>Completeness re-check (max-effort, 2 параллельных чистых ревизора — методология + реальный код MVP):</b> 27 находок (G-01..G-17, I-01..I-10; 5 CRITICAL) — <b>все закрыты в спеке</b>. Ключевые: <b>G-01</b> механика чекпоинт/revert (commit-per-keep, diff vs last kept state без docs/loen, <code>git apply -R</code>) → §4.2a; <b>G-02/G-03</b> ровно одна primary <code>&lt;name&gt;:max|min</code> + грамматика <code>target:</code>/<code>tolerance:</code> → §4.3; <b>I-01/I-02</b> mode-инструкции агентов живут в dispatch-промптах → §5.5; <b>I-03</b> ассеты/bootstrap через <code>../loop-delivery/assets/</code> без копий → §2; <b>G-10/G-11</b> inversion-evidence stash-ем от worker-а, verifier read-only → §3; baseline-провал = стоп; gates гоняются на каждом эксперименте; plugin README + синк ростера в LOEN.md → §10. Ростер подтверждён: planner=fable, verifier=opus, explorer=haiku.</div>
   <figure class="rpt-states">
     <div class="state">Intent <span class="sub">n/a</span></div>
     <div class="edge"></div>
