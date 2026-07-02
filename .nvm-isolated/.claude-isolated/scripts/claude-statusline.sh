@@ -146,7 +146,7 @@ detect_real_context_window() {
         *opus*|*sonnet*)
             case "${model,,}" in
                 *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
-                *sonnet*5*) known=1000000 ;;                      # Sonnet 5 = 1M
+                *sonnet?5*) known=1000000 ;;                      # Sonnet 5 = 1M ("5" right after "sonnet"; not "Sonnet 3.5")
                 *) known=0 ;;                                     # 4.0/4.1 → reported
             esac ;;
     esac

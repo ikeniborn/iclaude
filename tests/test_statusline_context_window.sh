@@ -49,4 +49,8 @@ out="$(run_sl "Opus4.8" 459000 457000 2000 0)"
 out="$(run_sl "Haiku 4.5" 100000 100000 0 0)"
 [[ "$out" == *"(50%)"* ]]  || fail "Haiku: expected (50%) of 200K window, got: $out"
 
+# Sonnet 3.5 = 200K (glob must not false-match "5" later in the name)
+out="$(run_sl "Sonnet 3.5" 100000 100000 0 0)"
+[[ "$out" == *"(50%)"* ]]  || fail "Sonnet 3.5: expected (50%) of 200K window, got: $out"
+
 echo "PASS test_statusline_context_window.sh"
