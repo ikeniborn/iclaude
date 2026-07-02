@@ -90,8 +90,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
@@ -202,7 +202,92 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">План реализации шага 3 бэклога loen: 7 TDD-задач — контрактный ключ, скрипт <code>verify_microvm.sh</code> (preflight → snapshot → check с 3 tripwire), isolation-aware диспатч audit, бамп 0.4.0, документация. Скрипт переиспользует боевой путь <code>iclaude.sh --sandbox-microvm</code> вместо новой VM-обвязки.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>f3ee32ae09a8a797</code> · 2026-07-02 · runner: clean-context subagent (check-runner protocol)</p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+    <tbody>
+      <tr><td>T1</td><td>Ключ <code>verifier_isolation: subagent</code> в <code>loop.template.yaml</code> + пин в тесте шаблона</td><td><code>PASS test_loen_templates.sh</code></td></tr>
+      <tr><td>T2</td><td><code>verify_microvm.sh</code>: скелет + <code>preflight</code> (валидация ключа + KVM/FC/images) + <code>extract</code> (sentinel-блок)</td><td>PASS unit: preflight + extract (bogus отклонён; hint «install or drop to subagent»)</td></tr>
+      <tr><td>T3</td><td><code>snapshot</code>: HEAD + tracked staged/unstaged, untracked исключён, артефакты рана, symlink <code>current</code></td><td>PASS unit snapshot (8 ассертов состава)</td></tr>
+      <tr><td>T4</td><td><code>check</code>: изолированный verify-поток (headless <code>claude -p</code> в guest) + 3 tripwire (host-fallback маркер, boot-маркер, fingerprint дерева) + gated e2e</td><td>PASS check guards; e2e SKIP без <code>/dev/kvm</code> или <code>ICLAUDE_LOEN_E2E=1</code></td></tr>
+      <tr><td>T5</td><td>Isolation-aware диспатч в <code>audit/SKILL.md</code>: plan-валидация через preflight, check-путь через скрипт, no silent fallback</td><td><code>PASS test_loen_plugin.sh</code></td></tr>
+      <tr><td>T6</td><td>Бамп версии 0.3.0 → 0.4.0 в обоих манифестах</td><td><code>PASS test_loen_plugin.sh</code> + <code>check-plugin-version-sync.sh</code></td></tr>
+      <tr><td>T7</td><td>LOEN.md (Hardening) / MICROVM.md (use-case) / README ×2 / iwiki (3 секции) + полный прогон</td><td>Все сьюты PASS + 4 grep-проверки вставок + <code>wiki_lint</code> чист</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+  <h3>2.1 Граф зависимостей задач</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 770 230" width="100%" role="img" aria-label="граф зависимостей задач плана">
+      <defs><marker id="amp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#amp)">
+        <path d="M120,80 L158,80"></path>
+        <path d="M270,80 L308,80"></path>
+        <path d="M420,80 L458,80"></path>
+        <path d="M570,80 L608,80"></path>
+        <path d="M65,60 C120,20 260,20 362,58"></path>
+        <path d="M65,60 C160,-8 390,-8 515,56"></path>
+        <path d="M120,180 C300,205 460,140 512,104"></path>
+        <path d="M663,102 L663,158"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="10" y="60" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="65" y="78">T2 preflight</text><text x="65" y="93" font-size="9" fill="var(--muted)">+ extract, хелперы</text></g>
+        <g><rect x="160" y="60" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="215" y="78">T3 snapshot</text><text x="215" y="93" font-size="9" fill="var(--muted)">диспатчер-chain</text></g>
+        <g><rect x="310" y="60" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="365" y="78">T4 check</text><text x="365" y="93" font-size="9" fill="var(--muted)">3 tripwire + e2e</text></g>
+        <g><rect x="460" y="60" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="515" y="78">T5 audit</text><text x="515" y="93" font-size="9" fill="var(--muted)">SKILL.md диспатч</text></g>
+        <g><rect x="610" y="60" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="665" y="78">T6 bump</text><text x="665" y="93" font-size="9" fill="var(--muted)">0.4.0 ×2 манифеста</text></g>
+        <g><rect x="10" y="160" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="65" y="178">T1 template</text><text x="65" y="193" font-size="9" fill="var(--muted)">verifier_isolation</text></g>
+        <g><rect x="610" y="160" width="110" height="42" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="665" y="178">T7 docs+wiki</text><text x="665" y="193" font-size="9" fill="var(--muted)">полный прогон</text></g>
+      </g>
+    </svg>
+    <figcaption>T2→T3→T4 — цепочка old/new string диспатчера; T2→T4 — хелперы <code>_read_isolation</code>/<code>_capability_check</code>/<code>cmd_extract</code>; T2,T4→T5 — skill зовёт preflight/check; T1→T5 — текст skill использует ключ контракта; T5→T6 (бамп после функционала); T6→T7 (доки последними). Циклов нет.</figcaption>
+  </figure>
+  <h3>2.2 Пересечения (артефакт/требование × задачи)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Артефакт / требование спеки</th><th class="rot">T1</th><th class="rot">T2</th><th class="rot">T3</th><th class="rot">T4</th><th class="rot">T5</th><th class="rot">T6</th><th class="rot">T7</th></tr></thead>
+    <tbody>
+      <tr><td><code>verify_microvm.sh</code></td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td><code>test_loen_verify_microvm.sh</code></td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§4 контракт + plan-валидация + диспатч</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§5 изолированный verify-поток</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§8 тесты</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td>§7 delivery (bump, sync)</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td>§9 документация + iwiki</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Нумерация задач 1–7 и шагов без разрывов; плейсхолдеров нет</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Все требования §4–§10 покрыты; 1 WARNING (F-001) — исправлен</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>Цепочка диспатчера T2→T3→T4 byte-identical; циклов нет</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>Каждая задача с командой и ожидаемым выводом; 1 INFO (F-003) — исправлен</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Имена/exit-коды/env/sentinel согласованы; F-002, F-004 — исправлены</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>sev</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge warn">WARN</span></td><td>Spec §9 «contract table» для LOEN.md не покрыт и не записан как отклонение → refinement 4 (в LOEN.md нет таблицы ключей; ключ в Hardening-секции + wiki)</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge warn">WARN</span></td><td>e2e: pre-fingerprint снимался после mkdir — код противоречил комментарию и внешнему NOTE → захват до mkdir, NOTE удалён</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge info">INFO</span></td><td>Doc-шаги T7 без команд проверки → grep-блок из 4 проверок в T7 Step 6</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-004</td><td><span class="badge info">INFO</span></td><td>Version-sync приписан test_loen_plugin.sh вместо check-plugin-version-sync.sh (spec §7) → процитированы оба</td><td><span class="badge ok">fixed</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 2 WARNING (fixed) · 2 INFO (fixed) · 13/13 механических анкеров (old_string для Edit) сверены с репо byte-identical. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> исполнение плана — <code>superpowers:subagent-driven-development</code> (рекомендовано) или <code>superpowers:executing-plans</code>.</div>
 </section>
 <!-- TAB:plan END -->
 
