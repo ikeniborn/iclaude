@@ -339,6 +339,12 @@ experiments.jsonl, report.html, pr-summary.md). В research-режиме eval п
 логируется детерминированным `log_experiment.py`. Шаблоны — ассеты плагина. Хук
 `loop-guard.py` жёстко контролирует раскладку/именование и scope; в не-loop репозиториях — no-op.
 
+**Изоляция верификатора (opt-in):** `verifier_isolation: microvm` в `loop.yaml` —
+верификатор выполняется headless внутри Firecracker microVM над одноразовым снапшотом
+дерева (канала записи на хост нет). Требует установленный microVM
+(`./iclaude.sh --install-microvm`); по умолчанию `subagent`. См.
+[docs/functions/MICROVM.md](docs/functions/MICROVM.md).
+
 Подробнее: [docs/functions/LOEN.md](docs/functions/LOEN.md).
 
 ### Обновление и диагностика

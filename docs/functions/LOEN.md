@@ -58,9 +58,24 @@ all read-only, isolated context; the worker (main session) is the single writer.
 frontmatter `model:` is a default and always overridable; on Claude Code versions without
 the `fable` alias the model falls back per harness rules.
 
+## Hardening: verifier microVM isolation
+
+Opt-in per run: set `verifier_isolation: microvm` in `loop.yaml` (default `subagent`
+keeps MVP behavior byte-for-byte). With `microvm`, `loen:audit check` runs the verifier
+as a headless Claude Code session inside an iclaude Firecracker microVM (this plugin's
+`scripts/verify_microvm.sh`) against a disposable snapshot of the tree — `git archive
+HEAD` + tracked staged/unstaged changes + the run's `docs/loen/<run-id>/` evidence;
+untracked files excluded. There is no sync-back channel: the judge is read-only **by
+construction**, not by convention. Requires the iclaude microVM install (KVM,
+Firecracker, images — see `docs/functions/MICROVM.md`). `loen:audit plan` validates the
+key and host capability up front; a VM failure at check time yields `needs_work` with
+the failure log — never a silent fallback to the in-session subagent. Cost: VM boot +
+snapshot add seconds-to-tens-of-seconds per check iteration, which is why the mode is
+opt-in.
+
 ## Scope
 
 Shipped: delivery (`loop-delivery`), repair (`loop-repair`), research
 (`loop-autoresearch`), verifier, guard, `/goal`+`/loop` wrapping (`loop-goal` +
-`make_goal.py`). Verifier microVM isolation and governance/observability are later
-increments.
+`make_goal.py`), opt-in verifier microVM isolation (`verifier_isolation: microvm`).
+Governance/observability is a later increment.

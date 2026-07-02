@@ -17,6 +17,10 @@ against a machine-readable `loop.yaml` contract, judged by an independent verifi
   string from the active approved `loop.yaml` (deterministic `scripts/make_goal.py`),
   with a session-scoped `/loop` polling recipe for long-running gates. Never
   bootstraps a run, never submits `/goal` itself.
+- `verifier_isolation: microvm` (`loop.yaml`, opt-in) — run the verifier headless inside
+  an iclaude Firecracker microVM against a disposable snapshot of the tree: the judge
+  cannot touch the worker's tree at all. Requires the iclaude microVM install; default
+  `subagent` keeps the in-session verifier.
 
 All results live under `docs/loen/<run-id>/`. Templates ship inside the plugin.
 A PreToolUse hook hard-enforces the artifact layout/naming and the loop's mutable/protected
