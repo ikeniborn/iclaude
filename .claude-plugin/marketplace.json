@@ -11,6 +11,14 @@
       "source": "./plugin/iwiki",
       "author": { "name": "ikeniborn" },
       "category": "documentation"
+    },
+    {
+      "name": "loen",
+      "description": "Loop Engineering harness plugin: controlled agent loop, independent verifier, artifact-layout guardrails.",
+      "version": "0.1.0",
+      "source": "./plugin/loen",
+      "author": { "name": "ikeniborn" },
+      "category": "development"
     }
   ]
 }

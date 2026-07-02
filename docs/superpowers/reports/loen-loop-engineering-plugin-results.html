@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>loen — IDD→SDD chain · loop-engineering-plugin</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg); transition:background .3s, color .3s;
+}
+h1{ font-size:1.5rem; margin:.2rem 0 .2rem; }
+h2{ font-size:1.15rem; margin:1.6rem 0 .5rem; color:var(--accent-2); }
+h3{ font-size:1rem; margin:1.1rem 0 .4rem; }
+.theme-btn{ position:sticky; top:.5rem; float:right; cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.95rem; }
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); position:sticky; top:0; }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+.matrix td.y{ color:var(--ok-2); font-weight:700; text-align:center; }
+.matrix td.n{ color:var(--muted); text-align:center; }
+.matrix th.rot{ font-size:.78rem; }
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.warn{ color:var(--warn-2); border-color:var(--warn); }
+.badge.info{ color:var(--accent-2); border-color:var(--accent); }
+.badge.crit{ color:var(--danger-2); border-color:var(--danger); }
+.rpt-c4 .boundary{ border:1.6px dashed var(--accent); border-radius:12px; padding:1.8rem 1rem 1rem;
+  margin:.7rem 0; position:relative; display:flex; flex-wrap:wrap; gap:.6rem;
+  background:color-mix(in srgb, var(--accent) 5%, transparent); }
+.rpt-c4 .boundary::before{ content:attr(data-label); position:absolute; top:-.7rem; left:.9rem;
+  background:var(--bg); padding:0 .45rem; font-size:.8rem; color:var(--accent); font-weight:600; }
+.rpt-c4 .comp{ background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:.55rem .85rem; min-width:6rem; font-size:.83rem; box-shadow:0 1px 6px var(--shadow);
+  border-left:4px solid var(--accent); }
+.rpt-c4 .comp b{ color:var(--accent); }
+.rpt-c4 .comp .sub{ font-size:.72rem; }
+figure.rpt-graph{ margin:1rem 0; text-align:center; }
+figure.rpt-graph figcaption{ font-size:.8rem; color:var(--muted); margin-top:.3rem; }
+.rpt-states{ display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:1rem 0; }
+.rpt-states .state{ border:2px solid var(--border); border-radius:999px; padding:.4rem .9rem;
+  background:var(--surface); font-size:.85rem; }
+.rpt-states .state.ok{ border-color:var(--ok); }
+.rpt-states .edge{ flex:0 0 2.4rem; height:2px; background:var(--line); position:relative; }
+.rpt-states .edge::after{ content:""; position:absolute; right:0; top:-4px;
+  border:5px solid transparent; border-left-color:var(--line); }
+/* tabs */
+.chain-tabs{ display:flex; gap:.3rem; margin:1rem 0 0; flex-wrap:wrap; }
+.chain-tabs label{ cursor:pointer; padding:.4rem .9rem; border:1px solid var(--border); border-bottom:none;
+  border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); }
+.tab-pane{ display:none; border:1px solid var(--border); border-radius:0 10px 10px 10px;
+  padding:1rem 1.2rem; background:color-mix(in srgb,var(--surface) 60%, transparent); }
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{ display:block; }
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); border-color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
+<header>
+  <h1>loen — Loop Engineering Plugin</h1>
+  <p class="sub">Цепочка IDD→SDD · тема <code>loen-loop-engineering-plugin</code> · источник: <code>docs/superpowers/specs/2026-07-01-loen-loop-engineering-plugin-design.md</code></p>
+</header>
+<nav class="chain-tabs">
+  <label for="tab-intent">Intent</label>
+  <label for="tab-spec">Spec</label>
+  <label for="tab-plan">Plan</label>
+  <label for="tab-result">Result</label>
+</nav>
+
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:intent END -->
+
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+  <p class="lead">Спецификация плагина <b>loen</b> — самодостаточный публикуемый Claude Code плагин, оборачивающий методологию Loop Engineering: контракт-петля, исполнитель, независимый verifier.</p>
+  <p class="sub">Вердикт проверки: <span class="badge ok">OK</span> · 0 critical · 1 warning (исправлен) · 1 info (исправлен) · body_hash <code>654552a8347f5bac</code></p>
+
+  <h2>1. Резюме спецификации</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Раздел</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
+    <tbody>
+      <tr><td>§2 Delivery</td><td>Плагин <code>plugin/loen/</code> в iclaude-маркетплейсе; самодостаточный, публикуемый</td><td>Ставится в <code>cache/iclaude/loen/&lt;ver&gt;/</code>, user-scope; полная мета в <code>plugin.json</code></td></tr>
+      <tr><td>§2 Version</td><td>Версия <code>plugin.json</code> == запись в <code>marketplace.json</code></td><td><code>check-plugin-version-sync.sh</code> зелёный для loen</td></tr>
+      <tr><td>§2 superpowers</td><td>Композиция с superpowers — опциональна, не hard-dep</td><td>Работает при отсутствии <code>superpowers:*</code></td></tr>
+      <tr><td>§3 Scope</td><td>MVP = rails + loop-delivery + verifier + guard</td><td>repair/autoresearch/governance вынесены в spec 2–3</td></tr>
+      <tr><td>§4 Artifacts</td><td>Результаты только под <code>docs/loen/&lt;run-id&gt;/</code>; шаблоны = plugin-ассеты</td><td><code>.agent-loop/</code> отсутствует; в проекте нет болванок</td></tr>
+      <tr><td>§4.3 Naming</td><td>run-id <code>&lt;date&gt;-&lt;topic&gt;</code>; итерации <code>iter-NN</code>; путь предсказуем</td><td>Каждый артефакт — предсказуемое имя/место; топик = join-ключ TODO</td></tr>
+      <tr><td>§5.1 loop-delivery</td><td>Skill-исполнитель, независим от IDD→SDD</td><td>Гоняет plan→act→check→report в любом репо</td></tr>
+      <tr><td>§5.2 audit</td><td><code>loen:audit plan|act|check|result</code>: валидация + регенерит report.html</td><td>Гейтит переход; апдейтит <code>state.md</code> + <code>TODO.md</code> Result</td></tr>
+      <tr><td>§5.3 Субагенты</td><td>planner / explorer / verifier — разные модели, read-only</td><td>Артефакт = return-текст; пишет только worker (single-writer)</td></tr>
+      <tr><td>§6 loop.yaml</td><td>YAML-контракт; planner заполняет, человек апрувит</td><td>Невалидный YAML → re-prompt до записи; апрув до act</td></tr>
+      <tr><td>§7 Context</td><td>Субагенты в изолированном форке; артефакты = shared memory</td><td>Основной контекст не загрязняется разведкой субагентов</td></tr>
+      <tr><td>§9 loop-guard</td><td>Хук жёстко энфорсит scope + layout/naming в рамках топика</td><td>Кросс-топик/кривое имя → block(2); нет loop → no-op</td></tr>
+      <tr><td>§10 Split</td><td>worker ≠ judge; verifier независим (read-only, свежий контекст)</td><td>Детерм. gates + verifier-субагент; человек — финальный PR</td></tr>
+      <tr><td>§12/§13/§14 Report/Test/Docs</td><td>HTML-отчёт (html-report); тесты; LOEN.md/README/wiki/TODO</td><td>Smoke зелёный; артефакты в канон-путях; страницы обновлены</td></tr>
+    </tbody>
+  </table>
+  <p class="sub"><b>Success criteria:</b> петля проходит end-to-end (planner→act→verifier→report), хук блокирует нарушения scope/layout, тесты зелёные, плагин публикуем.</p>
+
+  <h2>2. Схемы решения и зависимостей</h2>
+
+  <h3>2.1 Схема решения (C4)</h3>
+  <figure class="rpt-c4">
+    <div class="boundary" data-label="Plugin · plugin/loen/ (install-time, cache/iclaude/loen/)">
+      <div class="boundary" data-label="skills/">
+        <div class="comp"><b>loop-delivery</b><br><span class="sub">executor: plan→act→check→report</span></div>
+        <div class="comp"><b>audit</b><br><span class="sub">loen:audit &lt;stage&gt; · gate + report.html</span></div>
+      </div>
+      <div class="boundary" data-label="agents/ (read-only, isolated)">
+        <div class="comp"><b>planner</b><br><span class="sub">opus · fills loop.yaml</span></div>
+        <div class="comp"><b>explorer</b><br><span class="sub">haiku · evidence</span></div>
+        <div class="comp"><b>verifier</b><br><span class="sub">sonnet · APPROVE/REJECT</span></div>
+      </div>
+      <div class="boundary" data-label="hooks/ + scripts/ + assets/">
+        <div class="comp"><b>loop-guard.py</b><br><span class="sub">PreToolUse · scope+layout</span></div>
+        <div class="comp"><b>guard_protected.sh</b><br><span class="sub">gate defense-in-depth</span></div>
+        <div class="comp"><b>templates/</b><br><span class="sub">loop.yaml · state · report</span></div>
+      </div>
+    </div>
+    <div class="boundary" data-label="External · project (docs/loen/&lt;run-id&gt;/) — только результаты">
+      <div class="comp"><b>loop.yaml · plan.md · state.md</b><br><span class="sub">PLAN + log</span></div>
+      <div class="comp"><b>iterations/iter-NN/</b><br><span class="sub">diff.patch · gates.log · verifier.md</span></div>
+      <div class="comp"><b>report.html · pr-summary.md</b><br><span class="sub">REPORT</span></div>
+    </div>
+  </figure>
+
+  <h3>2.2 Граф зависимостей (A → B: «A использует / зависит от B»)</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 710 330" width="100%" role="img" aria-label="граф зависимостей компонентов loen">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path>
+        </marker>
+      </defs>
+      <!-- edges -->
+      <g stroke="var(--line)" stroke-width="1.8" fill="none" marker-end="url(#arr)">
+        <path d="M165,110 L200,35"></path>
+        <path d="M165,110 L200,115"></path>
+        <path d="M165,110 L200,195"></path>
+        <path d="M165,110 L200,275"></path>
+        <path d="M350,35 L400,52"></path>
+        <path d="M350,270 C380,200 380,110 400,62"></path>
+        <path d="M350,195 L400,195"></path>
+        <path d="M350,200 L400,262"></path>
+        <path d="M550,195 L585,193"></path>
+        <path d="M550,272 C575,240 575,215 588,205"></path>
+      </g>
+      <!-- nodes -->
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="15" y="90" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="90" y="114">loop-delivery</text></g>
+        <g><rect x="200" y="15" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="275" y="39">planner</text></g>
+        <g><rect x="200" y="95" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="275" y="119">explorer</text></g>
+        <g><rect x="200" y="175" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="275" y="199">audit</text></g>
+        <g><rect x="200" y="255" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="275" y="279">loop-guard</text></g>
+        <g><rect x="400" y="35" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="475" y="59">loop.yaml</text></g>
+        <g><rect x="400" y="175" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="475" y="199">verifier</text></g>
+        <g><rect x="400" y="255" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="475" y="279">report.html</text></g>
+        <g><rect x="585" y="175" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="640" y="199">docs/loen</text></g>
+      </g>
+    </svg>
+    <figcaption>Циклов нет (DAG). worker пишет только под docs/loen; loop-guard гейтит записи. Граф — свободный node-edge (CSS не выражает произвольные рёбра) → SVG-fallback.</figcaption>
+  </figure>
+
+  <h3>2.3 Карта покрытия (задача сборки → кластер требований)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr>
+      <th>Задача</th>
+      <th class="rot">Packaging<br>R5·R6</th>
+      <th class="rot">Delivery<br>R2·R3·R4</th>
+      <th class="rot">Agents<br>R7·R8·R9·R17</th>
+      <th class="rot">Artifacts<br>R10·R12·R13</th>
+      <th class="rot">Reporting<br>R11·R14·R15</th>
+      <th class="rot">Enforce<br>R16</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Plugin skeleton + marketplace</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>skill loop-delivery</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>skill audit</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td>agents planner/explorer/verifier</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>hook loop-guard</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>assets (loop.yaml/state/guard/report)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td>docs/tests (LOEN.md, wiki, tests)</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+  <h3>3.1 Статус фаз</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет (<code>&lt;topic&gt;</code>/<code>&lt;R&gt;</code> — схемные); нумерация без разрывов</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>R1–R17 покрыты; extras не найдено; противоречий нет</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">PASS</span></td><td>1 INFO (дрейф run-id/topic) — исправлен inline</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>1 WARNING (тавтология правила §9) — исправлен inline</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>severity</th><th>раздел</th><th>текст</th><th>fix</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge warn">WARNING</span></td><td>§9 hook</td><td>Правило кросс-топик было тавтологией <code>run-id == active topic</code></td><td>Переформулировано в «<code>&lt;R&gt;</code> пути == активный run-id, иначе block(2)»</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge info">INFO</span></td><td>§5.2 audit</td><td>Дрейф run-id vs topic; join-ключ TODO = topic, не датированный run-id</td><td>Булет сходимости переписан на «topic»</td><td><span class="badge ok">fixed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Итог и цепочка</h3>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 1 WARNING (fixed) · 1 INFO (fixed). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state">Plan <span class="sub">pending</span></div>
+    <div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> <code>superpowers:writing-plans</code> — построить план реализации по этой спецификации.</div>
+</section>
+<!-- TAB:spec END -->
+
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+  <p class="lead">План реализации — 9 TDD-задач: скелет плагина → ассеты → guard → hook → субагенты → skills → docs → прогон.</p>
+  <p class="sub">Вердикт проверки: <span class="badge ok">OK</span> · 0 critical · 3 warning · 1 info · plan_hash <code>3b318b9e0b818f7c</code></p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Создаёт</th><th>DoD (проверка)</th></tr></thead>
+    <tbody>
+      <tr><td>T1 · Plugin skeleton</td><td><code>plugin.json</code> + запись в <code>marketplace.json</code> + README</td><td><code>test_loen_plugin.sh</code>: name/version/source, версия==marketplace</td></tr>
+      <tr><td>T2 · Template assets</td><td><code>loop.template.yaml</code> + <code>state.template.md</code></td><td><code>test_loen_templates.sh</code>: YAML парсится, все ключи контракта</td></tr>
+      <tr><td>T3 · guard_protected.sh</td><td>guard-скрипт (defense-in-depth)</td><td><code>test_loen_guard.sh</code>: protected diff→exit1, clean→exit0</td></tr>
+      <tr><td>T4 · loop-guard hook</td><td><code>loop-guard.py</code> + <code>hooks.json</code></td><td><code>test_loen_hook.py</code>: 9 кейсов (cross-topic/bad-iter/canonical/bootstrap/protected/mutable/no-op)</td></tr>
+      <tr><td>T5 · Субагенты</td><td><code>planner/explorer/verifier.md</code></td><td>frontmatter-lint: name/description/tools/model</td></tr>
+      <tr><td>T6 · loop-delivery</td><td><code>skills/loop-delivery/SKILL.md</code></td><td>skill frontmatter-lint (T7 Step 2)</td></tr>
+      <tr><td>T7 · audit</td><td><code>skills/audit/SKILL.md</code></td><td>skill frontmatter-lint + прогон</td></tr>
+      <tr><td>T8 · Docs</td><td><code>docs/functions/LOEN.md</code> + секция README</td><td>файлы созданы; ссылки корректны</td></tr>
+      <tr><td>T9 · Full run</td><td>прогон 4 сьютов + wiki-страница + TODO</td><td>4×PASS; <code>check-plugin-version-sync.sh</code> exit 0; <code>wiki_lint</code> чист</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+
+  <h3>2.1 Граф зависимостей шагов (M → N: результат M используется в N)</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 700 380" width="100%" role="img" aria-label="граф зависимостей задач плана">
+      <defs>
+        <marker id="parr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path>
+        </marker>
+      </defs>
+      <g stroke="var(--line)" stroke-width="1.7" fill="none" marker-end="url(#parr)">
+        <path d="M350,55 L350,75"></path>
+        <path d="M300,45 C160,70 120,110 120,135"></path>
+        <path d="M320,115 L140,140"></path>
+        <path d="M350,115 L350,140"></path>
+        <path d="M380,115 L560,140"></path>
+        <path d="M560,175 L480,205"></path>
+        <path d="M560,175 L500,205"></path>
+        <path d="M330,115 C270,150 250,180 245,205"></path>
+        <path d="M150,175 L235,208"></path>
+        <path d="M280,225 L440,222"></path>
+        <path d="M350,175 L350,320"></path>
+        <path d="M455,245 L370,282"></path>
+        <path d="M350,305 L350,325"></path>
+      </g>
+      <g font-size="12" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="300" y="15" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="39">T1 skeleton</text></g>
+        <g><rect x="300" y="75" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="99">T2 assets</text></g>
+        <g><rect x="70" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="120" y="159">T3 guard</text></g>
+        <g><rect x="300" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="159">T4 hook</text></g>
+        <g><rect x="510" y="135" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="560" y="159">T5 agents</text></g>
+        <g><rect x="180" y="205" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="235" y="229">T6 delivery</text></g>
+        <g><rect x="410" y="205" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="460" y="229">T7 audit</text></g>
+        <g><rect x="300" y="265" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="350" y="289">T8 docs</text></g>
+        <g><rect x="300" y="325" width="100" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="350" y="349">T9 run</text></g>
+      </g>
+    </svg>
+    <figcaption>DAG, циклов нет; порядок соблюдён (M&lt;N). Ключевые рёбра: T2(schema)→T3/T4/T6, T5(agents)→T6/T7, T3(guard)→T7. Свободный node-edge → SVG-fallback.</figcaption>
+  </figure>
+
+  <h3>2.2 Пересечения (шаги, делящие артефакт)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Артефакт</th><th class="rot">T1</th><th class="rot">T2</th><th class="rot">T3</th><th class="rot">T5</th><th class="rot">T6</th><th class="rot">T7</th><th class="rot">T9</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/test_loen_plugin.sh</code> (append!)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td><code>loop.template.yaml</code></td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td><code>guard_protected.sh</code></td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td><code>marketplace.json</code></td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td><code>docs/TODO.md</code></td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Пересечение-риск:</b> <code>test_loen_plugin.sh</code> дописывается в T1→T5→T7 (append-порядок важен: agents-lint и skills-lint добавляются после создания соответствующих файлов).</div>
+
+  <h2>3. Результаты проверки</h2>
+  <h3>3.1 Статус фаз</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; нумерация T1–T9 без разрывов</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Все MVP-компоненты спеки покрыты; 0 critical-гэпов</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>schema→guard/hook, agents→skills; циклов нет</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>TDD (T1–T4); skills-DoD добавлен (F-004)</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>run-id regex / canonical-пути / symlink-конвенция единообразны</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>severity</th><th>задача</th><th>текст</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge info">INFO</span></td><td>T2/T7</td><td><code>report.template.html</code> из §5 спеки не создаётся — audit рендерит через html-report skill</td><td><span class="badge info">accepted</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge warn">WARNING</span></td><td>T5</td><td>explorer model haiku (override по §5.3); bare-имена агентов vs <code>loen:</code> в таблице спеки</td><td><span class="badge info">accepted</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge warn">WARNING</span></td><td>T7</td><td>Путь guard в audit был <code>${CLAUDE_PLUGIN_ROOT}/../scripts</code> (на уровень выше плагина)</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-004</td><td><span class="badge warn">WARNING</span></td><td>T6/T7</td><td>SKILL.md не имели DoD → добавлен skill frontmatter-lint</td><td><span class="badge ok">fixed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Итог и цепочка</h3>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 3 WARNING (F-003/F-004 fixed, F-002 accepted) · 1 INFO (F-001 accepted). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <div class="note"><b>Max-effort ре-check (против реального кода):</b> +7 находок, все закрыты. <span class="badge crit">CRIT</span> <b>F-005</b> — не было шага включения плагина (<code>enabledPlugins</code>) → добавлен Task 10 (иначе плагин мёртв). <b>F-006</b> ассеты через <code>${CLAUDE_PLUGIN_ROOT}</code> (hook-only) → skill base-dir. <b>F-007</b> scope-парсер только block-YAML → держит и flow. <b>F-008</b> Bash-записи обходят хук → детерминированный <code>check_layout.sh</code> (R16-закрытие). <b>F-009/F-010/F-101</b> run-id/symlink ordering, README-row, redact-заметка, stale-счётчики. Three-way canon-path (hook regex == check_layout == spec §4.3) — без дрейфа. <b>+2 формат-находки vs реальные плагины:</b> <b>F-202</b> — hooks.json был «голым» <code>python3 …</code>; реальные хуки (iwiki) используют file-guard + exit-нормализацию + timeout → loop-guard user-scoped, при падении обязан <b>fail-open</b> (только exit 2 блочит) — добавлен iwiki-паттерн + try/except в main(). <b>F-201</b> — <code>category: workflow</code> вне словаря маркетплейса → <code>development</code>. <b>VERDICT: OK</b>.</div>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div>
+    <div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> реализация плана — <code>superpowers:subagent-driven-development</code> (рекомендуется) или <code>executing-plans</code>.</div>
+</section>
+<!-- TAB:plan END -->
+
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:result END -->
+</body>
+</html>
