@@ -152,6 +152,18 @@ def main():
         check("empty foreign", doc["foreign"], [])
         check("empty success rate", doc["totals"]["success_rate"], None)
 
+    with tempfile.TemporaryDirectory() as tmp:
+        loen = os.path.join(tmp, "docs", "loen")
+        it = os.path.join(loen, "2026-07-03-binary", "iterations", "iter-01")
+        os.makedirs(it)
+        with open(os.path.join(it, "verifier.md"), "wb") as f:
+            f.write(b"\xff\xfe binary junk\n")
+        rc, out, err = run_stats(loen)
+        check("binary artifact exit", rc, 0)
+        doc = json.loads(out)
+        check("binary artifact verdict",
+              doc["runs"][0]["last_verdict"], None)
+
     if fails:
         print("FAIL test_loen_stats.py")
         for f in fails:

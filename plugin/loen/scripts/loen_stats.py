@@ -33,7 +33,7 @@ def read_lines(path):
     try:
         with open(path, encoding="utf-8") as f:
             return f.read().splitlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return None
 
 
