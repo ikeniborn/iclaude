@@ -21,6 +21,12 @@ against a machine-readable `loop.yaml` contract, judged by an independent verifi
   an iclaude Firecracker microVM against a disposable snapshot of the tree: the judge
   cannot touch the worker's tree at all. Requires the iclaude microVM install; default
   `subagent` keeps the in-session verifier.
+- `/loen:governance [--triage]` — cross-run governance: the deterministic offline
+  `scripts/loen_stats.py` aggregation over `docs/loen/` rendered as the
+  `docs/loen/governance.html` dashboard (success rate, metric delta, handoff reasons,
+  failure taxonomy, protected-path alerts, layout drift; cost/tokens and latency/VRAM
+  explicitly n/a). `--triage` proposes next actions for failing runs — proposals only,
+  never executes.
 
 All results live under `docs/loen/<run-id>/`. Templates ship inside the plugin.
 A PreToolUse hook hard-enforces the artifact layout/naming and the loop's mutable/protected
