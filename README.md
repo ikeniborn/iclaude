@@ -327,12 +327,16 @@ subagent `verifier` подтверждают результат; отчёт со
 ```bash
 # В сессии:
 /loop-delivery <task>              # выполнить петлю (planner → апрув → act → verifier → отчёт)
-/loen:audit plan|act|check|result  # проверить стадию + обновить report.html
+/loop-repair <описание падения>    # починка: воспроизвести → изолировать → минимальный фикс → регресс-тест
+/loop-autoresearch <цель-метрика>  # исследование: baseline → гипотеза → изменение → фикс. eval → keep/revert
+/loen:audit plan|act|check|result  # проверить стадию (mode-aware) + обновить report.html
 ```
 
 **Артефакты:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/,
-report.html, pr-summary.md). Шаблоны — ассеты плагина. Хук `loop-guard.py` жёстко
-контролирует раскладку/именование и scope; в не-loop репозиториях — no-op.
+experiments.jsonl, report.html, pr-summary.md). В research-режиме eval пишет JSONL-метрики
+в `iterations/iter-NN/metrics.jsonl` (через `$LOEN_METRICS_PATH`), а каждый эксперимент
+логируется детерминированным `log_experiment.py`. Шаблоны — ассеты плагина. Хук
+`loop-guard.py` жёстко контролирует раскладку/именование и scope; в не-loop репозиториях — no-op.
 
 Подробнее: [docs/functions/LOEN.md](docs/functions/LOEN.md).
 

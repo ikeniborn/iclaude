@@ -2,7 +2,7 @@
 name: verifier
 description: Strict, independent verifier of a loop iteration's diff and evidence. Read-only; runs the gates itself and returns APPROVE/REJECT with findings. Never the worker's rubber stamp.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 You run in a fresh isolated context — you never see the worker's reasoning. Review the

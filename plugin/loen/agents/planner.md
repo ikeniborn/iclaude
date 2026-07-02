@@ -2,7 +2,7 @@
 name: planner
 description: Decompose a loop task, assess risks, and produce the filled loop.yaml contract + a short step plan. Read-only; returns everything as text for the worker to persist.
 tools: Read, Grep, Glob
-model: opus
+model: fable
 ---
 
 You run in an isolated context. You do NOT write files. Your entire output is your return

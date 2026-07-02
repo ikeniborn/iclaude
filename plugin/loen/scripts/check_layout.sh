@@ -18,6 +18,7 @@ while IFS= read -r f; do
     iterations/iter-[0-9][0-9]/diff.patch) ;;
     iterations/iter-[0-9][0-9]/gates.log) ;;
     iterations/iter-[0-9][0-9]/verifier.md) ;;
+    iterations/iter-[0-9][0-9]/metrics.jsonl) ;;
     *) echo "check_layout: non-canonical artifact: $f" >&2; rc=1 ;;
   esac
 done < <(find "$run" -type f 2>/dev/null)

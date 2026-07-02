@@ -46,7 +46,7 @@ PY
 done
 
 # --- skill frontmatter lint ---
-for s in loop-delivery audit; do
+for s in loop-delivery audit loop-repair loop-autoresearch; do
   f="plugin/loen/skills/$s/SKILL.md"
   [[ -f "$f" ]] || fail "missing skill $f"
   python3 - "$f" "$s" <<'PY'
