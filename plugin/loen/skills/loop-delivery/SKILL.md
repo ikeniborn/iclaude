@@ -12,7 +12,9 @@ enforces the layout).
 
 ## Steps
 
-1. **Bootstrap the run.** Derive `<today>` via `date +%F`; `run-id = <today>-<topic>`.
+1. **Bootstrap the run.** Derive `<today>` via `date +%F`; `run-id = <today>-<topic>`
+   (`<topic>` must be lowercase kebab-case, e.g. `fix-auth-bug` — the loop-guard hook
+   only accepts run-ids matching `^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$`).
    With **Bash** (not the Write tool) create the run dir and the pointer BEFORE any
    Write-tool artifact — the loop-guard hook blocks docs/loen writes when no run is active:
    `mkdir -p docs/loen/<run-id>/iterations && ln -sfn <run-id> docs/loen/current`.
@@ -30,8 +32,10 @@ enforces the layout).
 4. **Run `loen:audit plan`** — must return `OK` before Act.
 5. **Act.** Make the smallest diff toward the objective. Stay in `mutable_scope` (the hook
    blocks otherwise). Save the iteration diff to
-   `docs/loen/<run-id>/iterations/iter-NN/diff.patch` (`git diff > …`). Use `explorer`
-   when you need code evidence without loading files into this context.
+   `docs/loen/<run-id>/iterations/iter-NN/diff.patch` (`git diff > …`), where `iter-NN`
+   is zero-padded to two digits (e.g. `iter-01`) — the hook and `check_layout.sh` reject
+   anything else. Use `explorer` when you need code evidence without loading files into
+   this context.
 6. **Check.** Run the `quality_gates` from `loop.yaml`; capture output to
    `iterations/iter-NN/gates.log`. Then **run `loen:audit check`** — it dispatches the
    `verifier` and writes `iterations/iter-NN/verifier.md`.
