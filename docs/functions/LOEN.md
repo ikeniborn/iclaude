@@ -36,8 +36,12 @@ Templates ship inside the plugin (not scaffolded into the project). A PreToolUse
 
 ## Subagents
 
-`planner` (opus), `explorer` (haiku), `verifier` (sonnet) — all read-only, isolated
-context; the worker (main session) is the single writer.
+`planner` (fable — strongest reasoning where the contract and decomposition are authored),
+`explorer` (haiku — cheap evidence gathering), `verifier` (opus — stronger judge, and
+model-diverse from a typically-fable worker session, preserving worker ≠ judge diversity) —
+all read-only, isolated context; the worker (main session) is the single writer. The
+frontmatter `model:` is a default and always overridable; on Claude Code versions without
+the `fable` alias the model falls back per harness rules.
 
 ## Scope
 
