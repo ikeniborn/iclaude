@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  spec_hash: 6db3fd48185a5106
+  spec_hash: 963515bf5f02c35e
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -130,7 +130,8 @@ that skill's body (trace column below). The VBC bullet (evidence-before-done) an
 | Bullet | Source rule already in the body |
 |---|---|
 | delivery: production code before failing test | Change D (new Act-step rule) |
-| delivery: protected_scope / quality_gate / verifier / handoff / budget | Steps 5–8 + `## Rules` + `## Stop conditions` |
+| delivery: protected_scope / handoff / budget | Steps 5, 8 + `## Stop conditions` |
+| delivery: quality_gate weakening / diff-edit / rubber-stamp | Step 6 (runs `quality_gates`; dispatches the independent verifier via `loen:audit check`) + `audit` `## Rules` / `verifier` — gates loop-delivery invokes |
 | delivery: done without gates + verifier APPROVE | Step 8 + `loen:audit result` |
 | repair: reproduce / minimal / regression / inversion | Steps 3–5 + Done condition |
 | repair: fixed without failing command exit 0 | Done condition #1 |
@@ -175,8 +176,12 @@ exemplar's own scoped exceptions — not a soft nuance clause.
   1024 chars; each description is concise — ≤ 35 whitespace tokens (roughly half the
   40–60-token originals; the anti-trigger routing costs a few words, and em-dashes count as
   tokens).
-- Every Red-Flags bullet maps to a rule in the same skill's body — via an existing rule
-  (A/B/C) or via Change D's new Act-step rule for the `loop-delivery` test-first bullet.
+- Every Red-Flags bullet maps to a rule in the skill's operative rule set — its own body,
+  Change D's new Act-step rule (the `loop-delivery` test-first bullet), OR the audit-stage /
+  verifier gates the skill invokes. (loop-delivery Step 6 runs the `quality_gates` and
+  dispatches the independent verifier via `loen:audit check`; the "never weaken a gate /
+  never edit or rubber-stamp the verified diff" rules live in `audit` `## Rules` /
+  `verifier` and bind the delivery worker who runs them.)
 - Only `loop-delivery`'s Act step gains a NEW behavior rule (Change D). No other behavior
   line changes: elsewhere only `description:` fields, additive Red-Flags sections, and the
   F5 clause.
