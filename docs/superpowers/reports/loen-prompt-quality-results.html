@@ -115,16 +115,17 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
-  <p class="lead">Хирургическое усиление <b>формы</b> промтов <code>plugin/loen</code> под <b>функциональные</b> навыки superpowers как эталоны (brainstorming, writing-plans, sdd, executing-plans, systematic-debugging) — не под мета-доктрину writing-skills. Scope: <b>Middle</b> — короткие trigger-описания + Red Flags-блоки (пересказ существующих Rules) + F5. <b>Ноль изменений поведения.</b></p>
-  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>1d0bd32a4cdb41b6</code> · 2026-07-03 · бенчмарк исправлен по указанию пользователя</p>
+  <p class="lead">Усиление <b>формы</b> промтов <code>plugin/loen</code> под <b>функциональные</b> навыки superpowers как эталоны (brainstorming, writing-plans, sdd, executing-plans, systematic-debugging, TDD, verification-before-completion) — не под мета-доктрину writing-skills. Scope: <b>Middle + Change D</b> — короткие trigger-описания (A) + Red Flags c evidence-before-done (B) + F5 (C) + <b>test-first в loop-delivery (D)</b>. A/B/C — пересказ существующих правил; D — одно одобренное изменение поведения.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>cca46f0ddd143fe3</code> · 2026-07-03 · бенчмарк расширен (TDD + VBC) по указанию пользователя</p>
 
   <h2>1. Резюме спецификации</h2>
   <table class="rpt-table">
     <thead><tr><th>Change</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
     <tbody>
       <tr><td>A</td><td>6 <code>description</code> → короткие trigger-led (22–30 слов), workflow убран, соседние loop-* как anti-triggers. Норма — сами функц. навыки (11–30 слов)</td><td><code>grep '^description:'</code> начинается с «Use when»; 22–30 слов</td></tr>
-      <tr><td>B</td><td>Блок <code>## Red Flags — STOP</code> в 3 дисциплинарных loop-скилла; каждый буллет ПЕРЕСКАЗЫВАЕТ существующее правило тела (форма sdd / systematic-debugging)</td><td>Каждый буллет трассируется в <code>## Rules</code>/<code>## Stop conditions</code>/<code>## Steps</code> того же файла</td></tr>
+      <tr><td>B</td><td>Блок <code>## Red Flags — STOP</code> в 3 дисциплинарных loop-скилла; каждый буллет ПЕРЕСКАЗЫВАЕТ существующее правило тела (форма sdd / systematic-debugging / VBC), включая evidence-before-done буллет (VBC)</td><td>Каждый буллет трассируется в <code>## Rules</code>/<code>## Stop conditions</code>/<code>## Steps</code>/Done condition того же файла</td></tr>
       <tr><td>C</td><td><code>loop-autoresearch</code>: «…fixed when possible» → conditional на наблюдаемом предикате (согласуется с «any deviation … MUST be logged»)</td><td>На строке нет «when possible»; conditional присутствует</td></tr>
+      <tr><td>D</td><td><b>loop-delivery Act-step: test-first мандат</b> для изменений поведения (одобренное поведенческое дополнение; loen self-contained — без зависимости на superpowers:TDD)</td><td>Step 5 содержит «test-first»; первый Red-Flags буллет — test-first STOP</td></tr>
       <tr><td>Инвариант</td><td>frontmatter валидный YAML &lt; 1024 симв; discovery-ключи сохранены; ни одной строки поведения — только description + additive Red Flags + 1 F5-клауза</td><td>YAML-парс; <code>git diff</code> в границах; <code>test_loen_plugin.sh</code> PASS</td></tr>
     </tbody>
   </table>
@@ -133,7 +134,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
   <h3>2.1 Схема решения</h3>
   <figure class="rpt-c4">
     <div class="boundary" data-label="Меняется (только форма)">
-      <div class="comp"><b>loop-delivery</b><br><span class="sub">desc + Red Flags</span></div>
+      <div class="comp"><b>loop-delivery</b><br><span class="sub">desc + Red Flags + TDD Act (D)</span></div>
       <div class="comp"><b>loop-repair</b><br><span class="sub">desc + Red Flags</span></div>
       <div class="comp"><b>loop-autoresearch</b><br><span class="sub">desc + Red Flags + F5</span></div>
       <div class="comp"><b>audit</b><br><span class="sub">desc only</span></div>
@@ -147,7 +148,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
       <div class="comp untouched"><b>README ×2</b><br><span class="sub">своя trigger-таблица</span></div>
     </div>
   </figure>
-  <p class="sub">Red Flags — additive-секция, пересказ существующих Rules; description — сжатие метаданных. Behavior loop-инженерии неизменен. Флоучарты (broad-опция) вне scope — ближе к behavior-rewrite.</p>
+  <p class="sub">A/B/C — форма: Red Flags additive (пересказ Rules), description — сжатие метаданных, поведение то же. D — единственное одобренное изменение поведения (test-first в loop-delivery Act). Флоучарты (broad), F2, F6 — вне scope.</p>
 
   <h3>2.2 Граф зависимостей (маршрутизация anti-trigger)</h3>
   <figure class="rpt-graph">

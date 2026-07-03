@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  spec_hash: 1d0bd32a4cdb41b6
+  spec_hash: cca46f0ddd143fe3
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -19,41 +19,43 @@ review:
 
 Date: 2026-07-03
 Topic: loen-prompt-quality
-Status: design approved (Middle scope), pending implementation plan
+Status: design approved (Middle scope + Change D), pending implementation plan
 
 ## Benchmark (corrected)
 
 The reference for "good prompt" is the set of **functional** superpowers skills as
-exemplars — NOT the `writing-skills` meta-doctrine. Studied (6.1.1):
-`brainstorming`, `writing-plans`, `subagent-driven-development` (sdd),
-`executing-plans`, `systematic-debugging`.
+exemplars — NOT the `writing-skills` meta-doctrine. Studied (6.1.1): `brainstorming`,
+`writing-plans`, `subagent-driven-development` (sdd), `executing-plans`,
+`systematic-debugging`, `test-driven-development` (TDD), `verification-before-completion`
+(VBC).
 
-What those exemplars actually exhibit, and whether loen matches:
+What the exemplars exhibit, and whether loen matches:
 
 | Craft trait (from the functional exemplars) | loen today |
 |---|---|
 | SHORT trigger-led `description` (11–30 words; a brief what-clause is fine — `brainstorming` has one) | ✗ 40–60 words, whole workflow inlined |
-| `Red Flags` self-check list for discipline-under-pressure (sdd "Never:", systematic-debugging "STOP") | ✗ has `## Rules`/`## Stop conditions`, but not a Red-Flags self-check |
-| "When to Use / When NOT / use sibling instead" | ✗ absent |
-| Decision flowchart (dot digraph) for branch/loop points (brainstorming, sdd) | ✗ absent (linear numbered steps only) |
-| Strong imperatives / never-list (sdd, systematic-debugging) | ✓ present ("Never edit the diff", "Never weaken a gate") |
-| Subagent + single-writer discipline (sdd File Handoffs) | ✓ present (worker = only writer; subagents return text) |
+| `Red Flags` self-check list for discipline-under-pressure (sdd "Never:", systematic-debugging / TDD / VBC "STOP") | ✗ has `## Rules`/`## Stop conditions`, but not a Red-Flags self-check |
+| Evidence-before-completion self-check (VBC: no completion claim without fresh evidence) | ~ enforced by the verifier + `gates.log`, but the worker has no self-check bullet |
+| Test-first discipline for behavior changes (TDD Iron Law) | ✗ `loop-repair` proves regression via inversion evidence, but `loop-delivery` never mandates test-first |
+| Strong imperatives / never-list; subagent + single-writer discipline | ✓ present |
 
-loen already matches the exemplars on **imperatives and subagent mechanics** (its real
-strength). It diverges on **description brevity**, a **Red-Flags** self-check, and
-**sibling routing**.
+loen matches on imperatives, subagent mechanics, and (in `loop-repair`) the TDD red-green
+regression proof. It diverges on description brevity, a Red-Flags self-check, an explicit
+evidence-before-done bullet, and — in `loop-delivery` — a test-first mandate.
 
 ## Principle
 
-Surgical hardening of **form** toward the functional exemplars. **Zero behavior change**
-to loop engineering: new prose only RESTATES existing rules or shortens metadata. Bodies'
-`## Steps`, sub-agents (`agents/*`), `scripts/`, `hooks/`, and both READMEs keep their
-current behavior. The READMEs already carry their own trigger-style table and do not quote
-descriptions — untouched.
+Changes **A / B / C** are form-hardening that RESTATE existing rules or shorten metadata —
+zero behavior change. Change **D** is ONE deliberate behavior addition (test-first in
+`loop-delivery`), explicitly approved to close the gap the TDD exemplar exposes; it is the
+single exception to "restatement only". Everything else — sub-agents (`agents/*`),
+`scripts/`, `hooks/`, both READMEs, and the other skills' `## Steps` — is unchanged.
 
-Scope chosen: **Middle** (short descriptions + Red Flags on the discipline loops + F5).
-Decision flowcharts are OUT (heavier, drift toward behavior-shaping; a possible later
-track alongside the excluded F2 rationalization tables and F6 baseline pressure-tests).
+loen stays self-contained: Change D encodes test-first in loen's own words; it does NOT add
+a cross-plugin dependency on `superpowers:test-driven-development`.
+
+The READMEs already carry their own trigger-style table and do not quote descriptions —
+untouched.
 
 ## Change A — recalibrated descriptions (all 6 skills)
 
@@ -80,17 +82,20 @@ enumeration removed from the description (it already lives in each skill body).
 
 ## Change B — Red Flags block (the 3 discipline loop skills)
 
-Add one `## Red Flags — STOP` section per loop-* skill, near its `## Stop conditions`.
-Every bullet RESTATES an existing rule already in that skill's body — nothing new is
-introduced. Matches the sdd / systematic-debugging self-check form.
+Add one `## Red Flags — STOP` section per loop-* skill, near its `## Stop conditions` (for
+`loop-autoresearch`, after `## Error handling`). Every bullet RESTATES a rule already in
+that skill's body (trace column below). The VBC bullet (evidence-before-done) and, for
+`loop-delivery`, the TDD bullet (added by Change D) are restatements of existing gates too.
 
 ### `skills/loop-delivery/SKILL.md` — Red Flags
 ```markdown
 ## Red Flags — STOP
 
+- Writing production code for a behavior change before a failing test exists → delete it; restart test-first.
 - Editing a `protected_scope` path → stop; the scope IS the contract.
 - Weakening or skipping a `quality_gate` to go green → never; fix the code.
 - Editing the diff you are verifying, or rubber-stamping your own work → the verifier is independent.
+- Reporting the task done without green gates AND a verifier APPROVE for the final iteration → not done; re-run, don't claim.
 - Auto-merging, or proceeding past a `handoff_conditions` trigger (schema / PII / license / architecture / prod-creds) → hard stop, ask the human.
 - Continuing past `budget` → stop; report the best result and the blocker.
 ```
@@ -103,6 +108,7 @@ introduced. Matches the sdd / systematic-debugging self-check form.
 - A non-test hunk not required for the failing command to pass → out of scope, drop it.
 - Changing tests beyond ADDING the regression test → not allowed.
 - Claiming regression coverage without logged inversion evidence (stash → FAIL → pop → PASS) → not proven.
+- Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
 - Auto-merge, or past a `handoff_conditions` trigger, or past `budget.max_iterations` → hard stop.
 ```
 
@@ -114,8 +120,21 @@ introduced. Matches the sdd / systematic-debugging self-check form.
 - More than one main variable changed in an experiment → not isolatable; one variable per experiment.
 - Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
 - Treating a tie on the primary as progress → a tie is not an improvement; revert.
+- Keeping a change on a claimed metric delta the verifier did not re-confirm → not kept.
 - Two consecutive eval failures, or past `budget.max_experiments`, or a `handoff_conditions` trigger → stop.
 ```
+
+### Red-Flags → existing-rule trace (verification aid)
+
+| Bullet | Source rule already in the body |
+|---|---|
+| delivery: production code before failing test | Change D (new Act-step rule) |
+| delivery: protected_scope / quality_gate / verifier / handoff / budget | Steps 5–8 + `## Rules` + `## Stop conditions` |
+| delivery: done without gates + verifier APPROVE | Step 8 + `loen:audit result` |
+| repair: reproduce / minimal / regression / inversion | Steps 3–5 + Done condition |
+| repair: fixed without failing command exit 0 | Done condition #1 |
+| autoresearch: weaken-eval / one variable / no hand-edit / tie / budget | `## Hard rules` + `## Error handling` |
+| autoresearch: kept without verifier re-confirm | Step 9 + `loen:audit` research check |
 
 ## Change C — F5 nuance clause (`skills/loop-autoresearch/SKILL.md`, ~line 99)
 
@@ -123,6 +142,19 @@ Replace the soft "when possible" nuance clause with a conditional on an observab
 predicate (already consistent with the existing "any deviation … MUST be logged" line):
 
 > - Keep seed, model version, eval command, and dataset fixed across experiments; if any must change, log the deviation in the experiment record.
+
+## Change D — test-first mandate in `loop-delivery` (approved behavior addition)
+
+This is the ONE deliberate behavior change. Insert into `loop-delivery`'s Act step
+(Step 5), right after "Make the smallest diff toward the objective.":
+
+> When the change adds or alters behavior, work test-first: add a failing test that pins the objective, confirm it fails for the right reason, then write the smallest code that makes it pass. A pure refactor keeps the existing tests green; config/chore work with no behavioral surface is exempt.
+
+The matching Red-Flags bullet is the first bullet of `loop-delivery`'s Red-Flags block
+above ("Writing production code for a behavior change before a failing test exists →
+delete it; restart test-first"). The three-way conditional (behavior change / pure
+refactor / config-chore) is keyed to an observable predicate — mirroring the TDD
+exemplar's own scoped exceptions — not a soft nuance clause.
 
 ## Not in scope
 
@@ -133,29 +165,35 @@ predicate (already consistent with the existing "any deviation … MUST be logge
 - **Decision flowcharts** (the broad option), **F2** rationalization tables, **F6**
   baseline pressure-tests — separate track; each is heavier and/or needs the exemplars'
   RED phase (real baseline runs), not pure text.
-- Bodies' `## Steps`, `agents/*`, `scripts/`, `hooks/`, READMEs — untouched.
+- Bodies' `## Steps` of skills other than `loop-delivery`'s Act step, `agents/*`,
+  `scripts/`, `hooks/`, READMEs — untouched.
 
 ## Invariants
 
-- Every `description` starts with a trigger ("Use when …"); front-matter stays valid YAML
-  under 1024 chars; each description 22–30 words.
-- Every Red-Flags bullet maps to a rule already present in the same skill's body (a
-  restatement, not a new rule).
+- Every `description` starts with a trigger ("Use when …"); front-matter valid YAML under
+  1024 chars; each description 22–30 words.
+- Every Red-Flags bullet maps to a rule in the same skill's body — via an existing rule
+  (A/B/C) or via Change D's new Act-step rule for the `loop-delivery` test-first bullet.
+- Only `loop-delivery`'s Act step gains a NEW behavior rule (Change D). No other behavior
+  line changes: elsewhere only `description:` fields, additive Red-Flags sections, and the
+  F5 clause.
+- loen stays self-contained: no cross-plugin dependency introduced.
 - Discovery keywords preserved: `loen`, `loop.yaml`, `/goal`, `triage`, failing test,
   metric, `protected_scope`, `quality_gate`.
-- No behavior line changed: only `description:` fields, additive Red-Flags sections, and
-  the single F5 clause.
 
 ## Verification (prompt text, no runtime surface)
 
 1. `grep '^description:'` across the 6 SKILL.md files → each starts with "Use when"; word
    count 22–30.
-2. Each Red-Flags bullet traces to an existing rule (map bullet → source line in the same
-   file's `## Rules` / `## Stop conditions` / `## Steps`).
-3. Front-matter parses as YAML; each description < 1024 chars.
-4. `git diff` touches only: 6 `description:` lines, 3 additive `## Red Flags` sections, the
-   one `loop-autoresearch` F5 clause — zero edits to existing Steps/Rules logic.
-5. `tests/test_loen_plugin.sh` PASS (frontmatter lint: `name:` + `description:` present).
+2. Each Red-Flags bullet traces to a source rule per the trace table (delivery's first
+   bullet traces to the Change D Act-step rule).
+3. `loop-delivery` Act step (Step 5) contains "test-first"; its Red-Flags block's first
+   bullet is the test-first STOP.
+4. Front-matter parses as YAML; each description < 1024 chars.
+5. `git diff` touches only: 6 `description:` lines, 3 additive `## Red Flags` sections, the
+   one F5 clause, and the one `loop-delivery` Act-step insertion — no other existing rule
+   line altered.
+6. `tests/test_loen_plugin.sh` PASS.
 
 ## Branch / PR
 
