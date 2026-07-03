@@ -1,6 +1,6 @@
 ---
 name: loop-repair
-description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for open-ended work (use loop-delivery) or metrics (use loop-autoresearch).
+description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for delivering a change (use loop-delivery) or metrics (use loop-autoresearch).
 ---
 
 # Loop Repair (mode: repair)

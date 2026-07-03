@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  spec_hash: 0c1e6d31d46724a4
+  spec_hash: 6db3fd48185a5106
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -67,7 +67,7 @@ description (it already lives in each skill body).
 > Use when delivering ONE bounded change — a feature, refactor, or chore — as a controlled, audited loop in any repo. Not for a failing test (use loop-repair) or a numeric metric (use loop-autoresearch).
 
 ### `skills/loop-repair/SKILL.md`
-> Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for open-ended work (use loop-delivery) or metrics (use loop-autoresearch).
+> Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for delivering a change (use loop-delivery) or metrics (use loop-autoresearch).
 
 ### `skills/loop-autoresearch/SKILL.md`
 > Use when improving ONE numeric metric under a controlled research loop with a fixed eval and kept/reverted experiments. Not for a feature (use loop-delivery) or a failing test (use loop-repair).

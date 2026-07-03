@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  plan_hash: 9b9324b712668607
+  plan_hash: 2943d7ae323e3c9e
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -76,7 +76,7 @@ description: Fix one failing test / CI job / regression as a controlled loop —
 ```
 with:
 ```
-description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for open-ended work (use loop-delivery) or metrics (use loop-autoresearch).
+description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for delivering a change (use loop-delivery) or metrics (use loop-autoresearch).
 ```
 
 `loop-autoresearch/SKILL.md` — replace:
