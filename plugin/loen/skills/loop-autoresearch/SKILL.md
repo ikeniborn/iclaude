@@ -114,5 +114,6 @@ templates live at `<skill-base>/../loop-delivery/assets/` (single source — nev
 - More than one main variable changed in an experiment → not isolatable; one variable per experiment.
 - Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
 - Treating a tie on the primary as progress → a tie is not an improvement; revert.
-- Keeping a change on a claimed metric delta the verifier did not re-confirm → not kept.
-- Two consecutive eval failures, or past `budget.max_experiments`, or a `handoff_conditions` trigger → stop.
+- Treating a keep as final before `loen:audit check` re-confirms its metric delta → not confirmed.
+- Two consecutive eval failures, or `budget.max_experiments` exhausted → stop; report the best kept state and the full experiment log.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.

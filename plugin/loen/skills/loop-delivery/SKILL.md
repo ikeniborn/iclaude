@@ -59,8 +59,8 @@ enforces the layout).
 
 - Writing production code for a behavior change before a failing test exists → delete it; restart test-first.
 - Editing a `protected_scope` path → stop; the scope IS the contract.
-- Weakening or skipping a `quality_gate` to go green → never; fix the code.
-- Editing the diff you are verifying, or rubber-stamping your own work → the verifier is independent.
+- Weakening or skipping a quality gate to go green → never; fix the code.
+- Editing the diff you are verifying, or self-approving instead of the independent verifier → stop; only the verifier judges.
 - Reporting the task done without green gates AND a verifier APPROVE for the final iteration → not done; re-run, don't claim.
 - Auto-merging, or proceeding past a `handoff_conditions` trigger (schema / PII / license / architecture / prod-creds) → hard stop, ask the human.
 - Continuing past `budget` → stop; report the best result and the blocker.

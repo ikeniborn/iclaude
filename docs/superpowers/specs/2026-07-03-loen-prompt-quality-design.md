@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  spec_hash: 963515bf5f02c35e
+  spec_hash: 16e54a748ac48ed5
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -94,8 +94,8 @@ that skill's body (trace column below). The VBC bullet (evidence-before-done) an
 
 - Writing production code for a behavior change before a failing test exists → delete it; restart test-first.
 - Editing a `protected_scope` path → stop; the scope IS the contract.
-- Weakening or skipping a `quality_gate` to go green → never; fix the code.
-- Editing the diff you are verifying, or rubber-stamping your own work → the verifier is independent.
+- Weakening or skipping a quality gate to go green → never; fix the code.
+- Editing the diff you are verifying, or self-approving instead of the independent verifier → stop; only the verifier judges.
 - Reporting the task done without green gates AND a verifier APPROVE for the final iteration → not done; re-run, don't claim.
 - Auto-merging, or proceeding past a `handoff_conditions` trigger (schema / PII / license / architecture / prod-creds) → hard stop, ask the human.
 - Continuing past `budget` → stop; report the best result and the blocker.
@@ -108,9 +108,10 @@ that skill's body (trace column below). The VBC bullet (evidence-before-done) an
 - "Fixing" a failure you have not reproduced → stop; no reproduction, no fix.
 - A non-test hunk not required for the failing command to pass → out of scope, drop it.
 - Changing tests beyond ADDING the regression test → not allowed.
-- Claiming regression coverage without logged inversion evidence (stash → FAIL → pop → PASS) → not proven.
+- Claiming regression coverage without the logged inversion evidence (stash, regression test FAILS, pop, it PASSES) → not proven.
 - Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
-- Auto-merge, or past a `handoff_conditions` trigger, or past `budget.max_iterations` → hard stop.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
+- `budget.max_iterations` exhausted → stop; report the root cause, best attempt, and the blocker.
 ```
 
 ### `skills/loop-autoresearch/SKILL.md` — Red Flags
@@ -121,8 +122,9 @@ that skill's body (trace column below). The VBC bullet (evidence-before-done) an
 - More than one main variable changed in an experiment → not isolatable; one variable per experiment.
 - Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
 - Treating a tie on the primary as progress → a tie is not an improvement; revert.
-- Keeping a change on a claimed metric delta the verifier did not re-confirm → not kept.
-- Two consecutive eval failures, or past `budget.max_experiments`, or a `handoff_conditions` trigger → stop.
+- Treating a keep as final before `loen:audit check` re-confirms its metric delta → not confirmed.
+- Two consecutive eval failures, or `budget.max_experiments` exhausted → stop; report the best kept state and the full experiment log.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
 ```
 
 ### Red-Flags → existing-rule trace (verification aid)

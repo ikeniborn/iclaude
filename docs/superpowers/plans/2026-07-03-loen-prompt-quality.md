@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  plan_hash: a3fba0bf50a68e3a
+  plan_hash: e42fafc21921981b
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -183,8 +183,8 @@ The file ends with the `## Stop conditions` list; its last line is `  hard stop,
 
 - Writing production code for a behavior change before a failing test exists → delete it; restart test-first.
 - Editing a `protected_scope` path → stop; the scope IS the contract.
-- Weakening or skipping a `quality_gate` to go green → never; fix the code.
-- Editing the diff you are verifying, or rubber-stamping your own work → the verifier is independent.
+- Weakening or skipping a quality gate to go green → never; fix the code.
+- Editing the diff you are verifying, or self-approving instead of the independent verifier → stop; only the verifier judges.
 - Reporting the task done without green gates AND a verifier APPROVE for the final iteration → not done; re-run, don't claim.
 - Auto-merging, or proceeding past a `handoff_conditions` trigger (schema / PII / license / architecture / prod-creds) → hard stop, ask the human.
 - Continuing past `budget` → stop; report the best result and the blocker.
@@ -200,9 +200,10 @@ The file ends with the paragraph whose last line is `hook allows them, no audit 
 - "Fixing" a failure you have not reproduced → stop; no reproduction, no fix.
 - A non-test hunk not required for the failing command to pass → out of scope, drop it.
 - Changing tests beyond ADDING the regression test → not allowed.
-- Claiming regression coverage without logged inversion evidence (stash → FAIL → pop → PASS) → not proven.
+- Claiming regression coverage without the logged inversion evidence (stash, regression test FAILS, pop, it PASSES) → not proven.
 - Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
-- Auto-merge, or past a `handoff_conditions` trigger, or past `budget.max_iterations` → hard stop.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
+- `budget.max_iterations` exhausted → stop; report the root cause, best attempt, and the blocker.
 ```
 
 - [ ] **Step 4: Edit `loop-autoresearch/SKILL.md` — F5 clause (L99) then append Red Flags**
@@ -225,8 +226,9 @@ with:
 - More than one main variable changed in an experiment → not isolatable; one variable per experiment.
 - Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
 - Treating a tie on the primary as progress → a tie is not an improvement; revert.
-- Keeping a change on a claimed metric delta the verifier did not re-confirm → not kept.
-- Two consecutive eval failures, or past `budget.max_experiments`, or a `handoff_conditions` trigger → stop.
+- Treating a keep as final before `loen:audit check` re-confirms its metric delta → not confirmed.
+- Two consecutive eval failures, or `budget.max_experiments` exhausted → stop; report the best kept state and the full experiment log.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
 ```
 
 - [ ] **Step 5: Verify each Red-Flags bullet traces to a source rule (no un-grounded rule except Change D)**

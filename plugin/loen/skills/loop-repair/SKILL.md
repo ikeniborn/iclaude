@@ -74,6 +74,7 @@ hook allows them, no audit stage requires or reads them.
 - "Fixing" a failure you have not reproduced → stop; no reproduction, no fix.
 - A non-test hunk not required for the failing command to pass → out of scope, drop it.
 - Changing tests beyond ADDING the regression test → not allowed.
-- Claiming regression coverage without logged inversion evidence (stash → FAIL → pop → PASS) → not proven.
+- Claiming regression coverage without the logged inversion evidence (stash, regression test FAILS, pop, it PASSES) → not proven.
 - Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
-- Auto-merge, or past a `handoff_conditions` trigger, or past `budget.max_iterations` → hard stop.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
+- `budget.max_iterations` exhausted → stop; report the root cause, best attempt, and the blocker.
