@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  plan_hash: d031fb86d603f885
+  plan_hash: 9b9324b712668607
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -29,7 +29,7 @@ review:
 
 ## Global Constraints
 
-- Every `description` starts with `Use when`; 22–30 words; sibling loops named as anti-triggers; no workflow enumeration.
+- Every `description` starts with `Use when`; concise (≤ 35 whitespace tokens, ~half the 40–60-token originals; em-dashes count as tokens); sibling loops named as anti-triggers; no workflow enumeration.
 - Every Red-Flags bullet maps to a rule in the same skill's body — an existing rule (A/B/C) or, for `loop-delivery`'s first bullet, Change D's new Act-step rule.
 - **Change D is the ONE approved behavior change** (test-first mandate in `loop-delivery`'s Act step). Everywhere else only `description:` fields, additive `## Red Flags — STOP` sections, and the single F5 clause change — no other existing rule line altered.
 - **loen stays self-contained** — Change D encodes test-first in loen's own words; do NOT add a cross-plugin dependency on `superpowers:test-driven-development`.
@@ -126,7 +126,7 @@ for s in loop-delivery loop-repair loop-autoresearch audit governance loop-goal;
   echo "$s: words=$wc | ${line:0:22}"
 done
 ```
-Expected: every line prints `| description: Use when` and `words=` between 22 and 30.
+Expected: every line prints `| description: Use when` and `words=` ≤ 35 (well under the original 40–60).
 
 - [ ] **Step 3: Verify front-matter parses as YAML and is < 1024 chars**
 

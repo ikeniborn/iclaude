@@ -3,7 +3,7 @@ chain:
   intent: null
   spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
 review:
-  spec_hash: cca46f0ddd143fe3
+  spec_hash: 0c1e6d31d46724a4
   last_run: 2026-07-03
   runner: "main-session (check-runner protocol)"
   phases:
@@ -59,8 +59,9 @@ untouched.
 
 ## Change A — recalibrated descriptions (all 6 skills)
 
-Short, trigger-led (target 22–30 words), sibling loops named as anti-triggers. Workflow
-enumeration removed from the description (it already lives in each skill body).
+Short, trigger-led (concise — ≤ 35 whitespace tokens, roughly half the 40–60-token
+originals), sibling loops named as anti-triggers. Workflow enumeration removed from the
+description (it already lives in each skill body).
 
 ### `skills/loop-delivery/SKILL.md`
 > Use when delivering ONE bounded change — a feature, refactor, or chore — as a controlled, audited loop in any repo. Not for a failing test (use loop-repair) or a numeric metric (use loop-autoresearch).
@@ -171,7 +172,9 @@ exemplar's own scoped exceptions — not a soft nuance clause.
 ## Invariants
 
 - Every `description` starts with a trigger ("Use when …"); front-matter valid YAML under
-  1024 chars; each description 22–30 words.
+  1024 chars; each description is concise — ≤ 35 whitespace tokens (roughly half the
+  40–60-token originals; the anti-trigger routing costs a few words, and em-dashes count as
+  tokens).
 - Every Red-Flags bullet maps to a rule in the same skill's body — via an existing rule
   (A/B/C) or via Change D's new Act-step rule for the `loop-delivery` test-first bullet.
 - Only `loop-delivery`'s Act step gains a NEW behavior rule (Change D). No other behavior
@@ -183,8 +186,8 @@ exemplar's own scoped exceptions — not a soft nuance clause.
 
 ## Verification (prompt text, no runtime surface)
 
-1. `grep '^description:'` across the 6 SKILL.md files → each starts with "Use when"; word
-   count 22–30.
+1. `grep '^description:'` across the 6 SKILL.md files → each starts with "Use when"; token
+   count ≤ 35 (well under the original 40–60).
 2. Each Red-Flags bullet traces to a source rule per the trace table (delivery's first
    bullet traces to the Change D Act-step rule).
 3. `loop-delivery` Act step (Step 5) contains "test-first"; its Red-Flags block's first

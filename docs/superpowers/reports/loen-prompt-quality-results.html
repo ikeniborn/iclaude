@@ -116,13 +116,13 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
   <p class="lead">Усиление <b>формы</b> промтов <code>plugin/loen</code> под <b>функциональные</b> навыки superpowers как эталоны (brainstorming, writing-plans, sdd, executing-plans, systematic-debugging, TDD, verification-before-completion) — не под мета-доктрину writing-skills. Scope: <b>Middle + Change D</b> — короткие trigger-описания (A) + Red Flags c evidence-before-done (B) + F5 (C) + <b>test-first в loop-delivery (D)</b>. A/B/C — пересказ существующих правил; D — одно одобренное изменение поведения.</p>
-  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>cca46f0ddd143fe3</code> · 2026-07-03 · бенчмарк расширен (TDD + VBC) по указанию пользователя</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>0c1e6d31d46724a4</code> · 2026-07-03 · бенчмарк расширен (TDD + VBC) по указанию пользователя</p>
 
   <h2>1. Резюме спецификации</h2>
   <table class="rpt-table">
     <thead><tr><th>Change</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
     <tbody>
-      <tr><td>A</td><td>6 <code>description</code> → короткие trigger-led (22–30 слов), workflow убран, соседние loop-* как anti-triggers. Норма — сами функц. навыки (11–30 слов)</td><td><code>grep '^description:'</code> начинается с «Use when»; 22–30 слов</td></tr>
+      <tr><td>A</td><td>6 <code>description</code> → короткие trigger-led (22–30 слов), workflow убран, соседние loop-* как anti-triggers. Норма — сами функц. навыки (11–30 слов)</td><td><code>grep '^description:'</code> начинается с «Use when»; ≤35 токенов (≪ оригинальных 40–60)</td></tr>
       <tr><td>B</td><td>Блок <code>## Red Flags — STOP</code> в 3 дисциплинарных loop-скилла; каждый буллет ПЕРЕСКАЗЫВАЕТ существующее правило тела (форма sdd / systematic-debugging / VBC), включая evidence-before-done буллет (VBC)</td><td>Каждый буллет трассируется в <code>## Rules</code>/<code>## Stop conditions</code>/<code>## Steps</code>/Done condition того же файла</td></tr>
       <tr><td>C</td><td><code>loop-autoresearch</code>: «…fixed when possible» → conditional на наблюдаемом предикате (согласуется с «any deviation … MUST be logged»)</td><td>На строке нет «when possible»; conditional присутствует</td></tr>
       <tr><td>D</td><td><b>loop-delivery Act-step: test-first мандат</b> для изменений поведения (одобренное поведенческое дополнение; loen self-contained — без зависимости на superpowers:TDD)</td><td>Step 5 содержит «test-first»; первый Red-Flags буллет — test-first STOP</td></tr>
@@ -211,13 +211,13 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
   <p class="lead">План реализации: 3 задачи. Чистые правки текста промтов под <code>plugin/loen/skills/</code>. Change A (описания) → Change D+B+C (test-first Act + Red Flags + F5) → bump/verify/PR.</p>
-  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>d031fb86d603f885</code> · 2026-07-03 · runner: main-session · артефакт: <code>docs/superpowers/plans/2026-07-03-loen-prompt-quality.md</code></p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>9b9324b712668607</code> · 2026-07-03 · runner: main-session · артефакт: <code>docs/superpowers/plans/2026-07-03-loen-prompt-quality.md</code></p>
 
   <h2>1. Резюме плана</h2>
   <table class="rpt-table">
     <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
     <tbody>
-      <tr><td>Task 1</td><td>Change A — переписать 6 <code>description</code> на короткую trigger-форму (exact string swap)</td><td>каждое начинается с «Use when», 22–30 слов; YAML &lt;1024; <code>test_loen_plugin.sh</code> PASS; commit</td></tr>
+      <tr><td>Task 1</td><td>Change A — переписать 6 <code>description</code> на короткую trigger-форму (exact string swap)</td><td>каждое начинается с «Use when», ≤35 токенов; YAML &lt;1024; <code>test_loen_plugin.sh</code> PASS; commit</td></tr>
       <tr><td>Task 2</td><td>Change D (test-first в Act step loop-delivery) + Change B (<code>## Red Flags — STOP</code> ×3, вкл. VBC evidence-буллет) + Change C (F5-клауза)</td><td>Act step содержит «test-first»; каждый Red-Flags буллет трассируется в тело (буллет-1 delivery → Change D); дифф удаляет только F5-строку; <code>test_loen_plugin.sh</code> PASS; commit</td></tr>
       <tr><td>Task 3</td><td>Патч-бамп 0.5.0→0.5.1 (оба манифеста), полный прогон loen-сьютов, проверка doc-drift, iwiki+PR в <code>dev</code></td><td>version-sync exit 0; сьюты PASS; «NO stale quotes»; PR открыт; <code>/check-chain result</code></td></tr>
     </tbody>
