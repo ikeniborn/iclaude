@@ -169,7 +169,20 @@ fetch_node_via_node_tls() {
 	runner="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)/bin/node"
 	[[ -x "$runner" ]] || runner="$(command -v node 2>/dev/null)"
 	if [[ -z "$runner" ]] || [[ ! -x "$runner" ]]; then
+		# Bootstrap chicken-and-egg: the fetcher is a Node script, so it needs an
+		# existing Node to run. nvm cannot help here — it downloads Node with the
+		# same broken curl. The user must provide a Node to bootstrap from.
 		print_error "No Node.js available to run the TLS fetcher"
+		echo ""
+		echo "The node-TLS installer needs an existing Node.js to bootstrap from, but"
+		echo "none was found (no isolated Node, no system 'node' on PATH), and nvm"
+		echo "cannot download one on this host (system curl/OpenSSL cannot reach the"
+		echo "Node mirror)."
+		echo ""
+		echo "Provide a Node.js to bootstrap from, then re-run, e.g.:"
+		echo "  • install a system Node:    sudo apt install nodejs   (or dnf/pacman)"
+		echo "  • or drop a Node build in:  $NVM_DIR/versions/node/v$major.<minor>.<patch>/"
+		echo "  • or set a reachable mirror: export NVM_NODEJS_ORG_MIRROR=<mirror>"
 		return 1
 	fi
 
