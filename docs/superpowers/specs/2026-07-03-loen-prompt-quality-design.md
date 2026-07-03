@@ -1,7 +1,24 @@
+---
+chain:
+  intent: null
+  spec: docs/superpowers/specs/2026-07-03-loen-prompt-quality-design.md
+review:
+  spec_hash: b50c7e115cadbc6d
+  last_run: 2026-07-03
+  runner: "main-session (check-runner protocol)"
+  phases:
+    structure:   { status: passed }
+    coverage:    { status: passed }
+    clarity:     { status: passed }
+    consistency: { status: passed }
+  findings: []
+  verdict: OK
+---
+
 # loen prompt quality — surgical hardening (design)
 
 Date: 2026-07-03
-Topic: loen-prompt-hardening
+Topic: loen-prompt-quality
 Status: design approved, pending implementation plan
 
 ## Problem
