@@ -26,7 +26,7 @@ install_from_lockfile() {
 	echo ""
 
 	# Parse lockfile (using grep for portability)
-	local node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "18")
+	local node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "22")
 	local claude_version=$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
 
 	print_info "Node.js version from lockfile: $node_version"

@@ -365,6 +365,27 @@ experiments.jsonl, report.html, pr-summary.md). В research-режиме eval п
 ./iclaude.sh --check-statusline # Статус статуслайна
 ```
 
+**Версия Node.js.** `--update` держит Node.js изолированной среды не ниже
+`engines.node` Claude Code. Перед `npm install` он читает требование пакета и,
+если активный мажор устарел (например, v20 при требуемом v22), **предлагает**
+(prompt, по умолчанию «да») поставить нужный мажор внутри изолированной среды.
+Глобальные пакеты лежат в общем префиксе `npm-global`, поэтому переживают смену
+Node без миграции. Если отказаться или все способы скачивания провалились,
+обновление **прерывается** — иначе установился бы Claude Code, который выдаёт
+`EBADENGINE` или не запустится. Проверка срабатывает даже когда Claude Code уже
+последней версии. Новые установки используют Node 22 по умолчанию.
+
+Скачивание Node идёт двумя путями. Сначала `nvm install <major>` (системный
+`curl`). Если он падает — системный OpenSSL не может завершить TLS-хендшейк к
+`nodejs.org` (`x509 unsupported algorithm`: GOST-патченный OpenSSL в AltLinux
+или TLS-перехватывающий прокси; падает даже с `-k` и даже мимо прокси) —
+включается fallback `fetch_node_via_node_tls`: `scripts/fetch-node.js` качает
+tarball **через собственный TLS-стек Node** (по той же причине, по которой `npm`
+работает, а `curl` нет), сверяет `SHASUMS256.txt` (sha256) и распаковывает в
+`versions/node/`. Тот же fallback использует `install_isolated_nodejs`, поэтому
+`--update` и `--isolated-install` чинятся сами; fetcher может стартовать на
+системном Node, если в изоляторе Node ещё нет.
+
 ---
 
 ## Workflow разработки: IDD → iwiki → brainstorm
