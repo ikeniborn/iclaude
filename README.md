@@ -382,9 +382,10 @@ Node без миграции. Если отказаться или все спо
 включается fallback `fetch_node_via_node_tls`: `scripts/fetch-node.js` качает
 tarball **через собственный TLS-стек Node** (по той же причине, по которой `npm`
 работает, а `curl` нет), сверяет `SHASUMS256.txt` (sha256) и распаковывает в
-`versions/node/`. Тот же fallback использует `install_isolated_nodejs`, поэтому
-`--update` и `--isolated-install` чинятся сами; fetcher может стартовать на
-системном Node, если в изоляторе Node ещё нет.
+`versions/node/`. Тот же fallback используют `install_isolated_nodejs` и
+`install_from_lockfile`, поэтому `--update`, `--isolated-install` и
+`--install-from-lockfile` чинятся сами; fetcher может стартовать на системном
+Node, если в изоляторе Node ещё нет.
 
 ---
 
