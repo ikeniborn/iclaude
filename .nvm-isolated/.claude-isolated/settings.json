@@ -104,7 +104,7 @@
     ],
     "defaultMode": "default"
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -202,7 +202,9 @@
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "loen@iclaude": true
+    "loen@iclaude": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "iclaude": {

@@ -6,8 +6,12 @@ controlled `Plan → Act → Check → Report` agent loop with an independent ve
 ## Install
 
 The plugin ships with the repo. Enable it at user scope through the plugin system
-(marketplace `iclaude`, plugin `loen`). It installs to
-`.nvm-isolated/.claude-isolated/plugins/cache/iclaude/loen/<version>/`.
+(marketplace `iclaude`, plugin `loen`). The `iclaude` marketplace is a `directory`
+source, so Claude Code loads the plugin straight from the repo checkout
+(`plugin/loen/`) — no versioned copy is placed under `plugins/cache/`.
+
+User-facing docs ship with the plugin: `plugin/loen/README.md` (English) and
+`plugin/loen/README.ru.md` (Russian).
 
 ## Use
 
