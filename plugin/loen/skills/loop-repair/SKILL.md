@@ -1,6 +1,6 @@
 ---
 name: loop-repair
-description: Fix one failing test / CI job / regression as a controlled loop — reproduce first, isolate, minimal fix, regression test — reusing the loen loop machinery; artifacts under docs/loen/<run-id>/.
+description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for open-ended work (use loop-delivery) or metrics (use loop-autoresearch).
 ---
 
 # Loop Repair (mode: repair)

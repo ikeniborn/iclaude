@@ -1,6 +1,6 @@
 ---
 name: loop-autoresearch
-description: Improve one numeric metric as a controlled research loop — baseline, hypothesis, one bounded change, fixed eval, compare, keep/revert — logging every experiment as JSONL events; reuses the loen loop machinery.
+description: Use when improving ONE numeric metric under a controlled research loop with a fixed eval and kept/reverted experiments. Not for a feature (use loop-delivery) or a failing test (use loop-repair).
 ---
 
 # Loop AutoResearch (mode: research)

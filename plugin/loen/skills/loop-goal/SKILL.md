@@ -1,6 +1,6 @@
 ---
 name: loop-goal
-description: OPTIONAL accelerator — wrap the active, human-approved loen run in Claude's native /goal condition (generated deterministically from loop.yaml by scripts/make_goal.py), plus a session-scoped /loop polling recipe for long-running gates. Validates run state, briefs the evidence-first /goal mechanics, never bootstraps a run, never submits /goal itself.
+description: Use when an active, human-approved loen run should keep going multi-turn on its own — wraps it in Claude's native /goal from loop.yaml. Optional; never bootstraps a run or submits /goal itself.
 ---
 
 # Loop Goal — /goal + /loop wrapper (optional)

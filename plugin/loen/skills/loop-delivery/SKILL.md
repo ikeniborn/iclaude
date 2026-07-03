@@ -1,6 +1,6 @@
 ---
 name: loop-delivery
-description: Execute one delivery task as a controlled loop — plan, act (smallest diff), check (gates + independent verifier), report — writing all artifacts under docs/loen/<run-id>/. Independent of the IDD→SDD chain; works in any repo.
+description: Use when delivering ONE bounded change — a feature, refactor, or chore — as a controlled, audited loop in any repo. Not for a failing test (use loop-repair) or a numeric metric (use loop-autoresearch).
 ---
 
 # Loop Delivery
