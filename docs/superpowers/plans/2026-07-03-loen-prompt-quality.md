@@ -15,6 +15,10 @@ review:
   findings:
     - { id: F-001, phase: coverage, severity: INFO, verdict: wontfix, note: "Task 3 version bump + PR are release-hygiene steps beyond the spec text; included per repo convention (prior loen chains did the same)" }
   verdict: OK
+result_check:
+  verdict: OK
+  plan_hash: e42fafc21921981b
+  last_run: 2026-07-03
 ---
 
 # loen Prompt Quality — Surgical Hardening Implementation Plan

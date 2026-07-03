@@ -92,8 +92,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
   <h1>loen prompt quality — surgical hardening</h1>
@@ -282,7 +282,48 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка реализации с планом: 3 задачи DONE, 0 MISSING, 0 непрояснённого excess. Вердикт: <span class="badge ok">OK</span>.</p>
+  <p class="sub">result_check 2026-07-03 · plan_hash <code>e42fafc21921981b</code> · база диффа <code>dev</code> → HEAD <code>c7b2a59c</code> · PR <a href="https://github.com/ikeniborn/iclaude/pull/83">#83</a> → dev</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ</th><th>Путь / состояние</th></tr></thead>
+    <tbody>
+      <tr><td>Intent</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>Spec</td><td><code>...specs/2026-07-03-loen-prompt-quality-design.md</code> (OK)</td></tr>
+      <tr><td>План</td><td><code>...plans/2026-07-03-loen-prompt-quality.md</code> (OK, e42fafc21921981b)</td></tr>
+      <tr><td>База диффа</td><td><code>dev</code> (93d2816c) → HEAD c7b2a59c — нетто-продукт 8 файлов, +44/−10</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <h3>2.1 Покрытие задач плана: 3 DONE · 0 PARTIAL · 0 MISSING</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Evidence в диффе</th></tr></thead>
+    <tbody>
+      <tr><td>Task 1: Change A — 6 описаний</td><td><span class="badge ok">DONE</span></td><td>6× description в diff; commits ae8e4f3b, 699997ce (review-fix)</td></tr>
+      <tr><td>Task 2: Change D+B+C</td><td><span class="badge ok">DONE</span></td><td>loop-delivery Act-step test-first + Red Flags ×3 (7 буллетов) + F5-клауза; commits dc566500, 3b44e212 (review-fix); spec/quality оба ✅</td></tr>
+      <tr><td>Task 3: bump + verify + PR + result</td><td><span class="badge ok">DONE</span></td><td>plugin.json + marketplace loen 0.5.0→0.5.1 (c7b2a59c); version-sync exit 0; 3 сьюта PASS; doc-drift только в исторических планах (benign); PR #83; этот result</td></tr>
+    </tbody>
+  </table>
+  <h3>2.2 Findings</h3>
+  <table class="rpt-table">
+    <thead><tr><th>sev</th><th>шаг</th><th>Plan / Diff / примечание</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge info">INFO</span></td><td>Task 3</td><td>bump+PR — release-hygiene вне текста спеки (plan F-001 wontfix, repo-convention); не дефект</td></tr>
+      <tr><td><span class="badge info">INFO</span></td><td>doc-drift</td><td>grep <code>docs/</code> захватил исторические планы 2026-07-02 (неизменяемая запись эпохи их описаний); живые доки чисты</td></tr>
+    </tbody>
+  </table>
+  <h3>2.3 Покрытие intent + spec / excess</h3>
+  <p>Intent: n/a. Spec: A/B/C/D — все 4 класса изменений в диффе (6 описаний; Red Flags ×3; F5; test-first Act). Инварианты соблюдены (≤35 токенов, YAML&lt;1024, self-contained, только Change D меняет поведение). <b>EXCESS (продукт): 0</b> — все 8 продуктовых файлов принадлежат задачам. Прочий дифф ветки (spec/plan/report/TODO) — артефакты самой IDD-цепочки, не непланируемый продукт.</p>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 2 INFO (оба benign). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Финал:</b> final whole-branch review (opus) READY TO MERGE, 0 Critical/Important; PR #83 в <code>dev</code>; строка <code>docs/TODO.md</code> закрыта (done, 2026-07-03).</div>
 </section>
 <!-- TAB:result END -->
 </body>
