@@ -29,6 +29,16 @@ The plugin ships with the repo. Enable it at user scope through the plugin syste
   `/goal` string generated deterministically from the active, approved `loop.yaml`
   (`scripts/make_goal.py`), plus a session-scoped `/loop` polling recipe for
   long-running gates. Never bootstraps a run, never submits `/goal` itself.
+- `/loen:governance [--triage]` — cross-run governance: the deterministic
+  `scripts/loen_stats.py` aggregates every run under `docs/loen/` (success rate,
+  keep/revert, handoff reasons, failure taxonomy from REJECT verdicts' numbered
+  `REQUIRED FIXES:` items, protected-path alerts, layout-drift `foreign` list) and the
+  skill renders the `docs/loen/governance.html` dashboard via `html-report`. The §10.3
+  rows loen artifacts cannot back — cost/tokens and latency/VRAM — are explicitly n/a,
+  never fabricated. `--triage` lists failing runs (last verdict REJECT, or absent while
+  iterations exist) with proposed next actions (`/loen:loop-repair <failing command>`
+  for repair-shaped failures; "review contract/budget" otherwise) — proposals only, the
+  human executes. Offline-first: no network, no LLM in the aggregation.
 
 ## Artifacts
 
@@ -48,6 +58,14 @@ All results live under `docs/loen/<run-id>/` (run-id = `<YYYY-MM-DD>-<topic>`):
 Templates ship inside the plugin (not scaffolded into the project). A PreToolUse hook
 (`loop-guard.py`) hard-enforces the layout/naming within the active topic and the loop's
 `mutable_scope`/`protected_scope`. It is a no-op in non-loop repos.
+
+Cross-run (top level, outside run dirs): `docs/loen/governance.html` — the governance
+dashboard `/loen:governance` renders from `scripts/loen_stats.py` output. It joins
+`current` and `RUNBOOK.md` in the hook's top-level canon set (early allow guard +
+`canon_patterns()` entry; this Artifacts entry is the second leg of the canon sync —
+`check_layout.sh` is unaffected because it validates inside one run dir). The
+aggregator picks up handoff/stop reasons from `state.md` `## Attempts` lines of the
+form `- handoff: <reason>` / `- stop: <reason>`.
 
 ## Subagents
 
@@ -77,5 +95,6 @@ opt-in.
 
 Shipped: delivery (`loop-delivery`), repair (`loop-repair`), research
 (`loop-autoresearch`), verifier, guard, `/goal`+`/loop` wrapping (`loop-goal` +
-`make_goal.py`), opt-in verifier microVM isolation (`verifier_isolation: microvm`).
-Governance/observability is a later increment.
+`make_goal.py`), opt-in verifier microVM isolation (`verifier_isolation: microvm`),
+governance/observability (`/loen:governance` + `loen_stats.py` →
+`docs/loen/governance.html`).

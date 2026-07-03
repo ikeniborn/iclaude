@@ -28,6 +28,7 @@ def canon_patterns(R):
     return [
         re.compile(r"^docs/loen/current$"),
         re.compile(r"^docs/loen/RUNBOOK\.md$"),
+        re.compile(r"^docs/loen/governance\.html$"),
         re.compile(rf"^docs/loen/{Rq}/loop\.yaml$"),
         re.compile(rf"^docs/loen/{Rq}/plan\.md$"),
         re.compile(rf"^docs/loen/{Rq}/state\.md$"),
@@ -121,6 +122,8 @@ def main():
         sys.exit(0)
     if path == "docs/loen/RUNBOOK.md":
         sys.exit(0)
+    if path == "docs/loen/governance.html":
+        sys.exit(0)
 
     if path.startswith("docs/loen/"):
         if R is None:
@@ -142,7 +145,9 @@ def main():
             f"  expected: docs/loen/{R}/{{loop.yaml,plan.md,state.md,"
             f"pr-summary.md,report.html,experiments.jsonl}}\n"
             f"  or:       docs/loen/{R}/iterations/iter-NN/"
-            f"{{diff.patch,gates.log,verifier.md,metrics.jsonl}}"
+            f"{{diff.patch,gates.log,verifier.md,metrics.jsonl}}\n"
+            f"  top-level: docs/loen/{{current,RUNBOOK.md,"
+            f"governance.html}}"
         )
 
     # outside docs/loen/ -> scope enforcement, only when a loop is active

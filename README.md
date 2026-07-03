@@ -331,6 +331,7 @@ subagent `verifier` подтверждают результат; отчёт со
 /loop-autoresearch <цель-метрика>  # исследование: baseline → гипотеза → изменение → фикс. eval → keep/revert
 /loen:audit plan|act|check|result  # проверить стадию (mode-aware) + обновить report.html
 /loen:loop-goal                    # опционально: evidence-first строка /goal из одобренного loop.yaml + рецепт /loop
+/loen:governance [--triage]        # кросс-run дашборд docs/loen/governance.html (offline-агрегатор loen_stats.py); --triage только предлагает действия
 ```
 
 **Артефакты:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/,
@@ -344,6 +345,13 @@ experiments.jsonl, report.html, pr-summary.md). В research-режиме eval п
 дерева (канала записи на хост нет). Требует установленный microVM
 (`./iclaude.sh --install-microvm`); по умолчанию `subagent`. См.
 [docs/functions/MICROVM.md](docs/functions/MICROVM.md).
+
+**Governance (кросс-run):** `/loen:governance` строит дашборд
+`docs/loen/governance.html` детерминированным офлайн-агрегатором `loen_stats.py`
+(success rate, keep/revert, причины остановок, таксономия ошибок из REJECT-вердиктов,
+алерты protected-путей, дрейф раскладки; cost/tokens и latency/VRAM — явно n/a, без
+выдумывания). Всё локально: без сети и без LLM в агрегации; `--triage` только
+предлагает следующие действия — запускает их человек.
 
 Подробнее: [docs/functions/LOEN.md](docs/functions/LOEN.md).
 
