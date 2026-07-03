@@ -115,19 +115,17 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
-  <p class="lead">Хирургическое усиление <b>формы</b> промтов <code>plugin/loen</code> под эталон <code>superpowers/skills/writing-skills</code>: trigger-first описания (F1) + маршрутизация к соседним loop-скиллам как anti-triggers (F4) + одна nuance-клауза (F5). <b>Ноль изменений поведения</b> loop-инженерии.</p>
-  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>b50c7e115cadbc6d</code> · 2026-07-03 · дизайн одобрен пользователем</p>
+  <p class="lead">Хирургическое усиление <b>формы</b> промтов <code>plugin/loen</code> под <b>функциональные</b> навыки superpowers как эталоны (brainstorming, writing-plans, sdd, executing-plans, systematic-debugging) — не под мета-доктрину writing-skills. Scope: <b>Middle</b> — короткие trigger-описания + Red Flags-блоки (пересказ существующих Rules) + F5. <b>Ноль изменений поведения.</b></p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>1d0bd32a4cdb41b6</code> · 2026-07-03 · бенчмарк исправлен по указанию пользователя</p>
 
   <h2>1. Резюме спецификации</h2>
   <table class="rpt-table">
-    <thead><tr><th>Раздел</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
+    <thead><tr><th>Change</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
     <tbody>
-      <tr><td>F1</td><td>6 <code>description</code> скиллов (loop-delivery/repair/autoresearch, audit, governance, loop-goal) → trigger-first «Use when…», workflow убран из описания</td><td><code>grep '^description:'</code> каждого начинается с «Use when»</td></tr>
-      <tr><td>F4</td><td>Маршрутизация: описания трёх loop-* называют два соседних скилла как anti-triggers («Not for … use loop-X») — без дублей секций в теле</td><td>Каждое loop-* описание называет оба сиблинга</td></tr>
-      <tr><td>F5</td><td><code>loop-autoresearch</code>: мягкая клауза «…fixed when possible» → conditional на наблюдаемом предикате (согласуется с уже существующей «any deviation … MUST be logged»)</td><td>На строке нет «when possible»; conditional присутствует</td></tr>
-      <tr><td>Инвариант</td><td>frontmatter остаётся валидным YAML &lt; 1024 симв; ключевые слова для discovery сохранены (loen, loop.yaml, /goal, triage, report.html, failing test, metric, JSONL)</td><td>YAML парсится; keyword-grep проходит</td></tr>
-      <tr><td>Инвариант</td><td>Ни одной строки поведения: тело <code>## Steps/## Rules/## Stop conditions</code>, <code>agents/*</code>, <code>scripts/</code>, <code>hooks/</code>, оба README — не тронуты</td><td><code>git diff</code> = только <code>description:</code> + 1 F5-клауза</td></tr>
-      <tr><td>Success</td><td>Верификация текстовая (без рантайма): grep-стартеры + YAML-парс + диапазон диффа</td><td>Все три verify-шага §Verification зелёные</td></tr>
+      <tr><td>A</td><td>6 <code>description</code> → короткие trigger-led (22–30 слов), workflow убран, соседние loop-* как anti-triggers. Норма — сами функц. навыки (11–30 слов)</td><td><code>grep '^description:'</code> начинается с «Use when»; 22–30 слов</td></tr>
+      <tr><td>B</td><td>Блок <code>## Red Flags — STOP</code> в 3 дисциплинарных loop-скилла; каждый буллет ПЕРЕСКАЗЫВАЕТ существующее правило тела (форма sdd / systematic-debugging)</td><td>Каждый буллет трассируется в <code>## Rules</code>/<code>## Stop conditions</code>/<code>## Steps</code> того же файла</td></tr>
+      <tr><td>C</td><td><code>loop-autoresearch</code>: «…fixed when possible» → conditional на наблюдаемом предикате (согласуется с «any deviation … MUST be logged»)</td><td>На строке нет «when possible»; conditional присутствует</td></tr>
+      <tr><td>Инвариант</td><td>frontmatter валидный YAML &lt; 1024 симв; discovery-ключи сохранены; ни одной строки поведения — только description + additive Red Flags + 1 F5-клауза</td><td>YAML-парс; <code>git diff</code> в границах; <code>test_loen_plugin.sh</code> PASS</td></tr>
     </tbody>
   </table>
 
@@ -135,23 +133,23 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
   <h3>2.1 Схема решения</h3>
   <figure class="rpt-c4">
     <div class="boundary" data-label="Меняется (только форма)">
-      <div class="comp"><b>loop-delivery</b><br><span class="sub">description → Use when</span></div>
-      <div class="comp"><b>loop-repair</b><br><span class="sub">description → Use when</span></div>
-      <div class="comp"><b>loop-autoresearch</b><br><span class="sub">description + F5-клауза</span></div>
-      <div class="comp"><b>audit</b><br><span class="sub">description → Use when</span></div>
-      <div class="comp"><b>governance</b><br><span class="sub">description → Use when</span></div>
-      <div class="comp"><b>loop-goal</b><br><span class="sub">description → Use when</span></div>
+      <div class="comp"><b>loop-delivery</b><br><span class="sub">desc + Red Flags</span></div>
+      <div class="comp"><b>loop-repair</b><br><span class="sub">desc + Red Flags</span></div>
+      <div class="comp"><b>loop-autoresearch</b><br><span class="sub">desc + Red Flags + F5</span></div>
+      <div class="comp"><b>audit</b><br><span class="sub">desc only</span></div>
+      <div class="comp"><b>governance</b><br><span class="sub">desc only</span></div>
+      <div class="comp"><b>loop-goal</b><br><span class="sub">desc only</span></div>
     </div>
     <div class="boundary" data-label="Не тронуто (поведение)">
-      <div class="comp untouched"><b>## Steps / Rules</b><br><span class="sub">тело всех скиллов</span></div>
+      <div class="comp untouched"><b>## Steps</b><br><span class="sub">тело всех скиллов</span></div>
       <div class="comp untouched"><b>agents/*</b><br><span class="sub">planner · verifier · explorer</span></div>
       <div class="comp untouched"><b>scripts/ · hooks/</b><br><span class="sub">enforcement</span></div>
       <div class="comp untouched"><b>README ×2</b><br><span class="sub">своя trigger-таблица</span></div>
     </div>
   </figure>
-  <p class="sub">Правки живут исключительно во frontmatter (+1 клауза тела autoresearch). Behavior-shaping проза не трогается — этого требует сам <code>superpowers/CLAUDE.md</code> без eval-доказательств.</p>
+  <p class="sub">Red Flags — additive-секция, пересказ существующих Rules; description — сжатие метаданных. Behavior loop-инженерии неизменен. Флоучарты (broad-опция) вне scope — ближе к behavior-rewrite.</p>
 
-  <h3>2.2 Граф зависимостей</h3>
+  <h3>2.2 Граф зависимостей (маршрутизация anti-trigger)</h3>
   <figure class="rpt-graph">
     <svg viewBox="0 0 720 260" width="100%" role="img" aria-label="маршрутизация anti-trigger между loop-скиллами">
       <defs><marker id="aq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
@@ -164,7 +162,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
         <path d="M300,203 C340,182 375,150 400,118"></path>
       </g>
       <g font-size="11" text-anchor="middle" fill="var(--fg)">
-        <g><rect x="30" y="55" width="150" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="105" y="73">loop-delivery</text><text x="105" y="88" font-size="9" fill="var(--muted)">bounded delivery</text></g>
+        <g><rect x="30" y="55" width="150" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="105" y="73">loop-delivery</text><text x="105" y="88" font-size="9" fill="var(--muted)">bounded change</text></g>
         <g><rect x="360" y="55" width="150" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="435" y="73">loop-repair</text><text x="435" y="88" font-size="9" fill="var(--muted)">failing test/CI</text></g>
         <g><rect x="205" y="196" width="160" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="285" y="214">loop-autoresearch</text><text x="285" y="229" font-size="9" fill="var(--muted)">one numeric metric</text></g>
         <g><rect x="560" y="40" width="140" height="38" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="630" y="63">audit</text></g>
@@ -172,29 +170,30 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
         <g><rect x="560" y="144" width="140" height="38" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="630" y="167">loop-goal</text></g>
       </g>
     </svg>
-    <figcaption>Три loop-* скилла взаимно указывают друг на друга как anti-triggers («Not for … use loop-X») — F4. Взаимные рёбра намеренны (взаимоисключающая маршрутизация выбора), это НЕ нарушение порядка. audit/governance/loop-goal — trigger-переписка без маршрутизации (нет соседей-дублёров).</figcaption>
+    <figcaption>Три loop-* взаимно указывают друг на друга как anti-triggers («Not for … use loop-X») — Change A. Взаимные рёбра намеренны (выбор скилла), не нарушение порядка. audit/governance/loop-goal — только trigger-переписка (нет соседей-дублёров, нет Red Flags).</figcaption>
   </figure>
 
   <h3>2.3 Карта покрытия</h3>
   <table class="rpt-table matrix">
-    <thead><tr><th>Задача (из диалога: Подход 1 — surgical)</th><th class="rot">F1 desc</th><th class="rot">F4 routing</th><th class="rot">F5 clause</th><th class="rot">инвариант</th></tr></thead>
+    <thead><tr><th>Задача (из диалога)</th><th class="rot">A desc</th><th class="rot">B RedFlags</th><th class="rot">C F5</th><th class="rot">инвариант</th></tr></thead>
     <tbody>
-      <tr><td>Переписать описания под «Use when…» (эталон writing-skills)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
-      <tr><td>Добавить выбор соседнего loop-скилла (без дублей тела)</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
-      <tr><td>Убрать nuance-клаузу с дисциплинарного правила</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
-      <tr><td>Усилить форму, не трогая поведение loop-инженерии</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>Пере-мерить по функциональным навыкам (не writing-skills)</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>Короткие trigger-описания (норма функц. навыков)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>Red Flags в дисциплинарные loop (пересказ Rules)</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>Убрать nuance-клаузу</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+      <tr><td>Усилить форму, поведение loop то же</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
     </tbody>
   </table>
-  <p class="sub">Вне scope (отдельный трек, требует RED-фазы эталона): <b>F2</b> (rationalization-таблицы), <b>F6</b> (baseline pressure-тесты); <b>F3</b> (реструктур тела) исключён осознанно — behavior-shaping без eval.</p>
+  <p class="sub">Вне scope: флоучарты (broad), <b>F2</b> rationalization-таблицы, <b>F6</b> baseline pressure-тесты — отдельный трек (нужна RED-фаза эталона).</p>
 
   <h2>3. Результаты проверки</h2>
   <table class="rpt-table">
     <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
     <tbody>
-      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; дубликатов заголовков нет; нумерации разделов нет (N/A)</td></tr>
-      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>F1/F4/F5 покрыты; F2/F3/F6 явно исключены с обоснованием (без сирот-«extras»); противоречий нет</td></tr>
-      <tr><td>clarity</td><td><span class="badge ok">PASS</span></td><td>6 описаний и F5-клауза даны verbatim; verify-шаги измеримы; термины (F1/F4/F5) стабильны</td></tr>
-      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Новый файл; scope in/out заявлен один раз и выдержан; ветка/PR согласованы</td></tr>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; реальных дублей заголовков нет (3× <code>## Red Flags</code> — payload внутри ```markdown-фенсов)</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Пере-анализ + Change A/B/C покрыты; out-of-scope (флоучарты/F2/F6) явно исключены; без сирот</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">PASS</span></td><td>Описания и Red Flags даны verbatim; verify измерим; термины (A/B/C, Middle) стабильны</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Middle заявлен в Principle и выдержан в Changes/Not-in-scope; бенчмарк исправлен единообразно</td></tr>
     </tbody>
   </table>
   <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 0 INFO · findings нет. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
@@ -204,7 +203,7 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
     <div class="state">Plan <span class="sub">pending</span></div><div class="edge"></div>
     <div class="state">Result <span class="sub">pending</span></div>
   </figure>
-  <div class="note"><b>Next step:</b> ревью спеки пользователем → <code>superpowers:writing-plans</code> (план реализации).</div>
+  <div class="note"><b>Next step:</b> ревью исправленной спеки пользователем (scope=Middle default; broad+флоучарты / narrow — в одно слово) → <code>superpowers:writing-plans</code>.</div>
 </section>
 <!-- TAB:spec END -->
 
