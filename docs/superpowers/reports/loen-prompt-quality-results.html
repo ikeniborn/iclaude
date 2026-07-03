@@ -91,8 +91,8 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
 <header>
@@ -210,7 +210,73 @@ body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); bord
 
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">План реализации: 3 задачи. Чистые правки текста промтов под <code>plugin/loen/skills/</code>. Change A (описания) → Change D+B+C (test-first Act + Red Flags + F5) → bump/verify/PR.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>d031fb86d603f885</code> · 2026-07-03 · runner: main-session · артефакт: <code>docs/superpowers/plans/2026-07-03-loen-prompt-quality.md</code></p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+    <tbody>
+      <tr><td>Task 1</td><td>Change A — переписать 6 <code>description</code> на короткую trigger-форму (exact string swap)</td><td>каждое начинается с «Use when», 22–30 слов; YAML &lt;1024; <code>test_loen_plugin.sh</code> PASS; commit</td></tr>
+      <tr><td>Task 2</td><td>Change D (test-first в Act step loop-delivery) + Change B (<code>## Red Flags — STOP</code> ×3, вкл. VBC evidence-буллет) + Change C (F5-клауза)</td><td>Act step содержит «test-first»; каждый Red-Flags буллет трассируется в тело (буллет-1 delivery → Change D); дифф удаляет только F5-строку; <code>test_loen_plugin.sh</code> PASS; commit</td></tr>
+      <tr><td>Task 3</td><td>Патч-бамп 0.5.0→0.5.1 (оба манифеста), полный прогон loen-сьютов, проверка doc-drift, iwiki+PR в <code>dev</code></td><td>version-sync exit 0; сьюты PASS; «NO stale quotes»; PR открыт; <code>/check-chain result</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+  <h3>2.1 Граф зависимостей задач</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 640 120" width="100%" role="img" aria-label="граф зависимостей задач">
+      <defs><marker id="apn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#apn)">
+        <path d="M180,50 L250,50"></path><path d="M430,50 L500,50"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="30" y="30" width="150" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="105" y="48">Task 1</text><text x="105" y="62" font-size="9" fill="var(--muted)">6 описаний (A)</text></g>
+        <g><rect x="250" y="30" width="180" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="340" y="48">Task 2</text><text x="340" y="62" font-size="9" fill="var(--muted)">D + Red Flags + F5</text></g>
+        <g><rect x="500" y="30" width="130" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="565" y="48">Task 3</text><text x="565" y="62" font-size="9" fill="var(--muted)">bump→suite→PR</text></g>
+      </g>
+    </svg>
+    <figcaption>T1→T2 (правят те же loop-* файлы, но разные строки: description vs тело — порядок для чистого диффа), T2→T3 (полный прогон + PR после всех правок). DAG, циклов нет.</figcaption>
+  </figure>
+  <h3>2.2 Пересечения (файл × задача)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Файл</th><th class="rot">Task 1</th><th class="rot">Task 2</th><th class="rot">Task 3</th></tr></thead>
+    <tbody>
+      <tr><td><code>loop-delivery/SKILL.md</code></td><td class="y">desc</td><td class="y">Act(D)+RedFlags</td><td class="n">·</td></tr>
+      <tr><td><code>loop-repair/SKILL.md</code></td><td class="y">desc</td><td class="y">RedFlags</td><td class="n">·</td></tr>
+      <tr><td><code>loop-autoresearch/SKILL.md</code></td><td class="y">desc</td><td class="y">F5+RedFlags</td><td class="n">·</td></tr>
+      <tr><td><code>audit/governance/loop-goal</code></td><td class="y">desc</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td><code>plugin.json</code> + <code>marketplace.json</code></td><td class="n">·</td><td class="n">·</td><td class="y">bump+sync</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">loop-* файлы делятся Task 1 (description, L3) и Task 2 (тело) — разные строки, конфликта нет.</p>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет (хит self-review — мета-описание скана); нумерация задач 1–3; реальных дублей заголовков нет (Red Flags — fenced payload)</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>Change A/B/C/D покрыты задачами; 1 INFO — bump/PR вне текста спеки (repo-convention, wontfix)</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>T1→T2→T3; артефакты существуют; циклов нет</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>У каждого edit-шага следует verify с командой и ожидаемым выводом</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Строки описаний/Red Flags/Change D совпадают со спекой verbatim; версия 0.5.1 согласована</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>фаза</th><th>sev</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td>coverage</td><td><span class="badge info">INFO</span></td><td>Task 3 bump+PR — release-hygiene вне текста спеки; включено по repo-convention (прошлые loen-цепочки так же)</td><td><span class="badge info">wontfix</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 1 INFO (wontfix). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> выполнение плана — <code>superpowers:subagent-driven-development</code> или <code>superpowers:executing-plans</code>; затем <code>/check-chain result</code>.</div>
 </section>
 <!-- TAB:plan END -->
 
