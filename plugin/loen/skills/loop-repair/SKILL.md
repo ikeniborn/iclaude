@@ -68,3 +68,12 @@ layout, contract, audit gates, subagents, and hook. Shared templates live at
 No new artifacts: `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` suffice. The
 research streams (`metrics.jsonl`, `experiments.jsonl`) are simply absent in repair — the
 hook allows them, no audit stage requires or reads them.
+
+## Red Flags — STOP
+
+- "Fixing" a failure you have not reproduced → stop; no reproduction, no fix.
+- A non-test hunk not required for the failing command to pass → out of scope, drop it.
+- Changing tests beyond ADDING the regression test → not allowed.
+- Claiming regression coverage without logged inversion evidence (stash → FAIL → pop → PASS) → not proven.
+- Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
+- Auto-merge, or past a `handoff_conditions` trigger, or past `budget.max_iterations` → hard stop.

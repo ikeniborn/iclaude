@@ -96,7 +96,7 @@ templates live at `<skill-base>/../loop-delivery/assets/` (single source — nev
   FAILS a research contract whose `protected_scope` does not cover them.
 - Never improve metrics by weakening validation, eval data, or the eval script (unless
   the task IS eval design — then it must be the explicit objective).
-- Keep seed, model version, eval command, and dataset fixed when possible.
+- Keep seed, model version, eval command, and dataset fixed across experiments; if any must change, log the deviation in the experiment record.
 - **Budget:** `budget.max_experiments` (default 5) counts experiments; exhausted → stop,
   report the best kept state and the full experiment log.
 
@@ -107,3 +107,12 @@ templates live at `<skill-base>/../loop-delivery/assets/` (single source — nev
   as a keep. TWO consecutive eval failures → stop, report (broken eval ≠ research).
 - `log_experiment.py` rejects a record → fix the record, never hand-append.
 - Any `handoff_conditions` trigger → hard stop, ask the human. Never auto-merge.
+
+## Red Flags — STOP
+
+- Improving the metric by weakening validation, eval data, or the eval script → never (unless eval design IS the objective).
+- More than one main variable changed in an experiment → not isolatable; one variable per experiment.
+- Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
+- Treating a tie on the primary as progress → a tie is not an improvement; revert.
+- Keeping a change on a claimed metric delta the verifier did not re-confirm → not kept.
+- Two consecutive eval failures, or past `budget.max_experiments`, or a `handoff_conditions` trigger → stop.
