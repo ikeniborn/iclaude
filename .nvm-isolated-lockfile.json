@@ -1,5 +1,5 @@
 {
-  "nodeVersion": "20.20.2",
+  "nodeVersion": "22.23.1",
   "claudeCodeVersion": "2.1.199",
   "routerVersion": "unknown",
   "lspServers": {

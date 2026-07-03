@@ -72,9 +72,13 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/.cache/
 .nvm-isolated/.npm/
 .nvm-isolated/.nvm/.cache/
-.nvm-isolated/versions/node/*/include/
-.nvm-isolated/versions/node/*/.npm/
 .nvm-isolated/npm-global/.npm/
+
+# Node.js runtimes are no longer vendored in git: the node binary exceeds
+# GitHub's 100 MB file limit (node 22 ≈ 119 MB) and bloats history. They live
+# on disk only and are reinstalled from the lockfile via nvm or the node-TLS
+# fetcher (scripts/fetch-node.js, ensure_isolated_node_engine).
+.nvm-isolated/versions/node/
 
 # Isolated Claude Code configuration (session data)
 # Ignore session data, but keep skills and templates
