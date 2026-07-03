@@ -1,6 +1,6 @@
 ---
 name: loop-delivery
-description: Execute one delivery task as a controlled loop — plan, act (smallest diff), check (gates + independent verifier), report — writing all artifacts under docs/loen/<run-id>/. Independent of the IDD→SDD chain; works in any repo.
+description: Use when delivering ONE bounded change — a feature, refactor, or chore — as a controlled, audited loop in any repo. Not for a failing test (use loop-repair) or a numeric metric (use loop-autoresearch).
 ---
 
 # Loop Delivery
@@ -30,7 +30,11 @@ enforces the layout).
 3. **Human approval gate.** Show the contract (scope + budget). Ask the human to approve
    before any edit. Do not proceed without it.
 4. **Run `loen:audit plan`** — must return `OK` before Act.
-5. **Act.** Make the smallest diff toward the objective. Stay in `mutable_scope` (the hook
+5. **Act.** Make the smallest diff toward the objective. When the change adds or alters
+   behavior, work test-first: add a failing test that pins the objective, confirm it fails
+   for the right reason, then write the smallest code that makes it pass. A pure refactor
+   keeps the existing tests green; config/chore work with no behavioral surface is exempt.
+   Stay in `mutable_scope` (the hook
    blocks otherwise). Save the iteration diff to
    `docs/loen/<run-id>/iterations/iter-NN/diff.patch` (`git diff > …`), where `iter-NN`
    is zero-padded to two digits (e.g. `iter-01`) — the hook and `check_layout.sh` reject
@@ -50,3 +54,13 @@ enforces the layout).
 - `budget` exceeded → stop, report the best result and the blocker.
 - A `handoff_conditions` trigger (schema / PII / license / architecture / prod creds) →
   hard stop, ask the human. Never auto-merge.
+
+## Red Flags — STOP
+
+- Writing production code for a behavior change before a failing test exists → delete it; restart test-first.
+- Editing a `protected_scope` path → stop; the scope IS the contract.
+- Weakening or skipping a quality gate to go green → never; fix the code.
+- Editing the diff you are verifying, or self-approving instead of the independent verifier → stop; only the verifier judges.
+- Reporting the task done without green gates AND a verifier APPROVE for the final iteration → not done; re-run, don't claim.
+- Auto-merging, or proceeding past a `handoff_conditions` trigger (schema / PII / license / architecture / prod-creds) → hard stop, ask the human.
+- Continuing past `budget` → stop; report the best result and the blocker.

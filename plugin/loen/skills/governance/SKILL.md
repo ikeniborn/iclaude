@@ -1,6 +1,6 @@
 ---
 name: governance
-description: Cross-run governance over docs/loen/ — run the deterministic loen_stats.py aggregator (offline, stdlib-only, no LLM) and render the docs/loen/governance.html dashboard via the html-report skill. --triage additionally turns failing runs into proposed next actions for the human — proposals only, never launches loops, never edits runs.
+description: Use when you need a cross-run dashboard over all docs/loen/ runs, or --triage to turn failing runs into proposed next actions (proposals only; never launches loops or edits runs).
 ---
 
 # loen:governance — cross-run dashboard + triage proposals

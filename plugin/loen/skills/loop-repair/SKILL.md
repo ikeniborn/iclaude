@@ -1,6 +1,6 @@
 ---
 name: loop-repair
-description: Fix one failing test / CI job / regression as a controlled loop — reproduce first, isolate, minimal fix, regression test — reusing the loen loop machinery; artifacts under docs/loen/<run-id>/.
+description: Use when a specific test, CI job, or regression is failing and must be fixed under a reproduce-first controlled loop with proven regression coverage. Not for delivering a change (use loop-delivery) or metrics (use loop-autoresearch).
 ---
 
 # Loop Repair (mode: repair)
@@ -68,3 +68,13 @@ layout, contract, audit gates, subagents, and hook. Shared templates live at
 No new artifacts: `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` suffice. The
 research streams (`metrics.jsonl`, `experiments.jsonl`) are simply absent in repair — the
 hook allows them, no audit stage requires or reads them.
+
+## Red Flags — STOP
+
+- "Fixing" a failure you have not reproduced → stop; no reproduction, no fix.
+- A non-test hunk not required for the failing command to pass → out of scope, drop it.
+- Changing tests beyond ADDING the regression test → not allowed.
+- Claiming regression coverage without the logged inversion evidence (stash, regression test FAILS, pop, it PASSES) → not proven.
+- Reporting the failure fixed without the originally-failing command exiting 0 in the final `gates.log` → not fixed.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.
+- `budget.max_iterations` exhausted → stop; report the root cause, best attempt, and the blocker.

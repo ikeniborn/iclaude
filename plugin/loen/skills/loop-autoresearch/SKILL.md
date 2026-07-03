@@ -1,6 +1,6 @@
 ---
 name: loop-autoresearch
-description: Improve one numeric metric as a controlled research loop — baseline, hypothesis, one bounded change, fixed eval, compare, keep/revert — logging every experiment as JSONL events; reuses the loen loop machinery.
+description: Use when improving ONE numeric metric under a controlled research loop with a fixed eval and kept/reverted experiments. Not for a feature (use loop-delivery) or a failing test (use loop-repair).
 ---
 
 # Loop AutoResearch (mode: research)
@@ -96,7 +96,7 @@ templates live at `<skill-base>/../loop-delivery/assets/` (single source — nev
   FAILS a research contract whose `protected_scope` does not cover them.
 - Never improve metrics by weakening validation, eval data, or the eval script (unless
   the task IS eval design — then it must be the explicit objective).
-- Keep seed, model version, eval command, and dataset fixed when possible.
+- Keep seed, model version, eval command, and dataset fixed across experiments; if any must change, log the deviation in the experiment record.
 - **Budget:** `budget.max_experiments` (default 5) counts experiments; exhausted → stop,
   report the best kept state and the full experiment log.
 
@@ -107,3 +107,13 @@ templates live at `<skill-base>/../loop-delivery/assets/` (single source — nev
   as a keep. TWO consecutive eval failures → stop, report (broken eval ≠ research).
 - `log_experiment.py` rejects a record → fix the record, never hand-append.
 - Any `handoff_conditions` trigger → hard stop, ask the human. Never auto-merge.
+
+## Red Flags — STOP
+
+- Improving the metric by weakening validation, eval data, or the eval script → never (unless eval design IS the objective).
+- More than one main variable changed in an experiment → not isolatable; one variable per experiment.
+- Hand-editing `metrics.jsonl` / `experiments.jsonl` → never; append via `log_experiment.py`.
+- Treating a tie on the primary as progress → a tie is not an improvement; revert.
+- Treating a keep as final before `loen:audit check` re-confirms its metric delta → not confirmed.
+- Two consecutive eval failures, or `budget.max_experiments` exhausted → stop; report the best kept state and the full experiment log.
+- A `handoff_conditions` trigger → hard stop, ask the human; never auto-merge.

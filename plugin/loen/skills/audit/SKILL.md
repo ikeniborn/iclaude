@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Validate a loen loop stage (plan|act|check|result), gate progression, and regenerate the human-readable docs/loen/<run-id>/report.html via the html-report skill. Mode-aware — extra checks for repair and research contracts. Mirrors check-chain for the execution loop.
+description: Use when a loen loop stage — plan, act, check, or result — must be validated and gated before the next one. Mode-aware for delivery/repair/research; the execution-loop analog of check-chain.
 ---
 
 # loen:audit — loop stage validator + live report
