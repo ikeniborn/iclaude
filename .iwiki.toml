@@ -1,2 +1,2 @@
-read = ["iclaude", "iwiki-mcp","icodex"]
+read = ["iclaude", "icodex"]
 write = "iclaude"
