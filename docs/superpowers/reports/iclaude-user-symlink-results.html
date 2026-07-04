@@ -25,8 +25,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <header>
 <h1>iclaude-user-symlink</h1>
 <label for="theme-toggle" class="theme-btn" title="Toggle dark/light">Theme</label>
@@ -96,7 +96,34 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 </section>
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
-<section class="tab-pane" id="pane-result"><p class="note">Этап ещё не проверен.</p></section>
+<section class="tab-pane" id="pane-result">
+<h2>Проверка result — 2026-07-04</h2>
+<table>
+<tr><th>Plan Task</th><th>Result</th><th>Evidence</th></tr>
+<tr><td>Task 1: failing tests</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_user_symlink.sh</code> added; RED observed before module existed.</td></tr>
+<tr><td>Task 2: symlink module</td><td><span class="badge ok">DONE</span></td><td><code>lib/symlink/symlink.sh</code>; focused test later reports 18 passed, 0 failed.</td></tr>
+<tr><td>Task 3: command wiring</td><td><span class="badge ok">DONE</span></td><td><code>iclaude.sh</code> sources symlink module and install/update/lockfile branches call launcher helper; legacy symlink functions delegate.</td></tr>
+<tr><td>Task 4: docs</td><td><span class="badge ok">DONE</span></td><td>README, usage, CONFIGURATION, USE_CASES updated for no-sudo user launcher and <code>ICLAUDE_LINK_DIR</code>.</td></tr>
+<tr><td>Task 5: verification</td><td><span class="badge warn">DONE WITH WARNINGS</span></td><td>Syntax, focused, fallback, env/config/toggles, Chrome, statusline, project-id, symlink smoke passed. CCR and PII integration warnings recorded below.</td></tr>
+</table>
+<h3>Verification Evidence</h3>
+<table>
+<tr><th>Check</th><th>Status</th></tr>
+<tr><td>All tracked shell syntax excluding <code>.git</code>/<code>.nvm-isolated</code></td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td><code>bash tests/test_user_symlink.sh</code></td><td><span class="badge ok">18 passed, 0 failed</span></td></tr>
+<tr><td><code>bash tests/test-suppress-npx-fallback.sh</code></td><td><span class="badge ok">6 passed, 0 failed</span></td></tr>
+<tr><td><code>test_env_map</code>, <code>test_config_migration</code>, <code>test_persistent_toggles</code></td><td><span class="badge ok">10/10, 10/10, 3/3</span></td></tr>
+<tr><td>Chrome detection, statusline context window, project id</td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td>Temporary <code>ICLAUDE_LINK_DIR</code> smoke with <code>iclaude --help</code></td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td>Router/PII related module syntax</td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td><code>tests/test_ccr_integration.sh</code></td><td><span class="badge warn">WARN</span> Existing router request returned HTTP 500 <code>ERR_INVALID_URL</code>; router files untouched by this change.</td></tr>
+<tr><td><code>tests/test-pii-integration.sh</code></td><td><span class="badge warn">WARN</span> Existing PII lifecycle assertions failed on port/PID expectations; PII files untouched by this change.</td></tr>
+</table>
+<h3>Findings</h3>
+<p class="note">No missing planned implementation tasks. Residual warnings are external/pre-existing integration checks outside changed files.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Implementation diff matches the approved plan/spec/intent. Chain row closed with warnings recorded.</p>
+</section>
 <!-- TAB:result END -->
 </main>
 </body>
