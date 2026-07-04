@@ -16,8 +16,8 @@ cd claude
 # Шаг 2: Починить симлинки после git clone
 ./iclaude.sh --repair-isolated
 
-# Шаг 3: Создать глобальный симлинк (БЕЗ системного npm!)
-sudo ./iclaude.sh --create-symlink
+# Шаг 3: Создать пользовательский симлинк (БЕЗ системного npm!)
+./iclaude.sh --create-symlink
 
 # Шаг 4: Использовать глобально
 iclaude  # ✓ Работает из любой директории
@@ -72,17 +72,17 @@ sudo iclaude --system --update
 ## Use Case 4: Управление симлинками
 
 ```bash
-# Создать глобальный симлинк
-sudo ./iclaude.sh --create-symlink
+# Создать пользовательский симлинк
+./iclaude.sh --create-symlink
 
 # Проверить куда указывает симлинк
-ls -la /usr/local/bin/iclaude
+ls -la ~/.local/bin/iclaude
 
 # Удалить симлинк (сохранить изолированную среду)
-sudo iclaude --uninstall-symlink
+iclaude --uninstall-symlink
 
 # Повторно создать симлинк
-sudo ./iclaude.sh --create-symlink
+./iclaude.sh --create-symlink
 ```
 
 ---

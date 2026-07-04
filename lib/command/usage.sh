@@ -35,8 +35,8 @@ OPTIONS:
   --restore-git-proxy               Restore git proxy settings from backup
   --install                         Install script globally (requires sudo + system npm)
   --uninstall                       Uninstall script from system (requires sudo)
-  --create-symlink                  Create global symlink using isolated environment (NO system npm)
-  --uninstall-symlink               Remove global symlink only (keeps isolated environment)
+  --create-symlink                  Create user-space iclaude launcher (default: ~/.local/bin)
+  --uninstall-symlink               Remove user-space iclaude launcher only
   --update                          Update system Claude Code to latest version
   --check-update                    Check for available updates without installing
   --isolated-install                Install NVM + Node.js + Claude in isolated environment
@@ -146,8 +146,11 @@ ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time, NO system npm needed)
   ./iclaude.sh --isolated-install
 
-  # Create global symlink to use 'iclaude' from anywhere (NO system npm!)
-  sudo ./iclaude.sh --create-symlink
+  # Create user-space launcher to use 'iclaude' from anywhere
+  ./iclaude.sh --create-symlink
+
+  # Use a custom launcher directory
+  ICLAUDE_LINK_DIR=~/bin ./iclaude.sh --create-symlink
 
   # Check isolated environment status (includes symlink check)
   ./iclaude.sh --check-isolated
@@ -164,8 +167,8 @@ ISOLATED ENVIRONMENT (Recommended):
   # Refresh OAuth token (generates long-lived token ~1 year)
   ./iclaude.sh --refresh-token
 
-  # Remove global symlink only (keeps isolated environment)
-  sudo iclaude --uninstall-symlink
+  # Remove user-space launcher only (keeps isolated environment)
+  iclaude --uninstall-symlink
 
   # Clean up isolated environment (keeps lockfile for reinstall)
   ./iclaude.sh --cleanup-isolated

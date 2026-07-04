@@ -87,8 +87,10 @@ Claude Code может читать, изменять и выполнять фа
 | `--check-isolated` | Статус изолированной среды и версия |
 | `--isolated-update` | Обновить Claude Code (без sudo) |
 | `--install-from-lockfile` | Установить точные версии из lockfile |
-| `--create-symlink` | Создать глобальный симлинк `iclaude` |
+| `--create-symlink` | Создать пользовательский симлинк `iclaude` (`~/.local/bin`, override: `ICLAUDE_LINK_DIR`) |
 | `--cleanup-isolated` | Удалить среду, сохранив lockfile |
+
+`--isolated-install`, `--isolated-update`, and `--install-from-lockfile` create or repair the user launcher automatically. The default launcher path is `~/.local/bin/iclaude`; set `ICLAUDE_LINK_DIR` to use another directory. Existing non-symlink files are left untouched.
 
 **Порядок поиска бинарного файла Claude Code:**
 1. `$npm_prefix/bin/claude` (симлинк npm)
