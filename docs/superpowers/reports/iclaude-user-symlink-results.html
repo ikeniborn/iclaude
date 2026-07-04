@@ -24,8 +24,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <header>
 <h1>iclaude-user-symlink</h1>
@@ -77,7 +77,23 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 </section>
 <!-- TAB:spec END -->
 <!-- TAB:plan START -->
-<section class="tab-pane" id="pane-plan"><p class="note">Этап ещё не проверен.</p></section>
+<section class="tab-pane" id="pane-plan">
+<h2>Проверка plan — 2026-07-04</h2>
+<table>
+<tr><th>Task</th><th>DoD</th></tr>
+<tr><td>Task 1</td><td>Failing symlink module shell tests committed.</td></tr>
+<tr><td>Task 2</td><td><code>lib/symlink/symlink.sh</code> implemented and focused tests pass.</td></tr>
+<tr><td>Task 3</td><td>Existing command branches call symlink helpers without parser refactor.</td></tr>
+<tr><td>Task 4</td><td>User docs describe no-sudo user launcher and <code>ICLAUDE_LINK_DIR</code>.</td></tr>
+<tr><td>Task 5</td><td>Syntax, focused tests, launcher smoke, and integrated regression matrix checked.</td></tr>
+</table>
+<h3>Phase Results</h3>
+<p><span class="badge ok">structure passed</span> <span class="badge ok">coverage passed</span> <span class="badge ok">dependencies passed</span> <span class="badge ok">verifiability passed</span> <span class="badge ok">consistency passed</span></p>
+<h3>Findings</h3>
+<p class="note">Новых findings нет.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Plan is implementation-ready and preserves the approved user-space symlink scope.</p>
+</section>
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result"><p class="note">Этап ещё не проверен.</p></section>
