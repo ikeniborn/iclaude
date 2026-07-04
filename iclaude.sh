@@ -74,6 +74,13 @@ if [[ -d "$LIB_DIR/nvm" ]]; then
 fi
 
 #######################################
+# Load Symlink modules
+#######################################
+if [[ -d "$LIB_DIR/symlink" ]]; then
+    source "${LIB_DIR}/symlink/symlink.sh"
+fi
+
+#######################################
 # Load lockfile modules (Phase 4)
 #######################################
 if [[ -d "$LIB_DIR/lockfile" ]]; then
@@ -350,9 +357,10 @@ fi
                     echo "is specifically for installing isolated environment."
                     exit 1
                 fi
-                install_isolated_nvm
-                install_isolated_nodejs
-                install_isolated_claude
+                install_isolated_nvm && \
+                    install_isolated_nodejs && \
+                    install_isolated_claude && \
+                    install_iclaude_user_launcher
                 exit $?
                 ;;
             --install-from-lockfile)
@@ -363,7 +371,7 @@ fi
                     echo "is specifically for installing isolated environment from lockfile."
                     exit 1
                 fi
-                install_from_lockfile
+                install_from_lockfile && install_iclaude_user_launcher
                 exit $?
                 ;;
             --cleanup-isolated)
@@ -424,7 +432,7 @@ fi
                     echo "is specifically for updating Claude Code in isolated environment."
                     exit 1
                 fi
-                update_isolated_claude
+                update_isolated_claude && install_iclaude_user_launcher
                 exit $?
                 ;;
             --install-router)

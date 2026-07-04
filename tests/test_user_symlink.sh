@@ -189,5 +189,19 @@ else
 fi
 rm -rf "$root"
 
+for expected in \
+    "source \"\${LIB_DIR}/symlink/symlink.sh\"" \
+    "install_isolated_claude &&" \
+    "install_from_lockfile && install_iclaude_user_launcher" \
+    "update_isolated_claude && install_iclaude_user_launcher" \
+    "create_symlink_only()" \
+    "uninstall_symlink_only()"; do
+    if grep -qF "$expected" "$REPO_ROOT/iclaude.sh" "$REPO_ROOT/lib/core/remaining.sh"; then
+        ok "static-wiring-$expected"
+    else
+        not_ok "static-wiring-$expected" "missing expected wiring"
+    fi
+done
+
 echo "=== Results: $pass passed, $fail failed ==="
 [[ "$fail" -eq 0 ]]
