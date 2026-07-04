@@ -6,6 +6,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 pass=0
 fail=0
 
+RED=""
+GREEN=""
+YELLOW=""
+BLUE=""
+NC=""
+
 ok() {
     echo "PASS [$1]"
     pass=$((pass + 1))
@@ -46,6 +52,7 @@ assert_symlink_target() {
 new_fixture() {
     local root
     root="$(mktemp -d)"
+    export FIXTURE_ROOT="$root"
     export HOME="$root/home"
     export SCRIPT_DIR="$root/repo"
     export ISOLATED_NVM_DIR="$SCRIPT_DIR/.nvm-isolated"
@@ -55,7 +62,6 @@ new_fixture() {
     mkdir -p "$HOME" "$SCRIPT_DIR"
     printf '#!/usr/bin/env bash\necho iclaude test\n' > "$SCRIPT_DIR/iclaude.sh"
     chmod +x "$SCRIPT_DIR/iclaude.sh"
-    printf '%s\n' "$root"
 }
 
 add_native_claude() {
@@ -78,13 +84,15 @@ add_legacy_cli() {
 source "$REPO_ROOT/lib/core/logging.sh"
 source "$REPO_ROOT/lib/symlink/symlink.sh"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 install_iclaude_symlink
 assert_symlink_target "default-link-target" "$HOME/.local/bin/iclaude" "$SCRIPT_DIR/iclaude.sh"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 mkdir -p "$HOME/.local/bin" "$root/other"
 ln -s "$root/other/iclaude.sh" "$HOME/.local/bin/iclaude"
@@ -92,7 +100,8 @@ install_iclaude_symlink
 assert_symlink_target "repair-stale-symlink" "$HOME/.local/bin/iclaude" "$SCRIPT_DIR/iclaude.sh"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 mkdir -p "$HOME/.local/bin"
 printf 'real file\n' > "$HOME/.local/bin/iclaude"
@@ -100,21 +109,24 @@ install_iclaude_symlink
 assert_eq "non-symlink-left-untouched" "real file" "$(cat "$HOME/.local/bin/iclaude")"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 export ICLAUDE_LINK_DIR="~/custom-bin"
 install_iclaude_symlink
 assert_symlink_target "tilde-link-dir" "$HOME/custom-bin/iclaude" "$SCRIPT_DIR/iclaude.sh"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 ensure_iclaude_path_entry
 ensure_iclaude_path_entry
 assert_eq "bash-path-once" "1" "$(grep -c 'added by iclaude' "$HOME/.bashrc")"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 export SHELL="/bin/zsh"
 ensure_iclaude_path_entry
@@ -122,7 +134,8 @@ ensure_iclaude_path_entry
 assert_eq "zsh-path-once" "1" "$(grep -c 'added by iclaude' "$HOME/.zshrc")"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 export SHELL="/usr/bin/fish"
 ensure_iclaude_path_entry
@@ -130,25 +143,29 @@ ensure_iclaude_path_entry
 assert_eq "fish-path-once" "1" "$(grep -c 'added by iclaude' "$HOME/.config/fish/config.fish")"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 detect_iclaude_isolated_launcher
 ok "detect-native-claude-exe"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_bin_claude
 detect_iclaude_isolated_launcher
 ok "detect-npm-global-bin-claude"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_legacy_cli
 detect_iclaude_isolated_launcher
 ok "detect-legacy-cli-js"
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 if detect_iclaude_isolated_launcher >/tmp/iclaude-symlink-missing.out 2>&1; then
     not_ok "missing-isolated-fails" "detect returned success"
 else
@@ -160,7 +177,8 @@ else
 fi
 rm -rf "$root"
 
-root="$(new_fixture)"
+new_fixture
+root="$FIXTURE_ROOT"
 add_native_claude
 install_iclaude_symlink
 uninstall_iclaude_symlink
