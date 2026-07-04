@@ -1,3 +1,16 @@
+---
+review:
+  spec_hash: 1464fb23089ef8c9
+  last_run: 2026-07-04
+  phases:
+    structure: { status: passed }
+    coverage: { status: passed }
+    clarity: { status: passed }
+    consistency: { status: passed }
+  findings: []
+chain:
+  intent: docs/superpowers/intents/2026-07-04-iclaude-user-symlink-intent.md
+---
 # Design: iclaude user-space symlink
 
 ## Acceptance (from intent)

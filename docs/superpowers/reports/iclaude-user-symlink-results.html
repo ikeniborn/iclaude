@@ -23,8 +23,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 </head>
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
-<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <header>
@@ -58,7 +58,23 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 </section>
 <!-- TAB:intent END -->
 <!-- TAB:spec START -->
-<section class="tab-pane" id="pane-spec"><p class="note">Этап ещё не проверен.</p></section>
+<section class="tab-pane" id="pane-spec">
+<h2>Проверка spec — 2026-07-04</h2>
+<table>
+<tr><th>Раздел</th><th>Состояние</th></tr>
+<tr><td>Acceptance</td><td><span class="badge ok">PASS</span> Desired Outcomes and Done When copied from intent.</td></tr>
+<tr><td>Requirements</td><td><span class="badge ok">PASS</span> Covers user-space default, override, no-sudo behavior, target safety, PATH idempotence, native/legacy detection, legacy preservation.</td></tr>
+<tr><td>Architecture</td><td><span class="badge ok">PASS</span> Focused <code>lib/symlink/symlink.sh</code> module with bounded helper APIs.</td></tr>
+<tr><td>Command Flow</td><td><span class="badge ok">PASS</span> Covers install/update/lockfile/create/uninstall paths and legacy system install boundary.</td></tr>
+<tr><td>Testing</td><td><span class="badge ok">PASS</span> Includes shell tests and integrated feature regression matrix.</td></tr>
+</table>
+<h3>Phase Results</h3>
+<p><span class="badge ok">structure passed</span> <span class="badge ok">coverage passed</span> <span class="badge ok">clarity passed</span> <span class="badge ok">consistency passed</span></p>
+<h3>Findings</h3>
+<p class="note">Новых findings нет.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Spec matches intent and covers the original task without unrelated refactor scope.</p>
+</section>
 <!-- TAB:spec END -->
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan"><p class="note">Этап ещё не проверен.</p></section>
