@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDD/SDD: iclaude-user-symlink</title>
+<style>
+:root{--bg:#f8fafc;--surface:#ffffff;--text:#111827;--muted:#4b5563;--border:#cbd5e1;--accent:#0f766e;--ok:#15803d;--warn:#b45309;--crit:#b91c1c;--code:#f1f5f9}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+body:has(#theme-toggle:checked){--bg:#111827;--surface:#1f2937;--text:#f9fafb;--muted:#d1d5db;--border:#475569;--accent:#2dd4bf;--ok:#4ade80;--warn:#fbbf24;--crit:#f87171;--code:#0f172a}
+header,main{max-width:1100px;margin:0 auto;padding:24px}
+header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+h1{font-size:28px;margin:0} h2{font-size:22px;margin:20px 0 12px} h3{font-size:17px;margin:18px 0 8px}
+.theme-btn{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.chain-tabs{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.chain-tabs label{cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-bottom:0;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted)}
+body:has(#tab-intent:checked) label[for="tab-intent"],body:has(#tab-spec:checked) label[for="tab-spec"],body:has(#tab-plan:checked) label[for="tab-plan"],body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent);border-color:var(--accent);font-weight:700}
+.tab-pane{display:none;background:var(--surface);border:1px solid var(--border);border-radius:0 8px 8px 8px;padding:18px;margin-top:0}
+body:has(#tab-intent:checked) #pane-intent,body:has(#tab-spec:checked) #pane-spec,body:has(#tab-plan:checked) #pane-plan,body:has(#tab-result:checked) #pane-result{display:block}
+table{width:100%;border-collapse:collapse;margin:12px 0} th,td{border:1px solid var(--border);padding:8px;text-align:left;vertical-align:top} th{background:var(--code)}
+code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700}.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.crit{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit)}.note{border-left:4px solid var(--accent);padding:10px 12px;background:var(--code);color:var(--muted)}
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
+<header>
+<h1>iclaude-user-symlink</h1>
+<label for="theme-toggle" class="theme-btn" title="Toggle dark/light">Theme</label>
+</header>
+<nav class="chain-tabs">
+<label for="tab-intent">Intent</label>
+<label for="tab-spec">Spec</label>
+<label for="tab-plan">Plan</label>
+<label for="tab-result">Result</label>
+</nav>
+<main>
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+<h2>Проверка intent — 2026-07-04</h2>
+<table>
+<tr><th>Раздел</th><th>Состояние</th></tr>
+<tr><td>Objective</td><td>User-space launcher like <code>icodex</code>, no full path to <code>iclaude.sh</code>.</td></tr>
+<tr><td>Desired Outcomes</td><td><span class="badge ok">PASS</span> Observable launch, symlink path, idempotence, non-symlink protection.</td></tr>
+<tr><td>Health Metrics</td><td><span class="badge ok">PASS</span> Includes direct launch, repair, legacy preservation, no-sudo default, path resolution, integrated feature coverage.</td></tr>
+<tr><td>Constraints</td><td><span class="badge ok">PASS</span> Steering/hard split present; hard constraints cover target dir, override, sudo, target, clobbering, native binary detection.</td></tr>
+<tr><td>Stop Rules</td><td><span class="badge ok">PASS</span> Includes halt/escalate/done criteria.</td></tr>
+</table>
+<h3>Phase Results</h3>
+<p><span class="badge ok">structure passed</span> <span class="badge ok">completeness passed</span> <span class="badge ok">clarity passed</span> <span class="badge ok">consistency passed</span> <span class="badge ok">alignment passed</span></p>
+<h3>Findings</h3>
+<p class="note">Новых findings нет.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Intent validates against the conversation and relevant iwiki context. Next stage: spec/brainstorming.</p>
+</section>
+<!-- TAB:intent END -->
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+<h2>Проверка spec — 2026-07-04</h2>
+<table>
+<tr><th>Раздел</th><th>Состояние</th></tr>
+<tr><td>Acceptance</td><td><span class="badge ok">PASS</span> Desired Outcomes and Done When copied from intent.</td></tr>
+<tr><td>Requirements</td><td><span class="badge ok">PASS</span> Covers user-space default, override, no-sudo behavior, target safety, PATH idempotence, native/legacy detection, legacy preservation.</td></tr>
+<tr><td>Architecture</td><td><span class="badge ok">PASS</span> Focused <code>lib/symlink/symlink.sh</code> module with bounded helper APIs.</td></tr>
+<tr><td>Command Flow</td><td><span class="badge ok">PASS</span> Covers install/update/lockfile/create/uninstall paths and legacy system install boundary.</td></tr>
+<tr><td>Testing</td><td><span class="badge ok">PASS</span> Includes shell tests and integrated feature regression matrix.</td></tr>
+</table>
+<h3>Phase Results</h3>
+<p><span class="badge ok">structure passed</span> <span class="badge ok">coverage passed</span> <span class="badge ok">clarity passed</span> <span class="badge ok">consistency passed</span></p>
+<h3>Findings</h3>
+<p class="note">Новых findings нет.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Spec matches intent and covers the original task without unrelated refactor scope.</p>
+</section>
+<!-- TAB:spec END -->
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+<h2>Проверка plan — 2026-07-04</h2>
+<table>
+<tr><th>Task</th><th>DoD</th></tr>
+<tr><td>Task 1</td><td>Failing symlink module shell tests committed.</td></tr>
+<tr><td>Task 2</td><td><code>lib/symlink/symlink.sh</code> implemented and focused tests pass.</td></tr>
+<tr><td>Task 3</td><td>Existing command branches call symlink helpers without parser refactor.</td></tr>
+<tr><td>Task 4</td><td>User docs describe no-sudo user launcher and <code>ICLAUDE_LINK_DIR</code>.</td></tr>
+<tr><td>Task 5</td><td>Syntax, focused tests, launcher smoke, and integrated regression matrix checked.</td></tr>
+</table>
+<h3>Phase Results</h3>
+<p><span class="badge ok">structure passed</span> <span class="badge ok">coverage passed</span> <span class="badge ok">dependencies passed</span> <span class="badge ok">verifiability passed</span> <span class="badge ok">consistency passed</span></p>
+<h3>Findings</h3>
+<p class="note">Новых findings нет.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Plan is implementation-ready and preserves the approved user-space symlink scope.</p>
+</section>
+<!-- TAB:plan END -->
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+<h2>Проверка result — 2026-07-04</h2>
+<table>
+<tr><th>Plan Task</th><th>Result</th><th>Evidence</th></tr>
+<tr><td>Task 1: failing tests</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_user_symlink.sh</code> added; RED observed before module existed.</td></tr>
+<tr><td>Task 2: symlink module</td><td><span class="badge ok">DONE</span></td><td><code>lib/symlink/symlink.sh</code>; focused test later reports 18 passed, 0 failed.</td></tr>
+<tr><td>Task 3: command wiring</td><td><span class="badge ok">DONE</span></td><td><code>iclaude.sh</code> sources symlink module and install/update/lockfile branches call launcher helper; legacy symlink functions delegate.</td></tr>
+<tr><td>Task 4: docs</td><td><span class="badge ok">DONE</span></td><td>README, usage, CONFIGURATION, USE_CASES updated for no-sudo user launcher and <code>ICLAUDE_LINK_DIR</code>.</td></tr>
+<tr><td>Task 5: verification</td><td><span class="badge warn">DONE WITH WARNINGS</span></td><td>Syntax, focused, fallback, env/config/toggles, Chrome, statusline, project-id, symlink smoke passed. CCR and PII integration warnings recorded below.</td></tr>
+</table>
+<h3>Verification Evidence</h3>
+<table>
+<tr><th>Check</th><th>Status</th></tr>
+<tr><td>All tracked shell syntax excluding <code>.git</code>/<code>.nvm-isolated</code></td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td><code>bash tests/test_user_symlink.sh</code></td><td><span class="badge ok">18 passed, 0 failed</span></td></tr>
+<tr><td><code>bash tests/test-suppress-npx-fallback.sh</code></td><td><span class="badge ok">6 passed, 0 failed</span></td></tr>
+<tr><td><code>test_env_map</code>, <code>test_config_migration</code>, <code>test_persistent_toggles</code></td><td><span class="badge ok">10/10, 10/10, 3/3</span></td></tr>
+<tr><td>Chrome detection, statusline context window, project id</td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td>Temporary <code>ICLAUDE_LINK_DIR</code> smoke with <code>iclaude --help</code></td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td>Router/PII related module syntax</td><td><span class="badge ok">PASS</span></td></tr>
+<tr><td><code>tests/test_ccr_integration.sh</code></td><td><span class="badge warn">WARN</span> Existing router request returned HTTP 500 <code>ERR_INVALID_URL</code>; router files untouched by this change.</td></tr>
+<tr><td><code>tests/test-pii-integration.sh</code></td><td><span class="badge warn">WARN</span> Existing PII lifecycle assertions failed on port/PID expectations; PII files untouched by this change.</td></tr>
+</table>
+<h3>Findings</h3>
+<p class="note">No missing planned implementation tasks. Residual warnings are external/pre-existing integration checks outside changed files.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Implementation diff matches the approved plan/spec/intent. Chain row closed with warnings recorded.</p>
+</section>
+<!-- TAB:result END -->
+</main>
+</body>
+</html>
