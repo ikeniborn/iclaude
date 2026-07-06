@@ -5,13 +5,15 @@
   "lspServers": {
     "pyright": "1.1.408"
   },
-  "lspPlugins": {},
+  "lspPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": "1.0.0"
+  },
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-07-04T06:13:24Z",
+  "installedAt": "2026-07-06T05:50:37Z",
   "nvmVersion": "0.39.7",
   "gsdVersion": "not installed"
 }
