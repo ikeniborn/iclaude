@@ -354,26 +354,32 @@ check_lockfile_changes() {
 
 	# Non-interactive mode: warn only, do not block
 	if [[ ! -t 0 ]]; then
-		print_info "Non-interactive mode: skipping prompt. Run './iclaude.sh --install-from-lockfile' to update."
+		print_info "Non-interactive mode: skipping prompt. Run interactively for core sync, or './iclaude.sh --install-from-lockfile' for a full restore."
 		echo ""
 		return 0
 	fi
 
-	read -p "  Run --install-from-lockfile now to update environment? [y/N]: " run_install
+	read -p "  Update core isolated environment from lockfile now? [y/N]: " run_install
 	echo ""
 
 	if [[ "$run_install" =~ ^[Yy]$ ]]; then
-		print_info "Running: install_from_lockfile..."
+		if [[ $(type -t install_core_from_lockfile) != function ]]; then
+			print_warning "Core lockfile sync is unavailable — check installation modules"
+			echo ""
+			return 0
+		fi
+
+		print_info "Running: install_core_from_lockfile..."
 		echo ""
-		if install_from_lockfile; then
+		if install_core_from_lockfile; then
 			update_lockfile_hash
-			print_success "Environment updated from lockfile"
+			print_success "Core isolated environment updated from lockfile"
 		else
-			print_warning "install_from_lockfile failed — check errors above"
+			print_warning "install_core_from_lockfile failed — check errors above"
 		fi
 		echo ""
 	else
-		print_info "Skipped. Run './iclaude.sh --install-from-lockfile' manually when ready."
+		print_info "Skipped. Run './iclaude.sh --install-from-lockfile' manually for a full restore when ready."
 		echo ""
 	fi
 

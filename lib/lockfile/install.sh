@@ -6,6 +6,75 @@
 #######################################
 
 #######################################
+# Install core isolated environment from lockfile
+# Installs only Node.js and Claude Code for startup lockfile sync.
+# Returns:
+#   0 - success
+#   1 - error
+#######################################
+install_core_from_lockfile() {
+	if [[ ! -f "$ISOLATED_LOCKFILE" ]]; then
+		print_error "Lockfile not found: $ISOLATED_LOCKFILE"
+		echo ""
+		echo "Create lockfile first with: iclaude --isolated-install"
+		return 1
+	fi
+
+	print_info "Installing core isolated environment from lockfile..."
+	echo ""
+
+	local node_version
+	local claude_version
+	node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "22")
+	claude_version=$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
+
+	print_info "Node.js version from lockfile: $node_version"
+	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
+		print_info "Claude Code version from lockfile: $claude_version"
+	fi
+	echo ""
+
+	if [[ ! -s "$ISOLATED_NVM_DIR/nvm.sh" ]]; then
+		install_isolated_nvm || return 1
+	fi
+
+	setup_isolated_nvm
+	source "$NVM_DIR/nvm.sh"
+
+	node_version=$(echo "$node_version" | sed 's/^v//')
+
+	if ! nvm install "$node_version" || ! nvm use "$node_version"; then
+		print_warning "nvm could not download Node.js; trying the node-TLS fallback..."
+		echo ""
+		local major="${node_version%%.*}"
+		if fetch_node_via_node_tls "$major"; then
+			local newdir
+			newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			[[ -n "$newdir" ]] && { nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"; }
+		else
+			print_error "Failed to install Node.js $node_version"
+			return 1
+		fi
+	fi
+
+	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
+		if ! npm install -g "@anthropic-ai/claude-code@$claude_version"; then
+			print_error "Failed to install Claude Code"
+			return 1
+		fi
+	else
+		if ! npm install -g "@anthropic-ai/claude-code"; then
+			print_error "Failed to install Claude Code"
+			return 1
+		fi
+	fi
+
+	print_success "Core isolated environment installed from lockfile"
+	echo ""
+	return 0
+}
+
+#######################################
 # Install isolated environment from lockfile
 # Installs: Node.js, Claude Code, Router, GH CLI, LSP servers, LSP plugins
 # Returns:
