@@ -12,6 +12,10 @@ review:
 chain:
   intent: docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md
   spec: docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md
+result_check:
+  verdict: OK
+  plan_hash: 980b34f3843ef7d0
+  last_run: 2026-07-06
 ---
 # Startup Lockfile Core Sync Implementation Plan
 

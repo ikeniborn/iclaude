@@ -26,8 +26,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 <header>
 <h1>startup-lockfile-core-sync</h1>
 <label for="theme-toggle" class="theme-btn" title="Toggle dark/light">Theme</label>
@@ -192,7 +192,46 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-<p class="note">Этап ещё не проверен.</p>
+<h2>Проверка result — 2026-07-06</h2>
+<p>Implementation diff matches the approved plan: tests were added first, a core-only lockfile helper was added, startup prompt wiring now calls the helper, and final verification found no required follow-up changes.</p>
+<p>Diff source: <code>0472ca81..a3482817</code>. Changed product/test files: <code>lib/lockfile/install.sh</code>, <code>lib/lockfile/save.sh</code>, <code>tests/test_lockfile_core_sync.sh</code>.</p>
+<h3>Diff Reconciliation Graph</h3>
+<table>
+<tr><th>Plan task</th><th>Status</th><th>Diff evidence</th></tr>
+<tr><td>Task 1: Add failing startup core-sync tests</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_lockfile_core_sync.sh</code> added; RED failures observed before implementation, then test passes after wiring.</td></tr>
+<tr><td>Task 2: Add core-only lockfile restore helper</td><td><span class="badge ok">DONE</span></td><td><code>lib/lockfile/install.sh</code> adds <code>install_core_from_lockfile()</code> for Node.js + Claude Code only.</td></tr>
+<tr><td>Task 3: Wire startup prompt to core restore</td><td><span class="badge ok">DONE</span></td><td><code>lib/lockfile/save.sh</code> prompt text and accepted branch call <code>install_core_from_lockfile</code>; full restore remains manual.</td></tr>
+<tr><td>Task 4: Final verification</td><td><span class="badge ok">DONE</span></td><td>Focused tests, syntax checks, static boundary inspection, and final code review all passed.</td></tr>
+</table>
+<h3>Outcome Evidence Map</h3>
+<table>
+<tr><th>Intent outcome / spec requirement</th><th>Evidence</th><th>Status</th></tr>
+<tr><td>Startup prompt core-syncs without LSP restore.</td><td><code>tests/test_lockfile_core_sync.sh</code> asserts accepted prompt calls core restore and not full restore; <code>pass=22 fail=0</code>.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Successful core sync updates stored hash; failure/decline/non-interactive do not.</td><td>Focused test covers success, failure, decline, and non-interactive hash behavior.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Manual full restore can still restore LSP entries.</td><td>Static test asserts <code>install_from_lockfile</code> body still contains <code>lspServers</code> and <code>lspPlugins</code>; grep confirms LSP fields only in full installer.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Core helper installs Node.js + Claude Code only.</td><td><code>install_core_from_lockfile()</code> spans <code>lib/lockfile/install.sh</code> lines 15-75 and contains no <code>lspServers</code>/<code>lspPlugins</code>.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Existing binary probe regression preserved.</td><td><code>bash tests/test_check_lockfile_binary_probe.sh</code> reports <code>pass=5 fail=0</code>.</td><td><span class="badge ok">met</span></td></tr>
+</table>
+<h3>Excess/Gap Map</h3>
+<table>
+<tr><th>Category</th><th>Evidence</th><th>Status</th></tr>
+<tr><td>Missing plan work</td><td>No missing tasks: all four plan tasks have matching diff/test evidence.</td><td><span class="badge ok">none</span></td></tr>
+<tr><td>Unplanned product files</td><td>Diff product/test files are limited to planned <code>lib/lockfile/install.sh</code>, <code>lib/lockfile/save.sh</code>, and <code>tests/test_lockfile_core_sync.sh</code>.</td><td><span class="badge ok">none</span></td></tr>
+<tr><td>Documentation/wiki</td><td>iwiki <code>overview</code> documents the helper; <code>wiki_lint</code> reports no broken or stale pages. Existing orphan/missing_source/advisory items predate this task.</td><td><span class="badge ok">covered</span></td></tr>
+</table>
+<h3>Verification Evidence</h3>
+<table>
+<tr><th>Command</th><th>Result</th></tr>
+<tr><td><code>bash tests/test_lockfile_core_sync.sh</code></td><td><span class="badge ok">pass=22 fail=0</span></td></tr>
+<tr><td><code>bash tests/test_check_lockfile_binary_probe.sh</code></td><td><span class="badge ok">pass=5 fail=0</span></td></tr>
+<tr><td><code>bash -n iclaude.sh lib/lockfile/install.sh lib/lockfile/save.sh tests/test_lockfile_core_sync.sh tests/test_check_lockfile_binary_probe.sh</code></td><td><span class="badge ok">exit 0, no output</span></td></tr>
+<tr><td><code>git diff --check 0472ca81..a3482817</code></td><td><span class="badge ok">exit 0, no output</span></td></tr>
+<tr><td>Final code review</td><td><span class="badge ok">APPROVED, no findings</span></td></tr>
+</table>
+<h3>Findings</h3>
+<p class="note">Новых findings нет. Result verdict: OK.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Implementation satisfies intent, spec, and plan. TODO row closed.</p>
 </section>
 <!-- TAB:result END -->
 </main>
