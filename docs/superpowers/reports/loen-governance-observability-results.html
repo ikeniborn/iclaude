@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>loen backlog step 4 — IDD→SDD chain · governance-observability</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg); transition:background .3s, color .3s;
+}
+h1{ font-size:1.5rem; margin:.2rem 0 .2rem; }
+h2{ font-size:1.15rem; margin:1.6rem 0 .5rem; color:var(--accent-2); }
+h3{ font-size:1rem; margin:1.1rem 0 .4rem; }
+.theme-btn{ position:sticky; top:.5rem; float:right; cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.95rem; }
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); position:sticky; top:0; }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+.matrix td.y{ color:var(--ok-2); font-weight:700; text-align:center; }
+.matrix td.n{ color:var(--muted); text-align:center; }
+.matrix th.rot{ font-size:.78rem; }
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.warn{ color:var(--warn-2); border-color:var(--warn); }
+.badge.info{ color:var(--accent-2); border-color:var(--accent); }
+.badge.crit{ color:var(--danger-2); border-color:var(--danger); }
+.rpt-c4 .boundary{ border:1.6px dashed var(--accent); border-radius:12px; padding:1.8rem 1rem 1rem;
+  margin:.7rem 0; position:relative; display:flex; flex-wrap:wrap; gap:.6rem;
+  background:color-mix(in srgb, var(--accent) 5%, transparent); }
+.rpt-c4 .boundary::before{ content:attr(data-label); position:absolute; top:-.7rem; left:.9rem;
+  background:var(--bg); padding:0 .45rem; font-size:.8rem; color:var(--accent); font-weight:600; }
+.rpt-c4 .comp{ background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:.55rem .85rem; min-width:6rem; font-size:.83rem; box-shadow:0 1px 6px var(--shadow);
+  border-left:4px solid var(--accent); }
+.rpt-c4 .comp b{ color:var(--accent); }
+.rpt-c4 .comp .sub{ font-size:.72rem; }
+figure.rpt-graph{ margin:1rem 0; text-align:center; }
+figure.rpt-graph figcaption{ font-size:.8rem; color:var(--muted); margin-top:.3rem; }
+.rpt-states{ display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:1rem 0; }
+.rpt-states .state{ border:2px solid var(--border); border-radius:999px; padding:.4rem .9rem;
+  background:var(--surface); font-size:.85rem; }
+.rpt-states .state.ok{ border-color:var(--ok); }
+.rpt-states .edge{ flex:0 0 2.4rem; height:2px; background:var(--line); position:relative; }
+.rpt-states .edge::after{ content:""; position:absolute; right:0; top:-4px;
+  border:5px solid transparent; border-left-color:var(--line); }
+/* tabs */
+.chain-tabs{ display:flex; gap:.3rem; margin:1rem 0 0; flex-wrap:wrap; }
+.chain-tabs label{ cursor:pointer; padding:.4rem .9rem; border:1px solid var(--border); border-bottom:none;
+  border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); }
+.tab-pane{ display:none; border:1px solid var(--border); border-radius:0 10px 10px 10px;
+  padding:1rem 1.2rem; background:color-mix(in srgb,var(--surface) 60%, transparent); }
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{ display:block; }
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); border-color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
+<label for="theme-toggle" class="theme-btn" title="Тёмная/светлая тема">🌙 / ☀️</label>
+<header>
+  <h1>loen backlog step 4 — governance / observability</h1>
+  <p class="sub">Цепочка IDD→SDD · тема <code>loen-governance-observability</code> · источник: <code>docs/superpowers/specs/2026-07-02-loen-governance-observability-design.md</code></p>
+</header>
+<nav class="chain-tabs">
+  <label for="tab-intent">Intent</label>
+  <label for="tab-spec">Spec</label>
+  <label for="tab-plan">Plan</label>
+  <label for="tab-result">Result</label>
+</nav>
+
+
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+  <p class="note">Этап ещё не проверен (цепочка открыта спекой, intent: n/a).</p>
+</section>
+<!-- TAB:intent END -->
+
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+  <p class="lead">Спека шага 4 бэклога loen: offline-first governance — детерминированный агрегатор <b>loen_stats.py</b> по <code>docs/loen/**</code> + скилл <b>/loen:governance</b>, рендерящий сводный <code>docs/loen/governance.html</code> (success rate, metric delta, handoff reasons, failure taxonomy, protected alerts). Langfuse отложен — ноль сети, совместимо с PII-позицией.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · spec_hash <code>830b7b31f9d4d264</code> · 2026-07-02 · defaults выбраны при AFK пользователя (overridable)</p>
+
+  <h2>1. Резюме спецификации</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Раздел</th><th>Требование</th><th>Критерий приёмки (DoD)</th></tr></thead>
+    <tbody>
+      <tr><td>§2</td><td><code>loen_stats.py</code>: скан run-id детей; канонический top-set (current, RUNBOOK.md, governance.html) не считается drift; прочее → foreign</td><td><code>test_loen_stats.py</code>: foreign-кейсы file+dir</td></tr>
+      <tr><td>§2</td><td>totals: success rate по финальному VERDICT: APPROVE; taxonomy ТОЛЬКО из REQUIRED FIXES verifier.md; protected alerts по пину <code>^ERROR: protected path changed:</code></td><td>Фикстурные runs → точные агрегаты</td></tr>
+      <tr><td>§2</td><td>Fidelity: только рестейт артефактов; cost/tokens и latency/VRAM из §10.3 — unavailable, не фабрикуются</td><td>Поля unavailable в JSON/HTML</td></tr>
+      <tr><td>§3</td><td>Скилл governance: один write (governance.html через html-report); --triage предлагает, никогда не исполняет</td><td>Текст SKILL.md; skill-lint</td></tr>
+      <tr><td>§4</td><td>Hook: РАННИЙ guard <code>path == "docs/loen/governance.html"</code> (как current/RUNBOOK.md) + canon-запись для симметрии + block message</td><td><code>test_loen_hook.py</code>: governance.html allow, governance.txt block</td></tr>
+      <tr><td>§5–7</td><td>Ноль сети; 2 новых файла + 1 правка hook; minor bump; тесты stats/hook/lint</td><td>version-sync; сьюты PASS</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы решения и зависимостей</h2>
+  <h3>2.1 Схема решения (C4)</h3>
+  <figure class="rpt-c4">
+    <div class="boundary" data-label="Новое в шаге 4">
+      <div class="comp"><b>loen_stats.py</b><br><span class="sub">детерм. агрегатор → JSON</span></div>
+      <div class="comp"><b>governance (skill)</b><br><span class="sub">/loen:governance [--triage]</span></div>
+      <div class="comp"><b>docs/loen/governance.html</b><br><span class="sub">+1 канон-путь (ранний guard)</span></div>
+    </div>
+    <div class="boundary" data-label="Источники (read-only)">
+      <div class="comp"><b>docs/loen/&lt;run&gt;/loop.yaml</b><br><span class="sub">mode</span></div>
+      <div class="comp"><b>iter-NN/verifier.md</b><br><span class="sub">VERDICT + REQUIRED FIXES</span></div>
+      <div class="comp"><b>iter-NN/gates.log</b><br><span class="sub">только пин protected-alert</span></div>
+      <div class="comp"><b>experiments.jsonl</b><br><span class="sub">keep/revert, метрики</span></div>
+    </div>
+  </figure>
+  <h3>2.2 Граф зависимостей</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 720 190" width="100%" role="img" aria-label="зависимости governance">
+      <defs><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ag)">
+        <path d="M150,60 L205,60"></path><path d="M360,60 L415,60"></path><path d="M555,60 L600,60"></path>
+        <path d="M150,150 C180,130 190,90 203,70"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="10" y="40" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="80" y="64">governance (skill)</text></g>
+        <g><rect x="10" y="130" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="80" y="148">docs/loen/**</text><text x="80" y="161" font-size="9" fill="var(--muted)">артефакты runs</text></g>
+        <g><rect x="205" y="40" width="155" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="282" y="64">loen_stats.py → JSON</text></g>
+        <g><rect x="415" y="40" width="140" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="485" y="64">html-report (skill)</text></g>
+        <g><rect x="600" y="40" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="655" y="58">governance.html</text><text x="655" y="71" font-size="9" fill="var(--muted)">§10.3 дашборды</text></g>
+      </g>
+    </svg>
+    <figcaption>Скилл читает артефакты через loen_stats.py и рендерит один файл; сети нет. DAG, циклов нет.</figcaption>
+  </figure>
+  <h3>2.3 Карта покрытия</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Задача (из диалога)</th><th class="rot">§1–2</th><th class="rot">§3</th><th class="rot">§4</th><th class="rot">§5–8</th></tr></thead>
+    <tbody>
+      <tr><td>Dashboards + failure taxonomy (§10.3 методологии)</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>Traces → отложенный Langfuse, offline-substitute experiments.jsonl</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>Напряжение offline/PII разрешено (zero network)</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>Scheduled triage (§7.5) — proposals only</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Нумерация 1–10 без разрывов; плейсхолдеров нет</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>2 WARNING (Latency/VRAM; foreign vs canon) — исправлены; все строки §10.3 покрыты или unavailable</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">PASS</span></td><td>2 WARNING (пин protected-строки; парс gates.log) — исправлены</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>1 CRITICAL (canon_patterns-only не открыл бы запись — hook control flow) — исправлен ранним guard-ом</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>sev</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge crit">CRIT</span></td><td>Top-level governance.html блокировался бы run-id-гейтом ДО canon_patterns (RUNBOOK.md разрешён ранним guard-ом) → операционная правка = ранний <code>path ==</code> guard</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge warn">WARN</span></td><td>Строка Latency/VRAM §10.3 не помечена → явный n/a рядом с cost/tokens</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge warn">WARN</span></td><td>foreign флагал бы current/RUNBOOK.md/собственный вывод → канон-set исключён, files+dirs пин</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-004</td><td><span class="badge warn">WARN</span></td><td>Protected-alert токен допинён: <code>^ERROR: protected path changed:</code></td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-005</td><td><span class="badge warn">WARN</span></td><td>Free-form gates.log исключён из taxonomy; источник — REQUIRED FIXES verifier.md</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-006</td><td><span class="badge info">INFO</span></td><td>Шорткаты путей в §1 vs полные в заголовках — консистентный паттерн</td><td><span class="badge info">wontfix</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 1 CRITICAL (fixed) · 4 WARNING (fixed) · 1 INFO. <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Plan <span class="sub">pending</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> ревью спеки пользователем (defaults выбраны при AFK) → <code>superpowers:writing-plans</code>.</div>
+</section>
+<!-- TAB:spec END -->
+
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+  <p class="lead">План шага 4 бэклога loen: 5 задач TDD — детерминированный агрегатор <b>loen_stats.py</b> с тестами, +1 канонический top-level путь в hook, скилл <b>/loen:governance</b> с бампом до 0.5.0, документация (LOEN.md, README×2, iwiki) и полный регрессионный прогон.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>7d93418989614184</code> · 2026-07-02 · runner: clean-context subagent (check-runner protocol)</p>
+
+  <h2>1. Резюме плана</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+    <tbody>
+      <tr><td><b>T1</b></td><td>Агрегатор <code>plugin/loen/scripts/loen_stats.py</code> + <code>tests/test_loen_stats.py</code> (TDD): скан run-id детей, канон-set current/RUNBOOK.md/governance.html, foreign-drift, totals (success rate, keep/revert, handoff reasons, taxonomy, protected alerts), cost/tokens и latency/VRAM = unavailable</td><td>PASS test_loen_stats.py: success rate 0.5, keep/revert 1/1, primary 0.19→0.16, taxonomy из REQUIRED FIXES REJECT-вердикта, protected alert 1, foreign [notes.txt, scratch], пустой корень → валидный пустой JSON, exit 0</td></tr>
+      <tr><td><b>T2</b></td><td>Hook <code>loop-guard.py</code>: ранний <code>path ==</code> guard для <code>docs/loen/governance.html</code> (операционная правка) + запись в canon_patterns + block message (симметрия); 3 кейса в <code>test_loen_hook.py</code></td><td>PASS test_loen_hook.py (allow no-loop/active-loop, governance.txt → block 2); test_loen_guard.sh и test_loen_layout.sh зелёные; check_layout.sh не тронут</td></tr>
+      <tr><td><b>T3</b></td><td>Скилл <code>skills/governance/SKILL.md</code> (/loen:governance [--triage]: агрегация → дашборд через html-report → triage только предложения; ровно один write) + lint-список <code>test_loen_plugin.sh</code> + бамп 0.4.0→0.5.0 в обоих манифестах</td><td>OK skill governance · PASS test_loen_plugin.sh · VERSION-SYNC-OK</td></tr>
+      <tr><td><b>T4</b></td><td>Документация: <code>docs/functions/LOEN.md</code> (Use + Artifacts + Scope), <code>plugin/loen/README.md</code>, корневой <code>README.md</code> (RU), iwiki <code>iclaude/loen-plugin</code> (Components, Artifact model, Roadmap)</td><td>grep-проверки вставок непустые · wiki_lint чистый</td></tr>
+      <tr><td><b>T5</b></td><td>Регрессионный свип: 9 loen-сьютов + <code>check-plugin-version-sync.sh</code> + смоук агрегатора на реальном (пустом) <code>docs/loen/</code></td><td>ALL-GREEN · JSON-OK</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+  <h3>2.1 Граф зависимостей шагов</h3>
+  <figure class="rpt-graph">
+    <svg viewBox="0 0 740 240" width="100%" role="img" aria-label="зависимости задач плана">
+      <defs><marker id="agp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker></defs>
+      <g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#agp)">
+        <path d="M140,60 C180,70 200,90 228,102"></path>
+        <path d="M140,170 C180,160 200,140 228,120"></path>
+        <path d="M360,110 L428,110"></path>
+        <path d="M560,110 L618,110"></path>
+        <path d="M140,45 C300,10 400,40 465,88"></path>
+        <path d="M140,38 C400,-14 610,25 672,86"></path>
+        <path d="M140,180 C400,228 580,190 655,133"></path>
+        <path d="M355,127 C460,168 555,158 616,121"></path>
+      </g>
+      <g font-size="11" text-anchor="middle" fill="var(--fg)">
+        <g><rect x="10" y="30" width="130" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="75" y="48">T1 loen_stats.py</text><text x="75" y="61" font-size="9" fill="var(--muted)">JSON-схема</text></g>
+        <g><rect x="10" y="150" width="130" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="75" y="168">T2 hook +1 canon</text><text x="75" y="181" font-size="9" fill="var(--muted)">write-path</text></g>
+        <g><rect x="230" y="90" width="130" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="295" y="108">T3 скилл + 0.5.0</text><text x="295" y="121" font-size="9" fill="var(--muted)">/loen:governance</text></g>
+        <g><rect x="430" y="90" width="130" height="40" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect><text x="495" y="108">T4 docs + iwiki</text><text x="495" y="121" font-size="9" fill="var(--muted)">canon-sync docs-leg</text></g>
+        <g><rect x="620" y="90" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"></rect><text x="675" y="108">T5 регрессия</text><text x="675" y="121" font-size="9" fill="var(--muted)">9 сьютов + sync</text></g>
+      </g>
+    </svg>
+    <figcaption>T1→T3 (JSON потребляется скиллом), T2→T3 (открытый write-path для governance.html), T1→T4 и T3→T4 (поля и версия документируются), T1/T2/T3/T4→T5 (свип поверх всего). Циклов нет, порядок валиден.</figcaption>
+  </figure>
+  <h3>2.2 Пересечения (задача × требование спеки)</h3>
+  <table class="rpt-table matrix">
+    <thead><tr><th>Требование</th><th class="rot">T1</th><th class="rot">T2</th><th class="rot">T3</th><th class="rot">T4</th><th class="rot">T5</th></tr></thead>
+    <tbody>
+      <tr><td>§2 агрегатор loen_stats.py</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§3 скилл /loen:governance</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§4 hook +1 канон-путь</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§5 privacy (ноль сети)</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>§6 delivery, бамп 0.5.0</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>§7 тесты</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td></tr>
+      <tr><td>§9 process / docs</td><td class="n">·</td><td class="n">·</td><td class="n">·</td><td class="y">✓</td><td class="n">·</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">§5 закрыт глобальными ограничениями плана (действуют на все задачи). Общих редактируемых файлов между задачами нет — каждый файл принадлежит ровно одной задаче.</p>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">PASS</span></td><td>Плейсхолдеров нет; задачи 1–5 и шаги без разрывов/дублей</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">PASS</span></td><td>§2–§7, §9 покрыты; 2 INFO (prose vs table row; flake8 как конвенция)</td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">PASS</span></td><td>Все 13 repo-якорей правок сверены с реальными файлами; трасса фикстура↔код T1 сходится; порядок задач валиден</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">PASS</span></td><td>У каждого шага команда + ожидаемый вывод, включая точные строки FAIL для red-шагов</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">PASS</span></td><td>Пины (run-id, protected-alert, VERDICT, канон-set, 0.5.0) и JSON-поля консистентны между задачами; 1 INFO</td></tr>
+    </tbody>
+  </table>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>sev</th><th>суть → фикс</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>F-001</td><td><span class="badge info">INFO</span></td><td>Вставка T4 Edit 2 называла себя «this table» (spec §9: Artifacts table row; выбран абзац — существующая таблица per-run-dir) → переформулировано в «this Artifacts entry»</td><td><span class="badge ok">fixed</span></td></tr>
+      <tr><td>F-002</td><td><span class="badge info">INFO</span></td><td>Шаг flake8 (T1 Step 5) не привязан к spec §7 → оставлен как помеченная конвенция репо (post-PR #76), нефункционален</td><td><span class="badge info">wontfix</span></td></tr>
+      <tr><td>F-003</td><td><span class="badge info">INFO</span></td><td>Код T1 добавил <code>\b</code> и толерантность к пробелам против пинов Global Constraints → пины дополнены записью об осознанной толерантности (код не менялся)</td><td><span class="badge ok">fixed</span></td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 0 CRITICAL open · 0 WARNING open · 3 INFO (2 fixed, 1 wontfix). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state">Result <span class="sub">pending</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> исполнение плана (superpowers:subagent-driven-development или superpowers:executing-plans) на ветке <code>dev-loen-governance-observability</code>; базовую ветку (dev vs master) и worktree подтвердить у пользователя.</div>
+</section>
+<!-- TAB:plan END -->
+
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+  <p class="lead">Сверка реализации с планом: ветка <code>dev-loen-governance-observability</code>, 6 коммитов над <code>origin/dev</code>. Все 5 задач выполнены, плагин 0.5.0, финальное whole-branch ревью — READY TO MERGE.</p>
+  <p class="sub">Вердикт: <span class="badge ok">OK</span> · plan_hash <code>7d93418989614184</code> · 2026-07-03 · runner: clean-context subagent (check-runner protocol)</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+    <tbody>
+      <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-loen-governance-observability.md</code> (5 задач TDD, check-plan OK)</td></tr>
+      <tr><td>Спека</td><td><code>docs/superpowers/specs/2026-07-02-loen-governance-observability-design.md</code> (check-spec OK)</td></tr>
+      <tr><td>Intent</td><td>n/a (цепочка открыта спекой)</td></tr>
+      <tr><td>База диффа</td><td><code>f4e1cb75</code> (origin/dev) → <code>75936950</code>, 6 коммитов</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+  <p><b>Покрытие шагов плана: 5 DONE · 0 PARTIAL · 0 MISSING</b></p>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Доказательство в диффе</th></tr></thead>
+    <tbody>
+      <tr><td>T1 агрегатор loen_stats.py</td><td><span class="badge ok">DONE</span></td><td><code>f3adecaa</code>: plugin/loen/scripts/loen_stats.py (259 строк, полная JSON-схема) + tests/test_loen_stats.py; PASS при повторном прогоне</td></tr>
+      <tr><td>T2 hook +1 канон-путь</td><td><span class="badge ok">DONE</span></td><td><code>afeaada2</code>: ранний guard + canon_patterns + block message + 3 тест-кейса; check_layout.sh не тронут (отсутствует в диффе)</td></tr>
+      <tr><td>T3 скилл + 0.5.0</td><td><span class="badge ok">DONE</span></td><td><code>b93d9127</code>: skills/governance/SKILL.md, lint-список + governance, оба манифеста 0.4.0→0.5.0; OK skill governance + version-sync зелёные</td></tr>
+      <tr><td>T4 docs + iwiki</td><td><span class="badge ok">DONE</span></td><td><code>3ba8694d</code>: LOEN.md ×3, plugin README, корневой README (RU); iwiki проверен напрямую (Components ×2, Artifact model, Roadmap row 4 done)</td></tr>
+      <tr><td>T5 регрессия</td><td><span class="badge ok">DONE</span></td><td>Без диффа (evidence-only): 9/9 сьютов + version-sync + JSON-OK смоук — перепрогнаны runner-ом, ALL-GREEN</td></tr>
+    </tbody>
+  </table>
+  <p><b>Покрытие спеки:</b> §2 агрегатор ✓ · §3 скилл ✓ · §4 hook ✓ · §5 privacy (ноль сети) ✓ · §6 delivery/0.5.0 ✓ · §7 тесты ✓ · §9 process/docs ✓ — 7/7.</p>
+  <p><b>Excess:</b> без необъяснённого. Объяснённые: 3 chain-артефакта (<code>2790e67f</code>: план, HTML-отчёт, строка TODO) и фикс финального ревью <code>75936950</code> (read_lines ловит UnicodeDecodeError + бинарный регресс-тест — одобренное отклонение от дословного кода плана).</p>
+  <table class="rpt-table">
+    <thead><tr><th>severity</th><th>step</th><th>Plan / Diff / Fix</th></tr></thead>
+    <tbody>
+      <tr><td colspan="3" style="text-align:center;color:var(--muted)">Находок нет</td></tr>
+    </tbody>
+  </table>
+  <p><b>SUMMARY:</b> 0 CRITICAL · 0 WARNING · 0 INFO. Финальное whole-branch ревью (fable): READY TO MERGE Yes (1 Important — исправлен коммитом <code>75936950</code>; Minor-находки триажированы как post-merge). <b>VERDICT:</b> <span class="badge ok">OK</span></p>
+  <figure class="rpt-states">
+    <div class="state">Intent <span class="sub">n/a</span></div><div class="edge"></div>
+    <div class="state ok">Spec <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Plan <span class="badge ok">OK</span></div><div class="edge"></div>
+    <div class="state ok">Result <span class="badge ok">OK</span></div>
+  </figure>
+  <div class="note"><b>Next step:</b> PR ветки <code>dev-loen-governance-observability</code> → <code>dev</code>; после создания PR обновить номер в wiki Roadmap.</div>
+</section>
+<!-- TAB:result END -->
+</body>
+</html>

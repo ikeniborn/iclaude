@@ -64,7 +64,8 @@ _SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
   (.context_window.used_percentage // 0 | tostring),
   (.session_id // "unknown"),
   (.transcript_path // ""),
-  (.workspace.project_dir // .cwd // "")
+  (.workspace.project_dir // .cwd // ""),
+  (.context_window.current_usage.input_tokens // 0 | tostring)
 ' 2>/dev/null)
 {
     read -r _SD_IS_ANTHROPIC
@@ -79,6 +80,7 @@ _SD_PARSED=$(echo "$SESSION_DATA" | jq -r '
     read -r SESSION_ID
     read -r SESSION_FILE
     read -r PROJECT_DIR
+    read -r _SD_CACHE_INPUT
 } <<< "$_SD_PARSED"
 
 # --- Statusline caching (Variant D) ---
@@ -132,6 +134,39 @@ if [[ -f "$SCRIPT_DIR/lib/rate-limit.sh" ]]; then
     RATE_LIMIT_AVAILABLE=1
 fi
 
+# Detect the REAL context window by model name.
+# Claude Code reports context_window_size=200000 even for 1M-window models
+# (Opus/Sonnet 4.x), so the reported value can't be trusted. Map by model and
+# take max(known, reported) — falling back to the reported size for unknowns.
+detect_real_context_window() {
+    local model="$1" reported="${2:-200000}" known=0
+    case "${model,,}" in
+        *haiku*) known=200000 ;;                                  # Haiku 4.5 = 200K
+        *fable*|*mythos*) known=1000000 ;;                        # Claude 5 family = 1M
+        *opus*|*sonnet*)
+            case "${model,,}" in
+                *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
+                *sonnet?5*) known=1000000 ;;                      # Sonnet 5 = 1M ("5" right after "sonnet"; not "Sonnet 3.5")
+                *) known=0 ;;                                     # 4.0/4.1 → reported
+            esac ;;
+    esac
+    [[ "$reported" =~ ^[0-9]+$ ]] || reported=200000
+    (( known > reported )) && echo "$known" || echo "$reported"
+}
+
+# Humanize a token count: K for thousands, M for millions (matches the cache split).
+humanize() {
+    local n="${1:-0}"
+    [[ "$n" =~ ^[0-9]+$ ]] || n=0
+    if [[ $n -ge 1000000 ]]; then
+        awk "BEGIN {printf \"%.1fM\", ($n / 1000000.0)}"
+    elif [[ $n -ge 1000 ]]; then
+        awk "BEGIN {printf \"%.0fK\", ($n / 1000.0)}"
+    else
+        printf '%s' "$n"
+    fi
+}
+
 # Parse session data
 # Anthropic fast path: если one-shot parse дал валидные данные — пропускаем весь адаптер.
 # Адаптер нужен только для не-Anthropic провайдеров (Gemini, OpenAI, Ollama via router).
@@ -158,41 +193,43 @@ else
     exit 0
 fi
 
+# Override the reported context window with the real per-model window.
+# Covers both branches above (MODEL + CONTEXT_LIMIT are set in each).
+CONTEXT_LIMIT=$(detect_real_context_window "$MODEL" "$CONTEXT_LIMIT")
+
 # Calculate API tokens percentage (billing only, excludes cache reads)
 # Note: This is different from used_percentage which includes cache tokens
 PERCENT=$(awk "BEGIN {printf \"%.0f\", ($TOTAL_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
-# Parse active context (shows accumulated conversation INCLUDING cache)
-# This represents the TOTAL context window usage for next message
-# Cache is part of this total, shown separately in 📦
-USED_PERCENTAGE="$_SD_USED_PCT"
+# Active context = real input tokens of the current request (cache + conversation).
+# total_input_tokens is the actual window content; used_percentage is NOT used —
+# Claude Code saturates it at 100 against its stale 200K window.
+USED_PERCENTAGE="$_SD_USED_PCT"  # parsed but no longer the source of truth
 
-# Calculate active tokens from used_percentage
-# This shows accumulated context (cache + conversation)
-ACTIVE_TOKENS=0
-ACTIVE_PERCENT="0.0"
-if [[ "$USED_PERCENTAGE" != "null" ]] && [[ -n "$USED_PERCENTAGE" ]] && [[ "$USED_PERCENTAGE" != "0" ]]; then
-    ACTIVE_TOKENS=$(awk "BEGIN {printf \"%.0f\", ($CONTEXT_LIMIT * $USED_PERCENTAGE / 100.0)}")
-    ACTIVE_PERCENT="$USED_PERCENTAGE"
-fi
+ACTIVE_TOKENS="$TOTAL_INPUT"
+[[ "$ACTIVE_TOKENS" =~ ^[0-9]+$ ]] || ACTIVE_TOKENS=0
+ACTIVE_PERCENT=$(awk "BEGIN {printf \"%.1f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
 
 # SESSION_ID, SESSION_FILE, PROJECT_DIR — уже установлены one-shot parse выше
 # CACHE_READ, CACHE_CREATION — уже установлены one-shot parse (legacy) или адаптером
 TOTAL_CACHE=$((CACHE_READ + CACHE_CREATION))
 
-# Format cache display (show only if >0)
+# Format cache display: per-turn hit-rate % + read/write split (replaces summed count).
 CACHE_DISPLAY=""
 if [[ $TOTAL_CACHE -gt 0 ]]; then
-    # Format: K for thousands, M for millions
-    if [[ $TOTAL_CACHE -ge 1000000 ]]; then
-        CACHE_FMT=$(awk "BEGIN {printf \"%.1fM\", ($TOTAL_CACHE / 1000000.0)}")
-    elif [[ $TOTAL_CACHE -ge 1000 ]]; then
-        CACHE_FMT=$(awk "BEGIN {printf \"%.0fK\", ($TOTAL_CACHE / 1000.0)}")
+    # Uncached input of the current request (per-turn); 0 for non-Anthropic providers.
+    CACHE_INPUT="${_SD_CACHE_INPUT:-0}"
+    [[ "$CACHE_INPUT" =~ ^[0-9]+$ ]] || CACHE_INPUT=0
+    # hit-rate = cache_read / (cache_read + cache_creation + uncached_input)
+    HR_DENOM=$((CACHE_READ + CACHE_CREATION + CACHE_INPUT))
+    if [[ $HR_DENOM -gt 0 ]]; then
+        # Floor, not round: 100% must mean a fully cached request.
+        HIT_RATE=$(awk "BEGIN {printf \"%d\", int($CACHE_READ * 100.0 / $HR_DENOM)}")
+        CACHE_DISPLAY=" | 📦 ${HIT_RATE}% · R$(humanize "$CACHE_READ")/W$(humanize "$CACHE_CREATION")"
     else
-        CACHE_FMT="$TOTAL_CACHE"
+        CACHE_DISPLAY=" | 📦 n/a"
     fi
-    CACHE_DISPLAY=" | 📦 ${CACHE_FMT}"
-    # Clean cache display immediately
+    # Strip any stray newlines so the segment stays on one line.
     CACHE_DISPLAY=$(printf '%s' "$CACHE_DISPLAY" | tr -d '\n\r')
 fi
 
@@ -291,17 +328,23 @@ if [[ -f "$_SEC_FLAG" ]]; then
     fi
 fi
 
-# Caveman badge — show ⛏ when .caveman-active exists in $CLAUDE_CONFIG_DIR
-# caveman-stats.js writes $CLAUDE_CONFIG_DIR/.caveman-statusline-suffix (e.g. "⛏ 5.2k")
+# Caveman badge — show ⛏ when active flag exists in $CLAUDE_CONFIG_DIR/.caveman/.
+# Prefer THIS session's suffix (⛏ <session> · Σ<cumulative>), written by
+# caveman-stats.js as .caveman/suffix-<session_id>; fall back to the global
+# cumulative-only .caveman/statusline-suffix (e.g. before the first Stop).
 CAVEMAN_ICON=""
-if [[ -f "$CLAUDE_CONFIG_DIR/.caveman-active" ]]; then
-    _CAVEMAN_SUFFIX_FILE="$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix"
-    if [[ -f "$_CAVEMAN_SUFFIX_FILE" ]]; then
-        _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_SUFFIX_FILE" 2>/dev/null | tr -d '\n\r')
-        [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
-    else
-        CAVEMAN_ICON=" | ⛏"
+CAVEMAN_DIR="$CLAUDE_CONFIG_DIR/.caveman"
+if [[ -f "$CAVEMAN_DIR/active" ]]; then
+    _CAVEMAN_SUFFIX=""
+    if [[ -n "$SESSION_ID" && "$SESSION_ID" != "unknown" ]]; then
+        _CAVEMAN_PS_FILE="$CAVEMAN_DIR/suffix-${SESSION_ID}"
+        [[ -f "$_CAVEMAN_PS_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_PS_FILE" 2>/dev/null | tr -d '\n\r')
     fi
+    if [[ -z "$_CAVEMAN_SUFFIX" ]]; then
+        _CAVEMAN_GLOBAL_FILE="$CAVEMAN_DIR/statusline-suffix"
+        [[ -f "$_CAVEMAN_GLOBAL_FILE" ]] && _CAVEMAN_SUFFIX=$(cat "$_CAVEMAN_GLOBAL_FILE" 2>/dev/null | tr -d '\n\r')
+    fi
+    [[ -n "$_CAVEMAN_SUFFIX" ]] && CAVEMAN_ICON=" | ${_CAVEMAN_SUFFIX}" || CAVEMAN_ICON=" | ⛏"
 fi
 
 # PII proxy detection — show when ICLAUDE_PII_ACTIVE=1 (set by launch.sh after proxy starts)
@@ -758,18 +801,13 @@ if [[ "${STATUSLINE_ADAPTIVE:-1}" == "1" ]]; then
     DISPLAY_MODE=$(get_display_mode "$TERM_WIDTH")
 fi
 
-# Calculate reserved buffer (Claude Code reserves ~40-45K tokens as a safety buffer)
-BUFFER_SIZE=45000  # Typical Claude Code reserved buffer
-EFFECTIVE_WINDOW=$((CONTEXT_LIMIT - BUFFER_SIZE))
-
-# Calculate percentage of FULL context window (200K, not effective 155K)
-# This shows actual context usage relative to the full window
+# Percentage of the full context window
 EFFECTIVE_PERCENT=$(awk "BEGIN {printf \"%.0f\", ($ACTIVE_TOKENS * 100.0 / $CONTEXT_LIMIT)}")
-EFFECTIVE_WINDOW_FMT=$(format_tokens $EFFECTIVE_WINDOW)
-BUFFER_SIZE_FMT=$(format_tokens $BUFFER_SIZE)
 
-# Format buffer display (show reserved buffer)
-BUFFER_DISPLAY=" | 🔒 ${BUFFER_SIZE_FMT}"
+# Remaining tokens until the window is full (shown in Σ)
+REMAINING=$(( CONTEXT_LIMIT - ACTIVE_TOKENS ))
+(( REMAINING < 0 )) && REMAINING=0
+REMAINING_FMT=$(format_tokens "$REMAINING")
 
 # Build context display string
 # Shows: Cumulative tokens (billing) | Active context (includes cache)
@@ -812,19 +850,17 @@ ACTIVE_TOKENS_FMT=$(printf '%s' "$ACTIVE_TOKENS_FMT" | tr -d '\n\r')
 EFFECTIVE_PERCENT=$(printf '%s' "$EFFECTIVE_PERCENT" | tr -d '\n\r')
 CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 
-# Show active context and percentage of FULL context window
-# Format: 📊 120K (60%) - active tokens and % of full 200K window
-# Percentage shows actual usage relative to full context limit (not effective window)
-# Show active context and percentage of FULL context window
+# Σ = remaining tokens until the window is full; 📊 = active context + % of full window
+# Format: Σ 680K ↓ | 📊 320K (32%)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
     else
-        CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
     fi
 else
     # Zero active tokens (after /clear)
-    CONTEXT_DISPLAY="Σ ${TOTAL_TOKENS_FMT} | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
+    CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 0 (0%)${RESET}"
 fi
 
 # CRITICAL: Clean CONTEXT_DISPLAY immediately after assembly
@@ -852,7 +888,7 @@ case "$DISPLAY_MODE" in
     full)
         # Full mode: все компоненты, модель в читаемом виде
         MODEL_SHORT=$(shorten_model_name "$MODEL")
-        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY}${BUFFER_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
+        STATUS_LINE="${CONTEXT_DISPLAY}${CACHE_DISPLAY} | ${BLUE}${MODEL_SHORT}${RESET} | \$${COST}${PROVIDER_ICON}${STREAMING_ICON}${MICROVM_ICON}${RL_DISPLAY}${ROUTER_ICON}${PII_ICON}${SECURITY_ICON}${CAVEMAN_ICON}${SESSION_LINK}${MEMORY_LINK}${GIT_INFO} |${PROXY_ICON}"
         ;;
 
     compact)

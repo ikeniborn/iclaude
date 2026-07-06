@@ -30,7 +30,7 @@ install_isolated_nvm() {
 	# Load proxy credentials if available (for curl downloads)
 	if [[ -f "$CREDENTIALS_FILE" ]]; then
 		# Source the credentials file directly to get all variables
-		source "$CREDENTIALS_FILE"
+		source_iclaude_config
 		# Export proxy variables for curl
 		if [[ -n "${PROXY_URL:-}" ]]; then
 			export HTTPS_PROXY="$PROXY_URL"
@@ -86,13 +86,13 @@ install_isolated_nvm() {
 #######################################
 # Install Node.js in isolated NVM
 # Arguments:
-#   $1 - Node.js version (default: 18)
+#   $1 - Node.js version (default: 22)
 # Returns:
 #   0 - success
 #   1 - error
 #######################################
 install_isolated_nodejs() {
-	local node_version=${1:-20}
+	local node_version=${1:-22}
 
 	setup_isolated_nvm
 
@@ -115,13 +115,20 @@ install_isolated_nodejs() {
 	print_info "Installing Node.js $node_version to isolated environment..."
 	echo ""
 
-	# Install and use Node.js
-	nvm install "$node_version"
-	nvm use "$node_version"
-
-	if [[ $? -ne 0 ]]; then
-		print_error "Failed to install Node.js"
-		return 1
+	# Install and use Node.js. If nvm's download fails (system curl/OpenSSL cannot
+	# reach the Node mirror on this host), fall back to Node's own TLS stack.
+	if ! nvm install "$node_version" || ! nvm use "$node_version"; then
+		print_warning "nvm could not download Node.js; trying the node-TLS fallback..."
+		echo ""
+		local major="${node_version%%.*}"
+		if fetch_node_via_node_tls "$major"; then
+			local newdir
+			newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			[[ -n "$newdir" ]] && { nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"; }
+		else
+			print_error "Failed to install Node.js"
+			return 1
+		fi
 	fi
 
 	print_success "Node.js $node_version installed"
@@ -130,6 +137,224 @@ install_isolated_nodejs() {
 	echo ""
 
 	return 0
+}
+
+#######################################
+# Fallback Node.js installer using Node's own TLS stack.
+# Downloads the latest release for a given major from nodejs.org into the
+# isolated nvm versions dir, bypassing system curl/nvm — whose OpenSSL cannot
+# complete a TLS handshake to nodejs.org on some hosts (e.g. AltLinux's
+# GOST-patched OpenSSL, or a TLS-intercepting proxy), while Node's own OpenSSL
+# can. Integrity is verified against SHASUMS256.txt (the TLS certs go unverified,
+# so this checksum is what guards the download). The heavy lifting is in
+# scripts/fetch-node.js.
+# Arguments:
+#   $1 - Node.js major version (e.g. "22")
+# Returns:
+#   0 - a Node.js <major>.x was downloaded, verified and extracted
+#   1 - failure
+#######################################
+fetch_node_via_node_tls() {
+	local major="$1"
+	local fetch_js="$SCRIPT_DIR/scripts/fetch-node.js"
+
+	if [[ ! -f "$fetch_js" ]]; then
+		print_error "Fetcher not found: $fetch_js"
+		return 1
+	fi
+
+	# Any working node can run the fetcher: prefer the highest isolated one, fall
+	# back to a system node (needed on a first, node-less install).
+	local runner
+	runner="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)/bin/node"
+	[[ -x "$runner" ]] || runner="$(command -v node 2>/dev/null)"
+	if [[ -z "$runner" ]] || [[ ! -x "$runner" ]]; then
+		# Bootstrap chicken-and-egg: the fetcher is a Node script, so it needs an
+		# existing Node to run. nvm cannot help here — it downloads Node with the
+		# same broken curl. The user must provide a Node to bootstrap from.
+		print_error "No Node.js available to run the TLS fetcher"
+		echo ""
+		echo "The node-TLS installer needs an existing Node.js to bootstrap from, but"
+		echo "none was found (no isolated Node, no system 'node' on PATH), and nvm"
+		echo "cannot download one on this host (system curl/OpenSSL cannot reach the"
+		echo "Node mirror)."
+		echo ""
+		echo "Provide a Node.js to bootstrap from, then re-run, e.g.:"
+		echo "  • install a system Node:    sudo apt install nodejs   (or dnf/pacman)"
+		echo "  • or drop a Node build in:  $NVM_DIR/versions/node/v$major.<minor>.<patch>/"
+		echo "  • or set a reachable mirror: export NVM_NODEJS_ORG_MIRROR=<mirror>"
+		return 1
+	fi
+
+	# Make the proxy visible to the fetcher (isolated config holds ICLAUDE_PROXY_URL).
+	if [[ -z "${ICLAUDE_PROXY_URL:-}" ]] && declare -f source_iclaude_config &>/dev/null; then
+		source_iclaude_config 2>/dev/null || true
+	fi
+
+	# Arch tag used by nodejs.org tarball names.
+	local arch
+	case "$(uname -m)" in
+		x86_64) arch="x64" ;;
+		aarch64 | arm64) arch="arm64" ;;
+		armv7l) arch="armv7l" ;;
+		ppc64le) arch="ppc64le" ;;
+		s390x) arch="s390x" ;;
+		*) print_error "Unsupported architecture: $(uname -m)"; return 1 ;;
+	esac
+
+	local tmpd
+	tmpd="$(mktemp -d)"
+
+	print_info "Resolving latest Node.js $major (node-TLS; system curl cannot reach the mirror)..."
+	if ! "$runner" "$fetch_js" "https://nodejs.org/dist/index.json" "$tmpd/index.json"; then
+		print_error "Failed to fetch the Node.js release index"
+		rm -rf "$tmpd"
+		return 1
+	fi
+
+	# index.json is newest-first; take the first entry for this major.
+	local ver
+	ver="$("$runner" -e '
+		const fs = require("fs");
+		const list = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+		const hit = list.find(r => r.version.startsWith("v" + process.argv[2] + "."));
+		process.stdout.write(hit ? hit.version : "");
+	' "$tmpd/index.json" "$major")"
+
+	if [[ -z "$ver" ]]; then
+		print_error "No Node.js $major release found in the index"
+		rm -rf "$tmpd"
+		return 1
+	fi
+
+	local tarball="node-${ver}-linux-${arch}.tar.xz"
+	print_info "Downloading $tarball ..."
+	if ! "$runner" "$fetch_js" "https://nodejs.org/dist/${ver}/${tarball}" "$tmpd/$tarball"; then
+		print_error "Failed to download $tarball"
+		rm -rf "$tmpd"
+		return 1
+	fi
+	if ! "$runner" "$fetch_js" "https://nodejs.org/dist/${ver}/SHASUMS256.txt" "$tmpd/SHASUMS256.txt"; then
+		print_error "Failed to download SHASUMS256.txt"
+		rm -rf "$tmpd"
+		return 1
+	fi
+
+	# Verify integrity — the TLS certs are unverified, so this checksum matters.
+	local expected actual
+	expected="$(grep "  ${tarball}\$" "$tmpd/SHASUMS256.txt" | awk '{print $1}')"
+	actual="$(sha256sum "$tmpd/$tarball" | awk '{print $1}')"
+	if [[ -z "$expected" ]] || [[ "$expected" != "$actual" ]]; then
+		print_error "SHA256 mismatch for $tarball (expected: ${expected:-none}, got: $actual)"
+		rm -rf "$tmpd"
+		return 1
+	fi
+	print_success "SHA256 verified"
+
+	# Extract into the nvm versions layout so nvm and the launcher pick it up.
+	local dest="$NVM_DIR/versions/node/${ver}"
+	mkdir -p "$dest"
+	if ! tar -xJf "$tmpd/$tarball" -C "$dest" --strip-components=1; then
+		print_error "Failed to extract $tarball"
+		rm -rf "$tmpd" "$dest"
+		return 1
+	fi
+	rm -rf "$tmpd"
+
+	if [[ ! -x "$dest/bin/node" ]]; then
+		print_error "Node binary missing after extraction"
+		return 1
+	fi
+
+	print_success "Node.js $("$dest/bin/node" --version) installed to isolated env (node-TLS)"
+	return 0
+}
+
+#######################################
+# Ensure the active isolated Node.js satisfies a package's engines.node.
+# When the active Node is too old, offer to install the required major into the
+# isolated nvm and switch to it, so npm never emits EBADENGINE for the package.
+# Global packages live in the shared npm-global prefix (NPM_CONFIG_PREFIX) and
+# survive the Node switch, so no per-version package migration is performed.
+# Requires nvm.sh to be already sourced by the caller.
+# Arguments:
+#   $1 - package spec to query (default: @anthropic-ai/claude-code@latest)
+# Returns:
+#   0 - Node satisfies the requirement (was fine, or upgraded successfully)
+#   1 - Node is still too old (user declined, or the install failed)
+#######################################
+ensure_isolated_node_engine() {
+	local pkg="${1:-@anthropic-ai/claude-code@latest}"
+
+	# nvm must be available to install/switch versions; otherwise skip silently.
+	command -v nvm &>/dev/null || return 0
+
+	# Minimum required major from engines.node (e.g. ">=22.0.0" -> 22).
+	local engine_range required_major
+	engine_range=$(npm view "$pkg" engines.node 2>/dev/null)
+	required_major=$(echo "$engine_range" | grep -oE '[0-9]+' | head -1)
+	[[ -z "$required_major" ]] && return 0  # unknown requirement -> nothing to enforce
+
+	# Current active Node major.
+	local current_major
+	current_major=$(node --version 2>/dev/null | grep -oE '[0-9]+' | head -1)
+	[[ -z "$current_major" ]] && return 0
+
+	# Already new enough.
+	(( current_major >= required_major )) && return 0
+
+	print_warning "Node.js v$current_major is too old for $pkg (requires >= v$required_major)"
+	echo ""
+
+	# Offer before touching the environment; default yes (empty answer accepts).
+	local answer
+	read -r -p "Install Node.js $required_major into the isolated environment now? (Y/n): " answer
+	if [[ "$answer" =~ ^[Nn]$ ]]; then
+		print_info "Skipped Node.js upgrade — Claude Code $required_major+ may warn or fail on Node.js v$current_major"
+		echo ""
+		return 1
+	fi
+
+	print_info "Installing Node.js $required_major via the isolated nvm..."
+	echo ""
+
+	# Globals stay in npm-global (NPM_CONFIG_PREFIX), so a plain install + use is
+	# enough; the launcher (setup_isolated_nvm) then picks the highest version.
+	if nvm install "$required_major" && nvm use "$required_major"; then
+		print_success "Node.js upgraded to $(node --version) (isolated)"
+		echo ""
+		return 0
+	fi
+
+	# nvm's download failed — commonly the system curl/OpenSSL cannot reach the
+	# Node mirror on this host (e.g. 'TLS unsupported algorithm'), while Node's own
+	# TLS can. Fall back to the node-TLS fetcher before giving up.
+	echo ""
+	print_warning "nvm could not download Node.js; trying the node-TLS fallback..."
+	echo ""
+	if fetch_node_via_node_tls "$required_major"; then
+		# Activate the freshly extracted version for the rest of this process.
+		local newdir
+		newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${required_major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+		if [[ -n "$newdir" ]]; then
+			nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"
+		fi
+		print_success "Node.js upgraded to $(node --version) (isolated, node-TLS)"
+		echo ""
+		return 0
+	fi
+
+	# Both paths failed — actionable guidance.
+	echo ""
+	print_error "Failed to install Node.js $required_major in the isolated environment"
+	echo ""
+	echo "Neither nvm (system curl) nor the node-TLS fallback could fetch Node.js."
+	echo "Check network/proxy reachability to nodejs.org, or:"
+	echo "  • point nvm at a reachable mirror: export NVM_NODEJS_ORG_MIRROR=<mirror>"
+	echo "  • or drop a Node.js $required_major build under:"
+	echo "      $NVM_DIR/versions/node/v$required_major.<minor>.<patch>/"
+	echo "  then re-run: iclaude --update"
+	return 1
 }
 
 #######################################

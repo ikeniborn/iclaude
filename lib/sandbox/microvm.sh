@@ -487,6 +487,27 @@ configure_guest_environment() {
         echo 'python3 -c '"'"'import json,pathlib,shutil; src=pathlib.Path("/mnt/nvm/.claude-isolated"); dst=pathlib.Path("/workspace/.claude-guest"); dst.mkdir(exist_ok=True); copy_set={".claude.json",".credentials.json","history.jsonl","stats-cache.json"}; skip_set={"projects","settings.json"}; [(shutil.copy2(i,dst/i.name) if i.name in copy_set and not (dst/i.name).exists() else ((dst/i.name).symlink_to(i) if not (dst/i.name).exists() and i.name not in skip_set else None)) for i in src.iterdir()]; s=src/"settings.json"; d=json.loads(s.read_text()) if s.exists() else {}; d.pop("skipDangerousModePermissionPrompt",None); (dst/"settings.json").write_text(json.dumps(d,indent=2))'"'"' 2>/dev/null || true'
         echo "export CLAUDE_CONFIG_DIR='/workspace/.claude-guest'"
 
+        # Authentication: forward the host's auth credential into the guest so
+        # Claude Code is logged in. The host authenticates via the env var
+        # CLAUDE_CODE_OAUTH_TOKEN (set in .claude_config, exported by
+        # lib/config/isolated.sh) or ANTHROPIC_AUTH_TOKEN / ANTHROPIC_API_KEY —
+        # there is NO .credentials.json file to copy (the credential-copy step
+        # above only handles file-based OAuth). Without this the guest reports
+        # "Not logged in · Run /login". The env file is chmod 600 and is sourced
+        # then deleted at launch, the same channel already used for proxy creds.
+        if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+            local oauth_tok_e; oauth_tok_e=$(_sh_escape_val "$CLAUDE_CODE_OAUTH_TOKEN")
+            echo "export CLAUDE_CODE_OAUTH_TOKEN='${oauth_tok_e}'"
+        fi
+        if [[ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]]; then
+            local auth_tok_e; auth_tok_e=$(_sh_escape_val "$ANTHROPIC_AUTH_TOKEN")
+            echo "export ANTHROPIC_AUTH_TOKEN='${auth_tok_e}'"
+        fi
+        if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+            local api_key_e; api_key_e=$(_sh_escape_val "$ANTHROPIC_API_KEY")
+            echo "export ANTHROPIC_API_KEY='${api_key_e}'"
+        fi
+
         # Proxy settings
         if [[ "${MICRO_VM_PROXY_PASS:-true}" == "true" ]] && \
            [[ "${MICRO_VM_NET_ENABLED:-true}" == "true" ]]; then

@@ -30,3 +30,4 @@ current
 npm-shrinkwrap.json
 package-lock.json
 yarn.lock
+.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code-linux-x64/

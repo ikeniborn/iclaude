@@ -11,6 +11,10 @@
     "syntax_command": "{{syntax_command: from _shared/syntax-commands.json}}",
     "lint_command": "{{lint_command: optional}}",
     "code_style": "{{code_style: pep8|prettier|gofmt|none}}",
+    "lat_initialized": "{{lat_initialized: boolean}}",
+    "lat_sections": ["{{lat_section_ids}}"],
+    "lat_index_path": "{{lat_index_path: lat.md/lat.md|null}}",
+    "lat_summary": "{{lat_summary: string|null}}",
     "detected_files": {
       "config": ["{{config_files}}"],
       "source_dirs": ["{{source_directories}}"],

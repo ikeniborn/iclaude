@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@anthropic-ai/claude-code-linux-x64": "^2.1.161"
+  }
+}

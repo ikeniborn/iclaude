@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # lib/caveman/install.sh — caveman token-compression hooks for iclaude isolated env
 
-_CAVEMAN_HOOKS_BASE="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/hooks"
+_CAVEMAN_HOOKS_BASE="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/hooks"
 _CAVEMAN_HOOK_FILES=(caveman-activate.js caveman-config.js caveman-mode-tracker.js caveman-stats.js)
+_CAVEMAN_SKILL_URL="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/skills/caveman/SKILL.md"
 
 #######################################
 # Show caveman installation status.
@@ -30,6 +31,15 @@ check_caveman() {
         fi
     done
 
+    local skill_file="$config_dir/skills/caveman/SKILL.md"
+    if [[ -f "$skill_file" ]]; then
+        echo "  [OK]      skills/caveman/SKILL.md"
+        [[ -f "${skill_file}.new" ]] && echo "  [PENDING] skills/caveman/SKILL.md.new  (review and replace manually)"
+    else
+        echo "  [MISSING] skills/caveman/SKILL.md"
+        missing=$((missing + 1))
+    fi
+
     echo ""
     if [[ $missing -eq 0 ]]; then
         echo "  Status:  INSTALLED"
@@ -42,6 +52,48 @@ check_caveman() {
     local mode="${CAVEMAN_DEFAULT_MODE:-full (default)}"
     echo "  Mode:    $mode"
     echo ""
+}
+
+#######################################
+# Download caveman files via python3 urllib (ssl.CERT_NONE fallback).
+# Used when curl and git clone both fail due to TLS algorithm issues on ALT Linux.
+#######################################
+_caveman_python_download() {
+    local hooks_dir="$1" skills_dir="$2"
+    mkdir -p "$hooks_dir" "$skills_dir"
+    OPENSSL_CONF=/dev/null python3 - "$hooks_dir" "$skills_dir" \
+        "$_CAVEMAN_HOOKS_BASE" "$_CAVEMAN_SKILL_URL" \
+        "${_CAVEMAN_HOOK_FILES[@]}" <<'PYEOF'
+# -*- coding: utf-8 -*-
+_urllib = __import__('urllib.request', fromlist=['request'])
+import ssl, sys, os
+
+hooks_dir  = sys.argv[1]
+skills_dir = sys.argv[2]
+hooks_base = sys.argv[3]
+skill_url  = sys.argv[4]
+files      = sys.argv[5:]
+
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+for f in files:
+    with _urllib.urlopen(hooks_base + '/' + f, context=ctx) as r:
+        with open(os.path.join(hooks_dir, f), 'wb') as fp:
+            fp.write(r.read())
+    print('  ' + f)
+
+skill_dst = os.path.join(skills_dir, 'SKILL.md')
+skill_dst_new = skill_dst + '.new' if os.path.exists(skill_dst) else skill_dst
+with _urllib.urlopen(skill_url, context=ctx) as r:
+    with open(skill_dst_new, 'wb') as fp:
+        fp.write(r.read())
+label = 'skills/caveman/SKILL.md'
+if skill_dst_new.endswith('.new'):
+    label += '.new (existing preserved -- review manually)'
+print('  ' + label)
+PYEOF
 }
 
 #######################################
@@ -64,7 +116,7 @@ install_caveman() {
     fi
 
     # Load proxy credentials (PROXY_URL / PROXY_CA / PROXY_INSECURE from .claude_config)
-    [[ -f "${CREDENTIALS_FILE:-}" ]] && source "$CREDENTIALS_FILE"
+    source_iclaude_config
     # Export HTTPS_PROXY so python3 urllib picks it up automatically (fallback path)
     if [[ -n "${PROXY_URL:-}" ]] && [[ -z "${HTTPS_PROXY:-}" ]]; then
         export HTTPS_PROXY="$PROXY_URL"
@@ -84,8 +136,8 @@ install_caveman() {
     # Download hook files via curl (fast path) or git clone fallback.
     # Strategy: curl with proxy → on exit 35 (ALT Linux TLS algorithm issue, ECDSA cert
     # unsupported by OpenSSL on ALT Linux) fall back to GIT_SSL_NO_VERIFY=1 git clone
-    # which works through corporate MITM proxy even when TLS cert algorithm is unsupported.
-    # Use `|| _exit=$?` — compatible with set -euo pipefail.
+    # with OPENSSL_CONF=/dev/null to bypass algorithm restrictions, then python3 urllib
+    # as last resort. Use `|| _exit=$?` — compatible with set -euo pipefail.
     print_info "Downloading caveman hook files..."
     local _dest _exit _url _clone_dir
     local _all_curl_ok=true
@@ -104,27 +156,93 @@ install_caveman() {
         print_info "  $f"
     done
 
+    # Download SKILL.md (only via curl; git-clone fallback handles it below)
+    if [[ "$_all_curl_ok" == true ]]; then
+        local _skills_dir="$config_dir/skills/caveman"
+        mkdir -p "$_skills_dir"
+        local _skill_dst="$_skills_dir/SKILL.md"
+        if [[ -f "$_skill_dst" ]]; then
+            _skill_dst="${_skill_dst}.new"
+            _exit=0
+            curl -fsSL "${_proxy_args[@]}" -o "$_skill_dst" "$_CAVEMAN_SKILL_URL" 2>/dev/null || _exit=$?
+            if [[ $_exit -eq 0 ]]; then
+                print_info "  skills/caveman/SKILL.md.new (existing preserved — review manually)"
+            elif [[ $_exit -eq 35 ]]; then
+                rm -f "$_skill_dst"
+                _all_curl_ok=false
+            else
+                print_warning "Failed to download SKILL.md (curl exit $_exit) — skill level differentiation unavailable"
+                rm -f "$_skill_dst"
+            fi
+        else
+            _exit=0
+            curl -fsSL "${_proxy_args[@]}" -o "$_skill_dst" "$_CAVEMAN_SKILL_URL" 2>/dev/null || _exit=$?
+            if [[ $_exit -eq 0 ]]; then
+                print_info "  skills/caveman/SKILL.md"
+            elif [[ $_exit -eq 35 ]]; then
+                rm -f "$_skill_dst"
+                _all_curl_ok=false
+            else
+                print_warning "Failed to download SKILL.md (curl exit $_exit) — skill level differentiation unavailable"
+                rm -f "$_skill_dst"
+            fi
+        fi
+    fi
+
     if [[ "$_all_curl_ok" == false ]]; then
         print_warning "curl TLS error (exit 35) — falling back to git clone with GIT_SSL_NO_VERIFY=1"
         _clone_dir=$(mktemp -d)
         _exit=0
-        GIT_SSL_NO_VERIFY=1 git clone --quiet --depth=1 \
+        # OPENSSL_CONF=/dev/null bypasses OpenSSL algorithm restrictions on ALT Linux
+        OPENSSL_CONF=/dev/null GIT_SSL_NO_VERIFY=1 git clone --quiet --depth=1 \
             https://github.com/JuliusBrussee/caveman.git "$_clone_dir" 2>&1 || _exit=$?
+        local _python_ok=false
         if [[ $_exit -ne 0 ]]; then
-            rm -rf "$_clone_dir"
-            print_error "git clone failed (exit $_exit)"
-            return 1
-        fi
-        for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
-            if [[ ! -f "$_clone_dir/hooks/$f" ]]; then
-                rm -rf "$_clone_dir"
-                print_error "File not found in clone: hooks/$f"
+            rm -rf "$_clone_dir" && _clone_dir=""
+            print_warning "git clone failed (exit $_exit) — trying python3 urllib fallback..."
+            if _caveman_python_download "$hooks_dir" "$config_dir/skills/caveman"; then
+                _python_ok=true
+            else
+                print_error "All download methods failed."
+                print_info "Manual install — run these commands:"
+                for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
+                    print_info "  curl -fsSL ${_CAVEMAN_HOOKS_BASE}/$f -o $hooks_dir/$f"
+                done
+                print_info "  mkdir -p $config_dir/skills/caveman"
+                print_info "  curl -fsSL ${_CAVEMAN_SKILL_URL} -o $config_dir/skills/caveman/SKILL.md"
                 return 1
             fi
-            cp "$_clone_dir/hooks/$f" "$hooks_dir/$f"
-            print_info "  $f"
-        done
-        rm -rf "$_clone_dir"
+        fi
+        if [[ "$_python_ok" == false ]]; then
+            for f in "${_CAVEMAN_HOOK_FILES[@]}"; do
+                if [[ ! -f "$_clone_dir/src/hooks/$f" ]]; then
+                    rm -rf "$_clone_dir"
+                    print_error "File not found in clone: src/hooks/$f"
+                    return 1
+                fi
+                cp "$_clone_dir/src/hooks/$f" "$hooks_dir/$f"
+                print_info "  $f"
+            done
+
+            # Copy SKILL.md from clone
+            local _skill_src="$_clone_dir/skills/caveman/SKILL.md"
+            if [[ -f "$_skill_src" ]]; then
+                local _skills_dir="$config_dir/skills/caveman"
+                mkdir -p "$_skills_dir"
+                local _skill_dst="$_skills_dir/SKILL.md"
+                if [[ -f "$_skill_dst" ]]; then
+                    cp "$_skill_src" "${_skill_dst}.new"
+                    print_info "  skills/caveman/SKILL.md.new (existing preserved — review manually)"
+                else
+                    cp "$_skill_src" "$_skill_dst"
+                    print_info "  skills/caveman/SKILL.md"
+                fi
+            else
+                print_warning "SKILL.md not found in clone — skill level differentiation unavailable"
+            fi
+
+            rm -rf "$_clone_dir"
+        fi
     fi
 
     # Patch settings.json (idempotent)
@@ -250,6 +368,12 @@ PYEOF
             print_error "Failed to clean settings.json"
             return 1
         fi
+    fi
+
+    local skills_dir="$config_dir/skills/caveman"
+    if [[ -d "$skills_dir" ]]; then
+        rm -rf "$skills_dir"
+        print_info "  Removed skills/caveman/"
     fi
 
     rm -f "$config_dir/caveman-version"

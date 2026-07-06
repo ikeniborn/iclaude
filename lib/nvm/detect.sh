@@ -60,6 +60,29 @@ detect_nvm() {
 #   4. cli.js in temporary .claude-code-* folders
 #######################################
 get_nvm_claude_path() {
+	# Prefer the isolated install before any ambient/system nvm. iclaude pins the
+	# isolated binary via the lockfile; an inherited $NVM_DIR (e.g. the user's
+	# ~/.nvm loaded from .bashrc) may hold an older claude — or a stale
+	# .claude-code-* temp folder from an aborted npm install — that lacks newer
+	# flags like `plugin install --scope`, breaking iwiki plugin registration.
+	local iso_prefix="${NPM_CONFIG_PREFIX:-}"
+	[[ -z "$iso_prefix" && -n "${ISOLATED_NVM_DIR:-}" ]] && iso_prefix="$ISOLATED_NVM_DIR/npm-global"
+	if [[ -n "$iso_prefix" ]]; then
+		if [[ -x "$iso_prefix/bin/claude" ]]; then
+			echo "$iso_prefix/bin/claude"
+			return 0
+		fi
+		local iso_lib="$iso_prefix/lib/node_modules/@anthropic-ai"
+		if [[ -x "$iso_lib/claude-code/bin/claude.exe" ]]; then
+			echo "$iso_lib/claude-code/bin/claude.exe"
+			return 0
+		fi
+		if [[ -f "$iso_lib/claude-code/cli.js" ]]; then
+			echo "node $iso_lib/claude-code/cli.js"
+			return 0
+		fi
+	fi
+
 	# Try to find claude in active NVM node version
 	if [[ -n "${NVM_DIR:-}" ]]; then
 		# Get current node version

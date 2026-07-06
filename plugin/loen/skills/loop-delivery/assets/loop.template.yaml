@@ -1,0 +1,23 @@
+# loen loop contract — filled by the planner, approved by a human, then executed.
+name:                       # run-id: <YYYY-MM-DD>-<topic>
+mode: delivery              # delivery | repair | research
+objective: ""               # one measurable end state
+context_sources: []         # docs/files the worker must read first
+mutable_scope: []           # globs the worker MAY edit
+protected_scope: []         # globs the worker MUST NOT edit (guard/hook read these)
+quality_gates: []           # commands that must exit 0 (verifiers)
+verifier_isolation: subagent # subagent (default) | microvm — verifier runs headless in an iclaude Firecracker microVM against a disposable tree snapshot (requires iclaude microVM install)
+eval_command: ""            # research mode: fixed eval; appends JSONL to $LOEN_METRICS_PATH (empty in delivery/repair)
+metrics:
+  primary: []
+  secondary: []
+budget:
+  max_iterations: 3
+  max_experiments: 5        # research mode budget (governs instead of max_iterations there)
+  max_wall_time_minutes: 90
+  max_cost_usd: 5
+stop_conditions: []         # e.g. "all quality gates pass"
+handoff_conditions: []      # schema / PII / license / architecture / prod-creds -> stop, ask human
+rollback_policy: ""         # how to revert failed experiments
+logging:
+  state_file: docs/loen/<run-id>/state.md

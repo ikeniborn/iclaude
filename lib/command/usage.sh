@@ -35,8 +35,8 @@ OPTIONS:
   --restore-git-proxy               Restore git proxy settings from backup
   --install                         Install script globally (requires sudo + system npm)
   --uninstall                       Uninstall script from system (requires sudo)
-  --create-symlink                  Create global symlink using isolated environment (NO system npm)
-  --uninstall-symlink               Remove global symlink only (keeps isolated environment)
+  --create-symlink                  Create user-space iclaude launcher (default: ~/.local/bin)
+  --uninstall-symlink               Remove user-space iclaude launcher only
   --update                          Update system Claude Code to latest version
   --check-update                    Check for available updates without installing
   --isolated-install                Install NVM + Node.js + Claude in isolated environment
@@ -58,13 +58,8 @@ OPTIONS:
                                     Can be combined with --pii-proxy: traffic goes PII proxy → CCR → providers
   --install-pii-proxy               Install PII proxy (Python venv + Presidio NLP)
   --check-pii-proxy                 Show PII proxy status (venv, models, running PID)
-  --pii-proxy                       Launch with PII/secrets masking proxy (overrides USE_PII_PROXY config)
+  --pii-proxy                       Launch with PII/secrets masking proxy (overrides ICLAUDE_USE_PII_PROXY config)
                                     Can be combined with --router: activates chain claude → PII proxy(:9000) → CCR(:3456) → providers
-  --install-graphify                Install graphify knowledge graph tool (uv + Python 3.12 + graphifyy)
-  --install-graphify --force        Force reinstall (removes existing graphify tool dir)
-  --check-graphify                  Show graphify status (uv, graphifyy version, Python, paths)
-  --graphify                        Rebuild knowledge graph before launching claude
-                                    Output: GRAPHIFY_OUT or graphify-out/ (default)
   --no-attribution-header           Disable x-anthropic-billing-header (fixes KV cache on proxies/routers)
                                     Auto-enabled with --router. Use manually with custom ANTHROPIC_BASE_URL
   --chrome                          Enable Chrome browser integration (disabled by default)
@@ -85,7 +80,7 @@ OPTIONS:
   --sandbox-microvm                 Launch Claude Code inside Firecracker microVM (kernel isolation)
                                     Requires prior --install-microvm setup
                                     Can be combined with --pii-proxy: traffic routed through host TAP IP
-                                    Enable permanently: add MICRO_VM_ENABLED=true to .claude_config
+                                    Enable permanently: add ICLAUDE_MICRO_VM_ENABLED=true to .claude_config
   --no-test                         Skip proxy connectivity test
 
 Oh My Posh Commands:
@@ -151,8 +146,11 @@ ISOLATED ENVIRONMENT (Recommended):
   # Install in isolated environment (first time, NO system npm needed)
   ./iclaude.sh --isolated-install
 
-  # Create global symlink to use 'iclaude' from anywhere (NO system npm!)
-  sudo ./iclaude.sh --create-symlink
+  # Create user-space launcher to use 'iclaude' from anywhere
+  ./iclaude.sh --create-symlink
+
+  # Use a custom launcher directory
+  ICLAUDE_LINK_DIR=~/bin ./iclaude.sh --create-symlink
 
   # Check isolated environment status (includes symlink check)
   ./iclaude.sh --check-isolated
@@ -169,8 +167,8 @@ ISOLATED ENVIRONMENT (Recommended):
   # Refresh OAuth token (generates long-lived token ~1 year)
   ./iclaude.sh --refresh-token
 
-  # Remove global symlink only (keeps isolated environment)
-  sudo iclaude --uninstall-symlink
+  # Remove user-space launcher only (keeps isolated environment)
+  iclaude --uninstall-symlink
 
   # Clean up isolated environment (keeps lockfile for reinstall)
   ./iclaude.sh --cleanup-isolated
@@ -225,7 +223,7 @@ PII PROXY (MASKING):
   ./iclaude.sh --pii-proxy
 
   # Enable permanently via config
-  echo 'USE_PII_PROXY=true' >> .claude_config
+  echo 'ICLAUDE_USE_PII_PROXY=true' >> .claude_config
 
   # Combined mode: PII masking + CCR router (chain: claude → PII:9000 → CCR:3456 → providers)
   ./iclaude.sh --pii-proxy --router

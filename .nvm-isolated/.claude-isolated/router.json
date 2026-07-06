@@ -1,0 +1,78 @@
+{
+  "_comment": "Claude Code Router v2.0.0 — Ollama Cloud Models configuration",
+  "_docs": "https://github.com/musistudio/claude-code-router | docs/ROUTER.md",
+  "PORT": 3456,
+  "HOST": "127.0.0.1",
+  "LOG": true,
+  "LOG_LEVEL": "info",
+  "API_TIMEOUT_MS": 600000,
+  "Providers": [
+    {
+      "name": "homelab",
+      "api_base_url": "${ROUTER_URL}/v1/chat/completions",
+      "api_key": "${ROUTER_API_KEY}",
+      "models": [
+        "kimi-k2.6:cloud",
+        "deepseek-v4-flash:cloud"
+      ],
+      "transformer": {
+        "use": [
+          "reasoning",
+          [
+            "sampling",
+            {
+              "temperature": 0.2,
+              "top_p": 0.9,
+              "top_k": 40
+            }
+          ],
+          "ollama-reasoning",
+          "x-project-id"
+        ],
+        "kimi-k2.6:cloud": {
+          "use": [
+            "reasoning",
+            [
+              "sampling",
+              {
+                "temperature": 0.2,
+                "top_p": 0.9,
+                "top_k": 40
+              }
+            ]
+          ]
+        },
+        "deepseek-v4-flash:cloud": {
+          "use": [
+            "reasoning",
+            [
+              "sampling",
+              {
+                "temperature": 0.6,
+                "top_p": 0.9,
+                "top_k": 40
+              }
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "Router": {
+    "default": "homelab,kimi-k2.6:cloud",
+    "background": "homelab,kimi-k2.6:cloud",
+    "think": "homelab,deepseek-v4-flash:cloud",
+    "longContext": "homelab,deepseek-v4-flash:cloud",
+    "longContextThreshold": 200000,
+    "webSearch": "homelab,kimi-k2.6:cloud",
+    "image": "homelab,kimi-k2.6:cloud"
+  },
+  "transformers": [
+    {
+      "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/ollama-reasoning.js"
+    },
+    {
+      "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/x-project-id.js"
+    }
+  ]
+}

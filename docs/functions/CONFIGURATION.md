@@ -2,6 +2,8 @@
 
 Полный справочник по всем командам и настройкам.
 
+> **Note:** All `.claude_config` variables must use the `ICLAUDE_` prefix (e.g. `ICLAUDE_USE_PII_PROXY=true`). Legacy files without the prefix are auto-migrated on first launch with a `.claude_config.bak` backup created automatically.
+
 ---
 
 ## ⚡ Quick Reference
@@ -29,8 +31,8 @@
 | `--isolated-install` | Установка изолированной среды | ❌ | curl, bash |
 | `--isolated-update` | Обновление изолированного Claude Code | ❌ | - |
 | `--install-from-lockfile` | Установка из lockfile (воспроизводимость) | ❌ | curl, bash |
-| `--create-symlink` | Создание глобального симлинка | ✅ | isolated env |
-| `--uninstall-symlink` | Удаление симлинка | ✅ | - |
+| `--create-symlink` | Создание пользовательского симлинка | ❌ | isolated env |
+| `--uninstall-symlink` | Удаление пользовательского симлинка | ❌ | - |
 | `--repair-isolated` | Починка симлинков после git clone | ❌ | - |
 | `--repair-plugins` | Починка путей плагинов после переноса проекта | ❌ | - |
 | `--check-isolated` | Статус изолированной среды | ❌ | - |

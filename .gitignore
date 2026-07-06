@@ -1,12 +1,6 @@
 # Working directory (should not be in repository)
 /opt/vless/
 
-# Graphify generated output
-graphify-out/
-
-# graphify machine-specific interpreter path (re-resolved per-machine by SKILL.md Step 1)
-.graphify/.graphify_python
-
 # Python cache (global)
 __pycache__/
 *.pyc
@@ -55,6 +49,7 @@ qr_codes/
 
 # Configuration file (proxy, Claude Code settings, debug flags)
 .claude_config
+.claude_config.bak
 .claude_proxy_credentials  # Legacy filename (for backward compatibility)
 scripts/.claude_config
 scripts/.claude_proxy_credentials  # Legacy
@@ -77,9 +72,13 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/.cache/
 .nvm-isolated/.npm/
 .nvm-isolated/.nvm/.cache/
-.nvm-isolated/versions/node/*/include/
-.nvm-isolated/versions/node/*/.npm/
 .nvm-isolated/npm-global/.npm/
+
+# Node.js runtimes are no longer vendored in git: the node binary exceeds
+# GitHub's 100 MB file limit (node 22 ≈ 119 MB) and bloats history. They live
+# on disk only and are reinstalled from the lockfile via nvm or the node-TLS
+# fetcher (scripts/fetch-node.js, ensure_isolated_node_engine).
+.nvm-isolated/versions/node/
 
 # Isolated Claude Code configuration (session data)
 # Ignore session data, but keep skills and templates
@@ -92,6 +91,8 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/agents/
 !.nvm-isolated/.claude-isolated/agents/**
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
+!.nvm-isolated/.claude-isolated/mcp/
+!.nvm-isolated/.claude-isolated/mcp/**
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**
@@ -107,6 +108,9 @@ scripts/.claude_proxy_credentials  # Legacy
 .nvm-isolated/.claude-isolated/plugins/installed_plugins.json
 .nvm-isolated/.claude-isolated/plugins/known_marketplaces.json
 .nvm-isolated/.claude-isolated/plugins/install-counts-cache.json
+.nvm-isolated/.claude-isolated/plugins/plugin-catalog-cache.json
+# Runtime timestamp rewritten on every launch (pure cache, churns git)
+.nvm-isolated/.claude-isolated/plugins/.last_inuse_sweep
 !.nvm-isolated/.claude-isolated/CLAUDE.md
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
 .nvm-isolated/.claude-isolated/hooks/__pycache__/
@@ -114,6 +118,7 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Router configuration (only example in git, actual config ignored)
 !.nvm-isolated/.claude-isolated/router.json.example
+!.nvm-isolated/.claude-isolated/router.json
 
 # Plugin manifest (declarative list of plugins to install after git clone)
 !.nvm-isolated/.claude-isolated/plugins-manifest.json
@@ -126,6 +131,14 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Prevent accidental commit of runtime router config
 .claude-code-router/
+# EXCEPTION: track ONLY the custom transformer plugins shipped with the repo.
+# Re-include the dir for traversal, re-ignore its runtime contents (config.json,
+# *.pid), then re-include the plugins/*.js — so config.json and the PID file stay
+# ignored while x-project-id.js / ollama-reasoning.js are tracked.
+!.nvm-isolated/.claude-isolated/.claude-code-router/
+.nvm-isolated/.claude-isolated/.claude-code-router/*
+!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/
+!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/*.js
 
 # Backup files (any location, any extension with backup suffix)
 *.backup
@@ -179,3 +192,6 @@ tests/fixtures/
 # PII proxy audit logs (auto-added by iclaude PII proxy)
 .claude/pii/
 .superpowers
+.worktrees/
+.mcp.json
+.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code-linux-x64/

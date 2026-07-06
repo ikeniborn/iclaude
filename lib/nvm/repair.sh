@@ -171,18 +171,34 @@ create_claude_symlink() {
 	fi
 
 	# Binary is excluded from git (>100MB). Try to regenerate via postinstall.
+	# bin/ must exist first — install.cjs hardlinks into it and fails silently if absent.
 	if [[ ! -f "$claude_bin" ]] && [[ -f "$install_script" ]]; then
 		print_info "  Running postinstall to restore claude binary..."
+		mkdir -p "$claude_pkg_dir/bin"
 		(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
 	fi
 
-	# If still missing, optional platform package not installed — fetch via npm
+	# If still missing, optional platform package not installed or mismatched version.
+	# Install the platform-specific package explicitly — npm install -g (same version)
+	# skips optional deps it considers already installed, so we target it directly.
 	if [[ ! -f "$claude_bin" ]]; then
 		if command -v npm &>/dev/null; then
-			print_info "  Fetching optional dependencies via npm install..."
-			npm install -g @anthropic-ai/claude-code 2>&1 | tail -3 || true
-			# Re-run postinstall now that optional dep is available
+			local pkg_version os_name arch_name platform_pkg
+			pkg_version=$(node -e "process.stdout.write(require('$claude_pkg_dir/package.json').version)" 2>/dev/null)
+			os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+			arch_name=$(uname -m)
+			case "$arch_name" in
+				x86_64)          arch_name="x64" ;;
+				aarch64|arm64)   arch_name="arm64" ;;
+			esac
+			platform_pkg="@anthropic-ai/claude-code-${os_name}-${arch_name}"
+
+			print_info "  Installing platform binary: ${platform_pkg}@${pkg_version}"
+			npm install -g "${platform_pkg}@${pkg_version}" 2>&1 | tail -3 || true
+
+			# Re-run postinstall now that platform package is available
 			if [[ -f "$install_script" ]]; then
+				mkdir -p "$claude_pkg_dir/bin"
 				(cd "$claude_pkg_dir" && node install.cjs 2>/dev/null) || true
 			fi
 		fi

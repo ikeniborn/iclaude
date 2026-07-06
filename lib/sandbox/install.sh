@@ -262,7 +262,7 @@ _component_is_current() {
 # Download a file via curl with TLS fallback for old OpenSSL (exit 35).
 # When TLS handshake fails due to unsupported certificate algorithm (common on
 # AltLinux/RHEL with OpenSSL < 3.x), retries with --insecure and warns user.
-# Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS verification unconditionally.
+# Set ICLAUDE_MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS verification unconditionally.
 # Arguments:
 #   $1 - url:    source URL
 #   $2 - output: destination file path
@@ -295,9 +295,9 @@ _curl_download() {
 		echo ""
 		print_warning "TLS error (exit 35): OpenSSL cannot verify a certificate in the chain."
 		print_warning "Retrying with --insecure --proxy-insecure (TLS verification disabled)."
-		print_warning "IMPORTANT: set MICRO_VM_FC_SHA256 / MICRO_VM_KERNEL_SHA256 / MICRO_VM_ROOTFS_SHA256"
+		print_warning "IMPORTANT: set ICLAUDE_MICRO_VM_FC_SHA256 / ICLAUDE_MICRO_VM_KERNEL_SHA256 / ICLAUDE_MICRO_VM_ROOTFS_SHA256"
 		print_warning "  to verify file integrity — without TLS and SHA-256 downloads are unverified."
-		print_warning "Set MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
+		print_warning "Set ICLAUDE_MICRO_VM_INSECURE_DOWNLOAD=true to skip TLS and suppress this warning."
 		echo ""
 		rm -f "$output"
 		# --proxy-insecure: skip TLS verification for the proxy itself (e.g. ECDSA proxy cert on old OpenSSL).
@@ -599,6 +599,10 @@ install_microvm() {
 					_actual_mb="$_configured_mb"
 				fi
 			fi
+			# A v7 rootfs may predate the rsync bundle (older v7 shipped a bare rsync
+			# binary that cannot load in the guest). Apply/refresh it idempotently so
+			# delta sync works without bumping the state machine. Non-fatal.
+			_inject_rootfs_rsync_bundle "$_rootfs" || true
 			print_success "microVM already installed and up-to-date (v7)"
 			print_info "Rootfs: $_rootfs (${_actual_mb}MB)"
 			print_info "NVM image: $_nvm_img"
@@ -651,28 +655,17 @@ install_microvm() {
 			fi
 		fi
 
-		# Fast-path v6→v7: inject rsync for delta sync (ControlMaster + rsync).
-		# Requires rsync on host (sudo apt-get install rsync).
+		# Fast-path v6→v7: inject the self-contained rsync bundle for delta sync.
+		# Requires rsync on host (sudo apt-get install rsync). The bundle ships the
+		# host rsync + its lib closure + loader, so it loads regardless of guest glibc;
+		# if it cannot be built the launcher falls back to tar-over-SSH.
 		if [[ "$_skip_upgrade_paths" != true ]] && [[ "$(cat "$_state_file" 2>/dev/null)" == "v6" ]]; then
-			print_info "Existing rootfs found — upgrading to v7 (inject rsync for delta sync)..."
-			local _rsync_host; _rsync_host=$(command -v rsync 2>/dev/null || true)
-			if [[ -n "$_rsync_host" && -f "$_rsync_host" ]]; then
-				e2fsck -fy "$_rootfs" &>/dev/null || true
-				debugfs -w "$_rootfs" <<EOF 2>/dev/null
-rm /usr/bin/rsync
-write ${_rsync_host} /usr/bin/rsync
-set_inode_field /usr/bin/rsync mode 0100755
-EOF
-				local _v7_dbg_rc=$?
-				if [[ $_v7_dbg_rc -eq 0 ]]; then
-					printf 'v7' > "$_state_file"
-					print_success "rootfs upgraded to v7 (rsync injected — delta sync enabled)"
-				else
-					print_warning "rsync injection failed (debugfs rc=${_v7_dbg_rc}) — state NOT updated to v7, will retry on next --install-microvm"
-				fi
+			print_info "Existing rootfs found — upgrading to v7 (inject rsync bundle for delta sync)..."
+			if _inject_rootfs_rsync_bundle "$_rootfs"; then
+				printf 'v7' > "$_state_file"
+				print_success "rootfs upgraded to v7 (rsync bundle — delta sync enabled)"
 			else
-				print_warning "rsync not found on host — v7 upgrade skipped (install: sudo apt-get install rsync)"
-				print_warning "Periodic sync will fall back to tar-over-SSH"
+				print_warning "rsync bundle not applied — state NOT updated to v7, tar-over-SSH used; will retry on next --install-microvm"
 			fi
 			return 0
 		fi
@@ -836,7 +829,7 @@ EOF
 			local _fc_hash; _fc_hash=$(_compute_sha256 "$fc_bin") || true
 			if _versions_write_sha256 ".firecracker.${arch}.sha256 = \$h" "$_fc_hash"; then
 				print_info "SHA-256 saved to versions.json (firecracker ${arch}): ${_fc_hash}"
-				print_info "  Pin: export MICRO_VM_FC_SHA256=${_fc_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_FC_SHA256=${_fc_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -851,7 +844,7 @@ EOF
 			local _vmlinux_hash; _vmlinux_hash=$(_compute_sha256 "$kernel_path") || true
 			if _versions_write_sha256 ".vmlinux.${arch}.sha256 = \$h" "$_vmlinux_hash"; then
 				print_info "SHA-256 saved to versions.json (vmlinux ${arch}): ${_vmlinux_hash}"
-				print_info "  Pin: export MICRO_VM_KERNEL_SHA256=${_vmlinux_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_KERNEL_SHA256=${_vmlinux_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -866,7 +859,7 @@ EOF
 			local _rootfs_hash; _rootfs_hash=$(_compute_sha256 "$rootfs_path") || true
 			if _versions_write_sha256 ".rootfs.${arch}.sha256 = \$h" "$_rootfs_hash"; then
 				print_info "SHA-256 saved to versions.json (rootfs ${arch}): ${_rootfs_hash}"
-				print_info "  Pin: export MICRO_VM_ROOTFS_SHA256=${_rootfs_hash}  # add to .claude_config"
+				print_info "  Pin: ICLAUDE_MICRO_VM_ROOTFS_SHA256=${_rootfs_hash}  # add to .claude_config"
 			fi
 		fi
 	fi
@@ -918,7 +911,7 @@ EOF
 	print_info "Firecracker: $("$fc_bin" --version 2>/dev/null | head -1 || echo "installed")"
 	echo ""
 	print_info "Next steps:"
-	print_info "  1. Enable: add MICRO_VM_ENABLED=true to .claude_config"
+	print_info "  1. Enable: add ICLAUDE_MICRO_VM_ENABLED=true to .claude_config"
 	print_info "  2. Launch: ./iclaude.sh --sandbox-microvm"
 	print_info "  3. Status: ./iclaude.sh --check-microvm"
 	echo ""
@@ -1231,6 +1224,80 @@ _create_microvm_nvm_image() {
 }
 
 #######################################
+# Inject a self-contained rsync bundle into the guest rootfs (delta sync).
+#
+# The guest rsync must run WITHOUT depending on guest libraries: the host (e.g.
+# Ubuntu 24.04 / glibc 2.39) and the guest rootfs (Ubuntu 22.04 / glibc 2.35)
+# differ, so copying the host rsync binary or its libs directly fails — the
+# binary needs GLIBC_2.38/2.39 symbols and libpopt.so.0 the guest lacks. Instead
+# we bundle the host rsync, its full dynamic-lib closure (`ldd`), AND the host
+# dynamic loader into /opt/iclaude-rsync/, then replace /usr/bin/rsync with a
+# wrapper that runs the binary via the bundled loader (`--library-path`). The
+# bundle is glibc-version independent and never touches guest system libraries.
+#
+# Idempotent: a marker file (<rootfs>.rsync-bundle) holds the host rsync's sha256;
+# re-injection is skipped unless the host rsync changed.
+#
+# Arguments: $1 - rootfs image path
+# Returns: 0 if the bundle is present/current, 1 otherwise (the launcher's
+#          tar-over-SSH fallback remains available — non-fatal for callers).
+#######################################
+_inject_rootfs_rsync_bundle() {
+	local rootfs="$1"
+	local marker="${rootfs%.ext4}.rsync-bundle"
+	local rsync_host; rsync_host=$(command -v rsync 2>/dev/null || true)
+	if [[ -z "$rsync_host" || ! -f "$rsync_host" ]]; then
+		print_warning "rsync not found on host — delta sync unavailable (tar-over-SSH fallback). Install: sudo apt-get install rsync"
+		return 1
+	fi
+	local host_sha; host_sha=$(sha256sum "$rsync_host" 2>/dev/null | awk '{print $1}')
+	if [[ -f "$marker" && -n "$host_sha" && "$(cat "$marker" 2>/dev/null)" == "$host_sha" ]]; then
+		print_info "rsync bundle already current — skip"
+		return 0
+	fi
+	# debugfs -w on a live rootfs corrupts ext4 — refuse if a VM is running.
+	local _fc; _fc=$(pgrep -x firecracker 2>/dev/null || true)
+	if [[ -n "$_fc" ]]; then
+		print_warning "rsync bundle skipped — Firecracker running (PID: $(echo "$_fc" | tr '\n' ' ' | sed 's/ $//')). Exit microVM, then re-run --install-microvm."
+		return 1
+	fi
+	# Resolve the dynamic-lib closure + the loader from the host rsync.
+	local loader; loader=$(ldd "$rsync_host" 2>/dev/null | grep -oE '/[^ ]*ld-(linux|musl)[^ ]*\.so[^ ]*' | head -1)
+	local -a libs; mapfile -t libs < <(ldd "$rsync_host" 2>/dev/null | awk '/=>/ && $3 ~ /^\// {print $3}')
+	if [[ -z "$loader" || ! -f "$loader" || ${#libs[@]} -eq 0 ]]; then
+		print_warning "could not resolve rsync deps via ldd — delta sync unavailable (tar-over-SSH fallback)"
+		return 1
+	fi
+	local ldname; ldname=$(basename "$loader")
+	# Wrapper: run rsync via the bundled loader, isolated from guest libc.
+	local wrap; wrap=$(mktemp) || return 1
+	printf '#!/bin/sh\nd=/opt/iclaude-rsync\nexec "$d/%s" --library-path "$d" "$d/rsync.bin" "$@"\n' "$ldname" > "$wrap"
+	# Clean fs state before the offline edit.
+	e2fsck -fy "$rootfs" &>/dev/null || true
+	# Build the debugfs command stream (rm-before-write keeps it idempotent on re-runs).
+	local -a cmds=( "mkdir /opt" "mkdir /opt/iclaude-rsync" )
+	cmds+=( "rm /opt/iclaude-rsync/rsync.bin" "write ${rsync_host} /opt/iclaude-rsync/rsync.bin" "set_inode_field /opt/iclaude-rsync/rsync.bin mode 0100755" )
+	cmds+=( "rm /opt/iclaude-rsync/${ldname}" "write ${loader} /opt/iclaude-rsync/${ldname}" "set_inode_field /opt/iclaude-rsync/${ldname} mode 0100755" )
+	local lib ln
+	for lib in "${libs[@]}"; do
+		ln=$(basename "$lib")
+		cmds+=( "rm /opt/iclaude-rsync/${ln}" "write ${lib} /opt/iclaude-rsync/${ln}" "set_inode_field /opt/iclaude-rsync/${ln} mode 0100644" )
+	done
+	cmds+=( "rm /usr/bin/rsync" "write ${wrap} /usr/bin/rsync" "set_inode_field /usr/bin/rsync mode 0100755" )
+	printf '%s\n' "${cmds[@]}" | debugfs -w "$rootfs" >/dev/null 2>&1
+	rm -f "$wrap"
+	# Verify the binary + wrapper actually landed.
+	if debugfs -R "stat /opt/iclaude-rsync/rsync.bin" "$rootfs" 2>/dev/null | grep -q "Type: regular" \
+	   && debugfs -R "stat /usr/bin/rsync" "$rootfs" 2>/dev/null | grep -q "Type: regular"; then
+		printf '%s' "$host_sha" > "$marker"
+		print_success "rsync self-contained bundle injected (${#libs[@]} libs + loader → /opt/iclaude-rsync, wrapper → /usr/bin/rsync)"
+		return 0
+	fi
+	print_warning "rsync bundle injection failed (debugfs) — delta sync unavailable, tar-over-SSH fallback will be used"
+	return 1
+}
+
+#######################################
 # Inject guest init script into rootfs image (via debugfs, no sudo).
 # Injects:
 #   /usr/sbin/iclaude-guest-init  — PID 1 init script (block device mounts + sshd)
@@ -1414,24 +1481,10 @@ EOF
 		print_warning "  RHEL/Fedora:   sudo dnf install ca-certificates"
 	fi
 
-	# Inject rsync binary (enables delta sync via SSH ControlMaster from host).
-	# rsync is a static binary — safe to copy across matching architectures (host = guest = x86_64/aarch64).
-	local rsync_host; rsync_host=$(command -v rsync 2>/dev/null || true)
-	if [[ -n "$rsync_host" && -f "$rsync_host" ]]; then
-		debugfs -w "$rootfs" <<EOF 2>/dev/null
-rm /usr/bin/rsync
-write ${rsync_host} /usr/bin/rsync
-set_inode_field /usr/bin/rsync mode 0100755
-EOF
-		local _rsync_rc=$?
-		if [[ $_rsync_rc -eq 0 ]]; then
-			print_success "rsync injected into guest rootfs (/usr/bin/rsync)"
-		else
-			print_warning "rsync injection failed (debugfs rc=${_rsync_rc}) — delta sync unavailable, tar fallback will be used"
-		fi
-	else
-		print_warning "rsync not found on host — delta sync unavailable (install: sudo apt-get install rsync)"
-	fi
+	# Inject a self-contained rsync bundle (host rsync + lib closure + loader +
+	# wrapper) so delta sync works regardless of host/guest glibc differences.
+	# Non-fatal: on failure the launcher falls back to tar-over-SSH.
+	_inject_rootfs_rsync_bundle "$rootfs" || true
 
 	# Write state marker: rootfs has guest-init + jq + SSH keys + CA bundle + /tmp fix + resize + rsync.
 	printf 'v7' > "${rootfs%.ext4}.state"

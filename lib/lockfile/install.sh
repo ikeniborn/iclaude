@@ -26,7 +26,7 @@ install_from_lockfile() {
 	echo ""
 
 	# Parse lockfile (using grep for portability)
-	local node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "18")
+	local node_version=$(grep -oP '"nodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "22")
 	local claude_version=$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$ISOLATED_LOCKFILE" 2>/dev/null || echo "")
 
 	print_info "Node.js version from lockfile: $node_version"
@@ -50,12 +50,21 @@ install_from_lockfile() {
 	# Remove 'v' prefix if present
 	node_version=$(echo "$node_version" | sed 's/^v//')
 
-	nvm install "$node_version"
-	nvm use "$node_version"
-
-	if [[ $? -ne 0 ]]; then
-		print_error "Failed to install Node.js $node_version"
-		return 1
+	# Install Node.js. If nvm's download fails (system curl/OpenSSL cannot reach
+	# the Node mirror on this host), fall back to Node's own TLS stack — same path
+	# as install_isolated_nodejs, so lockfile installs self-heal too.
+	if ! nvm install "$node_version" || ! nvm use "$node_version"; then
+		print_warning "nvm could not download Node.js; trying the node-TLS fallback..."
+		echo ""
+		local major="${node_version%%.*}"
+		if fetch_node_via_node_tls "$major"; then
+			local newdir
+			newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			[[ -n "$newdir" ]] && { nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"; }
+		else
+			print_error "Failed to install Node.js $node_version"
+			return 1
+		fi
 	fi
 
 	# Install Claude Code with specific version if available

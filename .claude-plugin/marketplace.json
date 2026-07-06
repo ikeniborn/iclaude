@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "iclaude",
+  "description": "iclaude in-repo plugins",
+  "owner": { "name": "ikeniborn" },
+  "plugins": [
+    {
+      "name": "iwiki",
+      "description": "Embedding-based documentation agent replacing lat.md.",
+      "version": "0.6.4",
+      "source": "./plugin/iwiki",
+      "author": { "name": "ikeniborn" },
+      "category": "documentation"
+    },
+    {
+      "name": "loen",
+      "description": "Loop Engineering harness plugin: controlled agent loop, independent verifier, artifact-layout guardrails.",
+      "version": "0.5.1",
+      "source": "./plugin/loen",
+      "author": { "name": "ikeniborn" },
+      "category": "development"
+    }
+  ]
+}

@@ -351,136 +351,30 @@ fi
 
 if ! declare -F create_symlink_only &>/dev/null; then
 create_symlink_only() {
-    local script_path="$SCRIPT_DIR/iclaude.sh"
-    local target_path="/usr/local/bin/iclaude"
+    echo ""
+    print_info "Creating user-space iclaude launcher..."
+    echo ""
 
-    # Check if running with sudo
-    if [[ $EUID -ne 0 ]]; then
-        print_error "Creating symlink requires sudo privileges"
-        echo ""
-        echo "Run: sudo $0 --create-symlink"
-        exit 1
+    if ! declare -F install_iclaude_user_launcher &>/dev/null; then
+        print_error "Symlink module is not loaded"
+        return 1
     fi
 
-    echo ""
-    print_info "Checking isolated environment..."
-    echo ""
-
-    # Check if isolated environment exists
-    if [[ ! -d "$ISOLATED_NVM_DIR" ]]; then
-        print_error "Isolated environment not found"
-        echo ""
-        echo "The isolated environment is required for --create-symlink"
-        echo "This allows you to install globally WITHOUT system npm!"
-        echo ""
-        echo "First, install isolated environment:"
-        echo "  ./iclaude.sh --isolated-install"
-        echo ""
-        echo "Then create symlink:"
-        echo "  sudo ./iclaude.sh --create-symlink"
-        exit 1
-    fi
-
-    # Verify isolated environment is functional
-    local claude_cli="$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js"
-    if [[ ! -f "$claude_cli" ]]; then
-        print_error "Claude Code not found in isolated environment"
-        echo ""
-        echo "Run: ./iclaude.sh --isolated-install"
-        exit 1
-    fi
-
-    print_success "Isolated environment found and functional"
-    echo "  Location: $ISOLATED_NVM_DIR"
-    echo "  Claude Code: $claude_cli"
-    echo ""
-
-    # Check if already installed
-    if [[ -L "$target_path" ]]; then
-        local current_target=$(readlink -f "$target_path")
-        local script_realpath=$(readlink -f "$script_path")
-
-        if [[ "$current_target" == "$script_realpath" ]]; then
-            print_success "Already installed at: $target_path"
-            echo ""
-            echo "You can now run: iclaude"
-            return 0
-        else
-            print_warning "Different installation found at: $target_path"
-            echo "  Current: $current_target"
-            echo "  New:     $script_realpath"
-            echo ""
-            echo "Remove existing installation first:"
-            echo "  sudo iclaude --uninstall-symlink"
-            return 1
-        fi
-    fi
-
-    # Create symlink
-    ln -sf "$(readlink -f "$script_path")" "$target_path"
-    chmod +x "$target_path"
-
-    echo ""
-    print_success "Global symlink created successfully!"
-    echo ""
-    echo "  Symlink: $target_path"
-    echo "  Target:  $(readlink -f "$script_path")"
-    echo ""
-    print_info "Using isolated environment (NO system npm required):"
-    echo "  Node.js: $(find "$ISOLATED_NVM_DIR/versions/node" -name node -type f 2>/dev/null | head -1)"
-    echo "  Claude Code: $claude_cli"
-    echo ""
-    echo "You can now run: iclaude"
+    install_iclaude_user_launcher
 }
 fi
 
 if ! declare -F uninstall_symlink_only &>/dev/null; then
 uninstall_symlink_only() {
-    local target_path="/usr/local/bin/iclaude"
-
-    # Check if running with sudo
-    if [[ $EUID -ne 0 ]]; then
-        print_error "Removing symlink requires sudo privileges"
-        echo ""
-        echo "Run: sudo $0 --uninstall-symlink"
-        exit 1
-    fi
-
+    echo ""
+    print_info "Removing user-space iclaude launcher..."
     echo ""
 
-    # Check if symlink exists
-    if [[ ! -e "$target_path" ]]; then
-        print_info "Symlink not found at: $target_path"
-        echo ""
-        echo "Nothing to remove"
-        return 0
+    if ! declare -F uninstall_iclaude_symlink &>/dev/null; then
+        print_error "Symlink module is not loaded"
+        return 1
     fi
 
-    # Show what will be removed
-    if [[ -L "$target_path" ]]; then
-        local link_target=$(readlink -f "$target_path")
-        print_info "Removing symlink:"
-        echo "  Symlink: $target_path"
-        echo "  Target:  $link_target"
-    else
-        print_warning "File at $target_path is not a symlink"
-        echo ""
-        read -p "Remove anyway? (y/N): " confirm
-        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-            print_info "Cancelled"
-            return 1
-        fi
-    fi
-
-    # Remove symlink
-    rm -f "$target_path"
-
-    echo ""
-    print_success "Symlink removed successfully"
-    echo ""
-    print_info "Note: Isolated environment is preserved"
-    echo "  Location: $ISOLATED_NVM_DIR"
-    echo "  To use locally: ./iclaude.sh"
-    echo "  To recreate symlink: sudo ./iclaude.sh --create-symlink"
+    uninstall_iclaude_symlink
 }
 fi

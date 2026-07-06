@@ -126,7 +126,7 @@ load_credentials() {
     fi
 
     # Source the credentials file
-    source "$CREDENTIALS_FILE"
+    source_iclaude_config
 
     # Check if old format (single line with URL only)
     if [[ -z "${PROXY_URL:-}" ]]; then

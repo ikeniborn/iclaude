@@ -29,6 +29,16 @@ const PLATFORMS = {
     pkg: PACKAGE_PREFIX + '-linux-arm64-musl',
     bin: BINARY_NAME,
   },
+  'linux-arm64-android': {
+    pkg: PACKAGE_PREFIX + '-linux-arm64-android',
+    bin: BINARY_NAME,
+  },
+  'linux-x64-android': {
+    pkg: PACKAGE_PREFIX + '-linux-x64-android',
+    bin: BINARY_NAME,
+  },
+  'freebsd-x64': { pkg: PACKAGE_PREFIX + '-freebsd-x64', bin: BINARY_NAME },
+  'freebsd-arm64': { pkg: PACKAGE_PREFIX + '-freebsd-arm64', bin: BINARY_NAME },
   'win32-x64': {
     pkg: PACKAGE_PREFIX + '-win32-x64',
     bin: BINARY_NAME + '.exe',
@@ -53,6 +63,9 @@ function detectMusl() {
 function getPlatformKey() {
   const platform = process.platform
   let cpu = arch()
+  if (platform === 'android') {
+    return 'linux-' + cpu + '-android'
+  }
   if (platform === 'linux') {
     return 'linux-' + cpu + (detectMusl() ? '-musl' : '')
   }
@@ -75,6 +88,18 @@ function getBinaryPath() {
   if (!info) {
     console.error(
       `[${WRAPPER_NAME}] Unsupported platform: ${process.platform} ${arch()}. Supported: ${Object.keys(PLATFORMS).join(', ')}`,
+    )
+    process.exit(1)
+  }
+  const optionalDeps = require('./package.json').optionalDependencies || {}
+  if (!optionalDeps[info.pkg]) {
+    console.error(
+      `[${WRAPPER_NAME}] Native binaries for ${platformKey} are not available on this release channel.`,
+    )
+    console.error(
+      `  Available: ${Object.keys(optionalDeps)
+        .map(p => p.replace(PACKAGE_PREFIX + '-', ''))
+        .join(', ')}`,
     )
     process.exit(1)
   }

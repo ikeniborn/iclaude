@@ -1,0 +1,10 @@
+{
+  "name": "loen",
+  "description": "Loop Engineering harness: run a controlled Plan→Act→Check→Report agent loop with an independent verifier, a machine-readable loop.yaml contract, and hard artifact-layout guardrails.",
+  "version": "0.5.1",
+  "author": { "name": "ikeniborn" },
+  "keywords": ["loop-engineering", "agent-loop", "verifier", "workflow", "guardrails", "tdd"],
+  "license": "MIT",
+  "homepage": "https://github.com/ikeniborn/iclaude",
+  "repository": "https://github.com/ikeniborn/iclaude"
+}
