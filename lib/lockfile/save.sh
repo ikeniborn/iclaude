@@ -163,17 +163,6 @@ save_isolated_lockfile() {
 	local nvm_version
 	nvm_version=$(nvm --version 2>/dev/null || echo "unknown")
 
-	# Detect GSD version from marker file (offline/instant)
-	local gsd_version="not installed"
-	if declare -f detect_gsd &>/dev/null && detect_gsd &>/dev/null; then
-		local gsd_marker="${CLAUDE_CONFIG_DIR}/.gsd-version"
-		if [[ -f "$gsd_marker" ]]; then
-			gsd_version=$(cat "$gsd_marker" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
-		else
-			gsd_version=$(npm view get-shit-done-cc version 2>/dev/null | tr -d '[:space:]' || echo "unknown")
-		fi
-	fi
-
 	# Create lockfile using jq for safe JSON generation
 	jq -n \
 		--arg nodeVer "$node_version" \
@@ -188,7 +177,6 @@ save_isolated_lockfile() {
 		--arg ompInstAt "$omp_installed_at" \
 		--arg instAt "$installed_at" \
 		--arg nvmVer "$nvm_version" \
-		--arg gsdVer "$gsd_version" \
 		'{
 			nodeVersion: $nodeVer,
 			claudeCodeVersion: $claudeVer,
@@ -201,8 +189,7 @@ save_isolated_lockfile() {
 			ohMyPoshPlatform: $ompPlat,
 			ohMyPoshInstalledAt: $ompInstAt,
 			installedAt: $instAt,
-			nvmVersion: $nvmVer,
-			gsdVersion: $gsdVer
+			nvmVersion: $nvmVer
 		}' > "$ISOLATED_LOCKFILE"
 
 	chmod 644 "$ISOLATED_LOCKFILE"

@@ -157,15 +157,6 @@ if [[ -d "$LIB_DIR/caveman" ]]; then
 fi
 
 #######################################
-# Load GSD modules (Phase 8.5)
-#######################################
-if [[ -d "$LIB_DIR/gsd" ]]; then
-    source "${LIB_DIR}/gsd/detect.sh"
-    source "${LIB_DIR}/gsd/install.sh"
-    source "${LIB_DIR}/gsd/status.sh"
-fi
-
-#######################################
 # Load Sandbox modules (Phase 9.1)
 #######################################
 if [[ -d "$LIB_DIR/sandbox" ]]; then
@@ -511,25 +502,6 @@ fi
             --router)
                 USE_ROUTER_FLAG=true
                 shift
-                ;;
-            --install-gsd)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-gsd"
-                    echo ""
-                    echo "GSD is only available in isolated environment"
-                    exit 1
-                fi
-                _gsd_install_force=""
-                [[ "${2:-}" == "--force" ]] && { _gsd_install_force="--force"; shift; }
-                source_iclaude_config
-                install_gsd "$_gsd_install_force"
-                _gsd_rc=$?
-                [[ $_gsd_rc -eq 0 ]] && save_isolated_lockfile
-                exit $_gsd_rc
-                ;;
-            --check-gsd)
-                check_gsd_status
-                exit 0
                 ;;
             --pii-proxy)
                 USE_PII_PROXY_FLAG=true

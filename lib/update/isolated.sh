@@ -104,11 +104,6 @@ update_isolated_claude() {
 			repair_vendor_permissions
 		fi
 
-		# Update GSD if installed
-		if declare -f update_gsd_if_installed &>/dev/null; then
-			update_gsd_if_installed
-		fi
-
 		# Update lockfile with new version
 		print_info "Updating lockfile..."
 		save_isolated_lockfile
