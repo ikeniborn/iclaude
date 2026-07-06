@@ -58,14 +58,15 @@ install_core_from_lockfile() {
 	fi
 
 	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
-		npm install -g "@anthropic-ai/claude-code@$claude_version"
+		if ! npm install -g "@anthropic-ai/claude-code@$claude_version"; then
+			print_error "Failed to install Claude Code"
+			return 1
+		fi
 	else
-		npm install -g "@anthropic-ai/claude-code"
-	fi
-
-	if [[ $? -ne 0 ]]; then
-		print_error "Failed to install Claude Code"
-		return 1
+		if ! npm install -g "@anthropic-ai/claude-code"; then
+			print_error "Failed to install Claude Code"
+			return 1
+		fi
 	fi
 
 	print_success "Core isolated environment installed from lockfile"
