@@ -25,8 +25,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <header>
 <h1>startup-lockfile-core-sync</h1>
@@ -141,7 +141,53 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <!-- TAB:spec END -->
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-<p class="note">Этап ещё не проверен.</p>
+<h2>Проверка plan — 2026-07-06</h2>
+<p>Plan decomposes the approved spec into four executable tasks: tests first, core restore helper, startup prompt wiring, and final verification. Each task has explicit files, commands, expected output, and commit boundaries.</p>
+<p>Источник: <code>docs/superpowers/plans/2026-07-06-startup-lockfile-core-sync.md</code>; chain spec: <code>docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md</code>.</p>
+<h3>Step DAG</h3>
+<div class="flow">
+<div class="node"><strong>Task 1</strong>Write failing shell tests for startup prompt behavior and restore boundaries.</div>
+<div class="node"><strong>Task 2</strong>Add <code>install_core_from_lockfile()</code>; tests still fail until prompt is wired.</div>
+<div class="node"><strong>Task 3</strong>Wire accepted startup prompt to core restore; focused tests pass.</div>
+<div class="node"><strong>Task 4</strong>Run final verification and static boundary inspection.</div>
+</div>
+<h3>Artifact Impact Map</h3>
+<table>
+<tr><th>Plan task</th><th>Files</th><th>Purpose</th></tr>
+<tr><td>Task 1</td><td><code>tests/test_lockfile_core_sync.sh</code></td><td>Captures RED behavior for startup prompt and LSP/full restore boundaries.</td></tr>
+<tr><td>Task 2</td><td><code>lib/lockfile/install.sh</code></td><td>Adds core-only Node.js + Claude Code restore helper.</td></tr>
+<tr><td>Task 3</td><td><code>lib/lockfile/save.sh</code>, test file</td><td>Changes accepted prompt branch and non-interactive guidance.</td></tr>
+<tr><td>Task 4</td><td>Changed files only if verification finds a real fix</td><td>Prepares evidence for result reconciliation.</td></tr>
+</table>
+<h3>Verification Map</h3>
+<table>
+<tr><th>Requirement</th><th>Check</th><th>Expected evidence</th></tr>
+<tr><td>Startup core sync, no LSP restore</td><td><code>bash tests/test_lockfile_core_sync.sh</code></td><td>Final line <code>fail=0</code>; call log contains core restore, not full restore.</td></tr>
+<tr><td>Existing binary probe preserved</td><td><code>bash tests/test_check_lockfile_binary_probe.sh</code></td><td>Final line <code>fail=0</code>.</td></tr>
+<tr><td>Shell syntax</td><td><code>bash -n</code> on changed shell files/tests</td><td>No output, exit 0.</td></tr>
+<tr><td>Manual full restore preserves LSP</td><td><code>grep -n "lspServers\\|lspPlugins" lib/lockfile/install.sh</code></td><td>LSP fields remain in <code>install_from_lockfile()</code>, absent from core helper.</td></tr>
+</table>
+<h3>Human Checkpoint Flow</h3>
+<table>
+<tr><th>Decision</th><th>Zone</th><th>Plan handling</th></tr>
+<tr><td>Lockfile schema change</td><td>Proposal-first</td><td>Not planned; schema remains unchanged.</td></tr>
+<tr><td>Public <code>--install-from-lockfile</code> semantics</td><td>Proposal-first</td><td>Not changed; public full restore remains broad.</td></tr>
+<tr><td>Deleting LSP restore</td><td>No-go</td><td>Not planned; Task 4 verifies LSP paths remain.</td></tr>
+<tr><td>Prompt/help wording</td><td>Guarded</td><td>Task 3 changes text to core sync wording with tests.</td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>Plan header present; tasks and steps use checkbox syntax; no placeholders.</td></tr>
+<tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>All spec requirements map to tests, helper implementation, prompt wiring, or final verification.</td></tr>
+<tr><td>dependencies</td><td><span class="badge ok">passed</span></td><td>Tests precede implementation; helper precedes prompt wiring; verification runs last.</td></tr>
+<tr><td>verifiability</td><td><span class="badge ok">passed</span></td><td>Each task has explicit commands and expected evidence.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>Function names and file paths match spec and existing repo layout.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Plan passes. Следующий этап: implementation через subagent-driven-development или inline executing-plans.</p>
 </section>
 <!-- TAB:plan END -->
 <!-- TAB:result START -->

@@ -1,3 +1,18 @@
+---
+review:
+  plan_hash: 980b34f3843ef7d0
+  last_run: 2026-07-06
+  phases:
+    structure: { status: passed }
+    coverage: { status: passed }
+    dependencies: { status: passed }
+    verifiability: { status: passed }
+    consistency: { status: passed }
+  findings: []
+chain:
+  intent: docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md
+  spec: docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md
+---
 # Startup Lockfile Core Sync Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
