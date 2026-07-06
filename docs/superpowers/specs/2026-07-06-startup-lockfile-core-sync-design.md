@@ -1,3 +1,16 @@
+---
+review:
+  spec_hash: e85969ccc00c8ada
+  last_run: 2026-07-06
+  phases:
+    structure: { status: passed }
+    coverage: { status: passed }
+    clarity: { status: passed }
+    consistency: { status: passed }
+  findings: []
+chain:
+  intent: docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md
+---
 # Design: startup lockfile core sync
 
 ## Acceptance (from intent)

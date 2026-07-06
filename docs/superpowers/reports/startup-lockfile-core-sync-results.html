@@ -24,8 +24,8 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 </head>
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
-<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 <header>
@@ -93,7 +93,50 @@ code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inl
 <!-- TAB:intent END -->
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
-<p class="note">Этап ещё не проверен.</p>
+<h2>Проверка spec — 2026-07-06</h2>
+<p>Spec переводит approved intent в конкретное поведение: startup prompt получает core-only sync, а публичный <code>--install-from-lockfile</code> остаётся full restore. Проверка подтверждает coverage всех outcomes и constraints без расширения scope.</p>
+<p>Источник: <code>docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md</code>; chain intent: <code>docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md</code>.</p>
+<h3>Requirement Coverage Map</h3>
+<table>
+<tr><th>Intent outcome</th><th>Spec requirement/design response</th><th>Acceptance</th></tr>
+<tr><td>Startup prompt core-syncs without LSP restore.</td><td>Requirements 1, 2, 5, 6; Architecture <code>install_core_from_lockfile()</code>; Startup Flow accepted branch.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>Successful core sync prevents repeat prompt.</td><td>Requirement 3; Data Flow step 7; Error Handling leaves hash unchanged on failure only.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>LSP restore remains explicit.</td><td>Requirements 9, 10; Manual full restore data flow; Non-Goals preserve LSP behavior.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>Do not change lockfile schema.</td><td>Requirement 10; Non-Goals.</td><td><span class="badge ok">covered</span></td></tr>
+</table>
+<h3>Component Graph</h3>
+<div class="flow">
+<div class="node"><strong>Prompt gate</strong><code>check_lockfile_changes()</code><br>Detects hash mismatch and asks only in interactive mode.</div>
+<div class="node"><strong>Core sync</strong><code>install_core_from_lockfile()</code><br>Reads <code>nodeVersion</code> and <code>claudeCodeVersion</code> only.</div>
+<div class="node"><strong>Full restore</strong><code>install_from_lockfile()</code><br>Manual path remains broad and can restore LSP.</div>
+<div class="node"><strong>Hash state</strong><code>update_lockfile_hash()</code><br>Runs after successful core/full restore only.</div>
+</div>
+<h3>Data Flow</h3>
+<table>
+<tr><th>Flow</th><th>Steps</th><th>Risk control</th></tr>
+<tr><td>Startup</td><td>Changed lockfile → prompt → core-only function → hash update → launch continues.</td><td>No fallback to full restore; LSP untouched.</td></tr>
+<tr><td>Manual full restore</td><td>User runs <code>./iclaude.sh --install-from-lockfile</code> → existing full installer → LSP restore possible → hash update.</td><td>Public reproducibility path preserved.</td></tr>
+</table>
+<h3>Risk/Mitigation Map</h3>
+<table>
+<tr><th>Risk</th><th>Mitigation</th><th>Status</th></tr>
+<tr><td>Silent fallback reintroduces LSP restore.</td><td>Spec forbids fallback from core sync to full restore in startup branch.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Hash updates after failed core sync.</td><td>Requirement 4 and Error Handling require unchanged hash on failure.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Manual reproducibility regresses.</td><td>Requirement 9 keeps <code>--install-from-lockfile</code> full restore.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Scope expands into unrelated installer modules.</td><td>Non-Goals keep router/GSD/statusline/symlink/config/sandbox/OAuth/launch behavior unchanged.</td><td><span class="badge ok">addressed</span></td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>No placeholders, duplicate headings, broken section links, or numbering gaps.</td></tr>
+<tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>All user-approved design choices A/B/A are represented; all intent outcomes mapped to requirements and tests.</td></tr>
+<tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>Requirements name concrete functions, paths, command behavior, and test evidence.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>No contradiction between startup core-only sync and manual full restore.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Spec passes. Следующий этап после user review: writing-plans.</p>
 </section>
 <!-- TAB:spec END -->
 <!-- TAB:plan START -->
