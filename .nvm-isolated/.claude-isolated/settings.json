@@ -104,7 +104,7 @@
     ],
     "defaultMode": "default"
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
