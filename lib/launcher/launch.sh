@@ -11,37 +11,139 @@
 # Returns:
 #   Does not return (uses exec)
 #######################################
-######################################
-# Sync GRAPHIFY_OUT to settings.json env block so Claude Code's bash tool
-# subshells always inherit the configured value.
-# Without this, ${GRAPHIFY_OUT:-graphify-out} in skill bash blocks falls back
-# to "graphify-out" in fresh bash tool calls that don't inherit exported vars.
 #######################################
-_sync_graphify_env_to_settings() {
-    local settings_file="${ISOLATED_CONFIG_DIR:-}/settings.json"
-    [[ -f "$settings_file" ]] || return 0
-    [[ -z "${GRAPHIFY_OUT:-}" ]] && return 0
-    python3 - "$settings_file" "$GRAPHIFY_OUT" <<'PYEOF'
-import sys, json
-settings_file, graphify_out = sys.argv[1], sys.argv[2]
-with open(settings_file) as f:
-    s = json.load(f)
-env = s.setdefault('env', {})
-if env.get('GRAPHIFY_OUT') == graphify_out:
-    sys.exit(0)
-env['GRAPHIFY_OUT'] = graphify_out
-with open(settings_file, 'w') as f:
-    json.dump(s, f, indent=2, ensure_ascii=False)
-    f.write('\n')
-PYEOF
+# Mirror guest→host file DELETIONS for the microVM tar-over-SSH sync path.
+#
+# tar -x only adds/overwrites — it cannot remove files deleted in the guest, so on
+# the tar fallback `full`-mode deletions never reach the host. This removes host
+# workspace files that are absent from the guest's file list, giving tar the same
+# delete semantics rsync --delete provides natively (the rsync path does not call
+# this). SAFE: prunes the same protected paths as the sync excludes, deletes only
+# regular files, and is a no-op on an empty list (caller passes a list ONLY from a
+# successful guest scan — never on ssh/find error — so it never mass-deletes).
+#
+# Arguments:
+#   $1 - hostdir: host workspace directory
+#   $2 - guest_list: newline-separated guest-relative file paths ("./path"), from
+#        a successful `find . <prune> -type f -print` over the guest /workspace
+#######################################
+_microvm_mirror_deletions() {
+    local hostdir="$1" guest_list="$2"
+    [[ -d "$hostdir" && -n "$guest_list" ]] || return 0
+    local rel
+    while IFS= read -r rel; do
+        [[ -n "$rel" ]] || continue
+        rm -f -- "${hostdir}/${rel#./}"
+    done < <(comm -23 \
+        <(cd "$hostdir" && find . \( -name .git -o -name .nvm-isolated -o -name .claude_config -o -name .claude_proxy_credentials -o -name .iclaude-guest-env.sh -o -name .iclaude-ssh -o -name .claude-guest -o -name lost+found \) -prune -o -type f -print 2>/dev/null | sort) \
+        <(printf '%s\n' "$guest_list" | sort))
+    # Remove directories left empty by the deletions (best-effort).
+    find "$hostdir" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+}
+
+# Guest /workspace file-list command (relative "./path" entries), protected paths
+# pruned — matches _microvm_mirror_deletions and the rsync/tar sync excludes.
+# Used by the tar guest→host syncs to compute deletions.
+_MICROVM_GUEST_SCAN_CMD='cd /workspace 2>/dev/null && find . \( -name .git -o -name .nvm-isolated -o -name .claude_config -o -name .claude_proxy_credentials -o -name .iclaude-guest-env.sh -o -name .iclaude-ssh -o -name .claude-guest -o -name lost+found \) -prune -o -type f -print 2>/dev/null'
+
+#######################################
+# Derive a Langfuse-safe project id from a directory.
+# Uses the git toplevel basename (repo name) when $1 is inside a git work tree;
+# otherwise the directory basename. Sanitizes to a tag-safe slug: lowercased,
+# every run of chars outside [a-z0-9._-] collapsed to a single '-', leading and
+# trailing '-' trimmed. Falls back to "unknown" if the result is empty.
+# Arguments:
+#   $1 - directory (defaults to $PWD)
+# Outputs:
+#   slug on stdout
+#######################################
+_derive_project_id() {
+    local dir="${1:-$PWD}" top name
+    top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$top" ]]; then
+        name=$(basename "$top")
+    else
+        name=$(basename "$dir")
+    fi
+    name=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+        | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')
+    [[ -n "$name" ]] || name="unknown"
+    printf '%s' "$name"
+}
+
+#######################################
+# Export ICLAUDE_PROJECT_ID for the CCR process and/or the Langfuse capture observer.
+# Runs in router mode OR Langfuse-capture mode. The id is the same tag-safe slug both
+# the CCR x-project-id transformer and the PII-proxy Langfuse emitter use as project:<id>.
+# In router mode the CCR `x-project-id` transformer plugin
+# (.claude-code-router/plugins/x-project-id.js) reads ICLAUDE_PROJECT_ID from its process
+# env and injects it as the "X-Project-Id" header on the upstream request; LiteLLM's
+# project_tagger then emits the Langfuse tag project:<id>. (CCR 2.0.0 DROPS provider-level
+# `headers` from router.json at registerProvider, so the transformer is the only working
+# injection path — see docs/wiki/router.md.) In capture mode the PII proxy's Langfuse
+# emitter reads the same value. This MUST run before any CCR/PII-proxy fork/exec so the
+# child inherits the value. An explicit value already present in the environment (e.g.
+# exported from .claude_config) is kept.
+# NOTE: when unset, the router plugin emits "unknown" (its own `|| "unknown"` fallback),
+# so router/capture mode always exports a concrete value here to make the tag the real
+# repo name.
+# Arguments:
+#   $1 - use_router           ("true" activates)
+#   $2 - use_langfuse_capture ("true" activates; optional, defaults to "false")
+#######################################
+_init_project_id() {
+    local use_router="${1:-false}" use_capture="${2:-false}"
+    [[ "$use_router" == "true" || "$use_capture" == "true" ]] || return 0
+    if [[ -z "${ICLAUDE_PROJECT_ID:-}" ]]; then
+        ICLAUDE_PROJECT_ID="$(_derive_project_id "$PWD")"
+    fi
+    export ICLAUDE_PROJECT_ID
+}
+
+#######################################
+# Decide whether to start the PII proxy: it serves either masking, Langfuse capture, or both.
+# Returns 0 (start) if either is requested, 1 otherwise.
+# Arguments:
+#   $1 - use_pii_proxy        ("true" if masking requested)
+#   $2 - use_langfuse_capture ("true" if capture requested)
+#######################################
+_should_start_proxy() {
+    [[ "${1:-false}" == "true" || "${2:-false}" == "true" ]]
+}
+
+#######################################
+# Resolve the masking level to FORCE for capture-only sessions. When the proxy is started
+# only for Langfuse capture (no --pii-proxy) and no explicit PII_PROXY_MASKING_LEVEL is set,
+# the proxy runs purely as the auth + capture hop with masking 'off'. Otherwise echo nothing
+# (leave PII_PROXY_MASKING_LEVEL untouched — the proxy applies its own 'standard' default).
+# Arguments:
+#   $1 - use_pii_proxy   ("true" if masking explicitly requested)
+#   $2 - current PII_PROXY_MASKING_LEVEL value (may be empty)
+# Outputs:
+#   "off" to force, or empty string to leave untouched
+#######################################
+_proxy_masking_default() {
+    if [[ "${1:-false}" != "true" && -z "${2:-}" ]]; then
+        printf 'off'
+    fi
+}
+
+#######################################
+# Decide whether Langfuse non-router capture is active for this session. Capture is a
+# config-only toggle, deliberately suppressed in router mode (LiteLLM already emits to
+# Langfuse there — avoids double traces).
+# Returns 0 (capture) when USE_LANGFUSE_CAPTURE=true AND not router mode, else 1.
+# Arguments:
+#   $1 - USE_LANGFUSE_CAPTURE value
+#   $2 - use_router ("true" suppresses capture)
+#######################################
+_should_capture() {
+    [[ "${1:-false}" == "true" && "${2:-false}" != "true" ]]
 }
 
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
-
-    # Sync GRAPHIFY_OUT into settings.json env block before launch
-    _sync_graphify_env_to_settings
 
     # Unset CHROME_DESKTOP so Claude Code correctly identifies Chrome as the browser.
     # VS Code sets CHROME_DESKTOP=code.desktop in its terminal environment, which
@@ -59,6 +161,15 @@ launch_claude() {
     if [[ "$USE_ROUTER_FLAG" == "true" ]] && detect_router "$skip_isolated"; then
         use_router=true
     fi
+
+    # Langfuse non-router capture: a config-only toggle (.claude_config), suppressed in
+    # router mode by _should_capture (LiteLLM already emits to Langfuse there).
+    local use_langfuse_capture=false
+    _should_capture "${USE_LANGFUSE_CAPTURE:-false}" "$use_router" && use_langfuse_capture=true
+
+    # Per-project attribution (router and/or capture): export ICLAUDE_PROJECT_ID before
+    # any CCR or PII-proxy fork so both observers can tag traces project:<repo>.
+    _init_project_id "$use_router" "$use_langfuse_capture"
 
     # Disable x-anthropic-billing-header when routing to third-party backends.
     # The billing hash (cch=) changes every request and invalidates KV cache on
@@ -92,16 +203,24 @@ launch_claude() {
         fi
     fi
 
-    # PII proxy: intercept and mask PII/secrets in Anthropic API traffic
+    # PII proxy: intercept and mask PII/secrets in Anthropic API traffic.
+    # Also started for Langfuse non-router capture, which reuses the proxy as the
+    # auth + capture hop (with masking forced off when masking was not requested).
     local use_pii_proxy=false
-    if [[ "${USE_PII_PROXY_FLAG:-false}" == "true" ]]; then
+    if _should_start_proxy "${USE_PII_PROXY_FLAG:-false}" "$use_langfuse_capture"; then
         if [[ "$skip_isolated" == "true" ]]; then
             # System mode uses host Node.js; PII proxy requires isolated venv — abort (fail-secure)
             print_error "PII proxy is not supported in --system mode (isolated environment only)"
-            print_info "Remove --pii-proxy or omit --system to use PII masking"
+            print_info "Remove --pii-proxy / USE_LANGFUSE_CAPTURE or omit --system to use PII masking or Langfuse capture"
             exit 1
         elif type detect_pii_proxy &>/dev/null && detect_pii_proxy "$skip_isolated"; then
             use_pii_proxy=true
+            # Capture-only (masking not explicitly requested): run the proxy purely as the
+            # auth + Langfuse-capture hop with masking 'off'. Uses the unit-tested helper.
+            # Set BEFORE any start_pii_proxy_server fork below so the proxy inherits it.
+            local _mdef
+            _mdef=$(_proxy_masking_default "${USE_PII_PROXY_FLAG:-false}" "${PII_PROXY_MASKING_LEVEL:-}")
+            [[ -n "$_mdef" ]] && export PII_PROXY_MASKING_LEVEL="$_mdef"
             # Combined mode: PII proxy + CCR router can now work together.
             # Chain: claude → PII proxy(:9000) → CCR(:3456) → providers
             # When both are active, CCR is started as a background daemon (not via exec ccr code).
@@ -263,13 +382,18 @@ launch_claude() {
             _e_ssh_fallback+=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         fi
 
-        # Detect if guest has rsync (v7+ rootfs). Fallback to tar if absent.
+        # Detect if guest has a WORKING rsync (v7+ rootfs). Fallback to tar otherwise.
+        # We run `rsync --version`, NOT `command -v rsync`: the rootfs injects the host's
+        # rsync binary alone (lib/sandbox/install.sh), but host rsync is dynamically linked
+        # (libpopt.so.0, liblz4, libzstd, ...) and those deps may be absent in the guest —
+        # then the binary exists but exits 127 ("error while loading shared libraries"),
+        # which `command -v` cannot detect. Executing it proves it actually loads and runs.
         local _guest_has_rsync=false
         if ssh -o BatchMode=yes -o LogLevel=ERROR -o ConnectTimeout=5 \
                ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
                -i "$ssh_key" "${_ssh_kh_opts[@]}" \
                "iclaude@${guest_ip}" \
-               'command -v rsync >/dev/null 2>&1' 2>/dev/null; then
+               'rsync --version >/dev/null 2>&1' 2>/dev/null; then
             _guest_has_rsync=true
         fi
 
@@ -298,16 +422,31 @@ launch_claude() {
         # 'full' mode:     bidirectional sync (host→guest at start, guest→host on exit).
         # 'isolated' mode: one-way copy (host→guest at start only); host files remain unchanged.
         local _ws_mode="${MICRO_VM_WORKSPACE_MODE:-full}"
+        # tar-over-SSH fallback: deletions are mirrored explicitly (see
+        # _microvm_mirror_deletions) so 'full' mode stays correct, but tar does a full
+        # gzip copy each sync (no delta). Nudge toward the rsync bundle for speed.
+        if [[ "$_guest_has_rsync" != "true" && "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
+            print_info "microVM: guest rsync unavailable — using tar-over-SSH (deletions mirrored; full-copy sync, slower than rsync delta). Run './iclaude.sh --install-microvm' (microVM stopped) to enable the rsync bundle."
+        fi
         if [[ -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]]; then
             print_info "microVM: syncing workspace → guest (${MICRO_VM_WORKSPACE_HOSTDIR})..."
-            # Exclude heavyweight dirs and secret files from host→guest sync:
+            # Canonical sync excludes — heavyweight dirs, secret files, and guest-only
+            # paths. Shared by ALL sync directions (host→guest here, guest→host in the
+            # periodic and exit-time syncs below) to keep them in lock-step:
             #   .nvm-isolated/           — NVM env provided via /dev/vdb (mounted at /mnt/nvm)
             #   .git/                    — git history: large, rarely needed for claude tool calls
             #   .claude_config           — contains HTTPS_PROXY credentials and API keys
             #   .claude_proxy_credentials — legacy credentials file
             #   .iclaude-guest-env.sh    — may exist in PWD from a previous sync-back; never needed
             #   .iclaude-ssh/            — SSH keys for microVM access
-            # User can add more exclusions via MICRO_VM_SYNC_EXCLUDE (colon-separated paths).
+            #   .claude-guest/           — guest-only Claude config dir (CLAUDE_CONFIG_DIR)
+            #   lost+found/              — ext4 reserved dir, root:root 0700 in the guest image;
+            #                              the non-root guest user cannot opendir it, so a
+            #                              `rsync --delete` scan over it fails with EACCES →
+            #                              exit 23 ("sync had errors") though files transfer.
+            # CRITICAL for guest→host: .git / .nvm-isolated / .claude_config are absent in the
+            # guest, so without these excludes `rsync --delete` on sync-back would WIPE them
+            # from the host. User can add more via MICRO_VM_SYNC_EXCLUDE (colon-separated).
             local _sync_excludes=(
                 "--exclude=./.nvm-isolated"
                 "--exclude=./.git"
@@ -315,6 +454,8 @@ launch_claude() {
                 "--exclude=./.claude_proxy_credentials"
                 "--exclude=./.iclaude-guest-env.sh"
                 "--exclude=./.iclaude-ssh"
+                "--exclude=./.claude-guest"
+                "--exclude=./lost+found"
             )
             if [[ -n "${MICRO_VM_SYNC_EXCLUDE:-}" ]]; then
                 local IFS=':'; local _extra
@@ -323,32 +464,36 @@ launch_claude() {
                 done
                 unset IFS
             fi
+            # rsync-form excludes (--exclude=./.foo → --exclude=.foo), derived once and
+            # reused by the periodic + exit-time guest→host rsyncs below.
+            local _rsync_excludes=()
+            for _excl in "${_sync_excludes[@]}"; do
+                _rsync_excludes+=("${_excl//--exclude=.\//--exclude=}")
+            done
+            # Per-session sync log — rsync/tar stderr lands here so failures are
+            # diagnosable (previously discarded via 2>/dev/null).
+            local _sync_log="/tmp/iclaude-${MICRO_VM_SESSION_ID:-$$}-sync.log"
             if [[ "$_guest_has_rsync" == "true" ]]; then
-                # Build rsync excludes from _sync_excludes (convert --exclude=./.foo → --exclude=.foo)
-                local _rsync_excludes=()
-                for _excl in "${_sync_excludes[@]}"; do
-                    _rsync_excludes+=("${_excl//--exclude=.\//--exclude=}")
-                done
                 rsync -az --delete "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_cmd" \
                     "${MICRO_VM_WORKSPACE_HOSTDIR}/" \
-                    "iclaude@${guest_ip}:/workspace/" 2>/dev/null || \
-                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+                    "iclaude@${guest_ip}:/workspace/" 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files (see ${_sync_log})"
             else
-                tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>/dev/null \
+                tar -czf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" "${_sync_excludes[@]}" . 2>>"$_sync_log" \
                     | ssh -T \
                         ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
                         -i "$ssh_key" "${_ssh_kh_opts[@]}" -o LogLevel=ERROR \
                         "iclaude@${guest_ip}" \
-                        'tar -xzf - -C /workspace 2>/dev/null' 2>/dev/null || \
-                print_warning "microVM: workspace sync had errors — guest may have incomplete files"
+                        'tar -xzf - -C /workspace 2>/dev/null' 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync had errors — guest may have incomplete files (see ${_sync_log})"
             fi
         fi
 
         # Periodic background sync (full mode + MICRO_VM_SYNC_INTERVAL > 0).
         # Runs a background loop that pulls /workspace from guest to host every N seconds
         # while claude is running, so changes are visible on host without waiting for exit.
-        # Disabled by default (0); enable via MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
+        # Disabled by default (0); enable via ICLAUDE_MICRO_VM_SYNC_INTERVAL=30 in .claude_config.
         local _sync_interval="${MICRO_VM_SYNC_INTERVAL:-0}"
         local _periodic_sync_pid=""
         if [[ "$_ws_mode" != "isolated" && -n "${MICRO_VM_WORKSPACE_HOSTDIR:-}" ]] && \
@@ -362,6 +507,7 @@ launch_claude() {
                 local _sub_guest_ip="$guest_ip"
                 local _sub_ssh_key="$ssh_key"
                 local _sub_kh_opts=("${_ssh_kh_opts[@]}")
+                local _sub_rsync_excludes=("${_rsync_excludes[@]}")
                 while true; do
                     sleep "$_sync_interval" || break
                     # Stop if FC socket is gone (VM no longer running)
@@ -371,7 +517,7 @@ launch_claude() {
                     touch "$_sync_lock"
                     if [[ "$_sub_guest_has_rsync" == "true" ]]; then
                         rsync -az --delete \
-                            --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                            "${_sub_rsync_excludes[@]}" \
                             -e "$_sub_e_ssh_cmd" \
                             "iclaude@${_sub_guest_ip}:/workspace/" \
                             "${_sub_host_dir}/" 2>/dev/null || true
@@ -382,6 +528,14 @@ launch_claude() {
                             "iclaude@${_sub_guest_ip}" \
                             'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                             | tar -xzf - -C "${_sub_host_dir}" 2>/dev/null || true
+                        # tar -x cannot remove guest-deleted files — mirror deletions.
+                        local _gl_p
+                        _gl_p=$(ssh -T -o BatchMode=yes \
+                            -o ConnectTimeout=5 -i "$_sub_ssh_key" "${_sub_kh_opts[@]}" -o LogLevel=ERROR \
+                            "iclaude@${_sub_guest_ip}" "$_MICROVM_GUEST_SCAN_CMD" 2>/dev/null)
+                        if [[ $? -eq 0 && -n "$_gl_p" ]]; then
+                            _microvm_mirror_deletions "${_sub_host_dir}" "$_gl_p"
+                        fi
                     fi
                     rm -f "$_sync_lock"
                 done
@@ -434,18 +588,20 @@ launch_claude() {
             print_info "microVM: syncing workspace ← guest..."
             if [[ "$_guest_has_rsync" == "true" ]]; then
                 # Full bidirectional sync (full mode only): --delete propagates guest deletions to host.
+                # Shares _rsync_excludes with the host→guest sync so host-only paths
+                # (.git, .nvm-isolated, .claude_config, ...) are protected from --delete.
                 # Try via ControlMaster first; fallback to direct SSH if master died.
                 rsync -az --delete \
-                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_cmd" \
                     "iclaude@${guest_ip}:/workspace/" \
-                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>>"$_sync_log" || \
                 rsync -az --delete \
-                    --exclude=lost+found --exclude=.iclaude-guest-env.sh --exclude=.claude-guest \
+                    "${_rsync_excludes[@]}" \
                     -e "$_e_ssh_fallback" \
                     "iclaude@${guest_ip}:/workspace/" \
-                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>/dev/null || \
-                print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+                    "${MICRO_VM_WORKSPACE_HOSTDIR}/" 2>>"$_sync_log" || \
+                print_warning "microVM: workspace sync-back had errors — some changes may not persist (see ${_sync_log})"
             else
                 ssh -T \
                     ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
@@ -458,6 +614,16 @@ launch_claude() {
                     'tar -czf - -C /workspace --exclude=./lost+found --exclude=./.iclaude-guest-env.sh --exclude=./.claude-guest . 2>/dev/null' 2>/dev/null \
                     | tar -xzf - -C "${MICRO_VM_WORKSPACE_HOSTDIR}" 2>/dev/null || \
                 print_warning "microVM: workspace sync-back had errors — some changes may not persist"
+                # tar -x cannot remove files deleted in the guest — mirror deletions
+                # explicitly so 'full' mode propagates removals on the tar fallback.
+                local _gl_back
+                _gl_back=$(ssh -T \
+                    ${_ssh_control_socket:+-o "ControlPath=${_ssh_control_socket}" -o ControlMaster=no} \
+                    -i "$ssh_key" "${_ssh_kh_opts[@]}" -o ConnectTimeout=10 -o LogLevel=ERROR \
+                    "iclaude@${guest_ip}" "$_MICROVM_GUEST_SCAN_CMD" 2>/dev/null)
+                if [[ $? -eq 0 && -n "$_gl_back" ]]; then
+                    _microvm_mirror_deletions "${MICRO_VM_WORKSPACE_HOSTDIR}" "$_gl_back"
+                fi
             fi
         fi
 
@@ -609,32 +775,22 @@ launch_claude() {
         fi
     fi
 
-    # If still not found, try npx as fallback
     if [[ -z "$claude_cmd" ]]; then
-        if command -v npx &> /dev/null; then
-            print_info "Using npx to run Claude Code..."
-            if [[ "$use_pii_proxy" == "true" ]]; then
-                # Solo PII proxy mode: start proxy now (combined mode: proxy already started)
-                if [[ "$use_router" != "true" ]]; then
-                    if ! start_pii_proxy_server "$skip_isolated"; then
-                        print_error "PII proxy failed to start — aborting for safety"
-                        print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
-                        exit 1
-                    fi
-                    trap 'stop_pii_proxy_server' EXIT INT TERM
-                fi
-                # Combined mode trap already set above
-                npx @anthropic-ai/claude-code "$@"
-                exit $?
-            fi
-            exec npx @anthropic-ai/claude-code "$@"
-        else
-            print_error "Claude Code not found"
+        if [[ "$skip_isolated" == "true" ]]; then
+            print_error "Claude Code not found in system."
             echo ""
-            echo "Install Claude Code globally:"
+            echo "Install globally:"
             echo "  npm install -g @anthropic-ai/claude-code"
-            exit 1
+        else
+            print_error "Claude Code not found in isolated environment."
+            echo ""
+            echo "Restore the isolated environment:"
+            echo "  ./iclaude.sh --repair-isolated"
+            echo ""
+            echo "Updates are delivered via CI/CD (git pull + --install-from-lockfile),"
+            echo "not via local npm install."
         fi
+        exit 1
     fi
 
     print_info "Using Claude Code: $claude_cmd"
@@ -667,6 +823,15 @@ launch_claude() {
     local -a claude_cmd_arr
     read -ra claude_cmd_arr <<< "$claude_cmd"
 
+    # Register the iwiki MCP server from the tracked, secret-free mcp/iwiki.json
+    # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so
+    # Claude Code can expand ${IWIKI_COMMAND}/${IWIKI_*} at spawn time. The flag
+    # is added to claude_cmd_arr, so it flows into every launch branch below.
+    # (The microVM path execs earlier and is intentionally not covered.)
+    if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
+        claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_config_file)" )
+    fi
+
     # Launch Claude Code
     # When PII proxy is active: cannot use exec — EXIT trap would fire before the
     # new process starts, killing the proxy before claude makes its first API call.
@@ -676,7 +841,7 @@ launch_claude() {
         if [[ "$use_router" != "true" ]]; then
             if ! start_pii_proxy_server "$skip_isolated"; then
                 print_error "PII proxy failed to start — aborting for safety"
-                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                print_info "To launch without masking, remove ICLAUDE_USE_PII_PROXY from .claude_config"
                 exit 1
             fi
             trap 'stop_pii_proxy_server' EXIT INT TERM
@@ -842,14 +1007,17 @@ _sweep_dead_pii_consumers() {
 
 #######################################
 # Register current session as a consumer of the shared PII proxy.
-# Creates pii-proxy-pid/consumers/$ICLAUDE_SESSION_ID.pid with current bash PID.
+# Creates pii-proxy-pid/consumers/$$.pid (keyed by PID, not SID) with current bash PID.
 # Must be called while holding flock on shared.lock.
 #######################################
 _register_pii_consumer() {
     local consumers_dir="${PII_PROXY_PID_DIR}/consumers"
     mkdir -p "$consumers_dir"
     chmod 700 "$consumers_dir"
-    echo "$$" > "$consumers_dir/${ICLAUDE_SESSION_ID}.pid"
+    # Key by PID, not SID: multiple processes can share ICLAUDE_SESSION_ID (a Claude session and its
+    # Bash-tool sub-invocations). PID-keyed files prevent cross-deletion; _sweep_dead_pii_consumers
+    # reaps them by `kill -0` on the stored PID.
+    echo "$$" > "$consumers_dir/$$.pid"
 }
 
 #######################################
@@ -909,6 +1077,20 @@ except Exception:
     # (CCR_SESSION_OWNED=true) and needs a FRESH PII proxy to chain PII→CCR→providers.
     # Reusing the parent's proxy would bypass CCR entirely because the parent proxy's
     # upstream was baked in at its startup and cannot be changed retroactively.
+    # Inherited-env reuse guard: a same-SID sub-invocation (e.g. a Bash tool call inside a Claude
+    # session) inherits ANTHROPIC_BASE_URL + ICLAUDE_PII_ACTIVE from the parent. Reuse the parent's
+    # proxy and return BEFORE any shared-proxy consumer accounting, so the sub-invocation can never
+    # deregister/kill the proxy the live session depends on. Combined PII+CCR mode is excluded: it
+    # needs a fresh proxy chained to its own CCR daemon.
+    if [[ "${ICLAUDE_PII_ACTIVE:-}" == "1" ]] && \
+       [[ -n "${ANTHROPIC_BASE_URL:-}" ]] && \
+       [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && \
+       [[ "${CCR_UPSTREAM_ACTIVE:-false}" != "true" ]]; then
+        PII_PROXY_SESSION_OWNED=false
+        print_info "PII proxy: inheriting parent session proxy ($ANTHROPIC_BASE_URL)"
+        return 0
+    fi
+
     if [[ "${CCR_SESSION_OWNED:-false}" != "true" ]] && [[ -f "$PII_PROXY_PID_FILE" ]]; then
         local _existing_pid
         _existing_pid=$(cat "$PII_PROXY_PID_FILE" 2>/dev/null)
@@ -958,6 +1140,8 @@ except Exception:
         (
             flock -x 9
             _sweep_dead_pii_consumers
+            local _consumer_count
+            _consumer_count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
 
             # Check if shared proxy is alive
             local _spid _sport _salive=false
@@ -968,10 +1152,31 @@ except Exception:
                 [[ "$_sport" =~ ^[0-9]+$ ]] && _salive=true
             fi
 
+            if [[ "$_salive" == "true" && "$_consumer_count" -eq 0 ]]; then
+                # Orphan: proxy alive but no registered consumers
+                kill "$_spid" 2>/dev/null || true
+                rm -f "$_shared_pid_file" \
+                      "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port" \
+                      "${PII_PROXY_PID_DIR}/shared.starter"
+                _salive=false
+            fi
+
             if [[ "$_salive" == "true" ]]; then
                 # Attach to existing shared proxy
                 _register_pii_consumer
-                echo "attach:${_sport}" > "$_shared_result"
+                # Query proxy metadata for display (best-effort; failure degrades gracefully)
+                local _starter_sid _meta_json _meta_suffix=""
+                _starter_sid=$(cat "${PII_PROXY_PID_DIR}/shared.starter" 2>/dev/null || echo "shared")
+                _meta_json=$(curl -sf --max-time 2 "http://127.0.0.1:${_sport}/api/meta" 2>/dev/null || true)
+                if [[ -n "$_meta_json" ]]; then
+                    _meta_suffix=$("$python_bin" -c "
+import json, sys
+d = json.loads(sys.stdin.read())
+starter = sys.argv[1]
+print(f\"[{d['masking_level']}] → {d['upstream_url']} | log: {d['log_level']} | started by: {starter} from {d['pwd']}\")
+" "$_starter_sid" <<< "$_meta_json" 2>/dev/null || true)
+                fi
+                echo "attach:${_sport}:${_meta_suffix}" > "$_shared_result"
             else
                 # Start new shared proxy
                 rm -f "$_shared_pid_file" "$_shared_port_file"
@@ -990,6 +1195,7 @@ except Exception:
                 local _proxy_pid=$!
                 disown "$_proxy_pid" 2>/dev/null || true
                 echo "$_proxy_pid" > "$_shared_pid_file"
+                echo "${ICLAUDE_SESSION_ID:-unknown}" > "${PII_PROXY_PID_DIR}/shared.starter"
 
                 # Poll for port file then HTTP health (max 15s, 0.5s intervals)
                 local _max=30 _tick=0 _health=false _port=""
@@ -1034,8 +1240,11 @@ except Exception:
         else
             _result="fail:no_result"
         fi
+        local _rest _meta_suffix=""
         _mode="${_result%%:*}"
-        _port="${_result#*:}"
+        _rest="${_result#*:}"
+        _port="${_rest%%:*}"
+        _meta_suffix="${_rest#*:}"
 
         case "$_mode" in
             attach|start)
@@ -1053,17 +1262,17 @@ except Exception:
                 export ICLAUDE_PII_LOG_LEVEL="${PII_PROXY_LOG_LEVEL:-info}"
                 export ICLAUDE_PII_LOG_PATH="${PII_PROXY_LOG_DIR}/shared.log"
                 if [[ "$_mode" == "attach" ]]; then
-                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT"
+                    print_info "PII proxy: attached to shared proxy on :$PII_PROXY_ACTIVE_PORT${_meta_suffix:+ $_meta_suffix}"
                 else
                     print_info "PII proxy: shared proxy started on :$PII_PROXY_ACTIVE_PORT → $_upstream_url [${PII_PROXY_MASKING_LEVEL:-standard}]"
                 fi
                 unset -f _pii_proxy_http_health
-                echo ""
+                command -v print_telemetry_status >/dev/null 2>&1 && print_telemetry_status
                 return 0
                 ;;
             *)
                 print_warning "PII proxy: shared proxy failed to start (${_result})"
-                print_info "To launch without masking, remove USE_PII_PROXY from .claude_config"
+                print_info "To launch without masking, remove ICLAUDE_USE_PII_PROXY from .claude_config"
                 unset -f _pii_proxy_http_health
                 return 1
                 ;;
@@ -1305,13 +1514,16 @@ stop_pii_proxy_server() {
         mkdir -p "$PII_PROXY_PID_DIR"
         (
             flock -x 9
-            rm -f "${PII_PROXY_PID_DIR}/consumers/${ICLAUDE_SESSION_ID}.pid"
+            rm -f "${PII_PROXY_PID_DIR}/consumers/$$.pid"
             _sweep_dead_pii_consumers
             local _count
             _count=$(ls "${PII_PROXY_PID_DIR}/consumers/"*.pid 2>/dev/null | wc -l)
-            if [[ "$_count" -eq 0 ]]; then
+            if [[ $_count -eq 0 ]]; then
                 local _spid
                 _spid=$(cat "$_shared_pid_file" 2>/dev/null || true)
+                rm -f "$_shared_pid_file" \
+                      "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port" \
+                      "${PII_PROXY_PID_DIR}/shared.starter"
                 if [[ -n "$_spid" ]] && kill -0 "$_spid" 2>/dev/null; then
                     kill "$_spid" 2>/dev/null || true
                     local _waited=0
@@ -1321,8 +1533,6 @@ stop_pii_proxy_server() {
                     done
                     kill -9 "$_spid" 2>/dev/null || true
                 fi
-                rm -f "$_shared_pid_file"
-                rm -f "${PII_PROXY_LOG_DIR}/pii-proxy-shared.port"
                 if [[ "${PII_PROXY_LOG_LEVEL:-info}" != "debug" ]]; then
                     rm -f "${PII_PROXY_LOG_DIR}/shared.log"
                 fi

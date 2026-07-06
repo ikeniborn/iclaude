@@ -35,11 +35,21 @@ source "${LIB_DIR}/core/logging.sh"
 source "${LIB_DIR}/core/validation.sh"
 source "${LIB_DIR}/core/json.sh"
 source "${LIB_DIR}/core/remaining.sh"
+source "${LIB_DIR}/config/env-map.sh"
+# iwiki MCP helper (optional feature): guard the source so a missing lib/iwiki/
+# subtree degrades gracefully instead of aborting boot under set -e.
+if [[ -f "${LIB_DIR}/iwiki/mcp.sh" ]]; then
+    source "${LIB_DIR}/iwiki/mcp.sh"
+fi
 
 #######################################
 # Initialize environment
 #######################################
 init_environment
+
+# One-time migration of a legacy .claude_config to the ICLAUDE_ namespace.
+# Must run before BOTH the parse-time grep block and any config source.
+migrate_legacy_config
 
 #######################################
 # Load proxy modules (Phase 2)
@@ -61,6 +71,13 @@ if [[ -d "$LIB_DIR/nvm" ]]; then
     source "${LIB_DIR}/nvm/claude.sh"
     source "${LIB_DIR}/nvm/repair.sh"
     source "${LIB_DIR}/nvm/cleanup.sh"
+fi
+
+#######################################
+# Load Symlink modules
+#######################################
+if [[ -d "$LIB_DIR/symlink" ]]; then
+    source "${LIB_DIR}/symlink/symlink.sh"
 fi
 
 #######################################
@@ -103,15 +120,6 @@ if [[ -d "$LIB_DIR/pii-proxy" ]]; then
     source "${LIB_DIR}/pii-proxy/detect.sh"
     source "${LIB_DIR}/pii-proxy/install.sh"
     source "${LIB_DIR}/pii-proxy/status.sh"
-fi
-
-#######################################
-# Load Graphify modules (Phase 8.0)
-#######################################
-if [[ -d "$LIB_DIR/graphify" ]]; then
-    source "${LIB_DIR}/graphify/detect.sh"
-    source "${LIB_DIR}/graphify/install.sh"
-    source "${LIB_DIR}/graphify/status.sh"
 fi
 
 #######################################
@@ -210,7 +218,6 @@ fi
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
     USE_MICRO_VM_FLAG=false
-    USE_GRAPHIFY_FLAG=false
     USE_CHROME=false  # Chrome integration disabled by default (enable with --chrome)
     NO_ATTRIBUTION_HEADER=false  # Disable x-anthropic-billing-header (also auto-disabled when --router is active)
     posh_insecure=false
@@ -218,66 +225,41 @@ fi
 
     # Apply persistent settings from config file (before argument parsing so CLI can override)
     if [[ -f "$CREDENTIALS_FILE" ]]; then
-        # Match: USE_PII_PROXY=true  USE_PII_PROXY="true"  USE_PII_PROXY='true'  export USE_PII_PROXY=true
+        # Match: ICLAUDE_USE_PII_PROXY=true  ICLAUDE_USE_PII_PROXY="true"  ICLAUDE_USE_PII_PROXY='true'  export ICLAUDE_USE_PII_PROXY=true
         _cfg_pii=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?USE_PII_PROXY[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_USE_PII_PROXY[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_pii" ]] && USE_PII_PROXY_FLAG=true
         unset _cfg_pii
 
-        # Match: MICRO_VM_ENABLED=true  MICRO_VM_ENABLED="true"  export MICRO_VM_ENABLED=true
+        # Match: ICLAUDE_MICRO_VM_ENABLED=true  ICLAUDE_MICRO_VM_ENABLED="true"  export ICLAUDE_MICRO_VM_ENABLED=true
         _cfg_microvm=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?MICRO_VM_ENABLED[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_MICRO_VM_ENABLED[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_microvm" ]] && USE_MICRO_VM_FLAG=true
         unset _cfg_microvm
 
-        # Match: GRAPHIFY_OUT=.graphify
-        _cfg_graphify_out=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_OUT[[:space:]]*=[[:space:]]*['\"]?[^'\"[:space:]]" \
-            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
-        if [[ -n "$_cfg_graphify_out" ]]; then
-            GRAPHIFY_OUT=$(echo "$_cfg_graphify_out" | \
-                sed 's/.*GRAPHIFY_OUT[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
-            export GRAPHIFY_OUT
-        fi
-        unset _cfg_graphify_out
-
-        # Match: GRAPHIFY_EXTRA_ARGS="--no-video"
-        _cfg_graphify_args=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?GRAPHIFY_EXTRA_ARGS[[:space:]]*=" \
-            "$CREDENTIALS_FILE" 2>/dev/null | head -1 || true)
-        if [[ -n "$_cfg_graphify_args" ]]; then
-            GRAPHIFY_EXTRA_ARGS=$(echo "$_cfg_graphify_args" | \
-                sed 's/.*GRAPHIFY_EXTRA_ARGS[[:space:]]*=[[:space:]]*//' | tr -d "\"'")
-            export GRAPHIFY_EXTRA_ARGS
-        fi
-        unset _cfg_graphify_args
-
-        # Match: NO_ATTRIBUTION_HEADER=true  NO_ATTRIBUTION_HEADER="true"  export NO_ATTRIBUTION_HEADER=true
+        # Match: ICLAUDE_NO_ATTRIBUTION_HEADER=true  ICLAUDE_NO_ATTRIBUTION_HEADER="true"  export ICLAUDE_NO_ATTRIBUTION_HEADER=true
         _cfg_no_attr=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_NO_ATTRIBUTION_HEADER[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_no_attr" ]] && NO_ATTRIBUTION_HEADER=true
         unset _cfg_no_attr
 
-        # Match: USE_CHROME=true  USE_CHROME="true"  export USE_CHROME=true
+        # Match: ICLAUDE_USE_CHROME=true  ICLAUDE_USE_CHROME="true"  export ICLAUDE_USE_CHROME=true
         _cfg_chrome=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?USE_CHROME[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_USE_CHROME[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_chrome" ]] && USE_CHROME=true
         unset _cfg_chrome
 
-        # Match: CLAUDE_CODE_SKIP_PERMISSIONS=true  CLAUDE_CODE_SKIP_PERMISSIONS="true"  export CLAUDE_CODE_SKIP_PERMISSIONS=true
+        # Match: ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=true  ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS="true"  export ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=true
         _cfg_skip_perm=$(grep -E \
-            "^[[:space:]]*(export[[:space:]]+)?CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
+            "^[[:space:]]*(export[[:space:]]+)?ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS[[:space:]]*=[[:space:]]*[\"']?true[\"']?" \
             "$CREDENTIALS_FILE" 2>/dev/null || true)
         [[ -n "$_cfg_skip_perm" ]] && skip_permissions=true
         unset _cfg_skip_perm
     fi
-
-    GRAPHIFY_OUT="${GRAPHIFY_OUT:-graphify-out}"
-    export GRAPHIFY_OUT
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -366,9 +348,10 @@ fi
                     echo "is specifically for installing isolated environment."
                     exit 1
                 fi
-                install_isolated_nvm
-                install_isolated_nodejs
-                install_isolated_claude
+                install_isolated_nvm && \
+                    install_isolated_nodejs && \
+                    install_isolated_claude && \
+                    install_iclaude_user_launcher
                 exit $?
                 ;;
             --install-from-lockfile)
@@ -379,7 +362,7 @@ fi
                     echo "is specifically for installing isolated environment from lockfile."
                     exit 1
                 fi
-                install_from_lockfile
+                install_from_lockfile && install_iclaude_user_launcher
                 exit $?
                 ;;
             --cleanup-isolated)
@@ -440,7 +423,7 @@ fi
                     echo "is specifically for updating Claude Code in isolated environment."
                     exit 1
                 fi
-                update_isolated_claude
+                update_isolated_claude && install_iclaude_user_launcher
                 exit $?
                 ;;
             --install-router)
@@ -520,31 +503,6 @@ fi
                 USE_ROUTER_FLAG=true
                 shift
                 ;;
-            --graphify)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--graphify is only available in isolated environment"
-                    exit 1
-                fi
-                USE_GRAPHIFY_FLAG=true
-                shift
-                ;;
-            --install-graphify)
-                if [[ "$use_system" == true ]]; then
-                    print_error "--system cannot be used with --install-graphify"
-                    echo ""
-                    echo "Graphify is only available in isolated environment"
-                    exit 1
-                fi
-                _gfy_install_force=""
-                [[ "${2:-}" == "--force" ]] && { _gfy_install_force="--force"; shift; }
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
-                install_graphify "$_gfy_install_force"
-                exit $?
-                ;;
-            --check-graphify)
-                check_graphify_status
-                exit 0
-                ;;
             --pii-proxy)
                 USE_PII_PROXY_FLAG=true
                 shift
@@ -573,7 +531,7 @@ fi
                     exit 1
                 fi
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_microvm
                 exit $?
                 ;;
@@ -590,7 +548,7 @@ fi
                 fi
                 setup_isolated_config
                 # Load saved proxy settings from .claude_config (sets PROXY_URL/PROXY_CA/PROXY_INSECURE)
-                [[ -f "$CREDENTIALS_FILE" ]] && source "$CREDENTIALS_FILE"
+                source_iclaude_config
                 install_caveman
                 exit $?
                 ;;
@@ -630,6 +588,10 @@ fi
                 ;;
             --no-attribution-header)
                 NO_ATTRIBUTION_HEADER=true
+                shift
+                ;;
+            --no-telemetry)
+                export ICLAUDE_NO_TELEMETRY=1
                 shift
                 ;;
             --chrome)
@@ -711,6 +673,17 @@ fi
         esac
     done
 
+    #######################################
+    # Load telemetry module (after arg parsing)
+    #######################################
+    # Apply .claude_config to the env BEFORE telemetry setup, so USE_OTEL (opt-in) and
+    # the OTLP endpoint/credentials/log-prompts are resolved when setup_telemetry()
+    # auto-runs at source time. Idempotent (re-applied later by load_credentials/configure).
+    source_iclaude_config
+    if [[ -f "${LIB_DIR}/telemetry/otel.sh" ]]; then
+        source "${LIB_DIR}/telemetry/otel.sh"
+    fi
+
     # Combined mode: PII proxy + CCR router — show informational message
     # Both flags can now be combined; chain: claude → PII proxy(:9000) → CCR(:3456) → providers
     # No mutual exclusion — combined mode is handled in launch_claude() via start_ccr_server()
@@ -718,11 +691,6 @@ fi
         print_info "Combined mode detected: PII proxy + CCR router chain will be activated"
         print_info "Traffic chain: claude → PII proxy(:${PII_PROXY_PORT:-9000}) → CCR(:${CCR_PORT:-3456}) → providers"
         echo ""
-    fi
-
-    # Rebuild graphify knowledge graph if --graphify flag is set
-    if [[ "$USE_GRAPHIFY_FLAG" == true ]]; then
-        _graphify_rebuild_graph || print_warning "Graph rebuild failed — continuing without updated graph"
     fi
 
     # Configure isolated config if needed
@@ -834,6 +802,7 @@ fi
     # Configure proxy
     print_info "Configuring proxy..."
     configure_proxy_from_url "$proxy_url" "$proxy_no_proxy"
+    command -v patch_no_proxy_for_telemetry >/dev/null 2>&1 && patch_no_proxy_for_telemetry
 
     # Display configuration
     display_proxy_info "$show_password"

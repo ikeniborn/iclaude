@@ -142,17 +142,16 @@ check_pii_proxy_status() {
     if [[ "$_shared_alive" == "true" ]]; then
         print_success "Shared proxy: PID $_shared_pid, port $_shared_port"
         if [[ -d "$_consumers_dir" ]]; then
-            local _cf _cpid _csid _calive
+            local _cf _cpid _calive
             for _cf in "$_consumers_dir"/*.pid; do
                 [[ -f "$_cf" ]] || continue
                 _cpid=$(cat "$_cf" 2>/dev/null || true)
-                _csid="${_cf##*/}"; _csid="${_csid%.pid}"
                 if [[ -n "$_cpid" ]] && kill -0 "$_cpid" 2>/dev/null; then
                     _calive="alive"
                 else
                     _calive="dead (orphan)"
                 fi
-                echo "    Session ${_csid}: bash PID ${_cpid} (${_calive})"
+                echo "    Consumer PID ${_cpid} (${_calive})"
             done
         fi
     else

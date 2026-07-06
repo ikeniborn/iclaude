@@ -133,7 +133,7 @@ check_microvm_status() {
 	local _mem_mb="${MICRO_VM_MEM_MB:-2048}"
 	if [[ $_mem_mb -lt 2048 ]]; then
 		print_warning "⚠ RAM: ${_mem_mb}MB < 2048MB — Claude Code (~600MB RSS) may be killed by OOM"
-		echo "  → Set MICRO_VM_MEM_MB=2048 in .claude_config"
+		echo "  → Set ICLAUDE_MICRO_VM_MEM_MB=2048 in .claude_config"
 		echo ""
 	fi
 
@@ -170,7 +170,7 @@ check_microvm_status() {
 		echo "  ✓ Firecracker installed"
 		echo "  ✓ Guest images present (rootfs + nvm.img)"
 		echo "  ✓ Enable via: ./iclaude.sh --sandbox-microvm"
-		echo "    or add MICRO_VM_ENABLED=true to .claude_config"
+		echo "    or add ICLAUDE_MICRO_VM_ENABLED=true to .claude_config"
 	else
 		print_warning "microVM Not Ready"
 		for item in "${missing_items[@]}"; do

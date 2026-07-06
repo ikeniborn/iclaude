@@ -1,17 +1,17 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Use when starting any task, switching project, or before running syntax/test checks. NOT for querying knowledge graph (graphify-context) and NOT for wiki synthesis (llm-wiki).
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.2.0
-# tags: context, detection, project, language, framework
+# version: 1.5.0
+# tags: context, detection, project, language, framework, lat
 # dependencies: []
 # files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
 ---
 
 # Context Awareness
 
-Автоматическое определение языка, framework, наличия PRD и других характеристик проекта.
+Автоматическое определение языка, framework, наличия PRD и домена документации iwiki (MCP) для проекта.
 
 ## Когда использовать
 
@@ -60,64 +60,37 @@ JavaScript:
 
 См. `@shared:syntax-commands.json` для mapping language → syntax check command.
 
-### 5. Wiki Detection
+### 5. iwiki Detection
+
+Документационный граф проекта живёт в **MCP-сервере iwiki** (внешний central-store,
+адресуется доменами). Единственный источник документационного контекста проекта.
 
 ```
-Проверить наличие wiki в корне проекта:
-
-IF exists {CWD}/.wiki/.config/domain-map.json:
-  1. Прочитать {CWD}/.wiki/.config/domain-map.json
-     → извлечь список domains[].id
-  2. Прочитать {CWD}/.wiki/.config/index.md
-     → получить перечень документированных страниц
-  3. Skill(skill="llm-wiki", args='query "ключевые компоненты и архитектура проекта"')
-     → добавить синтезированный контекст как wiki_summary
-  4. Добавить в project_context:
+IF MCP-сервер iwiki подключён:
+  1. wiki_status → project_dir, список `domains`, текущая привязка read/write
+  2. Если домен проекта присутствует в `domains` (имя == basename проекта):
+       - не привязан → wiki_bind(read=[<domain>], write=<domain>)
+       - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
+         либо wiki_search('ключевые компоненты и архитектура проекта')
+     Добавить в project_context:
        wiki_initialized: true
-       wiki_domains: [список id из domain-map]
-       wiki_index_path: ".wiki/.config/index.md"
-       wiki_summary: <результат query или null если wiki пустая>
+       wiki_domain: "<domain>"
+       wiki_summary: <обзор страницы overview или результат wiki_search>
+  3. Если домена проекта нет:
+       wiki_initialized: false
+       wiki_domain: null
+       wiki_summary: null
 
-ELSE:
+ELSE (сервер не подключён):
   wiki_initialized: false
-  wiki_domains: []
-  wiki_index_path: null
+  wiki_domain: null
   wiki_summary: null
 ```
 
-**Назначение:** Централизует проверку доступности wiki — downstream-навыки используют
-`project_context.wiki_initialized` вместо самостоятельной проверки файла.
-
-### 6. Graph Detection
-
-Сначала resolve выходную директорию:
-
-```bash
-GOUT=$(echo "${GRAPHIFY_OUT:-graphify-out}")
-```
-
-Проверить наличие knowledge graph в корне проекта:
-
-```
-IF exists {CWD}/{GOUT}/GRAPH_REPORT.md:
-  Skill(skill="graphify-context")
-  → добавить результат в project_context:
-       graph_initialized: true
-       graph_god_nodes: [из graph_context.god_nodes]
-       graph_communities: graph_context.communities
-       graph_summary: graph_context.graph_summary
-       graph_fresh: graph_context.fresh если typeof === boolean, иначе null
-
-ELSE:
-  graph_initialized: false
-  graph_god_nodes: []
-  graph_communities: 0
-  graph_summary: null
-```
-
-**Назначение:** Централизует проверку графа — brainstorming и другие навыки используют
-`project_context.graph_initialized` вместо самостоятельной проверки файлов.
-Дополняет wiki: wiki даёт синтезированную прозу, граф — структурные связи.
+**Назначение:** Централизует проверку доступности документационного графа —
+downstream-навыки (brainstorming, prd-generator) используют
+`project_context.wiki_initialized` вместо самостоятельной проверки.
+`wiki_search` — опциональный семантический поиск по секциям внутри задачи.
 
 ## Output
 
@@ -136,14 +109,8 @@ ELSE:
     "syntax_command": "@shared:syntax-commands[language].syntax",
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
-    "wiki_domains": ["domain-id-1", "domain-id-2"],
-    "wiki_index_path": ".wiki/.config/index.md" | null,
-    "wiki_summary": "синтезированный контекст из wiki" | null,
-    "graph_initialized": true|false,
-    "graph_fresh": true|false|null,
-    "graph_god_nodes": ["ComponentA (20 edges)", "ComponentB (13 edges)"],
-    "graph_communities": 0,
-    "graph_summary": "структурный контекст из knowledge graph" | null
+    "wiki_domain": "<имя домена iwiki>" | null,
+    "wiki_summary": "синтезированный обзор из домена iwiki" | null
   }
 }
 ```
@@ -175,7 +142,10 @@ ELSE:
     "has_prd": true,
     "prd_path": "docs/prd/",
     "syntax_command": "python -m py_compile",
-    "code_style": "pep8"
+    "code_style": "pep8",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
@@ -206,7 +176,10 @@ ELSE:
     "has_prd": true,
     "prd_path": "PRD.md",
     "syntax_command": "tsc --noEmit",
-    "code_style": "prettier"
+    "code_style": "prettier",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
@@ -238,14 +211,17 @@ ELSE:
     "has_prd": true,
     "prd_path": "docs/requirements/",
     "syntax_command": "go build -o /dev/null",
-    "code_style": "gofmt"
+    "code_style": "gofmt",
+    "wiki_initialized": false,
+    "wiki_domain": null,
+    "wiki_summary": null
   }
 }
 ```
 
 ---
 
-### Example 4: Bash Script Project — без wiki
+### Example 4: Bash Script Project — без привязанного домена iwiki
 
 **Project structure:**
 ```
@@ -269,8 +245,7 @@ ELSE:
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": false,
-    "wiki_domains": [],
-    "wiki_index_path": null,
+    "wiki_domain": null,
     "wiki_summary": null
   }
 }
@@ -278,7 +253,7 @@ ELSE:
 
 ---
 
-### Example 4b: Bash Script Project — с инициализированной wiki
+### Example 4b: Bash Script Project — с привязанным доменом iwiki
 
 **Project structure:**
 ```
@@ -286,13 +261,9 @@ ELSE:
 ├── iclaude.sh
 ├── lib/
 │   └── proxy/...
-├── docs/
-│   ├── PROXY.md
-│   └── ROUTER.md
-└── .wiki/
-    └── .config/
-        ├── domain-map.json   ← домен "iclaude"
-        └── index.md          ← 12 документированных страниц
+└── docs/
+    ├── PROXY.md
+    └── ROUTER.md
 ```
 
 **Detection result:**
@@ -307,31 +278,22 @@ ELSE:
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": true,
-    "wiki_domains": ["iclaude"],
-    "wiki_index_path": ".wiki/.config/index.md",
-    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, изолированная среда NVM, OAuth-обновление токенов, PII-маскирование. Ключевые компоненты: proxy-mgmt, oauth-handler, pii-proxy, router-integration."
+    "wiki_domain": "iclaude",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки."
   }
 }
 ```
 
 ---
 
-### Example 4c: Bash Script Project — с wiki и knowledge graph
+### Example 4c: Bash Script Project — с привязанным доменом iwiki (минимальный)
 
 **Project structure:**
 ```
 /home/user/iclaude/
 ├── iclaude.sh
 ├── lib/
-├── docs/
-├── .wiki/
-│   └── .config/
-│       ├── domain-map.json   ← домен "iclaude"
-│       └── index.md
-└── .graphify/                ← GRAPHIFY_OUT=.graphify for this project
-    ├── graph.json            ← 167 nodes · 244 edges
-    ├── GRAPH_REPORT.md       ← god nodes + communities
-    └── cache/ast/
+└── docs/
 ```
 
 **Detection result:**
@@ -346,14 +308,8 @@ ELSE:
     "syntax_command": "bash -n",
     "code_style": "none",
     "wiki_initialized": true,
-    "wiki_domains": ["iclaude"],
-    "wiki_index_path": ".wiki/.config/index.md",
-    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси-менеджмент, NVM, OAuth, PII-маскирование.",
-    "graph_initialized": true,
-    "graph_fresh": null,
-    "graph_god_nodes": ["PIIProxyHandler (20 edges)", "TestShouldRedact (13 edges)", "presidio_mask() (8 edges)"],
-    "graph_communities": 8,
-    "graph_summary": "Ядро — PIIProxyHandler соединяет HTTP-слой с presidio_mask(). 8 сообществ: HTTP-обработчики, маскирование, тесты паттернов, false-positive тесты."
+    "wiki_domain": "iclaude",
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки."
   }
 }
 ```
@@ -425,12 +381,15 @@ ELSE:
 - `validation-framework` - Chooses appropriate validation commands
 - `code-review` - Applies language-specific review rules
 
+**Delegates to:**
+- iwiki MCP `wiki_search` - Targeted semantic search over the project's iwiki domain (optional, in-task)
+
 **Provides:**
 - `language` → Enables language-specific tooling
 - `framework` → Enables framework-specific patterns
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
-- `docs_llms_path` → Enables automatic project documentation loading
+- `wiki_initialized` / `wiki_domain` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
 
 ---
 
@@ -440,6 +399,24 @@ ELSE:
 **License:** MIT
 
 ## Changelog
+
+### 1.5.0 (2026-06-30)
+- iwiki detection switched from `docs/wiki/` files to the iwiki MCP server (`wiki_status`)
+- Output field `wiki_index_path` → `wiki_domain`; `iwiki:iwiki-query` delegate → MCP `wiki_search`
+
+### 1.4.1 (2026-06-18)
+- Удалён graphify knowledge-graph detection (Phase 6) и поля `graph_*` из output — graphify выпилен из проекта
+- `graphify-context` убран из delegates
+
+### 1.4.0 (2026-06-17)
+- Заменён `lat.md/` detect на `docs/wiki/` detection (читает корневой индекс `docs/wiki/index.md`)
+- Поля `lat_*` → `wiki_*` (`wiki_initialized`, `wiki_index_path`, `wiki_summary`)
+- `graphify` detection дополнен: docs/wiki = проза, graph = структура
+- `lat-search` заменён на `iwiki:iwiki-query` в delegates и dependencies
+
+### 1.3.0 (2026-06-07)
+- Заменён мёртвый detect `.wiki/` + `llm-wiki` на `lat.md/` detection (читал корневой индекс `lat.md/lat.md`)
+- `lat-search` и `graphify-context` оформлены как delegates; добавлены в dependencies
 
 ### 1.2.0 (2026-02-19)
 

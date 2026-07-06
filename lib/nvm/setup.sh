@@ -40,7 +40,7 @@ setup_isolated_nvm() {
 	export CLAUDE_CODE_ENABLE_TASKS="${CLAUDE_CODE_ENABLE_TASKS:-true}"
 
 	# Load additional Claude Code configuration from credentials file
-	# Note: load_claude_config() is defined in lib/proxy/credentials.sh (loaded before this module)
+	# Note: load_claude_config() is defined in lib/config/isolated.sh (loaded before this module)
 	if declare -f load_claude_config &>/dev/null; then
 		load_claude_config
 	fi

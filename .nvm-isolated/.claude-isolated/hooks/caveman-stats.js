@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { readFlag, appendFlag, readHistory, safeWriteFlag } = require('./caveman-config');
+const paths = require('./caveman-paths');
 
 // Mean per-task savings from benchmarks/results/*.json (avg_savings: 65 across
 // 10 tasks, sonnet-4-20250514). Only 'full' has measured data; lite / ultra /
@@ -23,9 +24,9 @@ const COMPRESSION = { 'full': 0.65 };
 // (e.g. claude-sonnet-4-20250514, claude-sonnet-4-7). Update from
 // https://www.anthropic.com/pricing if a release changes the tier.
 const MODEL_OUTPUT_PRICE_PER_M = [
-  ['claude-opus-4',     75.00],
+  ['claude-opus-4',     25.00],
   ['claude-sonnet-4',   15.00],
-  ['claude-haiku-4',     4.00],
+  ['claude-haiku-4',     5.00],
   ['claude-3-5-sonnet', 15.00],
   ['claude-3-5-haiku',   4.00],
   ['claude-3-opus',     75.00],
@@ -279,7 +280,7 @@ function main() {
   const sinceArg = sinceIdx !== -1 ? args[sinceIdx + 1] : null;
 
   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-  const historyPath = path.join(claudeDir, '.caveman-history.jsonl');
+  const historyPath = paths.history(claudeDir);
 
   // Lifetime aggregation paths short-circuit before we need a live session.
   if (all || sinceArg) {
@@ -301,7 +302,7 @@ function main() {
   }
 
   const parsed = parseSession(sessionFile);
-  const mode = readFlag(path.join(claudeDir, '.caveman-active'));
+  const mode = readFlag(paths.activeFlag(claudeDir));
 
   // Append a snapshot of this session's totals to the lifetime log. Multiple
   // /caveman-stats calls in one session emit multiple lines for the same
@@ -319,13 +320,31 @@ function main() {
       est_saved_usd: estSavedUsd,
     }));
 
-    // Statusline suffix: tiny pre-rendered string the shell statusline can
-    // cat without parsing JSONL. Updated on every /caveman-stats run.
-    // Routed through safeWriteFlag — the suffix path is predictable and
-    // user-owned, same symlink-clobber surface as the .caveman-active flag.
+    // Statusline suffixes: tiny pre-rendered strings the shell statusline can
+    // cat without parsing JSONL. The per-session file carries THIS session's
+    // savings first, the lifetime cumulative second (⛏ 12k · Σ110M). The global
+    // file stays cumulative-only — a fallback the statusline uses before a
+    // session's first Stop has written its per-session file. Both go through
+    // safeWriteFlag (predictable, user-owned paths, same symlink-clobber surface
+    // as the .caveman/active flag). agg already includes this session's snapshot,
+    // appended just above, so Σ is the true lifetime total.
     const agg = aggregateHistory(historyPath, null);
-    const suffix = agg.estSavedTokens > 0 ? `⛏ ${humanizeTokens(agg.estSavedTokens)}` : '';
-    safeWriteFlag(path.join(claudeDir, '.caveman-statusline-suffix'), suffix);
+    const cum = humanizeTokens(agg.estSavedTokens);
+    let perSession;
+    if (estSavedTokens > 0) {
+      perSession = `⛏ ${humanizeTokens(estSavedTokens)} · Σ${cum}`;
+    } else if (agg.estSavedTokens > 0) {
+      perSession = `⛏ Σ${cum}`;
+    } else {
+      perSession = '';
+    }
+    safeWriteFlag(paths.sessionSuffix(claudeDir, sessionId), perSession);
+    safeWriteFlag(
+      paths.baseSuffix(claudeDir),
+      agg.estSavedTokens > 0 ? `⛏ Σ${cum}` : ''
+    );
+
+    paths.pruneSessionSuffixes(claudeDir);
   }
 
   if (share) {

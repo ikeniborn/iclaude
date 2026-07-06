@@ -2,8 +2,7 @@
   "cleanupPeriodDays": 7,
   "env": {
     "DISABLE_AUTOUPDATER": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "GRAPHIFY_OUT": ".graphify"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "permissions": {
     "allow": [
@@ -47,10 +46,12 @@
       "Bash(cd:*)",
       "Bash(bash -n:*)",
       "Bash(ssh:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "mcp__iwiki__wiki_write_page"
     ],
     "deny": [
-      "Read(**/.env)",
       "Read(**/.env.local)",
       "Read(**/secrets/**)",
       "Read(**/.aws/**)",
@@ -80,6 +81,7 @@
       "Bash(reboot:*)"
     ],
     "ask": [
+      "Read(**/.env)",
       "Bash(cp:*)",
       "Bash(mv:*)",
       "Bash(rm:*)",
@@ -90,8 +92,6 @@
       "Bash(shred:*)",
       "Bash(dd:*)",
       "Bash(mkfs:*)",
-      "Bash(docker:*)",
-      "Bash(docker-compose:*)",
       "Bash(sudo:*)",
       "Bash(su:*)",
       "Bash(curl:*)",
@@ -104,6 +104,7 @@
     ],
     "defaultMode": "default"
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -123,6 +124,26 @@
             "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/redact-secrets.py\""
           }
         ]
+      },
+      {
+        "matcher": "Skill|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/chain-gate.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/chain-gate.py\""
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -131,8 +152,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js\"",
-            "timeout": 5,
-            "statusMessage": "Loading caveman mode..."
+            "timeout": 5
           }
         ]
       }
@@ -143,8 +163,31 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-mode-tracker.js\"",
-            "timeout": 5,
-            "statusMessage": "Tracking caveman mode..."
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-stats-stop.js\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_CONFIG_DIR/hooks/cache-report.py\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-cleanup.js\""
           }
         ]
       }
@@ -159,14 +202,23 @@
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
+    "loen@iclaude": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "iclaude": {
+      "source": {
+        "source": "directory",
+        "path": "/home/ikeniborn/Documents/Project/iclaude"
+      }
+    }
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
   "plansDirectory": ".claude/plans",
-  "autoMemoryEnabled": true,
-  "autoDreamEnabled": true,
+  "autoMemoryEnabled": false,
+  "autoDreamEnabled": false,
   "skipDangerousModePermissionPrompt": true
 }

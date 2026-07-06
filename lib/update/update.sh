@@ -42,6 +42,22 @@ update_claude_code() {
         fi
     fi
 
+    # Ensure Node.js satisfies Claude Code's engines.node BEFORE any npm work.
+    # Runs even when Claude Code is already up to date (that path returns early
+    # below), so a stale Node (e.g. v20 vs the required v22) is caught. If Node is
+    # too old and cannot be upgraded (declined or download failed), abort rather
+    # than install a Claude Code that would warn (EBADENGINE) or fail to run.
+    if [[ "$is_isolated" == true ]]; then
+        if ! ensure_isolated_node_engine "@anthropic-ai/claude-code@latest"; then
+            print_error "Update aborted — Node.js does not meet Claude Code's requirement"
+            echo ""
+            echo "Upgrade Node.js in the isolated environment (see above), then run:"
+            echo "  iclaude --update"
+            return 1
+        fi
+        echo ""
+    fi
+
     # Check if running with sudo (only required for system installations)
     if [[ "$using_nvm" == false ]] && [[ $EUID -ne 0 ]]; then
         print_error "Update requires sudo privileges for system installation"

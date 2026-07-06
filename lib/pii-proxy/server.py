@@ -18,10 +18,20 @@ Environment:
                                   off      - pass content through unmodified (proxy still runs)
                                   secrets  - regex-only: API keys, tokens, credentials
                                   standard - full: Presidio NLP + regex (default)
+    PII_PROXY_MASK_TOKEN      - replacement string for every detected secret/PII span, applied at
+                                ALL masking levels (secrets + standard). Default: 'REDACTED'.
+                                Empty string => deletion mode (span removed; assignment prefix,
+                                quotes and URL scheme are preserved).
     PII_PROXY_LOG_LEVEL       - logging verbosity: info|debug (default: info)
                                   info     - log count of masked items only (default)
                                   debug    - log count + entity types/descriptions found (PII metadata);
                                              log file is auto-deleted on session exit
+    PII_PROXY_CONNECT_TIMEOUT - upstream TCP connect timeout, seconds (default: 10)
+    PII_PROXY_READ_TIMEOUT    - upstream read timeout, seconds (default: 300; raise for
+                                long extended-thinking responses)
+    PII_PROXY_SUPERVISE       - respawn the serving worker if it dies (OOM/crash/kill), keeping the
+                                same port so a running session never hits ConnectionRefused.
+                                true (default) | false. Gives up after >5 restarts in 10s.
     ICLAUDE_SESSION_ID        - 12-char hex session ID for per-session port file naming
 """
 from __future__ import annotations
@@ -42,50 +52,67 @@ from pathlib import Path
 from typing import Any
 
 import requests as _requests
+from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError as _ReqConnError, Timeout as _ReqTimeout
+from urllib3.util.retry import Retry
 
 # ---------------------------------------------------------------------------
-# Deterministic regex patterns (ported from redact-secrets.py)
-# Applied when Presidio is unavailable or as pre-filter
+# Replacement token applied to EVERY detected secret/PII span, at all masking
+# levels (secrets + standard). Configurable via PII_PROXY_MASK_TOKEN; default
+# 'REDACTED'. Empty string => deletion mode (span removed, structural prefix kept).
+# Read here — before REDACT_PATTERNS — so the regex replacements can embed it.
+# _MASK_REPL backslash-escapes the token for safe use inside re.sub replacement
+# strings (where '\' introduces group refs); the \g<N> group refs we add to the
+# templates below stay intact regardless of the token's content.
+# ---------------------------------------------------------------------------
+MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
+_MASK_REPL: str = MASK_TOKEN.replace('\\', '\\\\')
+
+# ---------------------------------------------------------------------------
+# Deterministic regex patterns (ported from redact-secrets.py).
+# Applied when Presidio is unavailable or as pre-filter. Every replacement uses
+# MASK_TOKEN (via _MASK_REPL); structural context (assignment prefix, quotes,
+# URL scheme) is preserved so masked output stays readable and the regex keeps
+# anchoring on the same prefix.
 # ---------------------------------------------------------------------------
 REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
     (re.compile(r'\bsk-(?:ant-api03-|ant-|proj-|or-v1-)?[A-Za-z0-9\-_]{20,}'),
-     '[API_KEY_REDACTED]', 'Anthropic/OpenAI/Stripe API key'),
+     _MASK_REPL, 'Anthropic/OpenAI/Stripe API key'),
     (re.compile(r'\bAKIA[0-9A-Z]{16}\b'),
-     '[AWS_ACCESS_KEY_ID]', 'AWS Access Key ID'),
+     _MASK_REPL, 'AWS Access Key ID'),
     (re.compile(
         r'(?i)((?:aws[_\-]?secret[_\-]?(?:access[_\-]?)?key|AWS_SECRET_ACCESS_KEY)'
         r'\s*[=:]\s*)(["\']?)[A-Za-z0-9/+]{40}\2'),
-     r'\1\2[AWS_SECRET_KEY_REDACTED]\2', 'AWS Secret Access Key'),
+     rf'\g<1>\g<2>{_MASK_REPL}\g<2>', 'AWS Secret Access Key'),
     (re.compile(
         r'-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'
         r'[\s\S]*?'
         r'-----END (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?:-----| BLOCK-----)'),
-     '[PRIVATE_KEY_REDACTED]', 'PEM private key block'),
+     _MASK_REPL, 'PEM private key block'),
     (re.compile(r'\bgh[pousr]_[A-Za-z0-9_]{36,}\b'),
-     '[GITHUB_TOKEN]', 'GitHub token'),
+     _MASK_REPL, 'GitHub token'),
     (re.compile(r'\bgithub_pat_[A-Za-z0-9_]{82,}\b'),
-     '[GITHUB_TOKEN]', 'GitHub fine-grained PAT'),
+     _MASK_REPL, 'GitHub fine-grained PAT'),
     (re.compile(r'\bhf_[A-Za-z0-9_]{36,}\b'),
-     '[HF_TOKEN_REDACTED]', 'HuggingFace API token'),
+     _MASK_REPL, 'HuggingFace API token'),
     (re.compile(r'\bgsk_[A-Za-z0-9\-_]{50,}\b'),
-     '[GROQ_API_KEY]', 'Groq API key'),
+     _MASK_REPL, 'Groq API key'),
     (re.compile(r'\bAIzaSy[A-Za-z0-9_\-]{32,}\b'),
-     '[GOOGLE_API_KEY]', 'Google AI Studio API key'),
+     _MASK_REPL, 'Google AI Studio API key'),
     (re.compile(r'([a-zA-Z][a-zA-Z0-9+\-.]*://)(?:[^@\s/]*@)+'),
-     r'\1[CREDENTIALS]@', 'credentials in URL'),
+     rf'\g<1>{_MASK_REPL}@', 'credentials in URL'),
     (re.compile(
         r'(?i)((?:password|passwd|pwd|db_pass|pgpassword)\s*[=:]\s*)'
         r'(?:["\'](?!\$\{)((?:[^"\'\\]|\\.){8,})["\']|([^\s#\n"\'$]{8,}))'),
-     r'\1"[PASSWORD_REDACTED]"', 'password in config'),
+     rf'\g<1>"{_MASK_REPL}"', 'password in config'),
     (re.compile(
         r'(?i)((?:secret|api[_\-]?key|access[_\-]?token|auth[_\-]?token)'
         r'\s*[=:]\s*)["\']([A-Za-z0-9\-_./+=]{16,})["\']'),
-     r'\1"[SECRET_REDACTED]"', 'generic secret/token'),
+     rf'\g<1>"{_MASK_REPL}"', 'generic secret/token'),
     (re.compile(r'\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*'),
-     '[JWT_REDACTED]', 'JWT token'),
+     _MASK_REPL, 'JWT token'),
     (re.compile(r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b'),
-     '[CARD_NUMBER_REDACTED]', 'credit card number'),
+     _MASK_REPL, 'credit card number'),
     (re.compile(
         r'(?m)^((?:export\s+)?[A-Z][A-Z0-9_]*'
         r'(?:SECRET|TOKEN|KEY|PASSWORD|PASSWD|PWD|PASS|APIKEY)'
@@ -93,7 +120,7 @@ REDACT_PATTERNS: list[tuple[re.Pattern, str, str]] = [
         r'(?!["\']?\$\{)'
         r'(?!["\']?\[)'
         r'([^\s#\n]{20,})'),
-     r'\1[REDACTED]', '.env secret variable'),
+     rf'\g<1>{_MASK_REPL}', '.env secret variable'),
 ]
 
 # ---------------------------------------------------------------------------
@@ -162,7 +189,40 @@ ENABLE_FALLBACK = os.environ.get('PII_PROXY_ENABLE_FALLBACK', 'true').lower() !=
 #   'standard' - full masking: Presidio NLP + regex (default)
 _raw_masking_level = os.environ.get('PII_PROXY_MASKING_LEVEL', 'standard').lower().strip()
 MASKING_LEVEL: str = _raw_masking_level if _raw_masking_level in ('off', 'secrets', 'standard') else 'standard'
-MASK_TOKEN: str = os.environ.get('PII_PROXY_MASK_TOKEN', 'REDACTED')
+# MASK_TOKEN is defined near the top of the module (above REDACT_PATTERNS) because the
+# regex replacements embed it. It is the single replacement token for all masking levels.
+
+# ---------------------------------------------------------------------------
+# Upstream timeouts (split connect/read; env-configurable).
+# A single 30s scalar previously tripped ReadTimeout on slow time-to-first-byte
+# (Opus + extended thinking + large prompts) → 502. The Anthropic SDK uses ~600s
+# read for /v1/messages; 300s is a safe default that still fails fast on a dead host.
+# ---------------------------------------------------------------------------
+def _timeout_env(name: str, default: float) -> float:
+    """Parse a positive-float timeout from env; fall back to default on missing/invalid."""
+    try:
+        v = float(os.environ.get(name, ''))
+        return v if v > 0 else default
+    except (ValueError, TypeError):
+        return default
+
+
+CONNECT_TIMEOUT: float = _timeout_env('PII_PROXY_CONNECT_TIMEOUT', 10.0)
+READ_TIMEOUT: float = _timeout_env('PII_PROXY_READ_TIMEOUT', 300.0)
+
+# Supervisor: re-fork the request-serving worker if it dies (OOM / kill / crash), keeping the
+# listening socket — and therefore the port — stable for the proxy's whole lifetime. A Claude
+# session bakes ANTHROPIC_BASE_URL once at launch; without this, a vanished worker is unrecoverable.
+SUPERVISE: bool = os.environ.get('PII_PROXY_SUPERVISE', 'true').lower() != 'false'
+
+# Restart-storm guard: if the worker dies more than _MAX_RESTARTS times within _RESTART_WINDOW
+# seconds, the supervisor gives up instead of busy-looping on an unrecoverable startup crash.
+_MAX_RESTARTS = 5
+_RESTART_WINDOW = 10.0
+
+# Supervisor state (module-level so the SIGTERM handler can reach them).
+_supervisor_stop = False
+_current_worker_pid = 0
 
 # Log level: controls verbosity of masking log entries.
 #   'info'  - log count of masked items only (default, no PII metadata in logs)
@@ -191,6 +251,19 @@ _SSL_VERIFY = _build_ssl_verify()
 # Thread-local HTTP sessions: each request-handler thread gets its own Session so
 # concurrent requests don't share mutable state (cookie jar, adapter state).
 # Per-thread connection pooling still applies — urllib3 pools are per-Session.
+# Connect-only retry: retries connection ESTABLISHMENT (no bytes sent yet) — safe for
+# the non-idempotent POST /v1/messages. read=0/status=0 → never retry after a partial
+# response, so no duplicate generation or double billing.
+_RETRY = Retry(
+    total=None,
+    connect=2,
+    read=0,
+    status=0,
+    redirect=0,
+    backoff_factor=0.5,
+    raise_on_status=False,
+)
+
 _thread_local = threading.local()
 
 
@@ -199,6 +272,9 @@ def _get_http_session() -> _requests.Session:
     if not hasattr(_thread_local, 'session'):
         s = _requests.Session()
         s.trust_env = True  # respect HTTPS_PROXY / HTTP_PROXY env vars
+        adapter = HTTPAdapter(max_retries=_RETRY)
+        s.mount('http://', adapter)
+        s.mount('https://', adapter)
         _thread_local.session = s
     return _thread_local.session
 
@@ -210,6 +286,7 @@ _API_KEY_FROM_ENV = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # Global masked items counter (thread-safe)
 _masked_items_total: int = 0
+_startup_meta: dict = {}  # populated in main() after server binds
 _masked_items_lock = threading.Lock()
 _server_start_time: float = 0.0  # set in main() after server binds
 
@@ -221,6 +298,30 @@ _presidio_failed = False   # set True on import failure; prevents per-request re
 _presidio_lock = threading.Lock()
 
 log = logging.getLogger('pii-proxy')
+
+# --- Langfuse capture (observer) configuration --------------------------------
+# At normal runtime sys.path[0] is the real lib/pii-proxy dir (Python resolves the
+# executed script's symlink before setting it), so this import resolves. Guard it so
+# alternate load contexts (e.g. importlib.spec_from_file_location in the test suite)
+# degrade to capture-disabled instead of failing the whole module.
+try:
+    import langfuse_emitter as _langfuse  # sibling module (symlinked beside server.py)
+except ImportError:
+    _langfuse = None
+
+# Router-mode exclusion (skip capture when LiteLLM already emits to Langfuse) is enforced
+# by the launcher, which never sets USE_LANGFUSE_CAPTURE in router mode — not re-checked here.
+_LANGFUSE_CAPTURE = os.environ.get('USE_LANGFUSE_CAPTURE', 'false').lower() == 'true'
+_LANGFUSE_CONFIG = {
+    'host': os.environ.get('LANGFUSE_HOST', ''),
+    'public_key': os.environ.get('LANGFUSE_PUBLIC_KEY', ''),
+    'secret_key': os.environ.get('LANGFUSE_SECRET_KEY', ''),
+}
+_LANGFUSE_PROJECT = os.environ.get('ICLAUDE_PROJECT_ID', 'unknown') or 'unknown'
+# Disable capture (fail-soft) if the emitter is unavailable or the config is incomplete.
+if _LANGFUSE_CAPTURE and (_langfuse is None or not all(_LANGFUSE_CONFIG.values())):
+    log.warning('Langfuse capture enabled but emitter module or LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY unavailable — disabling')
+    _LANGFUSE_CAPTURE = False
 
 
 def setup_logging(log_dir: Path, session_id: str = 'default') -> None:
@@ -720,6 +821,8 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self._health()
         elif self.path == '/api/metrics':
             self._metrics()
+        elif self.path == '/api/meta':
+            self._meta()
         else:
             self._proxy_passthrough()
 
@@ -777,6 +880,14 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
+
+    def _meta(self) -> None:
+        body = json.dumps(_startup_meta).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _metrics(self) -> None:
         """GET /api/metrics — return live masking metrics for statusline integration."""
@@ -890,7 +1001,7 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 headers=headers,
                 stream=False,
                 verify=_SSL_VERIFY,
-                timeout=30,
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
                 allow_redirects=False,
             )
             self.send_response(resp.status_code)
@@ -919,6 +1030,9 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
         """
         target = UPSTREAM_URL.rstrip('/') + self.path
         headers = self._build_upstream_headers()
+        _do_capture = _LANGFUSE_CAPTURE and '/v1/messages' in self.path and self.command == 'POST'
+        captured = bytearray() if _do_capture else None
+        _cap_streaming = False
         try:
             with _get_http_session().request(
                 method=self.command,
@@ -927,34 +1041,75 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
                 data=body,
                 stream=True,
                 verify=_SSL_VERIFY,
-                timeout=30,
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
                 allow_redirects=False,
             ) as resp:
-                self.send_response(resp.status_code)
                 # Exclude headers that change after requests decompresses the body:
                 # content-encoding (decoded), content-length (recalculated below),
                 # transfer-encoding / connection (hop-by-hop, not for client).
                 _skip = ('transfer-encoding', 'connection', 'content-encoding', 'content-length')
-                for key, val in resp.headers.items():
-                    if key.lower() not in _skip:
-                        self.send_header(key, val)
-
                 is_streaming = 'text/event-stream' in resp.headers.get('Content-Type', '')
+                _cap_streaming = is_streaming
+
                 if is_streaming:
-                    # SSE: stream chunks without buffering; no Content-Length.
+                    # SSE: status + headers must go out before the first chunk. After
+                    # that the response is committed, so a mid-stream upstream error can
+                    # only end the stream (handled below) — it cannot become a 502.
+                    self.send_response(resp.status_code)
+                    for key, val in resp.headers.items():
+                        if key.lower() not in _skip:
+                            self.send_header(key, val)
                     self.end_headers()
-                    for chunk in resp.iter_content(chunk_size=4096):
-                        if chunk:
-                            try:
-                                self.wfile.write(chunk)
-                                self.wfile.flush()
-                            except (BrokenPipeError, ConnectionResetError):
-                                break  # client disconnected mid-stream
+                    try:
+                        for chunk in resp.iter_content(chunk_size=4096):
+                            if chunk:
+                                if captured is not None and _langfuse is not None and len(captured) < _langfuse.MAX_CAPTURE_BYTES:
+                                    captured.extend(chunk)
+                                try:
+                                    self.wfile.write(chunk)
+                                    self.wfile.flush()
+                                except (BrokenPipeError, ConnectionResetError):
+                                    break  # client disconnected mid-stream
+                    except _requests.exceptions.RequestException as exc:
+                        # ANY upstream error AFTER the 200 + headers were sent: we cannot
+                        # switch to 502 now. End the stream; client keeps partial output.
+                        log.warning('Mid-stream upstream error; ending partial response: %s', exc)
                 else:
+                    # Buffer the full body FIRST. If reading it raises an upstream error,
+                    # no status line has been emitted yet, so the outer handler still
+                    # sends a clean 502 instead of corrupting a started 200 response.
                     content = resp.content  # fully buffered (already decompressed by requests)
+                    if captured is not None and _langfuse is not None:
+                        captured.extend(content[:_langfuse.MAX_CAPTURE_BYTES])
+                    self.send_response(resp.status_code)
+                    for key, val in resp.headers.items():
+                        if key.lower() not in _skip:
+                            self.send_header(key, val)
                     self.send_header('Content-Length', str(len(content)))
                     self.end_headers()
                     self.wfile.write(content)
+
+            # Tee the relayed response to the Langfuse observer. Runs only after the
+            # client response is fully written, and is wrapped so nothing here — including
+            # the inline _meta build (os.getcwd() can raise on a deleted cwd) — can reach
+            # the surrounding except → 502 on an already-completed response. capture()
+            # itself is non-raising and async (daemon thread).
+            if _do_capture and captured and _langfuse is not None:
+                try:
+                    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+                    _sid = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
+                    _meta = {
+                        'session_id': _sid,
+                        'project': _LANGFUSE_PROJECT,
+                        'pwd': os.getcwd(),
+                        'upstream_masking_level': MASKING_LEVEL,
+                    }
+                    _langfuse.capture(
+                        bytes(body), bytes(captured), _cap_streaming, _meta,
+                        scrub=lambda t: regex_mask(t)[0], config=_LANGFUSE_CONFIG,
+                    )
+                except Exception as _cap_exc:  # noqa: BLE001 — capture must never affect the relay
+                    log.warning('Langfuse capture setup failed: %s', _cap_exc)
 
         except (_ReqConnError, _ReqTimeout) as exc:
             # Network errors: proxy unreachable, DNS failure, connection refused, timeout
@@ -975,6 +1130,145 @@ class PIIProxyHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b'PII-proxy internal error')
 
 
+def _build_server(args: Any) -> http.server.ThreadingHTTPServer:
+    """Select a port and return a bound + listening ThreadingHTTPServer (does not serve yet).
+
+    Port strategy: explicit args.port if free, else up to 30 random candidates from
+    [PORT_MIN, PORT_MAX], else OS-assigned (bind 0). Each attempt is an atomic bind.
+    """
+    try:
+        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
+        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
+    except (ValueError, TypeError):
+        _port_min, _port_max = 20000, 40000
+    if not (1024 <= _port_min < _port_max <= 65535):
+        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
+        _port_min, _port_max = 20000, 40000
+
+    server = None
+    if args.port != 0:
+        try:
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
+        except OSError:
+            pass
+    if server is None:
+        _n = min(30, _port_max - _port_min + 1)
+        for _p in random.sample(range(_port_min, _port_max + 1), _n):
+            try:
+                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
+                break
+            except OSError:
+                continue
+        if server is None:
+            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
+    return server
+
+
+def _run_worker(server: http.server.ThreadingHTTPServer, port_file: "Path | None" = None) -> None:
+    """Serve requests until terminated. Used as the forked worker and in non-supervised mode.
+
+    Installs its own SIGTERM/SIGINT handler (overriding any inherited supervisor handler in a
+    forked child). When port_file is given (non-supervised path) it is unlinked on shutdown;
+    in supervised mode the supervisor owns the port file and passes None.
+    """
+    global _server_start_time, _startup_meta
+    _server_start_time = time.time()
+    port = server.server_address[1]
+    _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
+    session_id = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
+    _startup_meta = {
+        'session_id': session_id,
+        'pwd': os.getcwd(),
+        'upstream_url': str(UPSTREAM_URL),
+        'masking_level': MASKING_LEVEL,
+        'log_level': LOG_LEVEL,
+        'started_at': _server_start_time,
+    }
+
+    def _worker_shutdown(signum: int, _: Any) -> None:
+        log.info('PII-proxy worker shutting down (signal %d)', signum)
+        try:
+            server.server_close()
+        except Exception:
+            pass
+        if port_file is not None:
+            port_file.unlink(missing_ok=True)
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, _worker_shutdown)
+    signal.signal(signal.SIGINT, _worker_shutdown)
+
+    if MASKING_LEVEL == 'standard':
+        threading.Thread(target=init_presidio, daemon=True).start()
+
+    server.serve_forever()
+
+
+def _supervise(server: http.server.ThreadingHTTPServer, port_file: "Path") -> None:
+    """Fork a worker to serve on the bound socket; re-fork it on unexpected death.
+
+    The listening socket is bound once (by the caller) and inherited across forks, so the port is
+    stable for the supervisor's lifetime. On SIGTERM/SIGINT the supervisor forwards the signal to the
+    current worker and exits without respawning. A restart-storm cap prevents busy-looping on a
+    worker that crashes immediately on startup.
+    """
+    global _supervisor_stop, _current_worker_pid
+
+    def _sup_shutdown(signum: int, _: Any) -> None:
+        global _supervisor_stop
+        _supervisor_stop = True
+        if _current_worker_pid:
+            try:
+                os.kill(_current_worker_pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+
+    signal.signal(signal.SIGTERM, _sup_shutdown)
+    signal.signal(signal.SIGINT, _sup_shutdown)
+
+    restarts: list[float] = []
+    while not _supervisor_stop:
+        pid = os.fork()
+        if pid == 0:
+            # Child: serve on the inherited socket. _run_worker re-installs signal handlers,
+            # replacing the supervisor's _sup_shutdown that this child inherited from the fork.
+            _run_worker(server)   # blocks; on SIGTERM the worker calls os._exit
+            os._exit(0)           # serve_forever returned unexpectedly
+        _current_worker_pid = pid
+        # Close the fork/assign window: if SIGTERM arrived before _current_worker_pid was set,
+        # _sup_shutdown could not have signalled this child — do it now so waitpid won't hang.
+        if _supervisor_stop:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
+        if _supervisor_stop:
+            break
+        now = time.time()
+        restarts.append(now)
+        restarts = [t for t in restarts if now - t <= _RESTART_WINDOW]
+        if len(restarts) > _MAX_RESTARTS:
+            log.error(
+                'PII-proxy worker crash-looped (%d restarts in %.0fs); supervisor exiting',
+                len(restarts), _RESTART_WINDOW,
+            )
+            break
+        log.warning('PII-proxy worker died; respawning on the same port')
+        time.sleep(0.2)
+
+    log.info('PII-proxy supervisor shutting down')
+    try:
+        server.server_close()
+    except Exception:
+        pass
+    port_file.unlink(missing_ok=True)
+    sys.exit(0)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description='PII-Proxy Server')
     parser.add_argument('--port', type=int, default=DEFAULT_PORT)
@@ -985,73 +1279,25 @@ def main() -> None:
     sid = os.environ.get('ICLAUDE_SESSION_ID', 'default')
     setup_logging(log_dir, sid)
 
-    # Port selection strategy:
-    #   port == 0  → auto-select a random free port from [PORT_MIN, PORT_MAX]
-    #   port != 0  → try exact port first, then fall back to range
-    # Trying up to 30 random candidates from the range before last-resort bind(0).
-    # Each attempt is an atomic bind (no TOCTOU race).
-    try:
-        _port_min = int(os.environ.get('PII_PROXY_PORT_MIN', '20000'))
-        _port_max = int(os.environ.get('PII_PROXY_PORT_MAX', '40000'))
-    except (ValueError, TypeError):
-        _port_min, _port_max = 20000, 40000
-    # Sanity check: must be valid unprivileged range with at least one port
-    if not (1024 <= _port_min < _port_max <= 65535):
-        log.warning('Invalid port range [%d, %d]; falling back to [20000, 40000]', _port_min, _port_max)
-        _port_min, _port_max = 20000, 40000
-    server = None
-
-    if args.port != 0:
-        # Explicit port requested — honour it if free
-        try:
-            server = http.server.ThreadingHTTPServer(('127.0.0.1', args.port), PIIProxyHandler)
-        except OSError:
-            pass  # fall through to range selection below
-
-    if server is None:
-        # Auto-select: probe a random sample from the range to spread sessions
-        # across 20000-40000 without sequential clustering.
-        _n = min(30, _port_max - _port_min + 1)
-        for _p in random.sample(range(_port_min, _port_max + 1), _n):
-            try:
-                server = http.server.ThreadingHTTPServer(('127.0.0.1', _p), PIIProxyHandler)
-                break
-            except OSError:
-                continue
-        if server is None:
-            # Last resort: let OS pick any free port
-            server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), PIIProxyHandler)
-
+    server = _build_server(args)
     port = server.server_address[1]  # actual port assigned by OS
 
-    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions each
-    # write their own file and never overwrite each other (eliminates the global server.port
-    # race where session-2 could overwrite session-1's file before session-1 read it).
-    # Validate session_id to hex-only (12 chars) to prevent path traversal via env variable.
+    # Per-session port file: named by ICLAUDE_SESSION_ID so concurrent sessions never collide.
     _raw_sid = os.environ.get('ICLAUDE_SESSION_ID', '')
     session_id = _raw_sid if (re.fullmatch(r'[0-9a-f]{12}', _raw_sid) or _raw_sid == 'shared') else 'default'
     port_file = log_dir / f'pii-proxy-{session_id}.port'
     port_file.write_text(str(port))
 
-    def _shutdown(signum: int, _: Any) -> None:
-        log.info('PII-proxy shutting down (signal %d)', signum)
-        server.server_close()
-        port_file.unlink(missing_ok=True)
-        sys.exit(0)
+    log.info(
+        'PII-proxy listening on 127.0.0.1:%d -> %s '
+        '(masking_level=%s, connect_timeout=%.0fs, read_timeout=%.0fs, supervise=%s)',
+        port, UPSTREAM_URL, MASKING_LEVEL, CONNECT_TIMEOUT, READ_TIMEOUT, SUPERVISE,
+    )
 
-    signal.signal(signal.SIGTERM, _shutdown)
-    signal.signal(signal.SIGINT, _shutdown)
-
-    global _server_start_time
-    _server_start_time = time.time()
-
-    log.info('PII-proxy listening on 127.0.0.1:%d -> %s (masking_level=%s)', port, UPSTREAM_URL, MASKING_LEVEL)
-
-    # Pre-load Presidio in background thread only when needed (threading imported at top)
-    if MASKING_LEVEL == 'standard':
-        threading.Thread(target=init_presidio, daemon=True).start()
-
-    server.serve_forever()
+    if SUPERVISE:
+        _supervise(server, port_file)
+    else:
+        _run_worker(server, port_file)
 
 
 if __name__ == '__main__':

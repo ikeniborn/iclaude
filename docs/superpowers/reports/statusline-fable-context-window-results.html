@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>statusline-fable-context-window — IDD→SDD chain report</title>
+<style>
+/* ===== themes ===== */
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
+  transition:background .3s, color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+h1{ font-size:1.45rem; } h2{ font-size:1.2rem; margin-top:2rem; color:var(--accent-2); }
+h3{ font-size:1.02rem; margin-top:1.4rem; }
+code{ background:color-mix(in srgb, var(--accent) 10%, var(--surface)); padding:.1rem .35rem; border-radius:5px; font-size:.86em; }
+/* ===== tabs ===== */
+.tab-pane{ display:none; }
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{ display:block; }
+.chain-tabs{ display:flex; gap:.35rem; margin-top:1rem; border-bottom:1px solid var(--border); }
+.chain-tabs label{ cursor:pointer; padding:.4rem .9rem; border:1px solid var(--border);
+  border-bottom:none; border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); }
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); border-color:var(--accent); font-weight:600; }
+/* ===== tables ===== */
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.92rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); position:sticky; top:0; }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+/* ===== flow ===== */
+.rpt-flow{ display:flex; align-items:center; gap:0; margin:1rem 0; flex-wrap:wrap; }
+.rpt-flow .node{
+  background:var(--surface); color:var(--fg);
+  border:1px solid var(--border); border-radius:8px; padding:.6rem 1rem; margin:.3rem 0;
+}
+.rpt-flow .node.fix{ border-color:var(--accent); border-width:2px; box-shadow:0 1px 8px var(--shadow); }
+.rpt-flow .node .sub{ display:block; color:var(--muted); font-size:.78rem; }
+.rpt-flow .arrow{ flex:0 0 2.2rem; height:2px; background:var(--line); position:relative; }
+.rpt-flow .arrow::after{
+  content:""; position:absolute; right:0; top:-4px;
+  border:5px solid transparent; border-left-color:var(--line);
+}
+/* ===== components ===== */
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.95rem; }
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.note.ok{ border-left-color:var(--ok); background:color-mix(in srgb, var(--ok) 8%, var(--surface)); }
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.info{ color:var(--accent-2); border-color:var(--accent); }
+.badge.fixed{ color:var(--ok-2); border-color:var(--ok); }
+/* ===== svg diagrams ===== */
+figure.diagram{ margin:1.2rem 0; }
+figure.diagram svg{ width:100%; height:auto; display:block; overflow:visible; }
+figcaption{ color:var(--muted); font-size:.85rem; margin-top:.35rem; text-align:center; }
+.card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; filter:url(#dropshadow); transition:stroke .15s, stroke-width .15s; }
+.node:hover .card{ stroke:var(--accent); stroke-width:2.5; }
+.bar-accent{ fill:var(--accent); } .bar-ok{ fill:var(--ok); }
+.bar-warn{ fill:var(--warn); } .bar-term{ fill:var(--danger); }
+.t-title{ fill:var(--fg); font:600 14px system-ui, sans-serif; }
+.t-sub{ fill:var(--muted); font:11px system-ui, sans-serif; }
+text{ pointer-events:none; }
+.conn{ fill:none; stroke:var(--line); stroke-width:2; }
+.conn-a{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; }
+.lbl-bg{ fill:var(--bg); }
+.lbl{ fill:var(--fg); font:11px system-ui, sans-serif; }
+</style>
+</head>
+<body>
+  <input type="checkbox" id="theme-toggle" hidden>
+  <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+  <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
+  <header>
+    <label for="theme-toggle" class="theme-btn" title="Переключить тему">🌙 / ☀️</label>
+    <h1>statusline-fable-context-window</h1>
+    <p class="sub">IDD→SDD chain report · ветка <code>dev-fix-statusline-context-window</code> · обновлено 2026-07-02</p>
+  </header>
+  <nav class="chain-tabs">
+    <label for="tab-intent">Intent</label>
+    <label for="tab-spec">Spec</label>
+    <label for="tab-plan">Plan</label>
+    <label for="tab-result">Result</label>
+  </nav>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="var(--shadow)" flood-opacity="1"/>
+    </filter>
+    <marker id="arr"  markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--line)"/></marker>
+    <marker id="arrA" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--accent)"/></marker>
+  </defs></svg>
+
+  <!-- TAB:intent START -->
+  <section class="tab-pane" id="pane-intent">
+    <p class="note">Этап ещё не проверен.</p>
+  </section>
+  <!-- TAB:intent END -->
+  <!-- TAB:spec START -->
+  <section class="tab-pane" id="pane-spec">
+
+    <h2>1. Резюме спецификации</h2>
+    <p class="lead">Два точечных фикса в активном скрипте статуслайна
+      <code>.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh</code> + регрессионный тест.</p>
+    <table class="rpt-table">
+      <thead><tr><th>§</th><th>Требование</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2">§1 Проблема</td>
+            <td><b>(a)</b> Окно 200K для Fable вместо 1M: <code>detect_real_context_window()</code> не знает
+                <code>fable</code>/<code>mythos</code>/<code>sonnet-5</code>; наблюдалось
+                <code>Σ 0 ↓ | 📊 228K (114%) ⚠️</code>. Реальное окно всей линейки Claude 5 — 1M.</td></tr>
+        <tr><td><b>(b)</b> Сегмент кэша показывает <code>📦 100%</code> из-за округления <code>%.0f</code>
+                при реальных 99.5%+ (наблюдалось у Fable и Opus).</td></tr>
+        <tr><td>§2 Fix 1</td>
+            <td>Явный маппинг: <code>*fable*|*mythos*</code> → 1000000; в ветке opus/sonnet добавить
+                <code>*sonnet*5*</code> → 1000000; haiku остаётся 200000; не-Claude модели роутера — reported.
+                Ожидаемый эффект: <code>Σ 772K ↓ | 📊 228K (23%)</code> без <code>⚠️</code>.</td></tr>
+        <tr><td>§3 Fix 2</td>
+            <td>Усечение вниз (<code>int()</code> в awk) вместо округления для hit-rate кэша;
+                <code>100%</code> — только при полностью закэшированном запросе.</td></tr>
+        <tr><td>§4 Вне скоупа</td>
+            <td>Устаревшая копия <code>.nvm-isolated/scripts/claude-statusline.sh</code>;
+                логика <code>ACTIVE_TOKENS</code> (проверена — корректна).</td></tr>
+        <tr><td>§5 Верификация</td>
+            <td>Новый <code>tests/test_statusline_context_window.sh</code>, 7 кейсов:
+                Fable 23%, Mythos 23%, Opus 46%, Sonnet 5 10%, Haiku 50% (окно 200K сохранено),
+                кэш 99% (floor), кэш 100% (полный хит).</td></tr>
+        <tr><td>§6 Поставка</td>
+            <td>Ветка <code>dev-fix-statusline-context-window</code> от <code>dev</code>, PR в <code>dev</code>;
+                обновление iwiki-домена <code>iclaude</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Схемы решения и зависимостей</h2>
+
+    <h3>2.1 Схема решения</h3>
+    <figure class="rpt-flow">
+      <div class="node">Claude Code<span class="sub">statusLine hook</span></div>
+      <div class="arrow"></div>
+      <div class="node">stdin JSON<span class="sub">context_window.*</span></div>
+      <div class="arrow"></div>
+      <div class="node">one-shot jq parse<span class="sub">14 полей</span></div>
+      <div class="arrow"></div>
+      <div class="node fix">detect_real_context_window()<span class="sub">Fix 1 · окно по модели</span></div>
+      <div class="arrow"></div>
+      <div class="node">PERCENT / ACTIVE_PERCENT<span class="sub">Σ · 📊</span></div>
+      <div class="arrow"></div>
+      <div class="node fix">CACHE_DISPLAY hit-rate<span class="sub">Fix 2 · floor · 📦</span></div>
+      <div class="arrow"></div>
+      <div class="node">CONTEXT_DISPLAY<span class="sub">терминал</span></div>
+    </figure>
+
+    <h3>2.2 Граф зависимостей требований</h3>
+    <figure class="diagram">
+    <svg viewBox="0 0 920 340" role="img" aria-label="Граф зависимостей: R3 тесты зависят от R1 и R2; R4 поставка зависит от R1, R2 и R3">
+      <!-- nodes -->
+      <g class="node"><rect class="card" x="120" y="30" width="230" height="60" rx="12"/><rect class="bar-accent" x="128" y="42" width="5" height="36" rx="2.5"/><text class="t-title" x="235" y="56" text-anchor="middle">R1 · маппинг окна</text><text class="t-sub" x="235" y="74" text-anchor="middle">§2 · fable/mythos/sonnet-5 → 1M</text></g>
+      <g class="node"><rect class="card" x="570" y="30" width="230" height="60" rx="12"/><rect class="bar-accent" x="578" y="42" width="5" height="36" rx="2.5"/><text class="t-title" x="685" y="56" text-anchor="middle">R2 · усечение hit-rate</text><text class="t-sub" x="685" y="74" text-anchor="middle">§3 · int() вместо %.0f</text></g>
+      <g class="node"><rect class="card" x="345" y="150" width="230" height="60" rx="12"/><rect class="bar-ok" x="353" y="162" width="5" height="36" rx="2.5"/><text class="t-title" x="460" y="176" text-anchor="middle">R3 · тесты</text><text class="t-sub" x="460" y="194" text-anchor="middle">§5 · test_statusline_context_window.sh</text></g>
+      <g class="node"><rect class="card" x="345" y="260" width="230" height="60" rx="12"/><rect class="bar-warn" x="353" y="272" width="5" height="36" rx="2.5"/><text class="t-title" x="460" y="286" text-anchor="middle">R4 · поставка</text><text class="t-sub" x="460" y="304" text-anchor="middle">§6 · ветка + PR + iwiki</text></g>
+      <!-- edges: A → B = A зависит от B -->
+      <path class="conn" marker-end="url(#arr)" d="M415,150 L280,96"/>
+      <path class="conn" marker-end="url(#arr)" d="M505,150 L640,96"/>
+      <path class="conn-a" marker-end="url(#arrA)" d="M460,260 V216"/>
+      <path class="conn" marker-end="url(#arr)" d="M370,265 C260,230 230,150 232,96"/>
+      <path class="conn" marker-end="url(#arr)" d="M550,265 C660,230 690,150 688,96"/>
+      <!-- edge label -->
+      <rect class="lbl-bg" x="470" y="228" width="110" height="18"/>
+      <text class="lbl" x="525" y="241" text-anchor="middle">зависит от</text>
+    </svg>
+    <figcaption>Ребро A→B = «A зависит от B». Циклов нет; порядок реализации: R1, R2 → R3 → R4.</figcaption>
+    </figure>
+
+    <h3>2.3 Карта покрытия (задача → требования)</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Задача</th><th>§1a</th><th>§1b</th><th>§2 Fix 1</th><th>§3 Fix 2</th><th>§5 Тесты</th></tr></thead>
+      <tbody>
+        <tr><td><b>T1</b> — Fable показывает 200K вместо 1M</td>
+            <td>✓</td><td>—</td><td>✓</td><td>—</td><td>✓</td></tr>
+        <tr><td><b>T2</b> — некорректные «100%» у Fable и Opus</td>
+            <td>—</td><td>✓</td><td>✓ <span class="sub">(114% у Fable закрывается Fix 1)</span></td><td>✓</td><td>✓</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Результаты проверки</h2>
+    <table class="rpt-table">
+      <thead><tr><th>Фаза</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>coverage</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>clarity</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>consistency</td><td><span class="badge ok">passed</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <table class="rpt-table">
+      <thead><tr><th>id</th><th>severity</th><th>фаза</th><th>секция</th><th>фрагмент</th><th>описание</th><th>fix</th><th>вердикт</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>F-001</td><td><span class="badge info">INFO</span></td><td>coverage</td><td>§2</td>
+          <td><code>*fable*|*mythos*) known=1000000</code></td>
+          <td>Маппинг mythos привязан к задаче T1 косвенно (через корневую причину §1 — «вся линейка Claude 5 = 1M»).</td>
+          <td>Зафиксирована производность от корневой причины + добавлен тест.</td>
+          <td><span class="badge fixed">fixed</span></td>
+        </tr>
+        <tr>
+          <td>F-002</td><td><span class="badge info">INFO</span></td><td>clarity</td><td>§5</td>
+          <td>таблица тестов</td>
+          <td>Ветка mythos → 1M не имела тест-кейса в таблице §5.</td>
+          <td>Добавлена строка «Mythos 1M» в таблицу §5.</td>
+          <td><span class="badge fixed">fixed</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note ok">
+      <b>Вердикт: OK.</b> CRITICAL open: 0 · WARNING open: 0 · INFO: 2 (оба fixed).<br>
+      <code>spec_hash: 6f903a264cfdff20</code> · проверено 2026-07-02.
+    </div>
+    <p class="sub">Цепочка: intent → spec — intent отсутствует (<b>n/a</b>), spec валиден.</p>
+
+  </section>
+  <!-- TAB:spec END -->
+  <!-- TAB:plan START -->
+  <section class="tab-pane" id="pane-plan">
+
+    <h2>1. Резюме плана</h2>
+    <p class="lead">6 задач TDD: red → green → commit для каждого фикса, затем живая проверка + документация + PR.</p>
+    <table class="rpt-table">
+      <thead><tr><th>Задача</th><th>Содержание</th><th>DoD</th></tr></thead>
+      <tbody>
+        <tr><td>Task 1</td><td>Падающий регрессионный тест маппинга окна: <code>tests/test_statusline_context_window.sh</code>, 5 кейсов (Fable/Mythos/Sonnet 5/Opus/Haiku), синтетический JSON → скрипт</td><td>Тест падает на кейсе Fable: <code>(114%) ⚠️</code>, exit 1</td></tr>
+        <tr><td>Task 2</td><td>Фикс <code>detect_real_context_window()</code>: <code>*fable*|*mythos*</code> → 1M, <code>*sonnet*5*</code> → 1M; коммит</td><td><code>PASS test_statusline_context_window.sh</code>, exit 0</td></tr>
+        <tr><td>Task 3</td><td>Падающие кейсы hit-rate: floor 99.56% → 99%; полный хит → 100%</td><td>Тест падает: <code>📦 100%</code> вместо <code>📦 99%</code>, exit 1</td></tr>
+        <tr><td>Task 4</td><td>Фикс округления: <code>int()</code> вместо <code>%.0f</code> в строке <code>HIT_RATE</code>; коммит</td><td>Все кейсы PASS, exit 0</td></tr>
+        <tr><td>Task 5</td><td>Живая проверка Fable-сессии (сброс /tmp-кэша statusline), проверка README, обновление iwiki-домена <code>iclaude</code>, полный прогон тестов</td><td>Живая строка без <code>⚠️</code>; <code>wiki_lint</code> без broken refs/orphan/stale; тесты зелёные</td></tr>
+        <tr><td>Task 6</td><td>Проверка неприкосновенности stale-копии, <code>/check-chain result</code>, push + PR в <code>dev</code></td><td><code>git diff --stat dev -- .nvm-isolated/scripts/</code> пуст; result_check OK; URL PR</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Схемы зависимостей и пересечений</h2>
+
+    <h3>2.1 Граф зависимостей шагов</h3>
+    <figure class="diagram">
+    <svg viewBox="0 0 920 300" role="img" aria-label="Граф зависимостей задач: цепочка T1→T2→T3→T4→T5→T6, плюс T2→T5 и T4→T5">
+      <!-- top row: TDD chain -->
+      <g class="node"><rect class="card" x="20"  y="40" width="130" height="60" rx="12"/><rect class="bar-warn"   x="28"  y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="85"  y="66" text-anchor="middle">T1 · тест red</text><text class="t-sub" x="85"  y="84" text-anchor="middle">окно · 5 кейсов</text></g>
+      <g class="node"><rect class="card" x="200" y="40" width="130" height="60" rx="12"/><rect class="bar-ok"     x="208" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="265" y="66" text-anchor="middle">T2 · Fix 1</text><text class="t-sub" x="265" y="84" text-anchor="middle">маппинг → green</text></g>
+      <g class="node"><rect class="card" x="380" y="40" width="130" height="60" rx="12"/><rect class="bar-warn"   x="388" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="445" y="66" text-anchor="middle">T3 · тест red</text><text class="t-sub" x="445" y="84" text-anchor="middle">hit-rate floor</text></g>
+      <g class="node"><rect class="card" x="560" y="40" width="130" height="60" rx="12"/><rect class="bar-ok"     x="568" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="625" y="66" text-anchor="middle">T4 · Fix 2</text><text class="t-sub" x="625" y="84" text-anchor="middle">int() → green</text></g>
+      <g class="node"><rect class="card" x="740" y="40" width="130" height="60" rx="12"/><rect class="bar-accent" x="748" y="52" width="5" height="36" rx="2.5"/><text class="t-title" x="805" y="66" text-anchor="middle">T5 · verify+docs</text><text class="t-sub" x="805" y="84" text-anchor="middle">live · iwiki · README</text></g>
+      <g class="node"><rect class="card" x="380" y="190" width="330" height="60" rx="12"/><rect class="bar-accent" x="388" y="202" width="5" height="36" rx="2.5"/><text class="t-title" x="545" y="216" text-anchor="middle">T6 · result check + PR → dev</text><text class="t-sub" x="545" y="234" text-anchor="middle">stale-копия нетронута · /check-chain result</text></g>
+      <!-- chain edges -->
+      <path class="conn" marker-end="url(#arr)" d="M150,70 H193"/>
+      <path class="conn" marker-end="url(#arr)" d="M330,70 H373"/>
+      <path class="conn" marker-end="url(#arr)" d="M510,70 H553"/>
+      <path class="conn" marker-end="url(#arr)" d="M690,70 H733"/>
+      <!-- fixes feed the live check -->
+      <path class="conn-a" marker-end="url(#arrA)" d="M265,100 C265,150 600,30 740,58"/>
+      <path class="conn-a" marker-end="url(#arrA)" d="M625,100 C650,120 720,110 745,100"/>
+      <!-- everything lands in T6 -->
+      <path class="conn" marker-end="url(#arr)" d="M805,100 C805,160 730,190 717,196"/>
+      <rect class="lbl-bg" x="470" y="150" width="150" height="18"/>
+      <text class="lbl" x="545" y="163" text-anchor="middle">M→N: результат M нужен N</text>
+    </svg>
+    <figcaption>Строгая цепочка T1→T2→T3→T4→T5→T6; фиксы T2/T4 дополнительно питают живую проверку T5. Циклов и нарушений порядка нет.</figcaption>
+    </figure>
+
+    <h3>2.2 Пересечения (артефакты × задачи, требования × задачи)</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Артефакт / требование</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th></tr></thead>
+      <tbody>
+        <tr><td><code>claude-statusline.sh</code> (активный)</td><td>—</td><td>✓ hunk 1</td><td>—</td><td>✓ hunk 2</td><td>читает</td><td>—</td></tr>
+        <tr><td><code>tests/test_statusline_context_window.sh</code></td><td>✓ создаёт</td><td>гонит</td><td>✓ дополняет</td><td>гонит</td><td>гонит</td><td>—</td></tr>
+        <tr><td>iwiki <code>iclaude</code> / README</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>spec §1a+§2 (окно 1M)</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>spec §1b+§3 (hit-rate floor)</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>spec §4 (stale-копия вне скоупа)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓ step 1</td></tr>
+        <tr><td>spec §5 (верификация, 7 кейсов)</td><td>✓ 5</td><td>—</td><td>✓ 2</td><td>—</td><td>✓ live</td><td>—</td></tr>
+        <tr><td>spec §6 (поставка)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓ docs</td><td>✓ PR</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Результаты проверки</h2>
+    <table class="rpt-table">
+      <thead><tr><th>Фаза</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>structure</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>coverage</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>dependencies</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>verifiability</td><td><span class="badge ok">passed</span></td></tr>
+        <tr><td>consistency</td><td><span class="badge ok">passed</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings</h3>
+    <table class="rpt-table">
+      <thead><tr><th>id</th><th>severity</th><th>фаза</th><th>секция</th><th>описание</th><th>fix</th><th>вердикт</th></tr></thead>
+      <tbody>
+        <tr><td>F-001</td><td><span class="badge info">INFO</span></td><td>coverage</td><td>File structure</td>
+            <td>Spec §4 покрывался только запретительной заметкой, без проверяемого шага.</td>
+            <td>Добавлен Task 6 Step 1: <code>git diff --stat dev -- .nvm-isolated/scripts/</code> → пусто.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+        <tr><td>F-002</td><td><span class="badge info">INFO</span></td><td>consistency</td><td>Task 4</td>
+            <td>Точный якорь строки 224 сместился бы после Task 2 (+2 строки).</td>
+            <td>Якорь → ~224 (≈226 после Task 2) + поиск по содержимому <code>HIT_RATE</code>.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+        <tr><td>F-003</td><td><span class="badge info">INFO</span></td><td>verifiability</td><td>Task 5</td>
+            <td>Шаг <code>wiki_lint</code> не фиксировал ожидаемый результат.</td>
+            <td>Дописано ожидание: без broken refs, orphan/stale для страницы statusline.</td>
+            <td><span class="badge fixed">fixed</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note ok">
+      <b>Вердикт: OK.</b> CRITICAL open: 0 · WARNING open: 0 · INFO: 3 (все fixed).<br>
+      <code>plan_hash: b1014ea02c62c526</code> · проверено 2026-07-02.
+    </div>
+    <p class="sub">Цепочка: intent → spec → plan — intent отсутствует (<b>n/a</b>), spec OK (<code>6f903a264cfdff20</code>), plan валиден.</p>
+
+  </section>
+  <!-- TAB:plan END -->
+  <!-- TAB:result START -->
+  <section class="tab-pane" id="pane-result">
+    <h2>Сверка результата (result check)</h2>
+    <p class="lead">Диф ветки сверен с планом и спекой: <b>6/6 задач DONE</b>, 0 PARTIAL, 0 MISSING. Вердикт: <span class="badge ok">OK</span></p>
+
+    <h3>Резюме сверки</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Документ / база</th><th>Значение</th></tr></thead>
+      <tbody>
+        <tr><td>План</td><td><code>docs/superpowers/plans/2026-07-02-statusline-fable-context-window.md</code> (plan_hash <code>b1014ea02c62c526</code>)</td></tr>
+        <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-02-statusline-fable-context-window-design.md</code> (spec_hash <code>6f903a264cfdff20</code>)</td></tr>
+        <tr><td>Intent</td><td>n/a — <code>chain.intent = null</code>, цепочку открыла спека</td></tr>
+        <tr><td>Diff-база</td><td>merge-base с <code>dev</code> = <code>b089c676</code> → HEAD <code>e91447b2</code>; ветка <code>dev-fix-statusline-context-window</code>, 6 коммитов; feature-коммиты: <code>b4985e6d</code>, <code>2d51cdf8</code>, <code>e91447b2</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие шагов плана</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Шаг</th><th>Статус</th><th>Свидетельство в дифе / evidence</th></tr></thead>
+      <tbody>
+        <tr><td>Task 1 — failing-тест window mapping</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_statusline_context_window.sh</code> в дифе (+66 строк, mode 100755); RED: <code>FAIL Fable … (114%) ⚠️</code>, exit 1</td></tr>
+        <tr><td>Task 2 — fix <code>detect_real_context_window()</code></td><td><span class="badge ok">DONE</span></td><td>арм <code>*fable*|*mythos*</code> → 1M в скрипте; коммит <code>b4985e6d</code> с заданным планом сообщением; отклонение (INFO): <code>*sonnet*5*</code> → <code>*sonnet?5*</code> — review-fix против ложного срабатывания на «Sonnet 3.5», + 8-й тест-кейс</td></tr>
+        <tr><td>Task 3 — failing-тест hit-rate floor</td><td><span class="badge ok">DONE</span></td><td>кейсы <code>📦 99%</code> / <code>📦 100%</code> в тесте; RED: FAIL floor case, exit 1</td></tr>
+        <tr><td>Task 4 — floor fix</td><td><span class="badge ok">DONE</span></td><td><code>HIT_RATE</code> через awk <code>int()</code>; коммит <code>e91447b2</code>; GREEN: 8/8 PASS</td></tr>
+        <tr><td>Task 5 — live verify + docs</td><td><span class="badge ok">DONE</span></td><td>live Fable: «Σ 887K ↓ | 📊 113K (11%) | 📦 98% · R112K/W1K», без ⚠️; README без правок (grep пуст); wiki-страница <code>iclaude/statusline</code> создана (вне репо, iwiki-personal <code>68d7207</code>+<code>cc2f4d3</code>), wiki_lint чист; регрессия: bash-тест 8/8 + pytest <code>test_statusline_cache.py</code> 2 passed</td></tr>
+        <tr><td>Task 6 — result check + PR</td><td><span class="badge ok">DONE</span></td><td>Step 1 guard: <code>git diff --stat dev -- .nvm-isolated/scripts/</code> пуст; Step 2 — этот прогон (<code>result_check: OK</code> записан во frontmatter); Step 3 push+PR выполняется сразу после проверки (INFO pending, дифа не порождает)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Находки</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Severity</th><th>Шаг</th><th>Plan</th><th>Diff</th><th>Fix / решение</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge" style="color:var(--warn-2);border-color:var(--warn)">WARNING</span></td><td>EXCESS</td><td>нет шага</td><td>коммит <code>2531d37d</code> «up»: <code>specs/2026-07-02-loen-repair-autoresearch-design.md</code> (+166), <code>reports/loen-repair-autoresearch-results.html</code> (+6)</td><td>не связан с планом, был на ветке до SDD-сессии; кода/тестов не трогает — принято</td></tr>
+        <tr><td><span class="badge info">INFO</span></td><td>Task 2</td><td>глоб <code>*sonnet*5*</code></td><td><code>*sonnet?5*</code> + кейс «Sonnet 3.5»=200K</td><td>adjudicated review-fix; независимо верифицирован финальным ревью (13 форм имён)</td></tr>
+        <tr><td><span class="badge info">INFO</span></td><td>Task 6 Step 3</td><td>push + <code>gh pr create</code></td><td>нет (remote-операция)</td><td>выполняется сразу после result-check по порядку плана</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Покрытие intent и spec</h3>
+    <table class="rpt-table">
+      <thead><tr><th>Источник</th><th>Покрытие</th><th>Детали</th></tr></thead>
+      <tbody>
+        <tr><td>Intent (Desired Outcomes)</td><td>n/a</td><td>интента нет — цепочку открыла спека</td></tr>
+        <tr><td>Spec §1 — проблема</td><td>✓</td><td>обе проблемы воспроизведены тестом (114% ⚠️; 100% при W≠0)</td></tr>
+        <tr><td>Spec §2 — маппинг окна</td><td>✓</td><td>fable/mythos/sonnet-5 → 1M; haiku → 200K; opus/sonnet 4.x без изменений; router-модели → reported</td></tr>
+        <tr><td>Spec §3 — hit-rate floor</td><td>✓</td><td><code>int()</code> вместо <code>%.0f</code>; 100% только при полностью кэшированном запросе</td></tr>
+        <tr><td>Spec §4 — out of scope</td><td>✓</td><td>stale-копия <code>.nvm-isolated/scripts/</code> нетронута (guard пуст)</td></tr>
+        <tr><td>Spec §5 — verification</td><td>✓</td><td>все 7 тест-кейсов + 8-й дополнительный («Sonnet 3.5»); manual live check выполнен</td></tr>
+        <tr><td>Spec §6 — delivery</td><td>✓</td><td>ветка от <code>dev</code> ✓; wiki ✓; README n/a ✓; PR — сразу после проверки</td></tr>
+      </tbody>
+    </table>
+
+    <p class="sub">Excess-изменения: 1 (см. WARNING). Chain-артефакты в дифе (план, спека, TODO.md, этот HTML-отчёт) — ожидаемы, не excess.</p>
+
+    <div class="note ok">
+      <b>Итог:</b> CRITICAL 0 / WARNING 1 / INFO 2 → вердикт <b>OK</b>.
+      Финальное whole-branch ревью (opus): READY TO MERGE — YES.
+    </div>
+    <p class="sub">Цепочка: intent (n/a) → spec ✓ → plan ✓ → result <b>OK</b>. Строка в <code>docs/TODO.md</code> закрыта (Status: done, Closed: 2026-07-02).</p>
+  </section>
+  <!-- TAB:result END -->
+</body>
+</html>

@@ -6,14 +6,15 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { getDefaultMode, safeWriteFlag, readFlag, VALID_MODES } = require('./caveman-config');
+const { getDefaultMode, getLanguages, safeWriteFlag, readFlag, VALID_MODES } = require('./caveman-config');
+const paths = require('./caveman-paths');
 
 // Modes handled by their own slash commands (/caveman-commit, etc.) — not
 // selectable via /caveman <arg>.
 const INDEPENDENT_MODES = new Set(['commit', 'review', 'compress']);
 
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const flagPath = path.join(claudeDir, '.caveman-active');
+const flagPath = paths.activeFlag(claudeDir);
 
 let input = '';
 process.stdin.on('data', chunk => { input += chunk; });
@@ -118,12 +119,17 @@ process.stdin.on('end', () => {
     // — never inject untrusted bytes into model context.
     const activeMode = readFlag(flagPath);
     if (activeMode && !INDEPENDENT_MODES.has(activeMode)) {
+      const { chat, doc } = getLanguages(claudeDir);
+      const langRule = (chat
+        ? "Respond in " + chat + " — never switch language to compress. "
+        : "Respond in the user's language — never switch language to compress. ") +
+        "Docs/code comments/commits: " + doc + ".";
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: "UserPromptSubmit",
           additionalContext: "CAVEMAN MODE ACTIVE (" + activeMode + "). " +
             "Drop articles/filler/pleasantries/hedging. Fragments OK. " +
-            "Code/commits/security: write normal."
+            langRule + " Code/commits/security: write normal."
         }
       }));
     }

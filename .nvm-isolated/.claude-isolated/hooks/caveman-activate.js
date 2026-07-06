@@ -2,27 +2,34 @@
 // caveman — Claude Code SessionStart activation hook
 //
 // Runs on every session start:
-//   1. Writes flag file at $CLAUDE_CONFIG_DIR/.caveman-active (statusline reads this)
+//   1. Writes flag file at $CLAUDE_CONFIG_DIR/.caveman/active (statusline reads this)
 //   2. Emits caveman ruleset as hidden SessionStart context
 //   3. Detects missing statusline config and emits setup nudge
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { getDefaultMode, safeWriteFlag } = require('./caveman-config');
+const { getDefaultMode, getLanguages, safeWriteFlag } = require('./caveman-config');
+const paths = require('./caveman-paths');
 
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const flagPath = path.join(claudeDir, '.caveman-active');
+const flagPath = paths.activeFlag(claudeDir); // pure path builder — no dir created
 const settingsPath = path.join(claudeDir, 'settings.json');
 
 const mode = getDefaultMode();
 
-// "off" mode — skip activation entirely, don't write flag or emit rules
+// "off" mode — skip activation entirely, don't write flag, don't emit rules,
+// and don't run migrateLegacy (which would mkdir .caveman/). An off session
+// must leave zero footprint on disk, so we also clean up any legacy flag from
+// before the .caveman/ migration existed.
 if (mode === 'off') {
   try { fs.unlinkSync(flagPath); } catch (e) {}
+  try { fs.unlinkSync(path.join(claudeDir, '.caveman-active')); } catch (e) {}
   process.stdout.write('OK');
   process.exit(0);
 }
+
+paths.migrateLegacy(claudeDir);
 
 // 1. Write flag file (symlink-safe)
 safeWriteFlag(flagPath, mode);
@@ -107,8 +114,21 @@ if (skillContent) {
     '## Auto-Clarity\n\n' +
     'Drop caveman for: security warnings, irreversible action confirmations, multi-step sequences where fragment order risks misread, user asks to clarify or repeats question. Resume caveman after clear part done.\n\n' +
     '## Boundaries\n\n' +
-    'Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.';
+    'Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.\n\n' +
+    '## Language\n\n' +
+    'Compression touches WORDS, not LANGUAGE. Compress in the conversation\'s language — NEVER switch language (e.g. drift to English) just to compress. ' +
+    'See the ## Resolved Language block below for the exact conversation/documentation languages.';
 }
+
+// 2b. Append the RESOLVED languages so the rule is concrete, not just the generic
+//     "match the conversation language" principle from SKILL.md. Sources:
+//     ICLAUDE_CHAT_LANG / ICLAUDE_DOC_LANG (.claude_config) → settings.json language.
+const { chat, doc } = getLanguages(claudeDir);
+output += '\n\n## Resolved Language\n\n' +
+  (chat
+    ? 'Conversation and all responses: ' + chat + '. Compress in ' + chat + ' — never switch language to compress.'
+    : 'Conversation and all responses: match the user’s language — never switch language to compress.') +
+  ' Documentation, code comments, commit messages, PRs: ' + doc + '.';
 
 // 3. Detect missing statusline config — nudge Claude to help set it up
 try {

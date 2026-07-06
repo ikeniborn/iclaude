@@ -25,8 +25,20 @@ resolve_script_directory() {
 
 # Initialize environment variables
 init_environment() {
+    # Capture the user's working directory at launch time (before any cd)
+    LAUNCH_DIR="${LAUNCH_DIR:-$PWD}"
+    export LAUNCH_DIR
+
     # Determine script directory
     SCRIPT_DIR="${SCRIPT_DIR:-$(resolve_script_directory)}"
+
+    # Wrapper version (from VERSION file; fallback to "dev").
+    # `|| true` keeps a missing VERSION from killing the boot under
+    # `set -euo pipefail` — the $() would otherwise propagate cat's exit 1
+    # before the fallback line below can run.
+    ICLAUDE_VERSION="$(cat "${SCRIPT_DIR}/VERSION" 2>/dev/null | tr -d '[:space:]' || true)"
+    [[ -z "$ICLAUDE_VERSION" ]] && ICLAUDE_VERSION="dev"
+    export ICLAUDE_VERSION
 
     # Constants
     CONFIG_FILE="${SCRIPT_DIR}/.claude_config"
@@ -96,14 +108,9 @@ init_environment() {
     export PII_PROXY_PID_FILE
     export PII_PROXY_SERVER_SCRIPT
 
-    # Graphify (Knowledge Graph)
-    GRAPHIFY_UV_BIN="${ISOLATED_NVM_DIR}/bin/uv"
-    GRAPHIFY_TOOL_DIR="${ISOLATED_CONFIG_DIR}/graphify"
-    GRAPHIFY_PYTHON_DIR="${ISOLATED_CONFIG_DIR}/graphify/python"
-    GRAPHIFY_EXTRA_ARGS="${GRAPHIFY_EXTRA_ARGS:-}"
-
-    export GRAPHIFY_UV_BIN GRAPHIFY_TOOL_DIR GRAPHIFY_PYTHON_DIR
-    export GRAPHIFY_EXTRA_ARGS
+    # uv binary (isolated). Used by the dormant iwiki plugin engine when run manually.
+    UV_BIN="${ISOLATED_NVM_DIR}/bin/uv"
+    export UV_BIN
 
     # CCR (Claude Code Router) daemon configuration — used in combined PII proxy + router mode
     # CCR_PID: PID of background CCR daemon started by start_ccr_server()

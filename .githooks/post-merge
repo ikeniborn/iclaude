@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# post-merge — after `git pull` / merge, bring the on-disk Claude Code native
+# binary (bin/claude.exe, gitignored, ~250MB) up to the version recorded in the
+# lockfile. Self-contained: no sourcing of lib/ modules, no jq dependency.
+# Always exits 0 — a binary refresh must never block or fail a git pull.
+#
+# Opt out:  export ICLAUDE_NO_AUTO_UPDATE=1
+#
+
+# 1. Opt-out.
+[[ "${ICLAUDE_NO_AUTO_UPDATE:-}" == "1" ]] && exit 0
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+LOCKFILE="$REPO_ROOT/.nvm-isolated-lockfile.json"
+[[ -f "$LOCKFILE" ]] || exit 0
+
+# 2. Cheap guard — only continue if this merge touched the lockfile. Default-safe:
+#    if the diff cannot be computed, fall through to the version check.
+changed=""
+if git -C "$REPO_ROOT" rev-parse --verify -q ORIG_HEAD >/dev/null 2>&1; then
+  changed="$(git -C "$REPO_ROOT" diff --name-only ORIG_HEAD HEAD 2>/dev/null)"
+elif git -C "$REPO_ROOT" rev-parse --verify -q '@{1}' >/dev/null 2>&1; then
+  changed="$(git -C "$REPO_ROOT" diff --name-only '@{1}' HEAD 2>/dev/null)"
+fi
+if [[ -n "$changed" ]] && ! grep -qxF '.nvm-isolated-lockfile.json' <<<"$changed"; then
+  exit 0
+fi
+
+# 3. Lockfile version (grep, not jq — keep the hook dependency-light).
+lockver="$(grep -oP '"claudeCodeVersion":\s*"\K[^"]+' "$LOCKFILE" 2>/dev/null | head -n 1)"
+
+# 4. Real on-disk binary version (authoritative — not the git-tracked package.json).
+#    Mirror check_lockfile_changes(): try the symlink, fall back to the native binary.
+binver=""
+claude_bin="$REPO_ROOT/.nvm-isolated/npm-global/bin/claude"
+if [[ ! -x "$claude_bin" ]]; then
+  claude_bin="$REPO_ROOT/.nvm-isolated/npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
+fi
+if [[ -x "$claude_bin" ]]; then
+  binver="$("$claude_bin" --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+fi
+
+# 5. Already in sync — nothing to do.
+[[ -n "$lockver" && "$lockver" == "$binver" ]] && exit 0
+
+# 6. Non-interactive (CI, piped, GUI background) — warn only, never prompt or block.
+# Use an open attempt rather than -r: under setsid, /dev/tty has read permission
+# bits set but cannot actually be opened (ENXIO), so -r gives a false positive.
+if ! ( exec >/dev/tty ) 2>/dev/null; then
+  echo "iclaude: claude.exe ${binver:-missing} != lockfile ${lockver:-unknown}." >&2
+  echo "iclaude: run './iclaude.sh --install-from-lockfile' to update the binary." >&2
+  exit 0
+fi
+
+# 7. Prompt on the controlling terminal.
+echo "iclaude: claude.exe version mismatch: ${binver:-missing} -> ${lockver}" >/dev/tty
+printf '  Update on-disk binary now via --install-from-lockfile? [y/N]: ' >/dev/tty
+read -r ans </dev/tty
+
+# 8. Apply on yes; otherwise leave a hint.
+if [[ "$ans" =~ ^[Yy]$ ]]; then
+  "$REPO_ROOT/iclaude.sh" --install-from-lockfile >/dev/tty 2>&1 \
+    || echo "iclaude: install failed — run './iclaude.sh --install-from-lockfile' manually." >/dev/tty
+else
+  echo "  Skipped. Run './iclaude.sh --install-from-lockfile' when ready." >/dev/tty
+fi
+
+exit 0
