@@ -60,6 +60,21 @@ assert_file_not_contains() {
 	fi
 }
 
+real_install_function_body() {
+	local name="$1"
+	awk -v name="$name" '
+		$0 ~ "^" name "\\(\\)[[:space:]]*\\{" {
+			found = 1
+		}
+		found && $0 ~ "^[[:alpha:]_][[:alnum:]_]*\\(\\)[[:space:]]*\\{" && $0 !~ "^" name "\\(\\)[[:space:]]*\\{" {
+			exit
+		}
+		found {
+			print
+		}
+	' "$ROOT/lib/lockfile/install.sh"
+}
+
 print_warning() { echo "WARN: $*"; }
 print_info() { echo "INFO: $*"; }
 print_success() { echo "OK: $*"; }
@@ -190,11 +205,11 @@ assert_contains "$out" "Non-interactive mode" "non-interactive warning remains"
 assert_file_not_contains "$CALL_LOG" "install_core_from_lockfile" "non-interactive does not call core restore"
 assert_file_not_contains "$CALL_LOG" "install_from_lockfile" "non-interactive does not call full restore"
 
-install_source="$(cat "$ROOT/lib/lockfile/install.sh")"
-assert_contains "$install_source" "lspServers" "full restore still handles lspServers"
-assert_contains "$install_source" "lspPlugins" "full restore still handles lspPlugins"
-if declare -F install_core_from_lockfile >/dev/null 2>&1; then
-	core_body="$(declare -f install_core_from_lockfile)"
+full_body="$(real_install_function_body install_from_lockfile)"
+assert_contains "$full_body" "lspServers" "full restore still handles lspServers"
+assert_contains "$full_body" "lspPlugins" "full restore still handles lspPlugins"
+core_body="$(real_install_function_body install_core_from_lockfile)"
+if [[ -n "$core_body" ]]; then
 	assert_absent "$core_body" "lspServers" "core restore ignores lspServers"
 	assert_absent "$core_body" "lspPlugins" "core restore ignores lspPlugins"
 fi
