@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDD/SDD: startup-lockfile-core-sync</title>
+<style>
+:root{--bg:#f8fafc;--surface:#ffffff;--text:#111827;--muted:#4b5563;--border:#cbd5e1;--accent:#0f766e;--ok:#15803d;--warn:#b45309;--crit:#b91c1c;--code:#f1f5f9}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+body:has(#theme-toggle:checked){--bg:#111827;--surface:#1f2937;--text:#f9fafb;--muted:#d1d5db;--border:#475569;--accent:#2dd4bf;--ok:#4ade80;--warn:#fbbf24;--crit:#f87171;--code:#0f172a}
+header,main{max-width:1100px;margin:0 auto;padding:24px}
+header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+h1{font-size:28px;margin:0} h2{font-size:22px;margin:20px 0 12px} h3{font-size:17px;margin:18px 0 8px}
+.theme-btn{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.chain-tabs{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.chain-tabs label{cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-bottom:0;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted)}
+body:has(#tab-intent:checked) label[for="tab-intent"],body:has(#tab-spec:checked) label[for="tab-spec"],body:has(#tab-plan:checked) label[for="tab-plan"],body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent);border-color:var(--accent);font-weight:700}
+.tab-pane{display:none;background:var(--surface);border:1px solid var(--border);border-radius:0 8px 8px 8px;padding:18px;margin-top:0}
+body:has(#tab-intent:checked) #pane-intent,body:has(#tab-spec:checked) #pane-spec,body:has(#tab-plan:checked) #pane-plan,body:has(#tab-result:checked) #pane-result{display:block}
+table{width:100%;border-collapse:collapse;margin:12px 0} th,td{border:1px solid var(--border);padding:8px;text-align:left;vertical-align:top} th{background:var(--code)}
+code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700}.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.crit{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit)}.note{border-left:4px solid var(--accent);padding:10px 12px;background:var(--code);color:var(--muted)}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}.node{border:1px solid var(--border);border-radius:8px;background:var(--code);padding:10px}.node strong{display:block;color:var(--accent);margin-bottom:4px}
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<header>
+<h1>startup-lockfile-core-sync</h1>
+<label for="theme-toggle" class="theme-btn" title="Toggle dark/light">Theme</label>
+</header>
+<nav class="chain-tabs">
+<label for="tab-intent">Intent</label>
+<label for="tab-spec">Spec</label>
+<label for="tab-plan">Plan</label>
+<label for="tab-result">Result</label>
+</nav>
+<main>
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+<h2>Проверка intent — 2026-07-06</h2>
+<p>Intent фиксирует проблему доверия в startup-flow: пользователь соглашается на обновление после изменения lockfile, но получает широкий restore, включая LSP. Проверка подтверждает, что цель, outcomes, ограничения и stop rules достаточно конкретны для перехода к design/spec.</p>
+<p>Источник: <code>docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md</code>; iwiki context: <code>overview.md#Isolated Environment</code>.</p>
+<h3>Outcome Chain</h3>
+<div class="flow">
+<div class="node"><strong>Problem</strong>Startup prompt runs broad <code>--install-from-lockfile</code> and can enter LSP restore.</div>
+<div class="node"><strong>Outcome</strong>Accepting prompt syncs core isolated env only and launch continues.</div>
+<div class="node"><strong>Outcome</strong>Successful core sync updates stored hash; next launch does not repeat prompt.</div>
+<div class="node"><strong>Done when</strong>Executable checks prove core-only startup sync, manual full restore with LSP, and no repeat prompt.</div>
+</div>
+<h3>Constraint Matrix</h3>
+<table>
+<tr><th>Type</th><th>Constraint</th><th>Approval lens</th></tr>
+<tr><td>Steering</td><td>Startup prompt describes core environment sync, not full restore.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Steering</td><td>Keep shell module changes surgical and explicit.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Hard</td><td>Automatic startup handling must not run LSP npm/plugin installs without separate consent or flag.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Hard</td><td>Manual full lockfile restore remains available.</td><td><span class="badge warn">watch</span></td></tr>
+<tr><td>Hard</td><td>Do not remove LSP install, restore, or lockfile capture capabilities.</td><td><span class="badge ok">safe</span></td></tr>
+</table>
+<h3>Autonomy Map</h3>
+<table>
+<tr><th>Zone</th><th>Decision types</th></tr>
+<tr><td>Full</td><td>Inspect modules, write chain artifacts, propose options, add lockfile prompt tests.</td></tr>
+<tr><td>Guarded</td><td>Adjust prompt/help text and choose a small flag name if needed.</td></tr>
+<tr><td>Proposal-first</td><td>Lockfile schema changes, user-visible command semantics, narrowed full restore behavior.</td></tr>
+<tr><td>No-go</td><td>Deleting LSP functionality or removing LSP restore from lockfile.</td></tr>
+</table>
+<h3>Context Map</h3>
+<table>
+<tr><th>Area</th><th>Artifacts</th><th>Risk</th></tr>
+<tr><td>Startup lockfile check</td><td><code>check_lockfile_changes()</code>, <code>LOCKFILE_HASH_FILE</code></td><td>Repeat prompts or inaccurate scope wording.</td></tr>
+<tr><td>Restore implementation</td><td><code>install_from_lockfile()</code>, <code>.nvm-isolated-lockfile.json</code></td><td>Core restore and LSP restore are currently coupled.</td></tr>
+<tr><td>LSP</td><td><code>lib/lsp/*</code>, Claude Code plugin commands</td><td>Should remain explicit and reproducible.</td></tr>
+<tr><td>Docs/wiki</td><td><code>overview.md#Isolated Environment</code></td><td>No contradiction found.</td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>All seven intent template sections present; no placeholders.</td></tr>
+<tr><td>completeness</td><td><span class="badge ok">passed</span></td><td>Constraints split into steering/hard, all autonomy zones covered, Health Metrics non-empty, Stop Rules include Done when.</td></tr>
+<tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>Desired outcomes and Done when are observable checks, not implementation-only statements.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>No contradiction between core-only startup sync and manual full restore preservation.</td></tr>
+<tr><td>alignment</td><td><span class="badge ok">passed</span></td><td>Matches user request and iwiki isolated environment context.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Intent passes. Следующий этап: brainstorming/spec для выбора дизайна core-only startup sync vs explicit full restore.</p>
+</section>
+<!-- TAB:intent END -->
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+<p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:spec END -->
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+<p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:plan END -->
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+<p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:result END -->
+</main>
+</body>
+</html>
