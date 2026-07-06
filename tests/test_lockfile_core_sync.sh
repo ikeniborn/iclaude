@@ -69,6 +69,7 @@ setup_case() {
 	local dir
 	dir="$(mktemp -d)"
 	echo "$dir" >> "$TMP_LIST"
+	CASE_DIR="$dir"
 	ISOLATED_LOCKFILE="$dir/lockfile.json"
 	cat > "$ISOLATED_LOCKFILE" <<'JSON'
 {
@@ -107,7 +108,46 @@ install_from_lockfile() {
 run_interactive_check() {
 	local input="$1"
 	if command -v script >/dev/null 2>&1; then
-		printf '%s\n' "$input" | script -q -e -c 'bash -c "source \"$0\"; check_lockfile_changes" "$1"' /dev/null "$ROOT/lib/lockfile/save.sh" 2>&1
+		local driver="$CASE_DIR/driver.sh"
+		{
+			printf '#!/usr/bin/env bash\n'
+			printf 'set -u\n'
+			printf 'ROOT=%q\n' "$ROOT"
+			printf 'ISOLATED_LOCKFILE=%q\n' "$ISOLATED_LOCKFILE"
+			printf 'LOCKFILE_HASH_FILE=%q\n' "$LOCKFILE_HASH_FILE"
+			printf 'ISOLATED_NVM_DIR=%q\n' "$ISOLATED_NVM_DIR"
+			printf 'CALL_LOG=%q\n' "$CALL_LOG"
+			printf 'CORE_RETURN=%q\n' "${CORE_RETURN:-0}"
+			cat <<'DRIVER'
+# shellcheck disable=SC1090
+source "$ROOT/lib/lockfile/save.sh"
+
+compute_lockfile_hash() { echo "NEWHASH"; }
+update_lockfile_hash() {
+	echo "NEWHASH" > "$LOCKFILE_HASH_FILE"
+	echo "update_lockfile_hash" >> "$CALL_LOG"
+}
+
+install_core_from_lockfile() {
+	echo "install_core_from_lockfile" >> "$CALL_LOG"
+	return "$CORE_RETURN"
+}
+
+install_from_lockfile() {
+	echo "install_from_lockfile" >> "$CALL_LOG"
+	return 0
+}
+
+print_warning() { echo "WARN: $*"; }
+print_info() { echo "INFO: $*"; }
+print_success() { echo "OK: $*"; }
+print_error() { echo "ERROR: $*"; }
+
+check_lockfile_changes
+DRIVER
+		} > "$driver"
+		chmod +x "$driver"
+		printf '%s\n' "$input" | script -q -e -c "bash $(printf '%q' "$driver")" /dev/null 2>&1
 	else
 		echo "SKIP: script command unavailable"
 		return 77
@@ -150,8 +190,9 @@ assert_contains "$out" "Non-interactive mode" "non-interactive warning remains"
 assert_file_not_contains "$CALL_LOG" "install_core_from_lockfile" "non-interactive does not call core restore"
 assert_file_not_contains "$CALL_LOG" "install_from_lockfile" "non-interactive does not call full restore"
 
-assert_contains "$(declare -f install_from_lockfile)" "lspServers" "full restore still handles lspServers"
-assert_contains "$(declare -f install_from_lockfile)" "lspPlugins" "full restore still handles lspPlugins"
+install_source="$(cat "$ROOT/lib/lockfile/install.sh")"
+assert_contains "$install_source" "lspServers" "full restore still handles lspServers"
+assert_contains "$install_source" "lspPlugins" "full restore still handles lspPlugins"
 if declare -F install_core_from_lockfile >/dev/null 2>&1; then
 	core_body="$(declare -f install_core_from_lockfile)"
 	assert_absent "$core_body" "lspServers" "core restore ignores lspServers"
