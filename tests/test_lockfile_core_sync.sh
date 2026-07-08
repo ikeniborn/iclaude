@@ -104,6 +104,33 @@ JSON
 	: > "$CALL_LOG"
 }
 
+setup_case
+mkdir -p "$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code"
+mkdir -p "$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/.claude-code-stale"
+touch "$ISOLATED_NVM_DIR/npm-global/bin/.claude-stale"
+cleanup_rc=0
+cleanup_out="$(cleanup_claude_npm_install_artifacts 2>&1)" || cleanup_rc=$?
+if [[ "$cleanup_rc" -eq 0 ]]; then
+	ok "claude npm cleanup helper exits successfully"
+else
+	not_ok "claude npm cleanup helper exits successfully" "$cleanup_out"
+fi
+if [[ -d "$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/claude-code" ]]; then
+	ok "claude npm cleanup keeps installed package"
+else
+	not_ok "claude npm cleanup keeps installed package" "installed package was removed"
+fi
+if [[ ! -e "$ISOLATED_NVM_DIR/npm-global/lib/node_modules/@anthropic-ai/.claude-code-stale" ]]; then
+	ok "claude npm cleanup removes stale package temp dir"
+else
+	not_ok "claude npm cleanup removes stale package temp dir" "stale temp dir remains"
+fi
+if [[ ! -e "$ISOLATED_NVM_DIR/npm-global/bin/.claude-stale" ]]; then
+	ok "claude npm cleanup removes stale temp binary"
+else
+	not_ok "claude npm cleanup removes stale temp binary" "stale temp binary remains"
+fi
+
 compute_lockfile_hash() { echo "NEWHASH"; }
 update_lockfile_hash() {
 	echo "NEWHASH" > "$LOCKFILE_HASH_FILE"

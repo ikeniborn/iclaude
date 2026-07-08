@@ -6,6 +6,29 @@
 #######################################
 
 #######################################
+# Remove stale npm artifacts from interrupted Claude Code installs.
+# npm retires global packages into .claude-code-* and .claude-* paths before
+# replacing them; leftover paths make the next install fail with ENOTEMPTY/EEXIST.
+# Returns:
+#   0 - success
+#######################################
+cleanup_claude_npm_install_artifacts() {
+	local npm_prefix_dir="$ISOLATED_NVM_DIR/npm-global"
+	local bin_dir="$npm_prefix_dir/bin"
+	local lib_dir="$npm_prefix_dir/lib/node_modules/@anthropic-ai"
+
+	if [[ -d "$lib_dir" ]]; then
+		find "$lib_dir" -maxdepth 1 -type d -name ".claude-code-*" -exec rm -rf {} + 2>/dev/null || true
+	fi
+
+	if [[ -d "$bin_dir" ]]; then
+		find "$bin_dir" -maxdepth 1 \( -type f -o -type l \) -name ".claude-*" -delete 2>/dev/null || true
+	fi
+
+	return 0
+}
+
+#######################################
 # Install core isolated environment from lockfile
 # Installs only Node.js and Claude Code for startup lockfile sync.
 # Returns:
@@ -56,6 +79,8 @@ install_core_from_lockfile() {
 			return 1
 		fi
 	fi
+
+	cleanup_claude_npm_install_artifacts
 
 	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
 		if ! npm install -g "@anthropic-ai/claude-code@$claude_version"; then
@@ -135,6 +160,8 @@ install_from_lockfile() {
 			return 1
 		fi
 	fi
+
+	cleanup_claude_npm_install_artifacts
 
 	# Install Claude Code with specific version if available
 	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
