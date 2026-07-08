@@ -72,7 +72,11 @@ install_core_from_lockfile() {
 		local major="${node_version%%.*}"
 		if fetch_node_via_node_tls "$major"; then
 			local newdir
-			newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			if sort -V </dev/null &>/dev/null; then
+				newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | sort -V | tail -1)"
+			else
+				newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			fi
 			[[ -n "$newdir" ]] && { nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"; }
 		else
 			print_error "Failed to install Node.js $node_version"
@@ -83,15 +87,21 @@ install_core_from_lockfile() {
 	cleanup_claude_npm_install_artifacts
 
 	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
-		if ! npm install -g "@anthropic-ai/claude-code@$claude_version"; then
+		if ! run_claude_npm_install_with_progress "@anthropic-ai/claude-code@$claude_version"; then
 			print_error "Failed to install Claude Code"
 			return 1
 		fi
 	else
-		if ! npm install -g "@anthropic-ai/claude-code"; then
+		if ! run_claude_npm_install_with_progress "@anthropic-ai/claude-code"; then
 			print_error "Failed to install Claude Code"
 			return 1
 		fi
+	fi
+
+	if declare -F create_claude_symlink &>/dev/null; then
+		echo ""
+		print_info "Repairing Claude Code symlink after npm install..."
+		create_claude_symlink || return 1
 	fi
 
 	print_success "Core isolated environment installed from lockfile"
@@ -153,7 +163,11 @@ install_from_lockfile() {
 		local major="${node_version%%.*}"
 		if fetch_node_via_node_tls "$major"; then
 			local newdir
-			newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			if sort -V </dev/null &>/dev/null; then
+				newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | sort -V | tail -1)"
+			else
+				newdir="$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v${major}.*" 2>/dev/null | LC_ALL=C sort | tail -1)"
+			fi
 			[[ -n "$newdir" ]] && { nvm use "$(basename "$newdir")" &>/dev/null || export PATH="$newdir/bin:$PATH"; }
 		else
 			print_error "Failed to install Node.js $node_version"
@@ -165,14 +179,20 @@ install_from_lockfile() {
 
 	# Install Claude Code with specific version if available
 	if [[ -n "$claude_version" ]] && [[ "$claude_version" != "unknown" ]]; then
-		npm install -g "@anthropic-ai/claude-code@$claude_version"
+		run_claude_npm_install_with_progress "@anthropic-ai/claude-code@$claude_version"
 	else
-		npm install -g "@anthropic-ai/claude-code"
+		run_claude_npm_install_with_progress "@anthropic-ai/claude-code"
 	fi
 
 	if [[ $? -ne 0 ]]; then
 		print_error "Failed to install Claude Code"
 		return 1
+	fi
+
+	if declare -F create_claude_symlink &>/dev/null; then
+		echo ""
+		print_info "Repairing Claude Code symlink after npm install..."
+		create_claude_symlink || return 1
 	fi
 
 	# Install router if version specified in lockfile

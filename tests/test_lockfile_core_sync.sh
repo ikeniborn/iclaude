@@ -241,6 +241,7 @@ core_body="$(real_install_function_body install_core_from_lockfile)"
 assert_contains "$core_body" "install_core_from_lockfile()" "core restore function exists"
 assert_absent "$core_body" "lspServers" "core restore ignores lspServers"
 assert_absent "$core_body" "lspPlugins" "core restore ignores lspPlugins"
+assert_contains "$core_body" "create_claude_symlink" "core restore repairs Claude symlink after npm install"
 
 echo "---"
 echo "pass=$pass fail=$fail"
