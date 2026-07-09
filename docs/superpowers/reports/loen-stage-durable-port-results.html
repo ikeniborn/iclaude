@@ -155,7 +155,7 @@ ul.tight li{ margin:.28rem 0; }
 <!-- TAB:spec START -->
 <section class="tab-pane" id="pane-spec">
   <p class="lead">Спецификация: <code>docs/superpowers/specs/2026-07-09-loen-stage-durable-port-design.md</code></p>
-  <p class="sub">spec_hash <code>1ad88e419a22e3fd</code> · фазы: structure / coverage / clarity / consistency · вердикт <span class="badge ok">OK</span></p>
+  <p class="sub">spec_hash <code>6c5950118645cca0</code> · фазы: structure / coverage / clarity / consistency · вердикт <span class="badge ok">OK</span> · повторная проверка после правок тела 2026-07-09 (F-001…F-005 исправлены)</p>
 
   <h2>1. Резюме спецификации</h2>
   <p>Требования по разделам спецификации (по одной строке на требование).</p>
@@ -316,9 +316,9 @@ ul.tight li{ margin:.28rem 0; }
     <thead><tr><th>Фаза</th><th>Статус</th><th>Комментарий</th></tr></thead>
     <tbody>
       <tr><td>structure</td><td><span class="badge ok">passed</span></td><td>Плейсхолдеров нет (совпадения «TODO» — имя файла <code>docs/TODO.md</code>); битых ссылок нет; секции 1–7 без пропусков/дублей</td></tr>
-      <tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>Все 13 задач покрыты; 1 overlap (F-004) и 1 минорный лишний (F-007) — WARNING/INFO, не CRITICAL</td></tr>
-      <tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>1 размытый критерий активации (F-005); 1 отложенное решение (F-006)</td></tr>
-      <tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>3 внутренних рассогласования схемы/текста (F-001..F-003) — WARNING</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>Все 13 задач покрыты; overlap F-004 устранён (loop-start делегирует 3_plan → loop-plan, единственный писатель); F-007 (лишние доки) — INFO, open</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>F-005 устранён (порог <code>max_iterations&gt;5</code> OR <code>max_wall_time_minutes&gt;60</code>); F-006 (make_goal.py) — INFO, open</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>F-001…F-003 устранены (роли вложены под <code>stages.&lt;stage&gt;.roles</code>; permissions.filesystem зеркалит верхний уровень; «пять субагентных ролей»)</td></tr>
     </tbody>
   </table>
 
@@ -330,31 +330,31 @@ ul.tight li{ margin:.28rem 0; }
         <td>F-001</td><td><span class="badge warn">WARNING</span></td><td>§3 loop.yaml</td>
         <td>Схема задаёт роли этапов прямым списком (<code>stages.act: [worker]</code>), но loop-gate.py, tool-guard.py и §5 ссылаются на путь <code>stages.&lt;stage&gt;.roles</code> — вложенного ключа <code>roles:</code> в схеме нет.</td>
         <td>Свести к одному: либо вложить роли под <code>stages.&lt;stage&gt;.roles:</code>, либо изменить ссылки хуков/§5 на <code>stages.&lt;stage&gt;</code>.</td>
-        <td><span class="badge">open</span></td>
+        <td><span class="badge ok">fixed</span><br><span class="sub">2026-07-09</span></td>
       </tr>
       <tr>
         <td>F-002</td><td><span class="badge warn">WARNING</span></td><td>§3 loop.yaml</td>
         <td><code>mutable_scope</code>/<code>protected_scope</code> объявлены дважды — на верхнем уровне и внутри <code>permissions.filesystem</code> — без источника истины (validate_run_contract читает верхний уровень; scope-guard — permissions.filesystem).</td>
         <td>Определить одно авторитетное место или явно указать, что <code>permissions.filesystem</code> зеркалит верхний уровень.</td>
-        <td><span class="badge">open</span></td>
+        <td><span class="badge ok">fixed</span><br><span class="sub">2026-07-09</span></td>
       </tr>
       <tr>
         <td>F-003</td><td><span class="badge warn">WARNING</span></td><td>§5 Агенты</td>
         <td>Текст: «The four subagent roles are read-only», но таблица перечисляет пять read-only субагентов (explorer, planner, verifier, reviewer, researcher). Неясно, входит ли verifier в счёт.</td>
         <td>Написать «пять субагентных ролей» или уточнить, что «четыре» — это L1-субагенты без verifier (L3).</td>
-        <td><span class="badge">open</span></td>
+        <td><span class="badge ok">fixed</span><br><span class="sub">2026-07-09</span></td>
       </tr>
       <tr>
         <td>F-004</td><td><span class="badge warn">WARNING</span></td><td>§2 Скиллы</td>
         <td>И <code>loop-start</code> («dispatch planner → 3_plan»), и <code>loop-plan</code> (пишет <code>3_plan.md</code>) заявляют создание <code>3_plan.md</code>; связь между ними не описана.</td>
         <td>Указать, что loop-start делегирует генерацию 3_plan скиллу loop-plan (или planner), и назвать единственного писателя.</td>
-        <td><span class="badge">open</span></td>
+        <td><span class="badge ok">fixed</span><br><span class="sub">2026-07-09</span></td>
       </tr>
       <tr>
         <td>F-005</td><td><span class="badge warn">WARNING</span></td><td>§6 Авто-запуск</td>
         <td>Fallback на нативный <code>/goal</code> срабатывает «if compaction is a risk» / «for large budgets» без измеримого порога — критерий активации размыт.</td>
         <td>Задать конкретный триггер, напр. <code>budget.max_iterations &gt; N</code> или оценка контекста в токенах &gt; порога.</td>
-        <td><span class="badge">open</span></td>
+        <td><span class="badge ok">fixed</span><br><span class="sub">2026-07-09</span></td>
       </tr>
       <tr>
         <td>F-006</td><td><span class="badge info">INFO</span></td><td>§4 Хуки</td>
@@ -372,13 +372,13 @@ ul.tight li{ margin:.28rem 0; }
   </table>
 
   <h3>Итог</h3>
-  <p class="note ok"><b>Вердикт: OK.</b> Открытых CRITICAL — 0. Открытых WARNING — 5 (F-001…F-005). INFO — 2 (F-006, F-007). Все фазы (structure/coverage/clarity/consistency) — passed. WARNING'и — рекомендации к уточнению перед этапом plan, гейт не блокируют.</p>
+  <p class="note ok"><b>Вердикт: OK.</b> Открытых CRITICAL — 0. Открытых WARNING — 0 (все 5, F-001…F-005, исправлены в теле 2026-07-09). Открытых INFO — 2 (F-006, F-007 — намеренно в scope). Все фазы (structure/coverage/clarity/consistency) — passed. spec_hash пересчитан по канону (frontmatter-excluding) → <code>6c5950118645cca0</code>, совпадает с телом: IDD-гейт разблокирован для этапа plan.</p>
 
   <h3>Цепочка</h3>
   <figure class="rpt-c4">
     <div class="boundary" data-label="chain">
       <div class="comp" style="border-left-color:var(--muted)"><b>intent</b><br><span class="r">n/a — файл intent не найден</span></div>
-      <div class="comp" style="border-left-color:var(--ok)"><b>spec</b><br><span class="r">проверен · OK · spec_hash 1ad88e419a22e3fd</span></div>
+      <div class="comp" style="border-left-color:var(--ok)"><b>spec</b><br><span class="r">проверен · OK · spec_hash 6c5950118645cca0</span></div>
     </div>
   </figure>
   <p class="sub">Следующий шаг: <code>superpowers:writing-plans</code> (этап plan).</p>

@@ -1,7 +1,7 @@
 ---
 review:
   stage: spec
-  spec_hash: 1ad88e419a22e3fd
+  spec_hash: 6c5950118645cca0
   last_run: 2026-07-09
   phases:
     structure: {status: passed}
@@ -13,52 +13,52 @@ review:
       phase: consistency
       severity: WARNING
       section: "3. Contract — loop.yaml"
-      section_hash: d063b4d61a8ef87e
+      section_hash: f1743596d4e387db
       fragment: "stages: act: [worker] (schema) vs stages.<stage>.roles (loop-gate/tool-guard/§5)"
       text: "The loop.yaml schema binds stage roles as a direct list (stages.act: [worker]), but loop-gate.py, tool-guard.py and §5 reference stages.<stage>.roles — a nested roles: key that does not exist in the schema."
       fix: "Unify the path: either nest roles under stages.<stage>.roles: in the schema, or change all hook and §5 references to stages.<stage>."
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-07-09
     - id: F-002
       phase: consistency
       severity: WARNING
       section: "3. Contract — loop.yaml"
-      section_hash: d063b4d61a8ef87e
+      section_hash: f1743596d4e387db
       fragment: "mutable_scope/protected_scope at top level AND under permissions.filesystem"
       text: "mutable_scope/protected_scope are declared twice — at the loop.yaml top level and again under permissions.filesystem — with no stated source of truth (validate_run_contract checks the top-level; scope-guard reads permissions.filesystem)."
       fix: "Declare one authoritative location, or state explicitly that permissions.filesystem mirrors the top-level values so they cannot diverge."
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-07-09
     - id: F-003
       phase: consistency
       severity: WARNING
       section: "5. Agents / roles"
-      section_hash: 10484fdc6587006d
+      section_hash: 8285d71e77a24a7e
       fragment: "The four subagent roles are read-only (table lists 5: explorer, planner, verifier, reviewer, researcher)"
       text: "Prose says 'The four subagent roles are read-only', but the agents table lists five read-only subagents (explorer, planner, verifier, reviewer, researcher). Ambiguous whether the verifier is counted (L3 vs L1)."
       fix: "Say 'five subagent roles', or clarify that 'four' means the L1 subagents (planner/explorer/reviewer/researcher) excluding the L3 verifier."
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-07-09
     - id: F-004
       phase: coverage
       severity: WARNING
       section: "2. Skill set"
-      section_hash: 6f5fdec6f2366870
+      section_hash: 199066281cb33745
       fragment: "loop-start 'dispatch planner -> 3_plan' vs loop-plan Writes: 3_plan.md"
       text: "Both loop-start (Responsibility: 'dispatch planner -> 3_plan') and loop-plan (Writes: 3_plan.md) claim to produce 3_plan.md; the relationship (does loop-start invoke loop-plan?) is unstated."
       fix: "State that loop-start delegates 3_plan generation to loop-plan (or the planner) and name the single writer of 3_plan.md."
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-07-09
     - id: F-005
       phase: clarity
       severity: WARNING
       section: "6. Auto-run mechanics"
-      section_hash: f92921f062062a91
+      section_hash: 56ac68b43bd51984
       fragment: "if compaction is a risk, loop-run optionally emits a native /goal ... for large budgets"
       text: "The native-/goal cross-turn fallback triggers 'if compaction is a risk' / 'for large budgets' with no measurable threshold, leaving the activation criterion vague."
       fix: "Give a concrete trigger, e.g. budget.max_iterations > N or estimated context tokens > threshold."
-      verdict: open
-      verdict_at: null
+      verdict: fixed
+      verdict_at: 2026-07-09
     - id: F-006
       phase: clarity
       severity: INFO
@@ -73,7 +73,7 @@ review:
       phase: coverage
       severity: INFO
       section: "7. Migration, tests, versioning"
-      section_hash: 472cb646c6a60d13
+      section_hash: 3cacf33c7db95181
       fragment: "Add docs/architecture.md ... Update docs/functions/LOEN.md"
       text: "docs/architecture.md (new) and the docs/functions/LOEN.md update are documentation deliverables beyond the brainstorm's stated docs task, which mandated only the two READMEs. Reasonable elaboration, flagged for traceability."
       fix: "Confirm these extra docs are in scope; otherwise drop them."
