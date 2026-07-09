@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>check-chain — loen-stage-durable-port</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1120px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
+  transition:background .3s, color .3s;
+}
+h1{ font-size:1.5rem; margin:.2rem 0; }
+h2{ font-size:1.2rem; margin:1.8rem 0 .6rem; border-bottom:2px solid var(--border); padding-bottom:.3rem; }
+h3{ font-size:1.02rem; margin:1.2rem 0 .4rem; color:var(--accent); }
+.theme-btn{
+  position:sticky; top:.5rem; float:right;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+.sub{ color:var(--muted); font-size:.95rem; }
+.lead{ font-size:1.08rem; }
+/* tabs */
+.chain-tabs{ display:flex; gap:.35rem; margin:1rem 0 0; flex-wrap:wrap; }
+.chain-tabs label{ cursor:pointer; padding:.4rem .9rem; border:1px solid var(--border);
+  border-bottom:none; border-radius:8px 8px 0 0; background:var(--surface); color:var(--muted); }
+.tab-pane{ display:none; border:1px solid var(--border); border-radius:0 10px 10px 10px;
+  padding:1rem 1.3rem; background:color-mix(in srgb,var(--surface) 55%, transparent); }
+body:has(#tab-intent:checked) #pane-intent,
+body:has(#tab-spec:checked)   #pane-spec,
+body:has(#tab-plan:checked)   #pane-plan,
+body:has(#tab-result:checked) #pane-result{ display:block; }
+body:has(#tab-intent:checked) label[for="tab-intent"],
+body:has(#tab-spec:checked)   label[for="tab-spec"],
+body:has(#tab-plan:checked)   label[for="tab-plan"],
+body:has(#tab-result:checked) label[for="tab-result"]{ color:var(--accent); border-color:var(--accent); font-weight:600; }
+/* tables */
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); position:sticky; top:0; }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code, .rpt-table th code{ white-space:nowrap; }
+code{ font-family:ui-monospace, monospace; font-size:.86em; }
+/* badges */
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.warn{ color:var(--warn-2); border-color:var(--warn); }
+.badge.crit{ color:var(--danger-2); border-color:var(--danger); }
+.badge.info{ color:var(--muted); }
+.badge.na{ color:var(--muted); border-style:dashed; }
+/* note */
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.note.ok{ border-left-color:var(--ok); background:color-mix(in srgb, var(--ok) 10%, var(--surface)); }
+/* C4 */
+.rpt-c4 .boundary{
+  border:1.6px dashed var(--accent); border-radius:12px;
+  padding:1.8rem 1rem 1rem; margin:.7rem 0; position:relative;
+  display:flex; flex-wrap:wrap; gap:.6rem;
+  background:color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.rpt-c4 .boundary::before{
+  content:attr(data-label); position:absolute; top:-.7rem; left:.9rem;
+  background:var(--bg); padding:0 .45rem; font-size:.8rem; color:var(--accent); font-weight:600;
+}
+.rpt-c4 .comp{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:.55rem .85rem; min-width:6rem; font-size:.82rem; box-shadow:0 1px 6px var(--shadow);
+  border-left:4px solid var(--accent);
+}
+.rpt-c4 .comp b{ color:var(--accent); }
+.rpt-c4 .comp .r{ color:var(--muted); font-size:.75rem; }
+/* SVG diagram */
+figure.diagram{ margin:1.2rem 0; }
+figure.diagram svg{ width:100%; height:auto; display:block; overflow:visible; }
+figcaption{ color:var(--muted); font-size:.85rem; margin-top:.35rem; text-align:center; }
+.card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; filter:url(#dropshadow); transition:stroke .15s, stroke-width .15s; }
+.node:hover .card{ stroke:var(--accent); stroke-width:2.5; }
+.bar-accent{ fill:var(--accent); } .bar-ok{ fill:var(--ok); }
+.bar-warn{ fill:var(--warn); } .bar-term{ fill:var(--danger); }
+.t-title{ fill:var(--fg); font:600 13px system-ui, sans-serif; }
+.t-sub{ fill:var(--muted); font:10px system-ui, sans-serif; }
+.t-mono{ font-family:ui-monospace, monospace; }
+text{ pointer-events:none; }
+.conn{ fill:none; stroke:var(--line); stroke-width:2; }
+.conn-a{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; }
+.conn-term{ fill:none; stroke:var(--danger); stroke-width:2.2; }
+.flow{ fill:none; stroke:var(--accent); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+.flow-term{ fill:none; stroke:var(--danger); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+@keyframes dash{ to{ stroke-dashoffset:-14; } }
+@media (prefers-reduced-motion: reduce){ .flow,.flow-term{ animation:none; } }
+.lbl-bg{ fill:var(--bg); }
+.lbl{ fill:var(--fg); font:10px system-ui, sans-serif; }
+.boundary-rect{ fill:none; stroke:var(--danger); stroke-width:1.6; stroke-dasharray:7 6; opacity:.85; }
+ul.tight li{ margin:.28rem 0; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
+    <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="var(--shadow)" flood-opacity="1"/>
+  </filter>
+  <marker id="arr"     markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--line)"/></marker>
+  <marker id="arrA"    markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--accent)"/></marker>
+  <marker id="arrOk"   markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--ok)"/></marker>
+  <marker id="arrTerm" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--danger)"/></marker>
+</defs></svg>
+
+<header>
+  <label for="theme-toggle" class="theme-btn" title="Тёмная / светлая тема">🌙 / ☀️</label>
+  <h1>Цепочка IDD→SDD — <code>loen-stage-durable-port</code></h1>
+  <p class="sub">Порт plugin/loen на stage-oriented durable-topic модель (адаптация icodex) · отчёт check-chain · 2026-07-09</p>
+</header>
+
+<nav class="chain-tabs">
+  <label for="tab-intent">Intent</label>
+  <label for="tab-spec">Spec</label>
+  <label for="tab-plan">Plan</label>
+  <label for="tab-result">Result</label>
+</nav>
+
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+  <p class="note">Этап ещё не проверен. Файл intent для этой темы не найден (<code>Intent: n/a</code>).</p>
+</section>
+<!-- TAB:intent END -->
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+  <p class="lead">Спецификация: <code>docs/superpowers/specs/2026-07-09-loen-stage-durable-port-design.md</code></p>
+  <p class="sub">spec_hash <code>1ad88e419a22e3fd</code> · фазы: structure / coverage / clarity / consistency · вердикт <span class="badge ok">OK</span></p>
+
+  <h2>1. Резюме спецификации</h2>
+  <p>Требования по разделам спецификации (по одной строке на требование).</p>
+  <table class="rpt-table">
+    <thead><tr><th>Раздел</th><th>Требование</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="7"><b>§1</b> Модель артефактов</td><td>Долговременный топик <code>docs/loen/&lt;topic&gt;/</code>; префикс даты из run-id убран, топик резюмируем между сессиями</td></tr>
+      <tr><td>Указатель <code>docs/loen/current</code> — plain-text файл с одним слугом активного топика (заменяет symlink)</td></tr>
+      <tr><td>Правило слуга <code>validate_topic_slug</code>: <code>^[a-z0-9][a-z0-9-]*$</code></td></tr>
+      <tr><td>Адресация относительным путём; корень <code>LOEN_ARTIFACT_ROOT</code> (default <code>docs/loen</code>)</td></tr>
+      <tr><td>Поиск активного топика <code>event_topic()</code>: <code>LOEN_TOPIC</code> → <code>topic_from_path</code> → <code>current_topic()</code></td></tr>
+      <tr><td>7 нумерованных артефактов <code>1_goal…7_result</code> + <code>loop.yaml</code>, <code>handoff.md</code>, <code>audit.html</code>, <code>attempts.jsonl</code>, <code>evidence/</code></td></tr>
+      <tr><td>Принцип «missing file = missing state»; папки <code>iter-NN/</code> удалены</td></tr>
+      <tr><td rowspan="4"><b>§2</b> Набор скиллов (13)</td><td>7 pipeline: loop-start/run/plan/act/check/reflect/status</td></tr>
+      <tr><td>4 конфигуратора (тонкие, задают <code>mode</code>): delivery/repair/autoresearch/review</td></tr>
+      <tr><td>2 сквозных: <code>governance</code>, <code>audit</code></td></tr>
+      <tr><td><code>loop-goal</code> удалён как отдельный скилл; поведение свёрнуто в <code>loop-run</code> (опц. fallback)</td></tr>
+      <tr><td rowspan="2"><b>§3</b> Контракт loop.yaml</td><td>Богатый <code>loop.yaml</code> с новыми блоками <code>run</code>/<code>stages</code>/<code>tools</code>/<code>permissions</code>/<code>capsule</code></td></tr>
+      <tr><td><code>validate_run_contract</code> — авторитет: <code>plan_approved</code>, <code>plan_hash == plan_body_hash(3_plan)</code>, mode, mutable_scope, verifier, budget&gt;0, rollback_policy</td></tr>
+      <tr><td rowspan="5"><b>§4</b> Хуки (ядро принуждения)</td><td>Общая библиотека: <code>loen_common.py</code>, <code>loen_artifacts.py</code>, <code>loen_capsules.py</code></td></tr>
+      <tr><td>6 специализированных хуков: loop-gate, scope-guard, tool-guard, permission-guard, evidence-gate, audit-writer</td></tr>
+      <tr><td>Градуированный <code>LOEN_MODE</code>: off / advisory / enforce (default) / strict</td></tr>
+      <tr><td>Порядок <code>hooks.json</code>: gate→scope→tool→permission (Pre), audit-writer (Post), evidence-gate (Stop)</td></tr>
+      <tr><td>Детерминированные shell-сети сохранены (check_layout, guard_protected, loen_stats, log_experiment, verify_microvm)</td></tr>
+      <tr><td rowspan="3"><b>§5</b> Агенты / роли (5 .md)</td><td>explorer, planner, verifier (сохранены/скорректированы) + <b>reviewer</b>, <b>researcher</b> (новые)</td></tr>
+      <tr><td>Лестница изоляции: L0 worker (main session) / L1 субагент+капсула / L3 microVM verifier</td></tr>
+      <tr><td><code>stages.&lt;stage&gt;.roles</code> связывает роль, допустимую на этапе</td></tr>
+      <tr><td rowspan="4"><b>§6</b> Авто-запуск</td><td><code>loop-run</code> — автономный оркестратор: preflight (<code>validate_run_contract</code>), цикл <code>prepare→act→check→reflect→done/handoff</code></td></tr>
+      <tr><td>verifier-субагент на каждом check (через капсулу, не чат); hooks детерминированно держат scope/evidence</td></tr>
+      <tr><td><code>evidence-gate.py</code> на Stop блокирует «done» без 5_check + 7_result + verdict + непустого evidence/</td></tr>
+      <tr><td>Опциональный fallback на нативный <code>/goal</code> для больших бюджетов (риск компакции)</td></tr>
+      <tr><td rowspan="4"><b>§7</b> Миграция / тесты / доки</td><td>Чистая замена (breaking → v1.0.0); старый layout <code>&lt;run-id&gt;/</code> не поддерживается</td></tr>
+      <tr><td>Переписать тесты + новое покрытие (см. «Критерии приёмки»)</td></tr>
+      <tr><td>Оба README (<code>plugin/loen/README.md</code> + <code>README.ru.md</code>) обновить синхронно — обязательная поставка</td></tr>
+      <tr><td>Обновить <code>docs/functions/LOEN.md</code>; добавить <code>docs/architecture.md</code>; bump версии до 1.0.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Критерии приёмки (Success Criteria — из §7 «New coverage»)</h3>
+  <p class="sub">Явного раздела Success Criteria в спеке нет; приёмка задана списком нового тестового покрытия (см. finding F-007 / контекст).</p>
+  <ul class="tight">
+    <li><code>validate_topic_slug</code> + scaffold топика</li>
+    <li>stage-ordering gate (нельзя писать <code>N_*.md</code> при отсутствии младшего артефакта)</li>
+    <li>scope / tool / permission guards</li>
+    <li>evidence-gate на Stop</li>
+    <li>audit-writer</li>
+    <li>рендеринг капсулы</li>
+    <li><code>validate_run_contract</code> (plan_approved + plan_hash)</li>
+    <li>state machine <code>loop-run</code> (<code>prepare→act→check→reflect→done/handoff</code>)</li>
+    <li>градуированное поведение <code>LOEN_MODE</code></li>
+  </ul>
+
+  <h2>2. Схемы решения и зависимостей</h2>
+
+  <h3>Схема решения (компоненты плагина)</h3>
+  <figure class="rpt-c4">
+    <div class="boundary" data-label="plugin/loen · Claude Code plugin (v1.0.0)">
+      <div class="comp"><b>13 skills</b><br><span class="r">7 pipeline + 4 конфигуратора + governance + audit</span></div>
+      <div class="boundary" data-label="hooks/ · shared library">
+        <div class="comp"><b>loen_common.py</b><br><span class="r">mode · event_topic · YAML-parser · block_or_nudge</span></div>
+        <div class="comp"><b>loen_artifacts.py</b><br><span class="r">scaffold · validate_run_contract · render_audit · plan_body_hash</span></div>
+        <div class="comp"><b>loen_capsules.py</b><br><span class="r">render_capsule (L1-изоляция)</span></div>
+      </div>
+      <div class="boundary" data-label="hooks/ · 6 enforcement hooks">
+        <div class="comp"><b>loop-gate</b><br><span class="r">Pre · активный loop + порядок этапов</span></div>
+        <div class="comp"><b>scope-guard</b><br><span class="r">Pre · mutable/protected scope</span></div>
+        <div class="comp"><b>tool-guard</b><br><span class="r">Pre · tools + роли этапа</span></div>
+        <div class="comp"><b>permission-guard</b><br><span class="r">Pre · shell/network</span></div>
+        <div class="comp"><b>audit-writer</b><br><span class="r">Post · audit.html + TODO</span></div>
+        <div class="comp"><b>evidence-gate</b><br><span class="r">Stop · требует evidence</span></div>
+      </div>
+      <div class="boundary" data-label="agents/ · 5 .md roles">
+        <div class="comp"><b>explorer</b> · <span class="r">haiku</span></div>
+        <div class="comp"><b>planner</b> · <span class="r">fable</span></div>
+        <div class="comp"><b>verifier</b> · <span class="r">opus / microVM</span></div>
+        <div class="comp"><b>reviewer</b> · <span class="r">opus (new)</span></div>
+        <div class="comp"><b>researcher</b> · <span class="r">fable (new)</span></div>
+      </div>
+      <div class="boundary" data-label="docs/loen/&lt;topic&gt;/ · durable artifacts">
+        <div class="comp"><b>1_goal … 7_result</b><br><span class="r">loop.yaml · handoff · audit.html · attempts.jsonl · evidence/</span></div>
+        <div class="comp"><b>docs/loen/current</b><br><span class="r">указатель активного топика</span></div>
+      </div>
+    </div>
+  </figure>
+  <p class="sub">Управляющий контракт <code>loop.yaml</code> читается хуками и передаётся субагентам как капсула; запись артефактов проходит через PreToolUse-цепочку хуков.</p>
+
+  <h3>Граф зависимостей (A → B = «A зависит от / использует B»)</h3>
+  <figure class="diagram">
+  <svg viewBox="0 0 980 500" role="img" aria-label="Граф зависимостей компонентов loen с выделенным циклом act→check→reflect">
+    <!-- top row -->
+    <g class="node"><rect class="card" x="40"  y="30" width="160" height="56" rx="12"/><rect class="bar-accent" x="48" y="42" width="5" height="32" rx="2.5"/><text class="t-title" x="120" y="52" text-anchor="middle">Конфигураторы</text><text class="t-sub" x="120" y="70" text-anchor="middle">delivery/repair/…</text></g>
+    <g class="node"><rect class="card" x="280" y="30" width="150" height="56" rx="12"/><rect class="bar-accent" x="288" y="42" width="5" height="32" rx="2.5"/><text class="t-title" x="355" y="52" text-anchor="middle">loop-start</text><text class="t-sub" x="355" y="70" text-anchor="middle">approval gate</text></g>
+    <g class="node"><rect class="card" x="520" y="30" width="150" height="56" rx="12"/><rect class="bar-warn" x="528" y="42" width="5" height="32" rx="2.5"/><text class="t-title t-mono" x="595" y="52" text-anchor="middle">loop.yaml</text><text class="t-sub" x="595" y="70" text-anchor="middle">контракт</text></g>
+    <g class="node"><rect class="card" x="760" y="30" width="180" height="56" rx="12"/><rect class="bar-warn" x="768" y="42" width="5" height="32" rx="2.5"/><text class="t-title" x="850" y="52" text-anchor="middle">6 hooks</text><text class="t-sub" x="850" y="70" text-anchor="middle">Pre/Post/Stop</text></g>
+    <!-- second row -->
+    <g class="node"><rect class="card" x="280" y="150" width="150" height="56" rx="12"/><rect class="bar-accent" x="288" y="162" width="5" height="32" rx="2.5"/><text class="t-title" x="355" y="172" text-anchor="middle">loop-run</text><text class="t-sub" x="355" y="190" text-anchor="middle">оркестратор</text></g>
+    <g class="node"><rect class="card" x="760" y="150" width="180" height="56" rx="12"/><rect class="bar-ok" x="768" y="162" width="5" height="32" rx="2.5"/><text class="t-title" x="850" y="172" text-anchor="middle">shared library</text><text class="t-sub" x="850" y="190" text-anchor="middle">common/artifacts/capsules</text></g>
+    <!-- loop boundary (highlighted cycle) -->
+    <rect class="boundary-rect" x="60" y="262" width="820" height="96" rx="16"/>
+    <rect class="lbl-bg" x="76" y="254" width="320" height="16"/>
+    <text class="lbl" x="84" y="266" font-weight="600" fill="var(--danger)">ЦИКЛ · act → check → reflect → (retry) act</text>
+    <g class="node"><rect class="card" x="90"  y="290" width="150" height="56" rx="12"/><rect class="bar-accent" x="98" y="302" width="5" height="32" rx="2.5"/><text class="t-title" x="165" y="312" text-anchor="middle">loop-act</text><text class="t-sub" x="165" y="330" text-anchor="middle">4_act.md</text></g>
+    <g class="node"><rect class="card" x="380" y="290" width="150" height="56" rx="12"/><rect class="bar-ok" x="388" y="302" width="5" height="32" rx="2.5"/><text class="t-title" x="455" y="312" text-anchor="middle">loop-check</text><text class="t-sub" x="455" y="330" text-anchor="middle">5_check.md</text></g>
+    <g class="node"><rect class="card" x="670" y="290" width="150" height="56" rx="12"/><rect class="bar-warn" x="678" y="302" width="5" height="32" rx="2.5"/><text class="t-title" x="745" y="312" text-anchor="middle">loop-reflect</text><text class="t-sub" x="745" y="330" text-anchor="middle">6_reflect.md</text></g>
+    <!-- bottom row -->
+    <g class="node"><rect class="card" x="380" y="410" width="150" height="56" rx="12"/><rect class="bar-ok" x="388" y="422" width="5" height="32" rx="2.5"/><text class="t-title" x="455" y="432" text-anchor="middle">verifier</text><text class="t-sub" x="455" y="450" text-anchor="middle">субагент/microVM</text></g>
+    <g class="node"><rect class="card" x="670" y="410" width="150" height="56" rx="12"/><rect class="bar-term" x="678" y="422" width="5" height="32" rx="2.5"/><text class="t-title" x="745" y="432" text-anchor="middle">7_result / handoff</text><text class="t-sub" x="745" y="450" text-anchor="middle">терминал</text></g>
+
+    <!-- edges -->
+    <path class="conn-a" marker-end="url(#arrA)" d="M200,58 H278"/>
+    <rect class="lbl-bg" x="212" y="40" width="58" height="15"/><text class="lbl" x="241" y="51" text-anchor="middle">делегир.</text>
+    <path class="conn-a" marker-end="url(#arrA)" d="M430,58 H518"/>
+    <rect class="lbl-bg" x="450" y="40" width="48" height="15"/><text class="lbl" x="474" y="51" text-anchor="middle">пишет</text>
+    <path class="conn" marker-end="url(#arr)" d="M760,58 H672"/>
+    <rect class="lbl-bg" x="690" y="40" width="52" height="15"/><text class="lbl" x="716" y="51" text-anchor="middle">читает</text>
+    <path class="conn" marker-end="url(#arr)" d="M850,86 V150"/>
+    <path class="conn-a" marker-end="url(#arrA)" d="M355,150 V90"/>
+    <rect class="lbl-bg" x="300" y="112" width="110" height="15"/><text class="lbl" x="355" y="123" text-anchor="middle">approved plan</text>
+    <path class="conn-a" marker-end="url(#arrA)" d="M300,206 C210,236 175,255 165,288"/>
+    <!-- highlighted cycle -->
+    <path class="flow" marker-end="url(#arrA)" d="M240,318 H378"/>
+    <path class="flow" marker-end="url(#arrA)" d="M530,318 H668"/>
+    <path class="flow-term" marker-end="url(#arrTerm)" d="M745,346 V395 Q745,408 733,408 L177,408 Q165,408 165,395 V348"/>
+    <rect class="lbl-bg" x="360" y="372" width="200" height="16"/><text class="lbl" x="460" y="384" text-anchor="middle" fill="var(--danger)">REJECT &amp; pass&lt;max → retry</text>
+    <path class="conn" marker-end="url(#arrOk)" d="M455,346 V410"/>
+    <rect class="lbl-bg" x="410" y="368" width="92" height="15"/><text class="lbl" x="456" y="379" text-anchor="middle">dispatch</text>
+    <path class="conn-term" marker-end="url(#arrTerm)" d="M745,346 V410"/>
+    <rect class="lbl-bg" x="700" y="368" width="96" height="15"/><text class="lbl" x="748" y="379" text-anchor="middle">done/handoff</text>
+  </svg>
+  <figcaption>Выделенный красным цикл act→check→reflect с ребром возврата (retry, pass&lt;max) — единственный намеренный цикл; остальные рёбра ацикличны. Автозапуск loop-run стартует только от одобренного плана.</figcaption>
+  </figure>
+
+  <h3>Карта покрытия (задача → требование)</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Задача из брейншторма</th><th>Покрыта (раздел/требование)</th></tr></thead>
+    <tbody>
+      <tr><td>1. Порт outcome→stage-oriented durable-topic (адаптация под Claude Code)</td><td>Problem, Goal, Decision 1, §1</td></tr>
+      <tr><td>2. Чистая замена (v1.0.0)</td><td>Decision 2, §7 «Clean replace»</td></tr>
+      <tr><td>3. Авто-запуск после одобрения плана</td><td>Decision 3, §6</td></tr>
+      <tr><td>4. Полный набор из 13 скиллов (7+4+governance+audit)</td><td>§2</td></tr>
+      <tr><td>5. 7 нумерованных артефактов <code>docs/loen/&lt;topic&gt;/</code></td><td>§1 «Seven numbered stage artifacts»</td></tr>
+      <tr><td>6. 6 хуков + shared library</td><td>§4</td></tr>
+      <tr><td>7. Градуированный <code>LOEN_MODE</code></td><td>§4 «Graded LOEN_MODE»</td></tr>
+      <tr><td>8. 5 агентов (+reviewer/researcher)</td><td>§5</td></tr>
+      <tr><td>9. Богатый <code>loop.yaml</code> (run/stages/tools/permissions/capsule)</td><td>§3</td></tr>
+      <tr><td>10. Сохранение именования топиков</td><td>§1 (validate_topic_slug, слуг сохранён, убран лишь префикс даты)</td></tr>
+      <tr><td>11. Указатель <code>docs/loen/current</code></td><td>§1 «Active-loop signal»</td></tr>
+      <tr><td>12. Обязательное обновление README.md + README.ru.md</td><td>Decision 5, §7 «Documentation»</td></tr>
+      <tr><td>13. Переписать тесты</td><td>§7 «Test rewrite»</td></tr>
+    </tbody>
+  </table>
+  <p class="note ok">Все 13 задач покрыты ≥1 требованием. Лишние требования, не привязанные к задаче: минорные (F-007) — <code>docs/architecture.md</code> и обновление <code>docs/functions/LOEN.md</code> сверх заявленных двух README.</p>
+
+  <h2>3. Результаты проверки</h2>
+
+  <h3>Статус по фазам</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">passed</span></td><td>Плейсхолдеров нет (совпадения «TODO» — имя файла <code>docs/TODO.md</code>); битых ссылок нет; секции 1–7 без пропусков/дублей</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>Все 13 задач покрыты; 1 overlap (F-004) и 1 минорный лишний (F-007) — WARNING/INFO, не CRITICAL</td></tr>
+      <tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>1 размытый критерий активации (F-005); 1 отложенное решение (F-006)</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>3 внутренних рассогласования схемы/текста (F-001..F-003) — WARNING</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>severity</th><th>раздел</th><th>текст / фрагмент</th><th>fix</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>F-001</td><td><span class="badge warn">WARNING</span></td><td>§3 loop.yaml</td>
+        <td>Схема задаёт роли этапов прямым списком (<code>stages.act: [worker]</code>), но loop-gate.py, tool-guard.py и §5 ссылаются на путь <code>stages.&lt;stage&gt;.roles</code> — вложенного ключа <code>roles:</code> в схеме нет.</td>
+        <td>Свести к одному: либо вложить роли под <code>stages.&lt;stage&gt;.roles:</code>, либо изменить ссылки хуков/§5 на <code>stages.&lt;stage&gt;</code>.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-002</td><td><span class="badge warn">WARNING</span></td><td>§3 loop.yaml</td>
+        <td><code>mutable_scope</code>/<code>protected_scope</code> объявлены дважды — на верхнем уровне и внутри <code>permissions.filesystem</code> — без источника истины (validate_run_contract читает верхний уровень; scope-guard — permissions.filesystem).</td>
+        <td>Определить одно авторитетное место или явно указать, что <code>permissions.filesystem</code> зеркалит верхний уровень.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-003</td><td><span class="badge warn">WARNING</span></td><td>§5 Агенты</td>
+        <td>Текст: «The four subagent roles are read-only», но таблица перечисляет пять read-only субагентов (explorer, planner, verifier, reviewer, researcher). Неясно, входит ли verifier в счёт.</td>
+        <td>Написать «пять субагентных ролей» или уточнить, что «четыре» — это L1-субагенты без verifier (L3).</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-004</td><td><span class="badge warn">WARNING</span></td><td>§2 Скиллы</td>
+        <td>И <code>loop-start</code> («dispatch planner → 3_plan»), и <code>loop-plan</code> (пишет <code>3_plan.md</code>) заявляют создание <code>3_plan.md</code>; связь между ними не описана.</td>
+        <td>Указать, что loop-start делегирует генерацию 3_plan скиллу loop-plan (или planner), и назвать единственного писателя.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-005</td><td><span class="badge warn">WARNING</span></td><td>§6 Авто-запуск</td>
+        <td>Fallback на нативный <code>/goal</code> срабатывает «if compaction is a risk» / «for large budgets» без измеримого порога — критерий активации размыт.</td>
+        <td>Задать конкретный триггер, напр. <code>budget.max_iterations &gt; N</code> или оценка контекста в токенах &gt; порога.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-006</td><td><span class="badge info">INFO</span></td><td>§4 Хуки</td>
+        <td>Судьба <code>make_goal.py</code> явно отложена до планирования («or is removed if the fallback is inlined»); допустимо для дизайн-спеки, но участь скрипта не решена.</td>
+        <td>Решить при планировании; шаг плана по скриптам должен выбрать migrate/remove для make_goal.py с DoD.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+      <tr>
+        <td>F-007</td><td><span class="badge info">INFO</span></td><td>§7 Миграция</td>
+        <td><code>docs/architecture.md</code> (новый) и обновление <code>docs/functions/LOEN.md</code> — документационные поставки сверх заявленных в брейншторме двух README. Разумное расширение, отмечено для трассируемости.</td>
+        <td>Подтвердить, что эти доп. документы в scope; иначе убрать.</td>
+        <td><span class="badge">open</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Итог</h3>
+  <p class="note ok"><b>Вердикт: OK.</b> Открытых CRITICAL — 0. Открытых WARNING — 5 (F-001…F-005). INFO — 2 (F-006, F-007). Все фазы (structure/coverage/clarity/consistency) — passed. WARNING'и — рекомендации к уточнению перед этапом plan, гейт не блокируют.</p>
+
+  <h3>Цепочка</h3>
+  <figure class="rpt-c4">
+    <div class="boundary" data-label="chain">
+      <div class="comp" style="border-left-color:var(--muted)"><b>intent</b><br><span class="r">n/a — файл intent не найден</span></div>
+      <div class="comp" style="border-left-color:var(--ok)"><b>spec</b><br><span class="r">проверен · OK · spec_hash 1ad88e419a22e3fd</span></div>
+    </div>
+  </figure>
+  <p class="sub">Следующий шаг: <code>superpowers:writing-plans</code> (этап plan).</p>
+</section>
+<!-- TAB:spec END -->
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:plan END -->
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+  <p class="note">Этап ещё не проверен.</p>
+</section>
+<!-- TAB:result END -->
+</body>
+</html>
