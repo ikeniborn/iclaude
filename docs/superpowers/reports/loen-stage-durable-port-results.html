@@ -120,8 +120,8 @@ ul.tight li{ margin:.28rem 0; }
 <body>
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
 <input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -386,7 +386,185 @@ ul.tight li{ margin:.28rem 0; }
 <!-- TAB:spec END -->
 <!-- TAB:plan START -->
 <section class="tab-pane" id="pane-plan">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">План: <code>docs/superpowers/plans/2026-07-09-loen-stage-durable-port-plan.md</code></p>
+  <p class="sub">plan_hash <code>ef33cb8386e042bf</code> · фазы: structure / coverage / dependencies / verifiability / consistency · вердикт <span class="badge ok">OK</span> · повторная проверка после правок тела (F-001…F-005 исправлены) · 2026-07-10</p>
+
+  <h2>1. Резюме плана</h2>
+  <p class="sub">23 задачи в 8 фазах; Python/Bash-задачи — TDD (тест-фейл → реализация → тест-пасс), prose-скиллы — grep-санити.</p>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Артефакт / выход</th><th>DoD (проверка → ожидание)</th></tr></thead>
+    <tbody>
+      <tr><td><b>T1</b> loen_common.py</td><td>hooks/loen_common.py + test</td><td><code>python3 tests/test_loen_common.py</code> → PASS</td></tr>
+      <tr><td><b>T2</b> шаблоны</td><td>assets/templates/1_goal…7_result, loop.yaml, handoff, audit.html</td><td><code>bash tests/test_loen_templates.sh</code> → PASS</td></tr>
+      <tr><td><b>T3</b> loen_artifacts.py</td><td>hooks/loen_artifacts.py + 2 теста</td><td><code>test_loen_run_contract.py</code> && <code>test_loen_artifacts.py</code> → PASS</td></tr>
+      <tr><td><b>T4</b> loen_capsules.py</td><td>hooks/loen_capsules.py + test</td><td><code>python3 tests/test_loen_capsules.py</code> → PASS</td></tr>
+      <tr><td><b>T5</b> scope-guard</td><td>hooks/scope-guard.py + test</td><td><code>test_loen_scope_guard.py</code> → PASS</td></tr>
+      <tr><td><b>T6</b> loop-gate</td><td>hooks/loop-gate.py + test</td><td><code>test_loen_loop_gate.py</code> → PASS</td></tr>
+      <tr><td><b>T7</b> tool-guard</td><td>hooks/tool-guard.py + test</td><td><code>test_loen_tool_guard.py</code> → PASS</td></tr>
+      <tr><td><b>T8</b> permission-guard</td><td>hooks/permission-guard.py + test</td><td><code>test_loen_permission_guard.py</code> → PASS</td></tr>
+      <tr><td><b>T9</b> evidence-gate</td><td>hooks/evidence-gate.py + test</td><td><code>test_loen_evidence_gate.py</code> → PASS</td></tr>
+      <tr><td><b>T10</b> audit-writer</td><td>hooks/audit-writer.py + test</td><td><code>test_loen_audit_writer.py</code> → PASS</td></tr>
+      <tr><td><b>T11</b> hooks.json</td><td>rewire + удалить loop-guard.py</td><td><code>test_loen_hooks_wiring.sh</code> → PASS</td></tr>
+      <tr><td><b>T12</b> агенты</td><td>reviewer/researcher + правка explorer/planner/verifier</td><td><code>test_loen_agents.sh</code> → PASS</td></tr>
+      <tr><td><b>T13</b> loop-start</td><td>skills/loop-start/SKILL.md</td><td>grep <code>loop-plan</code> && <code>plan_approved</code></td></tr>
+      <tr><td><b>T14</b> stage-скиллы</td><td>loop-plan/act/check/reflect SKILL.md</td><td>per-skill greps: 3_plan/## Checks, 4_act/## Changed Paths, 5_check/verifier, 7_result/6_reflect <span class="badge ok">F-003 fixed</span></td></tr>
+      <tr><td><b>T15</b> loop-run</td><td>skills/loop-run/SKILL.md</td><td>grep <code>validate_run_contract</code> / <code>handoff</code> / <code>max_passes</code></td></tr>
+      <tr><td><b>T16</b> loop-status</td><td>skills/loop-status/SKILL.md</td><td>файл есть, frontmatter <code>name: loop-status</code></td></tr>
+      <tr><td><b>T17</b> конфигураторы</td><td>loop-delivery/repair/autoresearch/review</td><td>grep <code>loop-start</code>/<code>loop-run</code> + <code>mode</code></td></tr>
+      <tr><td><b>T18</b> governance/audit</td><td>правка + удалить loop-goal</td><td>grep <code>docs/loen/&lt;topic&gt;</code>, 4 стадии, loop-goal нет</td></tr>
+      <tr><td><b>T19</b> scripts (layout)</td><td>check_layout/guard_protected; удалить make_goal</td><td><code>bash tests/test_loen_layout.sh</code> → PASS</td></tr>
+      <tr><td><b>T20</b> stats/plugin</td><td>loen_stats/log_experiment/verify_microvm + тесты</td><td>stats/experiment/microvm → PASS (<code>test_loen_plugin.sh</code> — после T21)</td></tr>
+      <tr><td><b>T21</b> версия+доки</td><td>plugin.json 1.0.0, architecture.md, LOEN.md</td><td><code>bash tests/test_loen_plugin.sh</code> → PASS</td></tr>
+      <tr><td><b>T22</b> READMEs</td><td>README.md + README.ru.md (в синхроне)</td><td>grep <code>loop-run</code>/<code>loop-start</code>/<code>1.0.0</code> в обоих</td></tr>
+      <tr><td><b>T23</b> E2E</td><td>прогон всего пакета + smoke жизненного цикла</td><td>каждая строка → <code>PASS …</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Схемы зависимостей и пересечений</h2>
+
+  <h3>Граф зависимостей шагов (build order)</h3>
+  <figure class="diagram">
+    <svg viewBox="0 0 904 600" role="img" aria-label="Граф зависимостей задач плана">
+      <!-- edges first -->
+      <!-- foundations -->
+      <path class="conn-a" d="M218,64 L218,110" marker-end="url(#arrA)"/>
+      <path class="conn"   d="M500,64 L248,110" marker-end="url(#arr)"/>
+      <path class="conn"   d="M268,130 L480,130" marker-end="url(#arr)"/>
+      <!-- library -> hooks (fan) -->
+      <path class="conn" d="M212,150 L66,196"  marker-end="url(#arr)"/>
+      <path class="conn" d="M218,150 L218,196" marker-end="url(#arr)"/>
+      <path class="conn" d="M224,150 L370,196" marker-end="url(#arr)"/>
+      <path class="conn" d="M232,150 L524,196" marker-end="url(#arr)"/>
+      <path class="conn" d="M240,150 L682,196" marker-end="url(#arr)"/>
+      <path class="conn" d="M248,150 L838,196" marker-end="url(#arr)"/>
+      <!-- hooks -> hooks.json (converge) -->
+      <path class="conn" d="M62,236 L208,282"  marker-end="url(#arr)"/>
+      <path class="conn" d="M218,236 L218,282" marker-end="url(#arr)"/>
+      <path class="conn" d="M374,236 L228,282" marker-end="url(#arr)"/>
+      <path class="conn" d="M530,236 L232,282" marker-end="url(#arr)"/>
+      <path class="conn" d="M686,236 L236,282" marker-end="url(#arr)"/>
+      <path class="conn" d="M842,236 L240,282" marker-end="url(#arr)"/>
+      <!-- skills pipeline + forward ref -->
+      <path class="conn-a" d="M112,388 L166,388" marker-end="url(#arrA)"/>
+      <path class="conn"   d="M268,388 L322,388" marker-end="url(#arr)"/>
+      <!-- skills/agents -> plugin registration test -->
+      <path class="conn" d="M530,408 L530,454" marker-end="url(#arr)"/>
+      <path class="conn" d="M580,302 L602,302 L602,448 L560,454" marker-end="url(#arr)"/>
+      <!-- cross-task gate -->
+      <path class="conn-term" d="M580,474 L636,474" marker-end="url(#arrTerm)"/>
+      <!-- into E2E -->
+      <path class="conn" d="M400,494 L442,540" marker-end="url(#arr)"/>
+      <path class="conn" d="M520,494 L452,540" marker-end="url(#arr)"/>
+      <path class="conn" d="M676,494 L466,540" marker-end="url(#arr)"/>
+      <path class="conn" d="M834,494 L480,540" marker-end="url(#arr)"/>
+      <!-- edge labels -->
+      <rect class="lbl-bg" x="96" y="372" width="82" height="14"/><text class="lbl" x="137" y="383" text-anchor="middle">forward ref F-005</text>
+      <rect class="lbl-bg" x="566" y="458" width="86" height="14"/><text class="lbl" x="609" y="469" text-anchor="middle">bump-версии gate</text>
+
+      <!-- nodes -->
+      <g class="node"><rect class="card" x="168" y="24" width="100" height="40" rx="7"/><text class="t-title" x="218" y="41" text-anchor="middle">T1</text><text class="t-sub" x="218" y="55" text-anchor="middle">loen_common</text></g>
+      <g class="node"><rect class="card" x="480" y="24" width="100" height="40" rx="7"/><text class="t-title" x="530" y="41" text-anchor="middle">T2</text><text class="t-sub" x="530" y="55" text-anchor="middle">templates</text></g>
+      <g class="node"><rect class="card" x="168" y="110" width="100" height="40" rx="7"/><text class="t-title" x="218" y="127" text-anchor="middle">T3</text><text class="t-sub" x="218" y="141" text-anchor="middle">loen_artifacts</text></g>
+      <g class="node"><rect class="card" x="480" y="110" width="100" height="40" rx="7"/><text class="t-title" x="530" y="127" text-anchor="middle">T4</text><text class="t-sub" x="530" y="141" text-anchor="middle">loen_capsules</text></g>
+      <g class="node"><rect class="card" x="12"  y="196" width="100" height="40" rx="7"/><text class="t-title" x="62"  y="213" text-anchor="middle">T5</text><text class="t-sub" x="62"  y="227" text-anchor="middle">scope-guard</text></g>
+      <g class="node"><rect class="card" x="168" y="196" width="100" height="40" rx="7"/><text class="t-title" x="218" y="213" text-anchor="middle">T6</text><text class="t-sub" x="218" y="227" text-anchor="middle">loop-gate</text></g>
+      <g class="node"><rect class="card" x="324" y="196" width="100" height="40" rx="7"/><text class="t-title" x="374" y="213" text-anchor="middle">T7</text><text class="t-sub" x="374" y="227" text-anchor="middle">tool-guard</text></g>
+      <g class="node"><rect class="card" x="480" y="196" width="100" height="40" rx="7"/><text class="t-title" x="530" y="213" text-anchor="middle">T8</text><text class="t-sub" x="530" y="227" text-anchor="middle">perm-guard</text></g>
+      <g class="node"><rect class="card" x="636" y="196" width="100" height="40" rx="7"/><text class="t-title" x="686" y="213" text-anchor="middle">T9</text><text class="t-sub" x="686" y="227" text-anchor="middle">evidence-gate</text></g>
+      <g class="node"><rect class="card" x="792" y="196" width="100" height="40" rx="7"/><text class="t-title" x="842" y="213" text-anchor="middle">T10</text><text class="t-sub" x="842" y="227" text-anchor="middle">audit-writer</text></g>
+      <g class="node"><rect class="card" x="168" y="282" width="100" height="40" rx="7"/><text class="t-title" x="218" y="299" text-anchor="middle">T11</text><text class="t-sub" x="218" y="313" text-anchor="middle">hooks.json</text></g>
+      <g class="node"><rect class="card" x="480" y="282" width="100" height="40" rx="7"/><text class="t-title" x="530" y="299" text-anchor="middle">T12</text><text class="t-sub" x="530" y="313" text-anchor="middle">agents</text></g>
+      <g class="node"><rect class="card" x="12"  y="368" width="100" height="40" rx="7"/><text class="t-title" x="62"  y="385" text-anchor="middle">T13</text><text class="t-sub" x="62"  y="399" text-anchor="middle">loop-start</text></g>
+      <g class="node"><rect class="card" x="168" y="368" width="100" height="40" rx="7"/><text class="t-title" x="218" y="385" text-anchor="middle">T14</text><text class="t-sub" x="218" y="399" text-anchor="middle">stage skills</text></g>
+      <g class="node"><rect class="card" x="324" y="368" width="100" height="40" rx="7"/><text class="t-title" x="374" y="385" text-anchor="middle">T15</text><text class="t-sub" x="374" y="399" text-anchor="middle">loop-run</text></g>
+      <g class="node"><rect class="card" x="480" y="368" width="100" height="40" rx="7"/><text class="t-title" x="530" y="385" text-anchor="middle">T16</text><text class="t-sub" x="530" y="399" text-anchor="middle">loop-status</text></g>
+      <g class="node"><rect class="card" x="12"  y="454" width="100" height="40" rx="7"/><text class="t-title" x="62"  y="471" text-anchor="middle">T17</text><text class="t-sub" x="62"  y="485" text-anchor="middle">configurators</text></g>
+      <g class="node"><rect class="card" x="168" y="454" width="100" height="40" rx="7"/><text class="t-title" x="218" y="471" text-anchor="middle">T18</text><text class="t-sub" x="218" y="485" text-anchor="middle">gov/audit</text></g>
+      <g class="node"><rect class="card" x="324" y="454" width="100" height="40" rx="7"/><text class="t-title" x="374" y="471" text-anchor="middle">T19</text><text class="t-sub" x="374" y="485" text-anchor="middle">scripts</text></g>
+      <g class="node"><rect class="card" x="480" y="454" width="100" height="40" rx="7"/><text class="t-title" x="530" y="471" text-anchor="middle">T20</text><text class="t-sub" x="530" y="485" text-anchor="middle">stats+plugin</text></g>
+      <g class="node"><rect class="card" x="636" y="454" width="100" height="40" rx="7"/><text class="t-title" x="686" y="471" text-anchor="middle">T21</text><text class="t-sub" x="686" y="485" text-anchor="middle">version+docs</text></g>
+      <g class="node"><rect class="card" x="792" y="454" width="100" height="40" rx="7"/><text class="t-title" x="842" y="471" text-anchor="middle">T22</text><text class="t-sub" x="842" y="485" text-anchor="middle">READMEs</text></g>
+      <g class="node"><rect class="card" x="400" y="540" width="100" height="40" rx="7"/><text class="t-title" x="450" y="557" text-anchor="middle">T23</text><text class="t-sub" x="450" y="571" text-anchor="middle">E2E verify</text></g>
+    </svg>
+    <figcaption>Сверху вниз = порядок сборки; серые рёбра = «результат M используется в N» (M&lt;N). Веер T3→T5…T10 и сходимость T5…T10→T11 представляют зависимость всех хуков от общей библиотеки (T1/T3); скиллы T13–T18 также читают шаблоны (T2) и библиотеку (T3/T4), а тест регистрации плагина (T20) утверждает наличие всех 13 скиллов / 5 агентов / 6 хуков — эти веерные зависимости обобщены. <b>Синее пунктирное ребро T13→T14</b> — forward-reference (F-005, порядок: loop-start ссылается на loop-plan, который пишется позже). <b>Красное ребро T20→T21</b> — кросс-задачный гейт: <code>test_loen_plugin.sh</code> зеленеет только после bump версии в T21 (это отмечено в T20 Step 2).</figcaption>
+  </figure>
+
+  <h3>Пересечения (общие артефакты и покрытие требований)</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Артефакт / требование</th><th>Задачи, разделяющие его</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td><code>loop.yaml</code></td><td>T2, T3, T5–T8, T13, T19</td><td>шаблон → scaffold/validate → хуки читают → loop-start пишет status/plan_hash → guard_protected читает protected_scope</td></tr>
+      <tr><td><code>3_plan.md</code></td><td>T3, T13, T14</td><td>единственный писатель — loop-plan (T14); T13 — гейт одобрения + <code>plan_body_hash</code> (T3)</td></tr>
+      <tr><td><code>docs/TODO.md</code></td><td>T3, T10</td><td><code>upsert_todo_row</code> определён в T3, вызывается audit-writer (T10)</td></tr>
+      <tr><td><code>audit.html</code></td><td>T2, T3, T10</td><td>шаблон → <code>render_audit</code> → регенерация из audit-writer</td></tr>
+      <tr><td><code>loen_common.py</code></td><td>T1 → T3, T4, T5–T10</td><td>фундамент, потребляется артефактами, капсулами и всеми хуками</td></tr>
+      <tr><td><code>hooks.json</code></td><td>T11 ← T5–T10</td><td>wiring зависит от наличия всех 6 хуков</td></tr>
+      <tr><td><code>test_loen_plugin.sh</code></td><td>T20, T21 (+ T12–T18)</td><td>написан в T20, зеленеет в T21; утверждает регистрацию скиллов/агентов/хуков</td></tr>
+      <tr><td><code>verify_microvm.sh</code></td><td>T4, T20, T23</td><td>T4 ссылается на валидацию в T20 (F-001 исправлено: «Task 24» → T20/T23); адаптация в T20; smoke в T23</td></tr>
+      <tr><td><code>assets/templates/</code></td><td>T2, T3, T17</td><td>создание → scaffold копирует → T17 удаляет старую <code>loop-delivery/assets/</code></td></tr>
+      <tr><td>Требование §2 (13 скиллов)</td><td>T13, T14, T15, T16, T17, T18</td><td>одно требование закрывается несколькими задачами</td></tr>
+      <tr><td>Требование §4 (хуки+библиотека+режим)</td><td>T1, T3, T4, T5–T11</td><td>покрытие распределено по фазам 1–2</td></tr>
+      <tr><td>Требование §7 (доки)</td><td>T21, T22</td><td>architecture.md/LOEN.md + оба README</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Результаты проверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Фаза</th><th>Статус</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>structure</td><td><span class="badge ok">passed</span></td><td>Плейсхолдеров нет; задачи 1–23 без пропусков/дублей; заголовки уникальны. F-001 (висячая «Task 24») → <b>исправлено</b>: T4 Step 3 теперь ссылается на T20 (test_loen_verify_microvm.sh) и smoke в T23</td></tr>
+      <tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>Все 7 разделов спеки + 5 решений + README покрыты; traceability-заметки плана верны; лишних задач нет. F-002 (review-scope) → <b>исправлено</b>: добавлена проверка №9 в <code>validate_run_contract</code> + кейс <code>test_contract_review_needs_scope</code></td></tr>
+      <tr><td>dependencies</td><td><span class="badge ok">passed</span></td><td>Порядок сборки корректен (библиотека→хуки→wiring; шаблоны→скиллы); циклов нет. T20→T21 (тест зеленеет после bump) — согласовано. F-005 (forward-ref T13→T14) → <b>исправлено</b>: добавлена «Forward-dependency note» в T13</td></tr>
+      <tr><td>verifiability</td><td><span class="badge ok">passed</span></td><td>TDD-задачи имеют команду+ожидание; prose-скиллы T13/T15/T16 — адекватные grep-DoD. F-003 (вакуозный grep T14) → <b>исправлено</b>: Step 2 теперь грепает per-skill артефакты/секции (3_plan/## Checks, 4_act/## Changed Paths, 5_check/verifier, 7_result/6_reflect) + ожидаемый вывод</td></tr>
+      <tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>Имена функций согласованы между задачами (<code>block_or_nudge</code>, <code>tool_class</code>, <code>scaffold_topic</code>, <code>plan_body_hash</code>, <code>validate_run_contract</code>, <code>render_capsule</code>, <code>render_audit</code>, <code>upsert_todo_row</code>). F-004 (манифест «Created») → <b>исправлено</b>: добавлены test_loen_hooks_wiring.sh (T11) и test_loen_agents.sh (T12)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>id</th><th>сев.</th><th>фаза</th><th>секция</th><th>суть</th><th>fix</th><th>вердикт</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>F-001</td><td><span class="badge warn">WARNING</span></td><td>structure</td>
+        <td>T4 loen_capsules</td>
+        <td>Step 3 ссылается на «validated in Task 24», но в плане только 23 задачи; microVM валидируется в T20 (<code>test_loen_verify_microvm.sh</code>) и T23 (smoke). Висячая ссылка на задачу.</td>
+        <td>Заменить «Task 24» на «Task 20 (test_loen_verify_microvm.sh) / Task 23 (smoke)».</td>
+        <td><span class="badge ok">fixed</span> <span class="sub">2026-07-10</span></td>
+      </tr>
+      <tr>
+        <td>F-002</td><td><span class="badge warn">WARNING</span></td><td>coverage</td>
+        <td>T3 loen_artifacts</td>
+        <td>Спека §3 требует, чтобы <code>validate_run_contract</code> проверял mode-специфичные правила, включая «review needs a review scope», но чек-лист T3 (проверки 1–8) реализует только research-target; review-режим не проверяется, тест покрывает лишь delivery/research.</td>
+        <td>Добавить проверку review-режима (наличие review scope) как пункт 9 <code>validate_run_contract</code> + тест, либо явно указать, что review-scope валидируется в другом месте.</td>
+        <td><span class="badge ok">fixed</span> <span class="sub">2026-07-10</span></td>
+      </tr>
+      <tr>
+        <td>F-003</td><td><span class="badge warn">WARNING</span></td><td>verifiability</td>
+        <td>T14 stage skills</td>
+        <td>Санити-чек T14 Step 2 грепает лишь строку «SKILL» (совпадает почти с любым SKILL.md) и переносит реальную проверку в неизмеримое «ручное чтение»; в отличие от T13/T15 не утверждает выходные артефакты/секции четырёх скиллов.</td>
+        <td>Грепать выходной артефакт/секции каждого скилла (loop-act → 4_act.md/## Changed Paths, loop-check → verifier/5_check.md, loop-reflect → 7_result.md).</td>
+        <td><span class="badge ok">fixed</span> <span class="sub">2026-07-10</span></td>
+      </tr>
+      <tr>
+        <td>F-004</td><td><span class="badge info">INFO</span></td><td>consistency</td>
+        <td>File structure</td>
+        <td>Манифест «Created» перечисляет 10 новых тестов, но пропускает <code>test_loen_hooks_wiring.sh</code> (T11) и <code>test_loen_agents.sh</code> (T12), которые задачи создают как новые файлы.</td>
+        <td>Добавить оба теста в список «Created».</td>
+        <td><span class="badge ok">fixed</span> <span class="sub">2026-07-10</span></td>
+      </tr>
+      <tr>
+        <td>F-005</td><td><span class="badge info">INFO</span></td><td>dependencies</td>
+        <td>T13 loop-start</td>
+        <td>T13 (loop-start) ссылается на вызов loop-plan, чей SKILL.md пишется позже в T14 — forward-reference. Безвредно (обе пишутся в этом плане; рантайм не исполняется до smoke в T23), отмечено для трассируемости.</td>
+        <td>По желанию переставить loop-plan (T14) перед T13, либо оставить примечание о forward-зависимости; функционально не требуется.</td>
+        <td><span class="badge ok">fixed</span> <span class="sub">2026-07-10</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="note ok"><b>Вердикт: OK.</b> Открытых CRITICAL — 0. Открытых WARNING — 0, открытых INFO — 0: все пять находок (F-001…F-005) исправлены правками тела и закрыты <code>verdict: fixed</code> (2026-07-10). Все пять фаз (structure/coverage/dependencies/verifiability/consistency) — passed; plan_hash пересчитан по канону (frontmatter-excluding awk) → <code>ef33cb8386e042bf</code>, совпадает с телом: IDD-гейт разблокирован для executing-plans / subagent-driven-development.</p>
+
+  <p class="sub">Цепочка: <code>intent</code> <span class="badge na">n/a</span> → <code>spec</code> <span class="badge ok">OK</span> → <code>plan</code> <span class="badge ok">OK</span>. Следующий шаг: <code>superpowers:executing-plans</code> / <code>superpowers:subagent-driven-development</code>.</p>
 </section>
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
