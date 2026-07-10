@@ -15,8 +15,9 @@ until `7_result.md` (Done) or `handoff.md` (human decision required).
 2. Run the contract validator:
 
    ```bash
-   python3 - "$TOPIC" <<'PY'
-   import sys; sys.path.insert(0, "plugin/loen/hooks")
+   # PLUGIN="<skill-base-dir>/../.."   (resolve from the printed skill base directory)
+   python3 - "$TOPIC" "$PLUGIN" <<'PY'
+   import sys, os; sys.path.insert(0, os.path.join(sys.argv[2], "hooks"))
    import loen_common as c, loen_artifacts as a
    topic = sys.argv[1]
    loop = c.loop_policy(topic)
@@ -48,9 +49,14 @@ transition (so the loop resumes after a compaction or interruption):
 
 ## Termination
 
-`7_result.md` (Done) or `handoff.md`. Never auto-merge — the loop always ends at a human PR
-review. The evidence-gate Stop hook blocks a "done" stop without
-`5_check.md` + `7_result.md` + a verifier verdict + non-empty `evidence/`.
+`7_result.md` (Done) or `handoff.md`. On EITHER terminal, after writing the terminal artifact
+and setting `loop.yaml` `status` (`done`/`handoff`), **clear the `docs/loen/current` pointer**
+(`loen_artifacts.clear_current("docs/loen")`) so a finished topic never gates unrelated project
+work (the scope/permission/tool guards are inert once `status != active`, and clearing the
+pointer stops the Stop hook from re-resolving the topic). Never auto-merge — the loop always
+ends at a human PR review. The evidence-gate Stop hook blocks a "done" stop without
+`5_check.md` + `7_result.md` + a verifier verdict + non-empty `evidence/`, so write the verifier
+verdict to `evidence/verifier-verdict.md` BEFORE setting `status: done`.
 
 ## Cross-turn fallback (large budgets)
 

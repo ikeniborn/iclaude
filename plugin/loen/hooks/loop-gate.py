@@ -42,7 +42,7 @@ def main():
             check_path = os.path.join(topic_dir, "5_check.md")
             text = ""
             if os.path.isfile(check_path):
-                text = open(check_path, encoding="utf-8").read()
+                text = _a.strip_comments(open(check_path, encoding="utf-8").read())
             if "PASS" not in text:
                 return _c.block_or_nudge("7_result requires 5_check.md to contain PASS")
     return 0

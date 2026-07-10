@@ -17,13 +17,16 @@ Decide the iteration's outcome from the evidence. You optionally dispatch the re
    - `## Reason` — the evidence behind the decision.
    - `## Next Step` — the concrete next action.
 3. Apply the decision:
-   - **keep** — gates `PASS` AND verifier `APPROVE`: write `7_result.md`
-     (`## Outcome` = `Done`, `## Evidence Files` list), set `loop.yaml` `status: done`.
+   - **keep** — gates `PASS` AND verifier `APPROVE`: ensure `evidence/verifier-verdict.md`
+     exists, write `7_result.md` (`## Outcome` = `Done`, `## Evidence Files` list), set
+     `loop.yaml` `status: done`, then clear the `docs/loen/current` pointer
+     (`loen_artifacts.clear_current`).
    - **fix** — verifier `REJECT` within budget: record the required fixes; `loop-run` loops
      back to `loop-act`.
    - **revert** — apply `rollback_policy`; record why.
    - **handoff** — a `handoff_condition` fired, budget is exhausted, or a gate needs a human:
-     write `handoff.md` (state + required human decision), set `loop.yaml` `status: handoff`.
+     write `handoff.md` (state + required human decision), set `loop.yaml` `status: handoff`,
+     then clear the `docs/loen/current` pointer (`loen_artifacts.clear_current`).
 
 ## Output
 

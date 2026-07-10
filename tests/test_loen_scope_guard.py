@@ -43,6 +43,18 @@ def test_no_loop_allows():
     d = tempfile.mkdtemp(); assert run(d, "anything.py") == 0
 
 
+def test_finished_loop_does_not_gate_project():
+    # A done loop still pointed at by docs/loen/current must NOT block edits
+    # anywhere in the project.
+    d = tempfile.mkdtemp(); t = pathlib.Path(d, "docs/loen/t"); t.mkdir(parents=True)
+    (t / "loop.yaml").write_text(
+        "topic: t\nstatus: done\n"
+        "permissions:\n  filesystem: {mutable_scope: [src/**], protected_scope: [migrations/**]}\n")
+    (pathlib.Path(d, "docs/loen/current")).write_text("t\n")
+    assert run(d, "README.md") == 0
+    assert run(d, "migrations/001.sql") == 0
+
+
 if __name__ == "__main__":
     for n, f in sorted(globals().items()):
         if n.startswith("test_") and callable(f): f(); print("ok", n)

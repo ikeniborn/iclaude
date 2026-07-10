@@ -11,4 +11,4 @@ Topic: `{{topic}}`
 ## Result
 
 <!-- Write PASS when every quality gate exited 0, otherwise FAIL. -->
-PASS
+{{result}}

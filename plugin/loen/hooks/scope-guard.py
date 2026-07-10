@@ -16,7 +16,13 @@ def main():
         return 0
     if _c.tool_class(_c.tool_name(event)) != "edit":
         return 0
-    fs = (_c.loop_policy(topic).get("permissions") or {}).get("filesystem") or {}
+    loop_text = _c.read_loop_artifact(topic)
+    if not loop_text:
+        return 0  # no loop.yaml -> inert
+    policy = _c.parse_loop_yaml(loop_text)
+    if str(policy.get("status", "")).strip() != "active":
+        return 0  # a finished/paused loop must not gate the whole project
+    fs = (policy.get("permissions") or {}).get("filesystem") or {}
     protected = fs.get("protected_scope") or []
     mutable = fs.get("mutable_scope") or []
     for path in _c.extract_paths(event):

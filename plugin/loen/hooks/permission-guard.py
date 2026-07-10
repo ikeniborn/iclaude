@@ -24,6 +24,8 @@ def main():
     if not loop_text:
         return 0
     policy = _c.parse_loop_yaml(loop_text)
+    if str(policy.get("status", "")).strip() != "active":
+        return 0  # a finished/paused loop must not gate the whole project
     shell = (policy.get("permissions") or {}).get("shell") or {}
     network = (policy.get("permissions") or {}).get("network") or {}
     command = _c.shell_command(event)
