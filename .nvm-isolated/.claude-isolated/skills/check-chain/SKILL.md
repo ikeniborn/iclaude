@@ -25,7 +25,7 @@ Parse `$ARGUMENTS`:
   `specs/`→spec, `plans/`→plan). `result` is never inferred from a path (it shares
   `plans/` with `plan`); it must be named explicitly.
 
-## Shared core (applied by every stage)
+## Shared core (Steps 0–4 and 6 apply to every stage; Step 5 is result-only)
 
 ### Canonical hashing (MANDATORY)
 
