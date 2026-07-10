@@ -76,57 +76,53 @@ Write the updated frontmatter; report the phase; request verdicts (CRITICAL mand
 
 Apply the Step 0 exit criterion: `OK` or «требует доработки: <N> critical open, <M> warning open».
 
-### Step 5 — HTML report
+### Step 5 — HTML report (result stage only)
 
-After the verdict (including the cached quick-exit), invoke the `html-report` skill
-(`skill: "html-report"`) with `mode: chain`, `tab: <stage>`, output
-`docs/superpowers/reports/<topic>-results.html` (one file, four tabs Intent/Spec/Plan/Result;
-update only this stage's tab, preserve the others; create all four if absent with the
-placeholder «Этап ещё не проверен»; all report text in Russian).
-Determine `<topic>`: basename minus `.md`, strip the `^YYYY-MM-DD-` date prefix, strip a
-trailing `-intent`/`-design`/`-plan` suffix if present; fallback to the bare basename.
+Runs ONLY for the `result` stage, and only when the reconciled `git diff` is
+non-empty. The `intent` / `spec` / `plan` stages produce NO HTML — they end after
+Step 4 (verdict) and Step 6 (TODO upsert). On an empty diff, `result` emits INFO
+«result pending implementation» and produces no report.
 
-**Tab content contract (MANDATORY — the report explains the artifact, it is NOT a findings
-dump).** Pass every block below inline in the skill call. The diagram/graph/matrix blocks
-are REQUIRED — never drop a schema to save space; a tab without its schemas is a defect.
-Use the `html-report` grammar: CSS block/flow + C4 (`references/css-diagrams.md`), SVG
-node-edge graphs for arbitrary/looping/non-adjacent edges (`references/svg-diagrams.md`).
+After the result verdict, invoke the `html-report` skill (`skill: "html-report"`) in
+its **default `standalone` mode** (NOT `mode: chain`) with output
+`docs/superpowers/reports/<topic>-results.html` — one self-contained single-page
+report, all text in Russian. The explicit caller-supplied path is the `html-report`
+**Full** autonomy zone: create / overwrite (whole regeneration) without asking.
+Determine `<topic>`: basename minus `.md`, strip the `^YYYY-MM-DD-` date prefix, strip
+a trailing `-intent`/`-design`/`-plan` suffix if present; fallback to the bare basename.
 
-- **intent** — three blocks:
-  1. **Резюме требований** — Objective, Desired Outcomes, Health Metrics, Constraints
-     (steering/hard), Autonomy Zones, Stop Rules; each Outcome and Constraint on its own row.
-  2. **Схемы намерений и процесса** (all four): **Карта намерения** — flow
-     `Objective → Desired Outcomes → Health Metrics`; **Граф автономии** — the 4 zones
-     (Full/Guarded/Proposal-first/No autonomy) with their items, empty zone marked `N/A`;
-     **Связь ограничений и результатов** — a `Constraint × Desired Outcome` matrix;
-     **Stop Rules** — the `Done when:` criteria as a list.
-  3. **Результаты проверки** — per-phase status (structure/completeness/clarity/consistency/
-     alignment); findings table (`id, severity, section, fragment, text, fix, verdict`);
-     summary (CRITICAL/WARNING open + alignment notes); verdict; footer
-     `Next step: superpowers:brainstorming`.
-- **spec** — three blocks:
-  1. **Резюме спецификации** — requirements by section + Success Criteria, one row each.
-  2. **Схемы решения и зависимостей** (all three): **Схема решения** — block/flow or C4 of
-     the components/modules and their data/control links; **Граф зависимостей** — SVG
-     node-edge graph, nodes = requirements/components, edges = directed "depends on"/"uses"
-     (A→B = A depends on B), cycles highlighted; **Карта покрытия** — a `task → requirement(s)`
-     matrix.
-  3. **Результаты проверки** — per-phase status (structure/coverage/clarity/consistency);
-     findings table; summary; verdict; chain `intent → spec`.
-- **plan** — three blocks:
-  1. **Резюме плана** — steps/tasks with their DoD, one row each.
-  2. **Схемы зависимостей и пересечений** (both): **Граф зависимостей шагов** — SVG node-edge
-     graph, nodes = steps, edges `M→N` = result of step M used in N (M<N), cycles/order
-     violations highlighted; **Пересечения** — a matrix of steps sharing an artifact/file
-     and/or requirement coverage (one requirement closed by several steps or vice versa).
-  3. **Результаты проверки** — per-phase status (structure/coverage/dependencies/
-     verifiability/consistency); findings table; summary; verdict; chain `intent → spec → plan`.
-- **result** — two blocks:
-  1. **Резюме сверки** — the chain docs (plan/spec/intent) and the diff base.
-  2. **Результаты проверки** — plan step coverage (DONE/PARTIAL/MISSING counts + a per-step
-     table with evidence in the diff); findings table (`severity, step, Plan/Diff/Fix`);
-     intent + spec coverage (Desired Outcomes N/M, requirements N/M); excess changes;
-     summary (CRITICAL/WARNING/INFO); verdict; chain `intent → spec → plan → result`.
+**Report content contract (MANDATORY — the report explains the implementation
+outcome, it is NOT a bare findings dump).** Pass every block below inline in the skill
+call. Sections 1–4 are always present; section 5 is conditional (see the diagram
+trigger). Use the `html-report` grammar: CSS block/flow + C4 (`references/css-diagrams.md`),
+SVG node-edge graphs for looping / non-adjacent edges (`references/svg-diagrams.md`).
+
+1. **Резюме внедрения** — `<topic>`; links to the chain docs (intent / spec / plan
+   paths, `n/a` for a missing one); the diff base (`HEAD`, or `<ref>` when
+   `--since=<ref>` was passed).
+2. **Выполненные изменения** — a per-file table from the diff: path, change kind
+   (added / modified / deleted), ± lines, and a one-line description of what the
+   change does.
+3. **Результаты** — the plan↔diff reconciliation from the result profile: per-step
+   status (DONE / PARTIAL / MISSING) with diff evidence; intent Desired-Outcomes
+   coverage N/M; spec requirements coverage N/M; excess changes (files changed with no
+   matching plan step); the final verdict.
+4. **Влияние на систему** — a table of what the change affects: components / files
+   touched, behavioural changes, and risks / follow-ups (sourced from the diff and the
+   intent's Desired Outcomes).
+5. **Схемы** *(conditional — include ONLY when the structural-change trigger below
+   fires)* — architecture / change-flow and/or an impact map
+   (changed components → affected areas).
+
+**Diagram trigger (closed checklist — evaluate against the diff).** Include section 5
+when the diff does at least one of:
+- adds a new module / file / component (a new source file, or a new public
+  function/class other code will call), OR
+- adds or changes dependency edges between components (new import/require wiring, a
+  changed cross-module call graph), OR
+- introduces a new data-flow / control-flow / state machine.
+Otherwise (a point bugfix, a text/comment/config tweak, or edits contained within
+existing files with no new cross-component wiring) → sections 1–4 only, no diagram.
 
 ### Step 6 — TODO.md upsert
 
@@ -351,16 +347,16 @@ touch the plan body — it is the merge-gate pass signal for idd-gate).
 3. For each stage in `[intent, spec, plan, result]`:
    - artifact absent → record it (`Intent: n/a` etc.) and continue;
    - Step 0 quick-exit passes → `✓ cached`, continue;
-   - else run the stage's full Step 1–6 (findings → verdicts → frontmatter → HTML tab → TODO cell);
+   - else run the stage's Steps 1–4 + 6 (findings → verdicts → frontmatter → TODO cell); the `result` stage additionally runs Step 5 (single-page HTML report);
    - stage ends `needs_work` (open CRITICAL) → STOP: «chain остановлен на `<stage>`,
      почини и перезапусти». Do not run downstream stages.
 4. `result` needs a `git diff`. Reached with an empty diff → emit INFO
    «result pending implementation», chain verdict «OK up to plan», leave the TODO
    `Result` cell `–` (not `done`). Non-empty diff → reconcile; on `OK` close the row.
-5. Print the chain summary and the path to the HTML report.
+5. Print the chain summary, and the path to the HTML report when the `result` stage produced one.
 
 ### Single stage — `/check-chain <stage> [path]`
 
-Run Step 0–6 for exactly that one stage. This reproduces the former per-command
-behaviour 1:1 (same confirmation, findings, verdicts, frontmatter, HTML tab, TODO cell,
-footer).
+Run Steps 0–4 + 6 for exactly that one stage (confirmation, findings, verdicts,
+frontmatter, TODO cell, footer). Only `/check-chain result` additionally runs Step 5
+to produce the single-page HTML report; `/check-chain intent|spec|plan` produce no HTML.
