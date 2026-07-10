@@ -88,11 +88,12 @@ printf 'new-staged\n'  > "$repo/staged-new.txt"
 git -C "$repo" add staged-new.txt                                  # tracked, staged
 printf 'secret\n' > "$repo/untracked.txt"                          # untracked → EXCLUDED
 
-run="$repo/docs/loen/2026-07-02-demo"
-mkdir -p "$run/iterations/iter-01"
-printf 'name: 2026-07-02-demo\n' > "$run/loop.yaml"
-printf 'diff-evidence\n'  > "$run/iterations/iter-01/diff.patch"
-printf 'gates ok\n'       > "$run/iterations/iter-01/gates.log"
+run="$repo/docs/loen/demo"
+mkdir -p "$run/evidence"
+printf 'topic: demo\nstatus: active\n' > "$run/loop.yaml"
+printf '# Act\ntoy action\n' > "$run/4_act.md"
+printf '## Result\nPASS\n'   > "$run/5_check.md"
+printf 'prior verdict\n'     > "$run/evidence/verifier-verdict.md"
 
 snap="$tmp/snap"
 "$V" snapshot "$repo" "$run" "$snap" >/dev/null || fail "snapshot build failed"
@@ -102,28 +103,30 @@ snap="$tmp/snap"
 [[ "$(cat "$snap/src/app.txt")" == "a" ]]             || fail "HEAD content missing in snapshot"
 [[ ! -e "$snap/untracked.txt" ]]                      || fail "untracked file leaked into snapshot"
 [[ ! -e "$snap/.git" ]]                               || fail ".git leaked into snapshot"
-[[ -f "$snap/docs/loen/2026-07-02-demo/loop.yaml" ]]  || fail "run loop.yaml missing in snapshot"
-[[ -f "$snap/docs/loen/2026-07-02-demo/iterations/iter-01/gates.log" ]] || fail "gates.log missing in snapshot"
-[[ "$(readlink "$snap/docs/loen/current")" == "2026-07-02-demo" ]] || fail "docs/loen/current symlink wrong"
+[[ -f "$snap/docs/loen/demo/loop.yaml" ]]             || fail "topic loop.yaml missing in snapshot"
+[[ -f "$snap/docs/loen/demo/5_check.md" ]]            || fail "5_check.md missing in snapshot"
+[[ -f "$snap/docs/loen/demo/evidence/verifier-verdict.md" ]] || fail "evidence missing in snapshot"
+[[ ! -L "$snap/docs/loen/current" && "$(cat "$snap/docs/loen/current")" == "demo" ]] \
+    || fail "docs/loen/current pointer wrong (must be a text file, not a symlink)"
 
 # --- check: contract guard + preflight gate (no VM needed) ---
 
 # contract without microvm isolation → check must refuse (exit 1), not boot anything
-if out=$("$V" check "$run" iter-01 2>&1); then
+if out=$("$V" check "$run" 2>&1); then
     fail "check must refuse a contract that is not verifier_isolation: microvm"
 fi
 echo "$out" | grep -q "use the subagent dispatch instead" || fail "check refusal message missing"
 
 # microvm contract but missing prerequisites → non-zero, no VM attempted
-printf 'name: 2026-07-02-demo\nverifier_isolation: microvm\n' > "$run/loop.yaml"
+printf 'topic: demo\nstatus: active\nverifier_isolation: microvm\n' > "$run/loop.yaml"
 if LOEN_KVM_DEV=/nonexistent-kvm ISOLATED_CONFIG_DIR="$tmp/empty-cfg" \
-        "$V" check "$run" iter-01 2>/dev/null; then
+        "$V" check "$run" 2>/dev/null; then
     fail "check must fail preflight without prerequisites"
 fi
 
-# missing iteration dir → usage error
-if "$V" check "$run" iter-99 2>/dev/null; then
-    fail "check must reject a missing iteration dir"
+# missing topic dir → usage/contract error
+if "$V" check "$repo/docs/loen/nope" 2>/dev/null; then
+    fail "check must reject a missing topic dir"
 fi
 
 echo "PASS test_loen_verify_microvm.sh (unit: preflight + extract + snapshot + check guards)"
@@ -138,11 +141,12 @@ else
     # Fingerprints must bracket the toy run's WHOLE lifetime (created below, removed
     # before the post-capture), so pre is taken before mkdir.
     pre=$( { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | sha256sum; } | sha256sum )
-    e2e_run="docs/loen/2026-07-02-loen-e2e-toy"
-    mkdir -p "$e2e_run/iterations/iter-01"
+    e2e_run="docs/loen/loen-e2e-toy"
+    mkdir -p "$e2e_run/evidence"
     cat > "$e2e_run/loop.yaml" <<'YAML'
-name: 2026-07-02-loen-e2e-toy
+topic: loen-e2e-toy
 mode: delivery
+status: active
 objective: "toy: README.md exists at repo root"
 verifier_isolation: microvm
 mutable_scope: ["README.md"]
@@ -150,12 +154,12 @@ protected_scope: ["iclaude.sh"]
 quality_gates: ["test -f README.md"]
 budget: { max_iterations: 1 }
 YAML
-    printf 'toy diff\n' > "$e2e_run/iterations/iter-01/diff.patch"
-    printf '$ test -f README.md\nexit 0\n' > "$e2e_run/iterations/iter-01/gates.log"
-    if "$V" check "$e2e_run" iter-01; then
-        [[ -s "$e2e_run/iterations/iter-01/verifier.md" ]] || fail "e2e: verifier.md not written"
-        grep -qE '^VERDICT: (APPROVE|REJECT)$' "$e2e_run/iterations/iter-01/verifier.md" \
-            || fail "e2e: verifier.md has no VERDICT"
+    printf '# Act\ntoy action\n' > "$e2e_run/4_act.md"
+    printf '## Result\nPASS\n'   > "$e2e_run/5_check.md"
+    if "$V" check "$e2e_run"; then
+        [[ -s "$e2e_run/evidence/verifier-verdict.md" ]] || fail "e2e: verdict not written"
+        grep -qE '^VERDICT: (APPROVE|REJECT)$' "$e2e_run/evidence/verifier-verdict.md" \
+            || fail "e2e: verdict has no VERDICT"
         echo "PASS e2e: isolated verdict produced"
     else
         fail "e2e: verify_microvm.sh check failed"

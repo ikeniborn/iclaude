@@ -21,9 +21,11 @@ def main():
         return 0
     root = _c.artifact_root()
     policy = _c.loop_policy(topic)
+    status = str(policy.get("status") or "").strip()
+    if status != "active":
+        return 0  # inert once the loop is finished — no churn on unrelated work
     stage = str(policy.get("current_stage") or policy.get("stage") or "")
-    status = str(policy.get("status") or "")
-    verdict = "OK" if status == "done" else "–"
+    verdict = "–"
     today = os.environ.get("LOEN_TODAY") or datetime.date.today().isoformat()
     _a.render_audit(topic, root)
     _a.upsert_todo_row(topic, stage, verdict, today)

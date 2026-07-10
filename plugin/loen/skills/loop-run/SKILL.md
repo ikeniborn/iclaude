@@ -33,14 +33,18 @@ until `7_result.md` (Done) or `handoff.md` (human decision required).
 
 ## State machine (`run.state`: prepare → act → check → reflect)
 
-Loop these stages, updating `loop.yaml` `run.state` and `run.current_pass` on every
-transition (so the loop resumes after a compaction or interruption):
+Loop these stages, updating `loop.yaml` `run.state` **and the top-level `current_stage`** and
+`run.current_pass` on every transition (so the loop resumes after a compaction, `loop-status`/
+`audit`/the capsule report the real stage, and the role bindings in `stages.<stage>.roles`
+apply to the correct stage). Set `current_stage` to the stage you are entering BEFORE invoking
+that stage's skill: `act` → `check` → `reflect`.
 
-1. **prepare** — pick the next unfinished plan step.
+1. **prepare** — set `current_stage: act`; pick the next unfinished plan step.
 2. **act** — invoke `loop-act` (one bounded action → `4_act.md`).
-3. **check** — invoke `loop-check` (run `quality_gates` → `5_check.md`; dispatch the
-   `verifier` with a capsule → `evidence/verifier-verdict.md`).
-4. **reflect** — invoke `loop-reflect`, then branch:
+3. **check** — set `current_stage: check`; invoke `loop-check` (run `quality_gates` →
+   `5_check.md`; dispatch the `verifier` — with `LOEN_ROLE=verifier` in its environment so
+   `tool-guard` binds it to `stages.check.roles` — and a capsule → `evidence/verifier-verdict.md`).
+4. **reflect** — set `current_stage: reflect`; invoke `loop-reflect`, then branch:
    - gates `PASS` **and** verifier `APPROVE` → write `7_result.md`, set `status: done`, **STOP**.
    - verifier `REJECT` and `run.current_pass < budget.max_iterations` → `run.current_pass++`,
      feed the required fixes back into **act**.

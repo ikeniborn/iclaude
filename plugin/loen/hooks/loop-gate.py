@@ -13,6 +13,19 @@ import loen_artifacts as _a  # noqa: E402
 _STAGE_RE = re.compile(r"^([1-7])_.*\.md$")
 
 
+def _stage_complete(path):
+    """A lower stage counts as done only if its file exists AND has been filled
+    (no unfilled ``{{placeholder}}`` left from the scaffold template). This keeps
+    the ordering guard meaningful even though scaffold pre-creates all 7 files."""
+    if not os.path.isfile(path):
+        return False
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return "{{" not in fh.read()
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
 def main():
     event = _c.read_event()
     run, topic = _c.should_run_hook(event)
@@ -35,9 +48,9 @@ def main():
         n = int(m.group(1))
         for k in range(1, n):
             prev = _a.STAGE_FILES[k - 1]
-            if not os.path.isfile(os.path.join(topic_dir, prev)):
+            if not _stage_complete(os.path.join(topic_dir, prev)):
                 return _c.block_or_nudge(
-                    f"stage ordering: cannot write {base} while {prev} is missing")
+                    f"stage ordering: cannot write {base} while {prev} is not yet filled")
         if n == 7:
             check_path = os.path.join(topic_dir, "5_check.md")
             text = ""

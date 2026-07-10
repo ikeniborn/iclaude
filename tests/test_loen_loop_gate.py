@@ -50,6 +50,23 @@ def test_no_loop_allows():
     d = tempfile.mkdtemp(); assert run(d, "docs/loen/t/4_act.md") == 0
 
 
+def test_unfilled_template_blocks_ordering():
+    # A scaffolded topic pre-creates all 7 files as templates ({{...}}). Writing
+    # 4_act must be blocked while 3_plan is still an unfilled template, then
+    # allowed once 1_goal/2_context/3_plan are filled.
+    import importlib.util
+    ap = os.path.join(REPO, "plugin", "loen", "hooks", "loen_artifacts.py")
+    s = importlib.util.spec_from_file_location("loen_artifacts", ap)
+    a = importlib.util.module_from_spec(s); s.loader.exec_module(a)
+    templates = os.path.join(REPO, "plugin", "loen", "assets", "templates")
+    d = tempfile.mkdtemp()
+    a.scaffold_topic("t", templates, os.path.join(d, "docs", "loen"))
+    assert run(d, "docs/loen/t/4_act.md") == 2
+    for f in ("1_goal.md", "2_context.md", "3_plan.md"):
+        pathlib.Path(d, "docs/loen/t", f).write_text(f"# filled {f}\n")
+    assert run(d, "docs/loen/t/4_act.md") == 0
+
+
 if __name__ == "__main__":
     for n, f in sorted(globals().items()):
         if n.startswith("test_") and callable(f): f(); print("ok", n)

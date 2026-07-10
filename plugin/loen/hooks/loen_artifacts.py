@@ -207,7 +207,9 @@ def upsert_todo_row(topic, stage, verdict, today, path="docs/TODO.md"):
         spec = cells[3] if len(cells) > 3 else "–"
         plan = cells[4] if len(cells) > 4 else "–"
         opened = cells[6] if len(cells) > 6 and cells[6] else today
-        closed = today if status == "done" else (cells[7] if len(cells) > 7 else "")
+        existing_closed = cells[7] if len(cells) > 7 else ""
+        # Preserve a Closed date once set (no per-run drift); set it once on done.
+        closed = existing_closed or (today if status == "done" else "")
         lines[idx] = (f"| {topic} | {status} | {intent} | {spec} | {plan} | "
                       f"{verdict} | {opened} | {closed} | {_LOEN_NOTE} |")
     else:

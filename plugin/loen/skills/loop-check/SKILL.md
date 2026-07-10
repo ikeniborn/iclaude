@@ -16,7 +16,9 @@ verdict. You never approve your own work.
    - `## Evidence` — a ```text block with each command, its exit code, and key output.
    - `## Result` — `PASS` if every gate exited 0, otherwise `FAIL`.
 4. **Dispatch the `verifier` subagent** with a bounded capsule
-   (`loen_capsules.render_capsule(topic_dir, "verifier", question)`) — never chat history.
+   (`loen_capsules.render_capsule(topic_dir, "verifier", question)`) — never chat history —
+   and **`LOEN_ROLE=verifier` in its environment** so `tool-guard` constrains it to
+   `stages.check.roles` (the main-session worker, having no role, orchestrates unconstrained).
    When `verifier_isolation: microvm`, run it via `scripts/verify_microvm.sh`. The verifier
    writes `evidence/verifier-verdict.md` and returns `VERDICT: APPROVE|REJECT`.
 

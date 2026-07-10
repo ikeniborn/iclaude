@@ -22,7 +22,8 @@ def setup_stage(stage):
     (t / "loop.yaml").write_text(
         f"topic: t\nstatus: active\ncurrent_stage: {stage}\n"
         "tools: {allowed: [Read, Grep, Glob, Write, Edit, MultiEdit, Bash], denied: []}\n"
-        "stages:\n  act: {roles: [worker]}\n  check: {roles: [verifier]}\n")
+        "stages:\n  act: {roles: [worker]}\n  check: {roles: [verifier]}\n"
+        "  reflect: {roles: [reviewer]}\n")
     (pathlib.Path(d, "docs/loen/current")).write_text("t\n")
     return d
 
@@ -67,6 +68,15 @@ def test_subagent_role_still_constrained_on_check_stage():
     d = setup_stage("check")
     assert run(d, "Write", role="reviewer") == 2
     assert run(d, "Bash", role="verifier") == 0
+
+
+def test_reflect_stage_role_matrix():
+    # reflect stage binds roles=[reviewer]: worker (orchestrator) unconstrained,
+    # reviewer allowed, verifier blocked.
+    d = setup_stage("reflect")
+    assert run(d, "Write", role=None) == 0        # main-session worker
+    assert run(d, "Write", role="reviewer") == 0  # bound role
+    assert run(d, "Write", role="verifier") == 2  # wrong role for this stage
 
 
 if __name__ == "__main__":

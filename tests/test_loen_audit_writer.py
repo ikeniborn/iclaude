@@ -39,6 +39,17 @@ def test_no_loop_is_noop():
     assert not pathlib.Path(d, "docs/TODO.md").exists()
 
 
+def test_finished_loop_is_noop():
+    # Once the loop is done, audit-writer must not churn TODO on unrelated edits.
+    a = load("loen_artifacts")
+    d = tempfile.mkdtemp()
+    a.scaffold_topic("t", TEMPLATES, os.path.join(d, "docs", "loen"))
+    lp = pathlib.Path(d, "docs/loen/t/loop.yaml")
+    lp.write_text(lp.read_text().replace("status: active", "status: done"))
+    assert run(d) == 0
+    assert not pathlib.Path(d, "docs/TODO.md").exists()
+
+
 if __name__ == "__main__":
     for n, f in sorted(globals().items()):
         if n.startswith("test_") and callable(f) and n != "load": f(); print("ok", n)
