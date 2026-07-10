@@ -1,0 +1,29 @@
+topic: "{{topic}}"
+mode: delivery
+status: active
+objective: ""
+current_stage: goal
+context_sources: []
+mutable_scope: []
+protected_scope: []
+quality_gates: []
+verifier_isolation: subagent
+eval_command: ""
+metrics: {primary: [], secondary: []}
+budget: {max_iterations: 3, max_experiments: 5, max_wall_time_minutes: 90, max_cost_usd: 5}
+stop_conditions: []
+handoff_conditions: []
+rollback_policy: ""
+run: {plan_approved: false, plan_hash: "", state: prepare, max_passes: 3, current_pass: 0}
+stages:
+  act: {roles: [worker]}
+  check: {roles: [verifier]}
+  reflect: {roles: [reviewer]}
+tools: {allowed: [Read, Grep, Glob, Bash, Write, Edit, MultiEdit], denied: []}
+permissions:
+  filesystem: {mutable_scope: [], protected_scope: []}
+  network: {mode: off, allowlist: []}
+  shell: {allow: [], deny_patterns: []}
+capsule: {required_fields: [topic, objective, mode, current_stage, mutable_scope, protected_scope, quality_gates, relevant_files, last_evidence, question]}
+governance: {}
+logging: {state_file: docs/loen/{{topic}}/attempts.jsonl}

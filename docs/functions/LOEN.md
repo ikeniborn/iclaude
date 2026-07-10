@@ -1,104 +1,97 @@
 # Loop Engineering (loen)
 
-`loen` is an in-repo Claude Code plugin (`plugin/loen/`, marketplace `iclaude`) that runs a
-controlled `Plan → Act → Check → Report` agent loop with an independent verifier.
+`loen` is an in-repo Claude Code plugin (`plugin/loen/`, marketplace `iclaude`) that runs one
+bounded task as a **stage-oriented durable-topic** loop: seven numbered artifacts under
+`docs/loen/<topic>/`, an autonomous `loop-run` orchestrator, an independent verifier, and six
+hook-enforced guardrails. See `docs/architecture.md` for the operating model.
 
 ## Install
 
 The plugin ships with the repo. Enable it at user scope through the plugin system
-(marketplace `iclaude`, plugin `loen`). The `iclaude` marketplace is a `directory`
-source, so Claude Code loads the plugin straight from the repo checkout
-(`plugin/loen/`) — no versioned copy is placed under `plugins/cache/`.
+(marketplace `iclaude`, plugin `loen`). The `iclaude` marketplace is a `directory` source, so
+Claude Code loads the plugin straight from the repo checkout (`plugin/loen/`).
 
 User-facing docs ship with the plugin: `plugin/loen/README.md` (English) and
 `plugin/loen/README.ru.md` (Russian).
 
 ## Use
 
-- `/loop-delivery <task>` — the executor. The `planner` subagent fills a `loop.yaml`
-  contract, you approve scope + budget, the worker makes the smallest diff, `quality_gates`
-  + the independent `verifier` check it, and a report is produced.
-- `/loop-repair <failure description>` — fix a failing test / CI / regression:
-  reproduce first, isolate, minimal fix, regression test (mode `repair`,
-  `budget.max_iterations`, default 3).
-- `/loop-autoresearch <metric goal>` — improve one numeric metric:
-  baseline → hypothesis → one bounded change → fixed eval → compare → keep/revert
-  (mode `research`, `budget.max_experiments`, default 5). Metrics travel as JSONL:
-  the eval appends to `$LOEN_METRICS_PATH` (per-iteration `metrics.jsonl`); every
-  experiment is a record in `experiments.jsonl`, appended by the deterministic
-  `scripts/log_experiment.py`.
-- `loen:audit plan|act|check|result` — validate a stage (mode-aware), gate progression,
-  and regenerate `docs/loen/<run-id>/report.html`.
-- `/loen:loop-goal` — optional accelerator: print a ready-to-paste, evidence-first
-  `/goal` string generated deterministically from the active, approved `loop.yaml`
-  (`scripts/make_goal.py`), plus a session-scoped `/loop` polling recipe for
-  long-running gates. Never bootstraps a run, never submits `/goal` itself.
-- `/loen:governance [--triage]` — cross-run governance: the deterministic
-  `scripts/loen_stats.py` aggregates every run under `docs/loen/` (success rate,
-  keep/revert, handoff reasons, failure taxonomy from REJECT verdicts' numbered
-  `REQUIRED FIXES:` items, protected-path alerts, layout-drift `foreign` list) and the
-  skill renders the `docs/loen/governance.html` dashboard via `html-report`. The §10.3
-  rows loen artifacts cannot back — cost/tokens and latency/VRAM — are explicitly n/a,
-  never fabricated. `--triage` lists failing runs (last verdict REJECT, or absent while
-  iterations exist) with proposed next actions (`/loen:loop-repair <failing command>`
-  for repair-shaped failures; "review contract/budget" otherwise) — proposals only, the
-  human executes. Offline-first: no network, no LLM in the aggregation.
+The loop has one human gate — plan approval — after which `loop-run` executes autonomously.
+
+**Configurators (entry points, thin — set `mode`, delegate to the pipeline):**
+
+- `/loen:loop-delivery <task>` — deliver one bounded change (mode `delivery`).
+- `/loen:loop-repair <failure>` — fix a failing test / CI / regression, reproduce-first
+  (mode `repair`).
+- `/loen:loop-autoresearch <metric>` — improve one numeric metric via a fixed eval
+  (mode `research`).
+- `/loen:loop-review <diff/PR>` — review a diff / branch / PR (mode `review`).
+
+Each chains: configurator → `loop-start` (bootstrap + approval gate) → **auto** `loop-run` →
+`7_result.md` (Done) or `handoff.md`.
+
+**Pipeline skills (individually invocable — resumability + manual drive):**
+
+- `/loen:loop-start <topic>` — bootstrap the topic, write `1_goal`/`2_context`, delegate
+  `3_plan.md` to `loop-plan`, hold the approval gate, arm the contract
+  (`run.plan_approved`, `run.plan_hash`).
+- `/loen:loop-run` — autonomous orchestrator: preflight the approved contract, then drive
+  `act → check → reflect` to terminal.
+- `/loen:loop-plan` / `loop-act` / `loop-check` / `loop-reflect` — the single stage owners.
+- `/loen:loop-status` — read-only state summary from disk.
+
+**Cross-cutting:**
+
+- `loen:audit plan|act|check|result` — manual stage re-validator (`OK` / `needs_work`). Inside
+  `loop-run` this gating is automatic (hooks + verifier).
+- `/loen:governance [--triage]` — cross-topic dashboard from `scripts/loen_stats.py` →
+  `docs/loen/governance.html`; owns the `governance:` recurrence policy for recurring topics;
+  `--triage` proposes next actions (proposals only). Offline-first.
 
 ## Artifacts
 
-All results live under `docs/loen/<run-id>/` (run-id = `<YYYY-MM-DD>-<topic>`):
+All state lives under `docs/loen/<topic>/`:
 
 | Path | Content |
 |---|---|
-| `loop.yaml` | the contract (planner-filled, human-approved) |
-| `plan.md` | the step plan |
-| `state.md` | append-only attempt/decision log |
-| `iterations/iter-NN/{diff.patch,gates.log,verifier.md}` | per-iteration evidence |
-| `iterations/iter-NN/metrics.jsonl` | research: eval JSONL events + one `summary` line (baseline lives in `iter-00`) |
-| `experiments.jsonl` | research: run-level experiment stream (baseline + one record per experiment) |
-| `report.html` | consolidated human-readable report |
-| `pr-summary.md` | PR-ready summary |
+| `1_goal.md` | user request + success criteria |
+| `2_context.md` | durable facts, constraints, relevant files |
+| `3_plan.md` | one bounded plan: `## Steps` + `## Checks` (approval gate) |
+| `4_act.md` | action taken, changed paths, commands |
+| `5_check.md` | evidence + result (`PASS` sentinel) |
+| `6_reflect.md` | decision keep/fix/revert/handoff |
+| `7_result.md` | terminal outcome (`Done` sentinel) |
+| `loop.yaml` | the machine-readable contract |
+| `handoff.md` | non-terminal exit — human decision required |
+| `audit.html` | regenerated report |
+| `attempts.jsonl` | append-only iteration log |
+| `evidence/` | verifier output (`verifier-verdict.md`, gate logs, metrics) |
 
-Templates ship inside the plugin (not scaffolded into the project). A PreToolUse hook
-(`loop-guard.py`) hard-enforces the layout/naming within the active topic and the loop's
-`mutable_scope`/`protected_scope`. It is a no-op in non-loop repos.
+Top level: `docs/loen/current` (active-topic pointer), `docs/loen/governance.html`
+(cross-topic dashboard).
 
-Cross-run (top level, outside run dirs): `docs/loen/governance.html` — the governance
-dashboard `/loen:governance` renders from `scripts/loen_stats.py` output. It joins
-`current` and `RUNBOOK.md` in the hook's top-level canon set (early allow guard +
-`canon_patterns()` entry; this Artifacts entry is the second leg of the canon sync —
-`check_layout.sh` is unaffected because it validates inside one run dir). The
-aggregator picks up handoff/stop reasons from `state.md` `## Attempts` lines of the
-form `- handoff: <reason>` / `- stop: <reason>`.
+Templates ship inside the plugin (`assets/templates/`). Six hooks + a shared library
+(`loen_common` / `loen_artifacts` / `loen_capsules`) enforce the contract; `LOEN_MODE`
+(`off`/`advisory`/`enforce`/`strict`) grades enforcement. The plugin is inert without a
+`loop.yaml`.
 
-## Subagents
+## Roles
 
-`planner` (fable — strongest reasoning where the contract and decomposition are authored),
-`explorer` (haiku — cheap evidence gathering), `verifier` (opus — stronger judge, and
-model-diverse from a typically-fable worker session, preserving worker ≠ judge diversity) —
-all read-only, isolated context; the worker (main session) is the single writer. The
-frontmatter `model:` is a default and always overridable; on Claude Code versions without
-the `fable` alias the model falls back per harness rules.
+The worker is the main session (the only writer). Five read-only subagents: `planner` (fable),
+`explorer` (haiku), `verifier` (opus), `reviewer` (opus), `researcher` (fable). Each is fed a
+bounded capsule — durable-artifact text, never chat. `stages.<stage>.roles` binds which role
+acts per stage.
 
 ## Hardening: verifier microVM isolation
 
-Opt-in per run: set `verifier_isolation: microvm` in `loop.yaml` (default `subagent`
-keeps MVP behavior byte-for-byte). With `microvm`, `loen:audit check` runs the verifier
-as a headless Claude Code session inside an iclaude Firecracker microVM (this plugin's
-`scripts/verify_microvm.sh`) against a disposable snapshot of the tree — `git archive
-HEAD` + tracked staged/unstaged changes + the run's `docs/loen/<run-id>/` evidence;
-untracked files excluded. There is no sync-back channel: the judge is read-only **by
-construction**, not by convention. Requires the iclaude microVM install (KVM,
-Firecracker, images — see `docs/functions/MICROVM.md`). `loen:audit plan` validates the
-key and host capability up front; a VM failure at check time yields `needs_work` with
-the failure log — never a silent fallback to the in-session subagent. Cost: VM boot +
-snapshot add seconds-to-tens-of-seconds per check iteration, which is why the mode is
-opt-in.
+Opt-in per topic: set `verifier_isolation: microvm` in `loop.yaml` (default `subagent`). With
+`microvm`, the verifier runs headless inside an iclaude Firecracker microVM
+(`scripts/verify_microvm.sh`) against a disposable snapshot — read-only by construction.
+Requires the iclaude microVM install (KVM, Firecracker, images — see
+`docs/functions/MICROVM.md`).
 
 ## Scope
 
-Shipped: delivery (`loop-delivery`), repair (`loop-repair`), research
-(`loop-autoresearch`), verifier, guard, `/goal`+`/loop` wrapping (`loop-goal` +
-`make_goal.py`), opt-in verifier microVM isolation (`verifier_isolation: microvm`),
-governance/observability (`/loen:governance` + `loen_stats.py` →
-`docs/loen/governance.html`).
+Shipped: the 7-stage durable-topic pipeline (7 pipeline skills), four outcome configurators,
+governance + audit, six hook-enforced guardrails with a graded `LOEN_MODE`, five role
+subagents with capsule isolation, and opt-in verifier microVM isolation.
