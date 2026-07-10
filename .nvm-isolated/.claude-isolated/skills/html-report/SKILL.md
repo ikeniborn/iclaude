@@ -25,10 +25,6 @@ producing the human-readable artifact.
    skill runs (the current working directory's project root). If the caller passed an
    EXPLICIT output path (e.g. an IDD `check-*` command), write to that path instead.
    Create the target directory if it does not exist. Never invent an unrequested path.
-   In `mode: chain` (`references/chain-report.md`) the skill creates/merges the single
-   caller-supplied `<topic>-results.html`; an existing such file passed as a merge
-   source is caller-supplied (Full zone), NOT a proposal-first default `docs/reports/`
-   file.
 
 If faithful display would require an external resource, **escalate** — do not
 inline-fetch and do not silently drop the element.
@@ -45,7 +41,6 @@ inline-fetch and do not silently drop the element.
    - any dynamic (expand, hover, animation) → `references/dynamics.md`
    - theme palettes + toggle → `references/themes.md` (always)
    - arbitrary node-edge graph / free connector / data plot → `references/svg-fallback.md`
-   - chain report (multi-tab IDD→SDD, `mode: chain`) → `references/chain-report.md`
 
    **Gold-standard reference** — for the full SVG node grammar, animated connectors, C4,
    two-axis tables, badges, and `.note` callouts, study the in-skill `references/`
@@ -63,11 +58,6 @@ inline-fetch and do not silently drop the element.
    missing). If the caller passed the path, overwriting that path is **Full** zone
    (proceed — it is a regenerated artifact). Otherwise, if the target file already
    exists, **ask first** before overwriting (proposal-first).
-   In `mode: chain`, do NOT regenerate the whole file: follow the first-run vs.
-   update merge flow in `references/chain-report.md` (read the existing
-   caller-supplied `<topic>-results.html`, replace only the owned tab's marked
-   region, preserve the other three tabs). Creating and merging the unified
-   caller-supplied file are both Full zone.
 7. Report to the user: file path, file size, and any guarded-zone logs (inline script
    used / size warning).
 
@@ -86,18 +76,11 @@ Reject and fix the assembled HTML if any fails:
 - [ ] File size ≤ 5 MB — if larger, **warn** the user (soft limit).
 - [ ] Output path is under `docs/reports/` OR equals the explicit caller-supplied path — never an unrequested location.
 
-**`mode: chain` only** (see `references/chain-report.md`):
-
-- [ ] All four `<!-- TAB:{intent,spec,plan,result} START/END -->` pairs present, correctly ordered, non-overlapping.
-- [ ] Exactly one `.tab-radio` carries `checked` (exactly one active pane).
-- [ ] Theme toggle present and its `body:has(#theme-toggle…)` selectors intact alongside the tab `body:has(#tab-…)` selectors.
-- [ ] On update: the three non-owned panes are byte-identical to the pre-existing file (only the owned region + the single `checked` attribute changed).
-
 ## Autonomy Zones
 
 | Zone | Action |
 |------|--------|
-| Full — generating HTML, choosing CSS layout, picking the diagram type; writing to an output path EXPLICITLY passed by the calling command, including merging one tab into an existing caller-supplied `mode: chain` file | proceed, no pause |
+| Full — generating HTML, choosing CSS layout, picking the diagram type; writing to an output path EXPLICITLY passed by the calling command | proceed, no pause |
 | Guarded — using inline `<script>`/`<canvas>`/SVG, or approaching 5 MB | proceed, but **log** the structure CSS can't express / **warn** on size |
 | Proposal-first — which data sources to read; overwriting an existing default `docs/reports/` file with no caller path | **ask before acting** |
 | No-go — writing/deleting a file outside `docs/reports/` with NO caller-supplied path; fetching any external resource | **refuse** |
