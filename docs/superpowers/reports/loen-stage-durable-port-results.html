@@ -121,8 +121,8 @@ ul.tight li{ margin:.28rem 0; }
 <input type="checkbox" id="theme-toggle" hidden>
 <input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
 <input type="radio" name="chain-tab" id="tab-spec"   class="tab-radio" hidden>
-<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden checked>
-<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan"   class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
@@ -569,7 +569,97 @@ ul.tight li{ margin:.28rem 0; }
 <!-- TAB:plan END -->
 <!-- TAB:result START -->
 <section class="tab-pane" id="pane-result">
-  <p class="note">Этап ещё не проверен.</p>
+  <p class="lead">Сверка реализации с планом — <code>result</code></p>
+  <p class="sub">plan_hash <code>ef33cb8386e042bf</code> · база диффа <code>dev...HEAD</code> (25 коммитов) · вердикт <span class="badge ok">OK</span> · 2026-07-10 · non-interactive</p>
+
+  <h2>1. Резюме сверки</h2>
+  <table class="rpt-table">
+    <thead><tr><th>Документ цепочки</th><th>Путь / значение</th></tr></thead>
+    <tbody>
+      <tr><td>intent</td><td><span class="badge na">n/a</span> — файл intent для темы отсутствует</td></tr>
+      <tr><td>spec</td><td><code>docs/superpowers/specs/2026-07-09-loen-stage-durable-port-design.md</code> (spec_hash <code>6c5950118645cca0</code>)</td></tr>
+      <tr><td>plan</td><td><code>docs/superpowers/plans/2026-07-09-loen-stage-durable-port-plan.md</code> (23 задачи / 8 фаз, plan_hash <code>ef33cb8386e042bf</code>)</td></tr>
+      <tr><td>база диффа</td><td><code>git diff dev...HEAD</code> — 25 коммитов, 74 файла, <b>+4999 / −1887</b> (реализация закоммичена; <code>git diff HEAD</code> пуст)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Результаты проверки</h2>
+
+  <h3>Покрытие шагов плана</h3>
+  <p class="note ok"><b>DONE 23 · PARTIAL 0 · MISSING 0</b> из 23 задач. Все запланированные поставки присутствуют в диффе. Две намеренные, задокументированные девиации (не пропуски): (a) <code>verify_microvm.sh</code> оставлен на внутренней единице evidence <code>iterations/iter-NN</code> как follow-up; (b) F-006 <code>make_goal.py</code> удалён / F-007 <code>architecture.md</code>+<code>LOEN.md</code> в scope — обе разрешены в плане.</p>
+  <table class="rpt-table">
+    <thead><tr><th>Задача</th><th>Статус</th><th>Свидетельство в диффе</th></tr></thead>
+    <tbody>
+      <tr><td><b>T1</b> loen_common.py</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/loen_common.py</code> (368), <code>tests/test_loen_common.py</code> (80) · тест PASS</td></tr>
+      <tr><td><b>T2</b> шаблоны</td><td><span class="badge ok">DONE</span></td><td>+ <code>assets/templates/{1_goal…7_result}.md</code>, <code>loop.yaml</code>, <code>handoff.md</code>, <code>audit.html</code>; <code>test_loen_templates.sh</code> PASS</td></tr>
+      <tr><td><b>T3</b> loen_artifacts.py</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/loen_artifacts.py</code> (201), <code>test_loen_artifacts.py</code>, <code>test_loen_run_contract.py</code> · оба PASS</td></tr>
+      <tr><td><b>T4</b> loen_capsules.py</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/loen_capsules.py</code> (73), <code>test_loen_capsules.py</code> · PASS</td></tr>
+      <tr><td><b>T5</b> scope-guard</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/scope-guard.py</code>, <code>test_loen_scope_guard.py</code> · PASS</td></tr>
+      <tr><td><b>T6</b> loop-gate</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/loop-gate.py</code>, <code>test_loen_loop_gate.py</code> · PASS</td></tr>
+      <tr><td><b>T7</b> tool-guard</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/tool-guard.py</code>, <code>test_loen_tool_guard.py</code> · PASS</td></tr>
+      <tr><td><b>T8</b> permission-guard</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/permission-guard.py</code>, <code>test_loen_permission_guard.py</code> · PASS</td></tr>
+      <tr><td><b>T9</b> evidence-gate</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/evidence-gate.py</code>, <code>test_loen_evidence_gate.py</code> · PASS</td></tr>
+      <tr><td><b>T10</b> audit-writer</td><td><span class="badge ok">DONE</span></td><td>+ <code>hooks/audit-writer.py</code>, <code>test_loen_audit_writer.py</code> · PASS</td></tr>
+      <tr><td><b>T11</b> hooks.json + drop loop-guard</td><td><span class="badge ok">DONE</span></td><td>Δ <code>hooks.json</code>; − <code>loop-guard.py</code> (171), <code>test_loen_guard.sh</code>, <code>test_loen_hook.py</code>; + <code>test_loen_hooks_wiring.sh</code> · PASS</td></tr>
+      <tr><td><b>T12</b> агенты</td><td><span class="badge ok">DONE</span></td><td>+ <code>reviewer.md</code>, <code>researcher.md</code>; Δ <code>planner.md</code>, <code>verifier.md</code>; + <code>test_loen_agents.sh</code> · PASS. <code>explorer.md</code> намеренно не тронут (T12 Step 3: «keep behavior»)</td></tr>
+      <tr><td><b>T13</b> loop-start</td><td><span class="badge ok">DONE</span></td><td>+ <code>skills/loop-start/SKILL.md</code> (грепы <code>loop-plan</code>/<code>plan_approved</code>)</td></tr>
+      <tr><td><b>T14</b> stage-скиллы</td><td><span class="badge ok">DONE</span></td><td>+ <code>skills/{loop-plan,loop-act,loop-check,loop-reflect}/SKILL.md</code></td></tr>
+      <tr><td><b>T15</b> loop-run</td><td><span class="badge ok">DONE</span></td><td>+ <code>skills/loop-run/SKILL.md</code> (65)</td></tr>
+      <tr><td><b>T16</b> loop-status</td><td><span class="badge ok">DONE</span></td><td>+ <code>skills/loop-status/SKILL.md</code></td></tr>
+      <tr><td><b>T17</b> конфигураторы</td><td><span class="badge ok">DONE</span></td><td>Δ <code>loop-delivery/repair/autoresearch</code>; + <code>loop-review/SKILL.md</code>; − <code>loop-delivery/assets/{loop.template.yaml,state.template.md}</code></td></tr>
+      <tr><td><b>T18</b> governance/audit</td><td><span class="badge ok">DONE</span></td><td>Δ <code>governance/SKILL.md</code>, <code>audit/SKILL.md</code>; − <code>loop-goal/SKILL.md</code> (52)</td></tr>
+      <tr><td><b>T19</b> scripts (layout)</td><td><span class="badge ok">DONE</span></td><td>Δ <code>check_layout.sh</code>, <code>guard_protected.sh</code>; − <code>make_goal.py</code> (140), <code>test_loen_goal.py</code> (194); Δ <code>test_loen_layout.sh</code> · PASS</td></tr>
+      <tr><td><b>T20</b> stats/plugin</td><td><span class="badge ok">DONE</span></td><td>Δ <code>loen_stats.py</code> (221), <code>test_loen_stats.py</code>, <code>test_loen_plugin.sh</code> · PASS. <code>log_experiment.py</code> — path-parameterized (argv[1]), правки не требуют (тест зелёный); <code>verify_microvm.sh</code> — девиация (a)</td></tr>
+      <tr><td><b>T21</b> версия+доки</td><td><span class="badge ok">DONE</span></td><td>Δ <code>plugin.json</code> → 1.0.0; + <code>docs/architecture.md</code> (85); Δ <code>docs/functions/LOEN.md</code> (153) · <code>test_loen_plugin.sh</code> PASS</td></tr>
+      <tr><td><b>T22</b> READMEs</td><td><span class="badge ok">DONE</span></td><td>Δ <code>README.md</code> (235), <code>README.ru.md</code> (268) — оба на новую схему, версия 1.0.0</td></tr>
+      <tr><td><b>T23</b> E2E-верификация</td><td><span class="badge ok">DONE</span></td><td>Прогон пакета при сверке: 12 python + 5 bash тестов → <b>PASS</b>; <code>test_loen_verify_microvm.sh</code> → SKIP (нужен <code>ICLAUDE_LOEN_E2E=1</code>, по дизайну)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Находки</h3>
+  <table class="rpt-table">
+    <thead><tr><th>сев.</th><th>шаг</th><th>план / дифф / fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge warn">WARNING</span></td><td>T20 verify_microvm.sh</td>
+        <td><b>План:</b> адаптировать под топик-layout. <b>Дифф:</b> файл не тронут — сохраняет внутреннюю единицу <code>iterations/iter-NN</code> (<code>run-dir</code>/<code>run-id</code>). <b>Fix:</b> задокументированная девиация (a) — follow-up; смоук-тест SKIP без <code>ICLAUDE_LOEN_E2E</code>. Не блокирует: остальные поставки T20 (stats/plugin) зелёные.</td>
+      </tr>
+      <tr>
+        <td><span class="badge info">INFO</span></td><td>T20 log_experiment.py</td>
+        <td><b>План:</b> манифест перечисляет под «Modify». <b>Дифф:</b> не тронут. <b>Fix:</b> скрипт получает целевой <code>&lt;target.jsonl&gt;</code> как <code>argv[1]</code> — layout-агностичен, правок не требует; <code>test_loen_experiment.py</code> (сохранён) — PASS.</td>
+      </tr>
+      <tr>
+        <td><span class="badge info">INFO</span></td><td>T12 explorer.md</td>
+        <td><b>План:</b> манифест перечисляет под «Modify». <b>Дифф:</b> не тронут. <b>Fix:</b> согласуется с T12 Step 3 («keep explorer.md behavior») — намеренно без изменений; <code>test_loen_agents.sh</code> подтверждает read-only.</td>
+      </tr>
+      <tr>
+        <td><span class="badge info">INFO</span></td><td>EXCESS · marketplace.json</td>
+        <td><b>Дифф:</b> <code>.claude-plugin/marketplace.json</code> version 0.5.1→1.0.0 + описание. <b>План:</b> T21 называет только <code>plugin.json</code>. <b>Fix:</b> безвредный version-sync sibling bump'а версии; тесно связан с требованием §7 (bump до 1.0.0).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Покрытие spec + решений</h3>
+  <table class="rpt-table">
+    <thead><tr><th>Источник</th><th>Покрытие</th><th>Отражено в диффе</th></tr></thead>
+    <tbody>
+      <tr><td>Desired Outcomes (intent)</td><td><span class="badge na">n/a</span></td><td>intent отсутствует — не применимо</td></tr>
+      <tr><td>Разделы спеки §1–§7</td><td><b>7 / 7</b></td><td>§1 артефакты (T2/T3/T19), §2 13 скиллов (T13–T18), §3 loop.yaml (T2/T3), §4 хуки+библиотека+режим (T1/T3/T4/T5–T11), §5 5 агентов (T12), §6 авто-запуск (T15), §7 миграция/тесты/доки (T11/T19/T20/T21/T22)</td></tr>
+      <tr><td>Locked decisions 1–5</td><td><b>5 / 5</b></td><td>D1 адаптивный порт (tool-mapping в loen_common), D2 clean replace v1.0.0 (loop-guard/loop-goal/make_goal удалены), D3 авто-run после одобрения (loop-run + <code>plan_approved</code>-gate), D4 полный набор скиллов (7 pipeline), D5 READMEs (оба переписаны)</td></tr>
+      <tr><td>README-мандат</td><td><span class="badge ok">выполнен</span></td><td>README.md + README.ru.md переписаны синхронно, версия 1.0.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Лишние изменения (EXCESS)</h3>
+  <ul class="tight">
+    <li><code>.claude-plugin/marketplace.json</code> — bump версии 0.5.1→1.0.0 (version-sync, косвенно привязан к §7); см. находку INFO выше.</li>
+    <li>Артефакты цепочки IDD — сам план/спека, HTML-отчёт, строка <code>docs/TODO.md</code>: машинерия check-chain, не поставки плана (ожидаемо).</li>
+  </ul>
+
+  <h3>Итог</h3>
+  <p class="note ok"><b>Вердикт: OK.</b> CRITICAL — 0 (ни один шаг плана не отсутствует в диффе целиком). WARNING — 1 (T20 <code>verify_microvm.sh</code> — задокументированная девиация follow-up, не блокирует). INFO — 3 (log_experiment.py layout-агностичен; explorer.md намеренно не тронут; marketplace.json version-sync). Покрытие: 23/23 DONE, spec 7/7 разделов + 5/5 решений + README-мандат. Прогон пакета при сверке зелёный (12 py + 5 bash PASS, microVM SKIP по дизайну). <code>result_check</code> записан в frontmatter плана (verdict OK, plan_hash <code>ef33cb8386e042bf</code>, last_run 2026-07-10) — merge-gate для IDD открыт.</p>
+
+  <p class="sub">Цепочка: <code>intent</code> <span class="badge na">n/a</span> → <code>spec</code> <span class="badge ok">OK</span> → <code>plan</code> <span class="badge ok">OK</span> → <code>result</code> <span class="badge ok">OK</span>. Следующий шаг: человеческий PR-review (never auto-merge).</p>
 </section>
 <!-- TAB:result END -->
 </body>

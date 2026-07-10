@@ -64,6 +64,10 @@ chain:
   intent: n/a
   spec: docs/superpowers/specs/2026-07-09-loen-stage-durable-port-design.md
   plan: docs/superpowers/plans/2026-07-09-loen-stage-durable-port-plan.md
+result_check:
+  verdict: OK
+  plan_hash: ef33cb8386e042bf
+  last_run: 2026-07-10
 ---
 # loen — Stage-Oriented Durable-Topic Port Implementation Plan
 
