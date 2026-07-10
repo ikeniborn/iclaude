@@ -49,12 +49,12 @@ transition (so the loop resumes after a compaction or interruption):
 
 ## Termination
 
-`7_result.md` (Done) or `handoff.md`. On EITHER terminal, after writing the terminal artifact
-and setting `loop.yaml` `status` (`done`/`handoff`), **clear the `docs/loen/current` pointer**
-(`loen_artifacts.clear_current("docs/loen")`) so a finished topic never gates unrelated project
-work (the scope/permission/tool guards are inert once `status != active`, and clearing the
-pointer stops the Stop hook from re-resolving the topic). Never auto-merge — the loop always
-ends at a human PR review. The evidence-gate Stop hook blocks a "done" stop without
+`7_result.md` (Done) or `handoff.md`. Setting `loop.yaml` `status` to `done`/`handoff` makes
+the scope/permission/tool guards inert for the topic (only `status: active` gates), so a
+finished topic never blocks unrelated project work; the `docs/loen/current` pointer is left in
+place (the next `loop-start` overwrites it) — do NOT clear it here, because the Stop
+`evidence-gate` still needs to resolve the topic at the terminal stop. Never auto-merge — the
+loop always ends at a human PR review. The evidence-gate Stop hook blocks a "done" stop without
 `5_check.md` + `7_result.md` + a verifier verdict + non-empty `evidence/`, so write the verifier
 verdict to `evidence/verifier-verdict.md` BEFORE setting `status: done`.
 

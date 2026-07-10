@@ -221,17 +221,6 @@ def upsert_todo_row(topic, stage, verdict, today, path="docs/TODO.md"):
 
 # --- attempts log ----------------------------------------------------------
 
-def clear_current(root):
-    """Remove the docs/loen/current pointer (call on a loop's terminal so a
-    finished topic never gates unrelated project work)."""
-    pointer = os.path.join(root, "current")
-    try:
-        if os.path.isfile(pointer):
-            os.remove(pointer)
-    except OSError:
-        pass
-
-
 def append_attempt(topic, record, root):
     topic_dir = os.path.join(root, topic)
     os.makedirs(topic_dir, exist_ok=True)
