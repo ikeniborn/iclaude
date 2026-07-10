@@ -1,3 +1,23 @@
+---
+review:
+  stage: spec
+  spec_hash: a6128bbc5a77dd82
+  last_run: 2026-07-10
+  chain:
+    intent: null
+  phases:
+    structure: {status: passed}
+    coverage: {status: passed}
+    clarity: {status: passed}
+    consistency: {status: passed}
+  sections:
+    "1. Problem": 67fd3b2fc5922000
+    "2. Goals / Non-goals": 3368cee00636287b
+    "3. Architecture": e7cf38aa524258c0
+    "4. Data flow": 746d0a833fce3500
+    "5. Testing / Verification": 72735972c0373f4e
+  findings: []
+---
 # Design: result-only HTML report for the IDD→SDD chain
 
 **Date:** 2026-07-10
