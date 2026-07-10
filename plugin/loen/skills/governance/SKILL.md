@@ -3,19 +3,25 @@ name: governance
 description: Use when you need a cross-run dashboard over all docs/loen/ runs, or --triage to turn failing runs into proposed next actions (proposals only; never launches loops or edits runs).
 ---
 
-# loen:governance — cross-run dashboard + triage proposals
+# loen:governance — cross-topic dashboard + recurring policy + triage proposals
 
-Invoke as `/loen:governance [--triage]`. Aggregates the audit trail every loen run
-already leaves under `docs/loen/` (`loop.yaml`, `state.md`,
-`iterations/iter-NN/{gates.log,verifier.md}`, `experiments.jsonl`) into the ACROSS-runs
-view the governance loop calls for. Offline-first: no network, no LLM in the aggregation.
+Invoke as `/loen:governance [--triage]`. Aggregates the audit trail every loen topic leaves
+under `docs/loen/<topic>/` (`loop.yaml`, `5_check.md`, `6_reflect.md`, `7_result.md` /
+`handoff.md`, `attempts.jsonl`, `evidence/`) into the ACROSS-topics view. Offline-first: no
+network, no LLM in the aggregation.
+
+For a **recurring topic** (a scheduled check, CI triage, eval-drift check, or cost/latency
+comparison), this skill also owns the `governance:` block in that topic's `loop.yaml`:
+recurrence policy, whether first runs require human review, and whether findings auto-fix or
+stay report-only. It records automation attempts but never merges or auto-fixes outside the
+declared policy.
 
 ## Steps
 
 1. **Aggregate.** Run `python3 <skill-base>/../../scripts/loen_stats.py` (the skill base
    directory is printed when this skill is invoked; the script resolves `docs/loen/`
    from the CWD, `--root` overrides). Non-zero exit → abort and show the script's stderr
-   verbatim. Parse the JSON from stdout; an empty summary (zero runs) is valid — render
+   verbatim. Parse the JSON from stdout; an empty summary (zero topics) is valid — render
    the dashboard anyway.
 2. **Render `docs/loen/governance.html`** via the `html-report` skill (same flow
    `loen:audit` uses for `report.html`). Dashboard blocks per the methodology §10.3
@@ -28,15 +34,16 @@ view the governance loop calls for. Offline-first: no network, no LLM in the agg
      `REQUIRED FIXES:` items with occurrence counts);
    - **Protected-path alerts** — `totals.protected_alerts`;
    - **Layout drift** — the `foreign` list (direct children of `docs/loen/` that are
-     neither run-ids nor the canon top-level set);
+     neither topic slugs nor the canon top-level set: `current`, `governance.html`);
    - **Cost/tokens** and **Latency/VRAM** — always rendered as
      "n/a — loen artifacts carry no cost/token or inference-infra data"; never
      fabricate (latency appears only if a research run's eval recorded it as a metric).
    Self-contained single file, dark/light, opens by double-click.
-3. **`--triage` variant** — additionally list every run whose `last_verdict` is
-   `REJECT`, or `null` while `iterations > 0`. For each, give one line of evidence
-   quoted from the artifacts (the REJECT's first `REQUIRED FIXES:` item, or
-   "no verifier.md while iterations exist") and the suggested next action:
+3. **`--triage` variant** — additionally list every topic whose latest verdict
+   (`evidence/verifier-verdict.md`) is `REJECT`, or absent while `attempts.jsonl` is
+   non-empty, or ended in `handoff.md`. For each, give one line of evidence quoted from the
+   artifacts (the REJECT's first `REQUIRED FIXES:` item, or the handoff's required decision)
+   and the suggested next action:
    - the failure names a failing command/test → propose
      `/loen:loop-repair <failing command>`;
    - anything else → propose "review contract/budget" for that run.
