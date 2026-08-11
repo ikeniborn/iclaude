@@ -6,6 +6,29 @@
 #######################################
 
 #######################################
+# Get the active isolated Node.js version directory.
+# Uses version-aware sorting when available so v22 is selected over v20
+# regardless of filesystem traversal order.
+# Arguments:
+#   $1 - optional versions/node directory
+# Returns:
+#   Node.js version directory on stdout, or empty when none exists
+#######################################
+get_isolated_node_version_dir() {
+	local node_versions_dir="${1:-$ISOLATED_NVM_DIR/versions/node}"
+
+	if [[ ! -d "$node_versions_dir" ]]; then
+		return 0
+	fi
+
+	if sort -V </dev/null &>/dev/null; then
+		find "$node_versions_dir" -maxdepth 1 -type d -name "v*" 2>/dev/null | sort -V | tail -1
+	else
+		find "$node_versions_dir" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1
+	fi
+}
+
+#######################################
 # Setup isolated NVM environment
 # Side effects:
 #   - Exports NVM_DIR, NPM_CONFIG_PREFIX, ISOLATED_CONFIG_DIR
@@ -22,10 +45,9 @@ setup_isolated_nvm() {
 	export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
 	export ISOLATED_CONFIG_DIR="$ISOLATED_NVM_DIR/.claude-isolated"
 
-	# Найти установленную версию Node.js (раскрыть глоб)
-	# LC_ALL=C sort ensures v18 < v20 deterministically across all filesystems
-	# (find output order is filesystem-dependent — non-deterministic on ext4/CI)
-	local node_version_dir=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)
+	# Find the active Node.js version deterministically.
+	local node_version_dir
+	node_version_dir=$(get_isolated_node_version_dir "$NVM_DIR/versions/node")
 
 	if [[ -n "$node_version_dir" ]] && [[ -d "$node_version_dir/bin" ]]; then
 		# Add isolated paths to PATH (prepend to prioritize isolated over system)

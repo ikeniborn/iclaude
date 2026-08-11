@@ -2,13 +2,28 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write|Edit|MultiEdit|Bash|Read|Grep|Glob",
         "hooks": [
-          {
-            "type": "command",
-            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/loop-guard.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0",
-            "timeout": 10
-          }
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/loop-gate.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0", "timeout": 30 },
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/scope-guard.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0", "timeout": 30 },
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/tool-guard.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0", "timeout": 30 },
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/permission-guard.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0", "timeout": 30 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/audit-writer.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; exit 0", "timeout": 30 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/evidence-gate.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"; [ $? -eq 2 ] && exit 2 || exit 0", "timeout": 30 }
         ]
       }
     ]

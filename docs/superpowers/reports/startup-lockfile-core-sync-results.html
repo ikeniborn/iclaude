@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDD/SDD: startup-lockfile-core-sync</title>
+<style>
+:root{--bg:#f8fafc;--surface:#ffffff;--text:#111827;--muted:#4b5563;--border:#cbd5e1;--accent:#0f766e;--ok:#15803d;--warn:#b45309;--crit:#b91c1c;--code:#f1f5f9}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+body:has(#theme-toggle:checked){--bg:#111827;--surface:#1f2937;--text:#f9fafb;--muted:#d1d5db;--border:#475569;--accent:#2dd4bf;--ok:#4ade80;--warn:#fbbf24;--crit:#f87171;--code:#0f172a}
+header,main{max-width:1100px;margin:0 auto;padding:24px}
+header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+h1{font-size:28px;margin:0} h2{font-size:22px;margin:20px 0 12px} h3{font-size:17px;margin:18px 0 8px}
+.theme-btn{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.chain-tabs{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.chain-tabs label{cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-bottom:0;border-radius:8px 8px 0 0;background:var(--surface);color:var(--muted)}
+body:has(#tab-intent:checked) label[for="tab-intent"],body:has(#tab-spec:checked) label[for="tab-spec"],body:has(#tab-plan:checked) label[for="tab-plan"],body:has(#tab-result:checked) label[for="tab-result"]{color:var(--accent);border-color:var(--accent);font-weight:700}
+.tab-pane{display:none;background:var(--surface);border:1px solid var(--border);border-radius:0 8px 8px 8px;padding:18px;margin-top:0}
+body:has(#tab-intent:checked) #pane-intent,body:has(#tab-spec:checked) #pane-spec,body:has(#tab-plan:checked) #pane-plan,body:has(#tab-result:checked) #pane-result{display:block}
+table{width:100%;border-collapse:collapse;margin:12px 0} th,td{border:1px solid var(--border);padding:8px;text-align:left;vertical-align:top} th{background:var(--code)}
+code{background:var(--code);padding:2px 5px;border-radius:4px}.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700}.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.crit{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit)}.note{border-left:4px solid var(--accent);padding:10px 12px;background:var(--code);color:var(--muted)}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}.node{border:1px solid var(--border);border-radius:8px;background:var(--code);padding:10px}.node strong{display:block;color:var(--accent);margin-bottom:4px}
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<input type="radio" name="chain-tab" id="tab-intent" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-spec" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-plan" class="tab-radio" hidden>
+<input type="radio" name="chain-tab" id="tab-result" class="tab-radio" hidden checked>
+<header>
+<h1>startup-lockfile-core-sync</h1>
+<label for="theme-toggle" class="theme-btn" title="Toggle dark/light">Theme</label>
+</header>
+<nav class="chain-tabs">
+<label for="tab-intent">Intent</label>
+<label for="tab-spec">Spec</label>
+<label for="tab-plan">Plan</label>
+<label for="tab-result">Result</label>
+</nav>
+<main>
+<!-- TAB:intent START -->
+<section class="tab-pane" id="pane-intent">
+<h2>Проверка intent — 2026-07-06</h2>
+<p>Intent фиксирует проблему доверия в startup-flow: пользователь соглашается на обновление после изменения lockfile, но получает широкий restore, включая LSP. Проверка подтверждает, что цель, outcomes, ограничения и stop rules достаточно конкретны для перехода к design/spec.</p>
+<p>Источник: <code>docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md</code>; iwiki context: <code>overview.md#Isolated Environment</code>.</p>
+<h3>Outcome Chain</h3>
+<div class="flow">
+<div class="node"><strong>Problem</strong>Startup prompt runs broad <code>--install-from-lockfile</code> and can enter LSP restore.</div>
+<div class="node"><strong>Outcome</strong>Accepting prompt syncs core isolated env only and launch continues.</div>
+<div class="node"><strong>Outcome</strong>Successful core sync updates stored hash; next launch does not repeat prompt.</div>
+<div class="node"><strong>Done when</strong>Executable checks prove core-only startup sync, manual full restore with LSP, and no repeat prompt.</div>
+</div>
+<h3>Constraint Matrix</h3>
+<table>
+<tr><th>Type</th><th>Constraint</th><th>Approval lens</th></tr>
+<tr><td>Steering</td><td>Startup prompt describes core environment sync, not full restore.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Steering</td><td>Keep shell module changes surgical and explicit.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Hard</td><td>Automatic startup handling must not run LSP npm/plugin installs without separate consent or flag.</td><td><span class="badge ok">safe</span></td></tr>
+<tr><td>Hard</td><td>Manual full lockfile restore remains available.</td><td><span class="badge warn">watch</span></td></tr>
+<tr><td>Hard</td><td>Do not remove LSP install, restore, or lockfile capture capabilities.</td><td><span class="badge ok">safe</span></td></tr>
+</table>
+<h3>Autonomy Map</h3>
+<table>
+<tr><th>Zone</th><th>Decision types</th></tr>
+<tr><td>Full</td><td>Inspect modules, write chain artifacts, propose options, add lockfile prompt tests.</td></tr>
+<tr><td>Guarded</td><td>Adjust prompt/help text and choose a small flag name if needed.</td></tr>
+<tr><td>Proposal-first</td><td>Lockfile schema changes, user-visible command semantics, narrowed full restore behavior.</td></tr>
+<tr><td>No-go</td><td>Deleting LSP functionality or removing LSP restore from lockfile.</td></tr>
+</table>
+<h3>Context Map</h3>
+<table>
+<tr><th>Area</th><th>Artifacts</th><th>Risk</th></tr>
+<tr><td>Startup lockfile check</td><td><code>check_lockfile_changes()</code>, <code>LOCKFILE_HASH_FILE</code></td><td>Repeat prompts or inaccurate scope wording.</td></tr>
+<tr><td>Restore implementation</td><td><code>install_from_lockfile()</code>, <code>.nvm-isolated-lockfile.json</code></td><td>Core restore and LSP restore are currently coupled.</td></tr>
+<tr><td>LSP</td><td><code>lib/lsp/*</code>, Claude Code plugin commands</td><td>Should remain explicit and reproducible.</td></tr>
+<tr><td>Docs/wiki</td><td><code>overview.md#Isolated Environment</code></td><td>No contradiction found.</td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>All seven intent template sections present; no placeholders.</td></tr>
+<tr><td>completeness</td><td><span class="badge ok">passed</span></td><td>Constraints split into steering/hard, all autonomy zones covered, Health Metrics non-empty, Stop Rules include Done when.</td></tr>
+<tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>Desired outcomes and Done when are observable checks, not implementation-only statements.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>No contradiction between core-only startup sync and manual full restore preservation.</td></tr>
+<tr><td>alignment</td><td><span class="badge ok">passed</span></td><td>Matches user request and iwiki isolated environment context.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Intent passes. Следующий этап: brainstorming/spec для выбора дизайна core-only startup sync vs explicit full restore.</p>
+</section>
+<!-- TAB:intent END -->
+<!-- TAB:spec START -->
+<section class="tab-pane" id="pane-spec">
+<h2>Проверка spec — 2026-07-06</h2>
+<p>Spec переводит approved intent в конкретное поведение: startup prompt получает core-only sync, а публичный <code>--install-from-lockfile</code> остаётся full restore. Проверка подтверждает coverage всех outcomes и constraints без расширения scope.</p>
+<p>Источник: <code>docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md</code>; chain intent: <code>docs/superpowers/intents/2026-07-06-startup-lockfile-core-sync-intent.md</code>.</p>
+<h3>Requirement Coverage Map</h3>
+<table>
+<tr><th>Intent outcome</th><th>Spec requirement/design response</th><th>Acceptance</th></tr>
+<tr><td>Startup prompt core-syncs without LSP restore.</td><td>Requirements 1, 2, 5, 6; Architecture <code>install_core_from_lockfile()</code>; Startup Flow accepted branch.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>Successful core sync prevents repeat prompt.</td><td>Requirement 3; Data Flow step 7; Error Handling leaves hash unchanged on failure only.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>LSP restore remains explicit.</td><td>Requirements 9, 10; Manual full restore data flow; Non-Goals preserve LSP behavior.</td><td><span class="badge ok">covered</span></td></tr>
+<tr><td>Do not change lockfile schema.</td><td>Requirement 10; Non-Goals.</td><td><span class="badge ok">covered</span></td></tr>
+</table>
+<h3>Component Graph</h3>
+<div class="flow">
+<div class="node"><strong>Prompt gate</strong><code>check_lockfile_changes()</code><br>Detects hash mismatch and asks only in interactive mode.</div>
+<div class="node"><strong>Core sync</strong><code>install_core_from_lockfile()</code><br>Reads <code>nodeVersion</code> and <code>claudeCodeVersion</code> only.</div>
+<div class="node"><strong>Full restore</strong><code>install_from_lockfile()</code><br>Manual path remains broad and can restore LSP.</div>
+<div class="node"><strong>Hash state</strong><code>update_lockfile_hash()</code><br>Runs after successful core/full restore only.</div>
+</div>
+<h3>Data Flow</h3>
+<table>
+<tr><th>Flow</th><th>Steps</th><th>Risk control</th></tr>
+<tr><td>Startup</td><td>Changed lockfile → prompt → core-only function → hash update → launch continues.</td><td>No fallback to full restore; LSP untouched.</td></tr>
+<tr><td>Manual full restore</td><td>User runs <code>./iclaude.sh --install-from-lockfile</code> → existing full installer → LSP restore possible → hash update.</td><td>Public reproducibility path preserved.</td></tr>
+</table>
+<h3>Risk/Mitigation Map</h3>
+<table>
+<tr><th>Risk</th><th>Mitigation</th><th>Status</th></tr>
+<tr><td>Silent fallback reintroduces LSP restore.</td><td>Spec forbids fallback from core sync to full restore in startup branch.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Hash updates after failed core sync.</td><td>Requirement 4 and Error Handling require unchanged hash on failure.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Manual reproducibility regresses.</td><td>Requirement 9 keeps <code>--install-from-lockfile</code> full restore.</td><td><span class="badge ok">addressed</span></td></tr>
+<tr><td>Scope expands into unrelated installer modules.</td><td>Non-Goals keep router/GSD/statusline/symlink/config/sandbox/OAuth/launch behavior unchanged.</td><td><span class="badge ok">addressed</span></td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>No placeholders, duplicate headings, broken section links, or numbering gaps.</td></tr>
+<tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>All user-approved design choices A/B/A are represented; all intent outcomes mapped to requirements and tests.</td></tr>
+<tr><td>clarity</td><td><span class="badge ok">passed</span></td><td>Requirements name concrete functions, paths, command behavior, and test evidence.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>No contradiction between startup core-only sync and manual full restore.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Spec passes. Следующий этап после user review: writing-plans.</p>
+</section>
+<!-- TAB:spec END -->
+<!-- TAB:plan START -->
+<section class="tab-pane" id="pane-plan">
+<h2>Проверка plan — 2026-07-06</h2>
+<p>Plan decomposes the approved spec into four executable tasks: tests first, core restore helper, startup prompt wiring, and final verification. Each task has explicit files, commands, expected output, and commit boundaries.</p>
+<p>Источник: <code>docs/superpowers/plans/2026-07-06-startup-lockfile-core-sync.md</code>; chain spec: <code>docs/superpowers/specs/2026-07-06-startup-lockfile-core-sync-design.md</code>.</p>
+<h3>Step DAG</h3>
+<div class="flow">
+<div class="node"><strong>Task 1</strong>Write failing shell tests for startup prompt behavior and restore boundaries.</div>
+<div class="node"><strong>Task 2</strong>Add <code>install_core_from_lockfile()</code>; tests still fail until prompt is wired.</div>
+<div class="node"><strong>Task 3</strong>Wire accepted startup prompt to core restore; focused tests pass.</div>
+<div class="node"><strong>Task 4</strong>Run final verification and static boundary inspection.</div>
+</div>
+<h3>Artifact Impact Map</h3>
+<table>
+<tr><th>Plan task</th><th>Files</th><th>Purpose</th></tr>
+<tr><td>Task 1</td><td><code>tests/test_lockfile_core_sync.sh</code></td><td>Captures RED behavior for startup prompt and LSP/full restore boundaries.</td></tr>
+<tr><td>Task 2</td><td><code>lib/lockfile/install.sh</code></td><td>Adds core-only Node.js + Claude Code restore helper.</td></tr>
+<tr><td>Task 3</td><td><code>lib/lockfile/save.sh</code>, test file</td><td>Changes accepted prompt branch and non-interactive guidance.</td></tr>
+<tr><td>Task 4</td><td>Changed files only if verification finds a real fix</td><td>Prepares evidence for result reconciliation.</td></tr>
+</table>
+<h3>Verification Map</h3>
+<table>
+<tr><th>Requirement</th><th>Check</th><th>Expected evidence</th></tr>
+<tr><td>Startup core sync, no LSP restore</td><td><code>bash tests/test_lockfile_core_sync.sh</code></td><td>Final line <code>fail=0</code>; call log contains core restore, not full restore.</td></tr>
+<tr><td>Existing binary probe preserved</td><td><code>bash tests/test_check_lockfile_binary_probe.sh</code></td><td>Final line <code>fail=0</code>.</td></tr>
+<tr><td>Shell syntax</td><td><code>bash -n</code> on changed shell files/tests</td><td>No output, exit 0.</td></tr>
+<tr><td>Manual full restore preserves LSP</td><td><code>grep -n "lspServers\\|lspPlugins" lib/lockfile/install.sh</code></td><td>LSP fields remain in <code>install_from_lockfile()</code>, absent from core helper.</td></tr>
+</table>
+<h3>Human Checkpoint Flow</h3>
+<table>
+<tr><th>Decision</th><th>Zone</th><th>Plan handling</th></tr>
+<tr><td>Lockfile schema change</td><td>Proposal-first</td><td>Not planned; schema remains unchanged.</td></tr>
+<tr><td>Public <code>--install-from-lockfile</code> semantics</td><td>Proposal-first</td><td>Not changed; public full restore remains broad.</td></tr>
+<tr><td>Deleting LSP restore</td><td>No-go</td><td>Not planned; Task 4 verifies LSP paths remain.</td></tr>
+<tr><td>Prompt/help wording</td><td>Guarded</td><td>Task 3 changes text to core sync wording with tests.</td></tr>
+</table>
+<details><summary>Phase and finding evidence</summary>
+<table>
+<tr><th>Phase</th><th>Status</th><th>Evidence</th></tr>
+<tr><td>structure</td><td><span class="badge ok">passed</span></td><td>Plan header present; tasks and steps use checkbox syntax; no placeholders.</td></tr>
+<tr><td>coverage</td><td><span class="badge ok">passed</span></td><td>All spec requirements map to tests, helper implementation, prompt wiring, or final verification.</td></tr>
+<tr><td>dependencies</td><td><span class="badge ok">passed</span></td><td>Tests precede implementation; helper precedes prompt wiring; verification runs last.</td></tr>
+<tr><td>verifiability</td><td><span class="badge ok">passed</span></td><td>Each task has explicit commands and expected evidence.</td></tr>
+<tr><td>consistency</td><td><span class="badge ok">passed</span></td><td>Function names and file paths match spec and existing repo layout.</td></tr>
+</table>
+<p class="note">Новых findings нет.</p>
+</details>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Plan passes. Следующий этап: implementation через subagent-driven-development или inline executing-plans.</p>
+</section>
+<!-- TAB:plan END -->
+<!-- TAB:result START -->
+<section class="tab-pane" id="pane-result">
+<h2>Проверка result — 2026-07-06</h2>
+<p>Implementation diff matches the approved plan: tests were added first, a core-only lockfile helper was added, startup prompt wiring now calls the helper, and final verification found no required follow-up changes.</p>
+<p>Diff source: <code>0472ca81..a3482817</code>. Changed product/test files: <code>lib/lockfile/install.sh</code>, <code>lib/lockfile/save.sh</code>, <code>tests/test_lockfile_core_sync.sh</code>.</p>
+<h3>Diff Reconciliation Graph</h3>
+<table>
+<tr><th>Plan task</th><th>Status</th><th>Diff evidence</th></tr>
+<tr><td>Task 1: Add failing startup core-sync tests</td><td><span class="badge ok">DONE</span></td><td><code>tests/test_lockfile_core_sync.sh</code> added; RED failures observed before implementation, then test passes after wiring.</td></tr>
+<tr><td>Task 2: Add core-only lockfile restore helper</td><td><span class="badge ok">DONE</span></td><td><code>lib/lockfile/install.sh</code> adds <code>install_core_from_lockfile()</code> for Node.js + Claude Code only.</td></tr>
+<tr><td>Task 3: Wire startup prompt to core restore</td><td><span class="badge ok">DONE</span></td><td><code>lib/lockfile/save.sh</code> prompt text and accepted branch call <code>install_core_from_lockfile</code>; full restore remains manual.</td></tr>
+<tr><td>Task 4: Final verification</td><td><span class="badge ok">DONE</span></td><td>Focused tests, syntax checks, static boundary inspection, and final code review all passed.</td></tr>
+</table>
+<h3>Outcome Evidence Map</h3>
+<table>
+<tr><th>Intent outcome / spec requirement</th><th>Evidence</th><th>Status</th></tr>
+<tr><td>Startup prompt core-syncs without LSP restore.</td><td><code>tests/test_lockfile_core_sync.sh</code> asserts accepted prompt calls core restore and not full restore; <code>pass=22 fail=0</code>.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Successful core sync updates stored hash; failure/decline/non-interactive do not.</td><td>Focused test covers success, failure, decline, and non-interactive hash behavior.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Manual full restore can still restore LSP entries.</td><td>Static test asserts <code>install_from_lockfile</code> body still contains <code>lspServers</code> and <code>lspPlugins</code>; grep confirms LSP fields only in full installer.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Core helper installs Node.js + Claude Code only.</td><td><code>install_core_from_lockfile()</code> spans <code>lib/lockfile/install.sh</code> lines 15-75 and contains no <code>lspServers</code>/<code>lspPlugins</code>.</td><td><span class="badge ok">met</span></td></tr>
+<tr><td>Existing binary probe regression preserved.</td><td><code>bash tests/test_check_lockfile_binary_probe.sh</code> reports <code>pass=5 fail=0</code>.</td><td><span class="badge ok">met</span></td></tr>
+</table>
+<h3>Excess/Gap Map</h3>
+<table>
+<tr><th>Category</th><th>Evidence</th><th>Status</th></tr>
+<tr><td>Missing plan work</td><td>No missing tasks: all four plan tasks have matching diff/test evidence.</td><td><span class="badge ok">none</span></td></tr>
+<tr><td>Unplanned product files</td><td>Diff product/test files are limited to planned <code>lib/lockfile/install.sh</code>, <code>lib/lockfile/save.sh</code>, and <code>tests/test_lockfile_core_sync.sh</code>.</td><td><span class="badge ok">none</span></td></tr>
+<tr><td>Documentation/wiki</td><td>iwiki <code>overview</code> documents the helper; <code>wiki_lint</code> reports no broken or stale pages. Existing orphan/missing_source/advisory items predate this task.</td><td><span class="badge ok">covered</span></td></tr>
+</table>
+<h3>Verification Evidence</h3>
+<table>
+<tr><th>Command</th><th>Result</th></tr>
+<tr><td><code>bash tests/test_lockfile_core_sync.sh</code></td><td><span class="badge ok">pass=22 fail=0</span></td></tr>
+<tr><td><code>bash tests/test_check_lockfile_binary_probe.sh</code></td><td><span class="badge ok">pass=5 fail=0</span></td></tr>
+<tr><td><code>bash -n iclaude.sh lib/lockfile/install.sh lib/lockfile/save.sh tests/test_lockfile_core_sync.sh tests/test_check_lockfile_binary_probe.sh</code></td><td><span class="badge ok">exit 0, no output</span></td></tr>
+<tr><td><code>git diff --check 0472ca81..a3482817</code></td><td><span class="badge ok">exit 0, no output</span></td></tr>
+<tr><td>Final code review</td><td><span class="badge ok">APPROVED, no findings</span></td></tr>
+</table>
+<h3>Findings</h3>
+<p class="note">Новых findings нет. Result verdict: OK.</p>
+<h3>Summary</h3>
+<p><span class="badge ok">OK</span> Implementation satisfies intent, spec, and plan. TODO row closed.</p>
+</section>
+<!-- TAB:result END -->
+</main>
+</body>
+</html>

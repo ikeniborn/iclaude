@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итоговый отчёт — result-only-html-report</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3; --muted:#8b949e;
+  --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --miss:#f85149; --th:#1f2733;
+}
+body:has(#theme-toggle:checked){
+  --bg:#ffffff; --panel:#f6f8fa; --border:#d0d7de; --fg:#1f2328; --muted:#59636e;
+  --accent:#0969da; --ok:#1a7f37; --warn:#9a6700; --miss:#cf222e; --th:#eaeef2;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;max-width:1080px;margin-inline:auto;background:var(--bg);color:var(--fg);
+  font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+h1{font-size:1.5rem;margin:0}
+h2{font-size:1.15rem;margin:2rem 0 .5rem;padding-bottom:.3rem;border-bottom:2px solid var(--border)}
+.theme-btn{margin-left:auto;cursor:pointer;border:1px solid var(--border);border-radius:6px;
+  padding:.35rem .7rem;background:var(--panel);user-select:none;white-space:nowrap}
+table{width:100%;border-collapse:collapse;margin:.5rem 0 1rem;background:var(--panel);
+  border:1px solid var(--border);border-radius:8px;overflow:hidden}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--th);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--th);padding:.1rem .35rem;border-radius:4px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
+.badge{display:inline-block;padding:.05rem .5rem;border-radius:999px;font-size:.8em;font-weight:600;white-space:nowrap}
+.b-ok{background:rgba(63,185,80,.18);color:var(--ok)}
+.b-miss{background:rgba(248,81,73,.18);color:var(--miss)}
+.b-warn{background:rgba(210,153,34,.20);color:var(--warn)}
+.b-na{background:rgba(139,148,158,.20);color:var(--muted)}
+.note{background:var(--panel);border-left:3px solid var(--accent);padding:.6rem .9rem;
+  border-radius:4px;margin:.6rem 0;color:var(--muted)}
+.lead{color:var(--muted);margin:.2rem 0 0}
+.plus{color:var(--ok)} .minus{color:var(--miss)}
+footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.9em}
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<header>
+  <h1>Итоговый отчёт: result-only-html-report</h1>
+  <label for="theme-toggle" class="theme-btn" title="Тёмная / светлая тема">🌙 / ☀️</label>
+</header>
+<p class="lead">Внедрение: HTML-отчёт цепочки IDD→SDD теперь формируется только на этапе
+<code>result</code>; этапы <code>intent</code>/<code>spec</code>/<code>plan</code> HTML не создают.
+Мёртвый механизм <code>mode: chain</code> в скилле <code>html-report</code> удалён.</p>
+
+<h2>Резюме внедрения</h2>
+<table>
+  <tr><th>Поле</th><th>Значение</th></tr>
+  <tr><td>Тема</td><td><code>result-only-html-report</code></td></tr>
+  <tr><td>Intent</td><td><span class="badge b-na">n/a</span> — цепочку открывает spec</td></tr>
+  <tr><td>Spec</td><td><code>docs/superpowers/specs/2026-07-10-result-only-html-report-design.md</code></td></tr>
+  <tr><td>Plan</td><td><code>docs/superpowers/plans/2026-07-10-result-only-html-report-plan.md</code></td></tr>
+  <tr><td>База диффа</td><td><code>6655b67d</code> (<code>--since</code>) → рабочее дерево</td></tr>
+  <tr><td>Ветка</td><td><code>dev-result-only-html-report</code> (база <code>dev</code> → PR в <code>dev</code>)</td></tr>
+</table>
+
+<h2>Выполненные изменения</h2>
+<table>
+  <tr><th>Файл</th><th>Тип</th><th>± строк</th><th>Суть</th></tr>
+  <tr>
+    <td><code>skills/check-chain/SKILL.md</code></td><td>изменён</td>
+    <td><span class="plus">+52</span> / <span class="minus">−56</span></td>
+    <td>Step 5 → только этап <code>result</code>; новый контракт отчёта (5 разделов, условные диаграммы); формулировки run-mode обновлены (intent/spec/plan без HTML).</td>
+  </tr>
+  <tr>
+    <td><code>skills/html-report/SKILL.md</code></td><td>изменён</td>
+    <td><span class="plus">+1</span> / <span class="minus">−18</span></td>
+    <td>Удалён мёртвый код-путь <code>mode: chain</code> (Hard Constraint 5, workflow Step 3/6, self-validation блок, autonomy-строка).</td>
+  </tr>
+  <tr>
+    <td><code>skills/html-report/references/chain-report.md</code></td><td>удалён</td>
+    <td><span class="minus">−168</span></td>
+    <td>Ретайр контракта 4-табового chain-отчёта — единственного потребителя <code>mode: chain</code>.</td>
+  </tr>
+  <tr>
+    <td><code>skills/html-report/references/dynamics.md</code></td><td>изменён</td>
+    <td><span class="minus">−3</span></td>
+    <td>Убран указатель на удалённый <code>chain-report.md</code>.</td>
+  </tr>
+</table>
+<p class="note">Коммиты: <code>647f0c84</code> · <code>9bb943d9</code> · <code>bd374bb8</code>.
+Итого: 4 файла, +53 / −245.</p>
+
+<h2>Результаты</h2>
+<p class="lead">Сверка шагов плана против диффа <code>6655b67d..HEAD</code>.</p>
+<table>
+  <tr><th>Шаг плана</th><th>Статус</th><th>Свидетельство в диффе</th></tr>
+  <tr><td>Task 1 — check-chain Step 5 → result-only</td><td><span class="badge b-ok">DONE</span></td><td><code>check-chain/SKILL.md</code> переписан (<code>647f0c84</code>)</td></tr>
+  <tr><td>Task 2 — удалить mode:chain из html-report</td><td><span class="badge b-ok">DONE</span></td><td><code>html-report/SKILL.md</code> (<code>9bb943d9</code>)</td></tr>
+  <tr><td>Task 3 — удалить chain-report.md + указатель</td><td><span class="badge b-ok">DONE</span></td><td><code>chain-report.md</code> удалён + <code>dynamics.md</code> (<code>bd374bb8</code>)</td></tr>
+  <tr><td>Task 4 — синхронизировать iwiki</td><td><span class="badge b-miss">MISSING</span></td><td>Правка страницы <code>idd-chain-validation</code> живёт в репозитории <code>iwiki-personal</code> — <b>структурно не попадает</b> в git-дифф этого репо. На момент отчёта заблокирована недоступностью iwiki MCP.</td></tr>
+  <tr><td>Task 5 — dogfood-верификация</td><td><span class="badge b-na">—</span></td><td>Сам этот verification-шаг (кода нет)</td></tr>
+</table>
+<table>
+  <tr><th>Покрытие</th><th>Итог</th></tr>
+  <tr><td>Spec-требования</td><td>§3.1 <span class="badge b-ok">✓</span> · §3.2 <span class="badge b-ok">✓</span> · §3.3 <span class="badge b-ok">✓</span> · §3.4 <span class="badge b-ok">✓</span> · §3.5 wiki <span class="badge b-warn">pending (внешнее)</span> · §5 <span class="badge b-ok">✓</span></td></tr>
+  <tr><td>Intent Desired Outcomes</td><td><span class="badge b-na">n/a</span> — intent отсутствует</td></tr>
+  <tr><td>Excess-изменения</td><td>нет — все изменённые файлы соответствуют шагам плана</td></tr>
+</table>
+<p class="note"><b>Вердикт: needs_work.</b> Код-часть (Tasks 1–3) закрыта и прошла task-review.
+Единственный незакрытый пункт — Task 4 (синхронизация iwiki), заблокирован средой и по своей природе
+не может отражаться в диффе этого репозитория. Закрыть по восстановлении доступа к iwiki MCP.</p>
+
+<h2>Влияние на систему</h2>
+<table>
+  <tr><th>Область</th><th>Изменение</th><th>Риск / следующее действие</th></tr>
+  <tr><td>Скилл <code>check-chain</code></td><td>Отчёт формируется только на <code>result</code>; intent/spec/plan завершаются после вердикта + TODO, без HTML.</td><td>Меньше шума артефактов; фазы валидации и frontmatter-контракт не тронуты.</td></tr>
+  <tr><td>Скилл <code>html-report</code></td><td>Удалён режим <code>mode: chain</code> (4-табовый мердж) и его reference.</td><td>Мёртвый код-путь устранён; поведение <code>standalone</code> и zero-dependency-инварианты не затронуты.</td></tr>
+  <tr><td>Артефакты <code>docs/superpowers/reports/</code></td><td>Новый формат — одностраничный отчёт о внедрении (этот файл).</td><td>Старые 4-табовые <code>*-results.html</code> историчны, не мигрируются.</td></tr>
+  <tr><td>Документация iwiki</td><td>Страница <code>idd-chain-validation</code> требует синхронизации под новое поведение.</td><td><b>Pending</b> — выполнить, когда iwiki MCP снова доступен.</td></tr>
+</table>
+
+<p class="note">Схемы не включены: триггер §3.3 не сработал — дифф это markdown-правки двух
+skill-файлов плюс удаление одного reference-файла; нет нового модуля, связей-зависимостей между
+компонентами или потока данных. Разделы 1–4 без диаграмм соответствуют контракту.</p>
+
+<footer>
+Цепочка: intent (n/a) → spec → plan → result. Сгенерировано скиллом <code>html-report</code>
+(режим <code>standalone</code>), zero-dependency, тёмная + светлая темы.
+</footer>
+</body>
+</html>

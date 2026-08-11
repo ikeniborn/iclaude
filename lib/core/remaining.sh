@@ -116,6 +116,51 @@ get_claude_version() {
 }
 fi
 
+if ! declare -F normalize_claude_version &>/dev/null; then
+normalize_claude_version() {
+    local raw="${1:-}"
+    grep -oE '[0-9]+(\.[0-9]+){1,3}([-+][0-9A-Za-z.-]+)?' <<< "$raw" | head -n 1
+}
+fi
+
+if ! declare -F run_claude_npm_install_with_progress &>/dev/null; then
+run_claude_npm_install_with_progress() {
+    local install_args=("$@")
+    local log_file
+    log_file="$(mktemp)"
+    local poll="${ICLAUDE_NPM_PROGRESS_POLL_SECONDS:-2}"
+    local interval="${ICLAUDE_NPM_PROGRESS_INTERVAL_SECONDS:-30}"
+
+    [[ "$poll" =~ ^[0-9]+$ ]] || poll=2
+    [[ "$interval" =~ ^[0-9]+$ ]] || interval=30
+    (( poll >= 1 )) || poll=2
+    (( interval >= poll )) || interval=$poll
+
+    print_info "Claude Code native binary package is large; npm may look idle for several minutes"
+    print_info "Progress notice interval: ${interval}s"
+
+    npm install -g "${install_args[@]}" >"$log_file" 2>&1 &
+    local npm_pid=$!
+    local elapsed=0
+    local next_notice=$interval
+
+    while kill -0 "$npm_pid" 2>/dev/null; do
+        sleep "$poll"
+        elapsed=$((elapsed + poll))
+        if (( elapsed >= next_notice )) && kill -0 "$npm_pid" 2>/dev/null; then
+            print_info "npm install still running (${elapsed}s elapsed)"
+            next_notice=$((next_notice + interval))
+        fi
+    done
+
+    local rc=0
+    wait "$npm_pid" || rc=$?
+    cat "$log_file"
+    rm -f "$log_file"
+    return "$rc"
+}
+fi
+
 if ! declare -F check_update &>/dev/null; then
 check_update() {
     local skip_isolated="${1:-false}"
@@ -156,8 +201,10 @@ check_update() {
     print_info "Latest version:  $latest_version"
     echo ""
 
-    # Compare versions
-    if [[ "$current_version" == "$latest_version" ]]; then
+    # Compare normalized semver values; `claude --version` includes a display suffix.
+    local current_semver
+    current_semver=$(normalize_claude_version "$current_version")
+    if [[ "$current_semver" == "$latest_version" ]]; then
         print_success "You are running the latest version"
     else
         print_warning "An update is available: $latest_version"

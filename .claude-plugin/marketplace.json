@@ -14,8 +14,8 @@
     },
     {
       "name": "loen",
-      "description": "Loop Engineering harness plugin: controlled agent loop, independent verifier, artifact-layout guardrails.",
-      "version": "0.5.1",
+      "description": "Loop Engineering harness plugin: stage-oriented durable-topic loop, autonomous loop-run, independent verifier, hook-enforced guardrails.",
+      "version": "1.0.0",
       "source": "./plugin/loen",
       "author": { "name": "ikeniborn" },
       "category": "development"

@@ -117,7 +117,9 @@ install_isolated_nodejs() {
 
 	# Install and use Node.js. If nvm's download fails (system curl/OpenSSL cannot
 	# reach the Node mirror on this host), fall back to Node's own TLS stack.
-	if ! nvm install "$node_version" || ! nvm use "$node_version"; then
+	# `nvm install` already activates the version, so the defensive `nvm use` runs
+	# with --silent — otherwise "Now using node ..." is printed twice.
+	if ! nvm install "$node_version" || ! nvm use --silent "$node_version"; then
 		print_warning "nvm could not download Node.js; trying the node-TLS fallback..."
 		echo ""
 		local major="${node_version%%.*}"
@@ -320,7 +322,9 @@ ensure_isolated_node_engine() {
 
 	# Globals stay in npm-global (NPM_CONFIG_PREFIX), so a plain install + use is
 	# enough; the launcher (setup_isolated_nvm) then picks the highest version.
-	if nvm install "$required_major" && nvm use "$required_major"; then
+	# `nvm install` already activates the version, so the defensive `nvm use` runs
+	# with --silent — otherwise "Now using node ..." is printed twice.
+	if nvm install "$required_major" && nvm use --silent "$required_major"; then
 		print_success "Node.js upgraded to $(node --version) (isolated)"
 		echo ""
 		return 0

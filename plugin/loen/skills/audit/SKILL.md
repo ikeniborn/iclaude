@@ -1,96 +1,48 @@
 ---
 name: audit
-description: Use when a loen loop stage — plan, act, check, or result — must be validated and gated before the next one. Mode-aware for delivery/repair/research; the execution-loop analog of check-chain.
+description: Use when a loen loop stage — plan, act, check, or result — must be manually validated and gated. Mode-aware for delivery/repair/research/review; the manual re-validator. Inside loop-run this gating is automatic (hooks + verifier).
 ---
 
-# loen:audit — loop stage validator + live report
+# loen:audit — manual loop stage validator
 
-Invoke as `loen:audit <stage>` where `stage ∈ plan | act | check | result`. Read the active
-run from `docs/loen/current` and `mode` from its `loop.yaml`
-(`delivery | repair | research`). Every stage returns a verdict `OK` / `needs_work`, gates
-the next stage, and **regenerates `docs/loen/<run-id>/report.html`** (via the `html-report`
-skill) plus appends to `state.md`.
+Invoke as `loen:audit <stage>` where `stage ∈ plan | act | check | result`. Resolve the
+active topic from `docs/loen/current` (or a `status: active` `loop.yaml`) and read `mode`
+from `loop.yaml`. Each stage returns `OK` / `needs_work`, and regenerates
+`docs/loen/<topic>/audit.html` via `loen_artifacts.render_audit`.
+
+Inside `loop-run` this gating happens automatically (the PreToolUse loop-gate/scope/tool/
+permission hooks, the Stop evidence-gate, and the independent `verifier`). Use this skill for
+a manual, human-driven re-check of a single stage.
 
 ## Stage checks (all modes)
 
-- **plan** — `loop.yaml` parses; `objective` measurable; `mutable_scope`/`protected_scope`
-  non-empty and disjoint; `quality_gates` non-empty; `budget` present; human approval
-  recorded. `verifier_isolation`, when present, MUST be `subagent` or `microvm` — validate
-  it AND the host capability with this plugin's
-  `scripts/verify_microvm.sh preflight <run-dir>/loop.yaml` (resolved from the skill base
-  dir): `microvm` on a host without KVM/Firecracker/images → `needs_work` with the
-  script's "install microVM support or drop to `verifier_isolation: subagent`" hint. No
-  silent downgrade at plan time. `needs_work` blocks Act.
-- **act** — the latest `iterations/iter-NN/diff.patch` exists and touches only
-  `mutable_scope`; no `protected_scope` path present (cross-check with this plugin's
-  `scripts/guard_protected.sh` via the run's loop.yaml, resolved from the skill base dir);
-  and the run dir passes this plugin's `scripts/check_layout.sh` — the deterministic net
-  that catches any Bash-written non-canonical artifact that bypassed the PreToolUse hook.
-- **check** — dispatch the verifier per the contract's `verifier_isolation` key
-  (`subagent` when absent). `subagent` → dispatch the `verifier` subagent (isolated),
-  exactly the MVP path. `microvm` → write the mode-specific checklist (the same text the
-  subagent dispatch prompt would carry) to a temp file OUTSIDE the run dir, then run this
-  plugin's `scripts/verify_microvm.sh check <run-dir> <iter-NN> <checklist-file>`
-  (resolved from the skill base dir): it snapshots the tree, runs the verifier headless
-  inside an iclaude Firecracker microVM, and writes the returned text to
-  `iterations/iter-NN/verifier.md` unchanged — downstream consumers are agnostic to where
-  the verdict was produced. A non-zero exit (VM boot/provision failure, silent host
-  fallback, missing verdict, host-tree tripwire) → verdict `needs_work` quoting the
-  script's failure log path — NEVER fall back to the in-session subagent; the human may
-  edit the contract to `subagent` to proceed un-isolated. In both dispatch modes the
-  verdict lands at `iterations/iter-NN/verifier.md`; confirm `gates.log` shows the gates
-  ran. `OK` iff the verdict is APPROVE and gates are green.
-- **result** — every plan step is done, gates green, verifier APPROVE across the final
-  iteration. On `OK`: finalize `report.html`, ensure `pr-summary.md` exists, and mark the
-  `docs/TODO.md` row (`Result: OK`, `Status: done`, `Closed: <today>`) keyed by `<topic>`.
+- **plan** — `3_plan.md` has `## Steps` + `## Checks`; `loop.yaml` parses and passes
+  `loen_artifacts.validate_run_contract` (approved, `plan_hash` matches, mode valid, usable
+  `mutable_scope`, `quality_gates`, positive budget, `rollback_policy`). `verifier_isolation`
+  must be `subagent` or `microvm`; for `microvm` validate the host with
+  `scripts/verify_microvm.sh preflight docs/loen/<topic>/loop.yaml` — no silent downgrade.
+  `needs_work` blocks act.
+- **act** — `4_act.md` exists with `## Changed Paths`; the diff touches only `mutable_scope`
+  and no `protected_scope` path (cross-check `scripts/guard_protected.sh`); the topic dir
+  passes `scripts/check_layout.sh` (the deterministic net for Bash-written artifacts).
+- **check** — `5_check.md` `## Result` is `PASS` (gates green) and
+  `evidence/verifier-verdict.md` carries `VERDICT: APPROVE`. Dispatch the `verifier` per
+  `verifier_isolation` (`microvm` → `scripts/verify_microvm.sh check`). `OK` iff gates green
+  and verdict APPROVE.
+- **result** — `7_result.md` `## Outcome` is `Done`, `5_check.md` is `PASS`, `evidence/` is
+  non-empty. On `OK`: regenerate `audit.html` and mark the `docs/TODO.md` row
+  (`Result: OK`, `Status: done`, `Closed: <today>`) keyed by `<topic>`.
 
-## Mode: repair — additional checks
+## Mode notes
 
-- **plan** — `quality_gates` include the failing command recorded in the Baseline section
-  of `state.md` at bootstrap.
-- **check** — when the diff claims a NEW/extended regression test, `gates.log` carries the
-  worker's logged inversion evidence (stash the fix → the regression test FAILS → pop →
-  it PASSES).
-- **result** — regression coverage evidenced in the final diff: case (a) a new/extended
-  test, or case (b) the originally-failing test itself — the verifier states which case
-  applies; the originally-failing command exits 0; the diff is minimal (every non-test
-  hunk required for that command to pass).
-- **verifier dispatch prompt** carries the repair checklist: regression coverage case
-  (a/b), validation of the LOGGED inversion evidence, minimal-diff confirmation. The
-  verifier stays read-only — it never mutates the tree.
-
-## Mode: research — additional checks
-
-- **plan** — `eval_command` non-empty; EXACTLY ONE `metrics.primary` entry of the form
-  `<name>:max` or `<name>:min`; `stop_conditions` carry one
-  `target: <primary-name> <op> <number>` line (`<op>` ∈ `>=`/`<=` matching the direction)
-  and only well-formed `tolerance: <name> regression <= <number>[%]` lines;
-  `protected_scope` COVERS the eval assets (the `eval_command` script, eval datasets,
-  ground truth) — non-empty alone is not enough.
-- **check** — gates green (they run on every experiment);
-  `iterations/iter-NN/metrics.jsonl` has exactly one `summary` line; `experiments.jsonl`
-  has this iteration's record; for every `keep` decision the verifier RE-RUNS
-  `eval_command` — exporting `LOEN_METRICS_PATH` to a throwaway temp path, never appending
-  to canonical artifacts — and confirms the claimed delta. `revert` records are trusted
-  as logged.
-- **result** — kept changes are metric-backed (primary improved in its declared direction,
-  secondaries within their stated tolerances) OR the budget is exhausted with a
-  best-result report; the `experiments.jsonl` stream is consistent end-to-end with the
-  per-iteration `metrics.jsonl` summaries.
-- **verifier dispatch prompt** carries the research checklist: delta re-check via a
-  throwaway `LOEN_METRICS_PATH`, stream cross-check (`experiments.jsonl` vs
-  `metrics.jsonl`), protected eval assets untouched. The verifier stays read-only.
-
-## report.html (every stage)
-
-Invoke the `html-report` skill targeting `docs/loen/<run-id>/report.html` with: the
-contract (`loop.yaml`), an iterations table (diff summary, gates pass/fail, verifier
-verdict), metrics before/after — in research mode an experiments table (hypothesis,
-before/after, delta, decision) — budget spend, current stage/verdict, and handoff
-reasons. Self-contained, opens by double-click.
+- **repair** — `quality_gates` include the originally-failing command; `check` confirms the
+  regression test fails without the fix and passes with it (logged inversion evidence).
+- **research** — `eval_command` non-empty; a `stop_conditions` `target:` line; for every
+  `keep` the verifier re-runs `eval_command` to confirm the delta.
+- **review** — a non-empty review scope (`context_sources`); findings in `5_check.md`, the
+  disposition in `6_reflect.md`.
 
 ## Rules
 
-- Never edit the diff you are judging. Never weaken a gate to pass.
-- All writes land at canonical `docs/loen/<run-id>/` paths (the loop-guard hook enforces
-  this); the report is `report.html`, nothing else.
+- Never edit the artifacts you are judging. Never weaken a gate to pass.
+- All writes land at canonical `docs/loen/<topic>/` paths; the report is `audit.html`.
