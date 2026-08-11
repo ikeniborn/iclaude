@@ -2,12 +2,12 @@
 """Auto-bump the patch version of every marketplace plugin whose source files
 changed in a push range.
 
-Called by .githooks/pre-push on a push to `dev`, alongside the VERSION bump.
-For each plugin in `.claude-plugin/marketplace.json` whose `source` directory
-has a changed file in `<remote_sha>..<local_sha>`, bumps the patch in BOTH the
-marketplace entry and `<source>/.claude-plugin/plugin.json` (lockstep — the
-sync guard requires them equal) and `git add`s the two files. The pre-push hook
-makes the commit, so this script only edits + stages.
+Run by hand with a commit range. For each plugin in
+`.claude-plugin/marketplace.json` whose `source` directory has a changed file in
+`<remote_sha>..<local_sha>`, bumps the patch in BOTH the marketplace entry and
+`<source>/.claude-plugin/plugin.json` (lockstep — the sync guard requires them
+equal) and `git add`s the two files. This script only edits + stages; commit the
+result yourself.
 
 Minor/major bumps stay manual: edit both versions by hand when intended.
 

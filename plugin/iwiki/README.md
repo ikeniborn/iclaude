@@ -155,11 +155,9 @@ export IWIKI_LLM_KEY="sk-..."
 The plugin version lives in two files kept in lockstep — `.claude-plugin/plugin.json`
 and the `iwiki` entry in the repo-root `.claude-plugin/marketplace.json`. They
 **must** match: Claude Code caches user-scope plugins by version, so a drift would
-freeze the cache and stop hook/skill fixes from reaching other projects (the
-`scripts/check-plugin-version-sync.sh` pre-push guard blocks a push on drift).
+freeze the cache and stop hook/skill fixes from reaching other projects.
 
-- **Patch** — bumped automatically. On a push to `dev`, `.githooks/pre-push` runs
-  `scripts/bump-changed-plugins.py`, which bumps the patch of every plugin whose
-  `source` files changed in that push (both files, in lockstep). The bump lands
-  as a local `[skip ci]` commit that ships on the next push.
-- **Minor / major** — bumped manually on request: edit both files together.
+Every version bump is manual: edit both files together. `scripts/bump-changed-plugins.py`
+can bump the patch of every plugin whose `source` files changed between two commits, and
+`scripts/check-plugin-version-sync.sh` reports a drift between the two files — both are
+run by hand now that the `dev` branch and its pre-push hook are gone.
