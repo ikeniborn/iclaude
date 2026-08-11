@@ -6,9 +6,9 @@
 #
 # Subcommands:
 #   preflight [loop.yaml]                       validate verifier_isolation + host capability
-#   snapshot  <repo-root> <run-dir> <out-dir>   build the disposable tree snapshot
-#   extract   <log-file>                        print the LOEN_VERIFIER_BEGIN/END block
-#   check     <run-dir> <iter-NN> [checklist-file]  full isolated verify; writes verifier.md
+#   snapshot  <repo-root> <topic-dir> <out-dir>  build the disposable tree snapshot
+#   extract   <log-file>                         print the LOEN_VERIFIER_BEGIN/END block
+#   check     <topic-dir> [checklist-file]        full isolated verify; writes evidence/verifier-verdict.md
 #
 # Exit codes: 0 ok / verdict produced; 1 usage, contract or preflight failure;
 #             2 launch or isolation failure (silent host fallback, missing boot marker,
@@ -82,25 +82,21 @@ _snapshot() {
     fi
     rm -f "$patch"
 
-    # 3. The run's evidence artifacts + the current symlink the verifier body expects.
-    local run_id iter_dir f dest
-    run_id=$(basename "$run_dir")
-    dest="$out/docs/loen/$run_id"
-    mkdir -p "$dest"
+    # 3. The topic's durable artifacts + the current pointer the verifier body expects.
+    local topic f dest
+    topic=$(basename "$run_dir")
+    dest="$out/docs/loen/$topic"
+    mkdir -p "$dest/evidence"
     cp "$run_dir/loop.yaml" "$dest/loop.yaml"
-    for iter_dir in "$run_dir"/iterations/iter-[0-9][0-9]; do
-        [[ -d "$iter_dir" ]] || continue
-        mkdir -p "$dest/iterations/$(basename "$iter_dir")"
-        for f in diff.patch gates.log metrics.jsonl; do
-            if [[ -f "$iter_dir/$f" ]]; then
-                cp "$iter_dir/$f" "$dest/iterations/$(basename "$iter_dir")/$f"
-            fi
-        done
+    for f in "$run_dir"/[1-7]_*.md "$run_dir"/attempts.jsonl "$run_dir"/experiments.jsonl; do
+        [[ -f "$f" ]] && cp "$f" "$dest/$(basename "$f")"
     done
-    if [[ -f "$run_dir/experiments.jsonl" ]]; then
-        cp "$run_dir/experiments.jsonl" "$dest/experiments.jsonl"
+    if [[ -d "$run_dir/evidence" ]]; then
+        for f in "$run_dir"/evidence/*; do
+            [[ -f "$f" ]] && cp "$f" "$dest/evidence/$(basename "$f")"
+        done
     fi
-    ln -sfn "$run_id" "$out/docs/loen/current"
+    printf '%s\n' "$topic" > "$out/docs/loen/current"   # pointer file (not a symlink)
     echo "verify_microvm: snapshot ready at ${out}"
 }
 
@@ -144,10 +140,9 @@ _tree_fingerprint() {
 }
 
 cmd_check() {
-    local run_dir="${1:-}" iter="${2:-}" checklist_file="${3:-}"
-    [[ -n "$run_dir" && -n "$iter" ]] || usage
+    local run_dir="${1:-}" checklist_file="${2:-}"
+    [[ -n "$run_dir" ]] || usage
     [[ -f "$run_dir/loop.yaml" ]] || { echo "verify_microvm: no loop.yaml in ${run_dir}" >&2; return 1; }
-    [[ -d "$run_dir/iterations/$iter" ]] || { echo "verify_microvm: no iteration dir ${run_dir}/iterations/${iter}" >&2; return 1; }
 
     # Guard against dispatch bugs: this flow is ONLY for microvm contracts.
     local isolation
@@ -196,8 +191,9 @@ Mode-specific checklist:
 ${checklist}
 
 Inputs (snapshot-relative, cwd = /workspace):
-- contract: docs/loen/${run_id}/loop.yaml (also docs/loen/current/loop.yaml)
-- iteration under review: docs/loen/${run_id}/iterations/${iter}/ (diff.patch, gates.log)
+- contract: docs/loen/${run_id}/loop.yaml
+- work under review: docs/loen/${run_id}/4_act.md (action + changed paths),
+  docs/loen/${run_id}/5_check.md (gate evidence), and the diff
 
 Print your ENTIRE final report between a line containing exactly LOEN_VERIFIER_BEGIN and
 a line containing exactly LOEN_VERIFIER_END. The report MUST contain a line
@@ -254,8 +250,9 @@ PROMPT
         return 2
     fi
 
-    printf '%s\n' "$report" > "$run_dir/iterations/$iter/verifier.md"
-    echo "verify_microvm: verdict written to ${run_dir}/iterations/${iter}/verifier.md (log: ${log})"
+    mkdir -p "$run_dir/evidence"
+    printf '%s\n' "$report" > "$run_dir/evidence/verifier-verdict.md"
+    echo "verify_microvm: verdict written to ${run_dir}/evidence/verifier-verdict.md (log: ${log})"
 }
 
 case "${1:-}" in

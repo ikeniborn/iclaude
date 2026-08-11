@@ -60,6 +60,3 @@ interfering.
 .tab-pane{ display:none; }
 body:has(#tab-a:checked) #pane-a, body:has(#tab-b:checked) #pane-b{ display:block; }
 ```
-
-Full IDD→SDD chain-report merge contract (boundary markers, per-tab update,
-placeholder) → `chain-report.md`.

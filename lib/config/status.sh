@@ -158,7 +158,12 @@ check_isolated_status() {
 		echo ""
 		print_info "Symlinks Status:"
 
-		local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+		local node_version_dir
+		if declare -F get_isolated_node_version_dir &>/dev/null; then
+			node_version_dir=$(get_isolated_node_version_dir "$ISOLATED_NVM_DIR/versions/node")
+		else
+			node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)
+		fi
 		local symlink_issues=0
 
 		if [[ -n "$node_version_dir" ]]; then
@@ -252,7 +257,12 @@ show_native_installer_info() {
 
 	if [[ ! -f "$package_json" ]]; then
 		# Если package.json не найден, пытаемся найти в другом месте
-		local node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+		local node_version_dir
+		if declare -F get_isolated_node_version_dir &>/dev/null; then
+			node_version_dir=$(get_isolated_node_version_dir "$ISOLATED_NVM_DIR/versions/node")
+		else
+			node_version_dir=$(find "$ISOLATED_NVM_DIR/versions/node" -maxdepth 1 -type d -name "v*" 2>/dev/null | LC_ALL=C sort | tail -1)
+		fi
 		if [[ -n "$node_version_dir" ]]; then
 			package_json="$node_version_dir/lib/node_modules/@anthropic-ai/claude-code/package.json"
 		fi

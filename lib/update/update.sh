@@ -109,7 +109,9 @@ update_claude_code() {
     fi
 
     # Check if already up to date
-    if [[ "$current_version" == *"$latest_version"* ]]; then
+    local current_semver
+    current_semver=$(normalize_claude_version "$current_version")
+    if [[ "$current_semver" == "$latest_version" ]]; then
         print_success "Already running the latest version"
         echo ""
 
@@ -176,8 +178,16 @@ update_claude_code() {
     echo ""
 
     # Update via npm (use install instead of update for npm 10+ compatibility)
-    if npm install -g @anthropic-ai/claude-code@latest; then
+    if run_claude_npm_install_with_progress @anthropic-ai/claude-code@latest; then
         echo ""
+
+        # Restore native binary/symlink before version probing; interrupted npm installs can
+        # leave package files present while npm-global/bin/claude is missing.
+        if [[ "$is_isolated" == true ]] && declare -F create_claude_symlink &>/dev/null; then
+            print_info "Repairing Claude Code symlink after npm install..."
+            create_claude_symlink || true
+            echo ""
+        fi
 
         # Clear bash command hash cache BEFORE checking version
         hash -r 2>/dev/null || true
@@ -227,7 +237,9 @@ update_claude_code() {
         fi
 
         # Check if version actually updated
-        if [[ "$new_version" != *"$latest_version"* ]]; then
+        local new_semver
+        new_semver=$(normalize_claude_version "$new_version")
+        if [[ "$new_semver" != "$latest_version" ]]; then
             print_warning "Version still shows: $new_version"
             echo ""
             echo "The update was installed but your shell may be using a cached version."
