@@ -25,14 +25,13 @@ orchestrates unconstrained).
      Leave the `docs/loen/current` pointer in place — the guards are already inert once
      `status != active`, and the evidence-gate needs the pointer to verify the terminal stop.
      Because the PostToolUse `audit-writer` goes inert on `status != active`, finalize the
-     report + TODO row explicitly on this terminal:
+     report explicitly on this terminal:
 
      ```bash
-     python3 - "$TOPIC" "$PLUGIN" "$(date +%F)" <<'PY'
+     python3 - "$TOPIC" "$PLUGIN" <<'PY'
      import sys, os; sys.path.insert(0, os.path.join(sys.argv[2], "hooks"))
      import loen_artifacts as a
      a.render_audit(sys.argv[1], "docs/loen")          # audit.html verdict: Done
-     a.upsert_todo_row(sys.argv[1], "result", "OK", sys.argv[3])  # TODO: done + Closed
      PY
      ```
    - **fix** — verifier `REJECT` within budget: record the required fixes; `loop-run` loops

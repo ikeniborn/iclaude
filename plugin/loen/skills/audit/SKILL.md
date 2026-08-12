@@ -30,8 +30,7 @@ a manual, human-driven re-check of a single stage.
   `verifier_isolation` (`microvm` → `scripts/verify_microvm.sh check`). `OK` iff gates green
   and verdict APPROVE.
 - **result** — `7_result.md` `## Outcome` is `Done`, `5_check.md` is `PASS`, `evidence/` is
-  non-empty. On `OK`: regenerate `audit.html` and mark the `docs/TODO.md` row
-  (`Result: OK`, `Status: done`, `Closed: <today>`) keyed by `<topic>`.
+  non-empty. On `OK`: regenerate `audit.html`.
 
 ## Mode notes
 

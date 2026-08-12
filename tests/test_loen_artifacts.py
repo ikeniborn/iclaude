@@ -61,37 +61,6 @@ def test_render_audit_ignores_template_comment_sentinels():
     assert "Done" not in _verdict(html), "template comment sentinel leaked into verdict"
 
 
-def test_upsert_todo_preserves_foreign_row():
-    a = load("loen_artifacts")
-    d = tempfile.mkdtemp(); cwd = os.getcwd()
-    try:
-        os.chdir(d); os.makedirs("docs")
-        foreign = ("| Topic | Status | Intent | Spec | Plan | Result | Opened | Closed | Notes |\n"
-                   "|---|---|---|---|---|---|---|---|---|\n"
-                   "| t | done | ✓ | ✓ | ✓ | OK | 2026-06-01 | 2026-06-05 | check-chain managed |\n")
-        pathlib.Path("docs/TODO.md").write_text(foreign)
-        a.upsert_todo_row("t", "act", "–", "2026-07-10")
-        body = pathlib.Path("docs/TODO.md").read_text()
-        assert "check-chain managed" in body, "clobbered a foreign (check-chain) row"
-        assert "2026-06-01" in body and "✓" in body
-    finally:
-        os.chdir(cwd)
-
-
-def test_upsert_todo_idempotent():
-    a = load("loen_artifacts")
-    d = tempfile.mkdtemp(); cwd = os.getcwd()
-    try:
-        os.chdir(d)
-        a.upsert_todo_row("t", "spec", "OK", "2026-07-10")
-        a.upsert_todo_row("t", "spec", "OK", "2026-07-10")
-        body = pathlib.Path("docs/TODO.md").read_text()
-        assert body.count("| t |") == 1 or body.count("t") >= 1
-        assert body.count("\n| t ") <= 1
-    finally:
-        os.chdir(cwd)
-
-
 def test_append_attempt():
     a = load("loen_artifacts")
     d = tempfile.mkdtemp(); root = os.path.join(d, "docs", "loen")
@@ -100,6 +69,13 @@ def test_append_attempt():
     a.append_attempt("t", {"pass": 2, "decision": "keep"}, root)
     lines = pathlib.Path(root, "t", "attempts.jsonl").read_text().strip().splitlines()
     assert len(lines) == 2 and '"pass":1' in lines[0]
+
+
+def test_todo_ledger_api_is_gone():
+    a = load("loen_artifacts")
+    assert not hasattr(a, "upsert_todo_row"), "LoEn must not own a task ledger API"
+    src = pathlib.Path(__file__).resolve().parents[1] / "plugin/loen/hooks/loen_artifacts.py"
+    assert "docs/TODO.md" not in src.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":

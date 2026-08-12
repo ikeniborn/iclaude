@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""PostToolUse audit-writer: regenerate the topic's audit.html and upsert its
-docs/TODO.md row. Side-effecting only — never blocks (always exit 0)."""
-import datetime
+"""PostToolUse audit-writer: regenerate the topic's audit.html.
+Side-effecting only — never blocks (always exit 0)."""
 import os
 import sys
 
@@ -24,11 +23,7 @@ def main():
     status = str(policy.get("status") or "").strip()
     if status != "active":
         return 0  # inert once the loop is finished — no churn on unrelated work
-    stage = str(policy.get("current_stage") or policy.get("stage") or "")
-    verdict = "–"
-    today = os.environ.get("LOEN_TODAY") or datetime.date.today().isoformat()
     _a.render_audit(topic, root)
-    _a.upsert_todo_row(topic, stage, verdict, today)
     return 0
 
 

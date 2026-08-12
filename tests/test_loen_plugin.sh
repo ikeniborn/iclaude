@@ -13,7 +13,7 @@ python3 - "$pj" "$mj" <<'PY'
 import json, sys
 p = json.load(open(sys.argv[1]))
 assert p.get("name") == "loen", f"plugin name != loen: {p.get('name')}"
-assert p.get("version") == "1.0.0", f"plugin version must be 1.0.0, got {p.get('version')}"
+assert p.get("version") == "1.1.0", f"plugin version must be 1.1.0, got {p.get('version')}"
 for k in ("description", "author", "license"):
     assert p.get(k), f"plugin.json missing {k}"
 m = json.load(open(sys.argv[2]))
@@ -22,7 +22,7 @@ assert entry, "loen not registered in marketplace.json"
 assert entry.get("source") == "./plugin/loen", f"bad source: {entry.get('source')}"
 assert entry.get("version") == p["version"], (
     f"version mismatch: marketplace {entry.get('version')} != plugin {p['version']}")
-print("OK plugin manifest + marketplace registration @ 1.0.0")
+print("OK plugin manifest + marketplace registration @ 1.1.0")
 PY
 
 # --- 13 skills ---
