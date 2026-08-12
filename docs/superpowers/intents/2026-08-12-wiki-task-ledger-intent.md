@@ -1,3 +1,31 @@
+---
+review:
+  intent_hash: 8de7f8980672a2a0
+  last_run: 2026-08-12
+  phases:
+    structure:
+      status: passed
+    completeness:
+      status: passed
+    clarity:
+      status: passed
+    consistency:
+      status: passed
+    alignment:
+      status: passed
+  findings:
+    - id: F-001
+      phase: clarity
+      severity: WARNING
+      section: "Stop Rules"
+      section_hash: 7e87ade89a1b1dbb
+      fragment: "check-chain Step 6 and the LoEn hooks no longer write to `docs/TODO.md`"
+      text: "Done when clause mixed an implementation act (\"are rewritten\") with the observable behavior (\"no longer write to docs/TODO.md\"). The observable part alone is sufficient; naming the act risks reading as \"code written\" rather than a result."
+      fix: "Rephrase to the observable behavior only: \"check-chain Step 6 and the LoEn hooks no longer write to docs/TODO.md\"."
+      verdict: fixed
+      verdict_at: 2026-08-12
+---
+
 # Intent: wiki-task-ledger
 
 **Date:** 2026-08-12
@@ -85,5 +113,4 @@ changelog) entirely into the project's bound iwiki domain, replacing
   close.
 - Done when: `docs/TODO.md` is deleted; `tasks/index` and `tasks/changelog`
   exist and are populated from the migration; `check-chain` Step 6 and the
-  LoEn hooks are rewritten and no longer write to `docs/TODO.md`; `wiki_lint`
-  is clean.
+  LoEn hooks no longer write to `docs/TODO.md`; `wiki_lint` is clean.
