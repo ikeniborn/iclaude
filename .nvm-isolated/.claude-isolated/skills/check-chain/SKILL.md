@@ -80,7 +80,7 @@ Apply the Step 0 exit criterion: `OK` or «требует доработки: <N
 
 Runs ONLY for the `result` stage, and only when the reconciled `git diff` is
 non-empty. The `intent` / `spec` / `plan` stages produce NO HTML — they end after
-Step 4 (verdict) and Step 6 (TODO upsert). On an empty diff, `result` emits INFO
+Step 4 (verdict) and Step 6 (wiki task page). On an empty diff, `result` emits INFO
 «result pending implementation» and produces no report.
 
 After the result verdict, invoke the `html-report` skill (`skill: "html-report"`) in
@@ -124,13 +124,18 @@ when the diff does at least one of:
 Otherwise (a point bugfix, a text/comment/config tweak, or edits contained within
 existing files with no new cross-component wiring) → sections 1–4 only, no diagram.
 
-### Step 6 — TODO.md upsert
+### Step 6 — wiki task page
 
-After the verdict, upsert the chain's row in `docs/TODO.md` keyed by `<topic>` (see the
-Task Log convention in `CLAUDE.md`). Create the file with the header row if absent. Mark
-this stage's cell `✓` on `OK` (`–` if it still needs work); `intent` opens the row, a
-missing upstream stage is `n/a`; `result` on `OK` closes the row (`Result: OK`,
-`Status: done`, `Closed: <today>`).
+After the verdict, record the gate on the topic's wiki page
+`reference/tasks/<topic>` in the domain reported by `wiki_status.primary` (see the
+Task Log convention in `CLAUDE.md`). If the page is absent, create it with
+`wiki_write_page` and the five required sections; otherwise `wiki_read_page` the
+section you are about to change, then `wiki_update_page` it in full.
+
+- Append one `verification` event to `Changelog`: `- <today> — verification — <stage> <verdict> — key:<key>`, where `<key>` is derived from topic, event kind, and a hash of the recorded evidence. Skip the append when that key is already present.
+- Tick the stage's line in `TODO`.
+- On `result` `OK`: set `Current State` `Lifecycle: done` and `Closed: <today>`, and append the `close` event — but only after every queued event is delivered and `wiki_lint` reports no new finding for the page. Otherwise set `Lifecycle: completion-pending`.
+- If the MCP server is unreachable, append the event to the spool at `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, report `Tracking: unavailable`, and continue — the stage verdict itself is never blocked by the wiki channel.
 
 ## Rules (prohibited)
 
@@ -347,16 +352,16 @@ touch the plan body — it is the merge-gate pass signal for idd-gate).
 3. For each stage in `[intent, spec, plan, result]`:
    - artifact absent → record it (`Intent: n/a` etc.) and continue;
    - Step 0 quick-exit passes → `✓ cached`, continue;
-   - else run the stage's Steps 1–4 + 6 (findings → verdicts → frontmatter → TODO cell); the `result` stage additionally runs Step 5 (single-page HTML report);
+   - else run the stage's Steps 1–4 + 6 (findings → verdicts → frontmatter → wiki task page); the `result` stage additionally runs Step 5 (single-page HTML report);
    - stage ends `needs_work` (open CRITICAL) → STOP: «chain остановлен на `<stage>`,
      почини и перезапусти». Do not run downstream stages.
 4. `result` needs a `git diff`. Reached with an empty diff → emit INFO
-   «result pending implementation», chain verdict «OK up to plan», leave the TODO
-   `Result` cell `–` (not `done`). Non-empty diff → reconcile; on `OK` close the row.
+   «result pending implementation», chain verdict «OK up to plan», leave the page's
+   `Lifecycle` at `completion-pending` (not `done`). Non-empty diff → reconcile; on `OK` close the row.
 5. Print the chain summary, and the path to the HTML report when the `result` stage produced one.
 
 ### Single stage — `/check-chain <stage> [path]`
 
 Run Steps 0–4 + 6 for exactly that one stage (confirmation, findings, verdicts,
-frontmatter, TODO cell, footer). Only `/check-chain result` additionally runs Step 5
+frontmatter, wiki task page, footer). Only `/check-chain result` additionally runs Step 5
 to produce the single-page HTML report; `/check-chain intent|spec|plan` produce no HTML.
