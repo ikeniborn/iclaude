@@ -46,3 +46,8 @@ orchestrates unconstrained).
 Report the decision and the terminal artifact written (`7_result.md` for Done, `handoff.md`
 for a human decision). Never declare Done without gates `PASS` + verifier `APPROVE` + evidence
 (the evidence-gate Stop hook enforces this).
+
+The parent (never this hook) records the corresponding event on the topic's wiki task page
+`reference/tasks/<topic>`: a `decision`/`blocker` event for `fix`, `revert`, or `handoff`, and
+a `close` event when `7_result.md` or `handoff.md` is the terminal artifact — these are
+material stage boundaries per the Task Log rule.

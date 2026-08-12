@@ -56,7 +56,7 @@ hooks. Enforcement is graded by `LOEN_MODE`: `off` (inert) / `advisory` (print o
 | `tool-guard.py` | PreToolUse | tool in `tools.allowed`; role permitted for `current_stage` |
 | `permission-guard.py` | PreToolUse | shell deny_patterns, `git reset --hard`, network off/allowlist |
 | `evidence-gate.py` | Stop | a "done" stop needs `5_check` + `7_result` + verifier verdict + evidence |
-| `audit-writer.py` | PostToolUse | regenerate `audit.html`; upsert the `docs/TODO.md` row |
+| `audit-writer.py` | PostToolUse | regenerate the topic's `audit.html` |
 
 Deterministic shell nets (`check_layout.sh`, `guard_protected.sh`) re-check the layout and
 protected scope for Bash-written artifacts that bypass the PreToolUse hook.

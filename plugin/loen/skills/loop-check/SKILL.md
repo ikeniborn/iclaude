@@ -26,3 +26,7 @@ verdict. You never approve your own work.
 
 Report the gate result (`PASS`/`FAIL`), the verifier `VERDICT`, and that `loop-reflect`
 decides next. Both the gates and the verifier must agree before the loop can terminate.
+
+The parent (never this hook) records a `verification` event on the topic's wiki task page
+`reference/tasks/<topic>` with the gate result and verifier `VERDICT` — this is a material
+stage boundary per the Task Log rule.

@@ -357,7 +357,8 @@ touch the plan body — it is the merge-gate pass signal for idd-gate).
      почини и перезапусти». Do not run downstream stages.
 4. `result` needs a `git diff`. Reached with an empty diff → emit INFO
    «result pending implementation», chain verdict «OK up to plan», leave the page's
-   `Lifecycle` at `completion-pending` (not `done`). Non-empty diff → reconcile; on `OK` close the row.
+   `Lifecycle` at `completion-pending` (not `done`). Non-empty diff → reconcile; on `OK`
+   close the task page per Step 6 (`Lifecycle: done`, `Closed: <today>`).
 5. Print the chain summary, and the path to the HTML report when the `result` stage produced one.
 
 ### Single stage — `/check-chain <stage> [path]`

@@ -17,7 +17,7 @@ unavailable only when it is absent from that catalog or the `Skill` call itself 
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. **If the iwiki MCP server is connected**, call `wiki_status`. If it reports a domain bound to this project (convention: domain name == project basename), `wiki_bind(read=[<domain>], write=<domain>)`, then `wiki_search "<task topic>"` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no project domain → skip; iwiki is not set up for this project.)
+1. **If the iwiki MCP server is connected**, call `wiki_status`. If it reports a domain bound to this project (convention: domain name == project basename), `wiki_bind(read=[<domain>], write=[<domain>], primary=<domain>)`, then `wiki_search(query="<task topic>")` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no project domain → skip; iwiki is not set up for this project.)
 2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
    ```bash
    tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
@@ -61,10 +61,10 @@ These files are the entry point for two audiences at once: business users who ne
 
 - **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the events, continue working — but the task cannot reach `done`.
 - **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
-- **No index page, no changelog page.** Project status is derived with `wiki_search(tags=["task"])`.
+- **No index page, no changelog page.** Project status is derived by enumerating task pages with `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix; use `wiki_search(query=..., tags=["task"])` only for content lookup within a topic.
 - **Five `##` sections, each once, never renamed or reordered**: `Current State`, `TODO`, `Subtasks`, `Evidence`, `Changelog`. No `###`. Each section opens with a lead of at most 250 characters, then a blank line.
 - **Lifecycle** in the body: `in-progress`, `blocked`, `completion-pending`, `done`.
-- **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at material stage boundaries.
+- **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at four material stage boundaries: loop start (plan approved, `loop.yaml` armed) → `open`/`route`; each `loop-check` verdict → `verification`; each `loop-reflect` decision of `fix`, `revert`, or `handoff` → `decision`/`blocker`; the terminal `7_result.md` or `handoff.md` → `close`. Per-iteration act steps and hook-rendered `audit.html` refreshes are not mirrored.
 - **Write points.** `open` before the first change; `route` when the workflow or model route is decided; `verification` at each `/check-chain` verdict or loop-check; `dispatch` before delegating and `return` when the subagent answers; `blocker` when blocked; `close` at the end. Tool calls are not events.
 - **Idempotency.** Every `Changelog` entry carries `key:<hash of topic + kind + redacted evidence>`. An entry whose key is present is not appended again — this is what makes spool replay safe. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
 - **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the page. Until then the task stays `completion-pending`.
@@ -335,7 +335,7 @@ Switch confirmation: n/a | pending | confirmed | declined
 
 **When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
 
-- **Read both first.** Call `wiki_status`; then `wiki_search(tags=["task"])` for the task pages, and `wiki_search` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
+- **Read both first.** Call `wiki_status`; then `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix for the full set of task pages, and `wiki_search(query=...)` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
 - **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest `Changelog` events), then a **Discrepancies** section.
 - **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
   - A task page is `done` but the wiki has no subject-matter page (or a stale one) covering it.
