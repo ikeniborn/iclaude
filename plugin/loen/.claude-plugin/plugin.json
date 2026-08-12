@@ -1,7 +1,7 @@
 {
   "name": "loen",
   "description": "Loop Engineering harness: a stage-oriented durable-topic loop (7 numbered artifacts under docs/loen/<topic>/) with an autonomous loop-run orchestrator, an independent verifier, a machine-readable loop.yaml contract, and six hook-enforced guardrails.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": { "name": "ikeniborn" },
   "keywords": ["loop-engineering", "agent-loop", "verifier", "workflow", "guardrails", "tdd"],
   "license": "MIT",

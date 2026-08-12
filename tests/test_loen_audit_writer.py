@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the audit-writer PostToolUse hook (regenerate audit.html + TODO)."""
+"""Tests for the audit-writer PostToolUse hook (regenerate audit.html)."""
 import importlib.util, json, os, subprocess, sys, tempfile, pathlib
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOOK = os.path.join(REPO, "plugin", "loen", "hooks", "audit-writer.py")
@@ -22,20 +22,20 @@ def run(cwd, path="docs/loen/t/4_act.md"):
     return p.returncode
 
 
-def test_writes_audit_and_todo():
+def test_writes_audit():
     a = load("loen_artifacts")
     d = tempfile.mkdtemp()
     a.scaffold_topic("t", TEMPLATES, os.path.join(d, "docs", "loen"))
     rc = run(d)
     assert rc == 0, rc
     assert pathlib.Path(d, "docs/loen/t/audit.html").is_file()
-    todo = pathlib.Path(d, "docs/TODO.md").read_text()
-    assert "| t |" in todo
 
 
 def test_no_loop_is_noop():
     d = tempfile.mkdtemp()
     assert run(d, path="src/app.py") == 0
+    # Regression guard: the hook must never recreate docs/TODO.md now that
+    # LoEn no longer owns a task ledger.
     assert not pathlib.Path(d, "docs/TODO.md").exists()
 
 
@@ -47,6 +47,8 @@ def test_finished_loop_is_noop():
     lp = pathlib.Path(d, "docs/loen/t/loop.yaml")
     lp.write_text(lp.read_text().replace("status: active", "status: done"))
     assert run(d) == 0
+    # Regression guard: the hook must never recreate docs/TODO.md now that
+    # LoEn no longer owns a task ledger.
     assert not pathlib.Path(d, "docs/TODO.md").exists()
 
 

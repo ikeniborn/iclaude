@@ -15,7 +15,7 @@
     {
       "name": "loen",
       "description": "Loop Engineering harness plugin: stage-oriented durable-topic loop, autonomous loop-run, independent verifier, hook-enforced guardrails.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "source": "./plugin/loen",
       "author": { "name": "ikeniborn" },
       "category": "development"

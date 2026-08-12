@@ -2,7 +2,7 @@
 """Durable-state authority for loen topics (Claude Code runtime).
 
 Owns the numbered stage-artifact set, topic scaffolding, the machine-readable
-run-contract validation, the regenerated audit report, the docs/TODO.md row,
+run-contract validation, the regenerated audit report,
 and the append-only attempts log. Stdlib only.
 """
 from __future__ import annotations
@@ -168,57 +168,6 @@ def render_audit(topic, root):
     with open(os.path.join(topic_dir, "audit.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
     return page
-
-
-# --- TODO.md row -----------------------------------------------------------
-
-_TODO_HEADER = "| Topic | Status | Intent | Spec | Plan | Result | Opened | Closed | Notes |"
-_TODO_SEP = "|---|---|---|---|---|---|---|---|---|"
-
-
-_LOEN_NOTE = "loen runtime"
-
-
-def _row_cells(line):
-    # "| a | b | c |" -> ["a","b","c"]
-    return [c.strip() for c in line.strip().strip("|").split("|")]
-
-
-def upsert_todo_row(topic, stage, verdict, today, path="docs/TODO.md"):
-    """Idempotently upsert the topic's row in docs/TODO.md (keyed by topic).
-
-    Never clobbers a row managed by another tool (e.g. check-chain): a row is
-    loen-owned only if its Notes cell contains 'loen runtime'. For a loen-owned
-    row, preserve Intent/Spec/Plan/Opened and update only Status/Result/Closed.
-    """
-    status = "done" if verdict == "OK" else "in-progress"
-    if os.path.isfile(path):
-        lines = open(path, encoding="utf-8").read().splitlines()
-    else:
-        lines = [_TODO_HEADER, _TODO_SEP]
-    prefix = f"| {topic} |"
-    idx = next((i for i, ln in enumerate(lines) if ln.startswith(prefix)), None)
-    if idx is not None:
-        cells = _row_cells(lines[idx])
-        # cells: Topic Status Intent Spec Plan Result Opened Closed Notes
-        if len(cells) >= 9 and _LOEN_NOTE not in cells[8]:
-            return  # foreign row (check-chain etc.) — do not clobber
-        intent = cells[2] if len(cells) > 2 else "–"
-        spec = cells[3] if len(cells) > 3 else "–"
-        plan = cells[4] if len(cells) > 4 else "–"
-        opened = cells[6] if len(cells) > 6 and cells[6] else today
-        existing_closed = cells[7] if len(cells) > 7 else ""
-        # Preserve a Closed date once set (no per-run drift); set it once on done.
-        closed = existing_closed or (today if status == "done" else "")
-        lines[idx] = (f"| {topic} | {status} | {intent} | {spec} | {plan} | "
-                      f"{verdict} | {opened} | {closed} | {_LOEN_NOTE} |")
-    else:
-        closed = today if status == "done" else ""
-        lines.append(f"| {topic} | {status} | – | – | – | {verdict} | "
-                     f"{today} | {closed} | {_LOEN_NOTE} |")
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines) + "\n")
 
 
 # --- attempts log ----------------------------------------------------------

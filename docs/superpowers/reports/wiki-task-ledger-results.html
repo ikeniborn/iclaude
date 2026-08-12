@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wiki-task-ledger — результаты внедрения</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2a2f3a;
+  --fg:#e6e9ef; --dim:#9aa3b2; --accent:#6ea8fe; --ok:#4ade80; --warn:#fbbf24;
+  --bad:#f87171; --info:#a78bfa; --shadow:rgba(0,0,0,.45);
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --panel:#ffffff; --panel2:#eef1f5; --line:#d6dbe3;
+  --fg:#1a1d23; --dim:#5b6472; --accent:#1d5fd0; --ok:#15803d; --warn:#a16207;
+  --bad:#b91c1c; --info:#6d28d9; --shadow:rgba(0,0,0,.12);
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem 1.25rem 4rem;background:var(--bg);color:var(--fg);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;
+  transition:background .2s,color .2s}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font-size:1.7rem;margin:0 0 .3rem}
+h2{font-size:1.15rem;margin:2.4rem 0 .9rem;padding-bottom:.4rem;border-bottom:1px solid var(--line)}
+h3{font-size:.98rem;margin:1.5rem 0 .6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+p{margin:.6rem 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;
+  background:var(--panel2);padding:.12em .38em;border-radius:4px}
+a{color:var(--accent)}
+.sub{color:var(--dim);margin:0 0 1.6rem}
+.toggle{position:fixed;top:1rem;right:1rem;z-index:10;background:var(--panel);
+  color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:.5rem 1rem;
+  cursor:pointer;font-size:.85rem;box-shadow:0 2px 10px var(--shadow)}
+.toggle:hover{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin:.8rem 0;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.55rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--panel2);font-weight:600;font-size:.82rem;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--dim)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--panel2)}
+.num{text-align:right;font-family:ui-monospace,monospace;white-space:nowrap}
+.add{color:var(--ok)} .del{color:var(--bad)}
+.badge{display:inline-block;padding:.1rem .5rem;border-radius:999px;font-size:.74rem;
+  font-weight:600;letter-spacing:.03em;border:1px solid}
+.b-ok{color:var(--ok);border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.b-warn{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.b-info{color:var(--info);border-color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+.b-bad{color:var(--bad);border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.note{background:var(--panel);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;
+  padding:.8rem 1rem;margin:1rem 0}
+.note.warn{border-left-color:var(--warn)}
+.note.ok{border-left-color:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.8rem;margin:1rem 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem}
+.stat .k{font-size:1.5rem;font-weight:700}
+.stat .l{font-size:.78rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+details{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:.6rem .9rem;margin:.6rem 0}
+summary{cursor:pointer;font-weight:600;font-size:.92rem}
+summary:hover{color:var(--accent)}
+details[open] summary{margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+figure{margin:1.2rem 0;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:1rem;overflow-x:auto}
+figcaption{color:var(--dim);font-size:.84rem;margin-top:.7rem;text-align:center}
+svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.n-lbl{font:600 12px sans-serif;fill:var(--fg)}
+.n-sub{font:10px ui-monospace,monospace;fill:var(--dim)}
+.e-lbl{font:10px sans-serif;fill:var(--dim)}
+.box{fill:var(--panel2);stroke:var(--line);stroke-width:1.5}
+.box-acc{fill:color-mix(in srgb,var(--accent) 14%,var(--panel2));stroke:var(--accent);stroke-width:1.5}
+.box-gone{fill:color-mix(in srgb,var(--bad) 10%,var(--panel2));stroke:var(--bad);
+  stroke-width:1.5;stroke-dasharray:5 3}
+.edge{stroke:var(--dim);stroke-width:1.6;fill:none}
+.edge-acc{stroke:var(--accent);stroke-width:2;fill:none}
+.edge-gone{stroke:var(--bad);stroke-width:1.6;fill:none;stroke-dasharray:5 3}
+ul{margin:.5rem 0;padding-left:1.3rem}
+li{margin:.28rem 0}
+.foot{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);
+  color:var(--dim);font-size:.82rem}
+</style>
+</head>
+<body>
+<button class="toggle" id="tt">◐ Тема</button>
+<div class="wrap">
+
+<h1>wiki-task-ledger</h1>
+<p class="sub">Отчёт о внедрении · 12 августа 2026 · ветка <code>dev-wiki-task-ledger</code></p>
+
+<h2>1. Резюме внедрения</h2>
+
+<p>Репозиторный трекер задач <code>docs/TODO.md</code> заменён вики-журналом: одна страница
+на топик по адресу <code>reference/tasks/&lt;topic&gt;</code> в primary-домене проекта.
+Внедрение синхронизировано с общим межагентным стандартом
+<code>devops/concept/wiki-task-ledger</code>, который уже принят проектом <code>icodex</code>.</p>
+
+<table>
+<tr><th>Артефакт цепочки</th><th>Путь</th><th>Состояние</th></tr>
+<tr><td>Intent</td><td><code>docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md</code></td>
+    <td><span class="badge b-ok">OK</span> 5/5 фаз, <code>744c651c66a47cc1</code></td></tr>
+<tr><td>Spec</td><td><code>docs/superpowers/specs/2026-08-12-wiki-task-ledger-design.md</code></td>
+    <td><span class="badge b-ok">OK</span> 4/4 фазы, <code>73751af1ab2f68bd</code></td></tr>
+<tr><td>Plan</td><td><code>docs/superpowers/plans/2026-08-12-wiki-task-ledger-plan.md</code></td>
+    <td><span class="badge b-ok">OK</span> 5/5 фаз, <code>15eac6a739017179</code></td></tr>
+<tr><td>База сравнения</td><td><code>master</code> (<code>e91aedde</code>)</td>
+    <td>18 коммитов, <code>e91aedde..a332cc5b</code></td></tr>
+</table>
+
+<div class="grid">
+  <div class="stat"><div class="k">5/5</div><div class="l">задач плана DONE</div></div>
+  <div class="stat"><div class="k">0</div><div class="l">MISSING</div></div>
+  <div class="stat"><div class="k">17→0</div><div class="l">строк трекера в репо</div></div>
+  <div class="stat"><div class="k">4</div><div class="l">страницы в вики</div></div>
+</div>
+
+<h2>2. Выполненные изменения</h2>
+
+<h3>Правила и навыки</h3>
+<table>
+<tr><th>Файл</th><th class="num">±</th><th>Что делает изменение</th></tr>
+<tr><td><code>.nvm-isolated/.claude-isolated/CLAUDE.md</code></td>
+    <td class="num"><span class="add">+30</span> / <span class="del">−37</span></td>
+    <td>Секция <code>Task Log</code> переписана на вики-журнал; охват расширен на direct-работу; перечислены четыре материальные границы LoEn; <code>Project Status Reports</code> сверяет task-страницы с предметными</td></tr>
+<tr><td><code>…/skills/check-chain/SKILL.md</code></td>
+    <td class="num"><span class="add">+17</span> / <span class="del">−11</span></td>
+    <td>Step 6 пишет событие <code>verification</code> на страницу топика вместо upsert строки таблицы</td></tr>
+<tr><td><code>docs/architecture.md</code></td>
+    <td class="num"><span class="add">+1</span> / <span class="del">−1</span></td>
+    <td>Описание <code>audit-writer.py</code> приведено к реальности: только рендер <code>audit.html</code></td></tr>
+<tr><td><code>.iwikiignore</code></td>
+    <td class="num"><span class="add">+1</span> / <span class="del">−2</span></td>
+    <td>Убрана запись про удалённый <code>docs/TODO.md</code></td></tr>
+</table>
+
+<h3>Плагин LoEn</h3>
+<table>
+<tr><th>Файл</th><th class="num">±</th><th>Что делает изменение</th></tr>
+<tr><td><code>plugin/loen/hooks/loen_artifacts.py</code></td>
+    <td class="num"><span class="add">+1</span> / <span class="del">−52</span></td>
+    <td>Удалены <code>upsert_todo_row</code>, <code>_TODO_HEADER</code>, <code>_TODO_SEP</code>, <code>_LOEN_NOTE</code>, <code>_row_cells</code></td></tr>
+<tr><td><code>plugin/loen/hooks/audit-writer.py</code></td>
+    <td class="num"><span class="add">+2</span> / <span class="del">−7</span></td>
+    <td>Хук перестал писать трекер; убраны осиротевшие <code>verdict</code>, <code>stage</code>, <code>today</code>, импорт <code>datetime</code></td></tr>
+<tr><td><code>plugin/loen/skills/loop-check/SKILL.md</code></td>
+    <td class="num"><span class="add">+4</span> / <span class="del">−0</span></td>
+    <td>Родителю предписано записать событие <code>verification</code> на страницу топика</td></tr>
+<tr><td><code>plugin/loen/skills/loop-reflect/SKILL.md</code></td>
+    <td class="num"><span class="add">+7</span> / <span class="del">−3</span></td>
+    <td>Из терминального блока убран вызов upsert; добавлено событие <code>decision</code>/<code>close</code></td></tr>
+<tr><td><code>plugin/loen/skills/audit/SKILL.md</code></td>
+    <td class="num"><span class="add">+1</span> / <span class="del">−2</span></td>
+    <td>Убрано упоминание отметки строки трекера</td></tr>
+<tr><td><code>plugin/loen/.claude-plugin/plugin.json</code><br><code>.claude-plugin/marketplace.json</code></td>
+    <td class="num"><span class="add">+2</span> / <span class="del">−2</span></td>
+    <td>Версия <code>1.0.0 → 1.1.0</code> синхронно в обоих файлах (требование <code>check-plugin-version-sync.sh</code>)</td></tr>
+</table>
+
+<h3>Тесты и трекер</h3>
+<table>
+<tr><th>Файл</th><th class="num">±</th><th>Что делает изменение</th></tr>
+<tr><td><code>tests/test_loen_artifacts.py</code></td>
+    <td class="num"><span class="add">+7</span> / <span class="del">−31</span></td>
+    <td>Удалены два теста upsert; добавлен <code>test_todo_ledger_api_is_gone</code> — проверяет отсутствие функции и строки пути в исходнике</td></tr>
+<tr><td><code>tests/test_loen_audit_writer.py</code></td>
+    <td class="num"><span class="add">+6</span> / <span class="del">−4</span></td>
+    <td>Тест переименован в <code>test_writes_audit</code>; два <code>assert not exists</code> оставлены как regression guard с пояснением</td></tr>
+<tr><td><code>tests/test_loen_plugin.sh</code></td>
+    <td class="num"><span class="add">+2</span> / <span class="del">−2</span></td>
+    <td>Литералы версии подняты до <code>1.1.0</code></td></tr>
+<tr><td><code>docs/TODO.md</code></td>
+    <td class="num"><span class="del">−22</span></td>
+    <td>Удалён. 14 закрытых строк перенесены в архивную страницу, 3 открытые — в свои</td></tr>
+</table>
+
+<details>
+<summary>Одноразовая оснастка миграции (создана и удалена внутри ветки)</summary>
+<p><code>scripts/migrate_todo_to_wiki.py</code> и <code>tests/test_migrate_todo_to_wiki.py</code>
+существовали с коммита <code>0a6ccf6a</code> по <code>944d7b9c</code>. Генератор превращал строки
+таблицы в тела вики-страниц; 11 тестов фиксировали форму вывода. В итоговом диффе ветки они
+не видны — по замыслу: скрипт одноразовый, его история остаётся в git.</p>
+<p>Именно его тесты поймали дефект, который иначе съел бы задачу при миграции:
+строка <code>loen-verifier-microvm</code> содержит неэкранированный <code>|</code> внутри
+Notes (<code>verifier_isolation: subagent|microvm</code>), и строгая проверка на девять
+ячеек <strong>молча</strong> её отбрасывала.</p>
+</details>
+
+<h2>3. Результаты</h2>
+
+<h3>Сверка плана с диффом</h3>
+<table>
+<tr><th>Задача плана</th><th>Статус</th><th>Свидетельство</th></tr>
+<tr><td>1. Убрать трекер из LoEn</td><td><span class="badge b-ok">DONE</span></td>
+    <td><code>2ab05df7</code> — хуки, 2 навыка, версии, тесты</td></tr>
+<tr><td>2. Заменить правило <code>Task Log</code></td><td><span class="badge b-ok">DONE</span></td>
+    <td><code>946c787c</code>..<code>96e14fc5</code> — <code>CLAUDE.md</code> +30/−37</td></tr>
+<tr><td>3. Перенацелить Step 6</td><td><span class="badge b-ok">DONE</span></td>
+    <td><code>92305ad7</code> — <code>SKILL.md</code> +17/−11</td></tr>
+<tr><td>4. Сгенерировать и записать миграцию</td><td><span class="badge b-ok">DONE</span></td>
+    <td><code>0a6ccf6a</code>..<code>793d7f20</code> + 4 страницы в домене <code>iclaude</code></td></tr>
+<tr><td>5. Удалить трекер и оснастку</td><td><span class="badge b-ok">DONE</span></td>
+    <td><code>944d7b9c</code> — три удаления</td></tr>
+</table>
+
+<h3>Покрытие требований</h3>
+<table>
+<tr><th>Источник</th><th>Покрытие</th><th>Комментарий</th></tr>
+<tr><td>Intent · Desired Outcomes</td><td><span class="badge b-ok">5 / 5</span></td>
+    <td>Пятый (<code>docs/TODO.md</code> не упоминается как трекер) закрыт волной фиксов после финального ревью</td></tr>
+<tr><td>Spec · §1–§9</td><td><span class="badge b-ok">9 / 9</span></td>
+    <td><code>.gitignore</code> намеренно без задачи: spool живёт вне репозитория</td></tr>
+<tr><td>Plan · 5 задач</td><td><span class="badge b-ok">5 / 5</span></td><td>MISSING нет</td></tr>
+</table>
+
+<h3>Изменения вне плана</h3>
+<table>
+<tr><th>Файл</th><th>Тип</th><th>Обоснование</th></tr>
+<tr><td><code>docs/architecture.md</code>, <code>.iwikiignore</code>, <code>loop-check/SKILL.md</code></td>
+    <td><span class="badge b-warn">EXCESS</span></td>
+    <td>Волна фиксов финального ревью (F1, F3, Minor 2) — планом не предусматривались</td></tr>
+<tr><td><code>.iwiki.toml</code></td><td><span class="badge b-info">коммит <code>8da93e72</code></span></td>
+    <td>Правка в начале сессии: <code>write</code> был строкой вместо массива, из-за чего падали <strong>все</strong> вызовы MCP. Позже расширен до четырёх read-доменов и закоммичен вне волны задач</td></tr>
+<tr><td><code>.nvm-isolated/.claude-isolated/settings.json</code></td><td><span class="badge b-info">коммит <code>8da93e72</code></span></td>
+    <td><code>effortLevel</code> <code>high → medium</code> — смена режима сессии, к задаче отношения не имеет</td></tr>
+</table>
+
+<h3>Ход исполнения</h3>
+<table>
+<tr><th>Этап</th><th>Раундов фиксов</th><th>Что нашло ревью</th></tr>
+<tr><td>Task 1 · LoEn</td><td>0</td><td>—</td></tr>
+<tr><td>Task 2 · правило</td><td>1</td><td>Висячая ссылка «TODO topic»; строка, отрицавшая, что direct-работа получает страницу</td></tr>
+<tr><td>Task 3 · Step 6</td><td>0</td><td>—</td></tr>
+<tr><td>Task 4 · миграция</td><td>2</td><td>Тест длины лида проверял 4 секции из 5; обрезка Notes резала слова и эмодзи</td></tr>
+<tr><td>Task 5 · удаление</td><td>0</td><td>—</td></tr>
+<tr><td>Финальное ревью ветки</td><td>1</td><td>3 Important: устаревшая документация трекера, невызываемая форма <code>wiki_search</code>, неинструктированные границы LoEn</td></tr>
+</table>
+
+<div class="note ok">
+<strong>Итоговый вердикт <code>/check-chain result</code>: OK.</strong>
+5/5 задач плана DONE, 0 MISSING, <code>result_check</code> записан в frontmatter плана
+(<code>plan_hash 15eac6a739017179</code>). Проверки: обе LoEn-сюиты зелёные,
+<code>test_loen_plugin.sh</code> и <code>check-plugin-version-sync.sh</code> — exit 0,
+<code>wiki_lint</code> — <code>broken: []</code> и ни одной новой находки на task-страницах.
+</div>
+
+<h2>4. Влияние на систему</h2>
+
+<table>
+<tr><th>Компонент</th><th>Изменение поведения</th><th>Риск / что дальше</th></tr>
+<tr><td>Правила агента<br><code>CLAUDE.md</code></td>
+    <td>Каждая задача — включая direct и read-only — открывает страницу в вики до первого изменения. События пишутся сразу, без буфера</td>
+    <td>Охват шире прежнего: раньше строку получали только chain и LoEn. Нагрузка на MCP выросла</td></tr>
+<tr><td>Гейты цепочки<br><code>check-chain</code></td>
+    <td>Step 6 вместо upsert строки пишет событие <code>verification</code> и отмечает стадию</td>
+    <td>Вердикт стадии не блокируется каналом вики: при отказе событие уходит в spool</td></tr>
+<tr><td>Плагин LoEn</td>
+    <td>Хук больше не ведёт учёт. Состояние цикла попадает в вики только когда родитель зеркалит его на одной из четырёх границ</td>
+    <td>Устранено несоответствие частот: <code>audit-writer</code> срабатывал на каждом <code>PostToolUse</code></td></tr>
+<tr><td>Отчёты о статусе</td>
+    <td>Строятся из перечисления <code>reference/tasks/</code> и предметных страниц домена</td>
+    <td>Нет офлайн-ответа: без MCP статус недоступен, репозиторного запасного пути нет</td></tr>
+<tr><td>История задач</td>
+    <td>14 закрытых строк — в архивной странице, полный текст Notes обрезан до 120 символов по границе слова</td>
+    <td>Несокращённый оригинал: <code>git show e91aedde:docs/TODO.md</code>, ссылка указана в лиде <code>Evidence</code></td></tr>
+</table>
+
+<div class="note warn">
+<strong>Открытые следствия.</strong>
+Task-страницы всегда числятся orphan в <code>wiki_lint</code> — отказ от центрального
+индекса лишает их входящих ссылок; критерий завершения поэтому звучит как
+«нет новых находок по task-странице», а не «чистый lint». Идемпотентные ключи
+вычисляет модель, кода за ними нет — дедупликация при replay остаётся best-effort.
+Поведение spool под реальный отказ не проверено: тестов нет, только правило.
+</div>
+
+<h2>5. Схемы</h2>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="Поток учёта задач до и после">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--dim)"/>
+  </marker>
+  <marker id="ar-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+  </marker>
+  <marker id="ar-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--bad)"/>
+  </marker>
+</defs>
+
+<text x="20" y="24" class="n-lbl" style="font-size:13px">Было</text>
+<rect x="20" y="40" width="150" height="52" rx="7" class="box"/>
+<text x="95" y="62" class="n-lbl" text-anchor="middle">check-chain</text>
+<text x="95" y="78" class="n-sub" text-anchor="middle">Step 6</text>
+
+<rect x="20" y="112" width="150" height="52" rx="7" class="box"/>
+<text x="95" y="134" class="n-lbl" text-anchor="middle">LoEn hooks</text>
+<text x="95" y="150" class="n-sub" text-anchor="middle">PostToolUse</text>
+
+<rect x="250" y="76" width="160" height="52" rx="7" class="box-gone"/>
+<text x="330" y="98" class="n-lbl" text-anchor="middle">docs/TODO.md</text>
+<text x="330" y="114" class="n-sub" text-anchor="middle">17 строк</text>
+
+<path d="M170,66 L246,94" class="edge" marker-end="url(#ar)"/>
+<path d="M170,138 L246,112" class="edge-gone" marker-end="url(#ar-bad)"/>
+<text x="185" y="168" class="e-lbl">на каждый вызов</text>
+
+<line x1="450" y1="30" x2="450" y2="270" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
+
+<text x="480" y="24" class="n-lbl" style="font-size:13px">Стало</text>
+<rect x="480" y="40" width="150" height="52" rx="7" class="box"/>
+<text x="555" y="62" class="n-lbl" text-anchor="middle">check-chain</text>
+<text x="555" y="78" class="n-sub" text-anchor="middle">Step 6</text>
+
+<rect x="480" y="112" width="150" height="52" rx="7" class="box"/>
+<text x="555" y="134" class="n-lbl" text-anchor="middle">LoEn hooks</text>
+<text x="555" y="150" class="n-sub" text-anchor="middle">docs/loen/&lt;topic&gt;/</text>
+
+<rect x="480" y="184" width="150" height="52" rx="7" class="box"/>
+<text x="555" y="206" class="n-lbl" text-anchor="middle">субагенты</text>
+<text x="555" y="222" class="n-sub" text-anchor="middle">read-only</text>
+
+<rect x="680" y="112" width="190" height="52" rx="7" class="box-acc"/>
+<text x="775" y="134" class="n-lbl" text-anchor="middle">reference/tasks/&lt;topic&gt;</text>
+<text x="775" y="150" class="n-sub" text-anchor="middle">5 секций · вики</text>
+
+<rect x="680" y="196" width="190" height="46" rx="7" class="box"/>
+<text x="775" y="216" class="n-lbl" text-anchor="middle">spool</text>
+<text x="775" y="231" class="n-sub" text-anchor="middle">вне репозитория</text>
+
+<path d="M630,66 L676,128" class="edge-acc" marker-end="url(#ar-acc)"/>
+<path d="M630,138 L676,138" class="edge" marker-end="url(#ar)"/>
+<text x="632" y="130" class="e-lbl">4 границы</text>
+<path d="M630,210 L676,152" class="edge" marker-end="url(#ar)"/>
+<text x="628" y="196" class="e-lbl">дельта текстом</text>
+<path d="M775,164 L775,192" class="edge" marker-end="url(#ar)"/>
+<text x="785" y="182" class="e-lbl">при отказе</text>
+</svg>
+<figcaption>Единственный писатель — родительский агент. Хуки и субагенты потеряли прямой путь к учёту.</figcaption>
+</figure>
+
+<figure>
+<svg viewBox="0 0 900 210" role="img" aria-label="Карта влияния изменений">
+<rect x="20" y="80" width="170" height="50" rx="7" class="box-acc"/>
+<text x="105" y="101" class="n-lbl" text-anchor="middle">wiki-task-ledger</text>
+<text x="105" y="117" class="n-sub" text-anchor="middle">18 коммитов</text>
+
+<rect x="290" y="10" width="180" height="44" rx="7" class="box"/>
+<text x="380" y="30" class="n-lbl" text-anchor="middle">CLAUDE.md</text>
+<text x="380" y="45" class="n-sub" text-anchor="middle">правило учёта</text>
+
+<rect x="290" y="66" width="180" height="44" rx="7" class="box"/>
+<text x="380" y="86" class="n-lbl" text-anchor="middle">check-chain</text>
+<text x="380" y="101" class="n-sub" text-anchor="middle">Step 6</text>
+
+<rect x="290" y="122" width="180" height="44" rx="7" class="box"/>
+<text x="380" y="142" class="n-lbl" text-anchor="middle">plugin/loen 1.1.0</text>
+<text x="380" y="157" class="n-sub" text-anchor="middle">хуки + 3 навыка</text>
+
+<rect x="560" y="66" width="180" height="44" rx="7" class="box"/>
+<text x="650" y="86" class="n-lbl" text-anchor="middle">домен iclaude</text>
+<text x="650" y="101" class="n-sub" text-anchor="middle">4 task-страницы</text>
+
+<rect x="560" y="122" width="180" height="44" rx="7" class="box"/>
+<text x="650" y="142" class="n-lbl" text-anchor="middle">домен devops</text>
+<text x="650" y="157" class="n-sub" text-anchor="middle">общий стандарт</text>
+
+<rect x="790" y="94" width="90" height="44" rx="7" class="box"/>
+<text x="835" y="114" class="n-lbl" text-anchor="middle">icodex</text>
+<text x="835" y="129" class="n-sub" text-anchor="middle">читает</text>
+
+<path d="M190,95 L286,34" class="edge-acc" marker-end="url(#ar-acc)"/>
+<path d="M190,105 L286,88" class="edge-acc" marker-end="url(#ar-acc)"/>
+<path d="M190,115 L286,142" class="edge-acc" marker-end="url(#ar-acc)"/>
+<path d="M470,88 L556,88" class="edge" marker-end="url(#ar)"/>
+<path d="M470,144 L556,144" class="edge" marker-end="url(#ar)"/>
+<path d="M740,144 L786,124" class="edge" marker-end="url(#ar)"/>
+<path d="M740,88 L786,108" class="edge" marker-end="url(#ar)"/>
+</svg>
+<figcaption>Изменение выходит за пределы репозитория: общий стандарт в домене <code>devops</code> читают агенты обоих проектов.</figcaption>
+</figure>
+
+<div class="foot">
+Сгенерировано навыком <code>html-report</code> по контракту <code>check-chain</code> Step 5.
+Файл автономен: без внешних ресурсов, открывается двойным щелчком.
+</div>
+
+</div>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('tt');
+  try{var s=localStorage.getItem('wtl-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+  b.addEventListener('click',function(){
+    var n=r.getAttribute('data-theme')==='dark'?'light':'dark';
+    r.setAttribute('data-theme',n);
+    try{localStorage.setItem('wtl-theme',n);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
