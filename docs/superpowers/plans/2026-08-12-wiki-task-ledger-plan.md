@@ -4,6 +4,61 @@ chain:
   intent_hash: bd8fae72ce0c2ceb
   spec: docs/superpowers/specs/2026-08-12-wiki-task-ledger-design.md
   spec_hash: ec4af6056521ae6c
+review:
+  plan_hash: 15eac6a739017179
+  last_run: 2026-08-12
+  phases:
+    structure:
+      status: passed
+    coverage:
+      status: passed
+    dependencies:
+      status: passed
+    verifiability:
+      status: passed
+    consistency:
+      status: passed
+  findings:
+    - id: F-001
+      phase: dependencies
+      severity: WARNING
+      section: "Task 3: Point check-chain Step 6 at the wiki"
+      section_hash: 2df29ac726e09758
+      fragment: "see the Task Log convention in `CLAUDE.md`"
+      text: "The skill task originally preceded the CLAUDE.md rule task, so Step 6 would cite a Task Log convention that still declared docs/TODO.md the tracker — one commit of contradictory instructions."
+      fix: "Swap the tasks: the rule (now Task 2) lands before the skill that cites it (now Task 3)."
+      verdict: fixed
+      verdict_at: 2026-08-12
+    - id: F-002
+      phase: verifiability
+      severity: WARNING
+      section: "Task 1: Remove the TODO ledger from LoEn"
+      section_hash: 863e096f7c1a0dfb
+      fragment: "Run: `ls tests/ | grep -i version` / Then run the version-sync test it names."
+      text: "The step delegated discovery of its own verification command, and no such test exists: the repo guards versions with scripts/check-plugin-version-sync.sh, and a minor bump must land in plugin.json AND marketplace.json in lockstep, which the step never said."
+      fix: "Name both files and both commands explicitly: edit plugin.json and marketplace.json, then run scripts/check-plugin-version-sync.sh and tests/test_loen_plugin.sh."
+      verdict: fixed
+      verdict_at: 2026-08-12
+    - id: F-003
+      phase: verifiability
+      severity: WARNING
+      section: "Task 2: Replace the Task Log rule in CLAUDE.md"
+      section_hash: ae468738ab8f09c3
+      fragment: "In the discrepancy bullets, replace each `docs/TODO.md` reference with the task page"
+      text: "The Project Status Reports step described the edit instead of showing it, leaving the implementer to invent the final wording of five bullets."
+      fix: "Give the complete replacement block for the whole section, bounded by the next heading."
+      verdict: fixed
+      verdict_at: 2026-08-12
+    - id: F-004
+      phase: verifiability
+      severity: INFO
+      section: "Task 4: Generate the migration Markdown"
+      section_hash: null
+      fragment: "HUMAN CHECKPOINT — show the output and get approval"
+      text: "The checkpoint step has no verification command or expected output."
+      fix: "None — the intent puts the migration in the proposal-first zone, where the DoD is the user's approval, not a command's exit code."
+      verdict: wontfix
+      verdict_at: 2026-08-12
 ---
 
 # Wiki Task Ledger Implementation Plan
@@ -162,13 +217,19 @@ In `plugin/loen/skills/loop-reflect/SKILL.md`, replace the terminal bash block's
 
 In `plugin/loen/skills/audit/SKILL.md:33`, change `non-empty. On `OK`: regenerate `audit.html` and mark the `docs/TODO.md` row` to `non-empty. On `OK`: regenerate `audit.html`.` and delete the now-dangling remainder of that sentence on the following line.
 
-- [ ] **Step 9: Bump the plugin version**
+- [ ] **Step 9: Bump the plugin version in lockstep**
 
-In `plugin/loen/.claude-plugin/plugin.json`, change `"version": "1.0.0"` to `"version": "1.1.0"`. Then run the repository's version-sync test to find every file that must agree:
+A minor bump is manual and must land in **both** files — `scripts/bump-changed-plugins.py` only automates patch bumps, and `scripts/check-plugin-version-sync.sh` fails the push if the two disagree.
 
-Run: `ls tests/ | grep -i version`
-Then run the version-sync test it names.
-Expected: exit 0 after the marketplace entry is updated to `1.1.0`
+In `plugin/loen/.claude-plugin/plugin.json`, change `"version": "1.0.0"` to `"version": "1.1.0"`.
+
+In `.claude-plugin/marketplace.json`, change the `loen` entry's `"version": "1.0.0"` to `"version": "1.1.0"`. Leave the `iwiki` entry alone.
+
+Run: `bash scripts/check-plugin-version-sync.sh`
+Expected: exit 0, no drift reported
+
+Run: `bash tests/test_loen_plugin.sh`
+Expected: exit 0
 
 - [ ] **Step 10: Verify no LoEn path names the tracker**
 
@@ -178,13 +239,98 @@ Expected: no output
 - [ ] **Step 11: Commit**
 
 ```bash
-git add plugin/loen tests/test_loen_artifacts.py tests/test_loen_audit_writer.py
+git add plugin/loen .claude-plugin/marketplace.json tests/test_loen_artifacts.py tests/test_loen_audit_writer.py
 git commit -m "refactor(loen): drop the docs/TODO.md row from the loop hooks"
 ```
 
 ---
 
-### Task 2: Point check-chain Step 6 at the wiki
+### Task 2: Replace the Task Log rule in CLAUDE.md
+
+The rule is the single source of ledger behavior. It also widens the scope: under the shared standard every task gets a page, including direct work.
+
+**Files:**
+- Modify: `.nvm-isolated/.claude-isolated/CLAUDE.md:58-80` (the `## Task Log (docs/TODO.md)` section), `:87` (Task Topic surface), `:341-354` (Project Status Reports)
+- Test: none — instructional Markdown; verification is by `grep`
+
+**Interfaces:**
+- Consumes: the page schema, event kinds, and lifecycle values from Global Constraints.
+- Produces: the `Task Log (iwiki, MANDATORY)` section that Task 3's Step 6 cites as "the Task Log convention in `CLAUDE.md`", and the rule Task 4's migration and Task 5's deletion depend on. This task lands before Task 3 so the skill never cites a rule that still describes the retired file.
+
+- [ ] **Step 1: Replace the Task Log section**
+
+Replace everything from `## Task Log (docs/TODO.md)` up to (not including) `## Task Topic` with:
+
+```markdown
+## Task Log (iwiki, MANDATORY)
+
+**Every task — direct, chain, or LoEn, including small fixes and read-only analysis — is tracked as one wiki page in the project's primary write domain: opened before the first change, updated at every material event, closed only when delivery is confirmed.** This follows the shared standard `devops/concept/wiki-task-ledger`. There is no in-repo task file.
+
+- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the events, continue working — but the task cannot reach `done`.
+- **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
+- **No index page, no changelog page.** Project status is derived with `wiki_search(tags=["task"])`.
+- **Five `##` sections, each once, never renamed or reordered**: `Current State`, `TODO`, `Subtasks`, `Evidence`, `Changelog`. No `###`. Each section opens with a lead of at most 250 characters, then a blank line.
+- **Lifecycle** in the body: `in-progress`, `blocked`, `completion-pending`, `done`.
+- **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at material stage boundaries.
+- **Write points.** `open` before the first change; `route` when the workflow or model route is decided; `verification` at each `/check-chain` verdict or loop-check; `dispatch` before delegating and `return` when the subagent answers; `blocker` when blocked; `close` at the end. Tool calls are not events.
+- **Idempotency.** Every `Changelog` entry carries `key:<hash of topic + kind + redacted evidence>`. An entry whose key is present is not appended again — this is what makes spool replay safe. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
+- **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the page. Until then the task stays `completion-pending`.
+- **Divergence** from the shared standard is recorded on `devops/concept/wiki-task-ledger` before it is implemented.
+```
+
+- [ ] **Step 2: Update the Task Topic surface**
+
+At line 87, change:
+
+```markdown
+  - `docs/TODO.md` `Topic`;
+```
+
+to:
+
+```markdown
+  - the wiki task page slug `reference/tasks/<topic>`;
+```
+
+- [ ] **Step 3: Update Project Status Reports**
+
+Replace everything from `## Project Status Reports` up to (not including) `## Language Rules` with:
+
+```markdown
+## Project Status Reports
+
+**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
+
+- **Read both first.** Call `wiki_status`; then `wiki_search(tags=["task"])` for the task pages, and `wiki_search` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
+- **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest `Changelog` events), then a **Discrepancies** section.
+- **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
+  - A task page is `done` but the wiki has no subject-matter page (or a stale one) covering it.
+  - The wiki documents a feature/behavior that has no matching task page.
+  - A task page records a passed stage but the subject-matter page still describes the old behavior, or `wiki_lint` flags it stale/orphan.
+  - Lifecycle, dates, or scope disagree between the two.
+  - A task page sits at `completion-pending` with events still spooled.
+- **No silent reconciliation.** Report discrepancies; do not fix the task page or the subject-matter page as a side effect of a status request. If none exist, state "task pages and documentation agree" explicitly.
+- **Age signal.** List separately every task page whose `Current State` `Opened` is more than 14 days old and whose lifecycle is not `done`; this flags stalled work without changing its lifecycle or closing it automatically.
+```
+
+- [ ] **Step 4: Verify**
+
+Run: `grep -n "docs/TODO.md" .nvm-isolated/.claude-isolated/CLAUDE.md`
+Expected: no output
+
+Run: `grep -c "reference/tasks/<topic>" .nvm-isolated/.claude-isolated/CLAUDE.md`
+Expected: at least `3`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .nvm-isolated/.claude-isolated/CLAUDE.md
+git commit -m "feat(rules): replace the docs/TODO.md task log with the wiki ledger"
+```
+
+---
+
+### Task 3: Point check-chain Step 6 at the wiki
 
 Step 6 currently upserts a Markdown table row. It becomes the gate's write to the topic page.
 
@@ -193,8 +339,8 @@ Step 6 currently upserts a Markdown table row. It becomes the gate's write to th
 - Test: none — the skill is instructional Markdown; verification is by `grep`
 
 **Interfaces:**
-- Consumes: the page schema and event kinds from Global Constraints.
-- Produces: the phrase "Step 6 — wiki task page" that Task 3's `CLAUDE.md` rule refers to.
+- Consumes: the `Task Log (iwiki, MANDATORY)` rule written in Task 2 — Step 6's body cites it by name.
+- Produces: the gate's write path. Task 5's final `grep` expects no `docs/TODO.md` reference to survive here.
 
 - [ ] **Step 1: Rewrite Step 6**
 
@@ -237,82 +383,6 @@ Expected: `3`
 ```bash
 git add .nvm-isolated/.claude-isolated/skills/check-chain/SKILL.md
 git commit -m "feat(check-chain): record gates on the wiki task page"
-```
-
----
-
-### Task 3: Replace the Task Log rule in CLAUDE.md
-
-The rule is the single source of ledger behavior. It also widens the scope: under the shared standard every task gets a page, including direct work.
-
-**Files:**
-- Modify: `.nvm-isolated/.claude-isolated/CLAUDE.md:58-80` (the `## Task Log (docs/TODO.md)` section), `:87` (Task Topic surface), `:341-354` (Project Status Reports)
-- Test: none — instructional Markdown; verification is by `grep`
-
-**Interfaces:**
-- Consumes: "Step 6 — wiki task page" from Task 2.
-- Produces: the rule that Task 4's migration and Task 5's deletion depend on.
-
-- [ ] **Step 1: Replace the Task Log section**
-
-Replace everything from `## Task Log (docs/TODO.md)` up to (not including) `## Task Topic` with:
-
-```markdown
-## Task Log (iwiki, MANDATORY)
-
-**Every task — direct, chain, or LoEn, including small fixes and read-only analysis — is tracked as one wiki page in the project's primary write domain: opened before the first change, updated at every material event, closed only when delivery is confirmed.** This follows the shared standard `devops/concept/wiki-task-ledger`. There is no in-repo task file.
-
-- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the events, continue working — but the task cannot reach `done`.
-- **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
-- **No index page, no changelog page.** Project status is derived with `wiki_search(tags=["task"])`.
-- **Five `##` sections, each once, never renamed or reordered**: `Current State`, `TODO`, `Subtasks`, `Evidence`, `Changelog`. No `###`. Each section opens with a lead of at most 250 characters, then a blank line.
-- **Lifecycle** in the body: `in-progress`, `blocked`, `completion-pending`, `done`.
-- **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at material stage boundaries.
-- **Write points.** `open` before the first change; `route` when the workflow or model route is decided; `verification` at each `/check-chain` verdict or loop-check; `dispatch` before delegating and `return` when the subagent answers; `blocker` when blocked; `close` at the end. Tool calls are not events.
-- **Idempotency.** Every `Changelog` entry carries `key:<hash of topic + kind + redacted evidence>`. An entry whose key is present is not appended again — this is what makes spool replay safe. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
-- **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the page. Until then the task stays `completion-pending`.
-- **Divergence** from the shared standard is recorded on `devops/concept/wiki-task-ledger` before it is implemented.
-```
-
-- [ ] **Step 2: Update the Task Topic surface**
-
-At line 87, change:
-
-```markdown
-  - `docs/TODO.md` `Topic`;
-```
-
-to:
-
-```markdown
-  - the wiki task page slug `reference/tasks/<topic>`;
-```
-
-- [ ] **Step 3: Update Project Status Reports**
-
-In the `## Project Status Reports` section, replace the opening sentence and the "Read both first" bullet with:
-
-```markdown
-**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
-
-- **Read both first.** `wiki_status`; then `wiki_search(tags=["task"])` for the task pages, and `wiki_search`/`wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
-```
-
-In the discrepancy bullets, replace each `docs/TODO.md` reference with the task page: a topic whose page says `done` but whose subject-matter page is missing or stale; a documented feature with no task page; a page claiming a passed stage while the subject-matter page still describes the old behavior. Replace the closing line `state "TODO and wiki agree" explicitly` with `state "task pages and documentation agree" explicitly`. In the age signal, replace the `in-progress` row wording with task pages whose `Current State` `Opened` is more than 14 days old and whose lifecycle is not `done`.
-
-- [ ] **Step 4: Verify**
-
-Run: `grep -n "docs/TODO.md" .nvm-isolated/.claude-isolated/CLAUDE.md`
-Expected: no output
-
-Run: `grep -c "reference/tasks/<topic>" .nvm-isolated/.claude-isolated/CLAUDE.md`
-Expected: at least `3`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add .nvm-isolated/.claude-isolated/CLAUDE.md
-git commit -m "feat(rules): replace the docs/TODO.md task log with the wiki ledger"
 ```
 
 ---
@@ -661,9 +731,11 @@ git commit -m "feat(ledger): retire docs/TODO.md in favour of the wiki task ledg
 
 ## Self-Review
 
-**Spec coverage.** §1 Architecture → Tasks 2-4 (rule, skill, pages). §2 Page schema → Task 4 generator plus the Global Constraints every task inherits. §3 Write points → Task 3 Step 1 (rule) and Task 2 Step 1 (gate). §4 Failure handling → Task 3 Step 1 (spool, fail-closed) and Task 2 Step 1 (unreachable server). §5 LoEn integration → Task 1. §6 Migration → Task 4. §7 Affected artifacts → every file in the table appears in a task. §8 Verification → the verify steps in Tasks 1, 2, 3, 5 and the wiki checks in Task 4 Step 8. §9 Divergence → Task 3 Step 1's closing bullet.
+**Spec coverage.** §1 Architecture → Tasks 2-4 (rule, skill, pages). §2 Page schema → Task 4 generator plus the Global Constraints every task inherits. §3 Write points → Task 2 Step 1 (rule) and Task 3 Step 1 (gate). §4 Failure handling → Task 2 Step 1 (spool, fail-closed) and Task 3 Step 1 (unreachable server). §5 LoEn integration → Task 1. §6 Migration → Task 4. §7 Affected artifacts → every file in the table appears in a task. §8 Verification → the verify steps in Tasks 1, 2, 3, 5 and the wiki checks in Task 4 Step 8. §9 Divergence → Task 2 Step 1's closing bullet.
 
-**Placeholder scan.** No "TBD", no "implement later", no "add error handling". Every code step carries the actual code. `TODO` appears only as the tracker's filename, as the page's section name, and as the placeholder token in check-chain's own checklists — Task 2 Step 2 explicitly says which of those to leave alone.
+**Placeholder scan.** No "TBD", no "implement later", no "add error handling". Every code step carries the actual code. `TODO` appears only as the tracker's filename, as the page's section name, and as the placeholder token in check-chain's own checklists — Task 3 Step 2 explicitly says which of those to leave alone.
+
+**Task order.** The rule (Task 2) lands before the skill that cites it (Task 3). The reverse order would leave a commit where Step 6 writes to the wiki while `CLAUDE.md` still declares `docs/TODO.md` the tracker.
 
 **Type consistency.** `parse_rows` / `archive_page` / `topic_page` are declared in Task 4's Interfaces block and used with those exact names in the test (Step 1), the implementation (Step 3), and the CLI (Step 5). `ARCHIVE_SLUG` matches the `reference/tasks/archive-todo-log` used in the test assertion and in Task 4 Step 8's expectation. `upsert_todo_row` appears only where it is being removed.
 
