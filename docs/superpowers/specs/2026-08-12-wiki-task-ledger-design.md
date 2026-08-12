@@ -3,7 +3,7 @@ chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
   intent_hash: 744c651c66a47cc1
 review:
-  spec_hash: 73751af1ab2f68bd
+  spec_hash: 0384e7aa1a96164b
   last_run: 2026-08-12
   phases:
     structure:
@@ -161,11 +161,13 @@ chain's own section-hash algorithm.
 **Event kinds** in `Changelog`: `open`, `route`, `dispatch`, `return`, `scope`,
 `decision`, `blocker`, `verification`, `close`. Tool calls are not events.
 
-**Idempotency key** — derived from the topic, the event kind, and a hash of the
-redacted evidence. An event whose key already appears on the page is not
-appended again, which is what makes spool replay safe. Past entries are
-append-only; rewriting one is proposal-first and only to repair malformed or
-secret-bearing content.
+**Idempotency key** — `sha256(topic \n kind \n canonical redacted evidence)`
+truncated to 12 characters. The timestamp, the actor, and the human-readable
+summary must not enter the key, or a replay of the same fact would produce a
+second entry. An event whose key already appears on the page is not appended
+again, which is what makes spool replay safe. Past entries are append-only;
+rewriting one is proposal-first and only to repair malformed or secret-bearing
+content.
 
 ## 3. Write points
 
@@ -175,7 +177,7 @@ each event; no buffering while the server is reachable.
 
 | Moment | What is written |
 |---|---|
-| **Open** — before the first code or artifact change | `wiki_list_pages`; if `reference/tasks/<topic>` is absent, `wiki_write_page` with all five sections and lifecycle `in-progress`; `Changelog` gets the `open` event |
+| **Open** — after bounded discovery, before any task-specific analysis or implementation | `wiki_list_pages`; if `reference/tasks/<topic>` is absent, `wiki_write_page` with all five sections and lifecycle `in-progress`; `Changelog` gets the `open` event |
 | **Route** — workflow or model route decided or changed | `route` event; `Current State` `Route` updated |
 | **Gate** — `/check-chain <stage>` verdict, LoEn stage transition | `verification` event; the `TODO` stage checked off |
 | **Dispatch** — a subagent is launched | `dispatch` event, recorded *before* delegation; a `Subtasks` row with `Outcome: pending` |

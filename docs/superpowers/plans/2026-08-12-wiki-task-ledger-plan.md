@@ -3,7 +3,7 @@ chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
   intent_hash: 744c651c66a47cc1
   spec: docs/superpowers/specs/2026-08-12-wiki-task-ledger-design.md
-  spec_hash: 73751af1ab2f68bd
+  spec_hash: 0384e7aa1a96164b
 result_check:
   verdict: OK
   plan_hash: 15eac6a739017179
