@@ -76,7 +76,10 @@ def test_every_section_lead_is_at_most_250_chars():
     import migrate_todo_to_wiki as m
     rows = m.parse_rows(FIXTURE)
     for page in (m.archive_page(rows), m.topic_page(rows[1])):
-        for block in page.split("\n## ")[1:]:
+        # Prepend "\n" so the leading "## Current State" heading is also a
+        # split boundary; without it, [1:] silently drops the first section
+        # (the page starts with "## " at position 0, not "\n## ").
+        for block in ("\n" + page).split("\n## ")[1:]:
             lead = block.split("\n\n")[0].split("\n", 1)[1]
             assert len(lead) <= 250, lead
 
