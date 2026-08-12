@@ -83,7 +83,7 @@ These files are the entry point for two audiences at once: business users who ne
 - Do not use vague topics such as `fix`, `update`, `work`, `misc`, `phase1`, or `changes`.
 - Prefer topics that describe the task domain and intended outcome, not just the implementation step.
 - If a branch already exists, derive `<topic>` from the branch suffix unless it is vague.
-- If controlled artifacts (TODO topic, chain/LoEn topic, branch name) disagree, stop and normalize them to one `<topic>` before continuing.
+- If controlled artifacts (task page slug, chain/LoEn topic, branch name) disagree, stop and normalize them to one `<topic>` before continuing.
 
 ## Workflow Route Selection
 
@@ -127,8 +127,9 @@ start chain until the user accepts that recommendation; an explicit chain reques
 as acceptance. After intent validation, report `execute` or `full` with evidence and wait
 before starting `full`. Prefer `execute` when no full trigger is evidenced.
 
-Direct work creates no formal intent, spec, plan, `/check-chain`, or chain TODO artifacts,
-and must not invoke `fix-intent`, `superpowers:brainstorming`, `superpowers:writing-plans`,
+Direct work creates no formal intent, spec, plan, or `/check-chain` artifacts, but still
+gets a wiki task page per the Task Log rule above, and must not invoke `fix-intent`,
+`superpowers:brainstorming`, `superpowers:writing-plans`,
 `superpowers:subagent-driven-development`, or `superpowers:executing-plans`. Scoped
 systematic debugging, TDD, and verification remain allowed.
 `superpowers:finishing-a-development-branch` remains available after verified direct or
