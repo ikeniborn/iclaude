@@ -1,6 +1,6 @@
 ---
 review:
-  intent_hash: bd8fae72ce0c2ceb
+  intent_hash: 744c651c66a47cc1
   last_run: 2026-08-12
   phases:
     structure:
@@ -18,7 +18,7 @@ review:
       phase: clarity
       severity: WARNING
       section: "Stop Rules"
-      section_hash: 1998e6563b7088e0
+      section_hash: 3954a2c5db05d772
       fragment: "check-chain Step 6 and the LoEn hooks no longer write to `docs/TODO.md`"
       text: "Done when clause mixed an implementation act (\"are rewritten\") with the observable behavior (\"no longer write to docs/TODO.md\"). The observable part alone is sufficient; naming the act risks reading as \"code written\" rather than a result."
       fix: "Rephrase to the observable behavior only: \"check-chain Step 6 and the LoEn hooks no longer write to docs/TODO.md\"."
@@ -143,4 +143,6 @@ gets one authoritative page.
 - Done when: `docs/TODO.md` is deleted and its rows survive as one archive page;
   `check-chain` Step 6 and the LoEn hooks no longer write to `docs/TODO.md`;
   every open topic has a `reference/tasks/<topic>` page discoverable by tag
-  search; `wiki_lint` is clean.
+  search; `wiki_lint` reports no new task-page finding. Orphan entries for
+  `reference/tasks/*` are expected: refusing a central index is what leaves task
+  pages unreachable by link.

@@ -1,9 +1,9 @@
 ---
 chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
-  intent_hash: bd8fae72ce0c2ceb
+  intent_hash: 744c651c66a47cc1
 review:
-  spec_hash: bbeb4b0b9ec20cbe
+  spec_hash: 73751af1ab2f68bd
   last_run: 2026-08-12
   phases:
     structure:
@@ -55,7 +55,9 @@ Desired Outcomes carried verbatim:
 Done when: `docs/TODO.md` is deleted and its rows survive as one archive page;
 `check-chain` Step 6 and the LoEn hooks no longer write to `docs/TODO.md`; every
 open topic has a `reference/tasks/<topic>` page discoverable by tag search;
-`wiki_lint` is clean.
+`wiki_lint` reports no new task-page finding. Orphan entries for
+`reference/tasks/*` are expected: refusing a central index is what leaves task
+pages unreachable by link.
 
 ## 1. Architecture
 
