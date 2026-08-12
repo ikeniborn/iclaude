@@ -3,7 +3,7 @@ chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
   intent_hash: bd8fae72ce0c2ceb
 review:
-  spec_hash: ec4af6056521ae6c
+  spec_hash: bbeb4b0b9ec20cbe
   last_run: 2026-08-12
   phases:
     structure:
@@ -290,8 +290,11 @@ Manual, because ledger behavior lives in rules rather than code:
 
 - `wiki_search(tags=["task"])` returns the three migrated topic pages plus the
   archive page — status is derivable without an index.
-- `wiki_lint` is clean for the domain: no `pre_h2_text`, no `long_lead` on task
-  pages, no orphans, no broken refs.
+- `wiki_lint` reports no new task-page finding: no `pre_h2_text`, no `long_lead`
+  on task pages, no broken refs, nothing stale. Orphan entries for
+  `reference/tasks/*` are expected, not defects — refusing a central index is
+  what makes task pages unreachable by link, and status comes from tag search
+  instead. This wording matches the shared standard's own completion criterion.
 - A simulated outage leaves the task `completion-pending`, and a replay after
   recovery adds no duplicate `Changelog` entry (idempotency keys hold).
 
