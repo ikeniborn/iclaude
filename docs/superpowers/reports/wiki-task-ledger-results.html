@@ -217,10 +217,10 @@ Notes (<code>verifier_isolation: subagent|microvm</code>), и строгая п�
 <tr><td><code>docs/architecture.md</code>, <code>.iwikiignore</code>, <code>loop-check/SKILL.md</code></td>
     <td><span class="badge b-warn">EXCESS</span></td>
     <td>Волна фиксов финального ревью (F1, F3, Minor 2) — планом не предусматривались</td></tr>
-<tr><td><code>.iwiki.toml</code></td><td><span class="badge b-info">вне коммитов</span></td>
-    <td>Правка в начале сессии: <code>write</code> был строкой вместо массива, из-за чего падали <strong>все</strong> вызовы MCP</td></tr>
-<tr><td><code>.nvm-isolated/.claude-isolated/settings.json</code></td><td><span class="badge b-info">вне коммитов</span></td>
-    <td>Предсуществующий локальный дрейф, задачей не затрагивался</td></tr>
+<tr><td><code>.iwiki.toml</code></td><td><span class="badge b-info">коммит <code>8da93e72</code></span></td>
+    <td>Правка в начале сессии: <code>write</code> был строкой вместо массива, из-за чего падали <strong>все</strong> вызовы MCP. Позже расширен до четырёх read-доменов и закоммичен вне волны задач</td></tr>
+<tr><td><code>.nvm-isolated/.claude-isolated/settings.json</code></td><td><span class="badge b-info">коммит <code>8da93e72</code></span></td>
+    <td><code>effortLevel</code> <code>high → medium</code> — смена режима сессии, к задаче отношения не имеет</td></tr>
 </table>
 
 <h3>Ход исполнения</h3>
