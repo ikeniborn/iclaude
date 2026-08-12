@@ -1,3 +1,32 @@
+---
+chain:
+  intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
+  intent_hash: bd8fae72ce0c2ceb
+review:
+  spec_hash: ec4af6056521ae6c
+  last_run: 2026-08-12
+  phases:
+    structure:
+      status: passed
+    coverage:
+      status: passed
+    clarity:
+      status: passed
+    consistency:
+      status: passed
+  findings:
+    - id: F-003
+      phase: clarity
+      severity: WARNING
+      section: "6. Migration"
+      section_hash: f8c6c6bee7da07f1
+      fragment: "reference/tasks/archive-todo-log"
+      text: "The archive slug names a single month, but the rows it carries close across 2026-06 (3) and 2026-07 (11). A reader searching by tag sees a page that claims narrower coverage than it holds."
+      fix: "Rename the archive page to a month-neutral slug, e.g. reference/tasks/archive-todo-log."
+      verdict: fixed
+      verdict_at: 2026-08-12
+---
+
 # Design: wiki-task-ledger
 
 **Date:** 2026-08-12
@@ -85,42 +114,45 @@ renamed or reordered. Headings deeper than `##` are forbidden, and each section
 opens with a lead paragraph of at most 250 characters followed by a blank line
 before any list or table — otherwise `wiki_lint` reports `long_lead`.
 
-```markdown
-## Current State
-Topic, route, lifecycle, and ownership as of the last recorded event.
+The page template below is indented rather than fenced on purpose: a fenced block
+starting at column 0 would make the example's `##` lines indistinguishable from
+this document's own sections for any tool that splits on `^##`, including this
+chain's own section-hash algorithm.
 
-- Topic: <topic>
-- Route: direct | chain | loen
-- Lifecycle: in-progress | blocked | completion-pending | done
-- Opened: YYYY-MM-DD
-- Closed:
-- Parent: main
-- Pending delivery: none | <count> queued events
+    ## Current State
+    Topic, route, lifecycle, and ownership as of the last recorded event.
 
-## TODO
-Workflow-specific stages for this task; chain stages are not imposed on direct
-or loop work.
+    - Topic: <topic>
+    - Route: direct | chain | loen
+    - Lifecycle: in-progress | blocked | completion-pending | done
+    - Opened: YYYY-MM-DD
+    - Closed:
+    - Parent: main
+    - Pending delivery: none | <count> queued events
 
-- [x] intent — /check-chain intent OK
-- [ ] spec
+    ## TODO
+    Workflow-specific stages for this task; chain stages are not imposed on
+    direct or loop work.
 
-## Subtasks
-Parent-recorded dispatch and return state for delegated work.
+    - [x] intent — /check-chain intent OK
+    - [ ] spec
 
-| Subtask | Role | Route | Outcome |
-|---|---|---|---|
+    ## Subtasks
+    Parent-recorded dispatch and return state for delegated work.
 
-## Evidence
-Redacted paths, hashes, exit status, and check counts.
+    | Subtask | Role | Route | Outcome |
+    |---|---|---|---|
 
-- <command> → <exit status / count>
-- <artifact> → <hash>
+    ## Evidence
+    Redacted paths, hashes, exit status, and check counts.
 
-## Changelog
-Ordered material lifecycle events, append-only.
+    - <command> → <exit status / count>
+    - <artifact> → <hash>
 
-- YYYY-MM-DD — <kind> — <summary> — key:<idempotency key>
-```
+    ## Changelog
+    Ordered material lifecycle events, append-only.
+
+    - YYYY-MM-DD — <kind> — <summary> — key:<idempotency key>
 
 **Lifecycle** values: `in-progress`, `blocked`, `completion-pending`, `done`.
 
@@ -212,7 +244,7 @@ mirrored.
 The agent writes the generated output through `wiki_write_page`.
 
 - The 14 `done` rows become one archive page,
-  `reference/tasks/archive-2026-06-todo-log`, tagged `task`, lifecycle `done`.
+  `reference/tasks/archive-todo-log`, tagged `task`, lifecycle `done`.
   It carries the retired rows as a table under `Evidence`, condensed to topic,
   dates, verdict, and PR/commit. One page, not fourteen: closed history needs to
   survive, not to be individually addressable.
