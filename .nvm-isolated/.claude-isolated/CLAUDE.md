@@ -55,28 +55,20 @@ These files are the entry point for two audiences at once: business users who ne
 - **This is separate from the iwiki wiki.** The wiki (above) is internal/semantic documentation; the README files are the public, human-facing docs. Updating one does not exempt you from the other — do both when both apply.
 - **Skip only for changes that touch no functionality, behavior, usage, or setup** (typo, comment, internal formatting).
 
-## Task Log (docs/TODO.md)
+## Task Log (iwiki, MANDATORY)
 
-**Every task that enters the `chain` or LoEn workflow is tracked as one row in `docs/TODO.md`: opened at intent validation and closed after result reconciliation.**
+**Every task — direct, chain, or LoEn, including small fixes and read-only analysis — is tracked as one wiki page in the project's primary write domain: opened before the first change, updated at every material event, closed only when delivery is confirmed.** This follows the shared standard `devops/concept/wiki-task-ledger`. There is no in-repo task file.
 
-Purpose: a single human-readable index of what is being worked on and what is done — **one row per `<topic>`** (the shared key defined in **Task Topic**, the same one the `/check-chain` skill converges on), never per finding or per step. Direct work creates no row.
-
-- **One file, one table.** `docs/TODO.md` holds a single Markdown table, one row per `<topic>`.
-- **Columns:** `Topic | Status | Intent | Spec | Plan | Result | Opened | Closed | Notes`.
-  - `Status`: `in-progress` while any selected stage is still open; `done` once `/check-chain result` returns `OK` against the selected intent or plan source.
-  - Stage cells (`Intent` / `Spec` / `Plan`): `✓` once that stage's `/check-chain <stage>` passes (verdict `OK`, including a cached quick-exit); `–` if not reached yet; `n/a` if the stage does not exist for this topic (e.g. no intent).
-  - `Result`: `OK` / `needs_work` / `–`.
-  - `Opened` / `Closed`: ISO date (`YYYY-MM-DD`). `Closed` stays empty until the task is `done`.
-  - `Notes`: optional one-line context.
-- **Upsert, never duplicate.** Keyed by `<topic>`: update the matching row in place if it exists, otherwise append a new one.
-- **Lifecycle (driven by the `/check-chain` skill):**
-  - The first `/check-chain <stage>` run for a topic **opens** the row (`Opened: <today>`, `Status: in-progress`). Normally that is `/check-chain intent`; if there is no intent, `/check-chain spec` opens it and marks `Intent: n/a`.
-  - After intent passes, continuation `execute` marks `Spec: n/a` and `Plan: n/a`; continuation `full` leaves them open for their own checks. The skill does not write this — mark the cells yourself when you report the continuation decision.
-  - `/check-chain spec` / `/check-chain plan` mark their own stage cell `✓` and keep `Status: in-progress`.
-  - `/check-chain result` **closes** the row on verdict `OK` against the intent for `execute` or the plan for `full` (`Result: OK`, `Status: done`, `Closed: <today>`); on `needs_work` it sets `Result: needs_work` and leaves the row open.
-  - **LoEn rows** use LoEn stage cells (`Intent: n/a`, `Spec: n/a`, `Plan: n/a`); their state lives in `docs/loen/<topic>/` and closes from the loop's terminal result.
-- **Create on demand.** If `docs/TODO.md` is absent, the first `/check-chain <stage>` run creates it with the header row, then appends.
-- **Manual rows are allowed.** A task may be added by hand before any `/check-chain <stage>` run; the skill then updates the matching `<topic>` row instead of duplicating it.
+- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the events, continue working — but the task cannot reach `done`.
+- **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
+- **No index page, no changelog page.** Project status is derived with `wiki_search(tags=["task"])`.
+- **Five `##` sections, each once, never renamed or reordered**: `Current State`, `TODO`, `Subtasks`, `Evidence`, `Changelog`. No `###`. Each section opens with a lead of at most 250 characters, then a blank line.
+- **Lifecycle** in the body: `in-progress`, `blocked`, `completion-pending`, `done`.
+- **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at material stage boundaries.
+- **Write points.** `open` before the first change; `route` when the workflow or model route is decided; `verification` at each `/check-chain` verdict or loop-check; `dispatch` before delegating and `return` when the subagent answers; `blocker` when blocked; `close` at the end. Tool calls are not events.
+- **Idempotency.** Every `Changelog` entry carries `key:<hash of topic + kind + redacted evidence>`. An entry whose key is present is not appended again — this is what makes spool replay safe. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
+- **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the page. Until then the task stays `completion-pending`.
+- **Divergence** from the shared standard is recorded on `devops/concept/wiki-task-ledger` before it is implemented.
 
 ## Task Topic
 
@@ -84,7 +76,7 @@ Purpose: a single human-readable index of what is being worked on and what is do
 
 - `<topic>` is a semantic, English, lowercase kebab-case slug: words joined by hyphens, e.g. `thread-title-task-naming-policy`.
 - Use the same `<topic>` across every controlled surface:
-  - `docs/TODO.md` `Topic`;
+  - the wiki task page slug `reference/tasks/<topic>`;
   - chain artifact names in `docs/superpowers/`, for IDD→SDD work;
   - LoEn topic directory `docs/loen/<topic>/`, for LoEn loop work;
   - git branch suffix: `dev-<topic>`.
@@ -340,18 +332,18 @@ Switch confirmation: n/a | pending | confirmed | declined
 
 ## Project Status Reports
 
-**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: `docs/TODO.md` (what is being worked on) and the project's iwiki domain (what is documented as true).**
+**When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
 
-- **Read both first.** Read `docs/TODO.md` for the task index; if the iwiki MCP server reports a domain bound to this project (`wiki_status`), `wiki_bind` then `wiki_search`/`wiki_read_page` for the topic. If iwiki is not set up, report from `docs/TODO.md` alone and say so.
-- **Report shape:** lead with overall state (counts of `in-progress` vs `done` rows, or the specific topic's row), then per-topic detail (stage cells `Intent`/`Spec`/`Plan`/`Result`), then a **Discrepancies** section.
+- **Read both first.** Call `wiki_status`; then `wiki_search(tags=["task"])` for the task pages, and `wiki_search` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
+- **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest `Changelog` events), then a **Discrepancies** section.
 - **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
-  - Topic is `done` in `docs/TODO.md` but the wiki has no page (or a stale page) covering it.
-  - Wiki documents a feature/behavior that has no matching `<topic>` row in `docs/TODO.md`.
-  - `docs/TODO.md` says a stage passed (`✓` / `Result: OK`) but the wiki still describes the old behavior, or `wiki_lint` flags the topic's page as stale/orphan.
-  - Status, dates, or scope disagree between the two.
-- **No silent reconciliation.** Report discrepancies; do not fix `docs/TODO.md` or the wiki as a side effect of a status request. If none exist, state "TODO and wiki agree" explicitly.
-- **Age signal.** List every `in-progress` row opened more than 14 days ago separately;
-  this flags stalled work without changing its status or closing it automatically.
+  - A task page is `done` but the wiki has no subject-matter page (or a stale one) covering it.
+  - The wiki documents a feature/behavior that has no matching task page.
+  - A task page records a passed stage but the subject-matter page still describes the old behavior, or `wiki_lint` flags it stale/orphan.
+  - Lifecycle, dates, or scope disagree between the two.
+  - A task page sits at `completion-pending` with events still spooled.
+- **No silent reconciliation.** Report discrepancies; do not fix the task page or the subject-matter page as a side effect of a status request. If none exist, state "task pages and documentation agree" explicitly.
+- **Age signal.** List separately every task page whose `Current State` `Opened` is more than 14 days old and whose lifecycle is not `done`; this flags stalled work without changing its lifecycle or closing it automatically.
 
 ## Language Rules
 
