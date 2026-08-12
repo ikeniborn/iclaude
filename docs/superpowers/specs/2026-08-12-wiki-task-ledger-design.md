@@ -3,7 +3,7 @@ chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
   intent_hash: 744c651c66a47cc1
 review:
-  spec_hash: 0384e7aa1a96164b
+  spec_hash: 0720846c7cecf25a
   last_run: 2026-08-12
   phases:
     structure:
@@ -69,7 +69,7 @@ state, and status is derived by searching pages tagged `task`.
 parent agent ──wiki_read_page──►  reference/tasks/<topic>
      │       ──wiki_update_page─►    (Current State / TODO / Subtasks / Evidence / Changelog)
      │
-     ├──wiki_search(tags=[task])──►  project status, derived — nothing central to maintain
+     ├──wiki_list_pages(domain)───►  project status, derived — nothing central to maintain
      │
      └──(server unreachable)──────►  spool file outside the repo ──replay──► wiki at next checkpoint
 
@@ -304,9 +304,21 @@ Manual, because ledger behavior lives in rules rather than code:
 
 ## 9. Divergence from the shared standard
 
-None. Where this design is more specific than
-`devops/concept/wiki-task-ledger` — the enumerated material stage boundaries in
-§5, the `$CLAUDE_CONFIG_DIR` spool path in §4, the migration shape in §6 — it
-specifies `iclaude` mechanics under the standard rather than departing from it.
+One recorded, the rest are refinements.
+
+**Recorded on the shared page:** the spool lives under `$CLAUDE_CONFIG_DIR`
+rather than `$CODEX_HOME`, because the harness differs. The standard's
+`Ordering and degradation` section now names both homes, so an `icodex` agent
+reading it will not treat the `iclaude` path as drift.
+
+**Refinements, not departures:** the enumerated material stage boundaries in §5,
+the migration shape in §6, and the archive page's pointer to the pre-deletion
+commit. Each makes `iclaude` mechanics concrete under the standard.
+
+**Known drift left open:** the domain's pre-existing pages carry a bare
+`workflow` tag while task pages carry `workflow:<route>`, so `wiki_lint` reports
+`tag_drift` until those older pages are normalised. That normalisation is not
+this task's scope.
+
 Any future deviation is recorded on the shared page before it is implemented,
 per the intent's hard constraint.
