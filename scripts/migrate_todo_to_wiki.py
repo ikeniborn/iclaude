@@ -32,6 +32,19 @@ def parse_rows(text):
     return rows
 
 
+def _field(label, value):
+    return f"- {label}: {value}" if value else f"- {label}:"
+
+
+def _truncate_word(text, limit=120):
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    idx = cut.rfind(" ")
+    cut = (cut[:idx] if idx != -1 else cut).rstrip()
+    return cut + "…"
+
+
 def _sections(current_state, todo, subtasks, evidence, changelog):
     return "\n\n".join([
         "## Current State\n" + current_state,
@@ -46,18 +59,22 @@ def archive_page(rows):
     closed = [r for r in rows if r["status"] == "done"]
     table = ["| Topic | Opened | Closed | Result | Notes |", "|---|---|---|---|---|"]
     for r in closed:
-        notes = r["notes"].split(";")[0][:120]
+        notes = _truncate_word(r["notes"].split(";")[0])
         table.append(f"| {r['topic']} | {r['opened']} | {r['closed']} | {r['result']} | {notes} |")
-    return _sections(
-        "Frozen archive of the retired docs/TODO.md rows. Closed work only; it\n"
-        "records history and is never updated again.\n\n"
-        "- Topic: archive-todo-log\n"
-        "- Route: chain\n"
-        "- Lifecycle: done\n"
-        f"- Opened: {closed[0]['opened'] if closed else ''}\n"
-        f"- Closed: {closed[-1]['closed'] if closed else ''}\n"
-        "- Parent: main\n"
+    archive_current_state = "\n".join([
+        "Frozen archive of the retired docs/TODO.md rows. Closed work only; it",
+        "records history and is never updated again.",
+        "",
+        "- Topic: archive-todo-log",
+        "- Route: chain",
+        "- Lifecycle: done",
+        _field("Opened", closed[0]["opened"] if closed else ""),
+        _field("Closed", closed[-1]["closed"] if closed else ""),
+        "- Parent: main",
         "- Pending delivery: none",
+    ])
+    return _sections(
+        archive_current_state,
         "Nothing outstanding: every row here closed before the ledger moved to\n"
         "the wiki.\n\n- [x] archived",
         "No delegated work is recorded for archived rows.\n\n"
@@ -72,16 +89,20 @@ def archive_page(rows):
 def topic_page(row):
     stages = [f"- [{'x' if row[k] == '✓' else ' '}] {k}" for k in
               ("intent", "spec", "plan")]
-    return _sections(
-        "Task migrated from the retired docs/TODO.md row; live state continues\n"
-        "on this page.\n\n"
-        f"- Topic: {row['topic']}\n"
-        "- Route: chain\n"
-        f"- Lifecycle: {row['status']}\n"
-        f"- Opened: {row['opened']}\n"
-        f"- Closed: {row['closed']}\n"
-        "- Parent: main\n"
+    topic_current_state = "\n".join([
+        "Task migrated from the retired docs/TODO.md row; live state continues",
+        "on this page.",
+        "",
+        f"- Topic: {row['topic']}",
+        "- Route: chain",
+        f"- Lifecycle: {row['status']}",
+        _field("Opened", row["opened"]),
+        _field("Closed", row["closed"]),
+        "- Parent: main",
         "- Pending delivery: none",
+    ])
+    return _sections(
+        topic_current_state,
         "Chain stages carried over from the migrated row.\n\n" + "\n".join(stages),
         "No delegated work was recorded before the migration.\n\n"
         "| Subtask | Role | Route | Outcome |\n|---|---|---|---|",

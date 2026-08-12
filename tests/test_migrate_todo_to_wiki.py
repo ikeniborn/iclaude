@@ -84,6 +84,47 @@ def test_every_section_lead_is_at_most_250_chars():
             assert len(lead) <= 250, lead
 
 
+def test_archive_table_truncates_long_notes_on_word_boundary():
+    import migrate_todo_to_wiki as m
+    clause = " ".join(f"word{i}" for i in range(40))  # well over 120 chars
+    assert len(clause) > 120
+    extra = (f"| epsilon | done | ✓ | ✓ | ✓ | OK | 2026-07-05 | 2026-07-06 "
+             f"| {clause} |\n")
+    rows = m.parse_rows(FIXTURE + extra)
+    page = m.archive_page(rows)
+    line = next(ln for ln in page.splitlines() if ln.startswith("| epsilon |"))
+    cell = line.strip("|").split("|")[-1].strip()
+    assert cell.endswith("…"), cell
+    prefix = cell[:-1]
+    assert prefix == prefix.rstrip(), "no trailing space before the ellipsis"
+    assert clause.startswith(prefix), "truncated text must be a prefix of the original"
+    boundary = clause[len(prefix)]
+    assert boundary == " ", "cut must land on a word boundary"
+
+
+def test_archive_table_leaves_short_notes_unchanged():
+    import migrate_todo_to_wiki as m
+    clause = "short note under the limit"
+    assert len(clause) <= 120
+    extra = (f"| zeta | done | ✓ | ✓ | ✓ | OK | 2026-07-05 | 2026-07-06 "
+             f"| {clause} |\n")
+    rows = m.parse_rows(FIXTURE + extra)
+    page = m.archive_page(rows)
+    line = next(ln for ln in page.splitlines() if ln.startswith("| zeta |"))
+    cell = line.strip("|").split("|")[-1].strip()
+    assert cell == clause
+    assert "…" not in cell
+
+
+def test_topic_page_empty_closed_has_no_trailing_space():
+    import migrate_todo_to_wiki as m
+    row = m.parse_rows(FIXTURE)[1]  # beta, closed == ""
+    page = m.topic_page(row)
+    lines = page.splitlines()
+    assert "- Closed:" in lines
+    assert "- Closed: " not in lines
+
+
 def test_cli_prints_every_page():
     out = subprocess.run(
         [sys.executable, str(ROOT / "scripts/migrate_todo_to_wiki.py"), "-"],
