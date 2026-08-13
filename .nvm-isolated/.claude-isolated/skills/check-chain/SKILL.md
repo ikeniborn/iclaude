@@ -132,9 +132,10 @@ Task Log convention in `CLAUDE.md`). If the page is absent, create it with
 `wiki_write_page` and the five required sections; otherwise `wiki_read_page` the
 section you are about to change, then `wiki_update_page` it in full.
 
-- Append one `verification` event to `Changelog`: `- <today> — verification — <stage> <verdict> — key:<key>`, where `<key>` is derived from topic, event kind, and a hash of the recorded evidence. Skip the append when that key is already present.
+- Append one `verification` event to the `Events` section of the active history segment named in `Changelog` — `reference/task-history/<topic>-<sequence>`, created with the same frontmatter when absent: `- <today> — verification — <stage> <verdict> — key:<key>`, where `<key>` is derived from topic, event kind, and a hash of the recorded evidence. Skip the append when that key is already present in the segment chain. At 20 events open the next segment and point the current one's `Next` at it.
+- Refresh the `Changelog` manifest on the task page (first segment, active segment, event count) — never copy the events themselves there.
 - Tick the stage's line in `TODO`.
-- On `result` `OK`: set `Current State` `Lifecycle: done` and `Closed: <today>`, and append the `close` event — but only after every queued event is delivered and `wiki_lint` reports no new finding for the page. Otherwise set `Lifecycle: completion-pending`.
+- On `result` `OK`: set `Current State` `Lifecycle: done` and `Closed: <today>`, and append the `close` event — but only after every queued event is delivered and `wiki_lint` reports no new finding for the task page or its segments, the expected `orphan` advisory for `reference/tasks/*` and `reference/task-history/*` aside. Otherwise set `Lifecycle: completion-pending`.
 - If the MCP server is unreachable, append the event to the spool at `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, report `Tracking: unavailable`, and continue — the stage verdict itself is never blocked by the wiki channel.
 
 ## Rules (prohibited)
