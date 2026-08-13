@@ -3,8 +3,8 @@ chain:
   intent: docs/superpowers/intents/2026-08-12-wiki-task-ledger-intent.md
   intent_hash: 744c651c66a47cc1
 review:
-  spec_hash: 0720846c7cecf25a
-  last_run: 2026-08-12
+  spec_hash: 4da5c5a3e050ded0
+  last_run: 2026-08-13
   phases:
     structure:
       status: passed
@@ -54,7 +54,7 @@ Desired Outcomes carried verbatim:
 
 Done when: `docs/TODO.md` is deleted and its rows survive as one archive page;
 `check-chain` Step 6 and the LoEn hooks no longer write to `docs/TODO.md`; every
-open topic has a `reference/tasks/<topic>` page discoverable by tag search;
+open topic has a `reference/tasks/<topic>` page discoverable without an index;
 `wiki_lint` reports no new task-page finding. Orphan entries for
 `reference/tasks/*` are expected: refusing a central index is what leaves task
 pages unreachable by link.
@@ -63,7 +63,9 @@ pages unreachable by link.
 
 The ledger is one page per topic in the project's **primary** write domain.
 There is no index page and no changelog page: per-topic pages are the only task
-state, and status is derived by searching pages tagged `task`.
+state, and status is derived by enumerating the `reference/tasks/` prefix with
+`wiki_list_pages`; `wiki_search(tags=["task"])` serves content lookup within a
+topic.
 
 ```
 parent agent ──wiki_read_page──►  reference/tasks/<topic>
@@ -265,7 +267,7 @@ Markdown is shown to the user before the file is removed.
 
 | File | Change |
 |---|---|
-| `CLAUDE.md` | `Task Log (docs/TODO.md)` → `Task Log (iwiki)`, covering direct work too; in `Task Topic`, the controlled surface `docs/TODO.md` `Topic` → slug `reference/tasks/<topic>`; `Project Status Reports` derives status by tag search and reconciles it against the domain's subject-matter pages |
+| `CLAUDE.md` | `Task Log (docs/TODO.md)` → `Task Log (iwiki)`, covering direct work too; in `Task Topic`, the controlled surface `docs/TODO.md` `Topic` → slug `reference/tasks/<topic>`; `Project Status Reports` derives status by enumerating the `reference/tasks/` prefix with `wiki_list_pages` and reconciles it against the domain's subject-matter pages |
 | `skills/check-chain/SKILL.md` | Step 6 becomes MCP calls against the topic page; "TODO cell" / "TODO upsert" wording in the run modes and stage profiles follows |
 | `plugin/loen/hooks/loen_artifacts.py` | drop `upsert_todo_row`, `_TODO_HEADER`, `_TODO_SEP`, `_LOEN_NOTE`, `_row_cells`; fix the module docstring |
 | `plugin/loen/hooks/audit-writer.py` | drop the call and the docstring mention |
@@ -292,24 +294,32 @@ Automated:
 
 Manual, because ledger behavior lives in rules rather than code:
 
-- `wiki_search(tags=["task"])` returns the three migrated topic pages plus the
-  archive page — status is derivable without an index.
+- `wiki_list_pages(<primary>)` filtered to the `reference/tasks/` prefix returns
+  the three migrated topic pages plus the archive page — status is derivable
+  without an index.
 - `wiki_lint` reports no new task-page finding: no `pre_h2_text`, no `long_lead`
   on task pages, no broken refs, nothing stale. Orphan entries for
   `reference/tasks/*` are expected, not defects — refusing a central index is
-  what makes task pages unreachable by link, and status comes from tag search
-  instead. This wording matches the shared standard's own completion criterion.
+  what makes task pages unreachable by link, and status comes from prefix
+  enumeration instead. This wording matches the shared standard's own completion
+  criterion.
 - A simulated outage leaves the task `completion-pending`, and a replay after
   recovery adds no duplicate `Changelog` entry (idempotency keys hold).
 
 ## 9. Divergence from the shared standard
 
-One recorded, the rest are refinements.
+Two recorded, the rest are refinements.
 
 **Recorded on the shared page:** the spool lives under `$CLAUDE_CONFIG_DIR`
 rather than `$CODEX_HOME`, because the harness differs. The standard's
 `Ordering and degradation` section now names both homes, so an `icodex` agent
 reading it will not treat the `iclaude` path as drift.
+
+**Recorded on the shared page:** status derivation enumerates the
+`reference/tasks/` prefix with `wiki_list_pages` instead of the standard's tag
+search. Enumeration is exhaustive and deterministic, while `wiki_search` ranks
+and truncates; `wiki_search(tags=["task"])` is kept for content lookup within a
+topic. The standard's `Decision` section names both calls.
 
 **Refinements, not departures:** the enumerated material stage boundaries in §5,
 the migration shape in §6, and the archive page's pointer to the pre-deletion
