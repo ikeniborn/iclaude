@@ -37,7 +37,7 @@ Skip only when: familiar area, same session.
   - **Existing page** → `wiki_update_page(domain, slug, heading, new_body, source=<changed-source>)`. Rewrites one `##` section in place.
   - **Stale / removed source** → `wiki_delete_page(domain, slug)`. Drops the page and its vectors.
 - Call `wiki_index(domain)` only to rebuild after out-of-band edits (markdown changed on disk without a tool) or a sync conflict — never as a routine step after a write.
-- Run `wiki_lint` — no broken `[[refs]]`, no orphan or stale pages.
+- Run `wiki_lint` — no broken `[[refs]]`, no orphan or stale pages. Task pages (`reference/tasks/*`) and their history segments (`reference/task-history/*`) are exempt from the orphan check by design.
 - Writes auto-commit the base locally; `wiki_sync` publishes those commits to the git remote (pull-rebase-push) — run it only when sharing the base across machines.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
@@ -61,15 +61,17 @@ These files are the entry point for two audiences at once: business users who ne
 
 Bounded discovery comes first and creates nothing: read the request, the project binding, and the minimum repository context needed to derive the domain, the `<topic>`, and the route. Then open the page — before analysing the task itself.
 
-- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the events, continue working — but the task cannot reach `done`.
+- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the redacted events to `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, continue working — but the task cannot reach `done`.
 - **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
-- **No index page, no changelog page.** Project status is derived by enumerating task pages with `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix; use `wiki_search(query=..., tags=["task"])` only for content lookup within a topic.
+- **No index page.** Project status is derived by enumerating task pages with `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix; use `wiki_search(query=..., tags=["task"])` only for content lookup within a topic.
+- **Domain changelog** at `reference/domain-changelog` records only material domain-level changes — standards, releases, migrations, cross-task decisions — each linking to the relevant task page. It is not a task index and never repeats routine task events.
 - **Five `##` sections, each once, never renamed or reordered**: `Current State`, `TODO`, `Subtasks`, `Evidence`, `Changelog`. No `###`. Each section opens with a lead of at most 250 characters, then a blank line.
+- **History segments.** The event history lives in `reference/task-history/<topic>-<sequence>` pages, same frontmatter as the task page, two `##` sections: `Events` (at most 20, ordered, oldest first) and `Next` (the successor slug, or `none`). `Changelog` on the task page is a manifest only — first segment, active segment, event count. A new event rewrites the active segment alone; at 20 events open `<topic>-<sequence+1>` and point `Next` at it. Replay traverses the segment chain to load durable keys before appending.
 - **Lifecycle** in the body: `in-progress`, `blocked`, `completion-pending`, `done`.
 - **Single writer.** Only the parent agent writes. Subagents are read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`) and return structured evidence — subtask id, role, outcome, changed paths, checks, blockers, proposed changelog text — which the parent records. Hooks never reach MCP; loop hooks write `docs/loen/<topic>/` and the parent mirrors loop state at four material stage boundaries: loop start (plan approved, `loop.yaml` armed) → `open`/`route`; each `loop-check` verdict → `verification`; each `loop-reflect` decision of `fix`, `revert`, or `handoff` → `decision`/`blocker`; the terminal `7_result.md` or `handoff.md` → `close`. Per-iteration act steps and hook-rendered `audit.html` refreshes are not mirrored.
 - **Write points.** `open` before any task-specific analysis or implementation, after bounded discovery only; `route` when the workflow or model route is decided; `verification` at each `/check-chain` verdict or loop-check; `dispatch` before delegating and `return` when the subagent answers; `blocker` when blocked; `close` at the end. Tool calls are not events.
-- **Idempotency.** Every `Changelog` entry carries `key:` = `sha256(topic \n kind \n canonical redacted evidence)` truncated to 12 chars. Timestamp, actor, and the human-readable summary must not enter the key — otherwise a replay of the same fact appends a duplicate. An entry whose key is present is not appended again. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
-- **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the page. Until then the task stays `completion-pending`.
+- **Idempotency.** Every segment event carries `key:` = `sha256(topic \n kind \n canonical redacted evidence)` truncated to 12 chars. Timestamp, actor, and the human-readable summary must not enter the key — otherwise a replay of the same fact appends a duplicate. An event whose key is present anywhere in the segment chain is not appended again. Entries are append-only; rewriting one is proposal-first and only to repair malformed or secret-bearing content.
+- **Close is fail-closed.** `done` requires final evidence recorded, every spooled event delivered, and `wiki_lint` reporting no new finding for the task page or its segments. An `orphan` entry for `reference/tasks/*` or `reference/task-history/*` is the expected advisory — refusing a central index leaves those pages unreachable by link — and never blocks closure; any other finding does. Until then the task stays `completion-pending`.
 - **Divergence** from the shared standard is recorded on `devops/concept/wiki-task-ledger` before it is implemented.
 
 ## Task Topic
@@ -83,6 +85,7 @@ Bounded discovery comes first and creates nothing: read the request, the project
   - LoEn topic directory `docs/loen/<topic>/`, for LoEn loop work;
   - git branch suffix: `dev-<topic>`.
 - Do not use vague topics such as `fix`, `update`, `work`, `misc`, `phase1`, or `changes`.
+- Do not start a topic with `task`: the topic becomes a wiki tag next to the base tag `task`, and `wiki_lint` reports the pair as `tag_drift`.
 - Prefer topics that describe the task domain and intended outcome, not just the implementation step.
 - If a branch already exists, derive `<topic>` from the branch suffix unless it is vague.
 - If controlled artifacts (task page slug, chain/LoEn topic, branch name) disagree, stop and normalize them to one `<topic>` before continuing.
@@ -338,11 +341,11 @@ Switch confirmation: n/a | pending | confirmed | declined
 **When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
 
 - **Read both first.** Call `wiki_status`; then `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix for the full set of task pages, and `wiki_search(query=...)` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
-- **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest `Changelog` events), then a **Discrepancies** section.
+- **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest events from the active history segment named in `Changelog`), then a **Discrepancies** section.
 - **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
   - A task page is `done` but the wiki has no subject-matter page (or a stale one) covering it.
   - The wiki documents a feature/behavior that has no matching task page.
-  - A task page records a passed stage but the subject-matter page still describes the old behavior, or `wiki_lint` flags it stale/orphan.
+  - A task page records a passed stage but the subject-matter page still describes the old behavior, or `wiki_lint` flags it stale. An `orphan` entry for a task or history page is expected by design, not a discrepancy.
   - Lifecycle, dates, or scope disagree between the two.
   - A task page sits at `completion-pending` with events still spooled.
 - **No silent reconciliation.** Report discrepancies; do not fix the task page or the subject-matter page as a side effect of a status request. If none exist, state "task pages and documentation agree" explicitly.
