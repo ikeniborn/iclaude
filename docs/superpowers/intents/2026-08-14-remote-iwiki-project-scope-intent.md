@@ -8,6 +8,10 @@ review:
     clarity: {status: passed, findings: []}
     consistency: {status: passed, findings: []}
     alignment: {status: passed, findings: []}
+result_check:
+  verdict: OK
+  plan_hash: b64809290c5bf624
+  last_run: 2026-08-14
 ---
 
 # Intent: remote-iwiki-project-scope

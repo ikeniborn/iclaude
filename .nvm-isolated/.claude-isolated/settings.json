@@ -104,7 +104,7 @@
     ],
     "defaultMode": "default"
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
     "PreToolUse": [
       {
@@ -152,6 +152,15 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_CONFIG_DIR/hooks/caveman-activate.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_CONFIG_DIR/hooks/iwiki-remote-scope.js\"",
             "timeout": 5
           }
         ]
@@ -216,7 +225,7 @@
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
