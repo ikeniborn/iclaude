@@ -71,6 +71,34 @@ assert_eq "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mc
 assert_eq "$(python3 -c 'import json,sys; e=json.load(open(sys.argv[1]))["mcpServers"]["iwiki"]["env"]; print(",".join(sorted(e)))' "$RENDERED")" \
   "IWIKI_CODE_GRAPH_ENABLED,IWIKI_CODE_GRAPH_MAX_FILES,IWIKI_TOP_K" "launch config: only configured vars are added"
 
+# ---------------------------------------------------------------------------
+# Remote (hosted Streamable HTTP) mode: URL + token, no local binary needed.
+# ---------------------------------------------------------------------------
+RCFG="$TD/.claude-isolated/mcp/iwiki-remote.json"
+printf '%s' '{"mcpServers":{"iwiki":{"type":"http","url":"${IWIKI_REMOTE_URL}"}}}' > "$RCFG"
+
+# Enabled with neither an iwiki-mcp binary nor an embeddings key: a hosted
+# server keeps both server-side.
+assert_eq "$(PATH="/nonexistent"; CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; unset IWIKI_LLM_KEY IWIKI_COMMAND; IWIKI_REMOTE_URL=https://w.example/mcp; IWIKI_REMOTE_TOKEN=t; iwiki_mcp_enabled && echo YES || echo NO)" \
+  "YES" "remote: enabled without binary or LLM key"
+
+# A URL without a token is not usable, so remote stays off.
+assert_eq "$(PATH="/nonexistent"; CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; unset IWIKI_LLM_KEY IWIKI_COMMAND IWIKI_REMOTE_TOKEN; IWIKI_REMOTE_URL=https://w.example/mcp; iwiki_mcp_enabled && echo YES || echo NO)" \
+  "NO" "remote: disabled without a token"
+
+# Remote is the deliberate opt-in, so it wins over a usable local install.
+assert_eq "$(PATH="$TD/bin:$PATH"; CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; IWIKI_LLM_KEY=sk-x; unset IWIKI_COMMAND; IWIKI_REMOTE_URL=https://w.example/mcp; IWIKI_REMOTE_TOKEN=t; iwiki_mcp_launch_config)" \
+  "$RCFG" "remote: selected over the local config"
+
+# Remote never renders the code-graph sibling: a hosted server owns that cache.
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; IWIKI_REMOTE_URL=https://w.example/mcp; IWIKI_REMOTE_TOKEN=t; IWIKI_CODE_GRAPH_ENABLED=true; iwiki_mcp_launch_config)" \
+  "$RCFG" "remote: no code-graph render"
+
+# Without the tracked remote config, remote cannot be selected.
+rm -f "$RCFG"
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; unset "${_IWIKI_CODE_GRAPH_VARS[@]}"; IWIKI_REMOTE_URL=https://w.example/mcp; IWIKI_REMOTE_TOKEN=t; iwiki_mcp_launch_config)" \
+  "$CFG" "remote: falls back to local without the remote config"
+
 rm -rf "$TD"
 echo "iwiki-mcp: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]

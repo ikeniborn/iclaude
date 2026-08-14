@@ -1,3 +1,45 @@
+# iwiki project binding. Read by the iwiki MCP server from the project root.
+# `wiki_bind` rewrites the four core keys below and preserves everything else,
+# so these comments and the commented examples survive a rebind.
+#
+# read    — default project search scope. Empty or absent means "every domain in
+#           the base"; ["all"] is a literal domain named `all`, not a wildcard.
+# write   — domains mutating tools may change. Must be a subset of `read`.
+# primary — default target for wiki_index / wiki_write_page. Must be in `write`.
+# base    — optional; overrides IWIKI_BASE_DIR for this project only:
+# base = "/home/user/wiki"
+
 read = ["iclaude", "icodex", "iwiki-mcp", "devops"]
 write = ["iclaude" ,"devops"]
 primary = "iclaude"
+
+# Optional Python code graph (wiki_code_index / wiki_code_search /
+# wiki_code_context). All fields are optional; the values shown are the
+# defaults. `languages` accepts only "python". `exclude` takes safe relative
+# paths. The cache is local, under <IWIKI_BASE_DIR>/.iwiki/, and is never built
+# at server startup. The ICLAUDE_IWIKI_CODE_GRAPH_* variables in .claude_config
+# override this table for every project, so prefer configuring it here.
+#
+# [code_graph]
+# enabled = true
+# languages = ["python"]
+# auto_rebuild = "bounded"          # bounded | off
+# max_rebuild_seconds = 10
+# max_file_bytes = 1000000
+# max_total_files = 20000
+# include_tests = true
+# exclude = []
+
+# Optional PostgreSQL storage instead of the default Git base. Requires
+# non-empty `read`/`write` and a `primary`; the wiki and its domains must
+# already exist. The password comes from ICLAUDE_IWIKI_DB_PASSWORD, never from
+# this file. Omit the whole table for Git storage.
+#
+# [storage]
+# type = "postgres"
+# host = "db.internal.example"
+# port = 5432
+# database = "iwiki"
+# user = "iwiki_app"
+# sslmode = "verify-full"
+# iwiki_id = "team-wiki"            # local stdio only; a hosted server rejects it

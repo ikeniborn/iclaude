@@ -807,6 +807,16 @@ ICLAUDE_DEBUG_LAUNCH=
 # The server is only registered when IWIKI_LLM_KEY is set and `iwiki-mcp`
 # resolves on PATH.
 #
+# Two modes. REMOTE talks to a hosted `iwiki-mcp serve --transport
+# streamable-http` over HTTP and needs no local binary, no wiki base, and no
+# embeddings key — the server owns storage and credentials, and the bearer token
+# selects the wiki plus its read/write grants. Setting the URL is the opt-in, so
+# remote wins over a local install when both are configured:
+# ICLAUDE_IWIKI_REMOTE_URL="https://iwiki.example/mcp"   # must end at the /mcp endpoint
+# ICLAUDE_IWIKI_REMOTE_TOKEN="..."                       # bearer token (secret — keep here, not in git)
+#
+# Everything below configures the LOCAL (stdio) mode instead.
+#
 # Required (server halts without these):
 # ICLAUDE_IWIKI_BASE_DIR="/home/user/wiki"          # shared wiki base dir
 # ICLAUDE_IWIKI_LLM_BASE_URL="https://.../v1"        # OpenAI-compatible embeddings endpoint

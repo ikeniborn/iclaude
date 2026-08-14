@@ -19,6 +19,26 @@ iwiki_mcp_config_file() {
     printf '%s' "${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}/mcp/iwiki.json"
 }
 
+# Absolute path to the tracked config for a hosted (Streamable HTTP) server.
+# Remote mode talks to `iwiki-mcp serve --transport streamable-http` over
+# `type: "http"`, so it needs no local binary and no local wiki base: the URL
+# (which must end in the server's /mcp endpoint) plus a bearer token are the
+# whole client contract. Embedding credentials and storage stay server-side.
+iwiki_mcp_remote_config_file() {
+    printf '%s' "${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}/mcp/iwiki-remote.json"
+}
+
+# True when remote mode is both requested and usable: an explicit URL, a token
+# to authenticate with, and the tracked remote config present. Setting the URL
+# is the deliberate opt-in, so remote wins over a local install when both are
+# configured.
+_iwiki_remote_selected() {
+    [[ -n "${IWIKI_REMOTE_URL:-}" ]]                 || return 1
+    [[ -n "${IWIKI_REMOTE_TOKEN:-}" ]]               || return 1
+    [[ -f "$(iwiki_mcp_remote_config_file)" ]]       || return 1
+    return 0
+}
+
 # Resolve the iwiki-mcp executable to an absolute path and export IWIKI_COMMAND.
 # An explicit override is honored only when IWIKI_COMMAND is a NON-EMPTY value;
 # an unset OR empty IWIKI_COMMAND is treated as absent and resolved from PATH via
@@ -33,12 +53,15 @@ iwiki_resolve_command() {
     export IWIKI_COMMAND
 }
 
-# Return 0 (enabled) only when the iwiki MCP server should be registered:
+# Return 0 (enabled) when the iwiki MCP server should be registered, in either
+# of two modes. Remote mode needs only a URL, a token, and the tracked remote
+# config. Local (stdio) mode needs:
 #   - the binary resolved (IWIKI_COMMAND non-empty), AND
 #   - iwiki is configured (IWIKI_LLM_KEY non-empty), AND
 #   - the tracked config file exists.
 # Returns 1 otherwise, so launch proceeds without the server (no hard failure).
 iwiki_mcp_enabled() {
+    _iwiki_remote_selected && return 0
     iwiki_resolve_command
     [[ -n "${IWIKI_COMMAND:-}" ]]            || return 1
     [[ -n "${IWIKI_LLM_KEY:-}" ]]            || return 1
@@ -69,7 +92,10 @@ _iwiki_code_graph_env_lines() {
 }
 
 # Print the config path to hand to `--mcp-config`.
-# Without configured code-graph vars this is the tracked file itself. With them,
+# In remote mode this is the tracked remote config; the code-graph render does
+# not apply, because a hosted server owns its own storage and code-graph cache.
+# In local mode, without configured code-graph vars this is the tracked file
+# itself. With them,
 # a sibling *.runtime.json is rendered by splicing the extra keys into the `env`
 # object; it holds only `${VAR}` placeholders, so it stays secret-free like the
 # tracked original (it is git-ignored because it is machine-specific). Any write
@@ -77,6 +103,10 @@ _iwiki_code_graph_env_lines() {
 # without the code-graph overrides.
 iwiki_mcp_launch_config() {
     local tracked lines runtime
+    if _iwiki_remote_selected; then
+        iwiki_mcp_remote_config_file
+        return 0
+    fi
     tracked="$(iwiki_mcp_config_file)"
     lines="$(_iwiki_code_graph_env_lines)"
     if [[ -z "$lines" ]]; then
