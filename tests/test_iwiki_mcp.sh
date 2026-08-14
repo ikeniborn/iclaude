@@ -71,6 +71,22 @@ assert_eq "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mc
 assert_eq "$(python3 -c 'import json,sys; e=json.load(open(sys.argv[1]))["mcpServers"]["iwiki"]["env"]; print(",".join(sorted(e)))' "$RENDERED")" \
   "IWIKI_CODE_GRAPH_ENABLED,IWIKI_CODE_GRAPH_MAX_FILES,IWIKI_TOP_K" "launch config: only configured vars are added"
 
+# A tracked file with no `env` object cannot be spliced: fall back to it and
+# leave no half-rendered sibling behind.
+printf '%s' '{"mcpServers":{"iwiki":{"type":"stdio"}}}' > "$TD/.claude-isolated/mcp/noenv.json"
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; iwiki_mcp_config_file(){ printf '%s' "$TD/.claude-isolated/mcp/noenv.json"; }; IWIKI_CODE_GRAPH_ENABLED=true; iwiki_mcp_launch_config)" \
+  "$TD/.claude-isolated/mcp/noenv.json" "launch config: falls back when there is no env object"
+assert_eq "$([[ -e "$TD/.claude-isolated/mcp/noenv.runtime.json" ]] && echo YES || echo NO)" \
+  "NO" "launch config: no leftover render after a failed splice"
+
+# A render from an earlier launch is removed once the vars are gone, so a stale
+# file is never mistaken for the active config.
+touch "${CFG%.json}.runtime.json"
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; unset "${_IWIKI_CODE_GRAPH_VARS[@]}"; iwiki_mcp_launch_config)" \
+  "$CFG" "launch config: tracked file after the vars are unset"
+assert_eq "$([[ -e "${CFG%.json}.runtime.json" ]] && echo YES || echo NO)" \
+  "NO" "launch config: stale render removed"
+
 # ---------------------------------------------------------------------------
 # Remote (hosted Streamable HTTP) mode: URL + token, no local binary needed.
 # ---------------------------------------------------------------------------

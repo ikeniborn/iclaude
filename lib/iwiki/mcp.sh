@@ -2,12 +2,14 @@
 
 #######################################
 # iwiki MCP Registration Helper
-# Description: Resolves the iwiki-mcp binary to an absolute path and decides
-#              whether the tracked, secret-free mcp/iwiki.json should be handed
-#              to Claude Code via --mcp-config. The IWIKI_* values are already
+# Description: Decides whether an iwiki MCP server is handed to Claude Code via
+#              --mcp-config, and which tracked, secret-free config describes it:
+#              mcp/iwiki-remote.json for a hosted Streamable HTTP server, or
+#              mcp/iwiki.json for the local stdio server (optionally rendered
+#              with the code-graph overrides). The IWIKI_* values are already
 #              exported by lib/config/env-map.sh (de-prefixed from
 #              ICLAUDE_IWIKI_* in .claude_config); this module only resolves the
-#              binary path and evaluates the enable gate.
+#              binary path, evaluates the enable gate, and picks the config.
 #######################################
 
 # Absolute path to the tracked, secret-free MCP config file.
@@ -95,12 +97,13 @@ _iwiki_code_graph_env_lines() {
 # In remote mode this is the tracked remote config; the code-graph render does
 # not apply, because a hosted server owns its own storage and code-graph cache.
 # In local mode, without configured code-graph vars this is the tracked file
-# itself. With them,
-# a sibling *.runtime.json is rendered by splicing the extra keys into the `env`
-# object; it holds only `${VAR}` placeholders, so it stays secret-free like the
-# tracked original (it is git-ignored because it is machine-specific). Any write
-# or render failure falls back to the tracked file — iwiki still starts, only
-# without the code-graph overrides.
+# itself, and any render left over from an earlier launch is removed so a stale
+# file can never be mistaken for the active config. With them, a sibling
+# *.runtime.json is rendered by splicing the extra keys into the `env` object; it
+# holds only `${VAR}` placeholders, so it stays secret-free like the tracked
+# original (it is git-ignored because it is machine-specific). A write failure,
+# or a tracked file with no `env` object to splice into, falls back to the
+# tracked file — iwiki still starts, only without the code-graph overrides.
 iwiki_mcp_launch_config() {
     local tracked lines runtime
     if _iwiki_remote_selected; then
@@ -108,15 +111,17 @@ iwiki_mcp_launch_config() {
         return 0
     fi
     tracked="$(iwiki_mcp_config_file)"
+    runtime="${tracked%.json}.runtime.json"
     lines="$(_iwiki_code_graph_env_lines)"
     if [[ -z "$lines" ]]; then
+        rm -f "$runtime" 2>/dev/null || true
         printf '%s' "$tracked"
         return 0
     fi
-    runtime="${tracked%.json}.runtime.json"
     if awk -v ins="$lines" '
         { print }
         /"env"[[:space:]]*:[[:space:]]*\{/ && !spliced { printf "%s", ins; spliced = 1 }
+        END { if (!spliced) exit 3 }
     ' "$tracked" > "$runtime" 2>/dev/null; then
         printf '%s' "$runtime"
     else
