@@ -93,6 +93,8 @@ scripts/.claude_proxy_credentials  # Legacy
 !.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
 !.nvm-isolated/.claude-isolated/mcp/
 !.nvm-isolated/.claude-isolated/mcp/**
+# Launch-time render of mcp/iwiki.json (adds the optional code-graph keys)
+.nvm-isolated/.claude-isolated/mcp/*.runtime.json
 !.nvm-isolated/.claude-isolated/settings.json
 !.nvm-isolated/.claude-isolated/hooks/
 !.nvm-isolated/.claude-isolated/hooks/**

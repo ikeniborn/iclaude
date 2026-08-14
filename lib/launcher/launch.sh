@@ -828,8 +828,10 @@ launch_claude() {
     # Claude Code can expand ${IWIKI_COMMAND}/${IWIKI_*} at spawn time. The flag
     # is added to claude_cmd_arr, so it flows into every launch branch below.
     # (The microVM path execs earlier and is intentionally not covered.)
+    # iwiki_mcp_launch_config returns the tracked file, or a rendered sibling when
+    # the optional IWIKI_CODE_GRAPH_* vars are configured (see lib/iwiki/mcp.sh).
     if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
-        claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_config_file)" )
+        claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_launch_config)" )
     fi
 
     # Launch Claude Code

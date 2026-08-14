@@ -807,22 +807,66 @@ ICLAUDE_DEBUG_LAUNCH=
 # The server is only registered when IWIKI_LLM_KEY is set and `iwiki-mcp`
 # resolves on PATH.
 #
+# Two modes. REMOTE talks to a hosted `iwiki-mcp serve --transport
+# streamable-http` over HTTP and needs no local binary, no wiki base, and no
+# embeddings key — the server owns storage and credentials, and the bearer token
+# selects the wiki plus its read/write grants. Setting the URL is the opt-in, so
+# remote wins over a local install when both are configured:
+# ICLAUDE_IWIKI_REMOTE_URL="https://iwiki.example/mcp"   # must end at the /mcp endpoint
+# ICLAUDE_IWIKI_REMOTE_TOKEN="..."                       # bearer token (secret — keep here, not in git)
+#
+# Everything below configures the LOCAL (stdio) mode instead.
+#
 # Required (server halts without these):
 # ICLAUDE_IWIKI_BASE_DIR="/home/user/wiki"          # shared wiki base dir
 # ICLAUDE_IWIKI_LLM_BASE_URL="https://.../v1"        # OpenAI-compatible embeddings endpoint
 # ICLAUDE_IWIKI_LLM_KEY="..."                        # embeddings API key (secret — keep here, not in git)
 #
+# PostgreSQL storage (only when the project's .iwiki.toml declares
+# [storage] type = "postgres"; every other field lives in that TOML file):
+# ICLAUDE_IWIKI_DB_PASSWORD="..."                    # database password (secret — keep here, not in git)
+#
 # Embedding model (defaults shown; EMBED_DIMENSIONS must match the model):
 # ICLAUDE_IWIKI_EMBED_MODEL="text-embedding-3-small"
 # ICLAUDE_IWIKI_EMBED_DIMENSIONS="1536"
 #
-# Search / indexing tuning (optional; server defaults apply when unset):
+# Chat model (optional; empty disables it). When set, the server classifies
+# `type`/`tags` frontmatter itself, reusing LLM_BASE_URL / LLM_KEY:
+# ICLAUDE_IWIKI_CHAT_MODEL="..."
+#
+# Reranker (optional; empty disables it). Reuses LLM_BASE_URL / LLM_KEY and
+# fails soft, so a missing model degrades to the unreranked result order:
+# ICLAUDE_IWIKI_RERANK_MODEL="..."
+#
+# Server lifecycle: seconds of MCP inactivity after which the stdio server
+# exits; 0 disables the limit. A later call reconnects and respawns it:
+# ICLAUDE_IWIKI_IDLE_TIMEOUT_SECONDS="86400"
+#
+# Indexing tuning (optional; server defaults apply when unset):
 # ICLAUDE_IWIKI_CHUNK_SIZE="512"
 # ICLAUDE_IWIKI_CHUNK_OVERLAP="64"
 # ICLAUDE_IWIKI_SUMMARY_MAX_CHARS="400"
+#
+# Search tuning (optional; server defaults apply when unset). SEARCH_MODE is
+# only the default for an omitted wiki_search(mode=...); an explicit mode wins:
+# ICLAUDE_IWIKI_SEARCH_MODE="hybrid"                 # hybrid | lexical | semantic
 # ICLAUDE_IWIKI_TOP_K="8"
 # ICLAUDE_IWIKI_SCORE_THRESHOLD="0.2"
 # ICLAUDE_IWIKI_GRAPH_DEPTH="2"
+# ICLAUDE_IWIKI_SEED_TOP_K="5"                       # articles seeded before graph expansion
+# ICLAUDE_IWIKI_BFS_TOP_K="10"                       # cap on graph-expanded articles
+# ICLAUDE_IWIKI_SEED_THRESHOLD="0.15"                # minimum seed similarity for a read
+# ICLAUDE_IWIKI_WRITE_SEED_THRESHOLD="0.35"          # stricter seed similarity for intent="write"
+#
+# Python code graph (optional; wiki_code_index / wiki_code_search / wiki_code_context).
+# Its home is the project's .iwiki.toml [code_graph] table — the server applies
+# these variables AFTER that table, so anything set here overrides EVERY project
+# you open with iclaude. Leave them unset unless you want exactly that; when
+# unset, iclaude forwards nothing and .iwiki.toml stays authoritative.
+# ICLAUDE_IWIKI_CODE_GRAPH_ENABLED="true"            # true | false (exact strings)
+# ICLAUDE_IWIKI_CODE_GRAPH_AUTO_REBUILD="bounded"    # bounded | off
+# ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILE_BYTES="1000000"
+# ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILES="20000"
 #
 # Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
 # ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp
