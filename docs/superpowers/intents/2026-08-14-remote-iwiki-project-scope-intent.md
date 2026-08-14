@@ -1,3 +1,15 @@
+---
+review:
+  intent_hash: b64809290c5bf624
+  last_run: 2026-08-14
+  phases:
+    structure: {status: passed, findings: []}
+    completeness: {status: passed, findings: []}
+    clarity: {status: passed, findings: []}
+    consistency: {status: passed, findings: []}
+    alignment: {status: passed, findings: []}
+---
+
 # Intent: remote-iwiki-project-scope
 
 **Date:** 2026-08-14
