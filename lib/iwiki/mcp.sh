@@ -45,3 +45,52 @@ iwiki_mcp_enabled() {
     [[ -f "$(iwiki_mcp_config_file)" ]]      || return 1
     return 0
 }
+
+# Code-graph variables the iwiki-mcp server reads. They are NOT part of the
+# tracked config: iwiki-mcp applies them AFTER the project's `.iwiki.toml`
+# [code_graph] table, so a placeholder with a baked-in default would override
+# every project's own setting. Claude Code passes an unresolved `${VAR:-}` as a
+# set-but-empty value, and the server rejects an empty value for each of these,
+# so they can only be forwarded when actually configured.
+_IWIKI_CODE_GRAPH_VARS=(
+    IWIKI_CODE_GRAPH_ENABLED IWIKI_CODE_GRAPH_AUTO_REBUILD
+    IWIKI_CODE_GRAPH_MAX_FILE_BYTES IWIKI_CODE_GRAPH_MAX_FILES
+)
+
+# Emit one JSON `"NAME": "${NAME}",` line per code-graph var that is set to a
+# non-empty value. Empty output means "nothing to add" — the caller then uses
+# the tracked config unchanged and `.iwiki.toml` stays authoritative.
+_iwiki_code_graph_env_lines() {
+    local var
+    for var in "${_IWIKI_CODE_GRAPH_VARS[@]}"; do
+        [[ -n "${!var:-}" ]] && printf '        "%s": "${%s}",\n' "$var" "$var"
+    done
+    return 0
+}
+
+# Print the config path to hand to `--mcp-config`.
+# Without configured code-graph vars this is the tracked file itself. With them,
+# a sibling *.runtime.json is rendered by splicing the extra keys into the `env`
+# object; it holds only `${VAR}` placeholders, so it stays secret-free like the
+# tracked original (it is git-ignored because it is machine-specific). Any write
+# or render failure falls back to the tracked file — iwiki still starts, only
+# without the code-graph overrides.
+iwiki_mcp_launch_config() {
+    local tracked lines runtime
+    tracked="$(iwiki_mcp_config_file)"
+    lines="$(_iwiki_code_graph_env_lines)"
+    if [[ -z "$lines" ]]; then
+        printf '%s' "$tracked"
+        return 0
+    fi
+    runtime="${tracked%.json}.runtime.json"
+    if awk -v ins="$lines" '
+        { print }
+        /"env"[[:space:]]*:[[:space:]]*\{/ && !spliced { printf "%s", ins; spliced = 1 }
+    ' "$tracked" > "$runtime" 2>/dev/null; then
+        printf '%s' "$runtime"
+    else
+        rm -f "$runtime" 2>/dev/null || true
+        printf '%s' "$tracked"
+    fi
+}

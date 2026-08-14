@@ -43,6 +43,34 @@ assert_eq "$(PATH="/nonexistent"; CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; IWIK
 assert_eq "$(PATH="$TD/bin:$PATH"; CLAUDE_CONFIG_DIR="$TD/nowhere"; IWIKI_LLM_KEY=sk-x; unset IWIKI_COMMAND; iwiki_mcp_enabled && echo YES || echo NO)" \
   "NO" "disabled without config file"
 
+# ---------------------------------------------------------------------------
+# iwiki_mcp_launch_config: code-graph vars are forwarded only when configured.
+# ---------------------------------------------------------------------------
+CFG="$TD/.claude-isolated/mcp/iwiki.json"
+printf '%s\n' '{' '  "mcpServers": {' '    "iwiki": {' '      "env": {' \
+  '        "IWIKI_TOP_K": "${IWIKI_TOP_K:-8}"' '      }' '    }' '  }' '}' > "$CFG"
+
+# No code-graph var set: the tracked file is used verbatim, nothing is rendered.
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; unset "${_IWIKI_CODE_GRAPH_VARS[@]}"; iwiki_mcp_launch_config)" \
+  "$CFG" "launch config: tracked file without code-graph vars"
+assert_eq "$([[ -e "${CFG%.json}.runtime.json" ]] && echo YES || echo NO)" \
+  "NO" "launch config: no runtime file rendered"
+
+# An empty value is treated as unset: the server rejects an empty code-graph
+# value, so it must never reach the rendered config.
+assert_eq "$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; IWIKI_CODE_GRAPH_ENABLED=""; iwiki_mcp_launch_config)" \
+  "$CFG" "launch config: empty var does not trigger a render"
+
+# A configured var: a runtime file is rendered with the placeholder spliced in.
+RENDERED="$(CLAUDE_CONFIG_DIR="$TD/.claude-isolated"; IWIKI_CODE_GRAPH_ENABLED=false; IWIKI_CODE_GRAPH_MAX_FILES=100; iwiki_mcp_launch_config)"
+assert_eq "$RENDERED" "${CFG%.json}.runtime.json" "launch config: renders a runtime file"
+assert_eq "$(python3 -m json.tool "$RENDERED" >/dev/null 2>&1 && echo OK || echo BAD)" \
+  "OK" "launch config: rendered file is valid JSON"
+assert_eq "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mcpServers"]["iwiki"]["env"]["IWIKI_CODE_GRAPH_ENABLED"])' "$RENDERED")" \
+  '${IWIKI_CODE_GRAPH_ENABLED}' "launch config: placeholder, not the literal value"
+assert_eq "$(python3 -c 'import json,sys; e=json.load(open(sys.argv[1]))["mcpServers"]["iwiki"]["env"]; print(",".join(sorted(e)))' "$RENDERED")" \
+  "IWIKI_CODE_GRAPH_ENABLED,IWIKI_CODE_GRAPH_MAX_FILES,IWIKI_TOP_K" "launch config: only configured vars are added"
+
 rm -rf "$TD"
 echo "iwiki-mcp: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]

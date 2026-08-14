@@ -848,10 +848,15 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_SEED_THRESHOLD="0.15"                # minimum seed similarity for a read
 # ICLAUDE_IWIKI_WRITE_SEED_THRESHOLD="0.35"          # stricter seed similarity for intent="write"
 #
-# NOT configured here: the optional Python code graph. Its IWIKI_CODE_GRAPH_*
-# variables override the project's .iwiki.toml [code_graph] table, so iclaude
-# deliberately does not forward them — a default injected at launch would make
-# every per-project setting unreachable. Configure [code_graph] in .iwiki.toml.
+# Python code graph (optional; wiki_code_index / wiki_code_search / wiki_code_context).
+# Its home is the project's .iwiki.toml [code_graph] table — the server applies
+# these variables AFTER that table, so anything set here overrides EVERY project
+# you open with iclaude. Leave them unset unless you want exactly that; when
+# unset, iclaude forwards nothing and .iwiki.toml stays authoritative.
+# ICLAUDE_IWIKI_CODE_GRAPH_ENABLED="true"            # true | false (exact strings)
+# ICLAUDE_IWIKI_CODE_GRAPH_AUTO_REBUILD="bounded"    # bounded | off
+# ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILE_BYTES="1000000"
+# ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILES="20000"
 #
 # Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
 # ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp
