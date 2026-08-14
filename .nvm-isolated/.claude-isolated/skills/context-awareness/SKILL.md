@@ -3,7 +3,7 @@ name: context-awareness
 description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project, surfacing its summary as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.5.0
+# version: 1.6.0
 # tags: context, detection, project, language, framework, lat
 # dependencies: []
 # files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
@@ -66,9 +66,15 @@ JavaScript:
 адресуется доменами). Единственный источник документационного контекста проекта.
 
 ```
+1. Когда известны canonical topic и basename проекта, всегда проверить
+   `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`,
+   even when iwiki is unavailable or the project domain is absent. Установить
+   `task_delivery_pending: true when that queue file exists`; очередь не является
+   durable status.
+
 IF MCP-сервер iwiki подключён:
-  1. wiki_status → project_dir, список `domains`, текущая привязка read/write
-  2. Если домен проекта присутствует в `domains` (имя == basename проекта):
+  2. wiki_status → project_dir, список `domains`, текущая привязка read/write
+  3. Если домен проекта присутствует в `domains` (имя == basename проекта):
        - не привязан → wiki_bind(read=[<domain>], write=<domain>)
        - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
          либо wiki_search('ключевые компоненты и архитектура проекта')
@@ -76,16 +82,39 @@ IF MCP-сервер iwiki подключён:
        wiki_initialized: true
        wiki_domain: "<domain>"
        wiki_summary: <обзор страницы overview или результат wiki_search>
-  3. Если домена проекта нет:
+       task_topic: <canonical topic or null>
+       task_page_slug: "reference/tasks/<topic>" | null
+       task_page_found: true|false
+       task_lifecycle: "in-progress|blocked|completion-pending|done" | null
+       task_delivery_pending: true|false
+  4. Если домена проекта нет:
        wiki_initialized: false
        wiki_domain: null
        wiki_summary: null
+       task_topic: <canonical topic or null>
+       task_page_slug: "reference/tasks/<topic>" | null
+       task_page_found: false
+       task_lifecycle: null
+       task_delivery_pending: <spool result when topic known; otherwise false>
 
 ELSE (сервер не подключён):
   wiki_initialized: false
   wiki_domain: null
   wiki_summary: null
+  task_topic: <canonical topic or null>
+  task_page_slug: "reference/tasks/<topic>" | null
+  task_page_found: false
+  task_lifecycle: null
+  task_delivery_pending: <spool result when topic known; otherwise false>
 ```
+
+После привязки домена Phase 0 выводит точный контекст task page: определяет
+канонический topic из запроса или уже контролируемых артефактов, читает
+`reference/tasks/<topic>`, если topic известен. Независимо от доступности iwiki он
+проверяет `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`; очередь
+показывает только `task_delivery_pending`, она не является durable status. Создание
+страницы остаётся интерактивным действием parent agent по `task-ledger`, не действием
+context-awareness.
 
 **Назначение:** Централизует проверку доступности документационного графа —
 downstream-навыки (brainstorming, prd-generator) используют
@@ -110,7 +139,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
     "wiki_domain": "<имя домена iwiki>" | null,
-    "wiki_summary": "синтезированный обзор из домена iwiki" | null
+    "wiki_summary": "синтезированный обзор из домена iwiki" | null,
+    "task_topic": "<canonical topic>" | null,
+    "task_page_slug": "reference/tasks/<topic>" | null,
+    "task_page_found": true|false,
+    "task_lifecycle": "in-progress|blocked|completion-pending|done" | null,
+    "task_delivery_pending": true|false
   }
 }
 ```
@@ -145,7 +179,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "pep8",
     "wiki_initialized": false,
     "wiki_domain": null,
-    "wiki_summary": null
+    "wiki_summary": null,
+    "task_topic": null,
+    "task_page_slug": null,
+    "task_page_found": false,
+    "task_lifecycle": null,
+    "task_delivery_pending": false
   }
 }
 ```
@@ -179,7 +218,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "prettier",
     "wiki_initialized": false,
     "wiki_domain": null,
-    "wiki_summary": null
+    "wiki_summary": null,
+    "task_topic": null,
+    "task_page_slug": null,
+    "task_page_found": false,
+    "task_lifecycle": null,
+    "task_delivery_pending": false
   }
 }
 ```
@@ -214,7 +258,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "gofmt",
     "wiki_initialized": false,
     "wiki_domain": null,
-    "wiki_summary": null
+    "wiki_summary": null,
+    "task_topic": null,
+    "task_page_slug": null,
+    "task_page_found": false,
+    "task_lifecycle": null,
+    "task_delivery_pending": false
   }
 }
 ```
@@ -246,7 +295,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "none",
     "wiki_initialized": false,
     "wiki_domain": null,
-    "wiki_summary": null
+    "wiki_summary": null,
+    "task_topic": null,
+    "task_page_slug": null,
+    "task_page_found": false,
+    "task_lifecycle": null,
+    "task_delivery_pending": false
   }
 }
 ```
@@ -279,7 +333,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "none",
     "wiki_initialized": true,
     "wiki_domain": "iclaude",
-    "wiki_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки."
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: HTTP/HTTPS-прокси, изолированная NVM-среда, OAuth-обновление токенов, Claude Code Router, PII-прокси (Presidio), microVM-песочница, security-хуки.",
+    "task_topic": "task-ledger-skill-parity",
+    "task_page_slug": "reference/tasks/task-ledger-skill-parity",
+    "task_page_found": true,
+    "task_lifecycle": "in-progress",
+    "task_delivery_pending": false
   }
 }
 ```
@@ -309,7 +368,12 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_style": "none",
     "wiki_initialized": true,
     "wiki_domain": "iclaude",
-    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки."
+    "wiki_summary": "iclaude — bash-обёртка для Claude Code: прокси, NVM, OAuth, PII-маскирование, microVM, security-хуки.",
+    "task_topic": "task-ledger-skill-parity",
+    "task_page_slug": "reference/tasks/task-ledger-skill-parity",
+    "task_page_found": true,
+    "task_lifecycle": "in-progress",
+    "task_delivery_pending": false
   }
 }
 ```
@@ -390,6 +454,7 @@ downstream-навыки (brainstorming, prd-generator) используют
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
 - `wiki_initialized` / `wiki_domain` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
+- `task_topic` / `task_page_slug` / `task_page_found` / `task_lifecycle` / `task_delivery_pending` → Enables `task-ledger` to resume a topic without re-deriving its state
 
 ---
 
@@ -399,6 +464,10 @@ downstream-навыки (brainstorming, prd-generator) используют
 **License:** MIT
 
 ## Changelog
+
+### 1.6.0 (2026-08-14)
+- Task-ledger context added: `task_topic`, `task_page_slug`, `task_page_found`, `task_lifecycle`, `task_delivery_pending`
+- Phase 0 probes the local spool at `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json` even when iwiki is unavailable
 
 ### 1.5.0 (2026-06-30)
 - iwiki detection switched from `docs/wiki/` files to the iwiki MCP server (`wiki_status`)

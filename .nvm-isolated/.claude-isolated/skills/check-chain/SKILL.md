@@ -136,7 +136,7 @@ section you are about to change, then `wiki_update_page` it in full.
 - Refresh the `Changelog` manifest on the task page (first segment, active segment, event count) — never copy the events themselves there.
 - Tick the stage's line in `TODO`.
 - On `result` `OK`: set `Current State` `Lifecycle: done` and `Closed: <today>`, and append the `close` event — but only after every queued event is delivered and `wiki_lint` reports no new finding for the task page or its segments, the expected `orphan` advisory for `reference/tasks/*` and `reference/task-history/*` aside. Otherwise set `Lifecycle: completion-pending`.
-- If the MCP server is unreachable, append the event to the spool at `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, report `Tracking: unavailable`, and continue — the stage verdict itself is never blocked by the wiki channel.
+- If the MCP server is unreachable, append the event to the spool with the `task-ledger` skill's `scripts/task_spool.py` at `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, report `Tracking: unavailable`, and continue — the stage verdict itself is never blocked by the wiki channel.
 
 ## Rules (prohibited)
 
