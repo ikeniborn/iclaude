@@ -26,10 +26,11 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
    levels (e.g. `docs/superpowers/specs/`), so level 2 shows the full directory skeleton plus
    top-level files without flooding context with every leaf file. Raise the level for deeper trees.
 3. **For Python code-analysis or planning tasks**, check code-graph availability via
-   `wiki_code_status` (or `wiki_lint`'s `code_graph` field). When `state` is `ready`,
-   prefer `wiki_code_search` / `wiki_code_context` over blind grep for symbol lookups,
-   call graphs, and change-impact analysis. When `disabled`, `missing_snapshot`, or
-   `source_unavailable` — skip silently; it is optional context, not a blocker.
+   `wiki_code_status` (or `wiki_lint`'s `code_graph` field) on the resolved server (see
+   **iwiki Project Binding**'s multi-transport tool-name resolution below). When `state`
+   is `ready`, prefer `wiki_code_search` / `wiki_code_context` over blind grep for symbol
+   lookups, call graphs, and change-impact analysis. When `disabled`, `missing_snapshot`,
+   or `source_unavailable` — skip silently; it is optional context, not a blocker.
 
 Skip only when: familiar area, same session.
 
@@ -50,6 +51,24 @@ basename: the project's read scope routinely spans shared domains (e.g. `devops`
 narrowing it hides the standards those domains carry. `primary` is the write target for
 `wiki_write_page` / `wiki_update_page` / `wiki_index`; `write` is the full set of domains
 that may be mutated.
+
+**Multi-transport tool-name resolution.** A session exposes either one generic `iwiki`
+server, or two distinct servers `iwiki-local` + `iwiki-remote` (dual mode, see
+`docs/iwiki-mcp-modes.md`). Resolve which name to call, per call kind, from the tool
+names actually available this session — never assume one exists:
+
+- **Content and task-ledger calls** (`wiki_bind`, `wiki_status`, `wiki_search`,
+  `wiki_read_page`, `wiki_write_page`, and the rest): call `iwiki-remote` when present.
+  If remote is not available this session — call `iwiki-local` if that is what exists;
+  a single-mode session exposes just `iwiki` — call that.
+- **Code-graph calls** (`wiki_code_index`, `wiki_code_search`, `wiki_code_context`,
+  `wiki_code_status`): call `iwiki-local` when present. If local is not available this
+  session, fall back to whatever `iwiki` server does exist — a single-mode session
+  exposes just `iwiki`, which returns `source_unavailable` there when it is the remote
+  transport; skip silently per **Keep Code Graph Current** below.
+- **`wiki_code_publish_*`** always needs the remote transport: call `iwiki-remote` when
+  present, else the single `iwiki` server when it is itself hosted — unavailable under a
+  local-only single server.
 
 No `.iwiki.toml`, an invalid scope, or a rejected bind (e.g. 403): report the reason
 briefly, make no mutating wiki calls, and retain task lifecycle `completion-pending`. On
@@ -99,7 +118,7 @@ These files are the entry point for two audiences at once: business users who ne
 
 **After every change that adds, removes, renames, or moves a Python symbol (function, class, import) — and only when the project binding succeeded and the code graph is configured (`[code_graph] enabled = true` in `.iwiki.toml`) — refresh the code graph before responding to the user.**
 
-- **Local or dual server** (`wiki_code_index` reachable): call `wiki_code_index` to rebuild the snapshot from the changed checkout.
+- **Local or dual server** (`wiki_code_index` reachable): call `wiki_code_index` on the resolved server (`iwiki-local` in dual mode, or the plain `iwiki` server in local-only mode — see **iwiki Project Binding**'s multi-transport tool-name resolution) to rebuild the snapshot from the changed checkout.
 - **`publish_mode = "mcp"`**: after rebuilding, publish the refreshed snapshot with `wiki_code_publish_begin` / `_batch` / `_finalize` so the hosted copy matches.
 - **`wiki_code_index` unavailable** (remote-only session, `source_unavailable`): skip the rebuild — this is a transport gap, not something to route around by editing `.iwiki.toml`; see `docs/iwiki-mcp-modes.md`'s dual-mode section. Never block or fail the task on it.
 - **Skip entirely** for changes that touch no Python source (docs, config, non-Python code, comments/formatting) or when code graph is not configured for this project.
