@@ -719,6 +719,11 @@ fi
         disable_auto_updates
     fi
 
+    # Materialize CLAUDE_CODE_OAUTH_TOKEN to .credentials.json (best-effort, no-op
+    # if already present or no env token) — lets statusline rate-limit fetch read
+    # the token from disk, since Claude Code doesn't pass env vars to hooks.
+    materialize_oauth_credentials "$CLAUDE_CONFIG_DIR"
+
     echo ""
     echo "═══════════════════════════════════════"
     echo "  Claude Code Proxy Initializer v2.0"

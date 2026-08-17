@@ -264,3 +264,41 @@ validate_jq_installed() {
     # Delegated to core/validation.sh
     validate_dependency "jq" "Install jq: sudo apt-get install jq (Debian/Ubuntu) or brew install jq (macOS)"
 }
+
+#######################################
+# Materialize CLAUDE_CODE_OAUTH_TOKEN into .credentials.json
+# Claude Code doesn't propagate env vars like CLAUDE_CODE_OAUTH_TOKEN into
+# spawned hook/statusline processes, so tooling that reads the token from a
+# file (e.g. the statusline's rate-limit fetch) sees nothing when auth comes
+# from the env var (claude setup-token / .claude_config) instead of an
+# interactive `claude login`. Writing the token to the standard credentials
+# file location closes that gap without changing how Claude Code itself
+# authenticates.
+# Arguments:
+#   $1 - config directory (defaults to CLAUDE_CONFIG_DIR, then $HOME/.claude)
+# Returns:
+#   0 - always (best-effort; never blocks startup)
+#######################################
+materialize_oauth_credentials() {
+    local config_dir="${1:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] && return 0
+    command -v jq &>/dev/null || return 0
+    [[ -d "$config_dir" ]] || return 0
+
+    local credentials_file="$config_dir/.credentials.json"
+    # Never overwrite an existing file — it may hold a real interactive login
+    # (with refresh token / expiry) that this env-token stub would clobber.
+    [[ -f "$credentials_file" ]] && return 0
+
+    local tmp_file="${credentials_file}.tmp.$$"
+    if jq -n --arg token "$CLAUDE_CODE_OAUTH_TOKEN" \
+        '{claudeAiOauth: {accessToken: $token}}' > "$tmp_file" 2>/dev/null; then
+        chmod 600 "$tmp_file" 2>/dev/null
+        mv "$tmp_file" "$credentials_file" 2>/dev/null
+    else
+        rm -f "$tmp_file"
+    fi
+
+    return 0
+}
