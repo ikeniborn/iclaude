@@ -868,5 +868,10 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILE_BYTES="1000000"
 # ICLAUDE_IWIKI_CODE_GRAPH_MAX_FILES="20000"
 #
+# Optional: publish this machine's local code-graph snapshot to a hosted iwiki
+# MCP endpoint (local stdio server only; a remote/hosted server ignores these).
+# ICLAUDE_IWIKI_CODE_GRAPH_MCP_URL="https://iwiki.example.com/mcp"
+# ICLAUDE_IWIKI_CODE_GRAPH_MCP_TOKEN="..."           # secret — keep here, not in git
+#
 # Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
 # ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp

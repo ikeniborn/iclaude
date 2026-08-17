@@ -63,7 +63,7 @@ a hosted server the token's own grants remain the absolute authorization limit.
 - Writes auto-commit the base locally; `wiki_sync` publishes those commits to the git remote (pull-rebase-push) — run it only when sharing the base across machines.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
-Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_list_domains`, `wiki_list_pages`, `wiki_write_page`, `wiki_update_page`, `wiki_delete_page`, `wiki_index`, `wiki_create_domain`, `wiki_lint`, `wiki_sync`) — never the old plugin skills or the `iwiki_engine` CLI.
+Always use the iwiki MCP tools (`wiki_status`, `wiki_bind`, `wiki_search`, `wiki_related`, `wiki_read_page`, `wiki_list_domains`, `wiki_list_pages`, `wiki_write_page`, `wiki_update_page`, `wiki_delete_page`, `wiki_index`, `wiki_create_domain`, `wiki_lint`, `wiki_sync`, `wiki_remediation_plan`, `wiki_apply_okf`, `wiki_export_okf`, `wiki_migrate_okf`, `wiki_code_index`, `wiki_code_search`, `wiki_code_context`, `wiki_code_status`, `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant`) — never the old plugin skills or the `iwiki_engine` CLI. `wiki_code_*` needs `[code_graph]` enabled in `.iwiki.toml` (Python only); `wiki_*_domain_grant` needs a hosted Postgres-backed server with admin auth — both no-op or error otherwise.
 
 ## Keep README Current (MANDATORY)
 
