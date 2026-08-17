@@ -45,16 +45,10 @@ toon-skill and RFC-0003 both implement TOON but serve **different layers** with 
 ## References
 
 **TOON Format Specification:**
-- High-level spec: `@shared:TOON-REFERENCE.md`
-- Patterns & integration: `@shared:TOON-REFERENCE.md#integration-patterns`
-- Token savings benchmarks: `@shared:TOON-REFERENCE.md#token-savings`
-
-**Agent Pipeline TOON (RFC-0003 native):**
-- Protocol spec: `docs/RFC-0003-toon-protocol.md`
-- Implementation reference: `agents/_shared/toon-protocol.md`
-
-**Task Structure:**
-- TOON optimization definition: `@shared:TASK-STRUCTURE.md#toon-optimization`
+- Conversion API, patterns and token savings: this file (sections below)
+- Reference implementation: `./converters/toon-converter.mjs`
+- Output contract: `./schemas/toon-output.schema.json`
+- Worked examples: `./examples/`
 
 **External References:**
 - **NPM Package**: @toon-format/toon
@@ -237,10 +231,10 @@ dependency_graph:
 
 ## Skills Integration Examples
 
-### Example 1: code-review skill
+### Example 1: Code review output
 
 ```javascript
-// In code-review skill
+// In a code review step
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
 const codeReview = {
@@ -278,10 +272,10 @@ return { code_review: codeReview };
 
 ---
 
-### Example 2: structured-planning skill
+### Example 2: Task plan output
 
 ```javascript
-// In structured-planning skill
+// In a task planning step
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
 const taskPlan = {
@@ -311,10 +305,10 @@ return { task_plan: taskPlan };
 
 ---
 
-### Example 3: pr-automation skill
+### Example 3: PR automation output
 
 ```javascript
-// In pr-automation skill
+// In a PR automation step
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
 const prResult = {
@@ -353,10 +347,10 @@ return prResult;
 
 ---
 
-### Example 4: adaptive-workflow skill (complexity_factors[])
+### Example 4: Complexity assessment (complexity_factors[])
 
 ```javascript
-// In adaptive-workflow skill
+// In a complexity assessment step
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
 const complexityResult = {
@@ -410,10 +404,10 @@ return { complexity_result: complexityResult };
 
 ---
 
-### Example 5: phase-execution skill (checkpoint.checks[] and files_changed[])
+### Example 5: Phase execution (checkpoint.checks[] and files_changed[])
 
 ```javascript
-// In phase-execution skill
+// In a phase execution step
 import { arrayToToon, calculateTokenSavings } from '../toon-skill/converters/toon-converter.mjs';
 
 const checkpoint = {
@@ -516,7 +510,7 @@ return { master_plan: masterPlan };
 |----------|------------|-------------|-------------|---------|
 | Components (architecture-documentation) | 6 items | 202 | 123 | **39.1%** |
 | Dependency Graph (architecture-documentation) | 4 nodes + 6 edges | 223 | 114 | **48.9%** |
-| Code Review Warnings (code-review) | 15 items | 450 | 260 | **42.2%** |
+| Code Review Warnings | 15 items | 450 | 260 | **42.2%** |
 
 *(See TOON block below for complete 9-benchmark catalog)*
 
@@ -528,13 +522,13 @@ return { master_plan: masterPlan };
 benchmarks[9]{use_case,array_size,json_tokens,toon_tokens,savings}:
   Components (architecture-documentation),6 items,202,123,39.1%
   Dependency Graph (architecture-documentation),4 nodes + 6 edges,223,114,48.9%
-  Code Review Warnings (code-review),15 items,450,260,42.2%
-  Execution Steps (structured-planning),10 items,380,220,42.1%
-  PR Checks (pr-automation),8 items,290,175,39.7%
-  LSP Diagnostics (code-review),50 items,2100,1050,50.0%
-  Complexity Factors (adaptive-workflow),8 items,1680,1210,28.0%
-  Checkpoint Checks (phase-execution),6 items,1012,685,32.3%
-  Files Changed (phase-execution),12 items,2120,1319,37.8%
+  Code Review Warnings,15 items,450,260,42.2%
+  Execution Steps,10 items,380,220,42.1%
+  PR Checks,8 items,290,175,39.7%
+  LSP Diagnostics,50 items,2100,1050,50.0%
+  Complexity Factors,8 items,1680,1210,28.0%
+  Checkpoint Checks,6 items,1012,685,32.3%
+  Files Changed,12 items,2120,1319,37.8%
 ```
 
 **Usage:** Reference these benchmarks when estimating token savings for new TOON implementations.
@@ -630,7 +624,7 @@ const toon = arrayToToon('items', items, ['file', 'message']);
 
 ### Q: Нужно ли обновлять JSON Schema?
 
-**A:** Да, добавьте optional `toon` field используя `$ref: "@shared:TASK-STRUCTURE.md#toon-optimization"`:
+**A:** Да, добавьте optional `toon` field используя `$ref: "./schemas/toon-output.schema.json"`:
 
 ```json
 {
@@ -694,27 +688,9 @@ node converters/toon-converter.mjs stats input.json
 
 ## Skills с TOON Support
 
-См. актуальный список в:
-- `@shared:TOON-REFERENCE.md` - Integration patterns
-- `../README.md` - Skills status matrix с TOON support
-
-**High Priority Skills (с TOON интеграцией):**
-- ✅ **architecture-documentation** v1.2.0 - Components, dependency_graph (42% savings)
-- ✅ **validation-framework** v2.2.0 - Consumer (reads TOON input)
-- ✅ **git-workflow** v2.2.0 - Git commits array (when >= 5 commits)
-- ✅ **structured-planning** v2.4.0 - execution_steps[], files_to_change[] (38% savings)
-- ✅ **task-decomposition** v1.1.0 - phases[] (when >= 5 phases)
-- ✅ **adaptive-workflow** v2.2.0 - complexity_factors[] (28% savings)
-- ✅ **phase-execution** v1.2.0 - checkpoint.checks[], files_changed[] (32-38% savings)
-- 🔄 **code-review** - warnings[], lsp_diagnostics[] (planned 43% savings)
-- 🔄 **pr-automation** - checks[], autoFixedErrors[], commits[] (planned 40% savings)
-- 🔄 **skill-generator** - validation_results[], files_created[] (planned 42% savings)
-- 🔄 **prd-generator** - sections[], diagrams[], features[] (planned 48% savings)
-
-**Legend:**
-- ✅ Complete - TOON fully integrated
-- 🔄 Planned - Scheduled for integration
-- ❌ N/A - Not applicable
+No installed skill currently consumes this API. The integration examples below are
+generic illustrations, not references to shipped skills. Add a skill to this list only
+when it actually calls the converter.
 
 ---
 

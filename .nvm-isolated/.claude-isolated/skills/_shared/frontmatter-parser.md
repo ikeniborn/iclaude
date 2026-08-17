@@ -10,12 +10,8 @@
 
 Этот компонент предоставляет единообразный способ парсинга и валидации YAML frontmatter в SKILL.md файлах. Все skills должны использовать этот shared parser вместо реализации собственного.
 
-**Используется в:**
-- skill-generator
-- structured-planning
-- validation-framework
-- context-awareness
-- adaptive-workflow
+**Используется в:** любом скилле этой директории при чтении собственного или чужого
+frontmatter.
 
 ---
 
@@ -405,6 +401,6 @@ dependencies: [skill-a]
 
 ## References
 
-- [skill-generator/SKILL.md](../skill-generator/SKILL.md) - Original validation logic
-- [validation-framework/SKILL.md](../validation-framework/SKILL.md) - Frontmatter validation
+
+
 - [YAML 1.2 Specification](https://yaml.org/spec/1.2/spec.html)

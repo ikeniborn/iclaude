@@ -11,10 +11,7 @@
 Этот компонент определяет стандартные форматы Markdown output для всех skills. Использование этих темплейтов обеспечивает консистентность документации и улучшает читаемость.
 
 **Используется в:**
-- structured-planning (task plan output)
-- code-review (review report)
-- pr-automation (PR body)
-- git-workflow (task summary)
+- git-workflow (PR body)
 
 ---
 
@@ -98,9 +95,9 @@ code here
 
 ---
 
-## Template 1: Task Plan Output (structured-planning)
+## Template 1: Task Plan Output
 
-**Used by:** structured-planning skill
+**Used by:** any skill emitting a task plan
 
 **Format:**
 
@@ -223,9 +220,9 @@ Implement JWT-based authentication with FastAPI, including login endpoint, token
 
 ---
 
-## Template 2: Code Review Report (code-review)
+## Template 2: Code Review Report
 
-**Used by:** code-review skill
+**Used by:** any skill emitting a code review report
 
 **Format:**
 
@@ -375,9 +372,9 @@ cursor.execute(query, (email,))
 
 ---
 
-## Template 3: PR Body (pr-automation)
+## Template 3: PR Body (git-workflow Mode 3)
 
-**Used by:** pr-automation skill
+**Used by:** the `git-workflow` skill when opening a PR with `gh pr create`
 
 **Format:**
 
@@ -628,8 +625,5 @@ See [@shared:markdown-templates#template-1-task-plan-output](../_shared/markdown
 
 ## References
 
-- [structured-planning/SKILL.md](../structured-planning/SKILL.md) - Task plan generation
-- [code-review/SKILL.md](../code-review/SKILL.md) - Code review output
-- [pr-automation/SKILL.md](../pr-automation/SKILL.md) - PR body generation
-- [git-workflow/SKILL.md](../git-workflow/SKILL.md) - Task summary
+- [git-workflow/SKILL.md](../git-workflow/SKILL.md) - Branch, commit and PR workflow
 - [Markdown Guide](https://www.markdownguide.org/)

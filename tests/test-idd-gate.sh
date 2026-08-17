@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# tests/test-idd-gate.sh — тесты IDD→SDD gate (hooks/idd-gate.py).
+# tests/test-idd-gate.sh — тесты IDD→SDD chain gate (hooks/chain-gate.py).
 # Запускать из корня проекта iclaude: ./tests/test-idd-gate.sh
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOOK="$ROOT/.nvm-isolated/.claude-isolated/hooks/idd-gate.py"
+HOOK="$ROOT/.nvm-isolated/.claude-isolated/hooks/chain-gate.py"
 PASS=0; FAIL=0
 pass(){ echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail(){ echo "  ✗ $1"; FAIL=$((FAIL+1)); }
@@ -124,6 +124,41 @@ EOF
   echo "$f"
 }
 
+mk_intent_result(){ # root verdict → интент с result_check (execute-маршрут; печатает путь)
+  local d="$1/docs/superpowers/intents"; mkdir -p "$d"
+  local f="$d/2026-06-14-fix-intent.md"
+  cat > "$f" <<EOF
+---
+result_check:
+  verdict: $2
+  intent_hash: PLACEHOLDER
+  last_run: 2026-06-14
+---
+
+# Intent: fix
+
+Intent body content.
+EOF
+  sed -i "s/PLACEHOLDER/$(bodyhash "$f")/" "$f"
+  seed_owner "$1" "docs/superpowers/intents/2026-06-14-fix-intent.md" "$SID_A"
+  echo "$f"
+}
+
+mk_intent_noresult(){ # root → интент без result_check (→ block)
+  local d="$1/docs/superpowers/intents"; mkdir -p "$d"
+  cat > "$d/2026-06-14-fix-intent.md" <<'EOF'
+---
+review:
+  intent_hash: unused
+---
+
+# Intent: fix
+
+Intent body content.
+EOF
+  seed_owner "$1" "docs/superpowers/intents/2026-06-14-fix-intent.md" "$SID_A"
+}
+
 mk_plan_noresult(){ # root → план без result_check (→ block)
   local d="$1/docs/superpowers/plans"; mkdir -p "$d"
   cat > "$d/2026-06-14-fix-plan.md" <<'EOF'
@@ -219,6 +254,28 @@ assert_exit "нет result_check → 2"        "$T" "$SKILL_FIN" 2
 P=$(mk_plan_result "$T" OK)
 printf '\nextra line\n' >> "$P"
 assert_exit "hash drift (тело изменено) → 2" "$T" "$SKILL_FIN" 2
+rm -rf "$T"
+
+echo "idd-gate: result_check на интенте (execute-маршрут)"
+# Плана нет: гейт финиша ветки опирается на интент.
+T=$(mktemp -d); I=$(mk_intent_result "$T" OK)
+assert_exit "intent result_check OK → 0"      "$T" "$SKILL_FIN" 0
+sed -i 's/verdict: OK/verdict: needs_work/' "$I"
+assert_exit "intent needs_work → 2"           "$T" "$SKILL_FIN" 2
+rm -rf "$T"
+
+T=$(mktemp -d); mk_intent_noresult "$T"
+assert_exit "intent без result_check → 2"     "$T" "$SKILL_FIN" 2
+rm -rf "$T"
+
+T=$(mktemp -d); I=$(mk_intent_result "$T" OK)
+printf '\nextra line\n' >> "$I"
+assert_exit "intent hash drift → 2"           "$T" "$SKILL_FIN" 2
+rm -rf "$T"
+
+# План есть — он и решает, интент не подменяет его вердикт.
+T=$(mktemp -d); mk_plan_noresult "$T"; mk_intent_result "$T" OK >/dev/null
+assert_exit "план важнее интента → 2"         "$T" "$SKILL_FIN" 2
 rm -rf "$T"
 
 echo "idd-gate: plan glob fix (*.md)"

@@ -17,7 +17,7 @@ unavailable only when it is absent from that catalog or the `Skill` call itself 
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. **If the iwiki MCP server is connected**, call `wiki_status`. If it reports a domain bound to this project (convention: domain name == project basename), `wiki_bind(read=[<domain>], write=[<domain>], primary=<domain>)`, then `wiki_search(query="<task topic>")` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no project domain → skip; iwiki is not set up for this project.)
+1. **If the iwiki MCP server is connected**, apply the project binding (see **iwiki Project Binding** below), then `wiki_search(query="<task topic>")` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no `.iwiki.toml` → skip; iwiki is not set up for this project.)
 2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
    ```bash
    tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
@@ -28,9 +28,31 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
 
 Skip only when: familiar area, same session.
 
+## iwiki Project Binding (MANDATORY)
+
+**One protocol for every wiki call, in every skill, in every mode.** The project-root
+`.iwiki.toml` is the only source of the binding.
+
+1. Read exactly three keys from `.iwiki.toml`: `read`, `write`, `primary`. Normalize the
+   domain names. Never pass TOML text, paths, `base`, `iwiki_id`, tokens, or any other
+   credential to a tool.
+2. Call `wiki_bind(read=<read>, write=<write>, primary=<primary>)` with the **full**
+   values — before `wiki_status`, `wiki_search`, task-ledger, or any other wiki call.
+3. Then call `wiki_status` to confirm the effective scope.
+
+Never narrow the binding to one domain and never infer a domain from the project
+basename: the project's read scope routinely spans shared domains (e.g. `devops`), and
+narrowing it hides the standards those domains carry. `primary` is the write target for
+`wiki_write_page` / `wiki_update_page` / `wiki_index`; `write` is the full set of domains
+that may be mutated.
+
+No `.iwiki.toml`, an invalid scope, or a rejected bind (e.g. 403): report the reason
+briefly, make no mutating wiki calls, and retain task lifecycle `completion-pending`. On
+a hosted server the token's own grants remain the absolute authorization limit.
+
 ## Keep Docs Current (MANDATORY)
 
-**After every change that alters functionality, architecture, or behavior — and only when the iwiki MCP server reports a domain bound to this project (`wiki_status`) — update the wiki via the MCP tools before responding to the user.**
+**After every change that alters functionality, architecture, or behavior — and only when the project binding succeeded (see **iwiki Project Binding**) — update the wiki via the MCP tools before responding to the user.**
 
 - Pick the write tool by intent — all three auto-reindex the domain and auto-commit the base on success, so no manual `wiki_index` follows:
   - **New page** → `wiki_write_page(domain, slug, markdown, source=<changed-source>)`. Refuses to overwrite an existing page.
@@ -61,7 +83,7 @@ These files are the entry point for two audiences at once: business users who ne
 
 Bounded discovery comes first and creates nothing: read the request, the project binding, and the minimum repository context needed to derive the domain, the `<topic>`, and the route. Then open the page — before analysing the task itself.
 
-- **Preconditions.** Call `wiki_status`. Write to `primary`. If no domain is bound, `wiki_bind(read=[<domain>], write=[<domain>])`. If the server is unreachable, say `Tracking: unavailable`, spool the redacted events with the `task-ledger` skill's `scripts/task_spool.py` to `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, continue working — but the task cannot reach `done`.
+- **Preconditions.** Apply the **iwiki Project Binding** protocol, then write to `primary`. If the server is unreachable, say `Tracking: unavailable`, spool the redacted events with the `task-ledger` skill's `scripts/task_spool.py` to `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`, continue working — but the task cannot reach `done`.
 - **One page per topic**, slug `reference/tasks/<topic>`, frontmatter passed as tool parameters only: `type: reference`, `status: stable`, `tags: [task, <topic>, workflow:<direct|chain|loen>]`. Never put frontmatter inline in `markdown` — the server duplicates it and `wiki_lint` blocks on `pre_h2_text`.
 - **No index page.** Project status is derived by enumerating task pages with `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix; use `wiki_search(query=..., tags=["task"])` only for content lookup within a topic.
 - **Domain changelog** at `reference/domain-changelog` records only material domain-level changes — standards, releases, migrations, cross-task decisions — each linking to the relevant task page. It is not a task index and never repeats routine task events.
@@ -340,7 +362,7 @@ Switch confirmation: n/a | pending | confirmed | declined
 
 **When the user asks for project status, progress, or "what's the state of X", build the answer from two sources together — never one alone: the project's task pages (what is being worked on) and the project's subject-matter wiki pages (what is documented as true).**
 
-- **Read both first.** Call `wiki_status`; then `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix for the full set of task pages, and `wiki_search(query=...)` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
+- **Read both first.** Apply the **iwiki Project Binding** protocol; then `wiki_list_pages(domain)` filtered to the `reference/tasks/` prefix for the full set of task pages, and `wiki_search(query=...)` / `wiki_read_page` for the topic's subject-matter pages. If iwiki is unavailable, say so — there is no in-repo fallback.
 - **Report shape:** lead with overall state (counts by lifecycle, or the specific topic's `Current State`), then per-topic detail (the `TODO` stages and the latest events from the active history segment named in `Changelog`), then a **Discrepancies** section.
 - **Reconcile the two sources and surface every mismatch.** Examples of discrepancies to flag:
   - A task page is `done` but the wiki has no subject-matter page (or a stale one) covering it.
@@ -465,7 +487,12 @@ Test: every changed line must trace directly to the user's request.
   ```
 - After the PR is created, remove the branch's worktree — don't leave stale worktrees around.
 
-Use **@skill:git-workflow** for commit messages and PR creation.
+Invoke the `git-workflow` skill (via the `Skill` tool) for branch creation, commit
+messages, and PR creation — it is the executable form of the rules above.
+
+`superpowers:finishing-a-development-branch` remains usable for the integration decision,
+but its "merge locally into the base branch" option is **not** available here: the only
+integration path is a PR. Pick its PR option, or run `git-workflow` Mode 3 directly.
 
 ## Execution
 

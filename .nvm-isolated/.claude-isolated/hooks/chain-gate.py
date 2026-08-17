@@ -53,15 +53,21 @@ STAGE_RULES = {
                "hash_key": "plan_hash", "fix": "/check-chain plan"},
     "result": {"dir": "plans", "glob": "*.md", "block": "result_check",
                "hash_key": "plan_hash", "fix": "/check-chain result"},
+    # execute route: no plan is written, so the intent is the result artifact.
+    "result_intent": {"dir": "intents", "glob": "*-intent.md",
+                      "block": "result_check", "hash_key": "intent_hash",
+                      "fix": "/check-chain result"},
 }
 
-# PreToolUse skill → stage rule (chain-transition gate).
+# PreToolUse skill → stage rules (chain-transition gate). The first rule that
+# resolves a session-owned candidate is the one that gates.
 GATE_MAP = {
-    "brainstorming": STAGE_RULES["intent"],
-    "writing-plans": STAGE_RULES["spec"],
-    "executing-plans": STAGE_RULES["plan"],
-    "subagent-driven-development": STAGE_RULES["plan"],
-    "finishing-a-development-branch": STAGE_RULES["result"],
+    "brainstorming": [STAGE_RULES["intent"]],
+    "writing-plans": [STAGE_RULES["spec"]],
+    "executing-plans": [STAGE_RULES["plan"]],
+    "subagent-driven-development": [STAGE_RULES["plan"]],
+    "finishing-a-development-branch": [STAGE_RULES["result"],
+                                       STAGE_RULES["result_intent"]],
 }
 
 # Write-trigger rules (inline spec→plan, plan→impl transitions).
@@ -259,10 +265,9 @@ def block(candidate, reason, fix):
     sys.stderr.write(
         "🚧 IDD gate: %s has not passed validation.\n"
         "Reason: %s\n"
-        "Action: dispatch a subagent to run %s on %s (clean-context\n"
-        "check-runner protocol), collect verdicts in the main session, "
-        "resolve the CRITICAL\n"
-        "findings, then retry.\n"
+        "Action: run %s on %s in this session (it writes the wiki task page,\n"
+        "which only the parent agent may do), resolve the CRITICAL findings,\n"
+        "then retry.\n"
         % (candidate, reason, fix, candidate)
     )
     sys.exit(2)
@@ -299,16 +304,18 @@ def handle_write(data, tool, sid):
 
 def handle_skill(data, sid):
     skill = normalize_skill((data.get("tool_input") or {}).get("skill", ""))
-    rule = GATE_MAP.get(skill)
-    if rule is None:
+    rules = GATE_MAP.get(skill)
+    if not rules:
         sys.exit(0)
-    candidate = resolve_candidate(rule, sid)
-    if candidate is None:
-        sys.exit(0)
-    reason = gate_reason(candidate, rule)
-    if reason is None:
-        sys.exit(0)
-    block(candidate, reason, rule["fix"])
+    for rule in rules:
+        candidate = resolve_candidate(rule, sid)
+        if candidate is None:
+            continue
+        reason = gate_reason(candidate, rule)
+        if reason is None:
+            sys.exit(0)
+        block(candidate, reason, rule["fix"])
+    sys.exit(0)
 
 
 def rule_for(path):
@@ -325,9 +332,8 @@ def rule_for(path):
 def emit_nudge(path, fix):
     msg = (
         "IDD artifact %s was just written and has not passed validation yet. "
-        "Run %s on it (dispatch a clean-context subagent per the check-runner "
-        "protocol in CLAUDE.md, then collect verdicts in the main session) so "
-        "the IDD gate is open before the next chain transition." % (path, fix)
+        "Run %s on it in this session so the IDD gate is open before the next "
+        "chain transition." % (path, fix)
     )
     print(json.dumps({
         "hookSpecificOutput": {

@@ -9,7 +9,7 @@ Track every direct, chain, and LoEn task, including read-only work. The parent a
 
 ## Required flow
 
-1. Call `wiki_status`; bind the project domain for read/write when present.
+1. Apply the iwiki Project Binding protocol from `CLAUDE.md`: bind the full `read` / `write` / `primary` scope from the project-root `.iwiki.toml` before any wiki call, then confirm with `wiki_status`. Never narrow the scope to a basename-derived domain.
 2. Resolve one English lowercase-kebab-case topic; stop on conflicting controlled topics.
 3. Read or create `reference/tasks/<topic>` with `type: reference`, `status: stable`, and tag `task`.
 4. Load durable event keys, then replay pending spool events in order; acknowledge only after confirmed page replay.
@@ -18,7 +18,7 @@ Track every direct, chain, and LoEn task, including read-only work. The parent a
 7. On MCP failure, enqueue redacted events with `scripts/task_spool.py` and use `completion-pending`.
 8. Set `done` only after final evidence, successful wiki write, empty spool, and `wiki_lint` without a new task-page finding.
 
-If iwiki is connected but the project domain is absent, the task page cannot be read or created. Parent may continue with redacted spool events, report durable status unavailable, and retain `completion-pending`; completion remains fail-closed until a bound domain permits replay, wiki write, and lint. This differs from the normal bound-domain flow above.
+If iwiki is connected but the binding fails or the write domain is absent, the task page cannot be read or created. Parent may continue with redacted spool events, report durable status unavailable, and retain `completion-pending`; completion remains fail-closed until a bound domain permits replay, wiki write, and lint. This differs from the normal bound-domain flow above.
 
 ## State and events
 
@@ -28,7 +28,7 @@ Lifecycle: `in-progress`, `blocked`, `completion-pending`, `done`. Material even
 
 Input schema is exactly `{kind, occurred_at, actor, summary, evidence}`; persisted event schema adds canonical `evidence_hash` and `event_id`. Evidence is `{paths, checks, hashes}`. Paths are repository-relative; checks contain only name, passed/failed status, and integer exit code; hashes are lowercase hex. Never record credentials, environment values, auth files, or raw command output.
 
-Idempotency key: SHA-256 of topic, kind, and canonical redacted evidence hash, truncated to 16 hex characters. Exclude timestamp, actor, and summary. Page replay happens outside helper: skip page keys already durable, then acknowledge confirmed events.
+Idempotency key (`key:` on the segment event line, `event_id` in the spool): SHA-256 of topic, kind, and the canonical redacted evidence, truncated to 16 hex characters. Exclude timestamp, actor, and summary. Page replay happens outside helper: skip page keys already durable, then acknowledge confirmed events.
 
 ## History segments and domain journal
 
@@ -36,7 +36,7 @@ Keep complete task history in linked history segments. The task page `Changelog`
 
 The domain changelog is `reference/domain-changelog`. It contains curated domain-level changes such as standards, releases, migrations, and cross-task decisions, with links to affected task pages. Do not add routine task events there and do not use it as a task index.
 
-An `orphans` entry for `reference/tasks/*` is an expected task-page orphan advisory: status discovery enumerates task pages with `wiki_list_pages` rather than following an inbound central index. It does not block closure unless `wiki_lint` reports another finding for that task page.
+An `orphans` entry for `reference/tasks/*` or `reference/task-history/*` is an expected orphan advisory: status discovery enumerates task pages with `wiki_list_pages` rather than following an inbound central index. It does not block closure unless `wiki_lint` reports another finding for that task page or its segments.
 
 ## Helper
 

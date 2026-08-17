@@ -6,7 +6,7 @@ agent: Explore
 # version: 1.6.0
 # tags: context, detection, project, language, framework, lat
 # dependencies: []
-# files: templates: ./templates/*.json, shared: ../_shared/syntax-commands.json
+# files: templates: ./templates/*.json
 ---
 
 # Context Awareness
@@ -58,7 +58,18 @@ JavaScript:
 
 ### 4. Syntax Command Lookup
 
-См. `@shared:syntax-commands.json` для mapping language → syntax check command.
+Mapping language → syntax check command:
+
+| language | syntax_command |
+|---|---|
+| python | `python -m py_compile <file>` |
+| javascript | `node --check <file>` |
+| typescript | `npx tsc --noEmit` |
+| go | `go vet ./...` |
+| rust | `cargo check` |
+| bash | `bash -n <file>` |
+
+Если язык не определён — `syntax_command: null`, syntax-проверка пропускается.
 
 ### 5. iwiki Detection
 
@@ -73,9 +84,11 @@ JavaScript:
    durable status.
 
 IF MCP-сервер iwiki подключён:
-  2. wiki_status → project_dir, список `domains`, текущая привязка read/write
-  3. Если домен проекта присутствует в `domains` (имя == basename проекта):
-       - не привязан → wiki_bind(read=[<domain>], write=<domain>)
+  2. wiki_status → project_dir, список `domains`, действующая привязка read/write/primary.
+     Скилл НИКОГДА не вызывает wiki_bind: привязку делает parent agent по протоколу
+     iwiki Project Binding из CLAUDE.md. Здесь только чтение.
+  3. Если wiki_status вернул непустой `primary` (домен записи проекта):
+       - <domain> ← primary
        - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
          либо wiki_search('ключевые компоненты и архитектура проекта')
      Добавить в project_context:
@@ -87,7 +100,7 @@ IF MCP-сервер iwiki подключён:
        task_page_found: true|false
        task_lifecycle: "in-progress|blocked|completion-pending|done" | null
        task_delivery_pending: true|false
-  4. Если домена проекта нет:
+  4. Если `primary` пуст (привязка не выполнена или проект без .iwiki.toml):
        wiki_initialized: false
        wiki_domain: null
        wiki_summary: null
@@ -108,7 +121,7 @@ ELSE (сервер не подключён):
   task_delivery_pending: <spool result when topic known; otherwise false>
 ```
 
-После привязки домена Phase 0 выводит точный контекст task page: определяет
+При действующей привязке Phase 0 выводит точный контекст task page: определяет
 канонический topic из запроса или уже контролируемых артефактов, читает
 `reference/tasks/<topic>`, если topic известен. Независимо от доступности iwiki он
 проверяет `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`; очередь
@@ -120,6 +133,10 @@ context-awareness.
 downstream-навыки (brainstorming, prd-generator) используют
 `project_context.wiki_initialized` вместо самостоятельной проверки.
 `wiki_search` — опциональный семантический поиск по секциям внутри задачи.
+
+**Границы:** скилл работает read-only против iwiki (`wiki_status`, `wiki_read_page`,
+`wiki_search`). Ни `wiki_bind`, ни любой мутирующий вызов из него не выполняется —
+привязка и запись принадлежат parent agent.
 
 ## Output
 
@@ -135,7 +152,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "test_framework": "pytest|jest|go test|none",
     "has_prd": true|false,
     "prd_path": "docs/prd/" | null,
-    "syntax_command": "@shared:syntax-commands[language].syntax",
+    "syntax_command": "<команда из таблицы Syntax Command Lookup>",
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
     "wiki_domain": "<имя домена iwiki>" | null,
@@ -439,11 +456,9 @@ downstream-навыки (brainstorming, prd-generator) используют
 
 ## Integration with Other Skills
 
-**Used by:**
-- `adaptive-workflow` - Selects complexity based on project type
-- `lsp-integration` - Determines which LSP server to install
-- `validation-framework` - Chooses appropriate validation commands
-- `code-review` - Applies language-specific review rules
+**Used by:** any task that needs the project's language, framework, test/syntax command,
+or iwiki availability before acting — the caller reads `project_context` fields instead of
+re-detecting them.
 
 **Delegates to:**
 - iwiki MCP `wiki_search` - Targeted semantic search over the project's iwiki domain (optional, in-task)
