@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iwiki-dual-mcp-registration — отчёт о внедрении</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
+  transition:background .3s, color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+h1{ font-size:1.6rem; margin-bottom:.2rem; }
+h2{ font-size:1.2rem; margin-top:2.2rem; border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+.lead{ color:var(--muted); margin-top:0; }
+.meta{ display:flex; gap:1.2rem; flex-wrap:wrap; margin:.8rem 0 1.4rem; font-size:.92rem; color:var(--muted); }
+.meta code{ color:var(--fg); }
+code{ background:var(--zebra); padding:.05rem .35rem; border-radius:4px; font-size:.9em; }
+table{ width:100%; border-collapse:collapse; margin:.8rem 0 1.4rem; font-size:.92rem; }
+th,td{ text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--border); vertical-align:top; }
+th{ color:var(--muted); font-weight:600; }
+tr:nth-child(even) td{ background:var(--zebra); }
+.badge{ display:inline-block; padding:.12rem .55rem; border-radius:999px; font-size:.78rem; font-weight:600; }
+.badge-ok{ background:color-mix(in srgb, var(--ok) 20%, transparent); color:var(--ok-2); }
+.badge-done{ background:color-mix(in srgb, var(--ok) 20%, transparent); color:var(--ok-2); }
+.badge-added{ background:color-mix(in srgb, var(--accent) 20%, transparent); color:var(--accent-2); }
+.badge-modified{ background:color-mix(in srgb, var(--warn) 20%, transparent); color:var(--warn-2); }
+.note{ background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:8px; padding:.9rem 1.1rem; margin:1rem 0; box-shadow:0 2px 8px var(--shadow); }
+.note.ok{ border-left-color:var(--ok); }
+figure.diagram{ margin:1.2rem 0; }
+figure.diagram svg{ width:100%; height:auto; display:block; overflow:visible; }
+figcaption{ color:var(--muted); font-size:.85rem; margin-top:.35rem; text-align:center; }
+.card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; filter:url(#dropshadow); }
+.bar-accent{ fill:var(--accent); } .bar-ok{ fill:var(--ok); } .bar-warn{ fill:var(--warn); } .bar-term{ fill:var(--danger); }
+.t-title{ fill:var(--fg); font:600 14px system-ui, sans-serif; }
+.t-sub{ fill:var(--muted); font:11px system-ui, sans-serif; }
+.t-mono{ font-family:ui-monospace, monospace; }
+text{ pointer-events:none; }
+.conn{ fill:none; stroke:var(--line); stroke-width:2; }
+.conn-a{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; }
+.flow{ fill:none; stroke:var(--accent); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+.flow-ok{ fill:none; stroke:var(--ok); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+@keyframes dash{ to{ stroke-dashoffset:-14; } }
+@media (prefers-reduced-motion: reduce){ .flow,.flow-ok{ animation:none; } }
+.lbl-bg{ fill:var(--bg); }
+.lbl{ fill:var(--fg); font:11px system-ui, sans-serif; }
+.boundary-rect{ fill:none; stroke:var(--accent); stroke-width:1.6; stroke-dasharray:7 6; opacity:.85; }
+footer{ margin-top:2.5rem; color:var(--muted); font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<label for="theme-toggle" class="theme-btn" title="Тема">🌙 / ☀️</label>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
+    <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="var(--shadow)" flood-opacity="1"/>
+  </filter>
+  <marker id="arr"     markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--line)"/></marker>
+  <marker id="arrA"    markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--accent)"/></marker>
+  <marker id="arrOk"   markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--ok)"/></marker>
+</defs></svg>
+
+<main class="report">
+<h1>iwiki-dual-mcp-registration</h1>
+<p class="lead">Отчёт о внедрении — регистрация local + remote iwiki MCP серверов одновременно.</p>
+
+<h2>Резюме внедрения</h2>
+<div class="meta">
+  <span>Intent: <code>docs/superpowers/intents/2026-08-17-iwiki-dual-mcp-registration-intent.md</code> (approved, route <b>execute</b>)</span>
+  <span>Spec: <code>n/a</code></span>
+  <span>Plan: <code>n/a</code></span>
+  <span>Diff base: <code>7096bb7c</code> .. <code>HEAD</code> (branch <code>dev-iwiki-dual-mcp-registration</code>)</span>
+</div>
+<div class="note ok">
+  Проблема: <code>wiki_code_index</code> требует локальный чекаут (падает <code>source_unavailable</code> под remote-only),
+  а <code>wiki_code_publish_*</code> требует hosted-транзит (падает <code>unsupported_storage</code> под local-only).
+  Построить граф локально и опубликовать его — было невозможно в одной сессии из-за эксклюзивного выбора сервера.
+</div>
+
+<h2>Выполненные изменения</h2>
+<table>
+<tr><th>Файл</th><th>Тип</th><th>± строк</th><th>Описание</th></tr>
+<tr><td><code>lib/iwiki/mcp.sh</code></td><td><span class="badge badge-modified">modified</span></td><td>+114/-49</td><td>Новые <code>_iwiki_local_selected</code>, <code>iwiki_mcp_dual_config_file</code>, <code>_iwiki_render_code_graph</code>; <code>iwiki_mcp_enabled</code> = OR local/remote; <code>iwiki_mcp_launch_config</code> выбирает dual, когда оба usable.</td></tr>
+<tr><td><code>mcp/iwiki-dual.json</code></td><td><span class="badge badge-added">added</span></td><td>+38</td><td>Трекнутый secret-free конфиг: два сервера — <code>iwiki-local</code> (stdio) и <code>iwiki-remote</code> (http) в одном файле.</td></tr>
+<tr><td><code>lib/launcher/launch.sh</code></td><td><span class="badge badge-modified">modified</span></td><td>+8/-2</td><td>Обновлён комментарий про 3-way выбор конфига; сама логика вызова уже была общей, без изменений.</td></tr>
+<tr><td><code>hooks/iwiki-remote-scope.js</code></td><td><span class="badge badge-modified">modified</span></td><td>+24/-6</td><td>Детект dual-режима по <code>IWIKI_COMMAND</code>+<code>IWIKI_LLM_KEY</code> рядом с <code>IWIKI_REMOTE_URL</code>; маршрутизация code-graph тулов на <code>iwiki-local</code>, остального — на <code>iwiki-remote</code>.</td></tr>
+<tr><td><code>docs/iwiki-mcp-modes.md</code></td><td><span class="badge badge-modified">modified</span></td><td>+37/-4</td><td>Новая секция «Dual mode» документирует механизм.</td></tr>
+<tr><td><code>tests/test_iwiki_mcp.sh</code></td><td><span class="badge badge-modified">modified</span></td><td>+48/-3</td><td>Переписан «remote wins» сценарий (только когда local не usable); добавлено 5 dual-ассертов.</td></tr>
+<tr><td><code>tests/test_iwiki_remote_scope.sh</code></td><td><span class="badge badge-modified">modified</span></td><td>+36</td><td>Добавлены проверки remote-only code-graph note и dual routing note.</td></tr>
+<tr><td><code>docs/superpowers/intents/2026-08-17-iwiki-dual-mcp-registration-intent.md</code></td><td><span class="badge badge-added">added</span></td><td>+100</td><td>Intent-документ (approved, chain review OK, result reconciliation OK).</td></tr>
+</table>
+
+<h2>Результаты</h2>
+<table>
+<tr><th>Desired Outcome</th><th>Статус</th><th>Свидетельство</th></tr>
+<tr><td>Dual-сессия: <code>wiki_code_index</code> больше не <code>source_unavailable</code></td><td><span class="badge badge-done">DONE</span></td><td><code>iwiki-local</code> сервер зарегистрирован с доступом к чекауту</td></tr>
+<tr><td>Dual-сессия: <code>wiki_code_publish_*</code> успешно пушит снапшот</td><td><span class="badge badge-done">DONE</span></td><td><code>iwiki-remote</code> сорегистрирован, hosted-транзит не тронут</td></tr>
+<tr><td>Content-тулы продолжают идти через remote/primary, без регресса</td><td><span class="badge badge-done">DONE</span></td><td>single-mode файлы не тронуты; hook явно маршрутизирует не-code-graph тулы на <code>iwiki-remote</code></td></tr>
+<tr><td>local-only / remote-only сессии не меняются</td><td><span class="badge badge-done">DONE</span></td><td><code>tests/test_iwiki_mcp.sh</code> 30/30, <code>tests/test_iwiki_remote_scope.sh</code> 10/10, имя сервера <code>iwiki</code> побайтово прежнее</td></tr>
+</table>
+<p><b>Покрытие Desired Outcomes: 4/4.</b> Spec: n/a (execute-route). Plan: n/a (execute-route). Excess-изменений нет — каждый изменённый файл соответствует Desired Outcome или Hard/Steering ограничению.</p>
+<p><b>Итоговый вердикт: OK.</b></p>
+
+<h2>Влияние на систему</h2>
+<table>
+<tr><th>Компонент</th><th>Изменение</th><th>Риск / follow-up</th></tr>
+<tr><td><code>lib/iwiki/mcp.sh</code></td><td>Новая dual-ветка выбора конфига</td><td>Покрыто тестами; риск низкий</td></tr>
+<tr><td><code>mcp/iwiki-dual.json</code></td><td>Новый трекнутый файл, только <code>${VAR}</code> плейсхолдеры</td><td>Секретов нет, проверено</td></tr>
+<tr><td><code>hooks/iwiki-remote-scope.js</code></td><td>Новая ветка инструкции агенту для dual-режима</td><td>Покрыто тестами</td></tr>
+<tr><td>Skills, ссылающиеся на <code>mcp__iwiki__*</code></td><td>Поиск (grep) — не найдено ни одного</td><td>Proposal-first зона intent не потребовалась</td></tr>
+<tr><td>Глобальный пользовательский <code>CLAUDE.md</code></td><td>Не тронут</td><td>No-autonomy зона, вне скоупа задачи</td></tr>
+</table>
+
+<h2>Схемы</h2>
+
+<figure class="diagram">
+<svg viewBox="0 0 920 260" role="img" aria-label="Решающий граф iwiki_mcp_launch_config">
+  <g class="node"><rect class="card" x="20" y="100" width="170" height="60" rx="12"/><rect class="bar-accent" x="28" y="112" width="5" height="36" rx="2.5"/><text class="t-title" x="105" y="126" text-anchor="middle">local usable?</text><text class="t-sub" x="105" y="144" text-anchor="middle">_iwiki_local_selected</text></g>
+
+  <g class="node"><rect class="card" x="330" y="20" width="200" height="60" rx="12"/><rect class="bar-ok" x="338" y="32" width="5" height="36" rx="2.5"/><text class="t-title" x="430" y="46" text-anchor="middle">dual + remote usable?</text><text class="t-sub" x="430" y="64" text-anchor="middle">iwiki-dual.json exists</text></g>
+
+  <g class="node"><rect class="card" x="650" y="20" width="230" height="60" rx="12"/><rect class="bar-accent" x="658" y="32" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="765" y="46" text-anchor="middle">mcp/iwiki-dual.json</text><text class="t-sub" x="765" y="64" text-anchor="middle">iwiki-local + iwiki-remote</text></g>
+
+  <g class="node"><rect class="card" x="330" y="180" width="200" height="60" rx="12"/><rect class="bar-warn" x="338" y="192" width="5" height="36" rx="2.5"/><text class="t-title" x="430" y="196" text-anchor="middle">remote usable?</text><text class="t-sub" x="430" y="224" text-anchor="middle">_iwiki_remote_selected</text></g>
+
+  <g class="node"><rect class="card" x="650" y="180" width="230" height="60" rx="12"/><rect class="bar-warn" x="658" y="192" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="765" y="196" text-anchor="middle">mcp/iwiki-remote.json</text><text class="t-sub" x="765" y="224" text-anchor="middle">server name "iwiki"</text></g>
+
+  <g class="node"><rect class="card" x="20" y="180" width="230" height="60" rx="12"/><rect class="bar-ok" x="28" y="192" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="135" y="196" text-anchor="middle">mcp/iwiki.json</text><text class="t-sub" x="135" y="224" text-anchor="middle">server name "iwiki" (local-only)</text></g>
+
+  <path class="flow" marker-end="url(#arrA)" d="M190,120 C260,120 260,50 327,50"/>
+  <rect class="lbl-bg" x="200" y="70" width="30" height="16"/><text class="lbl" x="215" y="82" text-anchor="middle">да</text>
+
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M530,50 H647"/>
+  <rect class="lbl-bg" x="555" y="34" width="30" height="16"/><text class="lbl" x="570" y="46" text-anchor="middle">да</text>
+
+  <path class="conn-a" marker-end="url(#arrA)" d="M430,80 V177"/>
+  <rect class="lbl-bg" x="440" y="120" width="34" height="16"/><text class="lbl" x="457" y="132" text-anchor="middle">нет</text>
+
+  <path class="flow" marker-end="url(#arrA)" d="M530,210 H647"/>
+  <rect class="lbl-bg" x="555" y="194" width="30" height="16"/><text class="lbl" x="570" y="206" text-anchor="middle">да</text>
+
+  <path class="conn-a" marker-end="url(#arrA)" d="M105,160 V180"/>
+  <path class="conn-a" marker-end="url(#arrA)" d="M330,210 H250"/>
+  <rect class="lbl-bg" x="255" y="192" width="34" height="16"/><text class="lbl" x="272" y="204" text-anchor="middle">нет</text>
+</svg>
+<figcaption>local не usable → нет dual-ветки; remote решает по своему usability (иначе — local-only файл).</figcaption>
+</figure>
+
+<figure class="diagram">
+<svg viewBox="0 0 920 260" role="img" aria-label="Архитектура dual-режима">
+  <rect class="boundary-rect" x="20" y="20" width="880" height="220" rx="16"/>
+  <rect class="lbl-bg" x="34" y="12" width="260" height="18"/>
+  <text class="lbl" x="42" y="25" font-weight="600">Одна Claude Code сессия, --mcp-config = mcp/iwiki-dual.json</text>
+
+  <g class="node"><rect class="card" x="60" y="100" width="190" height="60" rx="12"/><rect class="bar-accent" x="68" y="112" width="5" height="36" rx="2.5"/><text class="t-title" x="155" y="126" text-anchor="middle">launch.sh</text><text class="t-sub" x="155" y="144" text-anchor="middle">--mcp-config</text></g>
+
+  <g class="node"><rect class="card" x="380" y="50" width="200" height="60" rx="12"/><rect class="bar-ok" x="388" y="62" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="480" y="76" text-anchor="middle">iwiki-local</text><text class="t-sub" x="480" y="94" text-anchor="middle">stdio · project checkout</text></g>
+
+  <g class="node"><rect class="card" x="380" y="150" width="200" height="60" rx="12"/><rect class="bar-warn" x="388" y="162" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="480" y="176" text-anchor="middle">iwiki-remote</text><text class="t-sub" x="480" y="194" text-anchor="middle">http · hosted PostgreSQL</text></g>
+
+  <g class="node"><rect class="card" x="680" y="50" width="200" height="60" rx="12"/><rect class="bar-ok" x="688" y="62" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="780" y="76" text-anchor="middle">wiki_code_index</text><text class="t-sub" x="780" y="94" text-anchor="middle">_search / _context</text></g>
+
+  <g class="node"><rect class="card" x="680" y="150" width="200" height="60" rx="12"/><rect class="bar-warn" x="688" y="162" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="780" y="176" text-anchor="middle">wiki_code_publish_*</text><text class="t-sub" x="780" y="194" text-anchor="middle">+ every other wiki_* tool</text></g>
+
+  <path class="flow" marker-end="url(#arrA)" d="M250,120 C300,120 320,80 377,80"/>
+  <path class="flow" marker-end="url(#arrA)" d="M250,140 C300,140 320,180 377,180"/>
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M580,80 H677"/>
+  <path class="flow" marker-end="url(#arrA)" d="M580,180 H677"/>
+</svg>
+<figcaption>Одна сессия одновременно видит оба транспорта: код-граф строится локально, публикуется на hosted.</figcaption>
+</figure>
+
+</main>
+
+<footer>Сгенерировано check-chain / html-report · iwiki-dual-mcp-registration · branch dev-iwiki-dual-mcp-registration</footer>
+</body>
+</html>

@@ -54,6 +54,42 @@ t_remote_region() {
 }
 t_remote_region
 
+# ---- remote-only: code-graph note tells the agent to switch/add config ----
+t_remote_only_code_graph_note() {
+  echo "[remote-only] no local vars -> code-graph note says switch/add config"
+  local out
+  out="$(env -u IWIKI_COMMAND -u IWIKI_LLM_KEY IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" node "$HOOK")"
+  if [[ "$out" == *"wiki_code_index"* && "$out" == *"source_unavailable"* && "$out" == *"mcp/iwiki.json"* ]]; then
+    pass "notes wiki_code_index needs a local config, not a .iwiki.toml edit"
+  else
+    fail "notes wiki_code_index needs a local config, not a .iwiki.toml edit"
+  fi
+  if [[ "$out" == *"iwiki-local"* && "$out" == *"iwiki-remote"* ]]; then
+    fail "does not claim dual registration when local is not usable"
+  else
+    pass "does not claim dual registration when local is not usable"
+  fi
+}
+t_remote_only_code_graph_note
+
+# ---- dual: local vars also present -> note routes tools per server, no switch ----
+t_dual_code_graph_note() {
+  echo "[dual] IWIKI_COMMAND + IWIKI_LLM_KEY also set -> per-server routing note"
+  local out
+  out="$(IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" IWIKI_COMMAND="/usr/local/bin/iwiki-mcp" IWIKI_LLM_KEY="sk-x" node "$HOOK")"
+  if [[ "$out" == *"iwiki-local"* && "$out" == *"iwiki-remote"* ]]; then
+    pass "routes code-graph tools to iwiki-local, rest to iwiki-remote"
+  else
+    fail "routes code-graph tools to iwiki-local, rest to iwiki-remote"
+  fi
+  if [[ "$out" == *"No config switch is needed"* ]]; then
+    pass "tells the agent no config switch is needed in dual mode"
+  else
+    fail "tells the agent no config switch is needed in dual mode"
+  fi
+}
+t_dual_code_graph_note
+
 # ---- remote output never contains the URL/token themselves ----
 t_remote_no_secrets() {
   echo "[remote] emitted region carries no URL or token"

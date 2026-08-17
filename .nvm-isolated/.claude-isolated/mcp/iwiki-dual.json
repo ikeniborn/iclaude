@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "iwiki-local": {
+      "type": "stdio",
+      "command": "${IWIKI_COMMAND}",
+      "args": [],
+      "env": {
+        "IWIKI_BASE_DIR":             "${IWIKI_BASE_DIR}",
+        "IWIKI_LLM_BASE_URL":         "${IWIKI_LLM_BASE_URL}",
+        "IWIKI_LLM_KEY":              "${IWIKI_LLM_KEY}",
+        "IWIKI_DB_PASSWORD":          "${IWIKI_DB_PASSWORD:-}",
+        "IWIKI_EMBED_MODEL":          "${IWIKI_EMBED_MODEL:-text-embedding-3-small}",
+        "IWIKI_EMBED_DIMENSIONS":     "${IWIKI_EMBED_DIMENSIONS:-1536}",
+        "IWIKI_CHAT_MODEL":           "${IWIKI_CHAT_MODEL:-}",
+        "IWIKI_RERANK_MODEL":         "${IWIKI_RERANK_MODEL:-}",
+        "IWIKI_IDLE_TIMEOUT_SECONDS": "${IWIKI_IDLE_TIMEOUT_SECONDS:-86400}",
+        "IWIKI_CHUNK_SIZE":           "${IWIKI_CHUNK_SIZE:-512}",
+        "IWIKI_CHUNK_OVERLAP":        "${IWIKI_CHUNK_OVERLAP:-64}",
+        "IWIKI_SUMMARY_MAX_CHARS":    "${IWIKI_SUMMARY_MAX_CHARS:-400}",
+        "IWIKI_SEARCH_MODE":          "${IWIKI_SEARCH_MODE:-hybrid}",
+        "IWIKI_TOP_K":                "${IWIKI_TOP_K:-8}",
+        "IWIKI_SCORE_THRESHOLD":      "${IWIKI_SCORE_THRESHOLD:-0.2}",
+        "IWIKI_GRAPH_DEPTH":          "${IWIKI_GRAPH_DEPTH:-2}",
+        "IWIKI_SEED_TOP_K":           "${IWIKI_SEED_TOP_K:-5}",
+        "IWIKI_BFS_TOP_K":            "${IWIKI_BFS_TOP_K:-10}",
+        "IWIKI_SEED_THRESHOLD":       "${IWIKI_SEED_THRESHOLD:-0.15}",
+        "IWIKI_WRITE_SEED_THRESHOLD": "${IWIKI_WRITE_SEED_THRESHOLD:-0.35}"
+      }
+    },
+    "iwiki-remote": {
+      "type": "http",
+      "url": "${IWIKI_REMOTE_URL}",
+      "headers": {
+        "Authorization": "Bearer ${IWIKI_REMOTE_TOKEN}"
+      }
+    }
+  }
+}

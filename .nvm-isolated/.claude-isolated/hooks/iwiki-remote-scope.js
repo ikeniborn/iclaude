@@ -19,6 +19,15 @@ if (!process.env.IWIKI_REMOTE_URL) {
   process.exit(0);
 }
 
+// IWIKI_COMMAND is exported by lib/iwiki/mcp.sh's iwiki_resolve_command as a
+// side effect of the launch-time enable gate, so by the time this hook runs
+// (spawned as a child of that same launch) it is present in the environment
+// whenever local mode is also usable. Together with IWIKI_LLM_KEY this
+// mirrors _iwiki_local_selected's conditions closely enough to tell the
+// agent whether it is looking at a dual (mcp/iwiki-dual.json) or a
+// remote-only registration — see lib/iwiki/mcp.sh.
+const dualActive = Boolean(process.env.IWIKI_COMMAND && process.env.IWIKI_LLM_KEY);
+
 process.stdout.write(
   '## Remote iwiki project scope\n\n' +
   'Before the first wiki call, load only `read`, `write`, and `primary` from the ' +
@@ -31,5 +40,18 @@ process.stdout.write(
   'domain, or current session scope. On a missing or invalid TOML scope, or a ' +
   'rejected bind such as 403, show a brief reason, do not make mutating wiki ' +
   'calls, and retain task lifecycle `completion-pending`. The remote server\'s ' +
-  'token grants remain the absolute authorization limit.'
+  'token grants remain the absolute authorization limit.\n\n' +
+  (dualActive
+    ? 'This session has both transports registered: `wiki_code_index`, ' +
+      '`wiki_code_search`, and `wiki_code_context` run on the `iwiki-local` ' +
+      'server (it has the repository checkout); every other wiki tool, ' +
+      'including `wiki_code_publish_begin`/`_batch`/`_finalize`, runs on ' +
+      '`iwiki-remote` as usual. No config switch is needed for either.'
+    : '`wiki_code_index` is unavailable under this hosted-only mode — it needs a ' +
+      'local repository checkout on the server\'s disk, which a remote HTTP ' +
+      'server does not have, so it returns `source_unavailable`. That error ' +
+      'means the active MCP server config must switch to the local stdio one ' +
+      '(`mcp/iwiki.json`, via `IWIKI_COMMAND`/`IWIKI_BASE_DIR`) or add it ' +
+      'alongside this one (`mcp/iwiki-dual.json`) and the session restarted — ' +
+      'not that `.iwiki.toml` needs editing.')
 );

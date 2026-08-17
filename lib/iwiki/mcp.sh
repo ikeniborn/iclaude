@@ -4,12 +4,17 @@
 # iwiki MCP Registration Helper
 # Description: Decides whether an iwiki MCP server is handed to Claude Code via
 #              --mcp-config, and which tracked, secret-free config describes it:
-#              mcp/iwiki-remote.json for a hosted Streamable HTTP server, or
+#              mcp/iwiki-remote.json for a hosted Streamable HTTP server,
 #              mcp/iwiki.json for the local stdio server (optionally rendered
-#              with the code-graph overrides). The IWIKI_* values are already
-#              exported by lib/config/env-map.sh (de-prefixed from
-#              ICLAUDE_IWIKI_* in .claude_config); this module only resolves the
-#              binary path, evaluates the enable gate, and picks the config.
+#              with the code-graph overrides), or mcp/iwiki-dual.json when both
+#              are usable at once — registered as two distinct servers,
+#              "iwiki-local" and "iwiki-remote", so wiki_code_index/_search/
+#              _context can run locally while every other wiki_* tool and
+#              wiki_code_publish_* still reach the hosted server in the same
+#              session. The IWIKI_* values are already exported by
+#              lib/config/env-map.sh (de-prefixed from ICLAUDE_IWIKI_* in
+#              .claude_config); this module only resolves the binary path,
+#              evaluates the enable gate, and picks the config.
 #######################################
 
 # Absolute path to the tracked, secret-free MCP config file.
@@ -30,14 +35,34 @@ iwiki_mcp_remote_config_file() {
     printf '%s' "${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}/mcp/iwiki-remote.json"
 }
 
+# Absolute path to the tracked config that registers both transports at once,
+# as "iwiki-local" and "iwiki-remote". Used only when both modes are usable;
+# a single distinct file keeps single-mode registration (server name "iwiki")
+# byte-identical to today.
+iwiki_mcp_dual_config_file() {
+    printf '%s' "${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}/mcp/iwiki-dual.json"
+}
+
 # True when remote mode is both requested and usable: an explicit URL, a token
 # to authenticate with, and the tracked remote config present. Setting the URL
-# is the deliberate opt-in, so remote wins over a local install when both are
-# configured.
+# is the deliberate opt-in, so remote wins over a local install when local is
+# not ALSO usable (see iwiki_mcp_launch_config for the dual case).
 _iwiki_remote_selected() {
     [[ -n "${IWIKI_REMOTE_URL:-}" ]]                 || return 1
     [[ -n "${IWIKI_REMOTE_TOKEN:-}" ]]               || return 1
     [[ -f "$(iwiki_mcp_remote_config_file)" ]]       || return 1
+    return 0
+}
+
+# True when local (stdio) mode is usable on its own: the binary resolves, the
+# embeddings key is configured, and the tracked local config exists. Factored
+# out of iwiki_mcp_enabled so dual-mode registration can check it independently
+# of whether remote also wins the single-mode selection.
+_iwiki_local_selected() {
+    iwiki_resolve_command
+    [[ -n "${IWIKI_COMMAND:-}" ]]            || return 1
+    [[ -n "${IWIKI_LLM_KEY:-}" ]]            || return 1
+    [[ -f "$(iwiki_mcp_config_file)" ]]      || return 1
     return 0
 }
 
@@ -56,19 +81,13 @@ iwiki_resolve_command() {
 }
 
 # Return 0 (enabled) when the iwiki MCP server should be registered, in either
-# of two modes. Remote mode needs only a URL, a token, and the tracked remote
-# config. Local (stdio) mode needs:
-#   - the binary resolved (IWIKI_COMMAND non-empty), AND
-#   - iwiki is configured (IWIKI_LLM_KEY non-empty), AND
-#   - the tracked config file exists.
-# Returns 1 otherwise, so launch proceeds without the server (no hard failure).
+# of two modes (see _iwiki_local_selected / _iwiki_remote_selected for the
+# exact conditions of each). Returns 1 when neither is usable, so launch
+# proceeds without the server (no hard failure).
 iwiki_mcp_enabled() {
+    _iwiki_local_selected && return 0
     _iwiki_remote_selected && return 0
-    iwiki_resolve_command
-    [[ -n "${IWIKI_COMMAND:-}" ]]            || return 1
-    [[ -n "${IWIKI_LLM_KEY:-}" ]]            || return 1
-    [[ -f "$(iwiki_mcp_config_file)" ]]      || return 1
-    return 0
+    return 1
 }
 
 # Code-graph variables the iwiki-mcp server reads. They are NOT part of the
@@ -94,25 +113,15 @@ _iwiki_code_graph_env_lines() {
     return 0
 }
 
-# Print the config path to hand to `--mcp-config`.
-# In remote mode this is the tracked remote config; the code-graph render does
-# not apply, because a hosted server owns its own storage and code-graph cache.
-# In local mode, without configured code-graph vars this is the tracked file
-# itself, and any render left over from an earlier launch is removed so a stale
-# file can never be mistaken for the active config. With them, a sibling
-# *.runtime.json is rendered by splicing the extra keys into the `env` object; it
-# holds only `${VAR}` placeholders, so it stays secret-free like the tracked
-# original (it is git-ignored because it is machine-specific). A write failure,
-# or a tracked file with no `env` object to splice into, falls back to the
-# tracked file — iwiki still starts, only without the code-graph overrides.
-iwiki_mcp_launch_config() {
-    local tracked lines runtime
-    if _iwiki_remote_selected; then
-        iwiki_mcp_remote_config_file
-        return 0
-    fi
-    tracked="$(iwiki_mcp_config_file)"
-    runtime="${tracked%.json}.runtime.json"
+# Render $1 (a tracked config with exactly one "env" object, the local
+# server's) into $2 (its *.runtime.json sibling), splicing configured
+# code-graph vars into that env object. Prints $2 on a successful render, or
+# $1 unchanged when no vars are configured or the splice fails (no `env`
+# object to splice into) — iwiki still starts, only without the code-graph
+# overrides. Always leaves at most one of the two present on disk, so a stale
+# render from an earlier launch is never mistaken for the active config.
+_iwiki_render_code_graph() {
+    local tracked="$1" runtime="$2" lines
     lines="$(_iwiki_code_graph_env_lines)"
     if [[ -z "$lines" ]]; then
         rm -f "$runtime" 2>/dev/null || true
@@ -129,4 +138,35 @@ iwiki_mcp_launch_config() {
         rm -f "$runtime" 2>/dev/null || true
         printf '%s' "$tracked"
     fi
+}
+
+# Print the config path to hand to `--mcp-config`.
+# Dual mode (both local and remote usable, and mcp/iwiki-dual.json present)
+# registers both transports at once under distinct names, "iwiki-local" and
+# "iwiki-remote", so wiki_code_index/_search/_context can run locally while
+# wiki_code_publish_* and every other wiki_* tool still reach the hosted
+# server. Otherwise remote wins when usable (the deliberate opt-in), else
+# local. In remote-only mode the code-graph render does not apply, because a
+# hosted server owns its own storage and code-graph cache; local-only and dual
+# mode both render code-graph overrides into the local server's `env` object
+# via _iwiki_render_code_graph (the dual tracked file's remote entry has no
+# `env` key, so the splice only ever touches the local one).
+iwiki_mcp_launch_config() {
+    local tracked runtime
+
+    if _iwiki_local_selected && _iwiki_remote_selected && [[ -f "$(iwiki_mcp_dual_config_file)" ]]; then
+        tracked="$(iwiki_mcp_dual_config_file)"
+        runtime="${tracked%.json}.runtime.json"
+        _iwiki_render_code_graph "$tracked" "$runtime"
+        return 0
+    fi
+
+    if _iwiki_remote_selected; then
+        iwiki_mcp_remote_config_file
+        return 0
+    fi
+
+    tracked="$(iwiki_mcp_config_file)"
+    runtime="${tracked%.json}.runtime.json"
+    _iwiki_render_code_graph "$tracked" "$runtime"
 }
