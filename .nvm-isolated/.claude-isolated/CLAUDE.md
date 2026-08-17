@@ -52,7 +52,7 @@ a hosted server the token's own grants remain the absolute authorization limit.
 
 ## Keep Docs Current (MANDATORY)
 
-**After every change that alters functionality, architecture, or behavior — and only when the iwiki MCP server reports a domain bound to this project (`wiki_status`) — update the wiki via the MCP tools before responding to the user.**
+**After every change that alters functionality, architecture, or behavior — and only when the project binding succeeded (see **iwiki Project Binding**) — update the wiki via the MCP tools before responding to the user.**
 
 - Pick the write tool by intent — all three auto-reindex the domain and auto-commit the base on success, so no manual `wiki_index` follows:
   - **New page** → `wiki_write_page(domain, slug, markdown, source=<changed-source>)`. Refuses to overwrite an existing page.

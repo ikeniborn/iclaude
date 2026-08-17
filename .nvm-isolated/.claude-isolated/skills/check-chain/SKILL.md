@@ -204,7 +204,7 @@ Closed checklist (do NOT extend):
 
 Closed checklist (do NOT extend). Never emits CRITICAL; never blocks a phase transition or the final verdict:
 - Conversation: do Objective and Desired Outcomes cover the original task the user described in the conversation? Is there an objective the user did not ask for? → INFO
-- iwiki: does the intent contradict a documented decision, or do Health Metrics ignore components that reference this area? → WARNING. Requires the iwiki MCP tools `wiki_search` / `wiki_related` (bind the project domain first via `wiki_bind`).
+- iwiki: does the intent contradict a documented decision, or do Health Metrics ignore components that reference this area? → WARNING. Requires the iwiki MCP tools `wiki_search` / `wiki_related` (apply the iwiki Project Binding protocol from `CLAUDE.md` first).
 - If the iwiki MCP server / `wiki_search` are unavailable — skip silently (like IDD Step 0). Do not block, do not mention the absence.
 
 ---
@@ -348,8 +348,9 @@ Additionally — find `EXCESS`: files changed in the diff with no corresponding 
 
 #### Step 7. Write the state into the plan frontmatter
 
-After the report, write a machine-readable block into the **plan frontmatter** (do NOT
-touch the plan body — it is the merge-gate pass signal for idd-gate).
+After the report, write a machine-readable block into the frontmatter of the
+reconciliation source (do NOT touch its body — the block is the merge-gate pass signal
+read by `hooks/chain-gate.py`).
 
 1. Compute the body hash of the reconciliation source via the canonical algorithm (see above).
 2. Determine the verdict: `OK` if there are no CRITICAL findings (no MISSING steps /

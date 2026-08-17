@@ -152,7 +152,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "test_framework": "pytest|jest|go test|none",
     "has_prd": true|false,
     "prd_path": "docs/prd/" | null,
-    "syntax_command": "<команда из таблицы Syntax Command Lookup>" ,
+    "syntax_command": "<команда из таблицы Syntax Command Lookup>",
     "code_style": "pep8|prettier|gofmt|none",
     "wiki_initialized": true|false,
     "wiki_domain": "<имя домена iwiki>" | null,
