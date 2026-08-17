@@ -1,50 +1,42 @@
 {
-  "$comment": "Conventional Commits types",
+  "$comment": "Conventional Commits types. Branch naming is not derived from the type: branches are always dev-<topic> (see git-workflow/SKILL.md).",
   "types": {
     "feat": {
       "description": "New feature",
-      "emoji": "✨",
-      "branch_prefix": "feature/"
+      "emoji": "✨"
     },
     "fix": {
       "description": "Bug fix",
-      "emoji": "🐛",
-      "branch_prefix": "fix/"
+      "emoji": "🐛"
     },
     "refactor": {
       "description": "Code refactoring without changing functionality",
-      "emoji": "♻️",
-      "branch_prefix": "refactor/"
+      "emoji": "♻️"
     },
     "docs": {
       "description": "Documentation only",
-      "emoji": "📚",
-      "branch_prefix": "docs/"
+      "emoji": "📚"
     },
     "test": {
       "description": "Adding or fixing tests",
-      "emoji": "🧪",
-      "branch_prefix": "test/"
+      "emoji": "🧪"
     },
     "chore": {
       "description": "Maintenance, CI/CD, dependencies",
-      "emoji": "🔧",
-      "branch_prefix": "chore/"
+      "emoji": "🔧"
     },
     "perf": {
       "description": "Performance improvement",
-      "emoji": "⚡",
-      "branch_prefix": "perf/"
+      "emoji": "⚡"
     },
     "style": {
       "description": "Code style changes (formatting, whitespace)",
-      "emoji": "💄",
-      "branch_prefix": "style/"
+      "emoji": "💄"
     }
   },
   "format": {
     "subject_max_length": 72,
     "body_wrap": 100,
-    "footer": "🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+    "footer": "Co-Authored-By: <the co-author line the harness specifies>"
   }
 }

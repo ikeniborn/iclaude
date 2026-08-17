@@ -9,7 +9,7 @@ Track every direct, chain, and LoEn task, including read-only work. The parent a
 
 ## Required flow
 
-1. Call `wiki_status`; bind the project domain for read/write when present.
+1. Apply the iwiki Project Binding protocol from `CLAUDE.md`: bind the full `read` / `write` / `primary` scope from the project-root `.iwiki.toml` before any wiki call, then confirm with `wiki_status`. Never narrow the scope to a basename-derived domain.
 2. Resolve one English lowercase-kebab-case topic; stop on conflicting controlled topics.
 3. Read or create `reference/tasks/<topic>` with `type: reference`, `status: stable`, and tag `task`.
 4. Load durable event keys, then replay pending spool events in order; acknowledge only after confirmed page replay.

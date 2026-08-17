@@ -141,12 +141,17 @@ agent: general-purpose
 
 ## iwiki Integration
 
-Этот скилл не вызывает `context-awareness` — проверяет домен iwiki (wiki_status) напрямую.
+Этот скилл не вызывает `context-awareness` — читает состояние iwiki (`wiki_status`) напрямую.
+
+**Read-only.** Скилл выполняется в отдельном контексте (`context: fork`) и потому является
+субагентом: разрешены только `wiki_status`, `wiki_search`, `wiki_read_page`, `wiki_related`.
+`wiki_bind` и любая запись в вики запрещены — привязка и запись принадлежат parent agent
+(см. iwiki Project Binding и Task Log в `CLAUDE.md`).
 
 ### Query (в начале Step 2 — Analyze Against Rules)
 
 ```
-IF iwiki MCP подключён AND wiki_status сообщает домен проекта (привязать через wiki_bind):
+IF iwiki MCP подключён AND wiki_status сообщает непустой primary:
   wiki_search(query='паттерны нарушений и best practices форматирования инструкций')
 
   Использовать результат для обогащения Step 2:
@@ -155,17 +160,20 @@ IF iwiki MCP подключён AND wiki_status сообщает домен пр
   - Если в домене iwiki нет данных → продолжить стандартный анализ по R1-R7
 ```
 
-### Record (после Step 4 — только в режиме adapt)
+### Report (после Step 4 — только в режиме adapt)
 
-iwiki — embedding-граф документации в MCP-сервере (доменная модель); запись новой страницы через `wiki_write_page` (авто-переиндексация домена и авто-коммит базы).
+Скилл ничего не пишет в вики. Если в режиме `adapt` найдены нарушения, он возвращает
+parent agent'у предложение к записи — тот решает, публиковать ли его:
 
 ```
-IF wiki_status сообщает домен проекта AND mode == "adapt" AND violations_found > 0:
-  (опционально) author markdown → wiki_write_page(domain, slug, markdown, source)   # авто-переиндексация
-    пример нарушения и его исправление (что и почему), ссылаясь на {verified_file_path}
+IF mode == "adapt" AND violations_found > 0:
+  вернуть в выводе блок proposed_wiki_page:
+    { slug, markdown, source: <verified_file_path>, rationale }
+    — пример нарушения и его исправление (что и почему)
 
-  Результат: примеры нарушений и исправлений попадают в домен iwiki —
-  переиспользуются как эталоны при следующих проверках документов.
+  Parent agent (единственный писатель) решает, вызывать ли wiki_write_page /
+  wiki_update_page. Результат: эталоны нарушений и исправлений попадают в вики
+  и переиспользуются при следующих проверках.
 ```
 
 ---

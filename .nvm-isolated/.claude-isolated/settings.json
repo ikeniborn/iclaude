@@ -52,16 +52,8 @@
       "mcp__iwiki__wiki_write_page",
       "Bash(cp:*)",
       "Bash(mv:*)",
-      "Bash(rm:*)",
-      "Bash(rmdir:*)",
       "Bash(chmod:*)",
       "Bash(chown:*)",
-      "Bash(truncate:*)",
-      "Bash(shred:*)",
-      "Bash(dd:*)",
-      "Bash(mkfs:*)",
-      "Bash(sudo:*)",
-      "Bash(su:*)",
       "Bash(curl:*)",
       "Bash(wget:*)",
       "Bash(scp:*)",
@@ -100,11 +92,19 @@
       "Bash(reboot:*)"
     ],
     "ask": [
-      "Read(**/.env)"
+      "Read(**/.env)",
+      "Bash(rm:*)",
+      "Bash(rmdir:*)",
+      "Bash(truncate:*)",
+      "Bash(shred:*)",
+      "Bash(dd:*)",
+      "Bash(mkfs:*)",
+      "Bash(sudo:*)",
+      "Bash(su:*)"
     ],
     "defaultMode": "default"
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -225,7 +225,7 @@
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,

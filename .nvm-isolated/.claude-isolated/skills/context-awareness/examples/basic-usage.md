@@ -91,9 +91,7 @@ context-awareness skill выполняет следующие шаги:
   - typescript: ^5.3.3
 
 🔍 Recommended skills:
-  - lsp-integration (TypeScript LSP)
-  - code-review (enhanced type checking)
-  - pr-automation (GitHub CI/CD monitoring)
+  - git-workflow (branch, commit, PR)
 ```
 
 ---
@@ -130,14 +128,14 @@ context-awareness skill выполняет следующие шаги:
 
 ### Integration with other skills:
 
-**lsp-integration:**
+**Choosing an LSP server:**
 ```
 IF project_context.language == "typescript":
   Recommend typescript-lsp plugin
   Check vtsls installation
 ```
 
-**code-review:**
+**Language-specific review rules:**
 ```
 IF project_context.framework == "fastapi":
   Add FastAPI-specific checks:
@@ -146,7 +144,7 @@ IF project_context.framework == "fastapi":
     - Dependency injection patterns
 ```
 
-**structured-planning:**
+**Deriving verification commands:**
 ```
 IF project_context.tooling.testing == "jest":
   Validation steps: "npm test"
@@ -183,5 +181,3 @@ ELSE IF project_context.tooling.testing == "pytest":
 ## Related
 
 - [context-awareness/SKILL.md](../SKILL.md)
-- [adaptive-workflow/SKILL.md](../adaptive-workflow/SKILL.md)
-- [lsp-integration/SKILL.md](../lsp-integration/SKILL.md)

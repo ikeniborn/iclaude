@@ -24,9 +24,9 @@ IDD owns WHY / WHAT / Outcomes / Constraints. Brainstorm owns HOW (architecture,
 
 ### Step 0: Load project context via iwiki (if available)
 
-Before asking any questions, check the iwiki MCP server. If connected, `wiki_status`;
-if a domain for this project exists, `wiki_bind(read=[<domain>], write=<domain>)` and load
-context in parallel:
+Before asking any questions, check the iwiki MCP server. If connected, apply the iwiki
+Project Binding protocol from `CLAUDE.md` (bind the full `read` / `write` / `primary`
+scope from the project-root `.iwiki.toml`, then `wiki_status`), and load context:
 
 1. `wiki_search('<topic>')` — existing documentation for this topic
 
@@ -35,11 +35,11 @@ Store results as **wiki_context** for use in Steps 1–6 below.
 Present to user:
 
 ```
-Context from iwiki domain `<name>`:
+Context from iwiki (primary domain `<primary>`):
 [sections found, or "No documentation found for this topic"]
 ```
 
-If the iwiki MCP server is unavailable, no project domain exists, or the search returns no
+If the iwiki MCP server is unavailable, `.iwiki.toml` is absent, or the search returns no
 results — skip silently. Do not block or mention the absence.
 
 ---
@@ -118,9 +118,12 @@ Fix any failures inline, then present.
 1. Show a summary of the written document.
 2. Ask: "Review the intent doc. Approve it or request changes."
 3. On changes requested: edit → re-show → repeat.
-4. On approval: set `Status: approved`, then commit once:
+4. On approval: set `Status: approved`, then commit once — on the task's `dev-<topic>`
+   branch, never on the main branch (see Branch Workflow in `CLAUDE.md`; create the branch
+   with `git-workflow` Mode 1 first if it does not exist yet):
 
 ```bash
+git branch --show-current
 git add docs/superpowers/intents/ && git commit -m "docs(idd): add intent doc for <topic>"
 ```
 

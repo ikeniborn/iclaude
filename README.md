@@ -56,6 +56,9 @@ There is no built-in way to see how many tokens are used, which model is active,
 Claude Code can read, modify, and execute files with broad permissions. iclaude:
 - Provides kernel-level isolation via Firecracker microVM
 - Separates each project's configuration via `CLAUDE_CONFIG_DIR`
+- Denies reads and edits of credential paths (`.ssh/`, `.aws/`, `*.pem`, token and
+  credential files) and asks for confirmation before destructive shell commands
+  (`rm`, `rmdir`, `truncate`, `shred`, `dd`, `mkfs`, `sudo`, `su`)
 
 ---
 

@@ -24,6 +24,9 @@ Parse `$ARGUMENTS`:
 - A lone path with no stage → resolve the stage from the directory (`intents/`→intent,
   `specs/`→spec, `plans/`→plan). `result` is never inferred from a path (it shares
   `plans/` with `plan`); it must be named explicitly.
+- `result` accepts either artifact: a plan (`full` route) or an intent (`execute` route,
+  where no plan is written). `/check-chain result docs/superpowers/intents/<...>-intent.md`
+  runs the reconciliation against the intent — see «result reconciliation».
 
 ## Shared core (Steps 0–4 and 6 apply to every stage; Step 5 is result-only)
 
@@ -124,7 +127,12 @@ when the diff does at least one of:
 Otherwise (a point bugfix, a text/comment/config tweak, or edits contained within
 existing files with no new cross-component wiring) → sections 1–4 only, no diagram.
 
-### Step 6 — wiki task page
+### Step 6 — wiki task page (parent session only)
+
+This step writes the wiki and therefore runs in the parent session — subagents are
+read-only against the wiki (`wiki_search`, `wiki_read_page`, `wiki_related`). If the check
+itself was delegated, the subagent returns the verdict, the findings and the proposed
+event line, and the parent performs Step 6.
 
 After the verdict, record the gate on the topic's wiki page
 `reference/tasks/<topic>` in the domain reported by `wiki_status.primary` (see the
@@ -154,7 +162,8 @@ section you are about to change, then `wiki_update_page` it in full.
 | intent | intents/ | *-intent.md | intent_hash | review | structure, completeness, clarity, consistency, alignment(advisory) |
 | spec | specs/ | *-design.md | spec_hash | review | structure, coverage, clarity, consistency |
 | plan | plans/ | *.md | plan_hash | review | structure, coverage, dependencies, verifiability, consistency |
-| result | plans/ | *.md | plan_hash | result_check | non-phased: git diff reconciliation |
+| result (`full`) | plans/ | *.md | plan_hash | result_check | non-phased: git diff reconciliation |
+| result (`execute`) | intents/ | *-intent.md | intent_hash | result_check | non-phased: git diff reconciliation against the intent |
 
 ### intent checklist
 
@@ -199,7 +208,10 @@ Closed checklist (do NOT extend). Never emits CRITICAL; never blocks a phase tra
 - If the iwiki MCP server / `wiki_search` are unavailable — skip silently (like IDD Step 0). Do not block, do not mention the absence.
 
 ---
-Next step: superpowers:brainstorming
+Next step: report the continuation decision (`execute` or `full`) with evidence and wait
+for the user (see Workflow Route Selection in `CLAUDE.md`). `execute` implements straight
+from the approved intent and ends with `/check-chain result <intent>`; only `full` goes on
+to `superpowers:brainstorming`.
 
 ### spec checklist
 
@@ -268,6 +280,23 @@ Closed checklist:
 
 ### result reconciliation
 
+#### Step 0. Pick the reconciliation source (plan or intent)
+
+The `result` stage reconciles the diff against the **latest approved artifact of the
+chosen continuation**:
+
+- `full` route → the plan (`docs/superpowers/plans/`). Steps 1–7 below apply as written.
+- `execute` route → the intent (`docs/superpowers/intents/`), because `execute` marks Spec
+  and Plan `n/a` and writes neither. Resolution order: the explicit `$ARGUMENTS` path → a
+  plan for `<topic>` → the intent for `<topic>`. If neither exists, report «Не найден ни
+  план, ни интент. Укажи путь: `/check-chain result path/to/artifact.md`» and stop.
+
+In intent mode the reconciliation unit is the **Desired Outcome**, not the plan step: read
+Objective, Desired Outcomes, Constraints and Stop Rules, then run Steps 3–7 with each
+Desired Outcome in place of a plan step (`DONE` / `PARTIAL` / `MISSING`, plus `EXCESS` for
+changed files no outcome accounts for). Step 7 writes `result_check` into the **intent**
+frontmatter with `intent_hash` instead of `plan_hash`. Skip Step 2's spec lookup.
+
 #### Step 1. Load the plan
 
 - Read the plan file from `$ARGUMENTS`
@@ -322,18 +351,21 @@ Additionally — find `EXCESS`: files changed in the diff with no corresponding 
 After the report, write a machine-readable block into the **plan frontmatter** (do NOT
 touch the plan body — it is the merge-gate pass signal for idd-gate).
 
-1. Compute the plan body hash via the canonical algorithm (see above).
-2. Determine the verdict: `OK` if there are no CRITICAL findings (no MISSING steps);
-   otherwise `needs_work`.
-3. Create the `result_check:` block (or update the existing one) in the plan frontmatter:
+1. Compute the body hash of the reconciliation source via the canonical algorithm (see above).
+2. Determine the verdict: `OK` if there are no CRITICAL findings (no MISSING steps /
+   outcomes); otherwise `needs_work`.
+3. Create the `result_check:` block (or update the existing one) in that artifact's
+   frontmatter — the plan in `full` mode, the intent in `execute` mode:
    ```yaml
    result_check:
      verdict: OK | needs_work
-     plan_hash: <plan body hash>
+     plan_hash: <plan body hash>      # full route
+     # intent_hash: <intent body hash>  # execute route — use this key instead
      last_run: <today>
    ```
-   If the plan has no frontmatter — add it at the start of the file
-   (`---` … `---`) without changing the body.
+   If the artifact has no frontmatter — add it at the start of the file
+   (`---` … `---`) without changing the body. The `chain-gate` hook reads exactly this
+   block when `superpowers:finishing-a-development-branch` is invoked.
 
 #### Severity
 
@@ -356,11 +388,13 @@ touch the plan body — it is the merge-gate pass signal for idd-gate).
    - else run the stage's Steps 1–4 + 6 (findings → verdicts → frontmatter → wiki task page); the `result` stage additionally runs Step 5 (single-page HTML report);
    - stage ends `needs_work` (open CRITICAL) → STOP: «chain остановлен на `<stage>`,
      почини и перезапусти». Do not run downstream stages.
-4. `result` needs a `git diff`. Reached with an empty diff → emit INFO
+4. When `spec` and `plan` are both `n/a` (the `execute` route), `result` reconciles
+   against the intent per Step 0 of the result profile.
+5. `result` needs a `git diff`. Reached with an empty diff → emit INFO
    «result pending implementation», chain verdict «OK up to plan», leave the page's
    `Lifecycle` at `completion-pending` (not `done`). Non-empty diff → reconcile; on `OK`
    close the task page per Step 6 (`Lifecycle: done`, `Closed: <today>`).
-5. Print the chain summary, and the path to the HTML report when the `result` stage produced one.
+6. Print the chain summary, and the path to the HTML report when the `result` stage produced one.
 
 ### Single stage — `/check-chain <stage> [path]`
 
