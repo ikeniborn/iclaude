@@ -25,6 +25,11 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
    Depth `-L 2` is chosen for the current project — its `docs/` nests at most 2 directory
    levels (e.g. `docs/superpowers/specs/`), so level 2 shows the full directory skeleton plus
    top-level files without flooding context with every leaf file. Raise the level for deeper trees.
+3. **For Python code-analysis or planning tasks**, check code-graph availability via
+   `wiki_code_status` (or `wiki_lint`'s `code_graph` field). When `state` is `ready`,
+   prefer `wiki_code_search` / `wiki_code_context` over blind grep for symbol lookups,
+   call graphs, and change-impact analysis. When `disabled`, `missing_snapshot`, or
+   `source_unavailable` — skip silently; it is optional context, not a blocker.
 
 Skip only when: familiar area, same session.
 
@@ -89,6 +94,15 @@ These files are the entry point for two audiences at once: business users who ne
 - **Only when they exist.** Do not create a `README.md` or `docs/README.ru.md` that the project does not already have unless the user asks. If only one of the two exists, update that one.
 - **This is separate from the iwiki wiki.** The wiki (above) is internal/semantic documentation; the README files are the public, human-facing docs. Updating one does not exempt you from the other — do both when both apply.
 - **Skip only for changes that touch no functionality, behavior, usage, or setup** (typo, comment, internal formatting).
+
+## Keep Code Graph Current (MANDATORY)
+
+**After every change that adds, removes, renames, or moves a Python symbol (function, class, import) — and only when the project binding succeeded and the code graph is configured (`[code_graph] enabled = true` in `.iwiki.toml`) — refresh the code graph before responding to the user.**
+
+- **Local or dual server** (`wiki_code_index` reachable): call `wiki_code_index` to rebuild the snapshot from the changed checkout.
+- **`publish_mode = "mcp"`**: after rebuilding, publish the refreshed snapshot with `wiki_code_publish_begin` / `_batch` / `_finalize` so the hosted copy matches.
+- **`wiki_code_index` unavailable** (remote-only session, `source_unavailable`): skip the rebuild — this is a transport gap, not something to route around by editing `.iwiki.toml`; see `docs/iwiki-mcp-modes.md`'s dual-mode section. Never block or fail the task on it.
+- **Skip entirely** for changes that touch no Python source (docs, config, non-Python code, comments/formatting) or when code graph is not configured for this project.
 
 ## Task Log (iwiki, MANDATORY)
 
