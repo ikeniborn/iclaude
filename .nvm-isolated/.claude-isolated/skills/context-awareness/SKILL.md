@@ -3,7 +3,7 @@ name: context-awareness
 description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project (doc summary) and its code-graph availability/state, surfacing both as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) or code-graph queries (wiki_code_search/wiki_code_context) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.7.0
+# version: 1.7.1
 # tags: context, detection, project, language, framework, lat
 # dependencies: []
 # files: templates: ./templates/*.json
@@ -84,9 +84,11 @@ Mapping language → syntax check command:
    durable status.
 
 IF MCP-сервер iwiki подключён:
-  2. wiki_status → project_dir, список `domains`, действующая привязка read/write/primary.
-     Скилл НИКОГДА не вызывает wiki_bind: привязку делает parent agent по протоколу
-     iwiki Project Binding из CLAUDE.md. Здесь только чтение.
+  2. wiki_status (на резолвленном сервере — см. multi-transport tool-name resolution в
+     iwiki Project Binding из CLAUDE.md: `iwiki-remote`, иначе `iwiki-local`, иначе
+     одиночный `iwiki`) → project_dir, список `domains`, действующая привязка
+     read/write/primary. Скилл НИКОГДА не вызывает wiki_bind: привязку делает parent
+     agent по тому же протоколу. Здесь только чтение.
   3. Если wiki_status вернул непустой `primary` (домен записи проекта):
        - <domain> ← primary
        - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
@@ -100,7 +102,9 @@ IF MCP-сервер iwiki подключён:
        task_page_found: true|false
        task_lifecycle: "in-progress|blocked|completion-pending|done" | null
        task_delivery_pending: true|false
-     Затем `wiki_code_status()` (read-only, тот же домен `primary`):
+     Затем `wiki_code_status()` (read-only, тот же домен `primary`, на резолвленном
+     code-graph сервере — `iwiki-local`, иначе одиночный `iwiki`, см. multi-transport
+     tool-name resolution в CLAUDE.md):
        code_graph_available: true, когда `state == "ready"`; иначе false
        code_graph_domain: "<domain>" (то же, что wiki_domain)
        code_graph_state: "<state из wiki_code_status>" (ready|missing_snapshot|disabled|source_unavailable)
@@ -502,6 +506,11 @@ re-detecting them.
 **License:** MIT
 
 ## Changelog
+
+### 1.7.1 (2026-08-17)
+- `wiki_status`/`wiki_code_status` calls now reference CLAUDE.md's multi-transport
+  tool-name resolution instead of naming the server generically — dual-mode sessions
+  expose `iwiki-local`/`iwiki-remote`, not a single `iwiki`
 
 ### 1.7.0 (2026-08-17)
 - Code-graph detection added: `code_graph_available`, `code_graph_domain`, `code_graph_state` via read-only `wiki_code_status()` alongside the existing wiki detection
