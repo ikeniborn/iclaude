@@ -8,6 +8,10 @@ review:
     clarity: {status: passed, findings: []}
     consistency: {status: passed, findings: []}
     alignment: {status: passed, findings: []}
+result_check:
+  verdict: OK
+  intent_hash: c8d088abafde6458
+  last_run: 2026-08-17
 ---
 
 # Intent: iwiki-dual-mcp-registration
