@@ -48,3 +48,14 @@ under local stdio (no `IWIKI_REMOTE_URL`).
 
 Local stdio does not run this preflight — its project binding is resolved entirely
 server-side from `.iwiki.toml`, as described above.
+
+## Code graph and remote mode
+
+`wiki_code_index` needs a local repository checkout on the server's disk. A hosted
+Streamable HTTP server has no such checkout, so under remote mode it returns
+`{"error":"source_unavailable", ...}`. The `iwiki-remote-scope.js` hook's emitted
+instruction now says this explicitly: that error means the active MCP config must
+switch from `mcp/iwiki-remote.json` to the local stdio one (`mcp/iwiki.json`, via
+`IWIKI_COMMAND`/`IWIKI_BASE_DIR`) and the session restarted — not that `.iwiki.toml`
+needs editing. `publish_mode = "mcp"` in `.iwiki.toml` still applies afterward, to push
+the locally-built snapshot to the hosted server.

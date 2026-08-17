@@ -51,6 +51,11 @@ t_remote_region() {
   else
     fail "fail-closed on invalid scope / 403"
   fi
+  if [[ "$out" == *"wiki_code_index"* && "$out" == *"source_unavailable"* && "$out" == *"mcp/iwiki.json"* ]]; then
+    pass "notes wiki_code_index needs local stdio config, not .iwiki.toml edit"
+  else
+    fail "notes wiki_code_index needs local stdio config, not .iwiki.toml edit"
+  fi
 }
 t_remote_region
 

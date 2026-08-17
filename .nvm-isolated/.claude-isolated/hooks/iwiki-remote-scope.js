@@ -31,5 +31,11 @@ process.stdout.write(
   'domain, or current session scope. On a missing or invalid TOML scope, or a ' +
   'rejected bind such as 403, show a brief reason, do not make mutating wiki ' +
   'calls, and retain task lifecycle `completion-pending`. The remote server\'s ' +
-  'token grants remain the absolute authorization limit.'
+  'token grants remain the absolute authorization limit.\n\n' +
+  '`wiki_code_index` is unavailable under this hosted mode — it needs a local ' +
+  'repository checkout on the server\'s disk, which a remote HTTP server does ' +
+  'not have, so it returns `source_unavailable`. That error means the active ' +
+  'MCP server config must switch to the local stdio one ' +
+  '(`mcp/iwiki.json`, via `IWIKI_COMMAND`/`IWIKI_BASE_DIR`), not that ' +
+  '`.iwiki.toml` needs editing.'
 );
