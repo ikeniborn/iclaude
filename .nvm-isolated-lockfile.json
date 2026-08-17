@@ -1,16 +1,23 @@
 {
   "nodeVersion": "22.23.1",
-  "claudeCodeVersion": "2.1.227",
+  "claudeCodeVersion": "2.1.233",
   "routerVersion": "unknown",
   "lspServers": {
-    "pyright": "1.1.408"
+    "pyright": "1.1.408",
+    "vtsls": "0.3.0",
+    "typescript-language-server": "0.3.0"
   },
-  "lspPlugins": {},
+  "lspPlugins": {
+    "pyright-lsp@claude-plugins-official": "1.0.0",
+    "typescript-lsp@claude-plugins-official": "1.0.0",
+    "gopls-lsp@claude-plugins-official": "1.0.0",
+    "rust-analyzer-lsp@claude-plugins-official": "1.0.0"
+  },
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-08-11T04:13:27Z",
+  "installedAt": "2026-08-17T07:08:50Z",
   "nvmVersion": "0.39.7"
 }
