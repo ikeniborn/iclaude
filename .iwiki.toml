@@ -24,17 +24,11 @@ primary = "iclaude"
 enabled = true
 languages = ["python"]
 auto_rebuild = "bounded"
-max_rebuild_seconds = 10
+max_rebuild_seconds = 300
 max_file_bytes = 1000000
 max_total_files = 20000
 include_tests = false
 exclude = []
-
-# Optional PostgreSQL storage instead of the default Git base. Requires
-# non-empty `read`/`write` and a `primary`; the wiki and its domains must
-# already exist. The password comes from ICLAUDE_IWIKI_DB_PASSWORD, never from
-# this file. Omit the whole table for Git storage.
-
 publish_mode = "mcp"     
 read_mode = "mcp"        
 max_snapshot_age_seconds = 86400
