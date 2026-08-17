@@ -19,27 +19,27 @@ primary = "iclaude"
 # paths. The cache is local, under <IWIKI_BASE_DIR>/.iwiki/, and is never built
 # at server startup. The ICLAUDE_IWIKI_CODE_GRAPH_* variables in .claude_config
 # override this table for every project, so prefer configuring it here.
-#
-# [code_graph]
-# enabled = true
-# languages = ["python"]
-# auto_rebuild = "bounded"          # bounded | off
-# max_rebuild_seconds = 10
-# max_file_bytes = 1000000
-# max_total_files = 20000
-# include_tests = true
-# exclude = []
+
+[code_graph]
+enabled = true
+languages = ["python"]
+auto_rebuild = "bounded"
+max_rebuild_seconds = 10
+max_file_bytes = 1000000
+max_total_files = 20000
+include_tests = false
+exclude = []
 
 # Optional PostgreSQL storage instead of the default Git base. Requires
 # non-empty `read`/`write` and a `primary`; the wiki and its domains must
 # already exist. The password comes from ICLAUDE_IWIKI_DB_PASSWORD, never from
 # this file. Omit the whole table for Git storage.
-#
-# [storage]
-# type = "postgres"
-# host = "db.internal.example"
-# port = 5432
-# database = "iwiki"
-# user = "iwiki_app"
-# sslmode = "verify-full"
-# iwiki_id = "team-wiki"            # local stdio only; a hosted server rejects it
+
+publish_mode = "mcp"     
+read_mode = "mcp"        
+max_snapshot_age_seconds = 86400
+max_batch_rows = 1000
+max_batch_bytes = 1000000
+publication_session_ttl_seconds = 900
+staging_retention_seconds = 86400
+staging_cleanup_limit = 100

@@ -66,6 +66,8 @@
       "mcp__iwiki__wiki_code_status",
       "mcp__iwiki__wiki_code_search",
       "mcp__iwiki__wiki_code_context",
+      "mcp__iwiki__wiki_sync",
+      "mcp__iwiki__wiki_code_index",
       "Bash(cp:*)",
       "Bash(mv:*)",
       "Bash(chmod:*)",
@@ -118,13 +120,11 @@
       "Bash(sudo:*)",
       "Bash(su:*)",
       "mcp__iwiki__wiki_delete_page",
-      "mcp__iwiki__wiki_create_domain",
-      "mcp__iwiki__wiki_sync",
-      "mcp__iwiki__wiki_code_index"
+      "mcp__iwiki__wiki_create_domain"
     ],
     "defaultMode": "default"
   },
-  "model": "opus",
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -245,7 +245,7 @@
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "medium",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
