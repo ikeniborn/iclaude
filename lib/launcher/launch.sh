@@ -823,13 +823,15 @@ launch_claude() {
     local -a claude_cmd_arr
     read -ra claude_cmd_arr <<< "$claude_cmd"
 
-    # Register the iwiki MCP server from the tracked, secret-free mcp/iwiki.json
+    # Register the iwiki MCP server(s) from the tracked, secret-free mcp/iwiki*.json
     # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so
     # Claude Code can expand ${IWIKI_COMMAND}/${IWIKI_*} at spawn time. The flag
     # is added to claude_cmd_arr, so it flows into every launch branch below.
     # (The microVM path execs earlier and is intentionally not covered.)
-    # iwiki_mcp_launch_config returns the tracked file, or a rendered sibling when
-    # the optional IWIKI_CODE_GRAPH_* vars are configured (see lib/iwiki/mcp.sh).
+    # iwiki_mcp_launch_config returns the tracked local or remote file (or a
+    # rendered sibling when the optional IWIKI_CODE_GRAPH_* vars are configured),
+    # or the dual-mode tracked file registering both "iwiki-local" and
+    # "iwiki-remote" when both transports are usable (see lib/iwiki/mcp.sh).
     if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
         claude_cmd_arr+=( --mcp-config "$(iwiki_mcp_launch_config)" )
     fi
