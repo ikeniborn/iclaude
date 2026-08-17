@@ -588,6 +588,21 @@ Format: `🧠` - clickable hyperlink (OSC 8)
 
 Branch name + uncommitted changes count (e.g., "master" or "feature-branch +3")
 
+### 10. Rate Limit
+
+Format: `[RL:45% 2h30m 7d:62% 3d]` — Anthropic-only (hidden with `--router`).
+
+- Read from `anthropic-ratelimit-unified-5h-*` and `anthropic-ratelimit-unified-7d-*`
+  response headers, fetched via a single minimal `POST /v1/messages` call
+  (`lib/rate-limit.sh`) and cached for 60s (5-minute hard expiry for display).
+- Auth for that call: `$CLAUDE_CODE_OAUTH_TOKEN` if set (long-lived `claude setup-token`,
+  set via `.claude_config` → `ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN` in iclaude setups), else
+  `$CLAUDE_CONFIG_DIR/.credentials.json`. Silently shows nothing if neither is available
+  (e.g. auth stored in an OS keychain the module doesn't read).
+- First segment is the 5-hour session window; `7d:` is the weekly window, shown only
+  when the API returns it. Colored green (<50%), yellow (50-79%), red (≥80%) per window.
+- Time shown is time-to-reset (`2h30m` for 5h, `3d` for 7d).
+
 ## Features
 
 ### Key Capabilities
@@ -610,13 +625,17 @@ The status line automatically adapts to terminal width to prevent line wrapping 
 
 `detect_real_context_window()` resolves the true window **by model name**, because
 Claude Code reports `context_window_size: 200000` even for 1M-window models
-(Opus/Sonnet 4.x). Mapping: Opus/Sonnet 4.5+ → 1M, Haiku → 200K, unknown → reported.
+(Opus/Sonnet 4.x). Mapping: Opus 5, Sonnet 5, Opus/Sonnet 4.5+ → 1M, Haiku → 200K,
+Fable/Mythos → 1M, unknown → reported.
 
 - **Σ** — remaining tokens until the window is full (`window − active`), e.g. `Σ 680K ↓`.
 - **📊** — active context (real `total_input_tokens`, incl. cache) and its % of the
   full window, e.g. `📊 320K (32%)`. `⚠️` appended if active exceeds the window.
   Derived from real token counts, **not** from `used_percentage` (which Claude Code
-  saturates at 100 against its stale 200K value).
+  saturates at 100 against its stale 200K value). A `🗜️~92%` marker is appended once
+  active usage reaches the estimated auto-compact threshold (Anthropic doesn't publish
+  the exact trigger, so this defaults to 92% and can be overridden with
+  `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`).
 - **📦** — cache hit-rate % and read/write split, e.g. `📦 86% · R310K/W10K` (`R` = cache_read, `W` = cache_creation; hit-rate = read / (read + creation + input)).
 
 The fixed `🔒 45K` reserved-buffer marker was removed — it was meaningless at 1M.

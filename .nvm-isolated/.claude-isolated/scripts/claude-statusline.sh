@@ -146,7 +146,7 @@ detect_real_context_window() {
         *opus*|*sonnet*)
             case "${model,,}" in
                 *4-8*|*4.8*|*4-7*|*4.7*|*4-6*|*4.6*|*4-5*|*4.5*) known=1000000 ;;  # 1M
-                *sonnet?5*) known=1000000 ;;                      # Sonnet 5 = 1M ("5" right after "sonnet"; not "Sonnet 3.5")
+                *sonnet?5*|*opus?5*) known=1000000 ;;             # Sonnet 5 / Opus 5 = 1M ("5" right after model name; not "Sonnet 3.5")
                 *) known=0 ;;                                     # 4.0/4.1 → reported
             esac ;;
     esac
@@ -843,6 +843,17 @@ else
     fi
 fi
 
+# Auto-compact proximity warning.
+# Anthropic doesn't publish the exact auto-compact trigger percentage (it has
+# shifted across releases, unofficially ~92-95%); CLAUDE_AUTOCOMPACT_PCT_OVERRIDE
+# lets users override it. Default 92 is an estimate, not a guarantee.
+COMPACT_ICON=""
+_COMPACT_THRESHOLD="${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-92}"
+[[ "$_COMPACT_THRESHOLD" =~ ^[0-9]+$ ]] || _COMPACT_THRESHOLD=92
+if [[ "${ACTIVE_PERCENT_INT:-0}" -ge "$_COMPACT_THRESHOLD" ]]; then
+    COMPACT_ICON=" 🗜️~${_COMPACT_THRESHOLD}%"
+fi
+
 # CRITICAL: Clean ALL variables from newlines BEFORE assembly
 # Problem: Newlines appear in multiple places, not just format_tokens
 TOTAL_TOKENS_FMT=$(printf '%s' "$TOTAL_TOKENS_FMT" | tr -d '\n\r')
@@ -854,9 +865,9 @@ CACHE_FMT=$(printf '%s' "${CACHE_FMT:-}" | tr -d '\n\r')
 # Format: Σ 680K ↓ | 📊 320K (32%)
 if [[ $ACTIVE_TOKENS -gt 0 ]]; then
     if [[ $ACTIVE_TOKENS -gt $CONTEXT_LIMIT ]]; then
-        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET} ⚠️${COMPACT_ICON}"
     else
-        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}"
+        CONTEXT_DISPLAY="Σ ${REMAINING_FMT} ↓ | ${ACTIVE_COLOR}📊 ${ACTIVE_TOKENS_FMT} (${EFFECTIVE_PERCENT}%)${RESET}${COMPACT_ICON}"
     fi
 else
     # Zero active tokens (after /clear)

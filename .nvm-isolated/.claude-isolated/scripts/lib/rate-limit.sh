@@ -1,20 +1,24 @@
 #!/bin/bash
 # Rate Limit Module for Claude Code Statusline
-# Fetches and caches Anthropic API rate limit info (unified 5h window)
+# Fetches and caches Anthropic API rate limit info (unified 5h + 7d windows)
 #
 # API: POST https://api.anthropic.com/v1/messages (max_tokens:1, "quota")
 #   - Costs 1 output token per call (~$0.00002) — minimal but not free
 #   - Returns headers:
 #     anthropic-ratelimit-unified-5h-utilization  (float 0.0-1.0)
 #     anthropic-ratelimit-unified-5h-reset         (unix timestamp, seconds)
+#     anthropic-ratelimit-unified-7d-utilization  (float 0.0-1.0)
+#     anthropic-ratelimit-unified-7d-reset         (unix timestamp, seconds)
 #
 # Auth: OAuth Bearer token + anthropic-beta: oauth-2025-04-20
-#       Token from $CLAUDE_CONFIG_DIR/.credentials.json
+#       Token from $CLAUDE_CODE_OAUTH_TOKEN (long-lived `claude setup-token`,
+#       set via .claude_config in iclaude setups) if set, else
+#       $CLAUDE_CONFIG_DIR/.credentials.json
 # Cache: /tmp/claude-ratelimit-cache.json  (TTL 60 seconds)
 # Async: Background curl — never blocks statusline render
 #
 # Public functions:
-#   get_rate_limit_display()              → prints "[RL:45% 2h30m]" or ""
+#   get_rate_limit_display()              → prints "[RL:45% 2h30m | 7d 12% 3d]" or ""
 #   trigger_rate_limit_fetch <config_dir> → fires background curl, returns immediately
 
 # Read cached rate limit and return formatted display string.
@@ -32,10 +36,12 @@ get_rate_limit_display() {
     [[ -z "$cache_json" ]] && return 0
 
     # Parse fields with jq
-    local utilization cached_at reset_at
+    local utilization cached_at reset_at util_7d reset_7d
     utilization=$(echo "$cache_json" | jq -r '.utilization // empty' 2>/dev/null)
     cached_at=$(echo "$cache_json" | jq -r '.cached_at // 0' 2>/dev/null)
     reset_at=$(echo "$cache_json" | jq -r '.reset_at // 0' 2>/dev/null)
+    util_7d=$(echo "$cache_json" | jq -r '.utilization_7d // empty' 2>/dev/null)
+    reset_7d=$(echo "$cache_json" | jq -r '.reset_at_7d // 0' 2>/dev/null)
 
     # Validate non-empty
     [[ -z "$utilization" ]] && return 0
@@ -81,7 +87,35 @@ get_rate_limit_display() {
     fi
     local rl_reset=$'\033[0m'
 
-    printf '%s[RL:%d%% %s]%s' "$rl_color" "$pct" "$time_str" "$rl_reset"
+    # Optional 7-day (weekly) window — same call, no extra API cost
+    local week_str=""
+    if [[ -n "$util_7d" ]] && [[ "$util_7d" =~ ^[0-9]+\.?[0-9]*$ ]] && \
+       [[ -n "$reset_7d" ]] && [[ "$reset_7d" != "0" ]]; then
+        local pct_7d delta_7d days_7d time_7d
+        pct_7d=$(awk "BEGIN{printf \"%.0f\", $util_7d * 100}")
+        delta_7d=$((reset_7d - now))
+        if [[ $delta_7d -le 0 ]]; then
+            time_7d="reset"
+        else
+            days_7d=$((delta_7d / 86400))
+            if [[ $days_7d -gt 0 ]]; then
+                time_7d="${days_7d}d"
+            else
+                time_7d="$(( (delta_7d % 86400) / 3600 ))h"
+            fi
+        fi
+        local color_7d
+        if [[ $pct_7d -lt 50 ]]; then
+            color_7d=$'\033[32m'
+        elif [[ $pct_7d -lt 80 ]]; then
+            color_7d=$'\033[33m'
+        else
+            color_7d=$'\033[31m'
+        fi
+        week_str=$(printf ' %s7d:%d%% %s%s' "$color_7d" "$pct_7d" "$time_7d" "$rl_reset")
+    fi
+
+    printf '%s[RL:%d%% %s]%s%s' "$rl_color" "$pct" "$time_str" "$rl_reset" "$week_str"
     return 0
 }
 
@@ -122,6 +156,10 @@ trigger_rate_limit_fetch() {
 
     # Capture for subshell
     local creds_file="$config_dir/.credentials.json"
+    # iclaude setups commonly authenticate via CLAUDE_CODE_OAUTH_TOKEN (long-lived
+    # token from `claude setup-token`, see lib/oauth/token.sh) instead of an
+    # interactive login — no .credentials.json file is ever written in that case.
+    local env_token="${CLAUDE_CODE_OAUTH_TOKEN:-}"
 
     # Background fetch — fire and forget
     (
@@ -131,15 +169,19 @@ trigger_rate_limit_fetch() {
         }
         trap cleanup_rl EXIT
 
-        [[ ! -f "$creds_file" ]] && exit 0
-
-        local token
-        token=$(jq -r '.claudeAiOauth.accessToken // empty' "$creds_file" 2>/dev/null)
+        local token="$env_token"
+        if [[ -z "$token" ]]; then
+            [[ ! -f "$creds_file" ]] && exit 0
+            token=$(jq -r '.claudeAiOauth.accessToken // empty' "$creds_file" 2>/dev/null)
+        fi
         [[ -z "$token" ]] && exit 0
 
         # POST /v1/messages with max_tokens:1 — same method Claude Code uses internally
         # Requires anthropic-beta: oauth-2025-04-20 to allow OAuth Bearer token
-        local body='{"model":"claude-sonnet-4-6","max_tokens":1,"messages":[{"role":"user","content":"quota"}]}'
+        # Model must be a currently valid id — an unknown/retired id returns 429
+        # rate_limit_error with NO anthropic-ratelimit-unified-* headers at all,
+        # silently breaking this fetch. Haiku 4.5 is the cheapest current model.
+        local body='{"model":"claude-haiku-4-5-20251001","max_tokens":1,"messages":[{"role":"user","content":"quota"}]}'
         local headers_file="/tmp/claude-ratelimit-headers-$$.tmp"
 
         curl -s \
@@ -157,10 +199,14 @@ trigger_rate_limit_fetch() {
 
         [[ ! -f "$headers_file" ]] && exit 0
 
-        local utilization reset_at
+        local utilization reset_at util_7d reset_7d
         utilization=$(grep -i "anthropic-ratelimit-unified-5h-utilization:" "$headers_file" \
                       | awk '{print $2}' | tr -d '\r\n')
         reset_at=$(grep -i "anthropic-ratelimit-unified-5h-reset:" "$headers_file" \
+                   | awk '{print $2}' | tr -d '\r\n')
+        util_7d=$(grep -i "anthropic-ratelimit-unified-7d-utilization:" "$headers_file" \
+                  | awk '{print $2}' | tr -d '\r\n')
+        reset_7d=$(grep -i "anthropic-ratelimit-unified-7d-reset:" "$headers_file" \
                    | awk '{print $2}' | tr -d '\r\n')
 
         [[ -z "$utilization" ]] && exit 0
@@ -168,11 +214,16 @@ trigger_rate_limit_fetch() {
         [[ ! "$utilization" =~ ^[0-9]+\.?[0-9]*$ ]] && exit 0
         [[ ! "$reset_at" =~ ^[0-9]+$ ]] && exit 0
 
+        # 7d fields are optional — blank out on any validation failure
+        [[ ! "$util_7d" =~ ^[0-9]+\.?[0-9]*$ ]] && util_7d=""
+        [[ ! "$reset_7d" =~ ^[0-9]+$ ]] && reset_7d=""
+
         local now
         now=$(date +%s)
         local tmp_cache="/tmp/claude-ratelimit-cache.json.$$.tmp"
-        printf '{"utilization":%s,"reset_at":%s,"cached_at":%s}\n' \
-            "$utilization" "$reset_at" "$now" > "$tmp_cache" && \
+        printf '{"utilization":%s,"reset_at":%s,"cached_at":%s,"utilization_7d":%s,"reset_at_7d":%s}\n' \
+            "$utilization" "$reset_at" "$now" \
+            "${util_7d:-null}" "${reset_7d:-null}" > "$tmp_cache" && \
             mv "$tmp_cache" "/tmp/claude-ratelimit-cache.json"
 
         exit 0
