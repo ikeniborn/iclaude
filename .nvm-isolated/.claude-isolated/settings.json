@@ -124,7 +124,7 @@
     ],
     "defaultMode": "default"
   },
-  "model": "sonnet",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -245,7 +245,7 @@
   },
   "language": "Russian",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "medium",
   "plansDirectory": ".claude/plans",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
