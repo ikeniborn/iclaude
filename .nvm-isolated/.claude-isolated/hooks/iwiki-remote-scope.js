@@ -46,12 +46,20 @@ process.stdout.write(
       '`wiki_code_search`, and `wiki_code_context` run on the `iwiki-local` ' +
       'server (it has the repository checkout); every other wiki tool, ' +
       'including `wiki_code_publish_begin`/`_batch`/`_finalize`, runs on ' +
-      '`iwiki-remote` as usual. No config switch is needed for either.'
+      '`iwiki-remote` as usual. No config switch is needed for either. ' +
+      'Trust code results only when `wiki_code_status` reports `state: ' +
+      '"ready"` and `fresh: true`; otherwise fall back to repository search. ' +
+      'A code read served by `iwiki-remote` never returns file source — ' +
+      '`include_source=true` yields graph context plus `source_unavailable`.'
     : '`wiki_code_index` is unavailable under this hosted-only mode — it needs a ' +
       'local repository checkout on the server\'s disk, which a remote HTTP ' +
       'server does not have, so it returns `source_unavailable`. That error ' +
       'means the active MCP server config must switch to the local stdio one ' +
       '(`mcp/iwiki.json`, via `IWIKI_COMMAND`/`IWIKI_BASE_DIR`) or add it ' +
       'alongside this one (`mcp/iwiki-dual.json`) and the session restarted — ' +
-      'not that `.iwiki.toml` needs editing.')
+      'not that `.iwiki.toml` needs editing. `wiki_code_status`, ' +
+      '`wiki_code_search`, and `wiki_code_context` still answer here from the ' +
+      'published snapshot; trust them only at `state: "ready"` with `fresh: ' +
+      'true`, and expect no file source — `include_source=true` yields graph ' +
+      'context plus `source_unavailable`.')
 );

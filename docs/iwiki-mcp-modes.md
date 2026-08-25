@@ -78,4 +78,32 @@ for byte as before. Dual mode is a distinct third tracked file, never a rename o
 `IWIKI_LLM_KEY` also being present alongside `IWIKI_REMOTE_URL`) and tells the agent to
 route code-graph tools to `iwiki-local` and everything else to `iwiki-remote` — no config
 switch needed. Under remote-only mode it still tells the agent that `source_unavailable`
-means switching (or adding) the local config, not editing `.iwiki.toml`.
+means switching (or adding) the local config, not editing `.iwiki.toml`. In both modes it
+also states the code-read contract: results count only at `state: "ready"` with
+`fresh: true`, and a read served by the hosted server returns no file source
+(`include_source=true` yields graph context plus `source_unavailable`).
+
+## Code graph languages and publication
+
+The graph indexes the languages the project's `[code_graph] languages` lists — `python`,
+`typescript`, `javascript`, or any combination; anything else is `invalid_config`. Entity
+IDs carry the language prefix (`py:`, `ts:`, `js:`), and `wiki_code_context` seeds must use
+those exact IDs from `wiki_code_search`, never a qualified name.
+
+Publication targets exactly one mode. `[code_graph] publish_mode` and `read_mode` each
+select `sqlite` (local atomic path, the default), `postgres` (direct), or `mcp` (remote
+transit through the publish tools); a failure in the selected mode is the result, never a
+reason to retry against another. With `publish_mode = "mcp"`, an agent publishes through
+`wiki_code_publish_begin`/`_batch`/`_finalize` on `iwiki-remote` — `begin` reports the
+server's effective `max_batch_rows`/`max_batch_bytes` to size batches against. Outside a
+session the same publication runs from the checkout as:
+
+```bash
+iwiki-mcp code publish --project "$PWD" --json
+```
+
+Exit 0 means ready, 1 a runtime or publication failure, 2 a usage or configuration
+failure. `IWIKI_CODE_GRAPH_MCP_URL` and `IWIKI_CODE_GRAPH_MCP_TOKEN` (direct PostgreSQL:
+`IWIKI_DB_PASSWORD`, `IWIKI_EMBED_MODEL`, `IWIKI_EMBED_DIMENSIONS`) come from the
+environment — `lib/iwiki/mcp.sh` splices the `IWIKI_CODE_GRAPH_*` pair into the local
+server's `env` at launch, and they never belong in `.iwiki.toml`.

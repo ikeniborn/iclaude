@@ -858,7 +858,9 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_SEED_THRESHOLD="0.15"                # minimum seed similarity for a read
 # ICLAUDE_IWIKI_WRITE_SEED_THRESHOLD="0.35"          # stricter seed similarity for intent="write"
 #
-# Python code graph (optional; wiki_code_index / wiki_code_search / wiki_code_context).
+# Code graph (optional; wiki_code_index / wiki_code_search / wiki_code_context).
+# Indexes Python, TypeScript, and JavaScript — the project's .iwiki.toml
+# [code_graph] languages list decides which of them this project uses.
 # Its home is the project's .iwiki.toml [code_graph] table — the server applies
 # these variables AFTER that table, so anything set here overrides EVERY project
 # you open with iclaude. Leave them unset unless you want exactly that; when
@@ -870,6 +872,8 @@ ICLAUDE_DEBUG_LAUNCH=
 #
 # Optional: publish this machine's local code-graph snapshot to a hosted iwiki
 # MCP endpoint (local stdio server only; a remote/hosted server ignores these).
+# Required by publish_mode = "mcp" in .iwiki.toml, both for the publish tools and
+# for `iwiki-mcp code publish --project <checkout>` run outside a session.
 # ICLAUDE_IWIKI_CODE_GRAPH_MCP_URL="https://iwiki.example.com/mcp"
 # ICLAUDE_IWIKI_CODE_GRAPH_MCP_TOKEN="..."           # secret — keep here, not in git
 #

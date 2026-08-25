@@ -3,7 +3,7 @@ name: context-awareness
 description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project (doc summary) and its code-graph availability/state, surfacing both as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) or code-graph queries (wiki_code_search/wiki_code_context) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
-# version: 1.7.1
+# version: 1.7.2
 # tags: context, detection, project, language, framework, lat
 # dependencies: []
 # files: templates: ./templates/*.json
@@ -104,12 +104,15 @@ IF MCP-сервер iwiki подключён:
        task_delivery_pending: true|false
      Затем `wiki_code_status()` (read-only, тот же домен `primary`, на резолвленном
      code-graph сервере — `iwiki-local`, иначе одиночный `iwiki`, см. multi-transport
-     tool-name resolution в CLAUDE.md):
-       code_graph_available: true, когда `state == "ready"`; иначе false
+     tool-name resolution в CLAUDE.md). Ответ содержит `enabled`, `domain`, `state`,
+     `fresh`, `revision`, `warnings`:
+       code_graph_available: true только когда `state == "ready"` И `fresh == true`; иначе false
        code_graph_domain: "<domain>" (то же, что wiki_domain)
-       code_graph_state: "<state из wiki_code_status>" (ready|missing_snapshot|disabled|source_unavailable)
+       code_graph_state: "<state из wiki_code_status>"
+         (ready|missing_snapshot|disabled|source_unavailable|dirty|rebuilding|failed|incompatible)
+       code_graph_fresh: <поле `fresh` из ответа> (false, если поля нет)
      `wiki_code_status` недоступен / вызов упал → code_graph_available: false, code_graph_state: null,
-     без блокировки остального Phase 0.
+     code_graph_fresh: false, без блокировки остального Phase 0.
   4. Если `primary` пуст (привязка не выполнена или проект без .iwiki.toml):
        wiki_initialized: false
        wiki_domain: null
@@ -122,6 +125,7 @@ IF MCP-сервер iwiki подключён:
        code_graph_available: false
        code_graph_domain: null
        code_graph_state: null
+       code_graph_fresh: false
 
 ELSE (сервер не подключён):
   wiki_initialized: false
@@ -135,6 +139,7 @@ ELSE (сервер не подключён):
   code_graph_available: false
   code_graph_domain: null
   code_graph_state: null
+  code_graph_fresh: false
 ```
 
 При действующей привязке Phase 0 выводит точный контекст task page: определяет
@@ -176,7 +181,8 @@ downstream-навыки (brainstorming, prd-generator) используют
     "wiki_summary": "синтезированный обзор из домена iwiki" | null,
     "code_graph_available": true|false,
     "code_graph_domain": "<имя домена iwiki>" | null,
-    "code_graph_state": "ready|missing_snapshot|disabled|source_unavailable" | null,
+    "code_graph_state": "ready|missing_snapshot|disabled|source_unavailable|dirty|rebuilding|failed|incompatible" | null,
+    "code_graph_fresh": true|false,
     "task_topic": "<canonical topic>" | null,
     "task_page_slug": "reference/tasks/<topic>" | null,
     "task_page_found": true|false,
@@ -374,6 +380,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_graph_available": false,
     "code_graph_domain": "iclaude",
     "code_graph_state": "missing_snapshot",
+    "code_graph_fresh": false,
     "task_topic": "task-ledger-skill-parity",
     "task_page_slug": "reference/tasks/task-ledger-skill-parity",
     "task_page_found": true,
@@ -412,6 +419,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "code_graph_available": false,
     "code_graph_domain": "iclaude",
     "code_graph_state": "missing_snapshot",
+    "code_graph_fresh": false,
     "task_topic": "task-ledger-skill-parity",
     "task_page_slug": "reference/tasks/task-ledger-skill-parity",
     "task_page_found": true,
@@ -495,7 +503,7 @@ re-detecting them.
 - `prd_path` → Enables PRD-driven validation
 - `syntax_command` → Enables pre-commit syntax checks
 - `wiki_initialized` / `wiki_domain` / `wiki_summary` → Enables doc-graph-aware context without re-checking files
-- `code_graph_available` / `code_graph_domain` / `code_graph_state` → Enables `wiki_code_search`/`wiki_code_context`-first analysis without re-checking `wiki_code_status`
+- `code_graph_available` / `code_graph_domain` / `code_graph_state` / `code_graph_fresh` → Enables `wiki_code_search`/`wiki_code_context`-first analysis without re-checking `wiki_code_status`
 - `task_topic` / `task_page_slug` / `task_page_found` / `task_lifecycle` / `task_delivery_pending` → Enables `task-ledger` to resume a topic without re-deriving its state
 
 ---
@@ -506,6 +514,12 @@ re-detecting them.
 **License:** MIT
 
 ## Changelog
+
+### 1.7.2 (2026-08-25)
+- `code_graph_available` now requires `fresh == true` alongside `state == "ready"`, matching
+  the freshness gate `wiki_code_status` actually reports
+- New field `code_graph_fresh`; `code_graph_state` vocabulary extended with `dirty`,
+  `rebuilding`, `failed`, and `incompatible`
 
 ### 1.7.1 (2026-08-17)
 - `wiki_status`/`wiki_code_status` calls now reference CLAUDE.md's multi-transport

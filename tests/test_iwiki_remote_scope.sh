@@ -90,6 +90,29 @@ t_dual_code_graph_note() {
 }
 t_dual_code_graph_note
 
+# ---- both modes: code reads carry the freshness gate and the no-source rule ----
+t_code_read_contract_note() {
+  echo "[remote+dual] code-read note states the freshness gate and no remote source"
+  local remote_out dual_out mode
+  remote_out="$(env -u IWIKI_COMMAND -u IWIKI_LLM_KEY IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" node "$HOOK")"
+  dual_out="$(IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" IWIKI_COMMAND="/usr/local/bin/iwiki-mcp" IWIKI_LLM_KEY="sk-x" node "$HOOK")"
+  for mode in remote dual; do
+    local out
+    [[ "$mode" == remote ]] && out="$remote_out" || out="$dual_out"
+    if [[ "$out" == *"wiki_code_status"* && "$out" == *"fresh"* ]]; then
+      pass "$mode: gates code results on wiki_code_status freshness"
+    else
+      fail "$mode: gates code results on wiki_code_status freshness"
+    fi
+    if [[ "$out" == *"include_source=true"* && "$out" == *"source_unavailable"* ]]; then
+      pass "$mode: states a remote code read returns no file source"
+    else
+      fail "$mode: states a remote code read returns no file source"
+    fi
+  done
+}
+t_code_read_contract_note
+
 # ---- remote output never contains the URL/token themselves ----
 t_remote_no_secrets() {
   echo "[remote] emitted region carries no URL or token"
