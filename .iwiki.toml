@@ -22,7 +22,7 @@ primary = "iclaude"
 
 [code_graph]
 enabled = true
-languages = ["python","typescript"]
+languages = ["python","typescript","javascript"]
 auto_rebuild = "bounded"
 max_rebuild_seconds = 900
 max_file_bytes = 1000000

@@ -17,7 +17,7 @@ unavailable only when it is absent from that catalog or the `Skill` call itself 
 
 At the start of any task in an unfamiliar area, or after a gap of more than 1 day:
 
-1. **If the iwiki MCP server is connected**, apply the project binding (see **iwiki Project Binding** below), then `wiki_search(query="<task topic>")` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no `.iwiki.toml` → skip; iwiki is not set up for this project.)
+1. **If the iwiki MCP server is connected**, apply the project binding (see **iwiki Project Binding** below), then `wiki_search(query="<task topic>")` → retrieve relevant sections; `wiki_lint` → check doc health. (No server / no `.iwiki.toml` → skip; iwiki is not set up for this project.) `wiki_search` narrows with `mode` (`hybrid` default, `lexical`, `semantic`), `domains`, `type`, `tags`, `heading`, `k`, and `threshold`; read one section directly with `wiki_read_page(domain, slug, heading=…)` instead of pulling a whole page.
 2. Map the `docs/` layout into context (complements iwiki's semantic search with a structural overview):
    ```bash
    tree -L 2 docs/ || find docs -maxdepth 2 | sort   # fallback when `tree` is absent
@@ -25,12 +25,15 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
    Depth `-L 2` is chosen for the current project — its `docs/` nests at most 2 directory
    levels (e.g. `docs/superpowers/specs/`), so level 2 shows the full directory skeleton plus
    top-level files without flooding context with every leaf file. Raise the level for deeper trees.
-3. **For Python code-analysis or planning tasks**, check code-graph availability via
-   `wiki_code_status` (or `wiki_lint`'s `code_graph` field) on the resolved server (see
-   **iwiki Project Binding**'s multi-transport tool-name resolution below). When `state`
-   is `ready`, prefer `wiki_code_search` / `wiki_code_context` over blind grep for symbol
-   lookups, call graphs, and change-impact analysis. When `disabled`, `missing_snapshot`,
-   or `source_unavailable` — skip silently; it is optional context, not a blocker.
+3. **For Python, TypeScript, or JavaScript code-analysis or planning tasks**, check
+   code-graph availability via `wiki_code_status` (or `wiki_lint`'s `code_graph` field) on
+   the resolved server (see **iwiki Project Binding**'s multi-transport tool-name
+   resolution below). Trust `wiki_code_search` / `wiki_code_context` only when the answer
+   reports `fresh: true` and `state: "ready"` — then prefer them over blind grep for symbol
+   lookups, call graphs, and change-impact analysis. Any other state (`disabled`,
+   `missing_snapshot`, `source_unavailable`, `dirty`, `rebuilding`, `failed`,
+   `incompatible`, or `fresh: false`) — keep Markdown results, fall back to repository
+   search, and skip silently; it is optional context, not a blocker.
 
 Skip only when: familiar area, same session.
 
@@ -88,6 +91,8 @@ a hosted server the token's own grants remain the absolute authorization limit.
 - **On PostgreSQL storage every page mutation is a compare-and-swap.** `wiki_update_page`, `wiki_insert_section`, `wiki_move_section`, `wiki_delete_section`, and `wiki_delete_page` require `expected_revision`; omitting it returns `expected_revision_required`, a stale value returns `conflict` and changes nothing. Read the page first and pass its `revision`. `wiki_read_page(domain, slug, heading=…)` returns one section plus its `section_hash`, which `expected_section_hash` narrows the check to. Git storage ignores both.
 - Call `wiki_index(domain)` only to rebuild after out-of-band edits (markdown changed on disk without a tool) or a sync conflict — never as a routine step after a write.
 - Run `wiki_lint` — no broken `[[refs]]`, no orphan or stale pages. Git storage computes orphans over every page, task pages (`reference/tasks/*`) and history segments (`reference/task-history/*`) included; that advisory is expected for them and never blocks. On PostgreSQL storage the report is narrower: only broken links and section findings are computed, and `orphans`, `stale`, `missing_source`, `missing_frontmatter`, and `tag_drift` are always returned empty — an empty list there is silence, not a clean bill of health.
+- **Wiki-to-code links are authored in frontmatter, never generated.** A page may declare only `code.symbols` (each entry exactly one `qualified_name`), `code.files`, and `code.source_globs` (both project-relative POSIX). Modules, module IDs, aliases, import bindings, unknown keys, unsafe paths, and duplicate mapping keys are rejected and the page is left unchanged. Add or edit a selector only when the user's change makes it true; rebuilds derive `DOCUMENTED_BY` links from it and never rewrite the Markdown.
+- **`wiki_lint` also reports a `code_graph` block** for the bound primary — `available`, `state`, `revision`, `findings`, `hint`. Its findings (unknown or ambiguous symbols, missing files, empty globs, unsafe/ignored/secret-like selectors, overlapping selectors, `stale_revision`) come from the existing snapshot only: lint never builds a graph or edits selectors. The block is fail-soft advisory — fix a finding your change caused, but a disabled, missing, or non-ready graph never blocks closure.
 - **Storage decides which tools exist.** Read `storage` from `wiki_status` once, then:
   - `git` — the whole surface works. Writes auto-commit the base locally; `wiki_sync` publishes those commits to the git remote (pull-rebase-push) — run it only when sharing the base across machines.
   - `postgres` — writes land in the database transactionally; there is no base and no commit, so nothing needs publishing. `wiki_sync`, `wiki_remediation_plan`, `wiki_export_okf`, `wiki_apply_okf`, `wiki_migrate_okf`, and `wiki_create_domain` all return `{"error":"unsupported_storage","hint":"use this tool with Git storage"}`. Never plan a step around them; create domains out of band.
@@ -97,9 +102,12 @@ Always use the iwiki MCP tools — never the old plugin skills or the `iwiki_eng
 
 Availability beyond the storage split above:
 
-- `wiki_code_index` extracts the Python graph from a repository checkout on disk, so it needs a **local** server with that checkout and `[code_graph]` enabled in `.iwiki.toml`. A remote HTTP / PostgreSQL binding returns `{"error":"source_unavailable","hint":"run wiki_code_index on a local MCP server with the repository checkout"}` — no configuration change lifts that.
+- `wiki_code_index` extracts the graph from a repository checkout on disk, so it needs a **local** server with that checkout and `[code_graph]` enabled in `.iwiki.toml`. A remote HTTP / PostgreSQL binding returns `{"error":"source_unavailable","hint":"run wiki_code_index on a local MCP server with the repository checkout"}` — no configuration change lifts that. `code_graph.languages` accepts `python`, `typescript`, and `javascript`; a list naming anything else returns `invalid_config`.
 - `wiki_code_status`, `wiki_code_search`, `wiki_code_context` are reads and do work under PostgreSQL, answering from the published snapshot. `code_graph.state: missing_snapshot` in `wiki_lint` means nobody published one yet, not that the feature is off.
-- `wiki_code_publish_begin` / `_batch` / `_finalize` / `_abort` move a locally built snapshot into PostgreSQL. They need a hosted authenticated request whose bound primary is writable; Git or local SQLite → `unsupported_storage`, no authenticated identity → `unsupported_transport`, primary not writable → `unauthorized`. They accept neither `iwiki_id` nor `domain`.
+- `wiki_code_search(query, kinds=…, languages=…, path=…, limit=…)` searches typed entities only: `file`, `module`, `class`, `function`, `async_function`, `method`; `limit` is 1–100 and `path` is a project-relative prefix. A `languages` value the running server does not know returns `invalid_config`; a known language the snapshot does not carry returns `unsupported_language` — that one is fixed by republishing, not by editing the request.
+- `wiki_code_context(seeds=…)` takes exact entity IDs prefixed `py:`, `ts:`, or `js:` — never a qualified name or alias; get them from `wiki_code_search`. `include_source` defaults to `false`, and a remote (PostgreSQL) read never returns source: `include_source=true` yields graph context plus `source_unavailable`. `include_wiki=true` hydrates derived `DOCUMENTED_BY` Wiki pages from the snapshot.
+- `wiki_code_publish_begin` / `_batch` / `_finalize` / `_abort` move a locally built snapshot into PostgreSQL. They need a hosted authenticated request whose bound primary is writable; Git or local SQLite → `unsupported_storage`, no authenticated identity → `unsupported_transport`, primary not writable → `unauthorized`. They accept neither `iwiki_id` nor `domain`. `begin` reports the server's effective `max_batch_rows` / `max_batch_bytes` — size batches to those, do not guess from local config.
+- **There is no unified Markdown+code search.** `wiki_search` and `wiki_code_search` are separate tools with independent ranks; never compare their scores or merge their result lists. Treat a unified tool as nonexistent until it actually appears in the session's tool list.
 - `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant` need the same hosted PostgreSQL identity; anything else returns `unsupported_transport` or a 403.
 
 ## Keep README Current (MANDATORY)
@@ -116,12 +124,13 @@ These files are the entry point for two audiences at once: business users who ne
 
 ## Keep Code Graph Current (MANDATORY)
 
-**After every change that adds, removes, renames, or moves a Python symbol (function, class, import) — and only when the project binding succeeded and the code graph is configured (`[code_graph] enabled = true` in `.iwiki.toml`) — refresh the code graph before responding to the user.**
+**After every change that adds, removes, renames, or moves a symbol (function, class, import) in a language this project's `[code_graph] languages` lists — `python`, `typescript`, `javascript`, or any combination — and only when the project binding succeeded and the code graph is configured (`[code_graph] enabled = true` in `.iwiki.toml`) — refresh the code graph before responding to the user.**
 
 - **Local or dual server** (`wiki_code_index` reachable): call `wiki_code_index` on the resolved server (`iwiki-local` in dual mode, or the plain `iwiki` server in local-only mode — see **iwiki Project Binding**'s multi-transport tool-name resolution) to rebuild the snapshot from the changed checkout.
-- **`publish_mode = "mcp"`**: after rebuilding, publish the refreshed snapshot with `wiki_code_publish_begin` / `_batch` / `_finalize` so the hosted copy matches.
+- **Publication targets exactly one mode.** `[code_graph] publish_mode` is `sqlite` (local atomic path, the default), `postgres` (direct), or `mcp` (remote transit); `read_mode` selects where reads come from the same way. A failure in the selected mode is the result — never retry the publication against another mode, and never edit `.iwiki.toml` to switch modes as a workaround.
+- **`publish_mode = "mcp"`**: after rebuilding, publish the refreshed snapshot with `wiki_code_publish_begin` / `_batch` / `_finalize` (or `_abort`) so the hosted copy matches. Outside an MCP session the same publication runs as `iwiki-mcp code publish --project <checkout> [--json]` on the machine holding the checkout — exit 0 ready, 1 runtime/publication failure, 2 usage/configuration failure. Credentials (`IWIKI_CODE_GRAPH_MCP_URL`, `IWIKI_CODE_GRAPH_MCP_TOKEN`, `IWIKI_DB_PASSWORD`) stay in the environment, never in `.iwiki.toml`.
 - **`wiki_code_index` unavailable** (remote-only session, `source_unavailable`): skip the rebuild — this is a transport gap, not something to route around by editing `.iwiki.toml`; see `docs/iwiki-mcp-modes.md`'s dual-mode section. Never block or fail the task on it.
-- **Skip entirely** for changes that touch no Python source (docs, config, non-Python code, comments/formatting) or when code graph is not configured for this project.
+- **Skip entirely** for changes that touch no source in a configured language (docs, config, other languages, comments/formatting) or when code graph is not configured for this project.
 
 ## Task Log (iwiki, MANDATORY)
 

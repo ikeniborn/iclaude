@@ -38,6 +38,8 @@ The domain changelog is `reference/domain-changelog`. It contains curated domain
 
 An `orphans` entry for `reference/tasks/*` or `reference/task-history/*` is an expected orphan advisory: status discovery enumerates task pages with `wiki_list_pages` rather than following an inbound central index. It does not block closure unless `wiki_lint` reports another finding for that task page or its segments.
 
+`wiki_lint`'s `code_graph` block is likewise advisory for closure: it audits authored `code.*` selectors against the existing snapshot for the bound primary and reports a disabled, missing, or non-ready graph fail-soft. Task pages carry no selectors, so it never blocks `done`; a finding your own change caused still gets fixed before closing.
+
 ## Helper
 
 `scripts/task_spool.py` is the only executable surface. It stores redacted events under `$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json`:
