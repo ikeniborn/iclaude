@@ -113,6 +113,29 @@ t_code_read_contract_note() {
 }
 t_code_read_contract_note
 
+# ---- both modes: specification policy is server-side, read from wiki_status ----
+t_specification_policy_note() {
+  echo "[remote+dual] specification note points at wiki_status, not the project file"
+  local remote_out dual_out mode
+  remote_out="$(env -u IWIKI_COMMAND -u IWIKI_LLM_KEY IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" node "$HOOK")"
+  dual_out="$(IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" IWIKI_COMMAND="/usr/local/bin/iwiki-mcp" IWIKI_LLM_KEY="sk-x" node "$HOOK")"
+  for mode in remote dual; do
+    local out
+    [[ "$mode" == remote ]] && out="$remote_out" || out="$dual_out"
+    if [[ "$out" == *"specifications"* && "$out" == *"wiki_status"* ]]; then
+      pass "$mode: takes the effective specification mode from wiki_status"
+    else
+      fail "$mode: takes the effective specification mode from wiki_status"
+    fi
+    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"wiki_bind"* ]]; then
+      pass "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
+    else
+      fail "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
+    fi
+  done
+}
+t_specification_policy_note
+
 # ---- remote output never contains the URL/token themselves ----
 t_remote_no_secrets() {
   echo "[remote] emitted region carries no URL or token"

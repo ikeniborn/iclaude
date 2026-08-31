@@ -1,6 +1,6 @@
 ---
 name: context-awareness
-description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project (doc summary) and its code-graph availability/state, surfacing both as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search) or code-graph queries (wiki_code_search/wiki_code_context) — this skill only detects availability + a quick summary.
+description: Detect project language, framework, package manager, lint/test commands and locate CLAUDE.md / PRD docs at task start (Phase 0). Also detects the iwiki MCP domain for this project (doc summary), its specification mode, and its code-graph availability/state, surfacing them as project context. Use when starting any task, switching project, or before running syntax/test checks. NOT for deep semantic doc search (wiki_search), scenario lookup (wiki_spec_search/wiki_spec_context), or code-graph queries (wiki_code_search/wiki_code_context) — this skill only detects availability + a quick summary.
 user-invocable: false
 agent: Explore
 # version: 1.7.2
@@ -102,6 +102,17 @@ IF MCP-сервер iwiki подключён:
        task_page_found: true|false
        task_lifecycle: "in-progress|blocked|completion-pending|done" | null
        task_delivery_pending: true|false
+     Из того же ответа `wiki_status` взять запись `specifications.domains[]`, чей
+     `domain` совпадает с `primary` (дополнительный вызов не нужен):
+       spec_mode: "<mode>" (disabled|optional|strict)
+       spec_source: "<source>" (project|hosted_default|hosted_override|built_in_default)
+       spec_projection_state: "<projection_state>" (disabled|absent|ready|stale|failed)
+       spec_scenarios: <scenarios> (целое)
+     Блок `specifications` отсутствует или в нём нет записи для `primary` →
+     spec_mode: null, spec_source: null, spec_projection_state: null, spec_scenarios: null.
+     Действующий режим сообщает сервер: `spec_source` называет ответивший тир, а
+     `[specifications] mode` из `.iwiki.toml` учтён только при `spec_source: project`
+     (см. Keep Specifications Current в CLAUDE.md).
      Затем `wiki_code_status()` (read-only, тот же домен `primary`, на резолвленном
      code-graph сервере — `iwiki-local`, иначе одиночный `iwiki`, см. multi-transport
      tool-name resolution в CLAUDE.md). Ответ содержит `enabled`, `domain`, `state`,
@@ -122,6 +133,10 @@ IF MCP-сервер iwiki подключён:
        task_page_found: false
        task_lifecycle: null
        task_delivery_pending: <spool result when topic known; otherwise false>
+       spec_mode: null
+       spec_source: null
+       spec_projection_state: null
+       spec_scenarios: null
        code_graph_available: false
        code_graph_domain: null
        code_graph_state: null
@@ -136,6 +151,10 @@ ELSE (сервер не подключён):
   task_page_found: false
   task_lifecycle: null
   task_delivery_pending: <spool result when topic known; otherwise false>
+  spec_mode: null
+  spec_source: null
+  spec_projection_state: null
+  spec_scenarios: null
   code_graph_available: false
   code_graph_domain: null
   code_graph_state: null
@@ -157,8 +176,10 @@ downstream-навыки (brainstorming, prd-generator) используют
 
 **Границы:** скилл работает read-only против iwiki (`wiki_status`, `wiki_read_page`,
 `wiki_search`, `wiki_code_status`). Ни `wiki_bind`, ни любой мутирующий вызов
-(включая `wiki_code_index`) из него не выполняется — привязка, запись и
-перестроение графа принадлежат parent agent.
+(включая `wiki_code_index` и `wiki_spec_resolve`) из него не выполняется — привязка,
+запись и перестроение графа принадлежат parent agent. `spec_*` — только доступность и
+режим из `wiki_status`; поиск сценариев (`wiki_spec_search`, `wiki_spec_context`)
+делает parent agent по задаче.
 
 ## Output
 
@@ -179,6 +200,10 @@ downstream-навыки (brainstorming, prd-generator) используют
     "wiki_initialized": true|false,
     "wiki_domain": "<имя домена iwiki>" | null,
     "wiki_summary": "синтезированный обзор из домена iwiki" | null,
+    "spec_mode": "disabled|optional|strict" | null,
+    "spec_source": "project|hosted_default|hosted_override|built_in_default" | null,
+    "spec_projection_state": "disabled|absent|ready|stale|failed" | null,
+    "spec_scenarios": <целое> | null,
     "code_graph_available": true|false,
     "code_graph_domain": "<имя домена iwiki>" | null,
     "code_graph_state": "ready|missing_snapshot|disabled|source_unavailable|dirty|rebuilding|failed|incompatible" | null,

@@ -29,8 +29,13 @@ Project Binding protocol from `CLAUDE.md` (bind the full `read` / `write` / `pri
 scope from the project-root `.iwiki.toml`, then `wiki_status`), and load context:
 
 1. `wiki_search('<topic>')` — existing documentation for this topic
+2. `wiki_spec_search(query='<topic>')` — existing Given-When-Then scenarios for the
+   behavior the intent will change; skip when the domain's `wiki_status` specification
+   mode is `disabled` or the tool is absent
 
-Store results as **wiki_context** for use in Steps 1–6 below.
+Store results as **wiki_context** for use in Steps 1–6 below. A scenario found here names
+the observable behavior already contracted — reuse its wording in Desired Outcomes instead
+of inventing a parallel description, and keep its ID stable.
 
 Present to user:
 
