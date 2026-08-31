@@ -127,10 +127,10 @@ t_specification_policy_note() {
     else
       fail "$mode: takes the effective specification mode from wiki_status"
     fi
-    if [[ "$out" == *"[specifications] mode"* && "$out" == *"wiki_bind"* ]]; then
-      pass "$mode: states the project file mode does not apply and wiki_bind cannot change it"
+    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"wiki_bind"* ]]; then
+      pass "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
     else
-      fail "$mode: states the project file mode does not apply and wiki_bind cannot change it"
+      fail "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
     fi
   done
 }

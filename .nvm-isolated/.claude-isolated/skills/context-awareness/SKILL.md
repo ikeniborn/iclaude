@@ -110,8 +110,9 @@ IF MCP-сервер iwiki подключён:
        spec_scenarios: <scenarios> (целое)
      Блок `specifications` отсутствует или в нём нет записи для `primary` →
      spec_mode: null, spec_source: null, spec_projection_state: null, spec_scenarios: null.
-     Действующий режим берётся только отсюда: `[specifications] mode` из `.iwiki.toml`
-     на hosted-транспорте не применяется (см. Keep Specifications Current в CLAUDE.md).
+     Действующий режим сообщает сервер: `spec_source` называет ответивший тир, а
+     `[specifications] mode` из `.iwiki.toml` учтён только при `spec_source: project`
+     (см. Keep Specifications Current в CLAUDE.md).
      Затем `wiki_code_status()` (read-only, тот же домен `primary`, на резолвленном
      code-graph сервере — `iwiki-local`, иначе одиночный `iwiki`, см. multi-transport
      tool-name resolution в CLAUDE.md). Ответ содержит `enabled`, `domain`, `state`,
