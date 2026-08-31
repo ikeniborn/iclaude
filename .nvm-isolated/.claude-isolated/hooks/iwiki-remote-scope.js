@@ -41,6 +41,12 @@ process.stdout.write(
   'rejected bind such as 403, show a brief reason, do not make mutating wiki ' +
   'calls, and retain task lifecycle `completion-pending`. The remote server\'s ' +
   'token grants remain the absolute authorization limit.\n\n' +
+  'Specification (Given-When-Then) policy is server-side on this transport. Take ' +
+  'each domain\'s effective mode from the `specifications` block of `wiki_status`, ' +
+  'never from the project file: hosted precedence is exact override, hosted ' +
+  'default, then the built-in `optional`, with no project tier, so a ' +
+  '`[specifications] mode` in `.iwiki.toml` does not apply here and `wiki_bind` ' +
+  'cannot change it.\n\n' +
   (dualActive
     ? 'This session has both transports registered: `wiki_code_index`, ' +
       '`wiki_code_search`, and `wiki_code_context` run on the `iwiki-local` ' +

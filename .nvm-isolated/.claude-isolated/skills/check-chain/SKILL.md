@@ -344,6 +344,22 @@ Additionally — find `EXCESS`: files changed in the diff with no corresponding 
 - For each requirement / Success Criterion from the spec: is it reflected in the diff?
 - Uncovered → a finding referencing the specific outcome/requirement
 
+#### Step 5b. Check GWT specification coverage
+
+Wiki scenarios, not the chain's design spec. Run this only when the diff changes observable
+domain behavior (a public contract, a business invariant, a bug reproduction) **and** the
+bound domain's `wiki_status` `specifications` record reports a mode other than `disabled`.
+
+- `wiki_spec_search(query="<changed behavior>")` — is a scenario already covering it?
+- Found → `wiki_spec_context(domain, scenario_id)`: freshness `stale_spec` or `stale_graph`,
+  or a binding that no longer points at the changed code, is a finding.
+- Not found for new observable behavior → a finding naming the behavior. `strict` mode makes
+  it `[CRITICAL]` (that domain blocks the next mutation of the specification page); `optional`
+  makes it `[WARNING]`.
+- This skill never authors or resolves a scenario — report the gap; the parent writes it per
+  **Keep Specifications Current** in `CLAUDE.md`.
+- No behavior change, `mode: "disabled"`, or an unreachable server → skip silently, no finding.
+
 #### Step 6. Build the report
 
 #### Step 7. Write the state into the plan frontmatter
@@ -372,8 +388,8 @@ read by `hooks/chain-gate.py`).
 
 | Severity | Condition |
 |----------|-----------|
-| `[CRITICAL]` | A plan step is entirely absent from the diff |
-| `[WARNING]` | A step is partially done; or excess changes with no link to the plan |
+| `[CRITICAL]` | A plan step is entirely absent from the diff; or new observable behavior has no GWT scenario in a `strict` domain |
+| `[WARNING]` | A step is partially done; excess changes with no link to the plan; or a missing / stale GWT scenario in an `optional` domain |
 | `[INFO]` | A semantic discrepancy; an intent outcome is partially reflected |
 
 ## Run modes

@@ -26,6 +26,8 @@ Lifecycle: `in-progress`, `blocked`, `completion-pending`, `done`. Material even
 
 `Current State` records topic, route, lifecycle, opened, closed (when done), parent, and pending-delivery. `TODO` is workflow-specific and must not impose chain stages on direct or LoEn work.
 
+Work on a Given-When-Then scenario is recorded as a `verification` event: the scenario ID, the test command with its integer exit code in `checks`, and the `wiki_spec_resolve` outcome (`resolved`, `ambiguous`, `unresolved`, `graph_unavailable`) in the summary. A `verifies` binding is not evidence that the test ran, and `wiki_spec_resolve` is a parent-only call — subagents return the scenario ID and the test result for the parent to record.
+
 Input schema is exactly `{kind, occurred_at, actor, summary, evidence}`; persisted event schema adds canonical `evidence_hash` and `event_id`. Evidence is `{paths, checks, hashes}`. Paths are repository-relative; checks contain only name, passed/failed status, and integer exit code; hashes are lowercase hex. Never record credentials, environment values, auth files, or raw command output.
 
 Idempotency key (`key:` on the segment event line, `event_id` in the spool): SHA-256 of topic, kind, and the canonical redacted evidence, truncated to 16 hex characters. Exclude timestamp, actor, and summary. Page replay happens outside helper: skip page keys already durable, then acknowledge confirmed events.

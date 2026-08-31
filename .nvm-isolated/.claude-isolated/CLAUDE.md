@@ -34,6 +34,12 @@ At the start of any task in an unfamiliar area, or after a gap of more than 1 da
    `missing_snapshot`, `source_unavailable`, `dirty`, `rebuilding`, `failed`,
    `incompatible`, or `fresh: false`) — keep Markdown results, fall back to repository
    search, and skip silently; it is optional context, not a blocker.
+4. **For work on observable domain behavior** — a public contract, a business invariant,
+   or a bug reproduction — read the domain's specification state from `wiki_status`'s
+   `specifications` block and look for an existing scenario with
+   `wiki_spec_search(query="<behavior>")` before designing a new one. See **Keep
+   Specifications Current** below. `mode: "disabled"` or an empty result set → skip;
+   scenarios are additive, not a prerequisite for ordinary Wiki work.
 
 Skip only when: familiar area, same session.
 
@@ -103,7 +109,7 @@ binding, do not retry the same call, and never try to widen scope with the grant
   - `postgres` — writes land in the database transactionally; there is no base and no commit, so nothing needs publishing. `wiki_sync`, `wiki_remediation_plan`, `wiki_export_okf`, `wiki_apply_okf`, `wiki_migrate_okf`, and `wiki_create_domain` all return `{"error":"unsupported_storage","hint":"use this tool with Git storage"}`. Never plan a step around them; create domains out of band.
 - Skip only for changes that touch no functionality, architecture, or behavior (typo, comment, formatting).
 
-Always use the iwiki MCP tools — never the old plugin skills or the `iwiki_engine` CLI. The server registers 32: `wiki_status`, `wiki_bind`, `wiki_list_domains`, `wiki_list_pages`, `wiki_read_page`, `wiki_search`, `wiki_related`, `wiki_write_page`, `wiki_update_page`, `wiki_insert_section`, `wiki_move_section`, `wiki_delete_section`, `wiki_delete_page`, `wiki_index`, `wiki_lint`, `wiki_create_domain`, `wiki_sync`, `wiki_remediation_plan`, `wiki_export_okf`, `wiki_apply_okf`, `wiki_migrate_okf`, `wiki_code_status`, `wiki_code_index`, `wiki_code_search`, `wiki_code_context`, `wiki_code_publish_begin`, `wiki_code_publish_batch`, `wiki_code_publish_finalize`, `wiki_code_publish_abort`, `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant`.
+Always use the iwiki MCP tools — never the old plugin skills or the `iwiki_engine` CLI. The server registers 35: `wiki_status`, `wiki_bind`, `wiki_list_domains`, `wiki_list_pages`, `wiki_read_page`, `wiki_search`, `wiki_related`, `wiki_write_page`, `wiki_update_page`, `wiki_insert_section`, `wiki_move_section`, `wiki_delete_section`, `wiki_delete_page`, `wiki_index`, `wiki_lint`, `wiki_create_domain`, `wiki_sync`, `wiki_remediation_plan`, `wiki_export_okf`, `wiki_apply_okf`, `wiki_migrate_okf`, `wiki_spec_search`, `wiki_spec_context`, `wiki_spec_resolve`, `wiki_code_status`, `wiki_code_index`, `wiki_code_search`, `wiki_code_context`, `wiki_code_publish_begin`, `wiki_code_publish_batch`, `wiki_code_publish_finalize`, `wiki_code_publish_abort`, `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant`.
 
 Availability beyond the storage split above:
 
@@ -117,6 +123,7 @@ Availability beyond the storage split above:
 - `wiki_list_domains` lists the domains this binding can see and `wiki_list_pages(domain)` every page slug in one of them; both are reads and work under either storage. `wiki_status` is what reports the effective scope itself.
 - The Git-only OKF tools are a governance set, not part of routine writing: `wiki_migrate_okf` moves a domain onto the governed frontmatter/type layout, `wiki_apply_okf(domain, slug, type, tags=…)` re-types one page and rewrites incoming links, `wiki_export_okf` exports the portable bundle, `wiki_remediation_plan` proposes fixes for lint findings, and `wiki_create_domain` bootstraps one empty domain that write scope already names. Under PostgreSQL they are absent — that is the storage answer, not a bug to work around.
 - `wiki_list_domain_grants(domain)`, `wiki_set_domain_grant(domain, token_id, can_read, can_write)`, and `wiki_revoke_domain_grant(domain, token_id)` administer another token's access, not your own scope. Never call them to widen a binding that a 403 refused.
+- `wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` are gated by the domain's specification mode rather than by storage: `mode: "disabled"` turns all three off, search and context need read scope, and resolve persists sanitized evidence — on a hosted server it also requires the bound primary. See **Keep Specifications Current** below.
 - **There is no unified Markdown+code search.** `wiki_search` and `wiki_code_search` are separate tools with independent ranks; never compare their scores or merge their result lists. Treat a unified tool as nonexistent until it actually appears in the session's tool list.
 - `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant` need the same hosted PostgreSQL identity; anything else returns `unsupported_transport` or a 403.
 
@@ -141,6 +148,38 @@ These files are the entry point for two audiences at once: business users who ne
 - **`publish_mode = "mcp"`**: after rebuilding, publish the refreshed snapshot with `wiki_code_publish_begin` / `_batch` / `_finalize` (or `_abort`) so the hosted copy matches. Outside an MCP session the same publication runs as `iwiki-mcp code publish --project <checkout> [--json]` on the machine holding the checkout — exit 0 ready, 1 runtime/publication failure, 2 usage/configuration failure. Credentials (`IWIKI_CODE_GRAPH_MCP_URL`, `IWIKI_CODE_GRAPH_MCP_TOKEN`, `IWIKI_DB_PASSWORD`) stay in the environment, never in `.iwiki.toml`.
 - **`wiki_code_index` unavailable** (remote-only session, `source_unavailable`): skip the rebuild — this is a transport gap, not something to route around by editing `.iwiki.toml`; see `docs/iwiki-mcp-modes.md`'s dual-mode section. Never block or fail the task on it.
 - **Skip entirely** for changes that touch no source in a configured language (docs, config, other languages, comments/formatting) or when code graph is not configured for this project.
+
+## Keep Specifications Current (MANDATORY)
+
+**Given-When-Then scenarios are the wiki's additive semantic layer for observable domain behavior. After every change that adds, alters, or reproduces such a behavior — and only when the project binding succeeded — update the scenario, its executable test, and its bindings as one unit before responding to the user.** The standard is `iwiki-mcp/concept/bdd-event-sourcing-specifications`; ordinary Wiki pages stay valid in every mode and never require a scenario or a code graph.
+
+- **When a scenario is required:** new observable domain behavior, a public contract, a bug reproduction, or a business invariant. **When it is not:** formatting, mechanical refactoring with unchanged behavior, and ordinary Wiki maintenance. Never author one to satisfy a checklist.
+- **The effective mode comes from `wiki_status`, never from `.iwiki.toml`.** Each `specifications.domains[]` record carries exactly `domain`, `mode`, `source`, `projection_state`, `scenarios`, and `bindings`; `source` is `project | hosted_default | hosted_override | built_in_default`, `projection_state` is `disabled | absent | ready | stale | failed`. Hosted precedence is exact override → hosted default → built-in `optional`, with no project tier: a `[specifications] mode` declared in the project file does not apply on the hosted transport, so never treat `strict` as active because the project asked for it. Read the reported mode per domain — bound domains can differ.
+- **Mode decides consequences, not shape.** `disabled` — no projection, no findings, the three semantic tools are off. `optional` — every finding is advisory and only valid, complete, unique scenarios enter the projection. `strict` — `missing_scenario`, `invalid_scenario`, `duplicate_scenario_id`, and `incomplete_bindings` block future mutations of the reported explicit specification page only; projection and resolution findings stay advisory in every mode.
+- **Grammar.** One closed `iwiki-gwt` TOML fence per scenario, inside an `##` section. `id` is required, matches `[a-z0-9]+(?:-[a-z0-9]+)*`, and is at most 128 bytes; `title` is nonblank and at most 250 code points; every phase-item `name` is nonblank and at most 1,024 bytes. `given` takes 0 or more items, `when` exactly one, `then` 1 or more, `code` 1 or more bindings. Roles are `event|state|fact` for given, `command|request|action` for when, and `event|response|outcome|exception` for then — an exception is exclusive. Malformed TOML, duplicate TOML keys, unknown keys, a duplicate `(phase, role, name)`, and a duplicate `(relation, phase, selector kind, selector)` are invalid.
+- **Bindings.** Each carries `relation` `implements | verifies`, an optional `phase` (`given | when | then`), and exactly one of `symbol` (the code-graph qualified name), `file`, or `source_glob` — trimmed safe relative POSIX values, at most 4,096 bytes and 256 segments, no backslash, absolute path, drive, empty segment, `.`, or `..`; `file` forbids `*`, `?`, and `[`, a glob allows them. A complete scenario declares at least one `implements` and one `verifies`, with at most 256 bindings. Keep the `id` stable while the observable behavior is unchanged.
+
+```iwiki-gwt
+id = "confirm-account-opening"
+title = "Confirm account opening"
+given = [
+  { role = "event", name = "AccountOpeningRequested" }
+]
+when = { role = "command", name = "ConfirmAccountOpening" }
+then = [
+  { role = "event", name = "AccountOpened" }
+]
+code = [
+  { relation = "implements", phase = "when", symbol = "accounts.Account.confirm" },
+  { relation = "verifies", file = "tests/test_account_opening.py" }
+]
+```
+
+- **Three tools, no more.** `wiki_spec_search(query, domains=…, limit=20)` and `wiki_spec_context(domain, scenario_id)` are reads; `wiki_spec_resolve(domain, scenario_id)` persists sanitized resolution evidence and needs write scope — hosted, the bound primary. Context reports freshness as `fresh`, `stale_spec`, or `stale_graph`; resolution evidence is `resolved`, `ambiguous`, `unresolved`, or `graph_unavailable`.
+- **Maintenance loop.** Call `wiki_spec_context` before changing an existing scenario → preserve its ID unless the behavioral contract itself changed → write or update the executable test before or with the implementation → run the focused and relevant regression tests and record command, exit status, and repository revision on the task page → call `wiki_spec_resolve` after code or test changes when a ready graph exists → treat ambiguous, stale, or unresolved evidence as a maintenance finding, never as permission to guess. A `verifies` selector proves only where the test lives; it never proves the test passed.
+- **`wiki_lint` reports a `specifications` block** per domain — `mode`, `source`, `state`, `projection_revision`, `scenarios`, `bindings`, `findings`. The findings taxonomy is `missing_scenario`, `invalid_scenario`, `duplicate_scenario_id`, `incomplete_bindings`, `projection_stale`, `projection_failed`, `binding_unresolved`, `binding_ambiguous`, `resolution_not_checked`, `resolution_stale_spec`, `resolution_stale_graph`, and `graph_unavailable`. Lint is read-only, never suppresses the ordinary Wiki report, and returns nothing here under `disabled`. Fix the findings your change caused.
+- **The code graph is optional context here too.** Absent, stale, failed, or unreachable: preserve the declared selectors, record `graph_unavailable`, fall back to repository search, run the test, and continue. Never rewrite scenario semantics to work around a missing graph.
+- **Skip entirely** when the bound domain reports `mode: "disabled"`, or when the change alters no observable behavior.
 
 ## Task Log (iwiki, MANDATORY)
 
