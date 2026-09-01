@@ -30,29 +30,40 @@ const dualActive = Boolean(process.env.IWIKI_COMMAND && process.env.IWIKI_LLM_KE
 
 process.stdout.write(
   '## Remote iwiki project scope\n\n' +
-  'Before the first wiki call, load only `read`, `write`, and `primary` from the ' +
-  'project-root `.iwiki.toml`. Normalize domain names before passing them to ' +
-  '`wiki_bind`; never pass TOML text, paths, `iwiki_id`, tokens, or other ' +
-  'credentials. Call `wiki_bind` with the full normalized `read`, `write`, and ' +
-  '`primary` values from `.iwiki.toml` before `wiki_status`, `wiki_search`, ' +
-  'task-ledger, or any other wiki call.\n\n' +
+  'Before the first wiki call, load `read`, `write`, `primary`, and — when present — ' +
+  '`[specifications].mode` from the project-root `.iwiki.toml`. Normalize domain ' +
+  'names before passing them to `wiki_bind`; never pass TOML text, paths, ' +
+  '`iwiki_id`, tokens, or other credentials. Call `wiki_bind` with the full ' +
+  'normalized `read`, `write`, and `primary` values from `.iwiki.toml`, and pass ' +
+  '`[specifications].mode` as `specification_mode`, before `wiki_status`, ' +
+  '`wiki_search`, task-ledger, or any other wiki call.\n\n' +
   'Do not infer, broaden, or replace that scope with a project name, primary ' +
   'domain, or current session scope. On a missing or invalid TOML scope, or a ' +
   'rejected bind such as 403, show a brief reason, do not make mutating wiki ' +
   'calls, and retain task lifecycle `completion-pending`. The remote server\'s ' +
   'token grants remain the absolute authorization limit.\n\n' +
-  'Specification (Given-When-Then) policy is server-side on this transport. Take ' +
-  'each domain\'s effective mode from the `specifications` block of `wiki_status`, ' +
-  'never from the project file: hosted precedence is exact override, hosted ' +
-  'default, then the built-in `optional`, so a `[specifications] mode` in ' +
-  '`.iwiki.toml` counts only when the answer reports `source: project`; ' +
-  '`wiki_bind` never sets the policy itself.\n\n' +
+  'Specification (Given-When-Then) policy is resolved server-side, but this ' +
+  'transport carries the project tier: the `[specifications] mode` you passed as ' +
+  '`wiki_bind(specification_mode=…)` is gated by the server\'s own ' +
+  '`allow_project_mode` switch and a tighten-only guard. Still take each domain\'s ' +
+  'effective mode from the `specifications` block of `wiki_status`, never from the ' +
+  'project file: precedence is hosted exact override, the carried project mode, ' +
+  'hosted default, then the built-in `optional`, so a `[specifications] mode` in ' +
+  '`.iwiki.toml` counts only when the answer reports `source: project` — a refused ' +
+  'value comes back as `project_mode_suppressed: true`, and a hosted override wins ' +
+  'over it outright. If the bind rejects `specification_mode`, the parameter is ' +
+  'absent, or `wiki_status` reports a looser mode than the project file asked for, ' +
+  'report the mismatch, make no mutating specification call, and retain task ' +
+  'lifecycle `completion-pending`; ordinary Wiki work stays available.\n\n' +
   (dualActive
     ? 'This session has both transports registered: `wiki_code_index`, ' +
       '`wiki_code_search`, and `wiki_code_context` run on the `iwiki-local` ' +
       'server (it has the repository checkout); every other wiki tool, ' +
       'including `wiki_code_publish_begin`/`_batch`/`_finalize`, runs on ' +
-      '`iwiki-remote` as usual. No config switch is needed for either. ' +
+      '`iwiki-remote` as usual. No config switch is needed for either. The ' +
+      '`specification_mode` argument belongs to the hosted bind only — the ' +
+      '`iwiki-local` server reads `.iwiki.toml` itself and rejects a client ' +
+      'binding override with `project_config_manual_edit_required`. ' +
       'Trust code results only when `wiki_code_status` reports `state: ' +
       '"ready"` and `fresh: true`; otherwise fall back to repository search. ' +
       'A code read served by `iwiki-remote` never returns file source — ' +
