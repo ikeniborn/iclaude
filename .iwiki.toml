@@ -7,7 +7,7 @@ mode = "strict"
 
 [code_graph]
 enabled = true
-languages = ["python","typescript","javascript"]
+languages = ["python","typescript","javascript","bash"]
 auto_rebuild = "bounded"
 max_rebuild_seconds = 300
 max_file_bytes = 1000000
