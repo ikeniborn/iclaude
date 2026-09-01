@@ -41,6 +41,11 @@ t_remote_region() {
   else
     fail "instructs wiki_bind with read/write/primary"
   fi
+  if [[ "$out" == *"[specifications].mode"* && "$out" == *"specification_mode"* ]]; then
+    pass "carries the project specification mode on the bind"
+  else
+    fail "carries the project specification mode on the bind"
+  fi
   if [[ "$out" == *"before"*"wiki_status"* ]]; then
     pass "orders bind before wiki_status"
   else
@@ -127,10 +132,15 @@ t_specification_policy_note() {
     else
       fail "$mode: takes the effective specification mode from wiki_status"
     fi
-    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"wiki_bind"* ]]; then
-      pass "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
+    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"wiki_bind(specification_mode"* ]]; then
+      pass "$mode: gates the project file mode on 'source: project' and carries it on wiki_bind"
     else
-      fail "$mode: gates the project file mode on 'source: project' and keeps wiki_bind out of policy"
+      fail "$mode: gates the project file mode on 'source: project' and carries it on wiki_bind"
+    fi
+    if [[ "$out" == *"project_mode_suppressed"* && "$out" == *"completion-pending"* ]]; then
+      pass "$mode: fail-closed on a refused or mismatched specification mode"
+    else
+      fail "$mode: fail-closed on a refused or mismatched specification mode"
     fi
   done
 }
