@@ -38,10 +38,28 @@ process.stdout.write(
   '`[specifications].mode` as `specification_mode`, before `wiki_status`, ' +
   '`wiki_search`, task-ledger, or any other wiki call.\n\n' +
   'Do not infer, broaden, or replace that scope with a project name, primary ' +
-  'domain, or current session scope. On a missing or invalid TOML scope, or a ' +
+  'domain, or current session scope. `wiki_search` also takes a `scope` ' +
+  'parameter: leave it at its `project` default, because `scope="all"` ignores ' +
+  'the bound `read` list. On a missing or invalid TOML scope, or a ' +
   'rejected bind such as 403, show a brief reason, do not make mutating wiki ' +
   'calls, and retain task lifecycle `completion-pending`. The remote server\'s ' +
   'token grants remain the absolute authorization limit.\n\n' +
+
+  'The binding is session-scoped, keyed by `mcp-session-id`, and expires after ' +
+  '1800 idle seconds, so a reconnect or a restarted server drops it silently. ' +
+  '`wiki_status`, `wiki_bind`, `wiki_code_status`, `wiki_code_search`, ' +
+  '`wiki_code_context`, and `wiki_code_publish_begin` report `binding_source`: ' +
+  '`session` means your bind chose the scope, `token_default` means the server ' +
+  'fell back to the token\'s own grants. Seeing `token_default` after you bound ' +
+  'means the selection was lost — re-bind before trusting the answer. This ' +
+  'matters most for the three domain-free code reads, which target ' +
+  '`binding.primary` rather than a named domain and otherwise report another ' +
+  'domain\'s snapshot as `state: "ready"`, `fresh: true`; under the fallback they ' +
+  'also append `binding_defaulted` to `warnings`, and a server configured with ' +
+  '`[code_graph] require_session_binding = true` refuses them with ' +
+  '`binding_not_selected`. A primary replaced by the write-scope intersection ' +
+  'appears as `primary_substituted: true` beside `requested_primary` — report ' +
+  'that as a binding error rather than working in the substituted scope.\n\n' +
   'Specification (Given-When-Then) policy is resolved server-side, but this ' +
   'transport carries the project tier: the `[specifications] mode` you passed as ' +
   '`wiki_bind(specification_mode=…)` is gated by the server\'s own ' +

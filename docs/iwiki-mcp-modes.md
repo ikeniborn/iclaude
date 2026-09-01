@@ -86,9 +86,14 @@ also states the code-read contract: results count only at `state: "ready"` with
 ## Code graph languages and publication
 
 The graph indexes the languages the project's `[code_graph] languages` lists — `python`,
-`typescript`, `javascript`, or any combination; anything else is `invalid_config`. Entity
-IDs carry the language prefix (`py:`, `ts:`, `js:`), and `wiki_code_context` seeds must use
-those exact IDs from `wiki_code_search`, never a qualified name.
+`typescript`, `javascript`, `bash`, or any combination; anything else is `invalid_config`.
+Entity IDs carry the language prefix (`py:`, `ts:`, `js:`, `sh:`), and `wiki_code_context`
+seeds must use those exact IDs from `wiki_code_search`, never a qualified name.
+
+Bash is opt-in and covers case-insensitive `.sh` files only — `.bash` files and
+extensionless shebang-only scripts stay outside the graph. List it in `[code_graph]
+languages` to keep it, or request one rebuild with `wiki_code_index(languages=["bash"])`.
+Changing the configured language set changes the fingerprint and forces a full rebuild.
 
 Publication targets exactly one mode. `[code_graph] publish_mode` and `read_mode` each
 select `sqlite` (local atomic path, the default), `postgres` (direct), or `mcp` (remote

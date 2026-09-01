@@ -146,6 +146,39 @@ t_specification_policy_note() {
 }
 t_specification_policy_note
 
+# ---- binding provenance: token_default means the session binding was lost ----
+t_binding_provenance_note() {
+  echo "[remote+dual] binding provenance note names binding_source and its fallback"
+  local remote_out dual_out
+  remote_out="$(env -u IWIKI_COMMAND -u IWIKI_LLM_KEY IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" node "$HOOK")"
+  dual_out="$(IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" IWIKI_COMMAND="iwiki-mcp" IWIKI_LLM_KEY="k" node "$HOOK")"
+  local mode out
+  for mode in remote dual; do
+    [[ "$mode" == remote ]] && out="$remote_out" || out="$dual_out"
+    if [[ "$out" == *"binding_source"* && "$out" == *"token_default"* && "$out" == *"re-bind"* ]]; then
+      pass "$mode: re-binds when binding_source reports token_default"
+    else
+      fail "$mode: re-binds when binding_source reports token_default"
+    fi
+    if [[ "$out" == *"binding_defaulted"* && "$out" == *"binding_not_selected"* ]]; then
+      pass "$mode: names the domain-free code-read fallback signals"
+    else
+      fail "$mode: names the domain-free code-read fallback signals"
+    fi
+    if [[ "$out" == *"primary_substituted"* && "$out" == *"requested_primary"* ]]; then
+      pass "$mode: treats a substituted primary as a binding error"
+    else
+      fail "$mode: treats a substituted primary as a binding error"
+    fi
+    if [[ "$out" == *'`scope`'* && "$out" == *'scope="all"'* ]]; then
+      pass "$mode: keeps wiki_search scope at its project default"
+    else
+      fail "$mode: keeps wiki_search scope at its project default"
+    fi
+  done
+}
+t_binding_provenance_note
+
 # ---- remote output never contains the URL/token themselves ----
 t_remote_no_secrets() {
   echo "[remote] emitted region carries no URL or token"

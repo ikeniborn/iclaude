@@ -14,6 +14,7 @@
     "wiki_initialized": "{{wiki_initialized: boolean}}",
     "wiki_domain": "{{wiki_domain: string|null}}",
     "wiki_summary": "{{wiki_summary: string|null}}",
+    "binding_source": "{{binding_source: session|token_default|null}}",
     "spec_mode": "{{spec_mode: disabled|optional|strict|null}}",
     "spec_source": "{{spec_source: project|hosted_default|hosted_override|built_in_default|null}}",
     "spec_projection_state": "{{spec_projection_state: disabled|absent|ready|stale|failed|null}}",

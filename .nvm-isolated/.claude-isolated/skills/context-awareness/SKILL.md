@@ -102,6 +102,14 @@ IF MCP-сервер iwiki подключён:
        task_page_found: true|false
        task_lifecycle: "in-progress|blocked|completion-pending|done" | null
        task_delivery_pending: true|false
+       binding_source: "session|token_default" | null (поле `binding_source` ответа
+         `wiki_status`; на локальном stdio-сервере поля нет → null)
+     `binding_source: token_default` означает, что сервер не нашёл записи сессии и
+     подставил область из грантов токена. Это НЕ ошибка Phase 0 — скилл ничего не
+     чинит и не вызывает wiki_bind, но обязан вернуть значение как есть: при
+     `token_default` parent agent должен перепривязаться до того, как доверять
+     `code_graph_*`, потому что домен-независимые code-чтения целятся в
+     `binding.primary` и иначе отчитаются о чужом снапшоте как `ready`/`fresh`.
      Из того же ответа `wiki_status` взять запись `specifications.domains[]`, чей
      `domain` совпадает с `primary` (дополнительный вызов не нужен):
        spec_mode: "<mode>" (disabled|optional|strict)
@@ -133,6 +141,7 @@ IF MCP-сервер iwiki подключён:
        task_page_found: false
        task_lifecycle: null
        task_delivery_pending: <spool result when topic known; otherwise false>
+       binding_source: null
        spec_mode: null
        spec_source: null
        spec_projection_state: null
@@ -151,6 +160,7 @@ ELSE (сервер не подключён):
   task_page_found: false
   task_lifecycle: null
   task_delivery_pending: <spool result when topic known; otherwise false>
+  binding_source: null
   spec_mode: null
   spec_source: null
   spec_projection_state: null
@@ -200,6 +210,7 @@ downstream-навыки (brainstorming, prd-generator) используют
     "wiki_initialized": true|false,
     "wiki_domain": "<имя домена iwiki>" | null,
     "wiki_summary": "синтезированный обзор из домена iwiki" | null,
+    "binding_source": "session|token_default" | null,
     "spec_mode": "disabled|optional|strict" | null,
     "spec_source": "project|hosted_default|hosted_override|built_in_default" | null,
     "spec_projection_state": "disabled|absent|ready|stale|failed" | null,
