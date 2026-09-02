@@ -49,7 +49,8 @@ process.stdout.write(
   '1800 idle seconds, so a reconnect or a restarted server drops it silently. ' +
   '`wiki_status`, `wiki_bind`, `wiki_code_status`, `wiki_code_search`, ' +
   '`wiki_code_context`, `wiki_code_publish_begin`, `wiki_spec_search`, ' +
-  '`wiki_spec_context`, and `wiki_spec_resolve` report `binding_source`: ' +
+  '`wiki_spec_context`, `wiki_spec_resolve`, and `wiki_search` report ' +
+  '`binding_source`: ' +
   '`session` means your bind chose the scope, `token_default` means the server ' +
   'fell back to the token\'s own grants. Seeing `token_default` after you bound ' +
   'means the selection was lost — re-bind before trusting the answer. This ' +
@@ -58,10 +59,14 @@ process.stdout.write(
   'domain\'s snapshot as `state: "ready"`, `fresh: true`; under the fallback they ' +
   'also append `binding_defaulted` to `warnings`, and a server configured with ' +
   '`[code_graph] require_session_binding = true` refuses them with ' +
-  '`binding_not_selected`. `wiki_spec_search` without an explicit `domains` ' +
-  'carries the same `binding_defaulted` warning, because its search set is the ' +
+  '`binding_not_selected`. `wiki_spec_search` and `wiki_search` without an ' +
+  'explicit `domains` ' +
+  'carry the same `binding_defaulted` warning, because their search set is the ' +
   'bound read list and a lost selection widens it to every domain the token may ' +
-  'read — pass `domains`, or re-bind, before trusting that result. A primary ' +
+  'read — pass `domains`, or re-bind, before trusting that result. ' +
+  '`wiki_search(intent="write")` prefers the bound primary over any `domains` you ' +
+  'pass, so under the fallback it is defaulted whatever you name; re-bind before ' +
+  'writing to the target it returns. A primary ' +
   'replaced by the write-scope intersection ' +
   'appears as `primary_substituted: true` beside `requested_primary` — report ' +
   'that as a binding error rather than working in the substituted scope. A hosted ' +

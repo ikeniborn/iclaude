@@ -61,8 +61,8 @@ Skip only when: familiar area, same session.
 
 **A hosted binding reports which tier chose it.** `wiki_status`, `wiki_bind`,
 `wiki_code_status`, `wiki_code_search`, `wiki_code_context`, `wiki_code_publish_begin`,
-`wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` carry `binding_source`:
-`session` when your `wiki_bind`
+`wiki_spec_search`, `wiki_spec_context`, `wiki_spec_resolve`, and `wiki_search` carry
+`binding_source`: `session` when your `wiki_bind`
 selected the scope, `token_default` when the server fell back to the token's own grants
 because it found no session record. A hosted session binding is keyed by `mcp-session-id`
 and expires after 1800 idle seconds, so a reconnect or a restarted server silently drops
@@ -73,10 +73,13 @@ it. `binding_source: token_default` after you bound means the selection was lost
 snapshot as `state: ready`, `fresh: true`. Under the fallback those three also append
 `binding_defaulted` to `warnings`, and a hosted server with
 `[code_graph] require_session_binding = true` refuses them outright with
-`binding_not_selected`. `wiki_spec_search` called **without** `domains` carries the same
-`binding_defaulted` warning, because its search set is the bound read list and a lapsed
+`binding_not_selected`. `wiki_spec_search` and `wiki_search` called **without** `domains`
+carry the same
+`binding_defaulted` warning, because their search set is the bound read list and a lapsed
 selection silently widens it to every domain the token may read; pass `domains`
-explicitly, or re-bind, rather than trusting that result. `wiki_bind` returns the
+explicitly, or re-bind, rather than trusting that result. `wiki_search(intent="write")`
+prefers the bound primary over any `domains` you pass, so under the fallback it is
+defaulted no matter what you name — re-bind before writing to the target it returns. `wiki_bind` returns the
 `session_id` it bound to. When the
 request's write-scope intersection replaces your primary, the same answers carry
 `primary_substituted: true` beside `requested_primary` — treat that as a binding error to
@@ -157,7 +160,7 @@ Availability beyond the storage split above:
 - The Git-only OKF tools are a governance set, not part of routine writing: `wiki_migrate_okf` moves a domain onto the governed frontmatter/type layout, `wiki_apply_okf(domain, slug, type, tags=…)` re-types one page and rewrites incoming links, `wiki_export_okf` exports the portable bundle, `wiki_remediation_plan` proposes fixes for lint findings, and `wiki_create_domain` bootstraps one empty domain that write scope already names. Under PostgreSQL they are absent — that is the storage answer, not a bug to work around.
 - `wiki_list_domain_grants(domain)`, `wiki_set_domain_grant(domain, token_id, can_read, can_write)`, and `wiki_revoke_domain_grant(domain, token_id)` administer another token's access, not your own scope. Never call them to widen a binding that a 403 refused.
 - `wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` are gated by the domain's specification mode rather than by storage: `mode: "disabled"` turns all three off, search and context need read scope, and resolve persists sanitized evidence — on a hosted server it also requires the bound primary, so a scenario that lives in any other domain is refused with `reason: "not_bound_primary"` no matter what the token may write. See **Keep Specifications Current** below.
-- **There is no unified Markdown+code search, by decision.** A `wiki_unified_search` tool was evaluated and closed `do_not_implement`; it stays unregistered. `wiki_search` and `wiki_code_search` are separate tools with independent ranks; never compare their scores or merge their result lists. A `wiki_search` result carrying `source: "graph"` came from the Markdown link graph, not the code graph — every read-search result is exactly `domain`, `file`, `heading`, `chunk`, `score`, `hit` (`semantic | lexical | both`), and `source` (`seed | graph | global | lexical`), plus an optional top-level `rerank` block that is `{"applied": true}` or a fail-soft `{"applied": false, "warning": …}`.
+- **There is no unified Markdown+code search, by decision.** A `wiki_unified_search` tool was evaluated and closed `do_not_implement`; it stays unregistered. `wiki_search` and `wiki_code_search` are separate tools with independent ranks; never compare their scores or merge their result lists. A `wiki_search` result carrying `source: "graph"` came from the Markdown link graph, not the code graph — every read-search result is exactly `domain`, `file`, `heading`, `chunk`, `score`, `hit` (`semantic | lexical | both`), and `source` (`seed | graph | global | lexical`), plus an optional top-level `rerank` block that is `{"applied": true}` or a fail-soft `{"applied": false, "warning": …}`. A hosted answer also carries top-level `binding_source`, and `warnings` when the scope came from the binding rather than your call.
 - `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant` need the same hosted PostgreSQL identity; anything else returns `unsupported_transport` or a 403.
 
 ## Keep README Current (MANDATORY)
