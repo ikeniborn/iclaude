@@ -48,7 +48,8 @@ process.stdout.write(
   'The binding is session-scoped, keyed by `mcp-session-id`, and expires after ' +
   '1800 idle seconds, so a reconnect or a restarted server drops it silently. ' +
   '`wiki_status`, `wiki_bind`, `wiki_code_status`, `wiki_code_search`, ' +
-  '`wiki_code_context`, and `wiki_code_publish_begin` report `binding_source`: ' +
+  '`wiki_code_context`, `wiki_code_publish_begin`, `wiki_spec_search`, ' +
+  '`wiki_spec_context`, and `wiki_spec_resolve` report `binding_source`: ' +
   '`session` means your bind chose the scope, `token_default` means the server ' +
   'fell back to the token\'s own grants. Seeing `token_default` after you bound ' +
   'means the selection was lost — re-bind before trusting the answer. This ' +
@@ -57,9 +58,18 @@ process.stdout.write(
   'domain\'s snapshot as `state: "ready"`, `fresh: true`; under the fallback they ' +
   'also append `binding_defaulted` to `warnings`, and a server configured with ' +
   '`[code_graph] require_session_binding = true` refuses them with ' +
-  '`binding_not_selected`. A primary replaced by the write-scope intersection ' +
+  '`binding_not_selected`. `wiki_spec_search` without an explicit `domains` ' +
+  'carries the same `binding_defaulted` warning, because its search set is the ' +
+  'bound read list and a lost selection widens it to every domain the token may ' +
+  'read — pass `domains`, or re-bind, before trusting that result. A primary ' +
+  'replaced by the write-scope intersection ' +
   'appears as `primary_substituted: true` beside `requested_primary` — report ' +
-  'that as a binding error rather than working in the substituted scope.\n\n' +
+  'that as a binding error rather than working in the substituted scope. A hosted ' +
+  'refusal answers `access_denied` whose `data` carries your own `binding_source` ' +
+  'and, when the gate can attribute it, a `reason`; for `wiki_spec_resolve` that ' +
+  'reason is `invalid_domain`, `primary_not_selected`, `primary_not_writable`, or ' +
+  '`not_bound_primary` — the last one is a binding mismatch, not a missing grant.' +
+  '\n\n' +
   'Specification (Given-When-Then) policy is resolved server-side, but this ' +
   'transport carries the project tier: the `[specifications] mode` you passed as ' +
   '`wiki_bind(specification_mode=…)` is gated by the server\'s own ' +

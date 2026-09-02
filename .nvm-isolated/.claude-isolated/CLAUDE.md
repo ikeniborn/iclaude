@@ -60,8 +60,9 @@ Skip only when: familiar area, same session.
    mode per domain, and — on the hosted transport — `binding_source`.
 
 **A hosted binding reports which tier chose it.** `wiki_status`, `wiki_bind`,
-`wiki_code_status`, `wiki_code_search`, `wiki_code_context`, and
-`wiki_code_publish_begin` carry `binding_source`: `session` when your `wiki_bind`
+`wiki_code_status`, `wiki_code_search`, `wiki_code_context`, `wiki_code_publish_begin`,
+`wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` carry `binding_source`:
+`session` when your `wiki_bind`
 selected the scope, `token_default` when the server fell back to the token's own grants
 because it found no session record. A hosted session binding is keyed by `mcp-session-id`
 and expires after 1800 idle seconds, so a reconnect or a restarted server silently drops
@@ -72,7 +73,11 @@ it. `binding_source: token_default` after you bound means the selection was lost
 snapshot as `state: ready`, `fresh: true`. Under the fallback those three also append
 `binding_defaulted` to `warnings`, and a hosted server with
 `[code_graph] require_session_binding = true` refuses them outright with
-`binding_not_selected`. `wiki_bind` returns the `session_id` it bound to. When the
+`binding_not_selected`. `wiki_spec_search` called **without** `domains` carries the same
+`binding_defaulted` warning, because its search set is the bound read list and a lapsed
+selection silently widens it to every domain the token may read; pass `domains`
+explicitly, or re-bind, rather than trusting that result. `wiki_bind` returns the
+`session_id` it bound to. When the
 request's write-scope intersection replaces your primary, the same answers carry
 `primary_substituted: true` beside `requested_primary` — treat that as a binding error to
 report, not as a working scope. Markdown tools that name their own domain carry no
@@ -106,9 +111,12 @@ No `.iwiki.toml`, an invalid scope, or a rejected bind (e.g. 403): report the re
 briefly, make no mutating wiki calls, and retain task lifecycle `completion-pending`. On
 a hosted server the token's own grants remain the absolute authorization limit.
 
-A hosted refusal of a single call comes back as an `access_denied` tool error carrying
-only a hint — it never names the refused domain or wiki. Treat it as final: re-read the
-binding, do not retry the same call, and never try to widen scope with the grant tools.
+A hosted refusal of a single call comes back as an `access_denied` tool error whose
+`data` carries a deliberately vague hint, your own `binding_source`, and — when the gate
+can attribute the refusal — a `reason`. None of them names the refused domain or wiki.
+Read `binding_source` first: `token_default` means the selection was lost, so re-bind and
+try once more. Otherwise treat the refusal as final: re-read the binding, do not retry the
+same call, and never try to widen scope with the grant tools.
 
 ## Keep Docs Current (MANDATORY)
 
@@ -148,7 +156,7 @@ Availability beyond the storage split above:
 - `wiki_list_domains` lists the domains this binding can see and `wiki_list_pages(domain)` every page slug in one of them; both are reads and work under either storage. `wiki_status` is what reports the effective scope itself.
 - The Git-only OKF tools are a governance set, not part of routine writing: `wiki_migrate_okf` moves a domain onto the governed frontmatter/type layout, `wiki_apply_okf(domain, slug, type, tags=…)` re-types one page and rewrites incoming links, `wiki_export_okf` exports the portable bundle, `wiki_remediation_plan` proposes fixes for lint findings, and `wiki_create_domain` bootstraps one empty domain that write scope already names. Under PostgreSQL they are absent — that is the storage answer, not a bug to work around.
 - `wiki_list_domain_grants(domain)`, `wiki_set_domain_grant(domain, token_id, can_read, can_write)`, and `wiki_revoke_domain_grant(domain, token_id)` administer another token's access, not your own scope. Never call them to widen a binding that a 403 refused.
-- `wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` are gated by the domain's specification mode rather than by storage: `mode: "disabled"` turns all three off, search and context need read scope, and resolve persists sanitized evidence — on a hosted server it also requires the bound primary. See **Keep Specifications Current** below.
+- `wiki_spec_search`, `wiki_spec_context`, and `wiki_spec_resolve` are gated by the domain's specification mode rather than by storage: `mode: "disabled"` turns all three off, search and context need read scope, and resolve persists sanitized evidence — on a hosted server it also requires the bound primary, so a scenario that lives in any other domain is refused with `reason: "not_bound_primary"` no matter what the token may write. See **Keep Specifications Current** below.
 - **There is no unified Markdown+code search, by decision.** A `wiki_unified_search` tool was evaluated and closed `do_not_implement`; it stays unregistered. `wiki_search` and `wiki_code_search` are separate tools with independent ranks; never compare their scores or merge their result lists. A `wiki_search` result carrying `source: "graph"` came from the Markdown link graph, not the code graph — every read-search result is exactly `domain`, `file`, `heading`, `chunk`, `score`, `hit` (`semantic | lexical | both`), and `source` (`seed | graph | global | lexical`), plus an optional top-level `rerank` block that is `{"applied": true}` or a fail-soft `{"applied": false, "warning": …}`.
 - `wiki_list_domain_grants`, `wiki_set_domain_grant`, `wiki_revoke_domain_grant` need the same hosted PostgreSQL identity; anything else returns `unsupported_transport` or a 403.
 
@@ -200,7 +208,8 @@ code = [
 ]
 ```
 
-- **Three tools, no more.** `wiki_spec_search(query, domains=…, limit=20)` and `wiki_spec_context(domain, scenario_id)` are reads; `wiki_spec_resolve(domain, scenario_id)` persists sanitized resolution evidence and needs write scope — hosted, the bound primary. Context reports freshness as `fresh`, `stale_spec`, or `stale_graph`; resolution evidence is `resolved`, `ambiguous`, `unresolved`, or `graph_unavailable`.
+- **Three tools, no more.** `wiki_spec_search(query, domains=…, limit=20)` and `wiki_spec_context(domain, scenario_id)` are reads; `wiki_spec_resolve(domain, scenario_id)` persists sanitized resolution evidence and needs write scope — hosted, the bound primary. Context reports freshness as `fresh`, `stale_spec`, or `stale_graph`; resolution evidence is `resolved`, `ambiguous`, `unresolved`, or `graph_unavailable`. Omitting `domains` on search hands the scope to the binding, so the answer carries `binding_defaulted` whenever that binding was a fallback — read the returned `domains` list before treating the result as the project's.
+- **A refused hosted `wiki_spec_resolve` names its own cause.** `data.reason` is `invalid_domain`, `primary_not_selected`, `primary_not_writable`, or `not_bound_primary`. `not_bound_primary` is a binding mismatch, not a missing grant: the scenario is in a domain that is not your `primary`, and the fix is to resolve it from the project whose `primary` is that domain, never to ask for a wider grant. There is no separate spec-evidence permission — grants are per-domain read/write only.
 - **Maintenance loop.** Call `wiki_spec_context` before changing an existing scenario → preserve its ID unless the behavioral contract itself changed → write or update the executable test before or with the implementation → run the focused and relevant regression tests and record command, exit status, and repository revision on the task page → call `wiki_spec_resolve` after code or test changes when a ready graph exists → treat ambiguous, stale, or unresolved evidence as a maintenance finding, never as permission to guess. A `verifies` selector proves only where the test lives; it never proves the test passed.
 - **`wiki_lint` reports a `specifications` block** per domain — `mode`, `source`, `state`, `projection_revision`, `scenarios`, `bindings`, `findings`. The findings taxonomy is `missing_scenario`, `invalid_scenario`, `duplicate_scenario_id`, `incomplete_bindings`, `projection_stale`, `projection_failed`, `binding_unresolved`, `binding_ambiguous`, `resolution_not_checked`, `resolution_stale_spec`, `resolution_stale_graph`, and `graph_unavailable`. Lint is read-only, never suppresses the ordinary Wiki report, and returns nothing here under `disabled`. Fix the findings your change caused.
 - **The code graph is optional context here too.** Absent, stale, failed, or unreachable: preserve the declared selectors, record `graph_unavailable`, fall back to repository search, run the test, and continue. Never rewrite scenario semantics to work around a missing graph.
