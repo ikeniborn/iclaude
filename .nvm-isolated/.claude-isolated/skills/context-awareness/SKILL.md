@@ -110,6 +110,9 @@ IF MCP-сервер iwiki подключён:
      `token_default` parent agent должен перепривязаться до того, как доверять
      `code_graph_*`, потому что домен-независимые code-чтения целятся в
      `binding.primary` и иначе отчитаются о чужом снапшоте как `ready`/`fresh`.
+     По той же причине `wiki_spec_search` без явного `domains` ищет по bound read
+     list и при откате расширяется до всех доменов токена, помечая ответ
+     `binding_defaulted`.
      Из того же ответа `wiki_status` взять запись `specifications.domains[]`, чей
      `domain` совпадает с `primary` (дополнительный вызов не нужен):
        spec_mode: "<mode>" (disabled|optional|strict)
