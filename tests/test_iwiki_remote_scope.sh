@@ -180,6 +180,11 @@ t_binding_provenance_note() {
     else
       fail "$mode: names the defaulted specification search scope"
     fi
+    if [[ "$out" == *'`wiki_search(intent="write")` prefers the bound primary'* ]]; then
+      pass "$mode: names the defaulted write-intent target"
+    else
+      fail "$mode: names the defaulted write-intent target"
+    fi
     if [[ "$out" == *"not_bound_primary"* && "$out" == *"not a missing grant"* ]]; then
       pass "$mode: reads a refused resolve as a binding mismatch"
     else
