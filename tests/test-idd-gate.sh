@@ -4,7 +4,7 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOOK="$ROOT/.nvm-isolated/.claude-isolated/hooks/chain-gate.py"
+HOOK="$ROOT/.claude-isolated/hooks/chain-gate.py"
 PASS=0; FAIL=0
 pass(){ echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail(){ echo "  ✗ $1"; FAIL=$((FAIL+1)); }

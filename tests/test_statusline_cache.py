@@ -9,7 +9,7 @@ import pytest
 
 SCRIPT = os.path.join(
     os.path.dirname(__file__), "..",
-    ".nvm-isolated", ".claude-isolated", "scripts", "claude-statusline.sh",
+    ".claude-isolated", "scripts", "claude-statusline.sh",
 )
 
 pytestmark = pytest.mark.skipif(

@@ -14,7 +14,7 @@ _spec = importlib.util.spec_from_file_location(
     'pii_proxy_server',
     os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        '../.nvm-isolated/.claude-isolated/pii-proxy-server.py',
+        '../.claude-isolated/pii-proxy-server.py',
     ),
 )
 pii = importlib.util.module_from_spec(_spec)

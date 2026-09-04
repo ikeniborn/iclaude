@@ -21,7 +21,7 @@ import subprocess
 # Путь к хуку относительно корня проекта
 HOOK = os.path.join(
     os.path.dirname(__file__),
-    '../.nvm-isolated/.claude-isolated/hooks/redact-secrets.py'
+    '../.claude-isolated/hooks/redact-secrets.py'
 )
 
 # --- счётчики ---

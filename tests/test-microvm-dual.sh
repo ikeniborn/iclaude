@@ -48,7 +48,7 @@ source "${PROJECT_DIR}/lib/core/json.sh"
 init_environment
 # Re-pin paths (init_environment resolves relative to caller's SCRIPT_DIR)
 ISOLATED_NVM_DIR="${PROJECT_DIR}/.nvm-isolated"
-ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.nvm-isolated/.claude-isolated"
+ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.claude-isolated"
 export ISOLATED_NVM_DIR ISOLATED_CONFIG_DIR
 # Pick up user overrides (MICRO_VM_NET_SUBNET, etc.) without crashing on unbound vars
 set +u

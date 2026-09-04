@@ -15,7 +15,7 @@
 #               missing sentinel block or VERDICT line); 3 host tree changed (tripwire).
 #
 # Env knobs: LOEN_KVM_DEV (default /dev/kvm), LOEN_ICLAUDE_SH (default $SCRIPT_DIR/iclaude.sh),
-#            ISOLATED_CONFIG_DIR (default ./.nvm-isolated/.claude-isolated),
+#            ISOLATED_CONFIG_DIR (default ./.claude-isolated),
 #            LOEN_VERIFY_TIMEOUT (seconds, default 1800), LOEN_VERIFY_KEEP_SNAPSHOT=1 (debug).
 set -euo pipefail
 
@@ -41,7 +41,7 @@ _read_isolation() {
 
 # Host capability for microvm mode: KVM + firecracker + images + launcher.
 _capability_check() {
-    local cfg="${ISOLATED_CONFIG_DIR:-$PWD/.nvm-isolated/.claude-isolated}"
+    local cfg="${ISOLATED_CONFIG_DIR:-$PWD/.claude-isolated}"
     local kvm="${LOEN_KVM_DEV:-/dev/kvm}"
     local iclaude_sh="${LOEN_ICLAUDE_SH:-${SCRIPT_DIR:-.}/iclaude.sh}"
     local missing=()

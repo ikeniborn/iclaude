@@ -4,7 +4,7 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SKILLS="$ROOT/.nvm-isolated/.claude-isolated/skills"
+SKILLS="$ROOT/.claude-isolated/skills"
 skill="$SKILLS/task-ledger/SKILL.md"
 helper="$SKILLS/task-ledger/scripts/task_spool.py"
 context_skill="$SKILLS/context-awareness/SKILL.md"

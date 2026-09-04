@@ -170,7 +170,7 @@ _section "check_microvm_status (dry run)"
     get_cli_version()     { echo "unknown"; }
     get_lockfile_field()  { echo "false"; }
     ISOLATED_NVM_DIR="${PROJECT_DIR}/.nvm-isolated"
-    ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
+    ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.claude-isolated"
     source "${PROJECT_DIR}/lib/core/init.sh"
     init_environment
     source "${PROJECT_DIR}/lib/sandbox/detect.sh"
