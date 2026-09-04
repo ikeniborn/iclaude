@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отчёт: per-project-home-resolution (S1)</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#12141a; --surface:#1b1e27; --surface2:#232734; --text:#e6e8ee; --muted:#9aa1b2;
+  --accent:#6ea8fe; --ok:#3fb96f; --warn:#e0a83c; --line:#333949; --code:#2a2f3e;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#eef0f4; --text:#1d2330; --muted:#5b6475;
+  --accent:#2f6fce; --ok:#1e8a4c; --warn:#a4700f; --line:#d7dbe3; --code:#eef0f4;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:1080px;margin-inline:auto}
+h1{font-size:1.5rem;margin:.2rem 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.badge{display:inline-block;padding:.12rem .55rem;border-radius:1rem;font-size:.78rem;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--surface);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:.08rem .35rem;border-radius:4px;font-size:.85em}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 8px 8px 0;margin:.8rem 0;color:var(--muted)}
+.toggle{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);border-radius:2rem;padding:.35rem .9rem;cursor:pointer;font-size:.85rem}
+.lead{color:var(--muted);margin:.2rem 0 1rem}
+figure{margin:1rem 0;background:var(--surface);border-radius:8px;padding:1rem;overflow-x:auto}
+figcaption{color:var(--muted);font-size:.82rem;margin-top:.5rem}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ тема</button>
+
+<h1>per-project-home-resolution — отчёт result-стадии <span class="badge ok">OK</span></h1>
+<p class="lead">Слайс S1 переработки изоляции: детерминированный per-project конфиг-дом за фиче-флагом.</p>
+
+<h2>1. Резюме внедрения</h2>
+<table>
+<tr><th>Топик</th><td><code>per-project-home-resolution</code> (слайс S1 плана <code>reference/plans/shared-store-per-project-home-architecture</code>)</td></tr>
+<tr><th>Intent</th><td><code>docs/superpowers/intents/2026-09-04-per-project-home-resolution-intent.md</code> (Status: approved, check-chain intent: OK)</td></tr>
+<tr><th>Spec / Plan</th><td>n/a — continuation <code>execute</code>: реализация напрямую из intent</td></tr>
+<tr><th>База diff</th><td><code>HEAD</code> = <code>fca06428</code> (origin/master), ветка <code>dev-per-project-home-resolution</code></td></tr>
+</table>
+
+<h2>2. Выполненные изменения</h2>
+<table>
+<thead><tr><th>Файл</th><th>Тип</th><th class="num">±</th><th>Что делает</th></tr></thead>
+<tbody>
+<tr><td><code>lib/config/isolated.sh</code></td><td>изменён</td><td class="num">+89/−1</td><td>Новые функции <code>resolve_project_root</code>, <code>resolve_claude_home_id</code>, <code>setup_claude_home</code>; диспетчеризация <code>ICLAUDE_HOME_MODE</code> в <code>setup_isolated_config</code></td></tr>
+<tr><td><code>tests/test_per_project_home.sh</code></td><td>добавлен</td><td class="num">+136</td><td>21 unit-проверка: резолюция корня, формат/детерминизм id, маркер home.json, идемпотентность, диспетчер режимов, env-map</td></tr>
+<tr><td><code>iclaude.sh</code></td><td>изменён</td><td class="num">+12</td><td>Флаг <code>--per-project-home</code>; экспорт <code>ICLAUDE_HOME_MODE=per-project</code> после чтения конфига (precedence: defaults &lt; config &lt; флаги)</td></tr>
+<tr><td><code>lib/config/env-map.sh</code></td><td>изменён</td><td class="num">+1</td><td><code>ICLAUDE_HOME_MODE</code> — native-переменная, не де-префиксуется</td></tr>
+<tr><td><code>lib/core/init.sh</code></td><td>изменён</td><td class="num">+2</td><td>Глобал <code>ISOLATED_HOMES_DIR=&lt;repo&gt;/.claude-homes</code> + export</td></tr>
+<tr><td><code>lib/command/usage.sh</code></td><td>изменён</td><td class="num">+1</td><td>Строка помощи для нового флага</td></tr>
+<tr><td><code>.gitignore</code></td><td>изменён</td><td class="num">+3</td><td><code>.claude-homes/</code> — рантайм-состояние, вне git</td></tr>
+<tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td>изменены</td><td class="num">+22</td><td>Секция про per-project дома: флаг, переменная, формат id, маркер, дефолт без изменений</td></tr>
+<tr><td><code>docs/superpowers/intents/…-intent.md</code></td><td>добавлен</td><td class="num">+103</td><td>Утверждённый intent слайса (chain-артефакт)</td></tr>
+</tbody>
+</table>
+
+<h2>3. Результаты</h2>
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+<tbody>
+<tr><td>Флаг/переменная → дом <code>.claude-homes/&lt;basename&gt;-&lt;sha256[0:12]&gt;</code> с маркером, экспорт <code>CLAUDE_CONFIG_DIR</code></td><td><span class="badge ok">DONE</span></td><td>isolated.sh + iclaude.sh; тесты «home: …», «dispatch: per-project»</td></tr>
+<tr><td>Детерминизм id; worktree — свой дом; non-git — fallback на путь</td><td><span class="badge ok">DONE</span></td><td>тесты «id: deterministic / distinct / hash vector», «root: non-git»</td></tr>
+<tr><td>Дефолт байт-в-байт как раньше, без <code>.claude-homes/</code></td><td><span class="badge ok">DONE</span></td><td>тесты «dispatch: default/shared/unknown»; regression-phase0 пройден</td></tr>
+<tr><td><code>.claude-homes/</code> в .gitignore</td><td><span class="badge ok">DONE</span></td><td>diff .gitignore</td></tr>
+</tbody>
+</table>
+<div class="note">Верификация: <code>bash tests/test_per_project_home.sh</code> → PASS=21 FAIL=0 (exit 0);
+<code>tests/test_env_map.sh</code> → 10/10; <code>tests/test_config_migration.sh</code> → 10/10;
+<code>tests/regression-phase0.sh</code> → OK; <code>bash -n</code> всех изменённых файлов — чисто.
+Ревизия базы: <code>fca06428</code>.</div>
+<div class="note">GWT (strict, домен iclaude): сценарий <code>per-project-home-resolution</code> на странице
+<code>specification/per-project-home-resolution</code>; <code>wiki_spec_resolve</code>:
+implements → <span class="badge ok">resolved</span>, verifies → <span class="badge warn">unresolved</span>
+(тест-файл вне code graph: <code>include_tests=false</code> и ветка не слита) — maintenance-finding, не блокер: тест реально выполнен, exit 0.
+Излишков нет: README/intent — обязательные артефакты правил проекта.</div>
+
+<h2>4. Влияние на систему</h2>
+<table>
+<thead><tr><th>Область</th><th>Влияние</th><th>Риски / follow-up</th></tr></thead>
+<tbody>
+<tr><td>Запуск по умолчанию</td><td>Нет изменений: диспетчер уходит в прежнюю ветку shared</td><td>—</td></tr>
+<tr><td>Запуск с флагом/переменной</td><td><code>CLAUDE_CONFIG_DIR</code> → per-project дом; Claude Code сам наполняет его состоянием</td><td>До S2/S3 дом «пустой»: без общих skills/hooks/credentials — экспериментальный режим, задокументировано</td></tr>
+<tr><td>Будущие слайсы</td><td>S2 (симлинки), S3 (settings), S5 (миграция) опираются на id и маркер</td><td>GC домов — S7; маркер уже пишется</td></tr>
+<tr><td>Code graph</td><td>Новые bash-функции попадут в граф после merge + rebuild</td><td>Пересборка снапшота после слияния PR</td></tr>
+</tbody>
+</table>
+
+<h2>5. Схема: новые функции и диспетчеризация</h2>
+<figure>
+<svg viewBox="0 0 860 300" width="860" height="300" role="img" aria-label="Диспетчеризация per-project home">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
+</defs>
+<g font-family="system-ui" font-size="13" fill="var(--text)">
+<rect x="20" y="20" width="220" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="130" y="42" text-anchor="middle">iclaude.sh</text>
+<text x="130" y="60" text-anchor="middle" fill="var(--muted)" font-size="11">--per-project-home → env</text>
+
+<rect x="320" y="20" width="230" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="435" y="42" text-anchor="middle">setup_isolated_config</text>
+<text x="435" y="60" text-anchor="middle" fill="var(--muted)" font-size="11">dispatch: ICLAUDE_HOME_MODE</text>
+
+<rect x="630" y="20" width="210" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="735" y="42" text-anchor="middle">shared (default)</text>
+<text x="735" y="60" text-anchor="middle" fill="var(--muted)" font-size="11">.nvm-isolated/.claude-isolated</text>
+
+<rect x="320" y="130" width="230" height="52" rx="8" fill="var(--surface2)" stroke="var(--accent)"/>
+<text x="435" y="152" text-anchor="middle">setup_claude_home</text>
+<text x="435" y="170" text-anchor="middle" fill="var(--muted)" font-size="11">mkdir + home.json + export</text>
+
+<rect x="60" y="228" width="220" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="170" y="250" text-anchor="middle">resolve_project_root</text>
+<text x="170" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">git toplevel | pwd -P</text>
+
+<rect x="330" y="228" width="240" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="450" y="250" text-anchor="middle">resolve_claude_home_id</text>
+<text x="450" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">basename-sha256(path)[0:12]</text>
+
+<rect x="630" y="130" width="210" height="52" rx="8" fill="var(--surface2)" stroke="var(--ok)"/>
+<text x="735" y="152" text-anchor="middle">.claude-homes/&lt;id&gt;/</text>
+<text x="735" y="170" text-anchor="middle" fill="var(--muted)" font-size="11">= CLAUDE_CONFIG_DIR</text>
+
+<line x1="240" y1="46" x2="318" y2="46" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="550" y1="46" x2="628" y2="46" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="589" y="38" text-anchor="middle" fill="var(--muted)" font-size="11">shared|unknown</text>
+<line x1="435" y1="72" x2="435" y2="128" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="500" y="102" text-anchor="middle" fill="var(--muted)" font-size="11">per-project</text>
+<line x1="380" y1="182" x2="230" y2="226" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="450" y1="182" x2="450" y2="226" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="550" y1="156" x2="628" y2="156" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+</g>
+</svg>
+<figcaption>Карта влияния: флаг/конфиг задают режим; per-project ветка строит дом из git-root и экспортирует его как CLAUDE_CONFIG_DIR; дефолтная ветка не изменена.</figcaption>
+</figure>
+
+</body>
+</html>

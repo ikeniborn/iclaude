@@ -48,6 +48,7 @@ OPTIONS:
   --repair-plugins                  Repair plugin paths after moving project directory
   --isolated-config                 Use isolated config directory (automatic for isolated install)
   --shared-config                   Use shared config directory (default: ~/.claude/)
+  --per-project-home                Use a per-project config home under .claude-homes/ (or ICLAUDE_HOME_MODE=per-project)
   --check-config                    Show current configuration directory status
   --refresh-token                   Refresh OAuth token using setup-token (long-lived ~1 year)
   --export-config DIR               Export configuration to backup directory

@@ -55,6 +55,7 @@ init_environment() {
     GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
     ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
     ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
+    ISOLATED_HOMES_DIR="${SCRIPT_DIR}/.claude-homes"
     CLAUDE_CONFIG_DIR="$ISOLATED_CONFIG_DIR"
     ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
     LOCKFILE_HASH_FILE="${SCRIPT_DIR}/.nvm-isolated/.claude-isolated/.last-lockfile-hash"
@@ -70,6 +71,7 @@ init_environment() {
     export GIT_BACKUP_FILE
     export ISOLATED_NVM_DIR
     export ISOLATED_CONFIG_DIR
+    export ISOLATED_HOMES_DIR
     export CLAUDE_CONFIG_DIR
     export ISOLATED_LOCKFILE
     export LOCKFILE_HASH_FILE
