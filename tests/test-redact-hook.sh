@@ -18,6 +18,28 @@ run_hook() {
     python3 "$HOOK" <<< "$1"
 }
 
+# Валидатор формы ответа хука — отдельный файл, чтобы не городить экранирование
+# python-кода внутри подстановки команд.
+SCHEMA_CHECK="$(mktemp)"
+trap 'rm -f "$SCHEMA_CHECK"' EXIT
+cat > "$SCHEMA_CHECK" <<'PY'
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception as exc:
+    print("stdout не JSON: %s" % exc)
+    raise SystemExit(0)
+h = d.get("hookSpecificOutput")
+if not isinstance(h, dict):
+    print("нет объекта hookSpecificOutput")
+elif h.get("hookEventName") != "PreToolUse":
+    print("hookEventName=%r, ожидали 'PreToolUse'" % h.get("hookEventName"))
+elif "toolInputOverride" not in h:
+    print("нет toolInputOverride")
+else:
+    print("OK")
+PY
+
 # Проверяет что stdout содержит строку (fixed-string, нет shell-injection)
 assert_masked() {
     local label="$1" payload="$2" expected="$3"
@@ -52,6 +74,23 @@ assert_exit() {
         pass "$label"
     else
         fail "$label (exit=$actual_code, ожидали $expected_code)"
+    fi
+}
+
+# Проверяет форму JSON, которую читает харнесс. Редактирование само по себе
+# ничего не значит: без hookEventName харнесс отбрасывает весь объект вместе с
+# toolInputOverride, и секрет уходит в инструмент незамаскированным, хотя хук
+# рапортует об успехе.
+assert_hook_schema() {
+    local label="$1" payload="$2"
+    local out
+    out=$(run_hook "$payload" 2>/dev/null)
+    local verdict
+    verdict=$(printf '%s' "$out" | python3 "$SCHEMA_CHECK" 2>/dev/null) || verdict="хук ничего не вернул"
+    if [[ "$verdict" == "OK" ]]; then
+        pass "$label"
+    else
+        fail "$label (${verdict:-хук ничего не вернул})"
     fi
 }
 
@@ -206,6 +245,13 @@ assert_blocked ".pem файл блокируется block-secrets.py" \
     '{"tool_name":"Write","tool_input":{"file_path":"/tmp/server.pem","content":"-----BEGIN CERTIFICATE-----"}}'
 assert_blocked ".ssh путь блокируется block-secrets.py" \
     '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.ssh/id_rsa"}}'
+
+echo ""
+echo "─ Форма ответа для харнесса"
+assert_hook_schema "Bash: hookSpecificOutput содержит hookEventName=PreToolUse" \
+    '{"tool_name":"Bash","tool_input":{"command":"psql password=\"sk-ant-abc123xyz456def789\""}}'
+assert_hook_schema "Write: hookSpecificOutput содержит hookEventName=PreToolUse" \
+    '{"tool_name":"Write","tool_input":{"file_path":"app.py","content":"KEY = \"sk-ant-abc123xyz456def789\""}}'
 
 echo ""
 echo "─────────────────────────────────────"
