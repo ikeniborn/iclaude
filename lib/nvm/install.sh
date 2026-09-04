@@ -446,6 +446,11 @@ _install_npm_package_with_lockfile_unlocked() {
 		set_lockfile_field "$lockfile_field" "$installed_version" || {
 			print_warning "Failed to update lockfile field: $lockfile_field"
 		}
+		# S8: pin the installed Claude native binary by sha256 (claude only).
+		if [[ "$package_name" == "@anthropic-ai/claude-code" ]] \
+			&& declare -f record_claude_binary_hash &>/dev/null; then
+			record_claude_binary_hash
+		fi
 	else
 		# Fallback: manual jq update (if core/json.sh not loaded)
 		if command -v jq &>/dev/null && [[ -f "$ISOLATED_LOCKFILE" ]]; then
