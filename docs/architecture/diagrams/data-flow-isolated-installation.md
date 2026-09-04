@@ -6,11 +6,12 @@
 
 | Путь | Описание |
 |------|----------|
-| `.nvm-isolated/` | Корневая директория окружения |
+| `.nvm-isolated/` | Корневая директория Node.js-окружения |
 | `.nvm-isolated/nvm.sh` | Скрипт NVM |
 | `.nvm-isolated/versions/node/v18.x.x/` | Установка Node.js |
 | `.nvm-isolated/npm-global/bin/claude` | Симлинк на CLI |
-| `.nvm-isolated/.claude-isolated/` | Изолированная конфигурация |
+| `.claude-isolated/` | Общий стор Claude — сосед `.nvm-isolated/`, а не его потомок: nvm переустанавливается и удаляется целиком, стор хранит логин, транскрипты и плагины |
+| `.claude-homes/<project>-<hash>/` | Дом проекта, куда указывает `CLAUDE_CONFIG_DIR` |
 | `.nvm-isolated-lockfile.json` | Файл версий |
 
 ## Диаграмма

@@ -14,7 +14,7 @@
 
 ## Изоляция от `~/.claude/`
 
-Стандартный установщик caveman патчит `~/.claude/settings.json` — несовместимо с изолированной средой iclaude (`$CLAUDE_CONFIG_DIR` → `.nvm-isolated/.claude-isolated/`). iclaude-обёртка в `lib/caveman/install.sh`:
+Стандартный установщик caveman патчит `~/.claude/settings.json` — несовместимо с изолированной средой iclaude (`$CLAUDE_CONFIG_DIR` → `.claude-isolated/`). iclaude-обёртка в `lib/caveman/install.sh`:
 
 - скачивает 4 upstream-файла прямо в `$CLAUDE_CONFIG_DIR/hooks/` (локальные расширения `caveman-paths.js`, `caveman-stats-stop.js`, `caveman-cleanup.js` уже входят в изолированный конфиг)
 - патчит `$CLAUDE_CONFIG_DIR/settings.json` (НЕ `~/.claude/settings.json`)

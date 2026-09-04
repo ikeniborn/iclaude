@@ -21,7 +21,7 @@ graph TD
     %% Per-Project Home Flow (S1-S8)
     USER[User] -->|1. iclaude launch| CFG[setup_isolated_config]
     CFG -->|2. ICLAUDE_HOME_MODE?| MODE{per-project<br/>default}
-    MODE -->|shared| SHARED[.nvm-isolated/.claude-isolated<br/>legacy escape hatch]
+    MODE -->|shared| SHARED[.claude-isolated<br/>legacy escape hatch]
     MODE -->|per-project| RESOLVE[resolve_project_root<br/>git toplevel or pwd -P]
 
     RESOLVE -->|3. id = basename-sha256:12| HOME[.claude-homes/id/]
@@ -29,7 +29,7 @@ graph TD
 
     POP -->|5. marker| MARKER[home.json<br/>project_root, created, schema]
     POP -->|6. symlinks| LINKS[link_shared_assets<br/>skills, hooks, plugins, mcp,<br/>CLAUDE.md, .credentials.json, ...]
-    LINKS -.->|read-only| STORE[Общий стор<br/>.nvm-isolated/.claude-isolated/]
+    LINKS -.->|read-only| STORE[Общий стор<br/>.claude-isolated/]
     POP -->|7. seed + sync| SETTINGS[settings.json<br/>copy-once + machine-keys mirror]
     POP -->|8. first launch only| MIGRATE[migrate_home_from_store<br/>.claude.json slice, projects/,<br/>history.jsonl filtered]
     MIGRATE -.->|copy-only, store untouched| STORE

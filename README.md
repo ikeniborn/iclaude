@@ -280,10 +280,13 @@ Browser task automation via the "Claude in Chrome" extension.
 **Per-project config homes (default).** iclaude keeps Claude Code state in two layers,
 mirroring the icodex design:
 
-- **Shared store** — `.nvm-isolated/.claude-isolated/` holds the assets every project
+- **Shared store** — `.claude-isolated/` holds the assets every project
   reuses: skills, hooks, commands, agents, plugins, MCP registrations, scripts, the
   global `CLAUDE.md`, one login (`.credentials.json`), `router.json`, and the
-  `settings.json` template.
+  `settings.json` template. It is a sibling of `.nvm-isolated/`, not a child of it, so
+  `--isolated-clean` and a full Node.js reinstall leave the login, the transcripts and
+  the plugins untouched. An installation that still keeps the store inside the nvm tree
+  is relocated once, by a plain rename, on the next launch.
 - **Per-project home** — each launch resolves a stable
   `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points `CLAUDE_CONFIG_DIR`
   at it, so sessions, history, and project state stay separate per repository (a git
@@ -460,8 +463,8 @@ iclaude.sh
 └── plugin/iwiki/    — iwiki plugin (archived/disabled; docs go through the iwiki MCP server)
 ```
 
-Security hooks: `.nvm-isolated/.claude-isolated/hooks/`
-Statusline scripts: `.nvm-isolated/.claude-isolated/scripts/`
+Security hooks: `.claude-isolated/hooks/`
+Statusline scripts: `.claude-isolated/scripts/`
 
 ---
 

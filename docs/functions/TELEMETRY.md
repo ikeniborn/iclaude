@@ -48,7 +48,7 @@ ICLAUDE_LANGFUSE_SECRET_KEY=sk-...
 
 ### 1. `stats-cache.json` — агрегаты по всем сессиям
 
-Путь: `.nvm-isolated/.claude-isolated/stats-cache.json`
+Путь: `.claude-isolated/stats-cache.json`
 
 **Содержит:**
 - `dailyActivity[]` — по дням: messageCount, sessionCount, toolCallCount
@@ -74,13 +74,13 @@ ICLAUDE_LANGFUSE_SECRET_KEY=sk-...
 
 ### 2. `sessions/{pid}.json` — метаданные сессий
 
-Путь: `.nvm-isolated/.claude-isolated/sessions/`
+Путь: `.claude-isolated/sessions/`
 
 Поля: `pid`, `sessionId`, `cwd`, `startedAt`, `kind`, `entrypoint`
 
 ### 3. `history.jsonl` — история взаимодействий
 
-Путь: `.nvm-isolated/.claude-isolated/history.jsonl` (~2.1 MB)
+Путь: `.claude-isolated/history.jsonl` (~2.1 MB)
 
 Поля: `display`, `pastedContents`, `timestamp`, `project`, `sessionId`
 
@@ -98,7 +98,7 @@ GET /api/metrics → {masked_items_total, uptime_seconds, masking_level, log_lev
 
 ### 5. Telemetry events SDK
 
-Путь: `.nvm-isolated/.claude-isolated/telemetry/1p_failed_events.*.json`
+Путь: `.claude-isolated/telemetry/1p_failed_events.*.json`
 
 Формат JSONL, каждая строка — событие `ClaudeCodeInternalEvent`.
 
@@ -346,7 +346,7 @@ cd monitoring && docker compose up -d
 # 4. Prometheus: http://localhost:9090
 
 # 5. Тест: сгенерировать метрики вручную
-python3 .nvm-isolated/.claude-isolated/hooks/session-stop.py
+python3 .claude-isolated/hooks/session-stop.py
 cat monitoring/metrics/session.prom
 ```
 

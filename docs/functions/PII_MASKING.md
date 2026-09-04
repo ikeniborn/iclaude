@@ -172,7 +172,7 @@ iclaude уже имеет несколько механизмов защиты �
 
 ### 1. block-secrets.py (PreToolUse Hook)
 
-**Путь:** `.nvm-isolated/.claude-isolated/hooks/block-secrets.py`
+**Путь:** `.claude-isolated/hooks/block-secrets.py`
 
 **Работает:** Перехватывает каждый вызов инструментов Read/Edit/Write/Bash **до** передачи в Claude Code.
 
@@ -195,7 +195,7 @@ SAFE_SUFFIXES = ('.example', '.sample', '.template', '.dist')
 ### 2. Конфигурационная изоляция
 
 - `.claude_config` (chmod 600) — учётные данные не попадают в git
-- `CLAUDE_CONFIG_DIR` → `.nvm-isolated/.claude-isolated/` — изоляция от системного `~/.claude/`
+- `CLAUDE_CONFIG_DIR` → `.claude-isolated/` — изоляция от системного `~/.claude/`
 - `.gitignore` исключает session data, history.jsonl
 
 ### 3. Отсутствующая защита
@@ -316,7 +316,7 @@ USE_PASTEGUARD=true
 
 Создать PreToolUse hook для маскирования через PasteGuard API:
 
-**Файл: `.nvm-isolated/.claude-isolated/hooks/mask-pii.py`**
+**Файл: `.claude-isolated/hooks/mask-pii.py`**
 
 ```python
 #!/usr/bin/env python3
@@ -564,7 +564,7 @@ clean = scrubber.clean(text)
 **Использование в Claude Code Hook:**
 
 ```python
-# В .nvm-isolated/.claude-isolated/hooks/scrub-pii.py
+# В .claude-isolated/hooks/scrub-pii.py
 import scrubadub
 import json
 import sys
@@ -876,7 +876,7 @@ response = comprehend.detect_pii_entities(Text=text, LanguageCode='en')
 
 Создать `/path/to/.claude-isolated/hooks/redact-secrets.py` (полный код в разделе "Альтернативные решения → Claude Code Hooks").
 
-Зарегистрировать в `.nvm-isolated/.claude-isolated/settings.json`:
+Зарегистрировать в `.claude-isolated/settings.json`:
 
 ```json
 {
@@ -887,7 +887,7 @@ response = comprehend.detect_pii_entities(Text=text, LanguageCode='en')
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .nvm-isolated/.claude-isolated/hooks/redact-secrets.py"
+            "command": "python3 .claude-isolated/hooks/redact-secrets.py"
           }
         ]
       }
@@ -963,7 +963,7 @@ PasteGuard наследует `HTTPS_PROXY` из окружения и испо�
 │  │  iclaude.sh → launcher/launch.sh → exec claude          │ │
 │  │                                                          │ │
 │  │  Переменные окружения:                                   │ │
-│  │  • CLAUDE_CONFIG_DIR=.nvm-isolated/.claude-isolated/    │ │
+│  │  • CLAUDE_CONFIG_DIR=.claude-isolated/    │ │
 │  │  • ANTHROPIC_BASE_URL=http://localhost:3000/anthropic   │ │
 │  │  • HTTPS_PROXY=https://corp-proxy:8118 (если нужно)     │ │
 │  │                                                          │ │
@@ -1228,7 +1228,7 @@ Claude Code → PreToolUse
 Для добавления новых провайдеров (Google AI, Stripe, HuggingFace, Groq) — см. детальные рекомендации в:
 - [`docs/SECURITY_PATTERNS_IMPROVEMENTS.md`](./SECURITY_PATTERNS_IMPROVEMENTS.md) — конкретные regex с примерами
 - [`docs/SECURITY_RESEARCH.md`](./SECURITY_RESEARCH.md) — анализ 14+ провайдеров и инструментов (gitleaks, trufflehog)
-- [`.nvm-isolated/.claude-isolated/hooks/patterns.json.example`](../.nvm-isolated/.claude-isolated/hooks/patterns.json.example) — шаблон конфигурации JSON
+- [`.claude-isolated/hooks/patterns.json.example`](../.claude-isolated/hooks/patterns.json.example) — шаблон конфигурации JSON
 
 ---
 
@@ -1314,7 +1314,7 @@ curl http://127.0.0.1:<PORT>/api/metrics
 
 ### Server Log
 
-PII proxy пишет server log в `$PII_PROXY_LOG_DIR` (`.nvm-isolated/.claude-isolated/pii-proxy-logs/`):
+PII proxy пишет server log в `$PII_PROXY_LOG_DIR` (`.claude-isolated/pii-proxy-logs/`):
 
 ```
 {pii-proxy-logs}/{SESSION_ID}.log
@@ -1367,7 +1367,7 @@ ICLAUDE_PII_PROXY_LOG_LEVEL=debug
 **Просмотр лога:**
 
 ```bash
-tail -f .nvm-isolated/.claude-isolated/pii-proxy-logs/${ICLAUDE_SESSION_ID}.log
+tail -f .claude-isolated/pii-proxy-logs/${ICLAUDE_SESSION_ID}.log
 ```
 
 ---
@@ -1377,8 +1377,8 @@ tail -f .nvm-isolated/.claude-isolated/pii-proxy-logs/${ICLAUDE_SESSION_ID}.log
 - [PasteGuard GitHub](https://github.com/sgasser/pasteguard)
 - [Microsoft Presidio](https://microsoft.github.io/presidio/)
 - [Claude Code Hooks документация](https://docs.anthropic.com/en/docs/claude-code/hooks)
-- [`hooks/block-secrets.py`](../.nvm-isolated/.claude-isolated/hooks/block-secrets.py) — блокировка по пути
-- [`hooks/redact-secrets.py`](../.nvm-isolated/.claude-isolated/hooks/redact-secrets.py) — маскирование содержимого
+- [`hooks/block-secrets.py`](../.claude-isolated/hooks/block-secrets.py) — блокировка по пути
+- [`hooks/redact-secrets.py`](../.claude-isolated/hooks/redact-secrets.py) — маскирование содержимого
 - [`tests/test-redact-hook.sh`](../tests/test-redact-hook.sh) — тест-сьют (37 тестов)
 - [docs/PROXY.md](./PROXY.md) — прокси конфигурация
 - [docs/INTEGRATIONS.md](./INTEGRATIONS.md) — обзор всех интеграций

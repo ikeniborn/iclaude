@@ -30,14 +30,14 @@
 ```
 1. ./iclaude.sh --router
 2. launcher/launch.sh читает:
-     .nvm-isolated/.claude-isolated/router.json
+     .claude-isolated/router.json
 3. Копирует в:
      ~/.claude-code-router/config.json
 4. Запускает: ccr code [args]
 5. CCR слушает на PORT (3456) и проксирует запросы Claude Code
 ```
 
-> Редактировать нужно `.nvm-isolated/.claude-isolated/router.json` —
+> Редактировать нужно `.claude-isolated/router.json` —
 > iclaude копирует его в `~/.claude-code-router/config.json` при каждом старте с `--router`.
 
 ### Важно: схема конфига (CCR v2.0.0)
@@ -634,7 +634,7 @@ module.exports = async function router(req, config) {
 ./iclaude.sh --check-router
 
 # Проверить конфиг
-cat .nvm-isolated/.claude-isolated/router.json | python3 -m json.tool
+cat .claude-isolated/router.json | python3 -m json.tool
 
 # Что CCR скопировал в рабочее место
 cat ~/.claude-code-router/config.json
@@ -681,7 +681,7 @@ cat ~/.claude-code-router/config.json
 
 Если нужно применить изменения без перезапуска iclaude:
 ```bash
-cp .nvm-isolated/.claude-isolated/router.json ~/.claude-code-router/config.json
+cp .claude-isolated/router.json ~/.claude-code-router/config.json
 ccr restart
 ```
 
