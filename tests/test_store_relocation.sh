@@ -45,6 +45,15 @@ ISOLATED_NVM_DIR="$c/.nvm-isolated" ISOLATED_CONFIG_DIR="$c/.claude-isolated" mi
 assert_eq "$?" "0" "idempotent: second call succeeds"
 assert_eq "$(cat "$c/.claude-isolated/.credentials.json")" "SECRET-TOKEN" "idempotent: store untouched"
 
+# --- the point of the relocation: --isolated-clean deletes ISOLATED_NVM_DIR, and the
+#     store is no longer inside it. cleanup_isolated_nvm prompts, so the test performs
+#     the one destructive step that function performs.
+rm -rf "$c/.nvm-isolated"
+assert_true '[[ ! -e "$c/.nvm-isolated" ]]' "nvm removal: the nvm tree is gone"
+assert_true '[[ -d "$c/.claude-isolated" ]]' "nvm removal: the store survives"
+assert_eq "$(cat "$c/.claude-isolated/.credentials.json")" "SECRET-TOKEN" "nvm removal: the login survives"
+assert_eq "$(cat "$c/.claude-isolated/settings.json")" '{"model":"opus"}' "nvm removal: settings survive"
+
 # --- nothing to relocate: no legacy store ---
 c="$(new_case fresh)"
 rm -rf "$c/.nvm-isolated/.claude-isolated"
