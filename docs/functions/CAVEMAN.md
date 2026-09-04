@@ -16,7 +16,7 @@
 
 Стандартный установщик caveman патчит `~/.claude/settings.json` — несовместимо с изолированной средой iclaude (`$CLAUDE_CONFIG_DIR` → `.nvm-isolated/.claude-isolated/`). iclaude-обёртка в `lib/caveman/install.sh`:
 
-- скачивает 4 хука прямо в `$CLAUDE_CONFIG_DIR/hooks/`
+- скачивает 4 upstream-файла прямо в `$CLAUDE_CONFIG_DIR/hooks/` (локальные расширения `caveman-paths.js`, `caveman-stats-stop.js`, `caveman-cleanup.js` уже входят в изолированный конфиг)
 - патчит `$CLAUDE_CONFIG_DIR/settings.json` (НЕ `~/.claude/settings.json`)
 - сохраняет версию в `$CLAUDE_CONFIG_DIR/caveman-version`
 - идемпотентно: повторный запуск безопасен
@@ -31,11 +31,13 @@
 ./iclaude.sh --uninstall-caveman  # Удалить хуки и записи в settings.json
 ```
 
-Скачиваются 4 файла (~10KB) с GitHub:
+Скачиваются 4 upstream-файла (~10KB) с GitHub:
 - `caveman-activate.js` (SessionStart hook)
 - `caveman-config.js` (shared config reader)
 - `caveman-mode-tracker.js` (UserPromptSubmit hook)
 - `caveman-stats.js` (token savings stats)
+
+Плюс локальные (не скачиваются, входят в изолированный конфиг): `caveman-stats-stop.js` (Stop hook — авто-обновление счётчика), `caveman-paths.js` (SSOT путей `.caveman/`), `caveman-cleanup.js` (SessionEnd).
 
 **Только в изолированной среде.** Флаг `--system` несовместим с `--install-caveman`.
 

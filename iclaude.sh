@@ -187,8 +187,6 @@ fi
 #######################################
 if [[ -d "$LIB_DIR/command" ]]; then
     source "${LIB_DIR}/command/usage.sh"
-    source "${LIB_DIR}/command/parse.sh"
-    source "${LIB_DIR}/command/dispatch.sh"
 fi
 
 #######################################

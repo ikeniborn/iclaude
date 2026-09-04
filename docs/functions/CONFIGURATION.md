@@ -58,7 +58,7 @@
 
 | Команда | Описание |
 |---------|----------|
-| `--proxy <url>` | Установка прокси (http/https/socks5) |
+| `--proxy <url>` | Установка прокси (https рекомендуется; http — только localhost; socks5 НЕ поддерживается) |
 | `--test` | Тестирование прокси подключения |
 | `--clear` | Очистка сохраненных credentials |
 | `--no-proxy` | Запуск без прокси |
@@ -113,11 +113,13 @@
 
 Интеграция с Google Chrome для автоматизации браузерных задач.
 
-**Chrome интеграция ВКЛЮЧЕНА ПО УМОЛЧАНИЮ.** Для отключения:
+**Chrome интеграция ВЫКЛЮЧЕНА по умолчанию.** Для включения:
 
 ```bash
-./iclaude.sh --no-chrome
+./iclaude.sh --chrome
 ```
+
+Постоянное включение — `ICLAUDE_USE_CHROME=true` в `.claude_config`; разовое отключение при включённом флаге — `--no-chrome`.
 
 **Требования:**
 - Google Chrome browser
@@ -141,47 +143,61 @@
 
 ---
 
+## 🛡️ Дополнительные подсистемы
+
+Команды подсистем, у каждой из которых есть отдельный подробный документ.
+
+| Команда | Описание | Документ |
+|---------|----------|----------|
+| `--install-pii-proxy` / `--pii-proxy` / `--check-pii-proxy` | PII-маскирующий прокси перед api.anthropic.com | [PII_MASKING.md](./PII_MASKING.md) |
+| `--install-microvm` / `--sandbox-microvm` / `--check-microvm` | Ядровая изоляция в Firecracker microVM | [MICROVM.md](./MICROVM.md) |
+| `--install-caveman` / `--check-caveman` / `--uninstall-caveman` | Режим сжатых ответов (caveman) | [CAVEMAN.md](./CAVEMAN.md) |
+| `--no-telemetry` | Отключить OTEL-телеметрию (включается `ICLAUDE_USE_OTEL=true`) | [TELEMETRY.md](./TELEMETRY.md) |
+| `--model <name>` | Передать модель в Claude Code | — |
+| `--refresh-token` | Обновить OAuth токен | — |
+| `-- <args>` | Всё после `--` передаётся в Claude Code как есть | — |
+
+Плагин loen управляется скиллами `/loen:*` внутри сессии, не флагами — см. [LOEN.md](./LOEN.md).
+
+---
+
 ## 🎛️ Claude Code Configuration
 
-Управление параметрами Claude Code через файл `.claude_proxy_credentials`.
-
-**Расположение:** `.claude_proxy_credentials` (в корне проекта)
+Управление параметрами Claude Code через файл `.claude_config` в корне проекта (chmod 600, исключён из git). Все переменные — с префиксом `ICLAUDE_`; при запуске `source_iclaude_config` экспортирует их без префикса.
 
 ### Доступные переменные
 
 | Переменная | Описание | Значение по умолчанию |
 |------------|----------|----------------------|
-| `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | Лимит output токенов | 32000 (макс: 128000) |
-| `CLAUDE_CODE_ENABLE_TASKS` | Tasks system (вкл/выкл) | true |
-| `CLAUDE_CODE_NO_CHROME` | Отключить Chrome integration | false |
-| `CLAUDE_CODE_MODEL` | Выбор модели | claude-4-5-sonnet |
-| `CLAUDE_CODE_SESSION_TIMEOUT` | Таймаут сессии (секунды) | 3600 |
-| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Agent Teams ⚠️ EXPERIMENTAL | не установлено (выкл) |
+| `ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS` | Лимит output токенов | не задано |
+| `ICLAUDE_CLAUDE_CODE_ENABLE_TASKS` | Tasks system (вкл/выкл) | true |
+| `ICLAUDE_CLAUDE_CODE_NO_CHROME` | Отключить Chrome integration | не задано |
+| `ICLAUDE_CLAUDE_CODE_MODEL` | Выбор модели (флаг `--model` имеет приоритет) | не задано |
+| `ICLAUDE_CLAUDE_CODE_SESSION_TIMEOUT` | Таймаут сессии (секунды) | не задано |
+| `ICLAUDE_CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Agent Teams ⚠️ EXPERIMENTAL | не задано (выкл) |
 
 ### Пример конфигурации
 
 ```bash
-# .claude_proxy_credentials
+# .claude_config
 
 # Proxy settings
-PROXY_URL=https://user:pass@proxy.example.com:8118
-PROXY_INSECURE=false
-NO_PROXY=localhost,127.0.0.1
+ICLAUDE_PROXY_URL=https://user:pass@proxy.example.com:8118
+ICLAUDE_PROXY_INSECURE=false
 
 # Claude Code configuration
-CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000    # Увеличенный лимит (для сложных задач)
-# CLAUDE_CODE_MODEL=claude-3-opus       # Закомментировано = не используется
-# CLAUDE_CODE_NO_CHROME=true            # Закомментировано = не используется
+ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000    # Увеличенный лимит (для сложных задач)
+# ICLAUDE_CLAUDE_CODE_MODEL=claude-sonnet-5     # Закомментировано = не используется
+# ICLAUDE_CLAUDE_CODE_NO_CHROME=true            # Закомментировано = не используется
 ```
 
-**⚠️ Важно:** Только **раскомментированные** переменные будут экспортированы при запуске. Закомментированные (`#`) переменные игнорируются.
+**⚠️ Важно:** Только **раскомментированные** переменные будут экспортированы при запуске. Закомментированные (`#`) переменные игнорируются. Legacy-файлы без префикса `ICLAUDE_` автоматически мигрируются при первом запуске (backup `.claude_config.bak`).
 
-**Подробная документация:** См. [CLAUDE_CONFIG.md](./CLAUDE_CONFIG.md) для полного списка переменных и примеров.
+**Полный список переменных:** см. `.claude_config.example` в корне репозитория (~130 ключей: proxy, PII, microVM, iwiki, Langfuse, OTEL, caveman, провайдеры).
 
 ---
 
 ## Следующие шаги
 
-- [Использование](./USAGE.md) - команды и примеры
 - [Use Cases](./USE_CASES.md) - практические примеры
 - [Proxy](./PROXY.md) - настройка прокси

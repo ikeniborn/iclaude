@@ -14,7 +14,7 @@ exploit — он атакует **guest kernel**, а не хостовую ОС.
 
 **Уровень защиты:** максимальный — полная kernel isolation через KVM hypervisor.
 
-Полный threat model: [docs/SANDBOX_ANALYSIS.md](SANDBOX_ANALYSIS.md)
+Границы изоляции и security notes — см. раздел [Security Notes](#security-notes) ниже.
 
 **Use case — loen verifier:** плагин `loen` (см. [docs/functions/LOEN.md](LOEN.md),
 раздел "Hardening") умеет запускать своего loop-верификатора headless внутри этой
@@ -40,7 +40,7 @@ Host OS (Linux + KVM)
 **Пользователь внутри guest:** `iclaude` (uid=1000, NOPASSWD sudo). Root SSH отключён (`PermitRootLogin no`).
 Запечён в rootfs при `--install-microvm`; создаётся через `useradd` при первом старте guest-init.
 
-Подробная диаграмма запуска: [docs/architecture/diagrams/data-flow-microvm-launch.md](architecture/diagrams/data-flow-microvm-launch.md)
+Подробная диаграмма запуска: [docs/architecture/diagrams/data-flow-microvm-launch.md](../architecture/diagrams/data-flow-microvm-launch.md)
 
 ---
 
@@ -514,48 +514,6 @@ Cmnd_Alias ICLAUDE_NET = \
 username ALL=(ALL) NOPASSWD: ICLAUDE_NET
 ```
 
----
-
-## Security Notes
-
-### Linux Capabilities внутри guest
-
-Процесс `claude` запускается как `iclaude` (uid=1000) с bounding capability set `000001ffffffffff` (все 41 capabilities). Это ожидаемо: `guest-init` запускается как PID 1 root и не вызывает `capsh --drop` перед созданием пользователя. Capabilities наследуются в bounding set.
-
-**Это приемлемо:** границей безопасности является KVM hypervisor. Capabilities внутри guest не могут распространяться за пределы VM — любой exploit остаётся изолированным в guest kernel. Повышение привилегий внутри VM через SUID-бинари возможно, но не выходит за пределы KVM-изоляции.
-
-Если требуется минимальный capability set (defence in depth), добавьте `capsh --drop=all --user=iclaude --` перед запуском claude в `launch.sh`.
-
-### Сетевой доступ и IPv6
-
-При `MICRO_VM_NET_ENABLED=true` (по умолчанию) гостевая VM получает:
-- IPv4: выход в интернет через NAT/MASQUERADE на хостовом интерфейсе
-- IPv6: kernel автоматически настраивает SLAAC на `eth0` (если хост имеет IPv6 uplink)
-
-**Это ожидаемо и корректно** — claude внутри VM должен обращаться к Anthropic API, npm и прочим сервисам. Доступ в интернет не является уязвимостью: он необходим для функционирования.
-
-Для полной изоляции без сети: `ICLAUDE_MICRO_VM_NET_ENABLED=false` (тогда API недоступен).
-
-## Обновление образов
-
-```bash
-# Переустановить все компоненты (безопасно, идемпотентно)
-./iclaude.sh --install-microvm
-```
-
----
-
-## Связанные документы
-
-- [docs/SANDBOX_ANALYSIS.md](SANDBOX_ANALYSIS.md) — threat model, выбор уровня изоляции
-- [docs/MIGRATION.md](MIGRATION.md) — история архитектуры (v1 virtiofs → v2 virtio-blk)
-- [docs/architecture/diagrams/data-flow-microvm-launch.md](architecture/diagrams/data-flow-microvm-launch.md) — детальная диаграмма запуска
-- `lib/sandbox/microvm.sh` — реализация `start_microvm()`
-- `lib/sandbox/install.sh` — реализация `install_microvm()`
-- `lib/sandbox/guest-init.sh` — guest PID 1 (монтирование, sshd)
-
-## Troubleshooting
-
 ### Guest cannot reach PII proxy
 
 If the guest's Claude Code calls hang or fail with connection errors after launching with `--pii-proxy --sandbox-microvm`, verify the host installed the DNAT rule:
@@ -598,3 +556,42 @@ while sudo iptables -t nat -L PREROUTING --line-numbers -n | grep -q iclaude-pii
     sudo iptables -t nat -D PREROUTING "$L"
 done
 ```
+
+---
+
+## Security Notes
+
+### Linux Capabilities внутри guest
+
+Процесс `claude` запускается как `iclaude` (uid=1000) с bounding capability set `000001ffffffffff` (все 41 capabilities). Это ожидаемо: `guest-init` запускается как PID 1 root и не вызывает `capsh --drop` перед созданием пользователя. Capabilities наследуются в bounding set.
+
+**Это приемлемо:** границей безопасности является KVM hypervisor. Capabilities внутри guest не могут распространяться за пределы VM — любой exploit остаётся изолированным в guest kernel. Повышение привилегий внутри VM через SUID-бинари возможно, но не выходит за пределы KVM-изоляции.
+
+Если требуется минимальный capability set (defence in depth), добавьте `capsh --drop=all --user=iclaude --` перед запуском claude в `launch.sh`.
+
+### Сетевой доступ и IPv6
+
+При `MICRO_VM_NET_ENABLED=true` (по умолчанию) гостевая VM получает:
+- IPv4: выход в интернет через NAT/MASQUERADE на хостовом интерфейсе
+- IPv6: kernel автоматически настраивает SLAAC на `eth0` (если хост имеет IPv6 uplink)
+
+**Это ожидаемо и корректно** — claude внутри VM должен обращаться к Anthropic API, npm и прочим сервисам. Доступ в интернет не является уязвимостью: он необходим для функционирования.
+
+Для полной изоляции без сети: `ICLAUDE_MICRO_VM_NET_ENABLED=false` (тогда API недоступен).
+
+## Обновление образов
+
+```bash
+# Переустановить все компоненты (безопасно, идемпотентно)
+./iclaude.sh --install-microvm
+```
+
+---
+
+## Связанные документы
+
+- [docs/architecture/diagrams/data-flow-microvm-launch.md](../architecture/diagrams/data-flow-microvm-launch.md) — детальная диаграмма запуска
+- `lib/sandbox/microvm.sh` — реализация `start_microvm()`
+- `lib/sandbox/install.sh` — реализация `install_microvm()`
+- `lib/sandbox/guest-init.sh` — guest PID 1 (монтирование, sshd)
+
