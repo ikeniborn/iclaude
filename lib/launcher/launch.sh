@@ -649,7 +649,7 @@ launch_claude() {
         # stays inside the isolated environment instead of ~/.claude-code-router/.
         local ccr_home=""
         if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
-            ccr_home="$ISOLATED_NVM_DIR/.claude-isolated"
+            ccr_home="$ISOLATED_CONFIG_DIR"
         else
             ccr_home="$HOME"
         fi
@@ -658,7 +658,7 @@ launch_claude() {
         # Copy router config to CCR's expected location inside isolated home
         local router_config=""
         if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
-            router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+            router_config="$ISOLATED_CONFIG_DIR/router.json"
         else
             router_config="$HOME/.claude/router.json"
         fi

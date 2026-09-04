@@ -107,12 +107,15 @@ assert_true '[[ "$out" == "$TMP/homes/"* ]]' "flip: unset mode defaults to per-p
 assert_eq "$(jq -r '.projects | keys | length' "$out/.claude.json" 2>/dev/null)" "1" "flip: home migrated on first default launch"
 
 # --- escape hatch: shared restores old behavior exactly ---
+# Shared mode points at the store named by ISOLATED_CONFIG_DIR; it no longer
+# derives a path of its own under the nvm tree.
 out="$(
   export ICLAUDE_HOME_MODE=shared
-  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_HOMES_DIR="$TMP/homes" setup_isolated_config >/dev/null 2>&1 || exit 1
+  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_CONFIG_DIR="$STORE" \
+    ISOLATED_HOMES_DIR="$TMP/homes" setup_isolated_config >/dev/null 2>&1 || exit 1
   printf '%s' "$CLAUDE_CONFIG_DIR"
 )"
-assert_eq "$out" "$TMP/nvm/.claude-isolated" "flip: shared escape hatch works"
+assert_eq "$out" "$STORE" "flip: shared escape hatch works"
 
 echo "home-migration: PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" == "0" ]]

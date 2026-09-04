@@ -40,7 +40,7 @@ check_router_status() {
 	# Check router config
 	local router_config=""
 	if [[ -d "$ISOLATED_NVM_DIR" ]]; then
-		router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+		router_config="$ISOLATED_CONFIG_DIR/router.json"
 	else
 		router_config="$HOME/.claude/router.json"
 	fi
