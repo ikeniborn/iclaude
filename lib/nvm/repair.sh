@@ -267,10 +267,12 @@ repair_vendor_permissions() {
 # Repair absolute paths in settings.json
 # Migrates legacy hardcoded .claude-isolated paths to $CLAUDE_CONFIG_DIR variable
 # (exported by iclaude.sh before launch, inherited by hooks/statusLine subprocesses).
-# Handles two legacy formats:
+# Handles three legacy formats:
 #   1. Absolute paths:      /some/path/.claude-isolated/hooks/...
 #   2. $CLAUDE_PROJECT_DIR: $CLAUDE_PROJECT_DIR/.nvm-isolated/.claude-isolated/hooks/...
-# Both are replaced with the canonical form: $CLAUDE_CONFIG_DIR/hooks/...
+#   3. $CLAUDE_PROJECT_DIR: $CLAUDE_PROJECT_DIR/.claude-isolated/hooks/... (after the
+#      store moved to the repository root; caught by the generic step 2 below)
+# All are replaced with the canonical form: $CLAUDE_CONFIG_DIR/hooks/...
 # Called during --repair-isolated for one-time migration of old installs.
 # Returns:
 #   0 - success (already canonical or migrated)
