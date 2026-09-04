@@ -280,9 +280,14 @@ iclaude shares one isolated config directory. With `--per-project-home` (or
 stable per-project home `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points
 `CLAUDE_CODE`'s `CLAUDE_CONFIG_DIR` at it, so sessions, history, and project state stay
 separate per repository (a git worktree gets its own home). Each home carries a
-`home.json` marker recording its project root. The default remains the shared isolated
-directory; `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed
-by iclaude itself and is never de-prefixed.
+`home.json` marker recording its project root. Shared assets — `skills/`, `hooks/`,
+`commands/`, `agents/`, `plugins/`, `mcp/`, `scripts/`, `CLAUDE.md`,
+`.credentials.json`, `router.json` — are symlinked from the shared store into every
+home and self-repair on each launch (a wrong link, or a real copy where a link
+belongs, is replaced with a warning; a stale link is pruned), so one login and one
+skill set serve all projects. The default remains the shared isolated directory;
+`.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
+iclaude itself and is never de-prefixed.
 
 **Key variables** (in `.claude_config`). All variables in the file take the `ICLAUDE_` prefix and no `export` (e.g. `ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000`); at launch iclaude de-prefixes them into the canonical names below:
 
