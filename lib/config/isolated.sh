@@ -42,6 +42,52 @@ resolve_claude_home_id() {
 	printf '%s-%s' "$name" "$hash"
 }
 
+# Managed shared-asset entries wired from the store into per-project homes (S2).
+# settings.json is deliberately absent (S3: copy-once + managed-region sync);
+# session/state entries are never linked — they stay home-local.
+_ICLAUDE_SHARED_LINK_ENTRIES=(
+	skills hooks commands agents plugins mcp scripts
+	CLAUDE.md .credentials.json router.json
+)
+
+#######################################
+# Wire shared assets from the store into a per-project home as symlinks.
+# For each managed entry: a correct link is left untouched; a wrong link or a
+# materialized real path is replaced (with a warning — anti-de-share guard); an
+# absent store entry is skipped, and a stale link pointing into the store is
+# pruned. The store itself is never mutated. Real paths whose store counterpart
+# is absent are left alone.
+# Arguments:
+#   $1 - home directory
+#   $2 - store directory
+# Returns:
+#   0 - success, 1 - invalid arguments or link creation failure
+#######################################
+link_shared_assets() {
+	local home_dir="$1" store_dir="$2" entry store link target
+	[[ -d "$home_dir" && -d "$store_dir" ]] || return 1
+	for entry in "${_ICLAUDE_SHARED_LINK_ENTRIES[@]}"; do
+		store="$store_dir/$entry"
+		link="$home_dir/$entry"
+		if [[ -e "$store" ]]; then
+			if [[ -L "$link" ]]; then
+				target=$(readlink "$link")
+				[[ "$target" == "$store" ]] && continue
+				rm -f "$link"
+				print_warning "Repaired shared-asset link '$entry' (was: $target)"
+			elif [[ -e "$link" ]]; then
+				rm -rf "$link"
+				print_warning "Replaced materialized '$entry' in per-project home with a shared-store link"
+			fi
+			ln -s "$store" "$link" || return 1
+		elif [[ -L "$link" && "$(readlink "$link")" == "$store_dir"/* ]]; then
+			rm -f "$link"
+			print_warning "Pruned stale shared-asset link '$entry'"
+		fi
+	done
+	return 0
+}
+
 #######################################
 # Create (or reuse) the per-project home and export CLAUDE_CONFIG_DIR to it.
 # S1 scope: only the home directory and its home.json marker (project root,
@@ -72,6 +118,10 @@ setup_claude_home() {
 		printf '{\n  "project_root": "%s",\n  "created": "%s",\n  "schema": 1\n}\n' \
 			"$esc_root" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$marker" || return 1
 	fi
+
+	# Fail-soft: a link failure leaves the home usable, launch continues.
+	link_shared_assets "$home_dir" "${ISOLATED_CONFIG_DIR:-${ISOLATED_NVM_DIR}/.claude-isolated}" \
+		|| print_warning "Shared-asset linking failed for $home_dir"
 
 	export CLAUDE_CONFIG_DIR="$home_dir"
 	return 0

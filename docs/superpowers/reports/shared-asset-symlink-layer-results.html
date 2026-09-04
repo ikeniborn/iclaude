@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отчёт: shared-asset-symlink-layer (S2)</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#12141a; --surface:#1b1e27; --surface2:#232734; --text:#e6e8ee; --muted:#9aa1b2;
+  --accent:#6ea8fe; --ok:#3fb96f; --warn:#e0a83c; --line:#333949; --code:#2a2f3e;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#eef0f4; --text:#1d2330; --muted:#5b6475;
+  --accent:#2f6fce; --ok:#1e8a4c; --warn:#a4700f; --line:#d7dbe3; --code:#eef0f4;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:1080px;margin-inline:auto}
+h1{font-size:1.5rem;margin:.2rem 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.badge{display:inline-block;padding:.12rem .55rem;border-radius:1rem;font-size:.78rem;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--surface);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:.08rem .35rem;border-radius:4px;font-size:.85em}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 8px 8px 0;margin:.8rem 0;color:var(--muted)}
+.toggle{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);border-radius:2rem;padding:.35rem .9rem;cursor:pointer;font-size:.85rem}
+.lead{color:var(--muted);margin:.2rem 0 1rem}
+figure{margin:1rem 0;background:var(--surface);border-radius:8px;padding:1rem;overflow-x:auto}
+figcaption{color:var(--muted);font-size:.82rem;margin-top:.5rem}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ тема</button>
+
+<h1>shared-asset-symlink-layer — отчёт result-стадии <span class="badge ok">OK</span></h1>
+<p class="lead">Слайс S2: симлинк-слой общих ассетов из стора в per-project дома с самовосстановлением.</p>
+
+<h2>1. Резюме внедрения</h2>
+<table>
+<tr><th>Топик</th><td><code>shared-asset-symlink-layer</code> (слайс S2 плана <code>reference/plans/shared-store-per-project-home-architecture</code>)</td></tr>
+<tr><th>Intent</th><td><code>docs/superpowers/intents/2026-09-04-shared-asset-symlink-layer-intent.md</code> (approved, check-chain intent OK)</td></tr>
+<tr><th>Spec / Plan</th><td>n/a — continuation <code>execute</code></td></tr>
+<tr><th>База diff</th><td><code>HEAD</code> = <code>957ccd0c</code> (master, merge S1), ветка <code>dev-shared-asset-symlink-layer</code></td></tr>
+</table>
+
+<h2>2. Выполненные изменения</h2>
+<table>
+<thead><tr><th>Файл</th><th>Тип</th><th>Что делает</th></tr></thead>
+<tbody>
+<tr><td><code>lib/config/isolated.sh</code></td><td>изменён</td><td>Список <code>_ICLAUDE_SHARED_LINK_ENTRIES</code> (10 имён); функция <code>link_shared_assets</code> (линковка + ремонт + prune + анти-материализация); fail-soft вызов из <code>setup_claude_home</code></td></tr>
+<tr><td><code>tests/test_shared_asset_links.sh</code></td><td>добавлен</td><td>21 unit-проверка: свежая линковка, пропуск отсутствующих, идемпотентность, ремонт неверной цели, замена материализованного каталога с warning, prune устаревшей ссылки, поздняя линковка, неприкосновенность реальных путей и стора, интеграция с setup_claude_home, чистота shared-режима</td></tr>
+<tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td>изменены</td><td>Секция per-project домов дополнена описанием симлинк-слоя</td></tr>
+<tr><td><code>docs/superpowers/intents/…-intent.md</code></td><td>добавлен</td><td>Утверждённый intent слайса (chain-артефакт)</td></tr>
+</tbody>
+</table>
+
+<h2>3. Результаты</h2>
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+<tbody>
+<tr><td>Линки на все существующие store-записи после setup_claude_home</td><td><span class="badge ok">DONE</span></td><td>тесты «link: * linked», «integration: wires links»</td></tr>
+<tr><td>Ремонт неверной/висячей ссылки и реальной копии; верная ссылка не трогается</td><td><span class="badge ok">DONE</span></td><td>тесты «repair: wrong target», «idempotent rerun»</td></tr>
+<tr><td>Отсутствующая store-запись пропускается; появившаяся — линкуется позже; устаревшая ссылка — prune</td><td><span class="badge ok">DONE</span></td><td>тесты «absent skipped», «late: linked», «prune: removed»</td></tr>
+<tr><td>Guard: материализация обнаруживается, чинится, логирует warning</td><td><span class="badge ok">DONE</span></td><td>тесты «guard: relinked», «guard: warning»</td></tr>
+<tr><td>Shared-режим байт-в-байт прежний</td><td><span class="badge ok">DONE</span></td><td>тест «shared: no symlinks»; regression-phase0 OK</td></tr>
+</tbody>
+</table>
+<div class="note">Верификация: <code>tests/test_shared_asset_links.sh</code> → PASS=21 FAIL=0 (TDD: сперва 15 FAIL);
+S1-контракт цел: <code>test_per_project_home.sh</code> 21/21; env-map 10/10; config-migration 10/10; phase0 OK; <code>bash -n</code> чисто. Ревизия базы <code>957ccd0c</code>.</div>
+<div class="note">GWT (strict): сценарий <code>shared-asset-symlink-layer</code> на <code>specification/shared-asset-symlink-layer</code>;
+<code>wiki_spec_resolve</code>: implements → <span class="badge ok">resolved</span>, verifies → <span class="badge warn">unresolved</span>
+(структурно: <code>include_tests=false</code> исключает tests/ из графа) — advisory, тест выполнен (exit 0).</div>
+
+<h2>4. Влияние на систему</h2>
+<table>
+<thead><tr><th>Область</th><th>Влияние</th><th>Риски / follow-up</th></tr></thead>
+<tbody>
+<tr><td>Per-project режим</td><td>Дом получает общие skills/hooks/plugins/mcp/credentials — режим становится практически пригодным (один логин на все проекты)</td><td>settings.json ещё не сидируется — S3</td></tr>
+<tr><td>Shared-режим (default)</td><td>Без изменений</td><td>—</td></tr>
+<tr><td>Стор</td><td>Только чтение: линковка никогда не мутирует стор (закреплено тестом)</td><td>—</td></tr>
+<tr><td>Слабость icodex «hooks.json de-share»</td><td>Закрыта: материализация управляемого имени чинится с warning на каждом запуске</td><td>flock на мутации дома — S6</td></tr>
+</tbody>
+</table>
+
+<h2>5. Схема: поток линковки</h2>
+<figure>
+<svg viewBox="0 0 860 250" width="860" height="250" role="img" aria-label="Поток link_shared_assets">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
+</defs>
+<g font-family="system-ui" font-size="13" fill="var(--text)">
+<rect x="20" y="90" width="200" height="52" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="120" y="112" text-anchor="middle">setup_claude_home</text>
+<text x="120" y="130" text-anchor="middle" fill="var(--muted)" font-size="11">S1: дом + маркер</text>
+
+<rect x="300" y="90" width="220" height="52" rx="8" fill="var(--surface2)" stroke="var(--accent)"/>
+<text x="410" y="112" text-anchor="middle">link_shared_assets</text>
+<text x="410" y="130" text-anchor="middle" fill="var(--muted)" font-size="11">10 managed-имён, fail-soft</text>
+
+<rect x="620" y="20" width="220" height="46" rx="8" fill="var(--surface2)" stroke="var(--ok)"/>
+<text x="730" y="39" text-anchor="middle">store-запись есть</text>
+<text x="730" y="56" text-anchor="middle" fill="var(--muted)" font-size="11">верная ссылка → skip; иначе rm + ln -s (+warn)</text>
+
+<rect x="620" y="100" width="220" height="46" rx="8" fill="var(--surface2)" stroke="var(--warn)"/>
+<text x="730" y="119" text-anchor="middle">store-записи нет</text>
+<text x="730" y="136" text-anchor="middle" fill="var(--muted)" font-size="11">ссылка в стор → prune; реальный путь → не трогаем</text>
+
+<rect x="620" y="180" width="220" height="46" rx="8" fill="var(--surface2)" stroke="var(--line)"/>
+<text x="730" y="199" text-anchor="middle">стор</text>
+<text x="730" y="216" text-anchor="middle" fill="var(--muted)" font-size="11">только чтение, никогда не мутируется</text>
+
+<line x1="220" y1="116" x2="298" y2="116" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="520" y1="103" x2="618" y2="49" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="520" y1="122" x2="618" y2="122" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="520" y1="140" x2="618" y2="198" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+</svg>
+<figcaption>Диспетчер по каждому managed-имени: наличие в сторе решает ветку; стор — только источник целей ссылок.</figcaption>
+</figure>
+
+</body>
+</html>
