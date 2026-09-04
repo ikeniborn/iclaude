@@ -1,7 +1,46 @@
 # Телеметрия и мониторинг iclaude
 
-Исследование вариантов сбора статистики сессий, метрик кэша и эффективности работы с агентом.
-Дата: 2026-04-14.
+Реализованная телеметрия iclaude: opt-in OTEL-экспорт из Claude Code и отдельный Langfuse-захват трафика через PII-прокси. Ниже — актуальная документация фичи; после неё сохранён исторический research-мемо от 2026-04-14, который предшествовал реализации.
+
+---
+
+## Реализовано: OTEL-экспорт
+
+Настраивается целиком модулем `lib/telemetry/otel.sh` (функция `setup_telemetry`, самовызывается при source после загрузки `.claude_config`). По умолчанию ВЫКЛЮЧЕНО.
+
+**Включение** — в `.claude_config`:
+
+```bash
+ICLAUDE_USE_OTEL=true
+ICLAUDE_OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318   # default
+ICLAUDE_OTEL_EXPORTER_OTLP_CREDENTIALS=user:pass            # опционально → BasicAuth header
+ICLAUDE_OTEL_LOG_USER_PROMPTS=0                             # default 0 — промпты НЕ экспортируются
+```
+
+**Отключение разово** — флаг `--no-telemetry` (или `ICLAUDE_NO_TELEMETRY=1`): убивает экспорт независимо от `USE_OTEL`.
+
+При включении экспортируются: `CLAUDE_CODE_ENABLE_TELEMETRY=1`, `OTEL_METRICS_EXPORTER=otlp`, `OTEL_LOGS_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, `OTEL_METRIC_EXPORT_INTERVAL=10000`, `OTEL_RESOURCE_ATTRIBUTES` (service.name=claude-code, service.namespace=iclaude, iclaude.project=<git repo>, wrapper.version, proxy.profile). `patch_no_proxy_for_telemetry` добавляет OTLP-хост в `NO_PROXY`, чтобы корпоративный прокси не перехватывал локальную телеметрию.
+
+**Тесты:** `tests/test_telemetry_otel.sh`, `tests/test_telemetry_e2e.sh`.
+
+## Реализовано: Langfuse-захват
+
+Трассы запрос/ответ в Langfuse эмитит PII-прокси (`lib/pii-proxy/langfuse_emitter.py`), а не OTEL-модуль.
+
+```bash
+ICLAUDE_USE_LANGFUSE_CAPTURE=true
+ICLAUDE_LANGFUSE_HOST=https://langfuse.example.com
+ICLAUDE_LANGFUSE_PUBLIC_KEY=pk-...
+ICLAUDE_LANGFUSE_SECRET_KEY=sk-...
+```
+
+Захват работает только при активном PII-прокси и отключён в router-режиме (`_should_capture` в `lib/launcher/launch.sh`). Payload дополнительно маскируется (`_deep_scrub`); проект атрибутируется через `ICLAUDE_PROJECT_ID`. **Тесты:** `tests/test_langfuse_capture_e2e.py`, `tests/test_langfuse_emitter.py`, `tests/test_langfuse_capture_launch_unit.sh`.
+
+---
+
+# Исторический research-мемо (2026-04-14)
+
+Исследование вариантов сбора статистики сессий, метрик кэша и эффективности работы с агентом — написано ДО реализации; предложенные ниже архитектуры (hooks, Prometheus/Grafana stack) не внедрялись в предложенном виде. Сохранено как контекст решений.
 
 ---
 

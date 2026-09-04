@@ -73,6 +73,4 @@ git commit -m "docs: add plan"
 
 ## Документация
 
-- [PLANNING.md](PLANNING.md) - Полное руководство
-- [CONFIG_HIERARCHY.md](CONFIG_HIERARCHY.md) - Иерархия конфигураций
-- [plans/README.md](plans/README.md) - Документация каталога
+- [CONFIGURATION.md](CONFIGURATION.md) - все команды и настройки iclaude

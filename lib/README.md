@@ -186,21 +186,14 @@ lib/
 ### Phase 14: Command Handling (COMPLETE ✅)
 
 **Created Modules:**
-- **lib/command/usage.sh** (312 lines) - Help text display
-- **lib/command/parse.sh** (28 lines) - CLI argument parsing stub
-- **lib/command/dispatch.sh** (33 lines) - Command dispatcher stub
-
-**Benefits:**
-- ✅ 3 functions extracted (show_usage, parse_cli_arguments, dispatch_command)
-- ✅ ~362 lines modularized
-- ✅ Modular command handling structure established
-- ✅ Help text isolated from main()
+- **lib/command/usage.sh** - Help text display (show_usage)
 
 **Design Notes:**
-- **Pragmatic approach**: parse.sh and dispatch.sh are thin wrappers
-- **Rationale**: Full extraction of ~428-line case statement deferred
-- **Future**: Phase 15+ can extract remaining parsing logic
-- **Current**: main() in legacy contains actual parsing/dispatch
+- Help text is isolated from the inline main body.
+- CLI parsing and dispatch deliberately live inline in `iclaude.sh` (Phase 15 while/case
+  loop). The former `parse.sh` / `dispatch.sh` stub wrappers were dead code and were
+  removed in 2026-09; extract real parsing into this module only if it ever becomes
+  shared.
 
 **Phase 14 Summary:**
 - **3 functions** extracted

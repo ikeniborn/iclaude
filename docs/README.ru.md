@@ -196,7 +196,7 @@ Claude Code может читать, изменять и выполнять фа
 | `$1.06` | Стоимость сессии |
 | `🔀 deepseek` | Активный router-провайдер |
 | `🛡42` | PII-прокси: 42 замаскированных элемента |
-| `⛏` | Caveman активен. Счётчик сэкономленных токенов (`⛏ 5.2k`) появляется только после ручного вызова `/caveman-stats` |
+| `⛏` | Caveman активен. Счётчик сэкономленных токенов (`⛏ 5.2k`) автоматически обновляется каждый ход Stop-хуком `caveman-stats-stop.js` |
 | `📄` | Ссылка на читаемую историю сессии |
 | `🧠` | Ссылка на MEMORY.md проекта |
 | `main +2` | Git-ветка и количество незафиксированных изменений |
@@ -307,19 +307,23 @@ Resource-атрибуты идентифицируют сессию: `service.na
 
 ### Loop Engineering (loen)
 
-Плагин `loen` (`plugin/loen/`, маркетплейс `iclaude`) запускает управляемую петлю `Plan → Act → Check → Report` с независимым verifier. Задача описывается машиночитаемым контрактом `loop.yaml`; worker делает минимальный diff; детерминированные gates и subagent `verifier` подтверждают результат; отчёт собирается в `docs/loen/<run-id>/report.html`.
+Плагин `loen` (`plugin/loen/`, маркетплейс `iclaude`) выполняет одну ограниченную инженерную задачу как stage-ориентированную петлю с долговечной темой: состояние живёт в семи нумерованных артефактах в `docs/loen/<topic>/` (никогда в чате), единственные человеческие ворота одобрения армируют контракт `loop.yaml`, автономный оркестратор `loop-run` ведёт `Act → Check → Reflect`, а независимый subagent `verifier` судит каждую итерацию.
 
 ```bash
-# В сессии:
-/loop-delivery <task>              # выполнить петлю (planner → апрув → act → verifier → отчёт)
-/loop-repair <описание падения>    # починка: воспроизвести → изолировать → минимальный фикс → регресс-тест
-/loop-autoresearch <цель-метрика>  # исследование: baseline → гипотеза → изменение → фикс. eval → keep/revert
-/loen:audit plan|act|check|result  # проверить стадию (mode-aware) + обновить report.html
-/loen:loop-goal                    # опционально: evidence-first строка /goal из одобренного loop.yaml + рецепт /loop
-/loen:governance [--triage]        # кросс-run дашборд docs/loen/governance.html (offline-агрегатор loen_stats.py); --triage только предлагает действия
+# В сессии — тонкие конфигураторы (задают режим и делегируют пайплайну):
+/loen:loop-delivery <task>              # доставить одно ограниченное изменение
+/loen:loop-repair <описание падения>    # починка: воспроизвести → изолировать → минимальный фикс → регресс-тест
+/loen:loop-autoresearch <цель-метрика>  # исследование: фикс. eval, эксперименты keep/revert
+/loen:loop-review <diff|branch|PR>      # ревью с записанными findings и решением
+# Пайплайн и сквозные:
+/loen:loop-start <topic>                # бутстрап темы и единственные ворота одобрения
+/loen:loop-run                          # автономно act → check → reflect до 7_result.md/handoff.md
+/loen:loop-status                       # read-only сводка темы с диска
+/loen:audit plan|act|check|result       # ручная перевалидация стадии (mode-aware)
+/loen:governance [--triage]             # кросс-тематический дашборд docs/loen/governance.html; --triage только предлагает действия
 ```
 
-**Артефакты:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/, experiments.jsonl, report.html, pr-summary.md). В research-режиме eval пишет JSONL-метрики в `iterations/iter-NN/metrics.jsonl` (через `$LOEN_METRICS_PATH`), а каждый эксперимент логируется детерминированным `log_experiment.py`. Шаблоны — ассеты плагина. Хук `loop-guard.py` жёстко контролирует раскладку/именование и scope; в не-loop репозиториях — no-op.
+**Артефакты:** `docs/loen/<topic>/` — `1_goal.md … 7_result.md`, `loop.yaml` (контракт), `attempts.jsonl` (журнал итераций), `audit.html`, `evidence/`, плюс файл-указатель `docs/loen/current`. Нет файла = нет состояния: возобновление читает диск, а не разговор. Шесть специализированных хуков (`loop-gate`, `scope-guard`, `tool-guard`, `permission-guard`, `audit-writer`, `evidence-gate`), градуированных `LOEN_MODE`, следят за контрактом; без `loop.yaml` (или когда `status` больше не `active`) они инертны.
 
 **Изоляция верификатора (opt-in):** `verifier_isolation: microvm` в `loop.yaml` — верификатор выполняется headless внутри Firecracker microVM над одноразовым снапшотом дерева (канала записи на хост нет). Требует установленный microVM (`./iclaude.sh --install-microvm`); по умолчанию `subagent`. См. [functions/MICROVM.md](functions/MICROVM.md).
 
@@ -398,7 +402,7 @@ echo "ICLAUDE_DEEPSEEK_API_KEY=sk-..." >> .claude_config
 ```
 iclaude.sh
 ├── lib/core/        — инициализация, глобальные переменные
-├── lib/command/     — разбор аргументов, справка
+├── lib/command/     — текст справки (разбор аргументов — инлайн в iclaude.sh)
 ├── lib/proxy/       — HTTP/HTTPS прокси
 ├── lib/nvm/         — изолированная NVM-среда
 ├── lib/symlink/     — пользовательский лаунчер iclaude (~/.local/bin)

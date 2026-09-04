@@ -217,5 +217,4 @@ InvalidArgumentError: Invalid URL protocol: the URL must start with 'http:' or '
 ## Дополнительная информация
 
 - [Конфигурация](./CONFIGURATION.md) - все команды
-- [Troubleshooting](./TROUBLESHOOTING.md) - решение проблем
-- [Installation](./INSTALLATION.md) - установка
+- [Use Cases](./USE_CASES.md) - практические примеры установки и использования

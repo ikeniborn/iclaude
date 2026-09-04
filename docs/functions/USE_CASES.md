@@ -10,8 +10,8 @@
 
 ```bash
 # Шаг 1: Клонировать репозиторий (включает .nvm-isolated/)
-git clone https://github.com/ikeniborn/claude.git
-cd claude
+git clone https://github.com/ikeniborn/iclaude.git
+cd iclaude
 
 # Шаг 2: Починить симлинки после git clone
 ./iclaude.sh --repair-isolated
@@ -106,7 +106,7 @@ gh auth login
 - ✅ Мониторинг GitHub Actions checks
 - ✅ Автоматическое исправление ошибок (TypeScript, ESLint, tests)
 
-**Подробнее:** См. `.nvm-isolated/.claude-isolated/skills/pr-automation/SKILL.md`
+**Подробнее:** См. `.nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md` (скилл `git-workflow`: ветки `dev-<topic>`, Conventional Commits, PR через `gh pr create`).
 
 ---
 
@@ -141,28 +141,27 @@ echo 'ICLAUDE_DEEPSEEK_API_KEY=your-key-here' >> .claude_config
 - ✅ Доступ к нескольким провайдерам (OpenRouter → Claude/GPT/Gemini)
 - ✅ Полная совместимость с Claude Code API
 
-**Пример конфигурации** (`.nvm-isolated/.claude-isolated/router.json`):
+**Пример конфигурации** (`.nvm-isolated/.claude-isolated/router.json`, схема CCR v2: массив `Providers` + объект `Router`):
 ```json
 {
-  "providers": {
-    "deepseek": {
-      "type": "deepseek",
-      "apiKey": "${DEEPSEEK_API_KEY}",
-      "baseURL": "https://api.deepseek.com"
+  "PORT": 3456,
+  "Providers": [
+    {
+      "name": "deepseek",
+      "api_base_url": "https://api.deepseek.com/v1/chat/completions",
+      "api_key": "${DEEPSEEK_API_KEY}",
+      "models": ["deepseek-chat"],
+      "transformer": { "use": ["deepseek"] }
     }
-  },
-  "models": {
-    "claude-sonnet-4-5": {
-      "provider": "deepseek",
-      "model": "deepseek-chat",
-      "maxTokens": 8000
-    }
-  },
-  "routing": {
-    "default": "claude-sonnet-4-5"
+  ],
+  "Router": {
+    "default": "deepseek,deepseek-chat",
+    "background": "deepseek,deepseek-chat"
   }
 }
 ```
+
+Устаревшая pre-v2 схема (lowercase `providers`/`models`/`routing`) больше не поддерживается — полный справочник схемы см. [ROUTER.md](./ROUTER.md).
 
 ---
 
@@ -217,12 +216,11 @@ Claude Code внутри изолированной виртуальной ма�
 | CLAUDE_CONFIG_DIR | Изолированный конфиг в `.nvm-isolated/` | Всегда активен |
 | microVM | Firecracker KVM (отдельный Linux kernel) | `--sandbox-microvm` |
 
-**Подробнее:** [docs/MICROVM.md](./MICROVM.md) · [threat model](./SANDBOX_ANALYSIS.md)
+**Подробнее:** [MICROVM.md](./MICROVM.md) (включая troubleshooting)
 
 ---
 
 ## Дополнительная информация
 
-- [Установка](./INSTALLATION.md) - варианты установки
 - [Конфигурация](./CONFIGURATION.md) - все команды и настройки
-- [Troubleshooting](./TROUBLESHOOTING.md) - решение проблем
+- [Proxy](./PROXY.md) - настройка прокси и решение проблем подключения

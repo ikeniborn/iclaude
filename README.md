@@ -196,7 +196,7 @@ Displays Claude Code metrics in the terminal status line in real time.
 | `$1.06` | Session cost |
 | `🔀 deepseek` | Active router provider |
 | `🛡42` | PII proxy: 42 masked items |
-| `⛏` | Caveman active. The saved-token counter (`⛏ 5.2k`) appears only after a manual `/caveman-stats` call |
+| `⛏` | Caveman active. The saved-token counter (`⛏ 5.2k`) is refreshed automatically each turn by the `caveman-stats-stop.js` Stop hook |
 | `📄` | Link to the readable session history |
 | `🧠` | Link to the project's MEMORY.md |
 | `main +2` | Git branch and uncommitted change count |
@@ -307,19 +307,23 @@ Details: [docs/functions/CAVEMAN.md](docs/functions/CAVEMAN.md).
 
 ### Loop Engineering (loen)
 
-The `loen` plugin (`plugin/loen/`, marketplace `iclaude`) runs a managed `Plan → Act → Check → Report` loop with an independent verifier. The task is described by a machine-readable `loop.yaml` contract; the worker makes a minimal diff; deterministic gates and the `verifier` subagent confirm the result; the report lands in `docs/loen/<run-id>/report.html`.
+The `loen` plugin (`plugin/loen/`, marketplace `iclaude`) runs one bounded engineering task as a stage-oriented durable-topic loop: state lives in seven numbered artifacts under `docs/loen/<topic>/` (never in chat), a single human approval gate arms the `loop.yaml` contract, the autonomous `loop-run` orchestrator drives `Act → Check → Reflect`, and an independent `verifier` subagent judges each iteration.
 
 ```bash
-# In a session:
-/loop-delivery <task>              # run the loop (planner → approval → act → verifier → report)
-/loop-repair <failure description> # repair: reproduce → isolate → minimal fix → regression test
-/loop-autoresearch <goal metric>   # research: baseline → hypothesis → change → fixed eval → keep/revert
-/loen:audit plan|act|check|result  # check a stage (mode-aware) + refresh report.html
-/loen:loop-goal                    # optional: evidence-first /goal line from the approved loop.yaml + /loop recipe
-/loen:governance [--triage]        # cross-run dashboard docs/loen/governance.html (offline loen_stats.py aggregator); --triage only suggests actions
+# In a session — thin configurators (set the mode, delegate to the pipeline):
+/loen:loop-delivery <task>              # deliver one bounded change
+/loen:loop-repair <failure description> # repair: reproduce → isolate → minimal fix → regression test
+/loen:loop-autoresearch <goal metric>   # research: fixed eval, kept/reverted experiments
+/loen:loop-review <diff|branch|PR>      # review with recorded findings and disposition
+# Pipeline and cross-cutting:
+/loen:loop-start <topic>                # bootstrap the topic and hold the one approval gate
+/loen:loop-run                          # autonomous act → check → reflect to 7_result.md/handoff.md
+/loen:loop-status                       # read-only topic summary from disk
+/loen:audit plan|act|check|result       # manual stage re-validation (mode-aware)
+/loen:governance [--triage]             # cross-topic dashboard docs/loen/governance.html; --triage only suggests actions
 ```
 
-**Artifacts:** `docs/loen/<run-id>/` (loop.yaml, plan.md, state.md, iterations/iter-NN/, experiments.jsonl, report.html, pr-summary.md). In research mode, eval writes JSONL metrics to `iterations/iter-NN/metrics.jsonl` (via `$LOEN_METRICS_PATH`), and every experiment is logged by the deterministic `log_experiment.py`. Templates are plugin assets. The `loop-guard.py` hook strictly enforces layout/naming and scope; in non-loop repositories it is a no-op.
+**Artifacts:** `docs/loen/<topic>/` — `1_goal.md … 7_result.md`, `loop.yaml` (contract), `attempts.jsonl` (iteration log), `audit.html`, `evidence/`, plus the `docs/loen/current` pointer file. Missing file = missing state: a resume reads the disk, never the conversation. Six specialized hooks (`loop-gate`, `scope-guard`, `tool-guard`, `permission-guard`, `audit-writer`, `evidence-gate`), graded by `LOEN_MODE`, enforce the contract; without a `loop.yaml` (or once `status` is no longer `active`) they are inert.
 
 **Verifier isolation (opt-in):** `verifier_isolation: microvm` in `loop.yaml` — the verifier runs headless inside a Firecracker microVM over a disposable tree snapshot (no write channel to the host). Requires the microVM to be installed (`./iclaude.sh --install-microvm`); default is `subagent`. See [docs/functions/MICROVM.md](docs/functions/MICROVM.md).
 
@@ -398,7 +402,7 @@ echo "ICLAUDE_DEEPSEEK_API_KEY=sk-..." >> .claude_config
 ```
 iclaude.sh
 ├── lib/core/        — initialization, global variables
-├── lib/command/     — argument parsing, help
+├── lib/command/     — help text (parsing lives inline in iclaude.sh)
 ├── lib/proxy/       — HTTP/HTTPS proxy
 ├── lib/nvm/         — isolated NVM environment
 ├── lib/symlink/     — user-space iclaude launcher (~/.local/bin)
