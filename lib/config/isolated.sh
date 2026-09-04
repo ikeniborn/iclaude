@@ -6,6 +6,52 @@
 #######################################
 
 #######################################
+# Relocate a pre-existing shared store out of the vendored nvm tree into the
+# repository root. One-way rename, never a copy and never a delete: the store
+# holds the login credential, every transcript and multi-gigabyte microVM images.
+# Runs once — after the rename the legacy path is gone and the guard is false.
+# Refuses rather than guess when two stores exist or when the rename would cross
+# a filesystem boundary and silently become a multi-gigabyte copy.
+# Globals:
+#   ISOLATED_NVM_DIR    - vendored nvm tree that used to hold the store
+#   ISOLATED_CONFIG_DIR - relocated store path, from lib/core/init.sh
+# Returns:
+#   0 - relocated, or nothing to relocate
+#   1 - refused; the caller stops before anything reads the store
+#######################################
+migrate_isolated_store() {
+	local legacy="${ISOLATED_NVM_DIR}/.claude-isolated"
+	[[ -d "$legacy" ]] || return 0
+
+	if [[ -e "$ISOLATED_CONFIG_DIR" ]]; then
+		print_error "Two shared stores present; refusing to guess which one is current:"
+		print_error "  legacy: $legacy"
+		print_error "  new:    $ISOLATED_CONFIG_DIR"
+		print_error "Merge them by hand, remove the legacy one, then run iclaude again"
+		return 1
+	fi
+
+	local legacy_dev target_dev
+	legacy_dev=$(stat -c %d "$legacy" 2>/dev/null)
+	target_dev=$(stat -c %d "$(dirname "$ISOLATED_CONFIG_DIR")" 2>/dev/null)
+	if [[ -z "$legacy_dev" || -z "$target_dev" || "$legacy_dev" != "$target_dev" ]]; then
+		print_error "The legacy store is on another filesystem, so the move would copy it."
+		print_error "Move it yourself, then run iclaude again:"
+		print_error "  mv '$legacy' '$ISOLATED_CONFIG_DIR'"
+		return 1
+	fi
+
+	if ! mv "$legacy" "$ISOLATED_CONFIG_DIR"; then
+		print_error "Failed to relocate the shared store from $legacy"
+		return 1
+	fi
+
+	print_info "Relocated the shared store out of the nvm tree:"
+	print_info "  $legacy → $ISOLATED_CONFIG_DIR"
+	return 0
+}
+
+#######################################
 # Resolve the project root for per-project home keying.
 # Git toplevel of the given directory when inside a work tree; otherwise the
 # physical directory itself (mirrors icodex resolve_project_root).
