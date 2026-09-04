@@ -288,7 +288,9 @@ belongs, is replaced with a warning; a stale link is pruned), so one login and o
 skill set serve all projects. `settings.json` is seeded into the home once from the
 shared copy; after that only its machine-owned keys (`hooks`, `enabledPlugins`,
 `statusLine`, `extraKnownMarketplaces`) are re-synced from the store on every launch,
-while user-owned keys (`model`, `language`, `permissions`, …) stay per home. The default remains the shared isolated directory;
+while user-owned keys (`model`, `language`, `permissions`, …) stay per home.
+Session-env garbage collection is scoped to the active home, so one project's launch
+never prunes another project's session state. The default remains the shared isolated directory;
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 

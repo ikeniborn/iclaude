@@ -960,7 +960,10 @@ cleanup_orphaned_pii_proxies() {
 # Called once per launch from launch_claude() regardless of mode.
 #######################################
 cleanup_stale_session_env() {
-    local dir="${ISOLATED_CONFIG_DIR:-}"
+    # Scope to the ACTIVE config dir: the per-project home when ICLAUDE_HOME_MODE
+    # selected one, the shared store otherwise. Pruning the store from a
+    # per-project launch would race other projects' idle-but-live sessions.
+    local dir="${CLAUDE_CONFIG_DIR:-${ISOLATED_CONFIG_DIR:-}}"
     local session_env_dir="${dir}/session-env"
     [[ -z "$dir" ]] || [[ ! -d "$session_env_dir" ]] && return 0
 
