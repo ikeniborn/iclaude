@@ -80,6 +80,9 @@ scripts/.claude_proxy_credentials  # Legacy
 # fetcher (scripts/fetch-node.js, ensure_isolated_node_engine).
 .nvm-isolated/versions/node/
 
+# Per-project config homes (runtime state, ICLAUDE_HOME_MODE=per-project)
+.claude-homes/
+
 # Isolated Claude Code configuration (session data)
 # Ignore session data, but keep skills and templates
 # NOTE: CLAUDE.md is in project root (not here) to avoid user-level memory pollution

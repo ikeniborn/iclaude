@@ -6,14 +6,101 @@
 #######################################
 
 #######################################
+# Resolve the project root for per-project home keying.
+# Git toplevel of the given directory when inside a work tree; otherwise the
+# physical directory itself (mirrors icodex resolve_project_root).
+# Arguments:
+#   $1 - directory (defaults to $PWD)
+# Outputs:
+#   absolute project root on stdout
+#######################################
+resolve_project_root() {
+	local dir="${1:-$PWD}" top
+	top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+	if [[ -n "$top" ]]; then
+		printf '%s' "$top"
+	else
+		(cd "$dir" 2>/dev/null && pwd -P)
+	fi
+}
+
+#######################################
+# Derive the stable per-project home id: <sanitized-basename>-<sha256(path)[0:12]>.
+# Basename sanitization matches _derive_project_id (lib/launcher/launch.sh):
+# lowercased, runs outside [a-z0-9._-] collapsed to '-', edges trimmed.
+# Arguments:
+#   $1 - absolute project root path
+# Outputs:
+#   home id on stdout
+#######################################
+resolve_claude_home_id() {
+	local root="$1" name hash
+	name=$(basename "$root" | tr '[:upper:]' '[:lower:]' \
+		| sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')
+	[[ -n "$name" ]] || name="unknown"
+	hash=$(printf '%s' "$root" | sha256sum | cut -c1-12)
+	printf '%s-%s' "$name" "$hash"
+}
+
+#######################################
+# Create (or reuse) the per-project home and export CLAUDE_CONFIG_DIR to it.
+# S1 scope: only the home directory and its home.json marker (project root,
+# created timestamp, schema version) — Claude Code populates the rest itself.
+# The marker keeps every home attributable to its project for future GC.
+# Globals:
+#   ISOLATED_HOMES_DIR - homes root (defaults to <repo>/.claude-homes next to
+#                        ISOLATED_NVM_DIR)
+# Returns:
+#   0 - success, 1 - home creation failed
+#######################################
+setup_claude_home() {
+	local homes_dir="${ISOLATED_HOMES_DIR:-$(dirname "$ISOLATED_NVM_DIR")/.claude-homes}"
+	local root home_id home_dir marker
+	root=$(resolve_project_root) || return 1
+	home_id=$(resolve_claude_home_id "$root")
+	home_dir="$homes_dir/$home_id"
+	marker="$home_dir/home.json"
+
+	if [[ ! -d "$home_dir" ]]; then
+		mkdir -p "$home_dir" || return 1
+		print_info "Created per-project home: $home_dir"
+	fi
+
+	if [[ ! -f "$marker" ]]; then
+		local esc_root="${root//\\/\\\\}"
+		esc_root="${esc_root//\"/\\\"}"
+		printf '{\n  "project_root": "%s",\n  "created": "%s",\n  "schema": 1\n}\n' \
+			"$esc_root" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$marker" || return 1
+	fi
+
+	export CLAUDE_CONFIG_DIR="$home_dir"
+	return 0
+}
+
+#######################################
 # Setup isolated configuration directory
-# Creates .claude-isolated directory and exports CLAUDE_CONFIG_DIR
+# Dispatches on ICLAUDE_HOME_MODE: "per-project" exports CLAUDE_CONFIG_DIR to
+# the per-project home; "shared" (default) keeps the single shared directory.
+# An unknown mode warns and falls back to shared.
 # Returns:
 #   0 - success
 # Example:
 #   setup_isolated_config || return 1
 #######################################
 setup_isolated_config() {
+	local mode="${ICLAUDE_HOME_MODE:-shared}"
+
+	case "$mode" in
+		per-project)
+			setup_claude_home && return 0
+			print_warning "Per-project home setup failed; falling back to shared config"
+			;;
+		shared) ;;
+		*)
+			print_warning "Unknown ICLAUDE_HOME_MODE '$mode'; using shared config"
+			;;
+	esac
+
 	local isolated_config_dir="${ISOLATED_NVM_DIR}/.claude-isolated"
 
 	# Create isolated config directory if it doesn't exist

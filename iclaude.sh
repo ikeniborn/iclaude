@@ -212,6 +212,7 @@ fi
     use_system=false
     use_isolated_config=false
     use_shared_config=false
+    use_per_project_home=false
     claude_args=()
     USE_ROUTER_FLAG=false
     USE_PII_PROXY_FLAG=false
@@ -639,6 +640,11 @@ fi
                 use_shared_config=true
                 shift
                 ;;
+            --per-project-home)
+                use_per_project_home=true
+                use_isolated_config=true
+                shift
+                ;;
             --check-config)
                 check_config_status
                 exit 0
@@ -696,6 +702,12 @@ fi
     # 1. If --isolated-config is set, use isolated config
     # 2. If --shared-config is set, use shared config (default)
     # 3. If isolated environment exists and is default, use isolated config (unless --shared-config)
+    # The --per-project-home flag wins over ICLAUDE_HOME_MODE from .claude_config
+    # (precedence: defaults < config < flags), so it is applied after
+    # source_iclaude_config has run.
+    if [[ "$use_per_project_home" == true ]]; then
+        export ICLAUDE_HOME_MODE=per-project
+    fi
     if [[ "$use_isolated_config" == true ]]; then
         setup_isolated_config
         disable_auto_updates "$CLAUDE_CONFIG_DIR"
