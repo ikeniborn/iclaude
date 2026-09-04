@@ -459,6 +459,7 @@ graph LR
 | `data-flow-oauth-token-refresh.mmd` | Поток обновления OAuth токена |
 | `data-flow-router-launch.mmd` | Поток запуска через Router |
 | `data-flow-microvm-launch.md` | Поток запуска через microVM (Firecracker) — 3 диаграммы: launch flow, filesystem, network |
+| `data-flow-per-project-home.md` | Поток создания per-project дома и миграции (двухслойная изоляция S1–S8) |
 
 ## Просмотр диаграмм
 
