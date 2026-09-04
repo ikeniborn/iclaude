@@ -277,32 +277,36 @@ Browser task automation via the "Claude in Chrome" extension.
 ./iclaude.sh --clean-home <id>       # Remove one home by id (confirmation asked)
 ```
 
-**Per-project config homes (default).** The launcher resolves a stable per-project
-home `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points Claude Code's
-`CLAUDE_CONFIG_DIR` at it, so sessions, history, and project state stay separate per
-repository (a git worktree gets its own home). On the first launch into a fresh home,
-this project's slice of the previous shared state is migrated in — `.claude.json`
-(global keys plus only this project's entry), its `projects/` transcripts, and its
-`history.jsonl` lines — as pure copies: the shared directory is never modified, so
-deleting a home re-migrates from it. Set `ICLAUDE_HOME_MODE=shared` (env or
-`.claude_config`) to restore the previous single shared directory exactly;
-`--per-project-home` remains as the explicit form. Each home carries a
-`home.json` marker recording its project root. Shared assets — `skills/`, `hooks/`,
-`commands/`, `agents/`, `plugins/`, `mcp/`, `scripts/`, `CLAUDE.md`,
-`.credentials.json`, `router.json` — are symlinked from the shared store into every
-home and self-repair on each launch (a wrong link, or a real copy where a link
-belongs, is replaced with a warning; a stale link is pruned), so one login and one
-skill set serve all projects. `settings.json` is seeded into the home once from the
-shared copy; after that only its machine-owned keys (`hooks`, `enabledPlugins`,
-`statusLine`, `extraKnownMarketplaces`) are re-synced from the store on every launch,
-while user-owned keys (`model`, `language`, `permissions`, …) stay per home.
-Session-env garbage collection is scoped to the active home, so one project's launch
-never prunes another project's session state. Concurrent launches are safe: home
-population and store writes (lockfile, npm installs) are serialized with `flock`,
-fail-soft — a busy or unavailable lock warns and proceeds, never blocking a launch.
-After each Claude Code install/update the lockfile also pins the installed native
-binary by sha256 (`claudeBinarySha256`); at startup a mismatch prints a warning with a
-repair hint (`--install-from-lockfile` / `--update`) and the launch continues.
+**Per-project config homes (default).** iclaude keeps Claude Code state in two layers,
+mirroring the icodex design:
+
+- **Shared store** — `.nvm-isolated/.claude-isolated/` holds the assets every project
+  reuses: skills, hooks, commands, agents, plugins, MCP registrations, scripts, the
+  global `CLAUDE.md`, one login (`.credentials.json`), `router.json`, and the
+  `settings.json` template.
+- **Per-project home** — each launch resolves a stable
+  `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points `CLAUDE_CONFIG_DIR`
+  at it, so sessions, history, and project state stay separate per repository (a git
+  worktree gets its own home). A `home.json` marker records the project root.
+
+Inside a home, shared assets are self-repairing symlinks into the store (a wrong link
+or a real copy where a link belongs is replaced with a warning; a stale link is
+pruned). `settings.json` is seeded once, then only its machine-owned keys (`hooks`,
+`enabledPlugins`, `statusLine`, `extraKnownMarketplaces`) mirror the store on every
+launch — user-owned keys (`model`, `language`, `permissions`, …) stay per home. On the
+first launch, the project's slice of the previous shared state is migrated in as pure
+copies (`.claude.json` global keys plus only this project's entry, its `projects/`
+transcripts, its `history.jsonl` lines) — the shared directory is never modified, so
+deleting a home simply re-migrates.
+
+Operational guarantees: session-env garbage collection is scoped to the active home;
+home population and store writes are serialized with fail-soft `flock` (a busy lock
+warns and proceeds, never blocking a launch); after each Claude Code install/update
+the lockfile pins the installed native binary by sha256 (`claudeBinarySha256`), and a
+startup mismatch warns with a repair hint (`--install-from-lockfile` / `--update`).
+Manage homes with `--list-homes` / `--clean-homes` / `--clean-home <id>`. Set
+`ICLAUDE_HOME_MODE=shared` (env or `.claude_config`) to restore the previous single
+shared directory exactly; `--per-project-home` remains as the explicit form.
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 
