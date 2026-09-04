@@ -5,7 +5,7 @@
 # session rendered "Σ 0 ↓ | 📊 228K (114%) ⚠️" against the false 200K window.
 set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-SL="$repo_root/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh"
+SL="$repo_root/.claude-isolated/scripts/claude-statusline.sh"
 
 # run_sl <display_name> <total_input> <cache_read> <cache_creation> <input_tokens>
 # Pipes a synthetic Claude Code statusline payload into the script.

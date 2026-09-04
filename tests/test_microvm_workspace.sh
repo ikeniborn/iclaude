@@ -15,7 +15,7 @@ _pass() { echo "  ✓ $1"; PASS=$((PASS+1)); }
 _fail() { echo "  ✗ FAIL: $1"; FAIL=$((FAIL+1)); }
 _section() { echo ""; echo "── $1 ──────────────────────────────────────────────────────"; }
 
-ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.nvm-isolated/.claude-isolated"
+ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.claude-isolated"
 SSH_KEY="${ISOLATED_CONFIG_DIR}/ssh/microvm"
 HOST_KEY_PUB="${ISOLATED_CONFIG_DIR}/ssh/microvm_host_key.pub"
 FC_BIN="${ISOLATED_CONFIG_DIR}/bin/firecracker"
@@ -36,7 +36,7 @@ source "${PROJECT_DIR}/lib/core/init.sh"
 init_environment
 # Re-pin to project root (init_environment may resolve to tests/ subdir when called from tests/)
 ISOLATED_NVM_DIR="${PROJECT_DIR}/.nvm-isolated"
-ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.nvm-isolated/.claude-isolated"
+ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.claude-isolated"
 export ISOLATED_NVM_DIR ISOLATED_CONFIG_DIR
 # Load user config to pick up MICRO_VM_NET_SUBNET and other overrides
 [[ -f "${PROJECT_DIR}/.claude_config" ]] && source "${PROJECT_DIR}/.claude_config" 2>/dev/null || true

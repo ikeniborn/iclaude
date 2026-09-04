@@ -36,7 +36,7 @@ source lib/launcher/launch.sh
 # ── bootstrap environment (mirrors iclaude.sh init) ──────────────────────────
 export SCRIPT_DIR
 ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
-ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
+ISOLATED_CONFIG_DIR="${SCRIPT_DIR}/.claude-isolated"
 init_environment   # sets PII_PROXY_VENV, LOG_DIR, etc.
 
 # ── helpers ───────────────────────────────────────────────────────────────────

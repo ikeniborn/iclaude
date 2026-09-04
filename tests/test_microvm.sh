@@ -33,7 +33,7 @@ detect_nvm()    { return 1; }
 
 # Set required globals with safe defaults for unit tests
 ISOLATED_NVM_DIR="${PROJECT_DIR}/.nvm-isolated"
-ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
+ISOLATED_CONFIG_DIR="${PROJECT_DIR}/.claude-isolated"
 ICLAUDE_SESSION_ID="test-$$"
 
 # Source microVM constants

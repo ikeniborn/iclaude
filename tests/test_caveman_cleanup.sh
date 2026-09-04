@@ -4,7 +4,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLEANUP="$REPO_ROOT/.nvm-isolated/.claude-isolated/hooks/caveman-cleanup.js"
+CLEANUP="$REPO_ROOT/.claude-isolated/hooks/caveman-cleanup.js"
 
 FAILED=0
 pass() { echo "  PASS: $1"; }

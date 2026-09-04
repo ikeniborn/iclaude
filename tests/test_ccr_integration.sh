@@ -28,12 +28,12 @@ done
 
 # ── locate router.json ────────────────────────────────────────────────────────
 
-ROUTER_JSON="$REPO_ROOT/.nvm-isolated/.claude-isolated/router.json"
+ROUTER_JSON="$REPO_ROOT/.claude-isolated/router.json"
 [[ -f "$ROUTER_JSON" ]] || skip "router.json not found at $ROUTER_JSON"
 
 # ── set up CCR_HOME in isolated env ───────────────────────────────────────────
 
-CCR_HOME="$REPO_ROOT/.nvm-isolated/.claude-isolated"
+CCR_HOME="$REPO_ROOT/.claude-isolated"
 mkdir -p "$CCR_HOME/.claude-code-router"
 cp "$ROUTER_JSON" "$CCR_HOME/.claude-code-router/config.json"
 

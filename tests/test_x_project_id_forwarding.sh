@@ -97,7 +97,7 @@ cat > "$CCR_HOME/.claude-code-router/config.json" <<JSON
   "HOST": "$CCR_HOST",
   "LOG": false,
   "transformers": [
-    { "path": "$REPO_ROOT/.nvm-isolated/.claude-isolated/.claude-code-router/plugins/x-project-id.js" }
+    { "path": "$REPO_ROOT/.claude-isolated/.claude-code-router/plugins/x-project-id.js" }
   ],
   "Providers": [
     {

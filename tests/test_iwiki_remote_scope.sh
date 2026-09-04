@@ -6,7 +6,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HOOKS_DIR="$REPO_ROOT/.nvm-isolated/.claude-isolated/hooks"
+HOOKS_DIR="$REPO_ROOT/.claude-isolated/hooks"
 HOOK="$HOOKS_DIR/iwiki-remote-scope.js"
 
 FAILED=0
