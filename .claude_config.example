@@ -154,7 +154,7 @@ ICLAUDE_CLAUDE_CODE_SKIP_PERMISSIONS=false
 #  PER-PROJECT КОНФИГ-ДОМА (двухслойная изоляция)
 # ============================================================
 # iclaude хранит состояние Claude Code в два слоя: общий стор
-# (.nvm-isolated/.claude-isolated/ — skills, hooks, plugins, логин, шаблон
+# (.claude-isolated/ — skills, hooks, plugins, логин, шаблон
 # settings.json) и дом проекта (.claude-homes/<project>-<hash>/ —
 # CLAUDE_CONFIG_DIR, сессии, история, состояние). Подробнее: README,
 # раздел «Per-project config homes»; docs/architecture/diagrams/
@@ -235,8 +235,8 @@ ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN=
 # Пример в router.json: "api_key": "${DEEPSEEK_API_KEY}"
 #
 # Для активации роутера: ./iclaude.sh --router
-# Конфиг роутера: .nvm-isolated/.claude-isolated/router.json
-# Шаблон конфига: .nvm-isolated/.claude-isolated/router.json.example
+# Конфиг роутера: .claude-isolated/router.json
+# Шаблон конфига: .claude-isolated/router.json.example
 #
 # В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
 # Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
@@ -427,7 +427,8 @@ ICLAUDE_USE_PII_PROXY=false
 #   - KVM поддержка (/dev/kvm): Linux с аппаратной виртуализацией
 #   - Однократная установка: ./iclaude.sh --install-microvm
 #     (скачивает firecracker ~22MB, vmlinux ~20MB, rootfs.ext4 ~30MB,
-#      строит nvm.img ~1GB из .nvm-isolated/ в .nvm-isolated/.claude-isolated/bin/)
+#      строит nvm.img ~1GB из .nvm-isolated/ и .claude-isolated/ в
+#      .claude-isolated/bin/; в госте стор остаётся по /mnt/nvm/.claude-isolated)
 #   - TAP networking: ./iclaude.sh --install-microvm настроит автоматически
 #     (требует sudo для ip tuntap + iptables)
 #
@@ -491,11 +492,11 @@ ICLAUDE_MICRO_VM_ENABLED=false
 # ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED=false
 
 # Директория для хранения снэпшотов VM.
-# По умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
+# По умолчанию: .claude-isolated/microvm-snapshots/
 # ICLAUDE_MICRO_VM_SNAPSHOT_DIR=
 
 # Путь к rootfs образу (ext4, Alpine Linux ~30MB).
-# По умолчанию: .nvm-isolated/.claude-isolated/bin/rootfs.ext4
+# По умолчанию: .claude-isolated/bin/rootfs.ext4
 # Устанавливается автоматически через --install-microvm.
 # ICLAUDE_MICRO_VM_ROOTFS_PATH=
 
@@ -526,7 +527,7 @@ ICLAUDE_MICRO_VM_ENABLED=false
 # ICLAUDE_MICRO_VM_WORKSPACE_SIZE_MB=2048
 
 # Путь к ядру Linux для гостя (vmlinux, ~20MB).
-# По умолчанию: .nvm-isolated/.claude-isolated/bin/vmlinux
+# По умолчанию: .claude-isolated/bin/vmlinux
 # Устанавливается автоматически через --install-microvm.
 # ICLAUDE_MICRO_VM_KERNEL_PATH=
 
@@ -834,7 +835,7 @@ ICLAUDE_DEBUG_LAUNCH=
 # ============================================================
 # The iwiki MCP server (`iwiki-mcp`, installed as a uv/pipx tool on PATH) is
 # registered at launch from the tracked, secret-free
-# .nvm-isolated/.claude-isolated/mcp/iwiki.json via --mcp-config. That file uses
+# .claude-isolated/mcp/iwiki.json via --mcp-config. That file uses
 # ${IWIKI_*} placeholders; the values below are de-prefixed by env-map
 # (ICLAUDE_IWIKI_X -> IWIKI_X) and expanded into the server's env at spawn time.
 # The server is only registered when IWIKI_LLM_KEY is set and `iwiki-mcp`

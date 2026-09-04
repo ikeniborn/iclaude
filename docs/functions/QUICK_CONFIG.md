@@ -8,7 +8,7 @@
 
 ```bash
 # Изолированная среда
-vim .nvm-isolated/.claude-isolated/settings.json
+vim .claude-isolated/settings.json
 
 # Добавить:
 {
@@ -36,7 +36,7 @@ vim .claude/settings.local.json
 ```bash
 # Где настроено?
 grep -r "plansDirectory" \
-  .nvm-isolated/.claude-isolated/ \
+  .claude-isolated/ \
   .claude/ 2>/dev/null
 
 # Создать каталог
@@ -68,7 +68,7 @@ git commit -m "docs: add plan"
 ```
 Высокий → .claude/settings.local.json  (не в git)
           .claude/settings.json        (в git)
-Низкий  → .nvm-isolated/.claude-isolated/settings.json
+Низкий  → .claude-isolated/settings.json
 ```
 
 ## Документация

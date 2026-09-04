@@ -106,7 +106,7 @@ gh auth login
 - ✅ Мониторинг GitHub Actions checks
 - ✅ Автоматическое исправление ошибок (TypeScript, ESLint, tests)
 
-**Подробнее:** См. `.nvm-isolated/.claude-isolated/skills/git-workflow/SKILL.md` (скилл `git-workflow`: ветки `dev-<topic>`, Conventional Commits, PR через `gh pr create`).
+**Подробнее:** См. `.claude-isolated/skills/git-workflow/SKILL.md` (скилл `git-workflow`: ветки `dev-<topic>`, Conventional Commits, PR через `gh pr create`).
 
 ---
 
@@ -119,7 +119,7 @@ Claude Code Router позволяет использовать DeepSeek, OpenRou
 ./iclaude.sh --install-router
 
 # Шаг 2: Настроить провайдер в router.json
-# Редактировать .nvm-isolated/.claude-isolated/router.json
+# Редактировать .claude-isolated/router.json
 # (используйте ${VAR_NAME} для API ключей)
 
 # Шаг 3: Добавить API ключ в .claude_config
@@ -141,7 +141,7 @@ echo 'ICLAUDE_DEEPSEEK_API_KEY=your-key-here' >> .claude_config
 - ✅ Доступ к нескольким провайдерам (OpenRouter → Claude/GPT/Gemini)
 - ✅ Полная совместимость с Claude Code API
 
-**Пример конфигурации** (`.nvm-isolated/.claude-isolated/router.json`, схема CCR v2: массив `Providers` + объект `Router`):
+**Пример конфигурации** (`.claude-isolated/router.json`, схема CCR v2: массив `Providers` + объект `Router`):
 ```json
 {
   "PORT": 3456,

@@ -249,7 +249,7 @@ ICLAUDE_MICRO_VM_SNAPSHOT_ENABLED=true
 Каждый снэпшот — отдельная директория:
 
 ```
-${MICRO_VM_SNAPSHOT_DIR}/        # по умолчанию: .nvm-isolated/.claude-isolated/microvm-snapshots/
+${MICRO_VM_SNAPSHOT_DIR}/        # по умолчанию: .claude-isolated/microvm-snapshots/
   2026-03-09_14-30_django-auth/
     vm.snap          # состояние Firecracker (CPU, RAM registers)
     vm.mem           # дамп оперативной памяти
@@ -445,12 +445,12 @@ microVM: snapshot load failed (HTTP 400) — try cold boot
 **Решение:** выбрать `0. Cold boot`. Старые снэпшоты можно удалить вручную:
 
 ```bash
-rm -rf .nvm-isolated/.claude-isolated/microvm-snapshots/2026-03-*/
+rm -rf .claude-isolated/microvm-snapshots/2026-03-*/
 ```
 
 ### Список снэпшотов пустой после переустановки
 
-Снэпшоты хранятся в `MICRO_VM_SNAPSHOT_DIR` (по умолчанию внутри `.nvm-isolated/`),
+Снэпшоты хранятся в `MICRO_VM_SNAPSHOT_DIR` (по умолчанию `.claude-isolated/microvm-snapshots/`),
 которая исключена из git. После `git clone` + `--repair-isolated` снэпшоты не восстанавливаются — это ожидаемо.
 
 ### `/usr/bin/sudo: Отказано в доступе` (ALT Linux)
