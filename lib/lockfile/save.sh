@@ -17,7 +17,7 @@
 save_isolated_lockfile() {
 	# Store-level lock (S6); falls back to unlocked when lock.sh is not loaded.
 	if declare -f iclaude_with_lock >/dev/null 2>&1; then
-		iclaude_with_lock "${ISOLATED_NVM_DIR}/.iclaude-store.lock" 60 _save_isolated_lockfile_unlocked "$@"
+		iclaude_with_lock "${ISOLATED_CONFIG_DIR}/.iclaude-store.lock" 60 _save_isolated_lockfile_unlocked "$@"
 	else
 		_save_isolated_lockfile_unlocked "$@"
 	fi
@@ -356,7 +356,7 @@ _update_lockfile_hash_unlocked() {
 update_lockfile_hash() {
 	# Store-level lock (S6); falls back to unlocked when lock.sh is not loaded.
 	if declare -f iclaude_with_lock >/dev/null 2>&1; then
-		iclaude_with_lock "${ISOLATED_NVM_DIR}/.iclaude-store.lock" 60 _update_lockfile_hash_unlocked "$@"
+		iclaude_with_lock "${ISOLATED_CONFIG_DIR}/.iclaude-store.lock" 60 _update_lockfile_hash_unlocked "$@"
 	else
 		_update_lockfile_hash_unlocked "$@"
 	fi

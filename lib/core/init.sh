@@ -54,11 +54,16 @@ init_environment() {
     CREDENTIALS_FILE="$CONFIG_FILE"
     GIT_BACKUP_FILE="${SCRIPT_DIR}/.claude_git_proxy_backup"
     ISOLATED_NVM_DIR="${SCRIPT_DIR}/.nvm-isolated"
-    ISOLATED_CONFIG_DIR="${ISOLATED_NVM_DIR}/.claude-isolated"
+    # The shared Claude store is a sibling of the vendored nvm tree, never a child
+    # of it: nvm is reinstalled, rebuilt and removed wholesale, while the store
+    # holds the login credential, transcripts and plugins. ISOLATED_CONFIG_DIR is
+    # the single source of the store path — no module rebuilds it from
+    # ISOLATED_NVM_DIR.
+    ISOLATED_CONFIG_DIR="${SCRIPT_DIR}/.claude-isolated"
     ISOLATED_HOMES_DIR="${SCRIPT_DIR}/.claude-homes"
     CLAUDE_CONFIG_DIR="$ISOLATED_CONFIG_DIR"
     ISOLATED_LOCKFILE="${SCRIPT_DIR}/.nvm-isolated-lockfile.json"
-    LOCKFILE_HASH_FILE="${SCRIPT_DIR}/.nvm-isolated/.claude-isolated/.last-lockfile-hash"
+    LOCKFILE_HASH_FILE="${ISOLATED_CONFIG_DIR}/.last-lockfile-hash"
     USE_ISOLATED_BY_DEFAULT=true  # Use isolated environment by default
 
     # Token refresh threshold in seconds (7 days = 604800)

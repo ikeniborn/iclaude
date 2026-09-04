@@ -388,7 +388,7 @@ install_npm_package_with_lockfile() {
 	# Store-level lock, long timeout for npm work (S6); falls back to unlocked
 	# when lock.sh is not loaded.
 	if declare -f iclaude_with_lock >/dev/null 2>&1; then
-		iclaude_with_lock "${ISOLATED_NVM_DIR}/.iclaude-store.lock" 600 _install_npm_package_with_lockfile_unlocked "$@"
+		iclaude_with_lock "${ISOLATED_CONFIG_DIR}/.iclaude-store.lock" 600 _install_npm_package_with_lockfile_unlocked "$@"
 	else
 		_install_npm_package_with_lockfile_unlocked "$@"
 	fi
