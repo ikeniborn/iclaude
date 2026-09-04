@@ -295,9 +295,13 @@ pruned). `settings.json` is seeded once, then only its machine-owned keys (`hook
 `enabledPlugins`, `statusLine`, `extraKnownMarketplaces`) mirror the store on every
 launch — user-owned keys (`model`, `language`, `permissions`, …) stay per home. On the
 first launch, the project's slice of the previous shared state is migrated in as pure
-copies (`.claude.json` global keys plus only this project's entry, its `projects/`
+copies (`.claude.json` global keys plus only this project's entry and only the
+`githubRepoPaths` repositories checked out under the project root, its `projects/`
 transcripts, its `history.jsonl` lines) — the shared directory is never modified, so
-deleting a home simply re-migrates.
+deleting a home simply re-migrates. Homes migrated before that repository-map
+reduction still list every other project; `scripts/clean-home-repo-paths.sh` re-applies
+it (dry run by default, `--apply` writes) — close Claude Code first, since a running
+session rewrites `.claude.json` on exit.
 
 Operational guarantees: session-env garbage collection is scoped to the active home;
 home population and store writes are serialized with fail-soft `flock` (a busy lock

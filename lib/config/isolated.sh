@@ -154,11 +154,27 @@ sync_home_settings() {
 	return 0
 }
 
+# jq program that narrows a .claude.json to one project. Takes --arg root.
+# .projects keeps only the root's own entry. .githubRepoPaths keeps only the
+# repositories with at least one checkout at or under the root, so sibling
+# worktrees of this repository survive while other repositories are dropped;
+# an absent key stays absent.
+CLAUDE_JSON_REDUCE_JQ='
+.projects = (if (.projects // {})[$root] then {($root): .projects[$root]} else {} end)
+| if has("githubRepoPaths")
+  then .githubRepoPaths = (
+    .githubRepoPaths
+    | with_entries(select(.value | any(. == $root or startswith($root + "/"))))
+  )
+  else . end
+'
+
 #######################################
 # One-time copy-based migration of this project's slice of the shared config
 # into a fresh per-project home (S5). Keyed on the absence of the home
 # .claude.json; the store is never mutated, so rollback = delete the home.
-# Migrates: .claude.json (global keys + only this project's .projects entry),
+# Migrates: .claude.json (global keys, only this project's .projects entry and
+# only the .githubRepoPaths repositories checked out under the project root),
 # projects/<mangled-root>/ transcripts, history.jsonl entries for this project.
 # Without jq the .claude.json is copied unreduced (warning) and history starts
 # fresh.
@@ -177,8 +193,7 @@ migrate_home_from_store() {
 
 	if command -v jq &>/dev/null; then
 		local tmp="${dst}.tmp.$$"
-		if jq --arg root "$root" \
-			'.projects = (if (.projects // {})[$root] then {($root): .projects[$root]} else {} end)' \
+		if jq --arg root "$root" "$CLAUDE_JSON_REDUCE_JQ" \
 			"$src" > "$tmp" 2>/dev/null; then
 			mv "$tmp" "$dst" && chmod 600 "$dst"
 		else

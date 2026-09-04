@@ -32,6 +32,11 @@ cat > "$STORE/.claude.json" <<EOF
   "projects": {
     "$PROJ": {"allowedTools": ["Bash"], "history": []},
     "/some/other/project": {"allowedTools": []}
+  },
+  "githubRepoPaths": {
+    "me/mine": ["$PROJ", "$PROJ/.git/worktrees/wt"],
+    "me/other": ["/some/other/project"],
+    "me/lookalike": ["${PROJ}-dev-branch"]
   }
 }
 EOF
@@ -53,6 +58,10 @@ assert_true '[[ -f "$HOME_DIR/.claude.json" ]]' "migrate: .claude.json created"
 assert_eq "$(jq -r '.hasCompletedOnboarding' "$HOME_DIR/.claude.json")" "true" "migrate: global keys carried"
 assert_eq "$(jq -r '.projects | keys | length' "$HOME_DIR/.claude.json")" "1" "migrate: only own project entry"
 assert_eq "$(jq -r ".projects[\"$PROJ\"].allowedTools[0]" "$HOME_DIR/.claude.json")" "Bash" "migrate: own entry content"
+
+# --- migration: githubRepoPaths reduced to repositories under this root ---
+assert_eq "$(jq -r '.githubRepoPaths | keys | join(",")' "$HOME_DIR/.claude.json")" "me/mine" "migrate: only own repository kept"
+assert_eq "$(jq -r '.githubRepoPaths["me/mine"] | length' "$HOME_DIR/.claude.json")" "2" "migrate: own repository keeps all its checkouts"
 
 # --- migration: transcripts copied, foreign ones not ---
 assert_true '[[ -f "$HOME_DIR/projects/$MANGLED/session-1.jsonl" ]]' "migrate: own transcripts copied"
@@ -76,6 +85,13 @@ H2="$TMP/home2"; mkdir -p "$H2"
 ( cd "$TMP/projM" && migrate_home_from_store "$H2" "$EMPTY" "$PROJ" >/dev/null 2>&1 ); rc=$?
 assert_eq "$rc" "0" "migrate: empty store exit 0"
 assert_true '[[ ! -e "$H2/.claude.json" ]]' "migrate: nothing invented from empty store"
+
+# --- migration: a store without githubRepoPaths does not gain the key ---
+NOREPO="$TMP/norepo-store"; mkdir -p "$NOREPO"
+echo '{"hasCompletedOnboarding": true}' > "$NOREPO/.claude.json"
+H3="$TMP/home3"; mkdir -p "$H3"
+( cd "$TMP/projM" && migrate_home_from_store "$H3" "$NOREPO" "$PROJ" >/dev/null 2>&1 )
+assert_eq "$(jq -r 'has("githubRepoPaths")' "$H3/.claude.json")" "false" "migrate: absent githubRepoPaths stays absent"
 
 # --- default flip: unset mode now resolves per-project ---
 out="$(
