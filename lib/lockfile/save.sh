@@ -15,6 +15,15 @@
 #   save_isolated_lockfile || return 1
 #######################################
 save_isolated_lockfile() {
+	# Store-level lock (S6); falls back to unlocked when lock.sh is not loaded.
+	if declare -f iclaude_with_lock >/dev/null 2>&1; then
+		iclaude_with_lock "${ISOLATED_NVM_DIR}/.iclaude-store.lock" 60 _save_isolated_lockfile_unlocked "$@"
+	else
+		_save_isolated_lockfile_unlocked "$@"
+	fi
+}
+
+_save_isolated_lockfile_unlocked() {
 	setup_isolated_nvm
 
 	# Source NVM (|| true: nvm_auto can fail with set -e in CI when no .nvmrc / default alias)
@@ -260,7 +269,7 @@ compute_lockfile_hash() {
 # Example:
 #   update_lockfile_hash || print_warning "Could not update lockfile hash"
 #######################################
-update_lockfile_hash() {
+_update_lockfile_hash_unlocked() {
 	local hash
 	hash=$(compute_lockfile_hash)
 
@@ -277,6 +286,15 @@ update_lockfile_hash() {
 
 	echo "$hash" > "$LOCKFILE_HASH_FILE"
 	return 0
+}
+
+update_lockfile_hash() {
+	# Store-level lock (S6); falls back to unlocked when lock.sh is not loaded.
+	if declare -f iclaude_with_lock >/dev/null 2>&1; then
+		iclaude_with_lock "${ISOLATED_NVM_DIR}/.iclaude-store.lock" 60 _update_lockfile_hash_unlocked "$@"
+	else
+		_update_lockfile_hash_unlocked "$@"
+	fi
 }
 
 #######################################

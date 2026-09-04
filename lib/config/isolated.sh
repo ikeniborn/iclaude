@@ -228,16 +228,41 @@ migrate_home_from_store() {
 #######################################
 setup_claude_home() {
 	local homes_dir="${ISOLATED_HOMES_DIR:-$(dirname "$ISOLATED_NVM_DIR")/.claude-homes}"
-	local root home_id home_dir marker
+	local root home_id home_dir
 	root=$(resolve_project_root) || return 1
 	home_id=$(resolve_claude_home_id "$root")
 	home_dir="$homes_dir/$home_id"
-	marker="$home_dir/home.json"
 
 	if [[ ! -d "$home_dir" ]]; then
 		mkdir -p "$home_dir" || return 1
 		print_info "Created per-project home: $home_dir"
 	fi
+
+	# Populate under a per-home lock (S6); falls back to unlocked when lock.sh
+	# is not loaded. Fail-soft either way — the launch continues.
+	if declare -f iclaude_with_lock >/dev/null 2>&1; then
+		iclaude_with_lock "$home_dir/.iclaude.lock" 30 \
+			_populate_claude_home "$home_dir" "$root" || true
+	else
+		_populate_claude_home "$home_dir" "$root" || true
+	fi
+
+	export CLAUDE_CONFIG_DIR="$home_dir"
+	return 0
+}
+
+#######################################
+# Populate a per-project home: marker, shared-asset links, settings seed/sync,
+# first-launch migration. Runs under the per-home lock from setup_claude_home.
+# Arguments:
+#   $1 - home directory
+#   $2 - absolute project root
+# Returns:
+#   0 - success, 1 - marker creation failed
+#######################################
+_populate_claude_home() {
+	local home_dir="$1" root="$2"
+	local marker="$home_dir/home.json"
 
 	if [[ ! -f "$marker" ]]; then
 		local esc_root="${root//\\/\\\\}"
@@ -253,8 +278,6 @@ setup_claude_home() {
 	seed_home_settings "$home_dir" "$store_dir"
 	sync_home_settings "$home_dir" "$store_dir"
 	migrate_home_from_store "$home_dir" "$store_dir" "$root"
-
-	export CLAUDE_CONFIG_DIR="$home_dir"
 	return 0
 }
 

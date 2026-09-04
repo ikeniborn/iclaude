@@ -32,6 +32,7 @@ fi
 # Load core modules in order
 source "${LIB_DIR}/core/init.sh"
 source "${LIB_DIR}/core/logging.sh"
+source "${LIB_DIR}/core/lock.sh"
 source "${LIB_DIR}/core/validation.sh"
 source "${LIB_DIR}/core/json.sh"
 source "${LIB_DIR}/core/remaining.sh"
