@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отчёт: settings-managed-region (S3)</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#12141a; --surface:#1b1e27; --surface2:#232734; --text:#e6e8ee; --muted:#9aa1b2;
+  --accent:#6ea8fe; --ok:#3fb96f; --warn:#e0a83c; --line:#333949; --code:#2a2f3e;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#eef0f4; --text:#1d2330; --muted:#5b6475;
+  --accent:#2f6fce; --ok:#1e8a4c; --warn:#a4700f; --line:#d7dbe3; --code:#eef0f4;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:1080px;margin-inline:auto}
+h1{font-size:1.5rem;margin:.2rem 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.badge{display:inline-block;padding:.12rem .55rem;border-radius:1rem;font-size:.78rem;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--surface);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:.08rem .35rem;border-radius:4px;font-size:.85em}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 8px 8px 0;margin:.8rem 0;color:var(--muted)}
+.toggle{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);border-radius:2rem;padding:.35rem .9rem;cursor:pointer;font-size:.85rem}
+.lead{color:var(--muted);margin:.2rem 0 1rem}
+figure{margin:1rem 0;background:var(--surface);border-radius:8px;padding:1rem;overflow-x:auto}
+figcaption{color:var(--muted);font-size:.82rem;margin-top:.5rem}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ тема</button>
+
+<h1>settings-managed-region — отчёт result-стадии <span class="badge ok">OK</span></h1>
+<p class="lead">Слайс S3: settings.json в per-project домах — copy-once seed + зеркалирование машинных ключей на каждом запуске.</p>
+
+<h2>1. Резюме внедрения</h2>
+<table>
+<tr><th>Топик</th><td><code>settings-managed-region</code> (слайс S3 плана <code>reference/plans/shared-store-per-project-home-architecture</code>)</td></tr>
+<tr><th>Intent</th><td><code>docs/superpowers/intents/2026-09-04-settings-managed-region-intent.md</code> (approved, check-chain intent OK)</td></tr>
+<tr><th>Spec / Plan</th><td>n/a — continuation <code>execute</code></td></tr>
+<tr><th>База diff</th><td><code>HEAD</code> = <code>c43fc30e</code> (master, merge S2), ветка <code>dev-settings-managed-region</code></td></tr>
+</table>
+
+<h2>2. Выполненные изменения</h2>
+<table>
+<thead><tr><th>Файл</th><th>Тип</th><th>Что делает</th></tr></thead>
+<tbody>
+<tr><td><code>lib/config/isolated.sh</code></td><td>изменён</td><td><code>seed_home_settings</code> (copy-once, chmod 600), <code>sync_home_settings</code> (jq-зеркало ключей <code>hooks</code>, <code>enabledPlugins</code>, <code>statusLine</code>, <code>extraKnownMarketplaces</code>; атомарная запись только при изменении; graceful degrade без jq/файлов); вызовы из <code>setup_claude_home</code> после линковки</td></tr>
+<tr><td><code>tests/test_settings_managed_region.sh</code></td><td>добавлен</td><td>18 unit-проверок: seed/no-reseed/600, восстановление испорченных managed-ключей, удаление исчезнувших из стора, неприкосновенность user-ключей, идемпотентность (inode), неизменность стора, degrade без jq и без store-файла, интеграция, чистота shared-режима</td></tr>
+<tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td>изменены</td><td>Описание seed + managed-keys sync в секции per-project домов</td></tr>
+<tr><td><code>docs/superpowers/intents/…-intent.md</code></td><td>добавлен</td><td>Утверждённый intent слайса</td></tr>
+</tbody>
+</table>
+
+<h2>3. Результаты</h2>
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+<tbody>
+<tr><td>Copy-once seed (600), без повторного сидирования</td><td><span class="badge ok">DONE</span></td><td>тесты «seed: *»</td></tr>
+<tr><td>Managed-ключи зеркалируют стор (restore/remove)</td><td><span class="badge ok">DONE</span></td><td>тесты «sync: tampered restored», «store-removed removed»</td></tr>
+<tr><td>User-ключи неприкосновенны</td><td><span class="badge ok">DONE</span></td><td>тесты «model/permissions preserved»</td></tr>
+<tr><td>Идемпотентность + стор только для чтения</td><td><span class="badge ok">DONE</span></td><td>тесты «inode», «store unchanged»</td></tr>
+<tr><td>Degrade без jq / без store-файла</td><td><span class="badge ok">DONE</span></td><td>тесты «degrade: *»</td></tr>
+<tr><td>Shared-режим байт-в-байт прежний</td><td><span class="badge ok">DONE</span></td><td>тест «shared: absent»; phase0 OK</td></tr>
+<tr><td>Единый lockfile drift prompt (store-anchored hash)</td><td><span class="badge ok">DONE</span></td><td>структурно: LOCKFILE_HASH_FILE = SCRIPT_DIR-путь (lib/core/init.sh:61), не CLAUDE_CONFIG_DIR; изменений не требовалось</td></tr>
+</tbody>
+</table>
+<div class="note">Верификация: <code>tests/test_settings_managed_region.sh</code> → PASS=18 FAIL=0 (TDD: сперва 14 FAIL);
+S1 21/21; S2 21/21; env-map 10/10; config-migration 10/10; phase0 OK; <code>bash -n</code> чисто. База <code>c43fc30e</code>.</div>
+<div class="note">GWT (strict): сценарий <code>settings-managed-region</code> на <code>specification/settings-managed-region</code>;
+<code>wiki_spec_resolve</code>: implements → <span class="badge ok">resolved</span>, verifies → <span class="badge warn">unresolved</span>
+(структурно: <code>include_tests=false</code>) — advisory, тест выполнен (exit 0).</div>
+
+<h2>4. Влияние на систему</h2>
+<table>
+<thead><tr><th>Область</th><th>Влияние</th><th>Риски / follow-up</th></tr></thead>
+<tbody>
+<tr><td>Per-project режим</td><td>Дом получает полный settings.json: permissions, hooks, плагины, statusline работают; user-ключи индивидуальны per проект</td><td>Аудит остальных подсистем (PII, microVM, oauth) — S4</td></tr>
+<tr><td>Дрейф конфигурации</td><td>Исключён для машинных ключей (зеркало стора) — закрыта слабость icodex copy-once config.toml</td><td>Расширение managed-списка — proposal-first</td></tr>
+<tr><td>Shared-режим</td><td>Без изменений</td><td>—</td></tr>
+<tr><td>Конкурентность</td><td>Атомарная запись tmp+mv; полного flock ещё нет</td><td>S6</td></tr>
+</tbody>
+</table>
+</body>
+</html>
