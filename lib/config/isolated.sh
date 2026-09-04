@@ -282,6 +282,86 @@ _populate_claude_home() {
 }
 
 #######################################
+# List per-project homes: id, project root (from home.json, "unknown" when the
+# marker is missing/unreadable), size, last-used date, and an "orphan" mark
+# when the recorded root no longer exists (S7).
+# Returns:
+#   0 - always (missing homes dir is a calm no-op)
+#######################################
+list_claude_homes() {
+	local homes_dir="${ISOLATED_HOMES_DIR:-$(dirname "$ISOLATED_NVM_DIR")/.claude-homes}"
+	[[ -d "$homes_dir" ]] || { print_info "No per-project homes yet ($homes_dir)"; return 0; }
+	local d id root size used mark
+	for d in "$homes_dir"/*/; do
+		[[ -d "$d" ]] || continue
+		id=$(basename "$d")
+		root="unknown"
+		if [[ -f "$d/home.json" ]] && command -v jq &>/dev/null; then
+			root=$(jq -r '.project_root // "unknown"' "$d/home.json" 2>/dev/null || echo "unknown")
+		fi
+		size=$(du -sh "$d" 2>/dev/null | cut -f1)
+		used=$(date -d "@$(stat -c %Y "$d" 2>/dev/null || echo 0)" +%Y-%m-%d 2>/dev/null || echo "?")
+		mark=""
+		[[ "$root" != "unknown" && ! -d "$root" ]] && mark=" orphan"
+		printf '%s\t%s\t%s\t%s%s\n' "$id" "$root" "${size:-?}" "$used" "$mark"
+	done
+	return 0
+}
+
+# Confirmation helper: ICLAUDE_ASSUME_YES=1 bypasses; otherwise interactive y/N.
+_confirm_home_deletion() {
+	[[ "${ICLAUDE_ASSUME_YES:-}" == "1" ]] && return 0
+	local answer
+	read -r -p "$1 [y/N] " answer 2>/dev/null || return 1
+	[[ "$answer" == "y" || "$answer" == "Y" ]]
+}
+
+#######################################
+# Remove orphan homes: readable marker whose recorded project root no longer
+# exists. Homes without a readable marker are never touched. Confirmation
+# required (ICLAUDE_ASSUME_YES=1 for non-interactive use).
+# Returns:
+#   0 - always
+#######################################
+clean_claude_homes() {
+	local homes_dir="${ISOLATED_HOMES_DIR:-$(dirname "$ISOLATED_NVM_DIR")/.claude-homes}"
+	[[ -d "$homes_dir" ]] || return 0
+	command -v jq &>/dev/null || { print_warning "jq not found; cannot attribute homes, nothing removed"; return 0; }
+	local d root removed=0
+	for d in "$homes_dir"/*/; do
+		[[ -d "$d" && -f "$d/home.json" ]] || continue
+		root=$(jq -r '.project_root // empty' "$d/home.json" 2>/dev/null)
+		[[ -n "$root" && ! -d "$root" ]] || continue
+		if _confirm_home_deletion "Remove orphan home $(basename "$d") (root gone: $root)?"; then
+			rm -rf "$d" && removed=$((removed + 1))
+		fi
+	done
+	print_info "Removed $removed orphan home(s)"
+	return 0
+}
+
+#######################################
+# Remove one home by id after confirmation. Unknown id is an error.
+# Arguments:
+#   $1 - home id (directory name under the homes dir)
+# Returns:
+#   0 - removed or declined, 1 - unknown id
+#######################################
+clean_claude_home() {
+	local homes_dir="${ISOLATED_HOMES_DIR:-$(dirname "$ISOLATED_NVM_DIR")/.claude-homes}"
+	local id="$1"
+	if [[ -z "$id" || ! -d "$homes_dir/$id" ]]; then
+		print_error "Unknown home id: ${id:-<empty>}"
+		return 1
+	fi
+	if _confirm_home_deletion "Remove home $id?"; then
+		rm -rf "${homes_dir:?}/$id"
+		print_info "Removed home $id"
+	fi
+	return 0
+}
+
+#######################################
 # Setup isolated configuration directory
 # Dispatches on ICLAUDE_HOME_MODE: "per-project" (default since S5) exports
 # CLAUDE_CONFIG_DIR to the per-project home; "shared" keeps the single shared

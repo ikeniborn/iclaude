@@ -49,6 +49,9 @@ OPTIONS:
   --isolated-config                 Use isolated config directory (automatic for isolated install)
   --shared-config                   Use shared config directory (default: ~/.claude/)
   --per-project-home                Use a per-project config home under .claude-homes/ (or ICLAUDE_HOME_MODE=per-project)
+  --list-homes                      List per-project homes (id, project root, size, last-used, orphan mark)
+  --clean-homes                     Remove orphan homes whose project root no longer exists (asks confirmation)
+  --clean-home <id>                 Remove one home by id (asks confirmation)
   --check-config                    Show current configuration directory status
   --refresh-token                   Refresh OAuth token using setup-token (long-lived ~1 year)
   --export-config DIR               Export configuration to backup directory

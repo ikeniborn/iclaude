@@ -272,6 +272,9 @@ Browser task automation via the "Claude in Chrome" extension.
 ./iclaude.sh --isolated-config       # Use the isolated config
 ./iclaude.sh --shared-config         # Use the system ~/.claude/
 ./iclaude.sh --per-project-home      # Use a per-project config home (see below)
+./iclaude.sh --list-homes            # List homes: id, root, size, last-used, orphan mark
+./iclaude.sh --clean-homes           # Remove orphan homes (confirmation asked)
+./iclaude.sh --clean-home <id>       # Remove one home by id (confirmation asked)
 ```
 
 **Per-project config homes (default).** The launcher resolves a stable per-project

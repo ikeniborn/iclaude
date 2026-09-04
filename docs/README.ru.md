@@ -272,6 +272,9 @@ Resource-атрибуты идентифицируют сессию: `service.na
 ./iclaude.sh --isolated-config       # Использовать изолированный конфиг
 ./iclaude.sh --shared-config         # Использовать системный ~/.claude/
 ./iclaude.sh --per-project-home      # Отдельный конфиг-дом на проект (см. ниже)
+./iclaude.sh --list-homes            # Список домов: id, корень, размер, last-used, метка orphan
+./iclaude.sh --clean-homes           # Удалить дома-сироты (с подтверждением)
+./iclaude.sh --clean-home <id>       # Удалить один дом по id (с подтверждением)
 ```
 
 **Per-project конфиг-дома (режим по умолчанию).** Лаунчер вычисляет стабильный дом

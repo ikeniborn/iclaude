@@ -650,6 +650,18 @@ fi
                 check_config_status
                 exit 0
                 ;;
+            --list-homes)
+                list_claude_homes
+                exit $?
+                ;;
+            --clean-homes)
+                clean_claude_homes
+                exit $?
+                ;;
+            --clean-home)
+                clean_claude_home "$2"
+                exit $?
+                ;;
             --refresh-token)
                 # Setup isolated environment if needed for refresh
                 if [[ "$use_system" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then

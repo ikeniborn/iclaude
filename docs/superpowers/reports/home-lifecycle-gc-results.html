@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отчёт: home-lifecycle-gc (S7)</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#12141a; --surface:#1b1e27; --surface2:#232734; --text:#e6e8ee; --muted:#9aa1b2;
+  --accent:#6ea8fe; --ok:#3fb96f; --warn:#e0a83c; --line:#333949; --code:#2a2f3e;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#eef0f4; --text:#1d2330; --muted:#5b6475;
+  --accent:#2f6fce; --ok:#1e8a4c; --warn:#a4700f; --line:#d7dbe3; --code:#eef0f4;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:1080px;margin-inline:auto}
+h1{font-size:1.5rem;margin:.2rem 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.badge{display:inline-block;padding:.12rem .55rem;border-radius:1rem;font-size:.78rem;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--surface);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:.08rem .35rem;border-radius:4px;font-size:.85em}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 8px 8px 0;margin:.8rem 0;color:var(--muted)}
+.toggle{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);border-radius:2rem;padding:.35rem .9rem;cursor:pointer;font-size:.85rem}
+.lead{color:var(--muted);margin:.2rem 0 1rem}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ тема</button>
+
+<h1>home-lifecycle-gc — отчёт result-стадии <span class="badge ok">OK</span></h1>
+<p class="lead">Слайс S7: операционный слой над .claude-homes/ — листинг, prune сирот, точечное удаление; всегда с подтверждением.</p>
+
+<h2>1. Резюме внедрения</h2>
+<table>
+<tr><th>Топик</th><td><code>home-lifecycle-gc</code> (слайс S7 плана <code>reference/plans/shared-store-per-project-home-architecture</code>)</td></tr>
+<tr><th>Intent</th><td><code>docs/superpowers/intents/2026-09-04-home-lifecycle-gc-intent.md</code> (approved, check-chain intent OK)</td></tr>
+<tr><th>Spec / Plan</th><td>n/a — continuation <code>execute</code></td></tr>
+<tr><th>База diff</th><td><code>HEAD</code> = <code>26e7bf7e</code> (master, merge S6), ветка <code>dev-home-lifecycle-gc</code></td></tr>
+</table>
+
+<h2>2. Выполненные изменения</h2>
+<table>
+<thead><tr><th>Файл</th><th>Тип</th><th>Что делает</th></tr></thead>
+<tbody>
+<tr><td><code>lib/config/isolated.sh</code></td><td>изменён</td><td><code>list_claude_homes</code> (id, корень из home.json / unknown, размер, last-used, метка orphan), <code>clean_claude_homes</code> (только сироты, подтверждение), <code>clean_claude_home &lt;id&gt;</code>, <code>_confirm_home_deletion</code> (ICLAUDE_ASSUME_YES=1 — единственный обход)</td></tr>
+<tr><td><code>iclaude.sh</code>, <code>lib/command/usage.sh</code></td><td>изменены</td><td>Флаги <code>--list-homes</code> / <code>--clean-homes</code> / <code>--clean-home &lt;id&gt;</code> + help</td></tr>
+<tr><td><code>tests/test_home_lifecycle_gc.sh</code></td><td>добавлен</td><td>17 проверок: маркировка live/orphan/unknown, отказ без подтверждения, удаление только сирот, неприкосновенность unknown и live, точечное удаление, ошибка на неизвестный id, no-op на пустом каталоге</td></tr>
+<tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td>изменены</td><td>Три новые команды в секции конфигурации</td></tr>
+<tr><td><code>docs/superpowers/intents/…-intent.md</code></td><td>добавлен</td><td>Утверждённый intent слайса</td></tr>
+</tbody>
+</table>
+
+<h2>3. Результаты</h2>
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+<tbody>
+<tr><td>Листинг: id, root/unknown, размер, last-used, orphan</td><td><span class="badge ok">DONE</span></td><td>тесты «list: *»</td></tr>
+<tr><td>clean-homes: только сироты, с подтверждением; без подтверждения — ничего</td><td><span class="badge ok">DONE</span></td><td>тесты «clean: no confirmation / orphan removed / live untouched / unknown never touched»</td></tr>
+<tr><td>clean-home &lt;id&gt;: точечно, неизвестный id — ошибка</td><td><span class="badge ok">DONE</span></td><td>тесты «clean-home: *»</td></tr>
+<tr><td>Удаление восстановимо (S5 re-migration)</td><td><span class="badge ok">DONE</span></td><td>по построению S5 (store copy-only), referenced</td></tr>
+<tr><td>Нет автоматического pruning на launch-пути</td><td><span class="badge ok">DONE</span></td><td>launch-путь не тронут; все тесты слайсов зелёные</td></tr>
+</tbody>
+</table>
+<div class="note">Верификация: <code>tests/test_home_lifecycle_gc.sh</code> → PASS=17 FAIL=0 (TDD: сперва 11 FAIL);
+S1–S6 контракты целы (20/21/18/12/16/13), phase0 OK. База <code>26e7bf7e</code>.
+GWT: сценарий <code>home-lifecycle-gc</code>; implements → <span class="badge ok">resolved</span>, verifies → <span class="badge warn">unresolved</span> (include_tests=false, структурно) — advisory, тест выполнен (exit 0).</div>
+
+<h2>4. Влияние на систему</h2>
+<table>
+<thead><tr><th>Область</th><th>Влияние</th><th>Риски / follow-up</th></tr></thead>
+<tbody>
+<tr><td>Дисковый рост .claude-homes/</td><td>Управляем: видимость (--list-homes) + подтверждаемая уборка сирот</td><td>—</td></tr>
+<tr><td>Слабость icodex «no orphan-home cleanup»</td><td>Закрыта (маркер S1 + команды S7)</td><td>—</td></tr>
+<tr><td>Безопасность удаления</td><td>Только сироты/явный id, подтверждение, unknown не трогается, launch-путь без удалений</td><td>—</td></tr>
+<tr><td>План</td><td>Остаются S8 (пин целостности) и S9 (финальный проход доков)</td><td>—</td></tr>
+</tbody>
+</table>
+</body>
+</html>
