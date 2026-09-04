@@ -87,13 +87,15 @@ out="$(
 )"
 assert_eq "$out" "$TMP/homes2/$id_a" "dispatch: default per-project (S5 flip)"
 
-# mode=shared → shared dir.
+# mode=shared → shared dir. The shared store comes from ISOLATED_CONFIG_DIR, not
+# from a path derived under ISOLATED_NVM_DIR.
 out="$(
   export ICLAUDE_HOME_MODE=shared
-  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_HOMES_DIR="$TMP/homes2" setup_isolated_config >/dev/null 2>&1 || exit 1
+  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_CONFIG_DIR="$TMP/shared-store" \
+    ISOLATED_HOMES_DIR="$TMP/homes2" setup_isolated_config >/dev/null 2>&1 || exit 1
   printf '%s' "$CLAUDE_CONFIG_DIR"
 )"
-assert_eq "$out" "$TMP/nvm/.claude-isolated" "dispatch: explicit shared"
+assert_eq "$out" "$TMP/shared-store" "dispatch: explicit shared"
 
 # mode=per-project → per-project home.
 out="$(
@@ -107,10 +109,11 @@ assert_eq "$out" "$TMP/homes2/$id_a" "dispatch: per-project mode"
 # Unknown mode → warn, fall back to shared, still succeed.
 out="$(
   export ICLAUDE_HOME_MODE=bogus
-  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_HOMES_DIR="$TMP/homes2" setup_isolated_config >/dev/null 2>&1 || exit 1
+  ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_CONFIG_DIR="$TMP/shared-store" \
+    ISOLATED_HOMES_DIR="$TMP/homes2" setup_isolated_config >/dev/null 2>&1 || exit 1
   printf '%s' "$CLAUDE_CONFIG_DIR"
 )"
-assert_eq "$out" "$TMP/nvm/.claude-isolated" "dispatch: unknown mode falls back to shared"
+assert_eq "$out" "$TMP/shared-store" "dispatch: unknown mode falls back to shared"
 
 # --- env-map: ICLAUDE_HOME_MODE is native, never de-prefixed ---
 

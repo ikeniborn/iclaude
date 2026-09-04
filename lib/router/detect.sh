@@ -18,7 +18,7 @@ detect_router() {
 
 	# Determine config location
 	if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
-		router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+		router_config="$ISOLATED_CONFIG_DIR/router.json"
 	else
 		router_config="$HOME/.claude/router.json"
 	fi
@@ -79,7 +79,7 @@ get_ccr_port() {
 
 	# Determine config location (mirrors detect_router() logic)
 	if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
-		router_config="$ISOLATED_NVM_DIR/.claude-isolated/router.json"
+		router_config="$ISOLATED_CONFIG_DIR/router.json"
 	else
 		router_config="$HOME/.claude/router.json"
 	fi

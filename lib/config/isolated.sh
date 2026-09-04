@@ -287,7 +287,7 @@ _populate_claude_home() {
 	fi
 
 	# Fail-soft: a link failure leaves the home usable, launch continues.
-	local store_dir="${ISOLATED_CONFIG_DIR:-${ISOLATED_NVM_DIR}/.claude-isolated}"
+	local store_dir="${ISOLATED_CONFIG_DIR}"
 	link_shared_assets "$home_dir" "$store_dir" \
 		|| print_warning "Shared-asset linking failed for $home_dir"
 	seed_home_settings "$home_dir" "$store_dir"
@@ -401,7 +401,10 @@ setup_isolated_config() {
 			;;
 	esac
 
-	local isolated_config_dir="${ISOLATED_NVM_DIR}/.claude-isolated"
+	# Shared mode uses the same chokepoint as per-project mode. Rebuilding the path
+	# from ISOLATED_NVM_DIR here is what made this branch ignore an
+	# ISOLATED_CONFIG_DIR override that the rest of the module honoured.
+	local isolated_config_dir="${ISOLATED_CONFIG_DIR}"
 
 	# Create isolated config directory if it doesn't exist
 	if [[ ! -d "$isolated_config_dir" ]]; then

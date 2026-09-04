@@ -12,7 +12,7 @@
 #######################################
 repair_plugin_paths() {
 	local quiet_mode="${1:-}"
-	local plugins_dir="$ISOLATED_NVM_DIR/.claude-isolated/plugins"
+	local plugins_dir="$ISOLATED_CONFIG_DIR/plugins"
 	local known_marketplaces="$plugins_dir/known_marketplaces.json"
 	local installed_plugins="$plugins_dir/installed_plugins.json"
 	local fixed=0
@@ -207,7 +207,7 @@ repair_plugin_paths() {
 #######################################
 install_plugins_from_manifest() {
 	local quiet_mode="${1:-}"
-	local manifest_file="${ISOLATED_CONFIG_DIR:-$ISOLATED_NVM_DIR/.claude-isolated}/plugins-manifest.json"
+	local manifest_file="${ISOLATED_CONFIG_DIR}/plugins-manifest.json"
 
 	# Nothing to do if manifest doesn't exist
 	if [[ ! -f "$manifest_file" ]]; then
