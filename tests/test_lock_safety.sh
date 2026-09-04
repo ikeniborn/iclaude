@@ -79,8 +79,12 @@ assert_eq "$(jq -r '.model' "$HOMEL/settings.json" 2>/dev/null)" "opus" "concurr
 assert_eq "$(readlink "$HOMEL/skills")" "$STORE/skills" "concurrent: skills link intact"
 
 # --- store hash writes under lock: parallel writers leave one valid line ---
+# Both the hash file and the store lock are anchored to ISOLATED_CONFIG_DIR, not
+# to the nvm tree. Exporting it here also keeps the block hermetic: without it the
+# lock would land in whatever store the surrounding session has exported.
 export ISOLATED_NVM_DIR="$TMP/nvm"; mkdir -p "$TMP/nvm"
-export LOCKFILE_HASH_FILE="$TMP/nvm/.claude-isolated/.last-lockfile-hash"
+export ISOLATED_CONFIG_DIR="$TMP/store-hash"; mkdir -p "$ISOLATED_CONFIG_DIR"
+export LOCKFILE_HASH_FILE="$ISOLATED_CONFIG_DIR/.last-lockfile-hash"
 export ISOLATED_LOCKFILE="$TMP/lock.json"; echo '{"nodeVersion":"22"}' > "$ISOLATED_LOCKFILE"
 # update_lockfile_hash comes from lib/lockfile/save.sh — extract the wrapper
 # and its unlocked body, with a stub for compute_lockfile_hash.

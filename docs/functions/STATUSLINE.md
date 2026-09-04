@@ -18,7 +18,7 @@ Claude Code v2.1+ (uses nested `context_window` object)
 
 ### Script Location
 
-`.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh`
+`.claude-isolated/scripts/claude-statusline.sh`
 
 ## ✨ Multi-Provider Support (NEW)
 
@@ -96,7 +96,7 @@ Session JSON → Provider Detection → Adapter → Unified Format → Display
             anthropic | openai | ollama | gemini | generic
 ```
 
-**Location:** `.nvm-isolated/.claude-isolated/scripts/lib/`
+**Location:** `.claude-isolated/scripts/lib/`
 
 **Files:**
 - `provider-adapter.sh` - Factory & detection logic
@@ -857,13 +857,13 @@ When `/compact` is used, the readable file shows a special marker:
 
 Enable statusline in Claude Code settings:
 
-**File:** `.nvm-isolated/.claude-isolated/settings.json` (isolated mode) or `~/.claude/settings.json` (system mode)
+**File:** `.claude-isolated/settings.json` (isolated mode) or `~/.claude/settings.json` (system mode)
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "/absolute/path/to/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh"
+    "command": "/absolute/path/to/.claude-isolated/scripts/claude-statusline.sh"
   }
 }
 ```
@@ -934,16 +934,16 @@ View session context and cached summary directly from command line.
 
 ```bash
 # View cached summary (after /compact)
-.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --cache
+.claude-isolated/scripts/claude-show-cache.sh --cache
 
 # View last 5 messages (default)
-.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh
+.claude-isolated/scripts/claude-show-cache.sh
 
 # View last N messages
-.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --last 10
+.claude-isolated/scripts/claude-show-cache.sh --last 10
 
 # View full conversation
-.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh --full
+.claude-isolated/scripts/claude-show-cache.sh --full
 ```
 
 #### Features
@@ -1145,8 +1145,8 @@ grep -l "search term" .claude-sessions/readable-*.txt
 ## Related Documentation
 
 - **Main Documentation**: `README.md` - iclaude.sh usage and installation
-- **Developer Guide**: `.nvm-isolated/.claude-isolated/CLAUDE.md` - Architecture and internals
-- **Skills System**: `.nvm-isolated/.claude-isolated/skills/` - Claude Code skills integration
+- **Developer Guide**: `.claude-isolated/CLAUDE.md` - Architecture and internals
+- **Skills System**: `.claude-isolated/skills/` - Claude Code skills integration
 - **Proxy Configuration**: `README.md` section on proxy setup
 - **Router Integration**: `README.md` section on Claude Code Router
 
@@ -1155,7 +1155,7 @@ grep -l "search term" .claude-sessions/readable-*.txt
 ### Phase 2.5 (Current — March 2026)
 - **PII Proxy Icon (🛡)**: shows when `ICLAUDE_PII_ACTIVE=1`; displays live masked-items counter from `/api/metrics` with 30s TTL cache; becomes an OSC 8 hyperlink to the server log when the file exists
 - Env vars: `ICLAUDE_PII_ACTIVE`, `ICLAUDE_PII_MASKING_LEVEL`, `ICLAUDE_PII_ACTIVE_PORT`, `ICLAUDE_PII_LOG_PATH` — all exported automatically by `launch.sh`
-- Log path: `{pii-proxy-logs}/{session}.log` (in `.nvm-isolated/.claude-isolated/pii-proxy-logs/`)
+- Log path: `{pii-proxy-logs}/{session}.log` (in `.claude-isolated/pii-proxy-logs/`)
 
 ### Phase 2.4 (March 2026)
 - **Memory Link (🧠)**: new OSC 8 hyperlink to project `MEMORY.md` (auto-memory maintained by Claude Code)

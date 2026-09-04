@@ -6,8 +6,8 @@
 
 set -euo pipefail
 
-HOOK=".nvm-isolated/.claude-isolated/hooks/redact-secrets.py"
-BLOCK_HOOK=".nvm-isolated/.claude-isolated/hooks/block-secrets.py"
+HOOK=".claude-isolated/hooks/redact-secrets.py"
+BLOCK_HOOK=".claude-isolated/hooks/block-secrets.py"
 PASS=0
 FAIL=0
 

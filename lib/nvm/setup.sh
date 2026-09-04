@@ -43,7 +43,9 @@ setup_isolated_nvm() {
 	# Export isolated environment
 	export NVM_DIR="$ISOLATED_NVM_DIR"
 	export NPM_CONFIG_PREFIX="$NVM_DIR/npm-global"
-	export ISOLATED_CONFIG_DIR="$ISOLATED_NVM_DIR/.claude-isolated"
+	# Re-export only. The store path is decided once in lib/core/init.sh; deriving
+	# it again here would silently re-anchor the store to the nvm tree.
+	export ISOLATED_CONFIG_DIR
 
 	# Find the active Node.js version deterministically.
 	local node_version_dir

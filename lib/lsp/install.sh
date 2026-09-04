@@ -51,7 +51,7 @@ install_isolated_lsp_servers() {
 				# Check if plugin already installed
 				local plugins_file=""
 				if [[ -d "$ISOLATED_NVM_DIR" ]]; then
-					plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
+					plugins_file="$ISOLATED_CONFIG_DIR/plugins/installed_plugins.json"
 				else
 					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi
@@ -114,7 +114,7 @@ install_isolated_lsp_servers() {
 				# Check if plugin already installed
 				local plugins_file=""
 				if [[ -d "$ISOLATED_NVM_DIR" ]]; then
-					plugins_file="$ISOLATED_NVM_DIR/.claude-isolated/plugins/installed_plugins.json"
+					plugins_file="$ISOLATED_CONFIG_DIR/plugins/installed_plugins.json"
 				else
 					plugins_file="$HOME/.claude/plugins/installed_plugins.json"
 				fi

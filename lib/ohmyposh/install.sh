@@ -95,7 +95,7 @@ install_isolated_ohmyposh() {
 	echo "Binary: $omp_binary"
 	echo ""
 	echo "Next steps:"
-	echo "1. Theme file already created: .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json"
-	echo "2. Customize theme (optional): edit .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json"
+	echo "1. Theme file already created: .claude-isolated/themes/claude-statusline.omp.json"
+	echo "2. Customize theme (optional): edit .claude-isolated/themes/claude-statusline.omp.json"
 	echo "3. Oh My Posh will be used automatically by statusline script when available"
 }

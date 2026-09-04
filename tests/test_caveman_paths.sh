@@ -4,7 +4,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PATHS="$REPO_ROOT/.nvm-isolated/.claude-isolated/hooks/caveman-paths.js"
+PATHS="$REPO_ROOT/.claude-isolated/hooks/caveman-paths.js"
 
 FAILED=0
 pass() { echo "  PASS: $1"; }

@@ -13,7 +13,7 @@ set -u
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LAUNCH_SH="$REPO_ROOT/lib/launcher/launch.sh"
 SERVER_SCRIPT="$REPO_ROOT/lib/pii-proxy/server.py"
-PYTHON_BIN="${PII_TEST_PYTHON:-$REPO_ROOT/.nvm-isolated/.claude-isolated/pii-proxy-venv/bin/python3}"
+PYTHON_BIN="${PII_TEST_PYTHON:-$REPO_ROOT/.claude-isolated/pii-proxy-venv/bin/python3}"
 
 # ---------------------------------------------------------------------------
 # Assertion A — static

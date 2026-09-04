@@ -470,7 +470,7 @@ fi
 
 ### settings.json
 
-**Location**: `.nvm-isolated/.claude-isolated/settings.json`
+**Location**: `.claude-isolated/settings.json`
 
 ```json
 {
@@ -500,7 +500,7 @@ DEBUG_STATUSLINE=1
 
 ### Oh My Posh Theme
 
-**Location**: `.nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json`
+**Location**: `.claude-isolated/themes/claude-statusline.omp.json`
 
 **Example** (Git segment only):
 ```json
@@ -596,13 +596,13 @@ real    0m0.142s  # Full regeneration
 
 **Check 1**: Verify settings.json
 ```bash
-cat .nvm-isolated/.claude-isolated/settings.json | jq '.statusLine'
+cat .claude-isolated/settings.json | jq '.statusLine'
 ```
 
 **Check 2**: Test script manually
 ```bash
 echo '{"context_window":{"total_input_tokens":1000,"total_output_tokens":500,"used_percentage":10,"context_window_size":200000},"cost":{"total_cost_usd":0.5},"model":{"display_name":"Test"}}' | \
-  bash .nvm-isolated/.claude-isolated/scripts/claude-statusline.sh
+  bash .claude-isolated/scripts/claude-statusline.sh
 ```
 
 **Check 3**: Verify jq
@@ -665,7 +665,7 @@ GIT_TIMEOUT=5  # Instead of 2
 
 **Check 3**: Oh My Posh theme valid?
 ```bash
-jq empty .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json
+jq empty .claude-isolated/themes/claude-statusline.omp.json
 ```
 
 ---
@@ -722,9 +722,9 @@ jq empty .nvm-isolated/.claude-isolated/themes/claude-statusline.omp.json
 
 ### Code
 
-- `.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh` (275 lines)
-- `.nvm-isolated/.claude-isolated/scripts/claude-show-cache.sh` (helper)
-- `.nvm-isolated/.claude-isolated/CLAUDE.md` (full documentation)
+- `.claude-isolated/scripts/claude-statusline.sh` (275 lines)
+- `.claude-isolated/scripts/claude-show-cache.sh` (helper)
+- `.claude-isolated/CLAUDE.md` (full documentation)
 
 ### Documentation
 

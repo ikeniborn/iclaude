@@ -4,8 +4,8 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HOOKS_DIR="$REPO_ROOT/.nvm-isolated/.claude-isolated/hooks"
-STATUSLINE="$REPO_ROOT/.nvm-isolated/.claude-isolated/scripts/claude-statusline.sh"
+HOOKS_DIR="$REPO_ROOT/.claude-isolated/hooks"
+STATUSLINE="$REPO_ROOT/.claude-isolated/scripts/claude-statusline.sh"
 STATS="$HOOKS_DIR/caveman-stats.js"
 
 FAILED=0

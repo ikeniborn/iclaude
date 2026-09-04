@@ -280,10 +280,13 @@ Resource-атрибуты идентифицируют сессию: `service.na
 **Per-project конфиг-дома (режим по умолчанию).** iclaude хранит состояние Claude Code
 в два слоя, зеркаля архитектуру icodex:
 
-- **Общий стор** — `.nvm-isolated/.claude-isolated/`: ассеты, которые переиспользуют
+- **Общий стор** — `.claude-isolated/`: ассеты, которые переиспользуют
   все проекты — skills, hooks, commands, agents, plugins, MCP-регистрации, scripts,
   глобальный `CLAUDE.md`, один логин (`.credentials.json`), `router.json`, шаблон
-  `settings.json`.
+  `settings.json`. Это сосед `.nvm-isolated/`, а не его потомок: `--isolated-clean` и
+  полная переустановка Node.js больше не уносят логин, транскрипты и плагины.
+  Установка, где стор всё ещё лежит внутри дерева nvm, переезжает один раз обычным
+  переименованием при следующем запуске.
 - **Дом проекта** — каждый запуск вычисляет стабильный
   `.claude-homes/<project>-<sha256(git-root)[0:12]>/` и направляет `CLAUDE_CONFIG_DIR`
   в него: сессии, история и состояние проекта раздельны по репозиториям (git worktree
@@ -458,8 +461,8 @@ iclaude.sh
 └── plugin/iwiki/    — iwiki плагин (архивный/отключён; документация идёт через MCP-сервер iwiki)
 ```
 
-Хуки безопасности: `.nvm-isolated/.claude-isolated/hooks/`
-Скрипты статуслайна: `.nvm-isolated/.claude-isolated/scripts/`
+Хуки безопасности: `.claude-isolated/hooks/`
+Скрипты статуслайна: `.claude-isolated/scripts/`
 
 ---
 

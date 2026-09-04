@@ -9,10 +9,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PYTHON_BIN=".nvm-isolated/.claude-isolated/pii-proxy-venv/bin/python3"
-SERVER_PY=".nvm-isolated/.claude-isolated/pii-proxy-server.py"
-LOG_DIR=".nvm-isolated/.claude-isolated/pii-proxy-logs"
-HOOK_DIR=".nvm-isolated/.claude-isolated/hooks"
+PYTHON_BIN=".claude-isolated/pii-proxy-venv/bin/python3"
+SERVER_PY=".claude-isolated/pii-proxy-server.py"
+LOG_DIR=".claude-isolated/pii-proxy-logs"
+HOOK_DIR=".claude-isolated/hooks"
 
 PASS=0
 FAIL=0
@@ -125,7 +125,7 @@ sys.path.insert(0, '.')
 
 # Minimal import test: verify _build_upstream_headers logic exists in server module
 # by parsing the source directly (avoids full server startup)
-with open('.nvm-isolated/.claude-isolated/pii-proxy-server.py') as f:
+with open('.claude-isolated/pii-proxy-server.py') as f:
     src = f.read()
 
 assert '_build_upstream_headers' in src, "MISSING: _build_upstream_headers"
@@ -171,7 +171,7 @@ echo ""
 # TEST 3: pii_proxy_mode marker file
 # ─────────────────────────────────────────────────
 echo "▶ Test 3: pii_proxy_mode marker file"
-mode_file=".nvm-isolated/.claude-isolated/pii-proxy-venv/pii_proxy_mode"
+mode_file=".claude-isolated/pii-proxy-venv/pii_proxy_mode"
 if [[ -f "$mode_file" ]]; then
     mode=$(cat "$mode_file" | tr -d '[:space:]')
     case "$mode" in

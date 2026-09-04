@@ -204,6 +204,12 @@ fi
 
 # Main execution starts here (previously main() function)
 
+# One-way relocation of a pre-existing shared store out of the vendored nvm tree.
+# Must run before anything reads the store. It refuses — and stops the launch —
+# rather than let a command run against an empty store while the real one sits at
+# the legacy path.
+migrate_isolated_store || exit 1
+
     test_mode=false
     skip_test=false
     show_password=false

@@ -255,7 +255,7 @@ CONFIGURATION:
 
 AUTHENTICATION:
   OAuth Token (default):
-    - Stored in ~/.claude/.credentials.json (system) and .nvm-isolated/.claude-isolated/.credentials.json (isolated)
+    - Stored in ~/.claude/.credentials.json (system) and .claude-isolated/.credentials.json (isolated)
     - Automatically refreshed every 5 minutes or on HTTP 401
     - Token expiration checked at startup (warns if < 1 hour remaining)
     - Run '/login' in Claude Code if token expired

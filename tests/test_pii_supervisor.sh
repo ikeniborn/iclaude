@@ -3,12 +3,12 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SERVER="$REPO_ROOT/.nvm-isolated/.claude-isolated/pii-proxy-server.py"
+SERVER="$REPO_ROOT/.claude-isolated/pii-proxy-server.py"
 
 pass() { echo "PASS[$1]: $2"; }
 fail() { echo "FAIL[$1]: $2"; cleanup; exit 1; }
 
-PY="$REPO_ROOT/.nvm-isolated/.claude-isolated/pii-proxy-venv/bin/python3"
+PY="$REPO_ROOT/.claude-isolated/pii-proxy-venv/bin/python3"
 [[ -x "$PY" ]] || PY="python3"
 command -v "$PY" >/dev/null 2>&1 || { echo "SKIP: python3 not found"; exit 0; }
 [[ -f "$SERVER" ]] || { echo "SKIP: server script not found"; exit 0; }

@@ -6,7 +6,7 @@ import os
 
 HOOK = os.path.join(
     os.path.dirname(__file__), "..",
-    ".nvm-isolated", ".claude-isolated", "hooks", "cache-report.py",
+    ".claude-isolated", "hooks", "cache-report.py",
 )
 
 

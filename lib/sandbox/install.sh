@@ -1064,6 +1064,11 @@ _generate_microvm_ssh_key() {
 # One-time at install; re-run --install-microvm to rebuild after NVM updates.
 # Requires sudo (loop mount for populating the image via rsync).
 # Image stored at ISOLATED_CONFIG_DIR/bin/nvm.img (covered by .gitignore).
+#
+# The image is built from two host trees. The guest layout is unchanged — it still
+# expects the store at /mnt/nvm/.claude-isolated — but on the host the store is no
+# longer inside the nvm tree, so it is copied in as a second rsync pass instead of
+# arriving for free with the first.
 # Returns:
 #   0 - success (or image already up-to-date)
 #   1 - failure
@@ -1071,6 +1076,7 @@ _generate_microvm_ssh_key() {
 _create_microvm_nvm_image() {
 	local nvm_img="${MICRO_VM_NVM_IMG:-${ISOLATED_CONFIG_DIR}/bin/nvm.img}"
 	local nvm_src="${ISOLATED_NVM_DIR:-}"
+	local store_src="${ISOLATED_CONFIG_DIR:-}"
 
 	if [[ -z "$nvm_src" || ! -d "$nvm_src" ]]; then
 		print_error "microVM: isolated NVM directory not found: ${nvm_src:-<unset>}"
@@ -1080,22 +1086,25 @@ _create_microvm_nvm_image() {
 
 	# Loop mount requires root — sudo will prompt for password if needed.
 
-	# Estimate NVM content size (subtract large host-specific dirs: bin/, projects/, pii-proxy-venv/).
+	# Estimate content size across both source trees, subtracting the large
+	# host-specific store dirs that the rsync excludes drop anyway (bin/, projects/,
+	# pii-proxy-venv/, debug/).
 	# Note: du --exclude=PATTERN does not work reliably with full paths on all GNU versions.
 	# Use subtraction: total minus excluded dirs (if they exist).
 	# Add 20% headroom. Minimum 512MiB, round to 64MiB boundary.
-	local nvm_size_kb
+	local nvm_size_kb store_size_kb=0
 	nvm_size_kb=$(du -sk "$nvm_src" 2>/dev/null | awk '{print $1}')
-	for _excl_dir in \
-		"$nvm_src/.claude-isolated/bin" \
-		"$nvm_src/.claude-isolated/projects" \
-		"$nvm_src/.claude-isolated/pii-proxy-venv" \
-		"$nvm_src/.claude-isolated/debug"; do
-		if [[ -d "$_excl_dir" ]]; then
-			local _excl_kb; _excl_kb=$(du -sk "$_excl_dir" 2>/dev/null | awk '{print $1}')
-			nvm_size_kb=$(( nvm_size_kb - _excl_kb ))
-		fi
-	done
+	if [[ -n "$store_src" && -d "$store_src" ]]; then
+		store_size_kb=$(du -sk "$store_src" 2>/dev/null | awk '{print $1}')
+		for _excl_dir in bin projects pii-proxy-venv debug; do
+			if [[ -d "$store_src/$_excl_dir" ]]; then
+				local _excl_kb; _excl_kb=$(du -sk "$store_src/$_excl_dir" 2>/dev/null | awk '{print $1}')
+				store_size_kb=$(( store_size_kb - _excl_kb ))
+			fi
+		done
+		[[ "$store_size_kb" -lt 0 ]] && store_size_kb=0
+	fi
+	nvm_size_kb=$(( nvm_size_kb + store_size_kb ))
 	[[ "$nvm_size_kb" -lt 1 ]] && nvm_size_kb=1
 	local nvm_size_mb=$(( (nvm_size_kb * 12 / 10 + 1023) / 1024 ))
 	nvm_size_mb=$(( (nvm_size_mb < 512 ? 512 : nvm_size_mb + 63) / 64 * 64 ))
@@ -1165,35 +1174,57 @@ _create_microvm_nvm_image() {
 	fi
 
 	print_info "microVM: populating NVM image via rsync..."
-	local _rsync_excludes=(
-		--exclude='.claude-isolated/bin/'
-		--exclude='.claude-isolated/projects/'
-		--exclude='.claude-isolated/pii-proxy-venv/'
-		--exclude='.claude-isolated/pii-proxy*'
-		--exclude='.claude-isolated/debug/'
-		--exclude='.claude-isolated/file-history/'
-		--exclude='.claude-isolated/todos/'
-		--exclude='.claude-isolated/paste-cache/'
-		--exclude='.claude-isolated/tasks/'
-		--exclude='.claude-isolated/telemetry/'
-		--exclude='.claude-isolated/session-env/'
-		--exclude='.claude-isolated/cache/'
-		--exclude='.claude-isolated/shell-snapshots/'
-		--exclude='.claude-isolated/plans/'
-		--exclude='.claude-isolated/statsig/'
-		--exclude='.claude-isolated/ssh/'
-		--exclude='.claude-isolated/chrome/'
-		--exclude='.claude-isolated/microvm-run/'
-		--exclude='.claude-isolated/microvm-snapshots/'
-		--exclude='.claude-isolated/backups/'
+	# nvm tree → image root. Only nvm's own build artefacts are dropped here; the
+	# store is a separate source now and carries its own exclude list.
+	local _nvm_excludes=(
 		--exclude='versions/node/*/include/'
 		--exclude='versions/node/*/.npm/'
 		--exclude='.npm/'
 	)
+	# Store → /mnt/nvm/.claude-isolated inside the guest. The patterns are the same
+	# host-specific runtime dirs as before, now relative to the store root instead
+	# of carrying a .claude-isolated/ prefix.
+	local _store_excludes=(
+		--exclude='bin/'
+		--exclude='projects/'
+		--exclude='pii-proxy-venv/'
+		--exclude='pii-proxy*'
+		--exclude='debug/'
+		--exclude='file-history/'
+		--exclude='todos/'
+		--exclude='paste-cache/'
+		--exclude='tasks/'
+		--exclude='telemetry/'
+		--exclude='session-env/'
+		--exclude='cache/'
+		--exclude='shell-snapshots/'
+		--exclude='plans/'
+		--exclude='statsig/'
+		--exclude='ssh/'
+		--exclude='chrome/'
+		--exclude='microvm-run/'
+		--exclude='microvm-snapshots/'
+		--exclude='backups/'
+	)
+	# The store pass must follow the nvm pass: the first rsync runs with --delete
+	# against the image root and would otherwise remove the store it just placed.
+	local _have_store=false
+	[[ -n "$store_src" && -d "$store_src" ]] && _have_store=true
+	if [[ "$_have_store" == "false" ]]; then
+		print_warning "microVM: no shared store at ${store_src:-<unset>} — guest config will be empty"
+	fi
+
 	if [[ "$_use_fuse" == "true" ]]; then
 		# fuse2fs with fakeroot: rsync runs as current user, no privilege needed
-		if ! rsync -a --delete --info=progress2 "${_rsync_excludes[@]}" "$nvm_src/" "$mnt_tmp/"; then
+		if ! rsync -a --delete --info=progress2 "${_nvm_excludes[@]}" "$nvm_src/" "$mnt_tmp/"; then
 			print_warning "microVM: rsync had errors — NVM image may be incomplete"
+		fi
+		if [[ "$_have_store" == "true" ]]; then
+			print_info "microVM: adding the shared store as .claude-isolated..."
+			if ! rsync -a --delete --info=progress2 "${_store_excludes[@]}" \
+				"$store_src/" "$mnt_tmp/.claude-isolated/"; then
+				print_warning "microVM: store rsync had errors — guest config may be incomplete"
+			fi
 		fi
 		fusermount -u "$mnt_tmp" 2>/dev/null \
 			|| fusermount3 -u "$mnt_tmp" 2>/dev/null \
@@ -1201,8 +1232,15 @@ _create_microvm_nvm_image() {
 	else
 		# Suppress rsync stderr (goes through su/sudo; error noise from shell init is expected).
 		# stdout (--info=progress2) is piped through su and visible to the user.
-		if ! _priv_run rsync -a --delete --info=progress2 "${_rsync_excludes[@]}" "$nvm_src/" "$mnt_tmp/" 2>/dev/null; then
+		if ! _priv_run rsync -a --delete --info=progress2 "${_nvm_excludes[@]}" "$nvm_src/" "$mnt_tmp/" 2>/dev/null; then
 			print_warning "microVM: rsync had errors — NVM image may be incomplete"
+		fi
+		if [[ "$_have_store" == "true" ]]; then
+			print_info "microVM: adding the shared store as .claude-isolated..."
+			if ! _priv_run rsync -a --delete --info=progress2 "${_store_excludes[@]}" \
+				"$store_src/" "$mnt_tmp/.claude-isolated/" 2>/dev/null; then
+				print_warning "microVM: store rsync had errors — guest config may be incomplete"
+			fi
 		fi
 		_priv_run umount "$mnt_tmp" || true
 	fi

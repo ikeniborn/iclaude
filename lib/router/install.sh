@@ -37,8 +37,8 @@ install_isolated_router() {
 	hash -r 2>/dev/null || true
 
 	# Check if router.json exists, if not copy from example
-	local router_config="${ISOLATED_NVM_DIR}/.claude-isolated/router.json"
-	local router_example="${ISOLATED_NVM_DIR}/.claude-isolated/router.json.example"
+	local router_config="${ISOLATED_CONFIG_DIR}/router.json"
+	local router_example="${ISOLATED_CONFIG_DIR}/router.json.example"
 
 	if [[ ! -f "$router_config" ]] && [[ -f "$router_example" ]]; then
 		print_info "Creating router.json from template..."

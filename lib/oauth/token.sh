@@ -25,8 +25,8 @@ check_token_expiration() {
     fi
 
     # Check isolated credentials if exists
-    if [[ -f "$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json" ]]; then
-        credentials_files+=("$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json")
+    if [[ -f "$ISOLATED_CONFIG_DIR/.credentials.json" ]]; then
+        credentials_files+=("$ISOLATED_CONFIG_DIR/.credentials.json")
     fi
 
     # If no credentials found, skip check
@@ -100,7 +100,7 @@ check_oauth_token() {
 
     if [[ "$skip_isolated" == "false" ]] && [[ -d "$ISOLATED_NVM_DIR" ]]; then
         # Use isolated config
-        credentials_file="$ISOLATED_NVM_DIR/.claude-isolated/.credentials.json"
+        credentials_file="$ISOLATED_CONFIG_DIR/.credentials.json"
     else
         # Use system config
         credentials_file="$HOME/.claude/.credentials.json"

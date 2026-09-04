@@ -3,7 +3,7 @@
 ## Local stdio
 
 iclaude registers `iwiki-mcp` as a local stdio MCP server at launch from the tracked,
-secret-free `.nvm-isolated/.claude-isolated/mcp/iwiki.json` (see `lib/iwiki/mcp.sh`). The
+secret-free `.claude-isolated/mcp/iwiki.json` (see `lib/iwiki/mcp.sh`). The
 server resolves the project's own read/write/primary binding server-side from the
 project-root `.iwiki.toml` — no client-side preflight is needed or run.
 
@@ -60,7 +60,7 @@ publishing it needs both in the same session.
 
 When both local (`IWIKI_COMMAND` resolvable, `IWIKI_LLM_KEY` set) and remote
 (`IWIKI_REMOTE_URL` + `IWIKI_REMOTE_TOKEN`) are usable, `lib/iwiki/mcp.sh` registers the
-tracked `.nvm-isolated/.claude-isolated/mcp/iwiki-dual.json` instead of either single
+tracked `.claude-isolated/mcp/iwiki-dual.json` instead of either single
 config. It declares two distinct servers in one `--mcp-config`:
 
 - `iwiki-local` — the same stdio registration as single-local mode, so

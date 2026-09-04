@@ -1017,7 +1017,7 @@ deployment:
     - isolated: Portable installation in .nvm-isolated/ directory
     - system: System-wide NVM installation
   configuration_modes:
-    - isolated_config: Config in .nvm-isolated/.claude-isolated/
+    - isolated_config: Config in .claude-isolated/
     - shared_config: Config in ~/.claude/
   proxy_support:
     - HTTPS (recommended, preserves domain names)
@@ -1059,7 +1059,7 @@ deployment:
         - TAP interface (sudo, configured once by --install-microvm; auto-updated at runtime)
 
 skills_integration:
-  skills_directory: .nvm-isolated/.claude-isolated/skills/
+  skills_directory: .claude-isolated/skills/
   available_skills:
     - structured-planning
     - bash-development

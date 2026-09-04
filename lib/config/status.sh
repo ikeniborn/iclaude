@@ -105,7 +105,7 @@ check_config_status() {
 	if [[ "$config_dir" == "$HOME/.claude" ]]; then
 		print_info "Configuration type: SHARED (system-wide)"
 		echo "  All installations use this config"
-	elif [[ "$config_dir" == *".nvm-isolated/.claude-isolated"* ]]; then
+	elif [[ "$config_dir" == *"/.claude-isolated"* ]]; then
 		print_info "Configuration type: ISOLATED (project-local)"
 		echo "  Only this project uses this config"
 	else

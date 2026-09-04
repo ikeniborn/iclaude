@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PROXY = ROOT / ".nvm-isolated" / ".claude-isolated" / "pii-proxy-server.py"
+PROXY = ROOT / ".claude-isolated" / "pii-proxy-server.py"
 
 # A credential-shaped secret long enough to match the proxy's REDACT_PATTERNS
 # (sk- prefix + 20+ body chars). It is planted in the upstream completion so the
