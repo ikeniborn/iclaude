@@ -269,6 +269,71 @@ compute_lockfile_hash() {
 # Example:
 #   update_lockfile_hash || print_warning "Could not update lockfile hash"
 #######################################
+#######################################
+# Resolve the installed Claude binary file, preferring the same layouts as
+# get_nvm_claude_path: npm-global/bin/claude target -> claude.exe -> cli.js.
+# Outputs:
+#   absolute file path on stdout, empty when none found
+#######################################
+_resolve_claude_binary_file() {
+	local prefix="${ISOLATED_NVM_DIR}/npm-global"
+	if [[ -e "$prefix/bin/claude" ]]; then
+		readlink -f "$prefix/bin/claude" 2>/dev/null
+		return 0
+	fi
+	local lib="$prefix/lib/node_modules/@anthropic-ai/claude-code"
+	if [[ -f "$lib/bin/claude.exe" ]]; then
+		printf '%s' "$lib/bin/claude.exe"
+	elif [[ -f "$lib/cli.js" ]]; then
+		printf '%s' "$lib/cli.js"
+	fi
+	return 0
+}
+
+#######################################
+# Record sha256 of the installed Claude binary into the lockfile (S8).
+# Missing binary or tooling is a calm no-op — never an error.
+# Returns:
+#   0 - always
+#######################################
+record_claude_binary_hash() {
+	local file hash
+	file=$(_resolve_claude_binary_file)
+	[[ -n "$file" && -f "$file" ]] || return 0
+	command -v sha256sum &>/dev/null || return 0
+	hash=$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)
+	[[ -n "$hash" ]] || return 0
+	if declare -f set_lockfile_field &>/dev/null; then
+		set_lockfile_field "claudeBinarySha256" "$hash" >/dev/null 2>&1 || true
+	fi
+	return 0
+}
+
+#######################################
+# Verify the recorded Claude binary hash against the on-disk binary (S8).
+# Warn-only: a mismatch prints a warning with a repair hint; a missing
+# recorded hash, binary, or tooling is silent. Never blocks the launch.
+# Returns:
+#   0 - always
+#######################################
+verify_claude_binary_hash() {
+	local expected file actual
+	[[ -f "$ISOLATED_LOCKFILE" ]] || return 0
+	command -v jq &>/dev/null || return 0
+	expected=$(jq -r '.claudeBinarySha256 // empty' "$ISOLATED_LOCKFILE" 2>/dev/null)
+	[[ -n "$expected" ]] || return 0
+	file=$(_resolve_claude_binary_file)
+	[[ -n "$file" && -f "$file" ]] || return 0
+	command -v sha256sum &>/dev/null || return 0
+	actual=$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)
+	[[ -n "$actual" ]] || return 0
+	if [[ "$actual" != "$expected" ]]; then
+		print_warning "Claude binary sha256 mismatch: on-disk binary does not match the lockfile pin"
+		print_warning "Repair with: ./iclaude.sh --install-from-lockfile (or --update to re-pin)"
+	fi
+	return 0
+}
+
 _update_lockfile_hash_unlocked() {
 	local hash
 	hash=$(compute_lockfile_hash)

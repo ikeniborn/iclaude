@@ -300,6 +300,9 @@ Session-env garbage collection is scoped to the active home, so one project's la
 never prunes another project's session state. Concurrent launches are safe: home
 population and store writes (lockfile, npm installs) are serialized with `flock`,
 fail-soft — a busy or unavailable lock warns and proceeds, never blocking a launch.
+After each Claude Code install/update the lockfile also pins the installed native
+binary by sha256 (`claudeBinarySha256`); at startup a mismatch prints a warning with a
+repair hint (`--install-from-lockfile` / `--update`) and the launch continues.
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 

@@ -773,6 +773,8 @@ fi
 
         # Check if lockfile has changed since last environment update
         check_lockfile_changes
+        # S8: warn-only integrity check of the installed Claude binary
+        verify_claude_binary_hash
 
         # Add --dangerously-skip-permissions only when --no-save is used
         if [[ "$skip_permissions" == true ]]; then
@@ -878,6 +880,8 @@ fi
 
     # Check if lockfile has changed since last environment update
     check_lockfile_changes
+    # S8: warn-only integrity check of the installed Claude binary
+    verify_claude_binary_hash
 
     # Add --dangerously-skip-permissions only when --no-save is used
     if [[ "$skip_permissions" == true ]]; then
