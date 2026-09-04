@@ -294,7 +294,9 @@ shared copy; after that only its machine-owned keys (`hooks`, `enabledPlugins`,
 `statusLine`, `extraKnownMarketplaces`) are re-synced from the store on every launch,
 while user-owned keys (`model`, `language`, `permissions`, …) stay per home.
 Session-env garbage collection is scoped to the active home, so one project's launch
-never prunes another project's session state.
+never prunes another project's session state. Concurrent launches are safe: home
+population and store writes (lockfile, npm installs) are serialized with `flock`,
+fail-soft — a busy or unavailable lock warns and proceeds, never blocking a launch.
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 

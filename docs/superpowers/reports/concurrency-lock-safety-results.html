@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отчёт: concurrency-lock-safety (S6)</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#12141a; --surface:#1b1e27; --surface2:#232734; --text:#e6e8ee; --muted:#9aa1b2;
+  --accent:#6ea8fe; --ok:#3fb96f; --warn:#e0a83c; --line:#333949; --code:#2a2f3e;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#eef0f4; --text:#1d2330; --muted:#5b6475;
+  --accent:#2f6fce; --ok:#1e8a4c; --warn:#a4700f; --line:#d7dbe3; --code:#eef0f4;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:2rem;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:1080px;margin-inline:auto}
+h1{font-size:1.5rem;margin:.2rem 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.badge{display:inline-block;padding:.12rem .55rem;border-radius:1rem;font-size:.78rem;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--surface);border-radius:8px;overflow:hidden;font-size:.9rem}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:.08rem .35rem;border-radius:4px;font-size:.85em}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 8px 8px 0;margin:.8rem 0;color:var(--muted)}
+.toggle{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);border-radius:2rem;padding:.35rem .9rem;cursor:pointer;font-size:.85rem}
+.lead{color:var(--muted);margin:.2rem 0 1rem}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ тема</button>
+
+<h1>concurrency-lock-safety — отчёт result-стадии <span class="badge ok">OK</span></h1>
+<p class="lead">Слайс S6: fail-soft flock-сериализация наполнения домов и записей в стор.</p>
+
+<h2>1. Резюме внедрения</h2>
+<table>
+<tr><th>Топик</th><td><code>concurrency-lock-safety</code> (слайс S6 плана <code>reference/plans/shared-store-per-project-home-architecture</code>)</td></tr>
+<tr><th>Intent</th><td><code>docs/superpowers/intents/2026-09-04-concurrency-lock-safety-intent.md</code> (approved, check-chain intent OK)</td></tr>
+<tr><th>Spec / Plan</th><td>n/a — continuation <code>execute</code></td></tr>
+<tr><th>База diff</th><td><code>HEAD</code> = <code>33acb332</code> (master, merge S5), ветка <code>dev-concurrency-lock-safety</code></td></tr>
+</table>
+
+<h2>2. Выполненные изменения</h2>
+<table>
+<thead><tr><th>Файл</th><th>Тип</th><th>Что делает</th></tr></thead>
+<tbody>
+<tr><td><code>lib/core/lock.sh</code></td><td>добавлен</td><td><code>iclaude_with_lock &lt;lockfile&gt; &lt;timeout&gt; &lt;cmd…&gt;</code>: эксклюзивный flock, fail-soft (нет flock / нет доступа / таймаут → warning + запуск без лока), проброс exit-кода</td></tr>
+<tr><td><code>lib/config/isolated.sh</code></td><td>изменён</td><td>Populate-блок вынесен в <code>_populate_claude_home</code>, вызывается под <code>&lt;home&gt;/.iclaude.lock</code> (30s); fallback без lock.sh</td></tr>
+<tr><td><code>lib/lockfile/save.sh</code></td><td>изменён</td><td><code>save_isolated_lockfile</code> и <code>update_lockfile_hash</code> — тонкие обёртки над <code>_*_unlocked</code> под store-локом (60s)</td></tr>
+<tr><td><code>lib/nvm/install.sh</code></td><td>изменён</td><td><code>install_npm_package_with_lockfile</code> — обёртка под store-локом (600s, npm-работа)</td></tr>
+<tr><td><code>iclaude.sh</code></td><td>изменён</td><td>Сорсинг <code>lib/core/lock.sh</code> в core-блоке</td></tr>
+<tr><td><code>tests/test_lock_safety.sh</code></td><td>добавлен</td><td>13 проверок: проброс exit-кодов, доказательство mutual exclusion (100/100 инкрементов двумя процессами), fail-soft таймаут, деградация без flock, параллельные setup_claude_home одного проекта → консистентный дом, параллельные записи хэша → валидный однострочный файл, наличие обёрток</td></tr>
+<tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td>изменены</td><td>Фраза про сериализацию и fail-soft</td></tr>
+<tr><td><code>docs/superpowers/intents/…-intent.md</code></td><td>добавлен</td><td>Утверждённый intent слайса</td></tr>
+</tbody>
+</table>
+
+<h2>3. Результаты</h2>
+<table>
+<thead><tr><th>Desired Outcome (intent)</th><th>Статус</th><th>Свидетельство</th></tr></thead>
+<tbody>
+<tr><td>Переиспользуемый fail-soft helper</td><td><span class="badge ok">DONE</span></td><td>тесты «exit propagated», «timeout fail-soft», «missing flock degrades»</td></tr>
+<tr><td>Mutual exclusion без потерь</td><td><span class="badge ok">DONE</span></td><td>тест «no lost increments» — 100/100 при двух конкурентах</td></tr>
+<tr><td>Конкурентные setup одного проекта — консистентный дом</td><td><span class="badge ok">DONE</span></td><td>тесты «concurrent: marker/settings/link»</td></tr>
+<tr><td>Store-лок на трёх chokepoint'ах</td><td><span class="badge ok">DONE</span></td><td>обёртки + тест параллельных записей хэша; test_lockfile_core_sync 27/27 — прозрачность</td></tr>
+<tr><td>Неконкурентный путь неизменен</td><td><span class="badge ok">DONE</span></td><td>S1 20/20, S2 21/21, S3 18/18, S4 12/12, S5 16/16, env-map, phase0 — все зелёные</td></tr>
+</tbody>
+</table>
+<div class="note">Верификация: <code>tests/test_lock_safety.sh</code> → PASS=13 FAIL=0 (TDD: сперва 7 FAIL);
+все контракты S1–S5 целы; lockfile-core-sync 27/27. База <code>33acb332</code>.
+GWT: сценарий <code>concurrency-lock-safety</code>; <code>lib/config/isolated.sh</code> → <span class="badge ok">resolved</span>,
+<code>lib/core/lock.sh</code> и тест → <span class="badge warn">unresolved</span> (новый файл вне графа до merge; тесты вне графа структурно) — advisory.</div>
+
+<h2>4. Влияние на систему</h2>
+<table>
+<thead><tr><th>Область</th><th>Влияние</th><th>Риски / follow-up</th></tr></thead>
+<tbody>
+<tr><td>Параллельные запуски одного проекта</td><td>Наполнение дома сериализовано — гонки settings/links/migration устранены</td><td>—</td></tr>
+<tr><td>Параллельные --update / инсталлы</td><td>Записи локфайла и npm-инсталлы сериализованы store-локом</td><td>—</td></tr>
+<tr><td>Надёжность запуска</td><td>Fail-soft: проблема с локом не ломает и не вешает запуск (таймауты 30/60/600s)</td><td>—</td></tr>
+<tr><td>Слабость icodex «no locking»</td><td>Закрыта</td><td>Остались S7 (GC), S8 (integrity), S9 (docs)</td></tr>
+</tbody>
+</table>
+</body>
+</html>
