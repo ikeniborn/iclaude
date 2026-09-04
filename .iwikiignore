@@ -15,6 +15,7 @@
 
 # Scratch notes (bug write-ups, investigation memos) are not documentable source.
 .claude/
+.claude-isolated/
 .claude-plugin/
 .githooks/
 .github/

@@ -65,8 +65,8 @@ scripts/.claude_proxy_credentials  # Legacy
 # microVM v2 block images — generated at --install-microvm, not committed
 # nvm.img: pre-built NVM snapshot (read-only per-session /dev/vdb)
 # workspace-*.img: per-session workspace (auto-cleaned by stop_microvm)
-.nvm-isolated/.claude-isolated/bin/nvm.img
-.nvm-isolated/.claude-isolated/bin/*.img
+.claude-isolated/bin/nvm.img
+.claude-isolated/bin/*.img
 
 # Isolated NVM environment - temporary/cache files only
 .nvm-isolated/.cache/
@@ -83,56 +83,58 @@ scripts/.claude_proxy_credentials  # Legacy
 # Per-project config homes (runtime state, ICLAUDE_HOME_MODE=per-project)
 .claude-homes/
 
-# Isolated Claude Code configuration (session data)
+# Shared Claude store (session data). A sibling of .nvm-isolated, not a child:
+# the nvm tree is reinstalled and removed wholesale, the store holds the login,
+# the transcripts and the plugins.
 # Ignore session data, but keep skills and templates
 # NOTE: CLAUDE.md is in project root (not here) to avoid user-level memory pollution
-.nvm-isolated/.claude-isolated/*
-!.nvm-isolated/.claude-isolated/commands/
-!.nvm-isolated/.claude-isolated/commands/**
-!.nvm-isolated/.claude-isolated/skills/
-!.nvm-isolated/.claude-isolated/skills/**
-!.nvm-isolated/.claude-isolated/agents/
-!.nvm-isolated/.claude-isolated/agents/**
-!.nvm-isolated/.claude-isolated/CHANGELOG-v7.0.md
-!.nvm-isolated/.claude-isolated/mcp/
-!.nvm-isolated/.claude-isolated/mcp/**
+.claude-isolated/*
+!.claude-isolated/commands/
+!.claude-isolated/commands/**
+!.claude-isolated/skills/
+!.claude-isolated/skills/**
+!.claude-isolated/agents/
+!.claude-isolated/agents/**
+!.claude-isolated/CHANGELOG-v7.0.md
+!.claude-isolated/mcp/
+!.claude-isolated/mcp/**
 # Launch-time render of mcp/iwiki.json (adds the optional code-graph keys)
-.nvm-isolated/.claude-isolated/mcp/*.runtime.json
-!.nvm-isolated/.claude-isolated/settings.json
-!.nvm-isolated/.claude-isolated/hooks/
-!.nvm-isolated/.claude-isolated/hooks/**
-!.nvm-isolated/.claude-isolated/commands/
-!.nvm-isolated/.claude-isolated/commands/**
-!.nvm-isolated/.claude-isolated/plugins/
-!.nvm-isolated/.claude-isolated/plugins/**
+.claude-isolated/mcp/*.runtime.json
+!.claude-isolated/settings.json
+!.claude-isolated/hooks/
+!.claude-isolated/hooks/**
+!.claude-isolated/commands/
+!.claude-isolated/commands/**
+!.claude-isolated/plugins/
+!.claude-isolated/plugins/**
 # Exclude plugin cache and marketplace dirs (contain nested git repos, regenerable via install)
-.nvm-isolated/.claude-isolated/plugins/cache/
-.nvm-isolated/.claude-isolated/plugins/marketplaces/
-.nvm-isolated/.claude-isolated/plugins/data/
+.claude-isolated/plugins/cache/
+.claude-isolated/plugins/marketplaces/
+.claude-isolated/plugins/data/
 # Exclude plugin runtime state (contains absolute paths, machine-specific, regenerated on install)
-.nvm-isolated/.claude-isolated/plugins/installed_plugins.json
-.nvm-isolated/.claude-isolated/plugins/known_marketplaces.json
-.nvm-isolated/.claude-isolated/plugins/install-counts-cache.json
-.nvm-isolated/.claude-isolated/plugins/plugin-catalog-cache.json
+.claude-isolated/plugins/installed_plugins.json
+.claude-isolated/plugins/known_marketplaces.json
+.claude-isolated/plugins/install-counts-cache.json
+.claude-isolated/plugins/plugin-catalog-cache.json
 # Runtime timestamp rewritten on every launch (pure cache, churns git)
-.nvm-isolated/.claude-isolated/plugins/.last_inuse_sweep
-!.nvm-isolated/.claude-isolated/CLAUDE.md
+.claude-isolated/plugins/.last_inuse_sweep
+!.claude-isolated/CLAUDE.md
 # Re-exclude Python bytecode inside hooks/ (negation above overrides global __pycache__/ rule)
-.nvm-isolated/.claude-isolated/hooks/__pycache__/
-.nvm-isolated/.claude-isolated/hooks/**/*.pyc
+.claude-isolated/hooks/__pycache__/
+.claude-isolated/hooks/**/*.pyc
 
 # Router configuration (only example in git, actual config ignored)
-!.nvm-isolated/.claude-isolated/router.json.example
-!.nvm-isolated/.claude-isolated/router.json
+!.claude-isolated/router.json.example
+!.claude-isolated/router.json
 
 # Plugin manifest (declarative list of plugins to install after git clone)
-!.nvm-isolated/.claude-isolated/plugins-manifest.json
+!.claude-isolated/plugins-manifest.json
 
 # Status line scripts and themes (Phase 1 & 2)
-!.nvm-isolated/.claude-isolated/scripts/
-!.nvm-isolated/.claude-isolated/scripts/**
-!.nvm-isolated/.claude-isolated/themes/
-!.nvm-isolated/.claude-isolated/themes/**
+!.claude-isolated/scripts/
+!.claude-isolated/scripts/**
+!.claude-isolated/themes/
+!.claude-isolated/themes/**
 
 # Prevent accidental commit of runtime router config
 .claude-code-router/
@@ -140,10 +142,10 @@ scripts/.claude_proxy_credentials  # Legacy
 # Re-include the dir for traversal, re-ignore its runtime contents (config.json,
 # *.pid), then re-include the plugins/*.js — so config.json and the PID file stay
 # ignored while x-project-id.js / ollama-reasoning.js are tracked.
-!.nvm-isolated/.claude-isolated/.claude-code-router/
-.nvm-isolated/.claude-isolated/.claude-code-router/*
-!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/
-!.nvm-isolated/.claude-isolated/.claude-code-router/plugins/*.js
+!.claude-isolated/.claude-code-router/
+.claude-isolated/.claude-code-router/*
+!.claude-isolated/.claude-code-router/plugins/
+!.claude-isolated/.claude-code-router/plugins/*.js
 
 # Backup files (any location, any extension with backup suffix)
 *.backup
@@ -172,7 +174,7 @@ scripts/.claude_proxy_credentials  # Legacy
 
 # Note: Platform-specific binaries (oh-my-posh-*) ARE committed to git
 # Claude Code Agent Workspace - ignore most content, keep skills/
-# Memory is stored in isolated config: .nvm-isolated/.claude-isolated/projects/*/memory/
+# Memory is stored in the shared store: .claude-isolated/projects/*/memory/
 .claude/*
 !.claude/skills
 !.claude/skills/**
