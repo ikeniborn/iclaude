@@ -196,7 +196,7 @@
     ],
     "defaultMode": "default"
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
     "PreToolUse": [
       {
@@ -319,8 +319,8 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "plansDirectory": ".claude/plans",
+  "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
-  "skipDangerousModePermissionPrompt": true,
-  "tui": "fullscreen"
+  "skipDangerousModePermissionPrompt": true
 }
