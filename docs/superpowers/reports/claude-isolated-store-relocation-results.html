@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Результат: claude-isolated-store-relocation</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#2b2b3a; --muted:#6b6b80;
+  --accent:#5c6bc0; --accent-2:#3949ab; --border:#d6d8e6; --line:#9aa0b4; --zebra:#eef0f8;
+  --ok:#43a047; --ok-2:#2e7d32; --warn:#fb8c00; --warn-2:#ef6c00; --danger:#e53935; --danger-2:#c62828;
+  --shadow:rgba(40,40,80,.18);
+}
+body:has(#theme-toggle:checked){
+  --bg:#181825; --surface:#262637; --fg:#cdd6f4; --muted:#a6adc8;
+  --accent:#89b4fa; --accent-2:#5e95f0; --border:#3a3b52; --line:#6c7086; --zebra:#21222f;
+  --ok:#a6e3a1; --ok-2:#74c46e; --warn:#f9e2af; --warn-2:#f5c95b; --danger:#f38ba8; --danger-2:#e8638a;
+  --shadow:rgba(0,0,0,.45);
+}
+body{
+  margin:0 auto; padding:1.5rem 2rem 4rem; max-width:1080px;
+  font:16px/1.55 system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent),
+    var(--bg);
+  color:var(--fg);
+  transition:background .3s, color .3s;
+}
+.theme-btn{
+  position:sticky; top:.5rem; float:right; z-index:5;
+  cursor:pointer; user-select:none;
+  padding:.25rem .6rem; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface);
+}
+h1{ font-size:1.7rem; margin:.2rem 0 .4rem; }
+h2{ font-size:1.22rem; margin:2.2rem 0 .6rem; padding-bottom:.3rem; border-bottom:2px solid var(--accent); }
+h3{ font-size:1.02rem; margin:1.4rem 0 .4rem; color:var(--accent); }
+code{ font-family:ui-monospace, monospace; font-size:.88em;
+  background:color-mix(in srgb, var(--accent) 10%, var(--surface));
+  padding:.05rem .32rem; border-radius:4px; }
+.lead{ font-size:1.08rem; }
+.sub{ color:var(--muted); font-size:.95rem; }
+.note{ border-left:4px solid var(--accent); padding:.55rem 1rem; margin:1rem 0;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:0 8px 8px 0;
+  box-shadow:0 1px 8px var(--shadow); }
+.note.warn{ border-left-color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+details{ background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:.7rem 1rem; margin:.7rem 0; box-shadow:0 1px 8px var(--shadow); }
+details summary{ cursor:pointer; font-weight:600; color:var(--accent); }
+details[open] summary{ margin-bottom:.55rem; }
+ul.tight li{ margin:.28rem 0; }
+.badge{ display:inline-block; font-size:.72rem; padding:.05rem .5rem; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
+.badge.ok{ color:var(--ok-2); border-color:var(--ok); }
+.badge.part{ color:var(--warn-2); border-color:var(--warn); }
+.badge.info{ color:var(--accent); border-color:var(--accent); }
+.badge.dang{ color:var(--danger-2); border-color:var(--danger); }
+
+.rpt-table{ border-collapse:separate; border-spacing:0; width:100%; background:var(--surface);
+  margin:1rem 0; font-size:.92rem; border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 12px var(--shadow); }
+.rpt-table th, .rpt-table td{ border-bottom:1px solid var(--border); padding:.5rem .75rem; text-align:left; vertical-align:top; }
+.rpt-table tbody tr:last-child td{ border-bottom:none; }
+.rpt-table thead th{ background:var(--accent); color:var(--bg); }
+.rpt-table tbody tr:nth-child(even){ background:var(--zebra); }
+.rpt-table tbody tr:hover{ background:color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.rpt-table td code{ white-space:nowrap; }
+.num{ text-align:right; font-family:ui-monospace, monospace; white-space:nowrap; }
+.plus{ color:var(--ok-2); } .minus{ color:var(--danger-2); }
+
+.rpt-c4 .boundary{
+  border:1.6px dashed var(--accent); border-radius:12px;
+  padding:1.8rem 1rem 1rem; margin:.7rem 0; position:relative;
+  display:flex; flex-wrap:wrap; gap:.6rem;
+  background:color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.rpt-c4 .boundary::before{
+  content:attr(data-label); position:absolute; top:-.7rem; left:.9rem;
+  background:var(--bg); padding:0 .45rem; font-size:.8rem; color:var(--accent); font-weight:600;
+}
+.rpt-c4 .comp{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:.55rem .85rem; min-width:6rem; font-size:.85rem; box-shadow:0 1px 6px var(--shadow);
+  border-left:4px solid var(--accent);
+}
+.rpt-c4 .comp b{ color:var(--accent); }
+.rpt-c4 .comp.danger{ border-left-color:var(--danger); }
+.rpt-c4 .comp.danger b{ color:var(--danger-2); }
+.rpt-c4 .comp.ok{ border-left-color:var(--ok); }
+.rpt-c4 .comp.ok b{ color:var(--ok-2); }
+.rpt-c4 .comp .sub{ font-size:.78rem; }
+
+figure.diagram{ margin:1.2rem 0; }
+figure.diagram svg{ width:100%; height:auto; display:block; overflow:visible; }
+figcaption{ color:var(--muted); font-size:.85rem; margin-top:.35rem; text-align:center; }
+.card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; filter:url(#dropshadow); transition:stroke .15s, stroke-width .15s; }
+.node:hover .card{ stroke:var(--accent); stroke-width:2.5; }
+.bar-accent{ fill:var(--accent); } .bar-ok{ fill:var(--ok); }
+.bar-warn{ fill:var(--warn); } .bar-term{ fill:var(--danger); }
+.t-title{ fill:var(--fg); font:600 14px system-ui, sans-serif; }
+.t-sub{ fill:var(--muted); font:11px system-ui, sans-serif; }
+.t-mono{ font-family:ui-monospace, monospace; }
+text{ pointer-events:none; }
+.conn{ fill:none; stroke:var(--line); stroke-width:2; }
+.conn-a{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; }
+.conn-term{ fill:none; stroke:var(--danger); stroke-width:2.2; }
+.flow{ fill:none; stroke:var(--accent); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+.flow-ok{ fill:none; stroke:var(--ok); stroke-width:2.6; stroke-dasharray:8 6; animation:dash 1.1s linear infinite; }
+@keyframes dash{ to{ stroke-dashoffset:-14; } }
+@media (prefers-reduced-motion: reduce){ .flow,.flow-ok{ animation:none; } }
+.lbl-bg{ fill:var(--bg); }
+.lbl{ fill:var(--fg); font:11px system-ui, sans-serif; }
+.boundary-rect{ fill:none; stroke:var(--accent); stroke-width:1.6; stroke-dasharray:7 6; opacity:.85; }
+</style>
+</head>
+<body>
+<input type="checkbox" id="theme-toggle" hidden>
+<label for="theme-toggle" class="theme-btn" title="Переключить тёмную/светлую тему">🌙 / ☀️</label>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="160%">
+    <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="var(--shadow)" flood-opacity="1"/>
+  </filter>
+  <marker id="arr"     markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--line)"/></marker>
+  <marker id="arrA"    markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--accent)"/></marker>
+  <marker id="arrOk"   markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--ok)"/></marker>
+  <marker id="arrTerm" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 Z" fill="var(--danger)"/></marker>
+</defs></svg>
+
+<main class="report">
+
+<h1>Результат внедрения: claude-isolated-store-relocation</h1>
+<p class="lead">Общий стор Claude вынесен из вендорного дерева nvm в корень репозитория. Имя каталога сохранено, гостевой контракт microVM заморожен, существующая установка переезжает одним переименованием.</p>
+<p class="sub">маршрут цепочки <code>execute</code> · база диффа <code>origin/master</code> · 159 файлов, +781 / −232 · семь слайсов, PR #128–#134 · сгенерировано 2026-09-04</p>
+
+<h2>1. Резюме внедрения</h2>
+
+<table class="rpt-table">
+  <thead><tr><th>Артефакт цепочки</th><th>Путь / значение</th></tr></thead>
+  <tbody>
+    <tr><td>Intent</td><td><code>docs/superpowers/intents/2026-09-04-claude-isolated-store-relocation-intent.md</code> — <span class="badge ok">approved</span></td></tr>
+    <tr><td>Spec</td><td><code>n/a</code> — маршрут <code>execute</code> не пишет спецификацию</td></tr>
+    <tr><td>Plan</td><td><code>n/a</code> — маршрут <code>execute</code> не пишет план</td></tr>
+    <tr><td>Страница задачи</td><td><code>iwiki://iclaude/reference/tasks/claude-isolated-store-relocation</code></td></tr>
+    <tr><td>GWT-сценарий</td><td><code>iclaude#claude-isolated-store-relocation</code> — <span class="badge ok">projection ready</span></td></tr>
+    <tr><td>База диффа</td><td><code>origin/master</code> → интеграционная ветка <code>dev-claude-isolated-store-relocation</code></td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Зачем.</b> Стор держит логин, все транскрипты проектов, набор плагинов и около 4 ГБ образов microVM и venv. Он лежал внутри <code>.nvm-isolated/</code> — дерева, которое iclaude переустанавливает, пересобирает и в <code>--isolated-clean</code> удаляет целиком командой <code>rm -rf "$ISOLATED_NVM_DIR"</code>.</div>
+
+<h2>2. Выполненные изменения</h2>
+
+<p>87 файлов — чистые переименования, git записал их как <code>R</code>, история следует за каждым файлом. Остальные 72 сгруппированы по назначению.</p>
+
+<table class="rpt-table">
+  <thead><tr><th>Файл</th><th class="num">+</th><th class="num">−</th><th>Что делает изменение</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>.claude-isolated/**</code> <span class="badge info">87 renames</span></td>
+      <td class="num">—</td><td class="num">—</td>
+      <td>Отслеживаемые ассеты стора переехали в корень: skills, hooks, commands, agents, mcp, scripts, themes, <code>settings.json</code>, <code>CLAUDE.md</code>, <code>router.json</code>, два CCR-трансформера</td>
+    </tr>
+    <tr><td><code>lib/core/init.sh</code></td><td class="num plus">7</td><td class="num minus">2</td><td>Чокпоинт: <code>ISOLATED_CONFIG_DIR</code> = <code>${SCRIPT_DIR}/.claude-isolated</code>; <code>LOCKFILE_HASH_FILE</code> перестал быть литералом</td></tr>
+    <tr><td><code>lib/config/isolated.sh</code></td><td class="num plus">51</td><td class="num minus">2</td><td>Новая <code>migrate_isolated_store</code>; shared-ветка <code>setup_isolated_config</code> перестала игнорировать override</td></tr>
+    <tr><td><code>iclaude.sh</code></td><td class="num plus">6</td><td class="num minus">0</td><td>Вызов миграции после загрузки модулей и до разбора аргументов; отказ останавливает запуск</td></tr>
+    <tr><td><code>lib/sandbox/install.sh</code></td><td class="num plus">73</td><td class="num minus">35</td><td>Сборка образа из двух деревьев: список исключений разделён, добавлен второй rsync стора, пересчитана оценка размера</td></tr>
+    <tr><td><code>lib/nvm/cleanup.sh</code></td><td class="num plus">10</td><td class="num minus">4</td><td>Подтверждение <code>--isolated-clean</code> теперь называет то, что переживёт удаление</td></tr>
+    <tr><td><code>lib/nvm/setup.sh</code></td><td class="num plus">3</td><td class="num minus">1</td><td><code>setup_isolated_nvm</code> ре-экспортирует путь вместо повторного вывода</td></tr>
+    <tr><td><code>lib/router/*.sh</code>, <code>lib/lsp/*.sh</code>, <code>lib/oauth/token.sh</code>, <code>lib/launcher/launch.sh</code></td><td class="num plus">14</td><td class="num minus">14</td><td>14 склеек <code>$ISOLATED_NVM_DIR/.claude-isolated</code> свёрнуты на чокпоинт</td></tr>
+    <tr><td><code>lib/lockfile/save.sh</code>, <code>lib/nvm/install.sh</code></td><td class="num plus">3</td><td class="num minus">3</td><td>Store-lock переехал под стор — это его состояние, а не состояние nvm</td></tr>
+    <tr><td><code>lib/config/status.sh</code></td><td class="num plus">1</td><td class="num minus">1</td><td>Определение типа конфига перестало матчить исчезнувшую подстроку</td></tr>
+    <tr><td><code>lib/nvm/repair.sh</code></td><td class="num plus">4</td><td class="num minus">2</td><td>Документирована третья legacy-форма пути, которую обобщённый шаг уже переписывал</td></tr>
+    <tr><td><code>.gitignore</code></td><td class="num plus">46</td><td class="num minus">44</td><td>Блок сохранил форму один-в-один, сменился только якорь</td></tr>
+    <tr><td><code>.iwikiignore</code></td><td class="num plus">1</td><td class="num minus">0</td><td>Стор получил собственную строку взамен утраченного прикрытия <code>.nvm-isolated/</code></td></tr>
+    <tr><td><code>tests/test_store_relocation.sh</code> <span class="badge info">new</span></td><td class="num plus">87</td><td class="num minus">0</td><td>26 проверок: переименование, идемпотентность, оба отказа, выживание стора при удалении дерева nvm</td></tr>
+    <tr><td><code>tests/test_microvm_image_layout.sh</code> <span class="badge info">new</span></td><td class="num plus">98</td><td class="num minus">0</td><td>23 проверки раскладки гостевого образа; массивы исключений извлекаются из исходника</td></tr>
+    <tr><td><code>tests/test_store_gitignore.sh</code> <span class="badge info">new</span></td><td class="num plus">65</td><td class="num minus">0</td><td>36 проверок через <code>git check-ignore</code>: 21 runtime-путь скрыт, 12 публикуемых доступны</td></tr>
+    <tr><td>ещё 27 файлов в <code>tests/</code> и <code>plugin/loen/</code></td><td class="num plus">~50</td><td class="num minus">~45</td><td>Сьюты перенаправлены на новый стор; шесть из них выражали путь не строкой</td></tr>
+    <tr><td><code>README.md</code>, <code>docs/README.ru.md</code></td><td class="num plus">14</td><td class="num minus">8</td><td>Соседство, безопасность <code>--isolated-clean</code>, автоматический переезд — синхронно в обоих</td></tr>
+    <tr><td><code>docs/functions/*.md</code>, <code>docs/architecture/**</code>, <code>.claude_config.example</code>, <code>docs/iwiki-mcp-modes.md</code></td><td class="num plus">68</td><td class="num minus">65</td><td>73 ссылки на путь; четыре места потребовали правки смысла, а не только пути</td></tr>
+    <tr><td><code>lib/command/usage.sh</code>, <code>lib/ohmyposh/install.sh</code></td><td class="num plus">3</td><td class="num minus">3</td><td>Пользовательские строки <code>--help</code> и подсказки о теме</td></tr>
+    <tr><td><code>docs/superpowers/intents/…-intent.md</code> <span class="badge info">new</span></td><td class="num plus">170</td><td class="num minus">0</td><td>Артефакт цепочки: intent + <code>review</code> + <code>result_check</code></td></tr>
+  </tbody>
+</table>
+
+<details>
+<summary>Что осталось со старым путём — намеренно</summary>
+<ul class="tight">
+  <li><code>lib/nvm/repair.sh</code> — документирует ту самую legacy-форму, которую <code>repair_settings_paths</code> переписывает в <code>$CLAUDE_CONFIG_DIR</code>.</li>
+  <li><code>tests/test_store_relocation.sh</code> — строит до-миграционную раскладку как фикстуру.</li>
+  <li><code>tests/test_store_gitignore.sh</code> — утверждает, что по старому пути ничего не отслеживается.</li>
+  <li><code>docs/superpowers/</code> — датированный архив цепочек; его 70 ссылок фиксируют, что было верно на момент написания каждого документа.</li>
+</ul>
+</details>
+
+<h2>3. Результаты</h2>
+
+<p>Маршрут <code>execute</code> сверяет дифф с Desired Outcomes интента, а не с шагами плана.</p>
+
+<table class="rpt-table">
+  <thead><tr><th>Desired Outcome</th><th>Статус</th><th>Доказательство</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>DO-1</b> <code>--check-config</code> показывает новый путь, установка продолжает работать без ручных шагов</td>
+      <td><span class="badge part">PARTIAL</span></td>
+      <td>Путь, метка типа конфига и миграция в диффе (<code>lib/core/init.sh</code>, <code>lib/config/status.sh</code>, <code>lib/config/isolated.sh</code>, <code>iclaude.sh</code>), покрыты юнит-тестами. Наблюдение на живой установке — человеческий чекпоинт, не выполнялось.</td>
+    </tr>
+    <tr>
+      <td><b>DO-2</b> в <code>.nvm-isolated/</code> только артефакты nvm и node; в корне три соседа</td>
+      <td><span class="badge ok">DONE</span></td>
+      <td>87 переименований наружу; <code>git ls-files .nvm-isolated/.claude-isolated</code> → 0; стор отслеживается в корне. <code>.claude-homes</code> — runtime-состояние, появляется при первом запуске.</td>
+    </tr>
+    <tr>
+      <td><b>DO-3</b> <code>--isolated-clean</code> удаляет дерево nvm и оставляет стор</td>
+      <td><span class="badge ok">DONE</span></td>
+      <td><code>cleanup_isolated_nvm</code> всегда удалял только <code>ISOLATED_NVM_DIR</code>, а стор больше не внутри. <code>test_store_relocation.sh</code> выполняет это удаление и проверяет, что стор, логин и настройки выжили.</td>
+    </tr>
+    <tr>
+      <td><b>DO-4</b> сессия microVM находит <code>/mnt/nvm/.claude-isolated</code> и стартует</td>
+      <td><span class="badge part">PARTIAL</span></td>
+      <td>Двухпроходная сборка в <code>lib/sandbox/install.sh</code>; <code>test_microvm_image_layout.sh</code> доказывает раскладку гостя и что <code>microvm.sh</code> по-прежнему читает гостевой путь. Загрузка реальной VM требует firecracker, не выполнялась.</td>
+    </tr>
+    <tr>
+      <td><b>DO-5</b> <code>.gitignore</code> адресует стор по новому корню, дерево чистое сразу после переезда</td>
+      <td><span class="badge ok">DONE</span></td>
+      <td><code>.gitignore</code> переякорен без смены формы; <code>test_store_gitignore.sh</code> — 36 проверок через <code>git check-ignore</code>; после коммита переезда дерево чистое.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Лишние изменения</h3>
+<p>Нет. Каждый изменённый файл трассируется либо в Desired Outcome, либо в Health Metric интента (сьюты), либо в его steering-ограничение «доставлять последовательными слайсами, каждый проверяемо».</p>
+
+<h3>Находки</h3>
+
+<table class="rpt-table">
+  <thead><tr><th>ID</th><th>Уровень</th><th>Содержание</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>R-001</code></td><td><span class="badge part">WARNING</span></td>
+      <td>Биндинг <code>verifies → tests/test_store_relocation.sh</code> резолвится как <code>unresolved</code>: опубликованный снапшот код-графа старше файла, потому что локальный сервер держит чекаут <code>master</code>. Разойдётся, когда master получит изменение и граф будет пересобран.</td>
+    </tr>
+    <tr>
+      <td><code>R-002</code></td><td><span class="badge info">INFO</span></td>
+      <td>DO-1 и DO-4 остаются <code>PARTIAL</code> до реального переезда и загрузки microVM на живой установке. Оба — человеческие чекпоинты по autonomy zones интента, а не пробелы в изменении.</td>
+    </tr>
+    <tr>
+      <td><code>F-001</code></td><td><span class="badge ok">FIXED</span></td>
+      <td>Вики-страница <code>architecture/per-project-homes</code> называла store-lock под корнем nvm. Исправлено в S7 вместе с новой секцией <code>Store Location</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Вердикт: <span class="badge ok">OK</span></b> — ни одного Desired Outcome со статусом <code>MISSING</code>, лишних изменений нет, критических находок нет.</div>
+
+<h2>4. Влияние на систему</h2>
+
+<table class="rpt-table">
+  <thead><tr><th>Область</th><th>Изменение поведения</th><th>Риск и что дальше</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Разрешение пути<br><span class="sub">core/init, nvm/setup, config/isolated</span></td>
+      <td><code>ISOLATED_CONFIG_DIR</code> — единственный источник пути стора; ни один модуль не выводит его из <code>ISOLATED_NVM_DIR</code></td>
+      <td>Низкий. Нарушение падает громко: <code>set -u</code> на неустановленной переменной вместо тихого указания не туда</td>
+    </tr>
+    <tr>
+      <td>Данные пользователя<br><span class="sub">логин, транскрипты, плагины</span></td>
+      <td><code>--isolated-clean</code> и полная переустановка Node перестали их уничтожать</td>
+      <td>Улучшение. Ранее одна команда уносила ~5 ГБ пользовательского состояния</td>
+    </tr>
+    <tr>
+      <td>Миграция установок<br><span class="sub">config/isolated, iclaude.sh</span></td>
+      <td>Один <code>mv</code> при запуске; два отказа с остановкой запуска вместо догадки</td>
+      <td>Средний, ограничен. Односторонняя: старая версия <code>iclaude.sh</code> после переезда не работает. Откат — обратный <code>mv</code></td>
+    </tr>
+    <tr>
+      <td>microVM<br><span class="sub">sandbox/install</span></td>
+      <td>Хостовая сборка образа берёт стор вторым проходом; гостевой контракт не менялся</td>
+      <td>Средний. Порядок проходов критичен: первый идёт с <code>--delete</code> по корню образа. Зафиксирован проверкой в тесте</td>
+    </tr>
+    <tr>
+      <td>Публикация в git<br><span class="sub">.gitignore, .iwikiignore</span></td>
+      <td>Набор публикуемых файлов не изменился — блок сохранил форму, сменился якорь</td>
+      <td>Низкий. 36 проверок держат границу, включая то, что <code>.credentials.json</code> остаётся скрытым</td>
+    </tr>
+    <tr>
+      <td>Совместимость<br><span class="sub">старый путь</span></td>
+      <td>Symlink-совместимости нет намеренно</td>
+      <td>Принято. <code>rsync -a</code> затащил бы такую ссылку в гостевой образ битой</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note warn"><b>Осталось на человеке.</b> PR интеграционной ветки в <code>master</code>, реальный переезд стора на этой машине и загрузка microVM после него. По autonomy zones интента первое — зона «только человек», остальные два — proposal-first.</div>
+
+<h2>5. Схемы</h2>
+
+<h3>Раскладка: было и стало</h3>
+
+<figure class="rpt-c4">
+  <div class="boundary" data-label="Было · корень репозитория">
+    <div class="comp"><b>.nvm-isolated/</b><br><span class="sub">nvm · node · npm-global</span></div>
+    <div class="boundary" data-label="внутри дерева nvm — источник проблемы">
+      <div class="comp danger"><b>.claude-isolated/</b><br><span class="sub">логин · транскрипты · плагины · 4 ГБ образов</span></div>
+    </div>
+    <div class="comp"><b>.claude-homes/</b><br><span class="sub">дома проектов</span></div>
+  </div>
+  <div class="boundary" data-label="Стало · корень репозитория">
+    <div class="comp"><b>.nvm-isolated/</b><br><span class="sub">только nvm · node · npm-global</span></div>
+    <div class="comp ok"><b>.claude-isolated/</b><br><span class="sub">общий стор — сосед, не потомок</span></div>
+    <div class="comp"><b>.claude-homes/</b><br><span class="sub">дома проектов</span></div>
+  </div>
+</figure>
+<figcaption>Три соседа вместо вложенности. <code>--isolated-clean</code> удаляет первый и не касается второго.</figcaption>
+
+<h3>Поток миграции при запуске</h3>
+
+<figure class="diagram">
+<svg viewBox="0 0 920 400" role="img" aria-label="Поток миграции стора при запуске с двумя ветвями отказа">
+  <rect class="boundary-rect" x="24" y="20" width="872" height="150" rx="16"/>
+  <rect class="lbl-bg" x="40" y="12" width="330" height="18"/>
+  <text class="lbl" x="48" y="25" font-weight="600">iclaude.sh · до разбора аргументов, до чтения стора</text>
+
+  <g class="node"><rect class="card" x="48" y="60" width="170" height="60" rx="12"/><rect class="bar-accent" x="56" y="72" width="5" height="36" rx="2.5"/><text class="t-title" x="133" y="86" text-anchor="middle">init_environment</text><text class="t-sub" x="133" y="104" text-anchor="middle">решает путь стора</text></g>
+  <g class="node"><rect class="card" x="290" y="60" width="200" height="60" rx="12"/><rect class="bar-warn" x="298" y="72" width="5" height="36" rx="2.5"/><text class="t-title" x="390" y="86" text-anchor="middle">migrate_isolated_store</text><text class="t-sub" x="390" y="104" text-anchor="middle">старый путь есть?</text></g>
+  <g class="node"><rect class="card" x="562" y="60" width="200" height="60" rx="12"/><rect class="bar-warn" x="570" y="72" width="5" height="36" rx="2.5"/><text class="t-title" x="662" y="86" text-anchor="middle">проверка предусловий</text><text class="t-sub" x="662" y="104" text-anchor="middle">цель свободна · одна ФС</text></g>
+
+  <path class="flow" marker-end="url(#arrA)" d="M218,90 H283"/>
+  <path class="flow" marker-end="url(#arrA)" d="M490,90 H555"/>
+
+  <path class="conn-a" marker-end="url(#arrA)" d="M390,120 V145 Q390,157 402,157 L640,157"/>
+  <rect class="lbl-bg" x="404" y="148" width="150" height="18"/>
+  <text class="lbl" x="479" y="161" text-anchor="middle">нет — запуск продолжается</text>
+
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M662,120 C662,200 400,200 300,242"/>
+  <rect class="lbl-bg" x="420" y="182" width="150" height="18"/>
+  <text class="lbl" x="495" y="195" text-anchor="middle">предусловия сошлись</text>
+
+  <path class="conn-term" marker-end="url(#arrTerm)" d="M662,120 C662,220 720,240 740,282"/>
+  <rect class="lbl-bg" x="676" y="196" width="180" height="18"/>
+  <text class="lbl" x="766" y="209" text-anchor="middle">два стора · разные ФС</text>
+
+  <g class="node"><rect class="card" x="60" y="244" width="480" height="66" rx="14"/><rect class="bar-ok" x="70" y="258" width="5" height="38" rx="2.5"/><text class="t-title t-mono" x="300" y="272" text-anchor="middle">mv .nvm-isolated/.claude-isolated → .claude-isolated</text><text class="t-sub" x="300" y="292" text-anchor="middle">переименование · без копирования · без удаления</text></g>
+  <g class="node"><rect class="card" x="580" y="284" width="300" height="66" rx="14"/><rect class="bar-term" x="590" y="298" width="5" height="38" rx="2.5"/><text class="t-title" x="730" y="312" text-anchor="middle">отказ · запуск остановлен</text><text class="t-sub" x="730" y="332" text-anchor="middle">ничего не перемещено</text></g>
+</svg>
+<figcaption>Отказ останавливает запуск намеренно: иначе команда отработала бы по пустому стору, пока настоящий лежит по старому пути.</figcaption>
+</figure>
+
+<h3>Сборка образа microVM</h3>
+
+<figure class="diagram">
+<svg viewBox="0 0 920 250" role="img" aria-label="Двухпроходная сборка образа microVM из двух деревьев хоста">
+  <g class="node"><rect class="card" x="40" y="30" width="200" height="60" rx="12"/><rect class="bar-accent" x="48" y="42" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="140" y="56" text-anchor="middle">.nvm-isolated/</text><text class="t-sub" x="140" y="74" text-anchor="middle">хост · дерево node</text></g>
+  <g class="node"><rect class="card" x="40" y="140" width="200" height="60" rx="12"/><rect class="bar-ok" x="48" y="152" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="140" y="166" text-anchor="middle">.claude-isolated/</text><text class="t-sub" x="140" y="184" text-anchor="middle">хост · общий стор</text></g>
+
+  <g class="node"><rect class="card" x="360" y="85" width="200" height="60" rx="12"/><rect class="bar-warn" x="368" y="97" width="5" height="36" rx="2.5"/><text class="t-title" x="460" y="109" text-anchor="middle">nvm.img · ext4</text><text class="t-sub" x="460" y="127" text-anchor="middle">два прохода rsync</text></g>
+
+  <path class="flow" marker-end="url(#arrA)" d="M240,60 C300,60 310,100 353,108"/>
+  <rect class="lbl-bg" x="248" y="52" width="112" height="18"/><text class="lbl" x="304" y="65" text-anchor="middle">1 · с --delete</text>
+
+  <path class="flow-ok" marker-end="url(#arrOk)" d="M240,170 C300,170 310,132 353,124"/>
+  <rect class="lbl-bg" x="248" y="162" width="150" height="18"/><text class="lbl" x="323" y="175" text-anchor="middle">2 · в .claude-isolated/</text>
+
+  <g class="node"><rect class="card" x="680" y="85" width="200" height="60" rx="12"/><rect class="bar-accent" x="688" y="97" width="5" height="36" rx="2.5"/><text class="t-title t-mono" x="780" y="109" text-anchor="middle">/mnt/nvm</text><text class="t-sub" x="780" y="127" text-anchor="middle">гость · /dev/vdb, RO</text></g>
+  <path class="conn" marker-end="url(#arr)" d="M560,115 H673"/>
+  <rect class="lbl-bg" x="576" y="88" width="90" height="18"/><text class="lbl" x="621" y="101" text-anchor="middle">контракт</text>
+</svg>
+<figcaption>Порядок обязателен: первый проход идёт с <code>--delete</code> по корню образа и стёр бы стор, положенный раньше. В госте путь <code>/mnt/nvm/.claude-isolated</code> не менялся.</figcaption>
+</figure>
+
+</main>
+</body>
+</html>

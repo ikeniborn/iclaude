@@ -30,8 +30,62 @@ review:
         Update the "Concurrency Locking" and "Settings Managed Region" sections of
         iclaude/architecture/per-project-homes in slice S7 so the lock path reads from
         the relocated store root.
+      verdict: fixed
+      verdict_at: 2026-09-04
+result_check:
+  verdict: OK
+  intent_hash: fc10a327b3600f74
+  last_run: 2026-09-04
+  diff_base: origin/master
+  outcomes:
+    - id: DO-1
+      status: PARTIAL
+      note: >-
+        The store path, the config-type label and the launch-time relocation are all in
+        the diff (lib/core/init.sh, lib/config/status.sh, lib/config/isolated.sh,
+        iclaude.sh) and unit-verified. Observing --check-config on a real installation
+        is the human checkpoint the intent reserves and has not been run.
+    - id: DO-2
+      status: DONE
+      note: >-
+        87 renames out of .nvm-isolated; git ls-files on the legacy path returns 0; the
+        store is tracked at the repository root. .claude-homes is runtime state and
+        appears on first launch.
+    - id: DO-3
+      status: DONE
+      note: >-
+        cleanup_isolated_nvm only ever removed ISOLATED_NVM_DIR, and the store is no
+        longer inside it. tests/test_store_relocation.sh now performs that removal and
+        asserts the store, the login and the settings survive.
+    - id: DO-4
+      status: PARTIAL
+      note: >-
+        The two-pass image build is in lib/sandbox/install.sh and
+        tests/test_microvm_image_layout.sh proves the guest layout, including that
+        microvm.sh still reads /mnt/nvm/.claude-isolated. Booting a real VM needs
+        firecracker and was not run.
+    - id: DO-5
+      status: DONE
+      note: >-
+        .gitignore re-anchored with its shape unchanged; tests/test_store_gitignore.sh
+        passes 36 assertions over git check-ignore; the tree was clean after the move.
+  excess: none
+  findings:
+    - id: R-001
+      severity: WARNING
+      text: >-
+        The scenario's verifies binding tests/test_store_relocation.sh resolves
+        unresolved: the published code-graph snapshot predates the file, because the
+        local graph server holds a master checkout. It resolves once master carries the
+        change and the graph is rebuilt.
       verdict: open
-      verdict_at: null
+    - id: R-002
+      severity: INFO
+      text: >-
+        DO-1 and DO-4 stay PARTIAL until the live relocation and a microVM boot are run
+        on the real installation. Both are human checkpoints under the intent's autonomy
+        zones, not gaps in the change.
+      verdict: open
 ---
 # Intent: claude-isolated-store-relocation
 
