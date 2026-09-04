@@ -274,12 +274,16 @@ Browser task automation via the "Claude in Chrome" extension.
 ./iclaude.sh --per-project-home      # Use a per-project config home (see below)
 ```
 
-**Per-project config homes (experimental).** By default every project launched via
-iclaude shares one isolated config directory. With `--per-project-home` (or
-`ICLAUDE_HOME_MODE=per-project` in `.claude_config`) the launcher instead resolves a
-stable per-project home `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points
-`CLAUDE_CODE`'s `CLAUDE_CONFIG_DIR` at it, so sessions, history, and project state stay
-separate per repository (a git worktree gets its own home). Each home carries a
+**Per-project config homes (default).** The launcher resolves a stable per-project
+home `.claude-homes/<project>-<sha256(git-root)[0:12]>/` and points Claude Code's
+`CLAUDE_CONFIG_DIR` at it, so sessions, history, and project state stay separate per
+repository (a git worktree gets its own home). On the first launch into a fresh home,
+this project's slice of the previous shared state is migrated in — `.claude.json`
+(global keys plus only this project's entry), its `projects/` transcripts, and its
+`history.jsonl` lines — as pure copies: the shared directory is never modified, so
+deleting a home re-migrates from it. Set `ICLAUDE_HOME_MODE=shared` (env or
+`.claude_config`) to restore the previous single shared directory exactly;
+`--per-project-home` remains as the explicit form. Each home carries a
 `home.json` marker recording its project root. Shared assets — `skills/`, `hooks/`,
 `commands/`, `agents/`, `plugins/`, `mcp/`, `scripts/`, `CLAUDE.md`,
 `.credentials.json`, `router.json` — are symlinked from the shared store into every
@@ -290,7 +294,7 @@ shared copy; after that only its machine-owned keys (`hooks`, `enabledPlugins`,
 `statusLine`, `extraKnownMarketplaces`) are re-synced from the store on every launch,
 while user-owned keys (`model`, `language`, `permissions`, …) stay per home.
 Session-env garbage collection is scoped to the active home, so one project's launch
-never prunes another project's session state. The default remains the shared isolated directory;
+never prunes another project's session state.
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 

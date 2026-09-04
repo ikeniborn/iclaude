@@ -155,6 +155,67 @@ sync_home_settings() {
 }
 
 #######################################
+# One-time copy-based migration of this project's slice of the shared config
+# into a fresh per-project home (S5). Keyed on the absence of the home
+# .claude.json; the store is never mutated, so rollback = delete the home.
+# Migrates: .claude.json (global keys + only this project's .projects entry),
+# projects/<mangled-root>/ transcripts, history.jsonl entries for this project.
+# Without jq the .claude.json is copied unreduced (warning) and history starts
+# fresh.
+# Arguments:
+#   $1 - home directory
+#   $2 - store directory
+#   $3 - absolute project root
+# Returns:
+#   0 - success or graceful skip
+#######################################
+migrate_home_from_store() {
+	local home_dir="$1" store_dir="$2" root="$3"
+	local src="$store_dir/.claude.json" dst="$home_dir/.claude.json"
+	[[ -f "$dst" ]] && return 0
+	[[ -f "$src" ]] || return 0
+
+	if command -v jq &>/dev/null; then
+		local tmp="${dst}.tmp.$$"
+		if jq --arg root "$root" \
+			'.projects = (if (.projects // {})[$root] then {($root): .projects[$root]} else {} end)' \
+			"$src" > "$tmp" 2>/dev/null; then
+			mv "$tmp" "$dst" && chmod 600 "$dst"
+		else
+			rm -f "$tmp"
+			print_warning "Failed to reduce .claude.json projects map; copying store file as-is"
+			cp "$src" "$dst" && chmod 600 "$dst"
+		fi
+	else
+		print_warning "jq not found; copying .claude.json without .projects reduction"
+		cp "$src" "$dst" && chmod 600 "$dst"
+	fi
+
+	# This project's transcripts — copy, store untouched.
+	local mangled
+	mangled=$(printf '%s' "$root" | sed -E 's/[^a-zA-Z0-9]/-/g')
+	if [[ -d "$store_dir/projects/$mangled" && ! -e "$home_dir/projects/$mangled" ]]; then
+		mkdir -p "$home_dir/projects"
+		cp -a "$store_dir/projects/$mangled" "$home_dir/projects/" 2>/dev/null \
+			|| print_warning "Transcript migration failed for $mangled"
+	fi
+
+	# History entries for this project only; fresh history without jq.
+	if command -v jq &>/dev/null \
+		&& [[ -f "$store_dir/history.jsonl" && ! -f "$home_dir/history.jsonl" ]]; then
+		if jq -c --arg root "$root" 'select(.project == $root)' \
+			"$store_dir/history.jsonl" > "$home_dir/history.jsonl" 2>/dev/null; then
+			chmod 600 "$home_dir/history.jsonl"
+		else
+			rm -f "$home_dir/history.jsonl"
+		fi
+	fi
+
+	print_info "Migrated project state from the shared config into the per-project home"
+	return 0
+}
+
+#######################################
 # Create (or reuse) the per-project home and export CLAUDE_CONFIG_DIR to it.
 # S1 scope: only the home directory and its home.json marker (project root,
 # created timestamp, schema version) — Claude Code populates the rest itself.
@@ -191,6 +252,7 @@ setup_claude_home() {
 		|| print_warning "Shared-asset linking failed for $home_dir"
 	seed_home_settings "$home_dir" "$store_dir"
 	sync_home_settings "$home_dir" "$store_dir"
+	migrate_home_from_store "$home_dir" "$store_dir" "$root"
 
 	export CLAUDE_CONFIG_DIR="$home_dir"
 	return 0
@@ -198,16 +260,17 @@ setup_claude_home() {
 
 #######################################
 # Setup isolated configuration directory
-# Dispatches on ICLAUDE_HOME_MODE: "per-project" exports CLAUDE_CONFIG_DIR to
-# the per-project home; "shared" (default) keeps the single shared directory.
-# An unknown mode warns and falls back to shared.
+# Dispatches on ICLAUDE_HOME_MODE: "per-project" (default since S5) exports
+# CLAUDE_CONFIG_DIR to the per-project home; "shared" keeps the single shared
+# directory (legacy escape hatch). An unknown mode warns and falls back to
+# shared.
 # Returns:
 #   0 - success
 # Example:
 #   setup_isolated_config || return 1
 #######################################
 setup_isolated_config() {
-	local mode="${ICLAUDE_HOME_MODE:-shared}"
+	local mode="${ICLAUDE_HOME_MODE:-per-project}"
 
 	case "$mode" in
 		per-project)

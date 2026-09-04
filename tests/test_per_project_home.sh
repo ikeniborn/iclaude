@@ -78,14 +78,14 @@ assert_eq "$(cat "$marker")" "$before" "home: second call preserves marker"
 
 # --- setup_isolated_config dispatch ---
 
-# Default (mode unset) → shared dir, no homes dir created.
+# Default (mode unset) → per-project home (S5 flip).
 out="$(
+  cd "$TMP/repoA" || exit 1
   unset ICLAUDE_HOME_MODE
   ISOLATED_NVM_DIR="$TMP/nvm" ISOLATED_HOMES_DIR="$TMP/homes2" setup_isolated_config >/dev/null 2>&1 || exit 1
   printf '%s' "$CLAUDE_CONFIG_DIR"
 )"
-assert_eq "$out" "$TMP/nvm/.claude-isolated" "dispatch: default shared"
-[[ ! -e "$TMP/homes2" ]] && PASS=$((PASS+1)) || { FAIL=$((FAIL+1)); echo "FAIL [dispatch: default creates no homes dir]"; }
+assert_eq "$out" "$TMP/homes2/$id_a" "dispatch: default per-project (S5 flip)"
 
 # mode=shared → shared dir.
 out="$(
