@@ -72,13 +72,16 @@ result_check:
   excess: none
   findings:
     - id: R-001
-      severity: WARNING
+      severity: INFO
       text: >-
         The scenario's verifies binding tests/test_store_relocation.sh resolves
-        unresolved: the published code-graph snapshot predates the file, because the
-        local graph server holds a master checkout. It resolves once master carries the
-        change and the graph is rebuilt.
-      verdict: open
+        unresolved. wiki_lint shows the same binding_unresolved finding for every one of
+        the domain's nine scenarios, because .iwiki.toml sets [code_graph]
+        include_tests = false and the graph therefore holds no test file at all. It is a
+        domain-wide configuration consequence, not a defect this change introduced, and
+        it does not clear by rebuilding. The standard already treats a verifies selector
+        as a pointer to where the test lives rather than evidence that it ran.
+      verdict: accepted
     - id: R-002
       severity: INFO
       text: >-

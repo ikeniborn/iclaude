@@ -237,8 +237,8 @@ text{ pointer-events:none; }
   <thead><tr><th>ID</th><th>Уровень</th><th>Содержание</th></tr></thead>
   <tbody>
     <tr>
-      <td><code>R-001</code></td><td><span class="badge part">WARNING</span></td>
-      <td>Биндинг <code>verifies → tests/test_store_relocation.sh</code> резолвится как <code>unresolved</code>: опубликованный снапшот код-графа старше файла, потому что локальный сервер держит чекаут <code>master</code>. Разойдётся, когда master получит изменение и граф будет пересобран.</td>
+      <td><code>R-001</code></td><td><span class="badge info">INFO · принято</span></td>
+      <td>Биндинг <code>verifies → tests/test_store_relocation.sh</code> резолвится как <code>unresolved</code>. <code>wiki_lint</code> показывает ту же находку <code>binding_unresolved</code> у <b>всех девяти</b> сценариев домена: в <code>.iwiki.toml</code> стоит <code>[code_graph] include_tests = false</code>, поэтому в графе нет ни одного тестового файла. Это следствие конфигурации домена, а не дефект этого изменения, и пересборкой графа не лечится. Стандарт и так трактует <code>verifies</code> как указатель на местоположение теста, а не доказательство его прогона.</td>
     </tr>
     <tr>
       <td><code>R-002</code></td><td><span class="badge info">INFO</span></td>
