@@ -285,7 +285,10 @@ separate per repository (a git worktree gets its own home). Each home carries a
 `.credentials.json`, `router.json` — are symlinked from the shared store into every
 home and self-repair on each launch (a wrong link, or a real copy where a link
 belongs, is replaced with a warning; a stale link is pruned), so one login and one
-skill set serve all projects. The default remains the shared isolated directory;
+skill set serve all projects. `settings.json` is seeded into the home once from the
+shared copy; after that only its machine-owned keys (`hooks`, `enabledPlugins`,
+`statusLine`, `extraKnownMarketplaces`) are re-synced from the store on every launch,
+while user-owned keys (`model`, `language`, `permissions`, …) stay per home. The default remains the shared isolated directory;
 `.claude-homes/` is git-ignored runtime state. `ICLAUDE_HOME_MODE` is consumed by
 iclaude itself and is never de-prefixed.
 

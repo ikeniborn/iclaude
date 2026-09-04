@@ -88,6 +88,72 @@ link_shared_assets() {
 	return 0
 }
 
+# Machine-owned settings.json keys mirrored from the store on every launch (S3).
+# Everything else in a home settings.json is user-owned and never touched.
+_ICLAUDE_SETTINGS_MANAGED_KEYS='{hooks, enabledPlugins, statusLine, extraKnownMarketplaces}'
+
+#######################################
+# Seed a per-project home settings.json from the store — copy-once.
+# An existing home file is never re-seeded; a missing store file is skipped.
+# Arguments:
+#   $1 - home directory
+#   $2 - store directory
+# Returns:
+#   0 - success or skip
+#######################################
+seed_home_settings() {
+	local home_dir="$1" store_dir="$2"
+	local src="$store_dir/settings.json" dst="$home_dir/settings.json"
+	[[ -f "$dst" ]] && return 0
+	if [[ ! -f "$src" ]]; then
+		print_warning "No store settings.json to seed into $home_dir"
+		return 0
+	fi
+	cp "$src" "$dst" || return 0
+	chmod 600 "$dst"
+	print_info "Seeded settings.json into per-project home"
+	return 0
+}
+
+#######################################
+# Mirror the machine-owned settings keys from the store into a home settings.json.
+# User-owned keys are preserved byte-for-byte; a managed key changed or deleted in
+# the home is restored, one removed from the store disappears. The file is only
+# rewritten when content differs; the store is never mutated. Degrades to a
+# warning without jq or without files.
+# Arguments:
+#   $1 - home directory
+#   $2 - store directory
+# Returns:
+#   0 - success or graceful skip
+#######################################
+sync_home_settings() {
+	local home_dir="$1" store_dir="$2"
+	local src="$store_dir/settings.json" dst="$home_dir/settings.json" tmp
+	[[ -f "$src" && -f "$dst" ]] || return 0
+	if ! command -v jq &>/dev/null; then
+		print_warning "jq not found; skipping settings managed-key sync"
+		return 0
+	fi
+	tmp="${dst}.tmp.$$"
+	if ! jq --slurpfile st "$src" \
+		"del(.hooks, .enabledPlugins, .statusLine, .extraKnownMarketplaces)
+		 + (\$st[0] | $_ICLAUDE_SETTINGS_MANAGED_KEYS | with_entries(select(.value != null)))" \
+		"$dst" > "$tmp" 2>/dev/null; then
+		rm -f "$tmp"
+		print_warning "Settings managed-key sync failed; home settings left unchanged"
+		return 0
+	fi
+	if cmp -s "$tmp" "$dst"; then
+		rm -f "$tmp"
+	else
+		mv "$tmp" "$dst"
+		chmod 600 "$dst"
+		print_info "Synced machine-owned settings keys from the store"
+	fi
+	return 0
+}
+
 #######################################
 # Create (or reuse) the per-project home and export CLAUDE_CONFIG_DIR to it.
 # S1 scope: only the home directory and its home.json marker (project root,
@@ -120,8 +186,11 @@ setup_claude_home() {
 	fi
 
 	# Fail-soft: a link failure leaves the home usable, launch continues.
-	link_shared_assets "$home_dir" "${ISOLATED_CONFIG_DIR:-${ISOLATED_NVM_DIR}/.claude-isolated}" \
+	local store_dir="${ISOLATED_CONFIG_DIR:-${ISOLATED_NVM_DIR}/.claude-isolated}"
+	link_shared_assets "$home_dir" "$store_dir" \
 		|| print_warning "Shared-asset linking failed for $home_dir"
+	seed_home_settings "$home_dir" "$store_dir"
+	sync_home_settings "$home_dir" "$store_dir"
 
 	export CLAUDE_CONFIG_DIR="$home_dir"
 	return 0
