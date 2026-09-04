@@ -296,9 +296,13 @@ def main() -> None:
     print(msg, file=sys.stderr)
     write_security_flag('redact', f'{len(found)} secret(s) in {tool}: {", ".join(unique_found)}')
 
-    # Возвращаем модифицированные аргументы через toolInputOverride (CC v2.0.10+)
+    # Возвращаем модифицированные аргументы через toolInputOverride (CC v2.0.10+).
+    # hookEventName обязателен: без него харнесс отбрасывает весь объект вместе с
+    # toolInputOverride, и секрет уходит в инструмент незамаскированным, хотя выше
+    # уже напечатано сообщение об успешной маскировке.
     print(json.dumps({
         'hookSpecificOutput': {
+            'hookEventName': 'PreToolUse',
             'toolInputOverride': new_input,
         }
     }))
