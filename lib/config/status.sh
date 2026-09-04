@@ -24,6 +24,16 @@ check_config_status() {
 	local config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 	print_info "Config directory: $config_dir"
+
+	# Per-project home mode (S5): report the active mode and, when a home is
+	# selected, the resolved home directory with its project root.
+	local home_mode="${ICLAUDE_HOME_MODE:-per-project}"
+	print_info "Home mode: $home_mode (ICLAUDE_HOME_MODE)"
+	if [[ "$home_mode" == "per-project" ]] && [[ -f "$config_dir/home.json" ]]; then
+		local home_root
+		home_root=$(jq -r '.project_root // "unknown"' "$config_dir/home.json" 2>/dev/null || echo "unknown")
+		echo "  Per-project home for: $home_root"
+	fi
 	echo ""
 
 	# Check if directory exists

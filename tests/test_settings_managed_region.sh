@@ -98,10 +98,10 @@ out="$(
 )"
 assert_eq "$out" "true" "integration: setup_claude_home seeds settings"
 
-# --- shared mode: no settings manipulation in shared dir ---
+# --- shared mode (explicit since the S5 default flip): no settings manipulation ---
 mkdir -p "$TMP/nvm/.claude-isolated"
 out="$(
-  unset ICLAUDE_HOME_MODE
+  export ICLAUDE_HOME_MODE=shared
   ISOLATED_NVM_DIR="$TMP/nvm" setup_isolated_config >/dev/null 2>&1 || exit 1
   [[ -e "$TMP/nvm/.claude-isolated/settings.json" ]] && echo present || echo absent
 )"

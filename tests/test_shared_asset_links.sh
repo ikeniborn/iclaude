@@ -86,9 +86,9 @@ out="$(
 )"
 assert_eq "$out" "$STORE/skills" "integration: setup_claude_home wires links"
 
-# --- shared mode: no links appear in the shared config dir ---
+# --- shared mode (explicit since the S5 default flip): no links in shared dir ---
 out="$(
-  unset ICLAUDE_HOME_MODE
+  export ICLAUDE_HOME_MODE=shared
   ISOLATED_NVM_DIR="$TMP/nvm" setup_isolated_config >/dev/null 2>&1 || exit 1
   find "$TMP/nvm/.claude-isolated" -maxdepth 1 -type l | wc -l
 )"
