@@ -67,6 +67,17 @@ git worktree add "$parent/$project-$branch" "$branch"
 Uncommitted changes in the way → stop and report; the user commits or stashes. A missing
 base branch → stop and report. Verify with `git worktree list --porcelain` before working.
 
+If worktrees created outside VS Code do not show up there, tell the user to enable
+detection in VS Code settings:
+
+```json
+{
+  "scm.repositories.explorer": true,
+  "git.detectWorktrees": true,
+  "git.detectWorktreesLimit": 50
+}
+```
+
 ## Mode 2 — commit and push
 
 Assumes the work is already on its `dev-<topic>` branch.
@@ -119,6 +130,54 @@ After the PR exists:
 - the parent agent records the event on the wiki task page (see Task Log in `CLAUDE.md`);
   this skill never writes the wiki itself.
 
+## Mode 4 — clean up merged branches
+
+Run this after a PR merges, and again whenever Mode 1 lists the existing `dev-*` branches —
+that listing already happens there, so the check costs nothing extra.
+
+A branch is safe to delete only when **all four** conditions hold. Check them; never assume
+from the branch name or from the fact that a PR was opened:
+
+```bash
+base="<base-branch>"
+branch="dev-<topic>"
+git fetch origin "$base" --prune
+git branch --merged "origin/$base"
+git log --oneline "origin/$base..$branch"
+gh pr list --state open --json number,headRefName --jq '.[] | "\(.number) \(.headRefName)"'
+git -C "<worktree-path>" status --short
+```
+
+1. `git branch --merged origin/<base>` lists the branch — it is fully contained in the base.
+2. `git log origin/<base>..<branch>` prints nothing — no commit lives only on that branch.
+3. No open PR names it in `headRefName`.
+4. Its worktree, if one exists, reports no uncommitted or untracked work.
+
+Any condition failing → keep the branch and say which one failed. Never reach for
+`git branch -D` to get past a failing check; `-D` is only for a branch the user explicitly
+abandons.
+
+Delete worktree first — a branch checked out anywhere cannot be deleted:
+
+```bash
+branch="dev-<topic>"
+root="$(git rev-parse --show-toplevel)"
+project="$(basename "$root")"
+parent="$(dirname "$root")"
+git worktree remove "$parent/$project-$branch"
+git worktree prune
+git branch -d "$branch"
+git push origin --delete "$branch"
+```
+
+The remote branch is often already gone: GitHub deletes the head branch on merge when the
+repository is configured that way, and `git fetch --prune` then drops the stale
+`origin/<branch>` ref. A `push --delete` answering `remote ref does not exist` means the
+cleanup already happened — that is success, not a failure to report.
+
+Report what was deleted and what was kept with its reason. Never delete the base branch,
+and never delete a branch another session may still be working on.
+
 ## Safety rules
 
 ```yaml
@@ -130,6 +189,8 @@ NEVER:
   - amend or rebase commits that are already pushed to a shared branch
   - create a branch outside the dev-<topic> pattern
   - create a worktree inside the repository root
+  - delete a branch that is unmerged, has an open PR, or has a dirty worktree
+  - use git branch -D to bypass a failing merge check
 
 ALWAYS:
   - verify the current branch before staging (git branch --show-current)
@@ -195,6 +256,14 @@ Co-Authored-By: <harness co-author line>"
 ```
 
 ## Changelog
+
+### 3.1.0
+
+- Added Mode 4: delete a merged `dev-*` branch and its worktree, gated on four checks —
+  merged into the base, no commits outside it, no open PR, clean worktree.
+- Added the VS Code worktree-detection settings, moved here out of `CLAUDE.md`.
+- Safety rules now forbid deleting an unmerged branch and bypassing the check with
+  `git branch -D`.
 
 ### 3.0.0
 
