@@ -13,7 +13,7 @@ Track every direct, chain, and LoEn task, including read-only work. The parent a
 2. Resolve one English lowercase-kebab-case topic; stop on conflicting controlled topics.
 3. Read or create `reference/tasks/<topic>` with `type: reference`, `status: stable`, and tag `task`.
 4. Load durable event keys, then replay pending spool events in order; acknowledge only after confirmed page replay.
-5. Keep exactly `## Current State`, `## TODO`, `## Subtasks`, `## Evidence`, and `## Changelog`. Each starts with a <=250-character lead paragraph and blank line; use no heading deeper than `##`.
+5. Keep exactly `## Current State`, `## TODO`, `## Subtasks`, `## Evidence`, and `## Changelog`. Each starts with a <=250-character lead paragraph and blank line; use no heading deeper than `##`. `Subtasks` carries the slice table below.
 6. Parent records material events. Before delegation record `dispatch`; subagents never write wiki and return subtask ID, role, outcome, changed paths, checks, blockers, and proposed changelog text. Record `return` before the next transition.
 7. On MCP failure, enqueue redacted events with `scripts/task_spool.py` and use `completion-pending`.
 8. Set `done` only after final evidence, successful wiki write, empty spool, and `wiki_lint` without a new task-page finding.
@@ -31,6 +31,24 @@ Work on a Given-When-Then scenario is recorded as a `verification` event: the sc
 Input schema is exactly `{kind, occurred_at, actor, summary, evidence}`; persisted event schema adds canonical `evidence_hash` and `event_id`. Evidence is `{paths, checks, hashes}`. Paths are repository-relative; checks contain only name, passed/failed status, and integer exit code; hashes are lowercase hex. Never record credentials, environment values, auth files, or raw command output.
 
 Idempotency key (`key:` on the segment event line, `event_id` in the spool): SHA-256 of topic, kind, and the canonical redacted evidence, truncated to 16 hex characters. Exclude timestamp, actor, and summary. Page replay happens outside helper: skip page keys already durable, then acknowledge confirmed events.
+
+## Slices
+
+`## Subtasks` carries one Markdown table decomposing the topic. `CLAUDE.md`'s **Task Topic** rules are authoritative; this is the format.
+
+```markdown
+| id | slice | prio | depends | state |
+|----|-------|------|---------|-------|
+| S1 | Reproduce the failing import path | critical | — | done |
+| S2 | Fix the resolver and cover it with a test | high | S1 | in-progress |
+| S3 | Update the public README example | low | S2 | todo |
+```
+
+`id` is `S<n>`, numbered from 1, monotone, never renumbered or reused. `prio` is `critical`, `high`, `medium`, or `low`. `depends` is a comma-separated list of earlier slice IDs or `—`; a slice may depend only on a lower-numbered one. `state` is `todo`, `in-progress`, `blocked`, `done`, or `dropped`. Rows stay in execution order.
+
+Every material event names its slice: append ` | slice: S<n>` to the segment event line, and carry `"slice"` in the spooled event's evidence. A `dispatch` event names the slice the subagent works on, and the subagent returns that ID in its structured evidence.
+
+New scope appends `S<n+1>`. Splitting a slice sets the original to `dropped`, states the reason in the summary of a `decision` event, and appends the replacements. Before each write point, verify that every slice has a state, that no forward dependency exists, that no `done` slice has an unfinished dependency, that current work maps to exactly one `in-progress` slice, that a `blocked` slice puts the lifecycle at `blocked`, and that `done` requires every slice `done` or `dropped`. Repair a violation with a `decision` event before continuing the work.
 
 ## History segments and domain journal
 
