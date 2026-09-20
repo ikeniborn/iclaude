@@ -10,7 +10,6 @@
   "lspPlugins": {
     "pyright-lsp@claude-plugins-official": "1.0.0",
     "typescript-lsp@claude-plugins-official": "1.0.0",
-    "gopls-lsp@claude-plugins-official": "1.0.0",
     "rust-analyzer-lsp@claude-plugins-official": "1.0.0"
   },
   "statusLineEnabled": true,
@@ -18,6 +17,6 @@
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-09-01T14:44:59Z",
+  "installedAt": "2026-09-04T17:47:30Z",
   "nvmVersion": "0.39.7"
 }
