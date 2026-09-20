@@ -88,6 +88,33 @@ resolve_claude_home_id() {
 	printf '%s-%s' "$name" "$hash"
 }
 
+# Hold a shared lock for the complete legacy-home lifecycle. ihar takes the same
+# adjacent file exclusively, so no updated wrapper can start during migration.
+acquire_claude_home_lifecycle_lock() {
+	local home_dir="$1" lockfile="${1}.ihar-lifecycle.lock" fd
+	if [[ -n "${ICLAUDE_HOME_LIFECYCLE_FD:-}" ]]; then
+		[[ "${ICLAUDE_HOME_LIFECYCLE_PATH:-}" == "$lockfile" ]] && return 0
+		print_error "Claude lifecycle lock already protects another home"
+		return 3
+	fi
+	if ! command -v flock >/dev/null 2>&1; then
+		print_error "flock is required for safe home migration"
+		return 3
+	fi
+	mkdir -p "$(dirname "$home_dir")" || return 1
+	if ! { exec {fd}>"$lockfile"; } 2>/dev/null; then
+		print_error "Cannot open lifecycle lock $lockfile"
+		return 3
+	fi
+	if ! flock -s -w "${ICLAUDE_HOME_LOCK_TIMEOUT:-30}" "$fd"; then
+		exec {fd}>&-
+		print_error "Home migration is active for $home_dir; retry after it finishes"
+		return 3
+	fi
+	ICLAUDE_HOME_LIFECYCLE_FD="$fd"
+	ICLAUDE_HOME_LIFECYCLE_PATH="$lockfile"
+}
+
 # Managed shared-asset entries wired from the store into per-project homes (S2).
 # settings.json is deliberately absent (S3: copy-once + managed-region sync);
 # session/state entries are never linked — they stay home-local.
@@ -293,6 +320,7 @@ setup_claude_home() {
 	root=$(resolve_project_root) || return 1
 	home_id=$(resolve_claude_home_id "$root")
 	home_dir="$homes_dir/$home_id"
+	acquire_claude_home_lifecycle_lock "$home_dir" || return $?
 
 	if [[ ! -d "$home_dir" ]]; then
 		mkdir -p "$home_dir" || return 1
@@ -438,7 +466,10 @@ setup_isolated_config() {
 
 	case "$mode" in
 		per-project)
-			setup_claude_home && return 0
+			local setup_status=0
+			setup_claude_home || setup_status=$?
+			[[ "$setup_status" == 0 ]] && return 0
+			[[ "$setup_status" == 3 ]] && return 3
 			print_warning "Per-project home setup failed; falling back to shared config"
 			;;
 		shared) ;;
