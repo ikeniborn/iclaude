@@ -9,6 +9,28 @@ source "$ROOT/lib/iwiki/mcp.sh"
 PASS=0; FAIL=0
 assert_eq(){ if [[ "$1" == "$2" ]]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); echo "FAIL [$3]: got '$1' expected '$2'"; fi; }
 
+json_env_value() { # <config> <server> <name>
+  python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mcpServers"][sys.argv[2]]["env"][sys.argv[3]])' "$1" "$2" "$3"
+}
+
+# Tracked local configurations forward System One settings to the stdio server.
+LOCAL_CFG="$ROOT/.claude-isolated/mcp/iwiki.json"
+DUAL_CFG="$ROOT/.claude-isolated/mcp/iwiki-dual.json"
+assert_eq "$(json_env_value "$LOCAL_CFG" iwiki IWIKI_SYSTEM1_SHADOW)" \
+  '${IWIKI_SYSTEM1_SHADOW:-}' "tracked local: System One shadow placeholder"
+assert_eq "$(json_env_value "$LOCAL_CFG" iwiki IWIKI_SYSTEM1_BASE_URL)" \
+  '${IWIKI_SYSTEM1_BASE_URL:-}' "tracked local: System One URL placeholder"
+assert_eq "$(json_env_value "$LOCAL_CFG" iwiki IWIKI_SYSTEM1_KEY)" \
+  '${IWIKI_SYSTEM1_KEY:-}' "tracked local: System One key placeholder"
+assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_SHADOW)" \
+  '${IWIKI_SYSTEM1_SHADOW:-}' "tracked dual: System One shadow stays local"
+assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_BASE_URL)" \
+  '${IWIKI_SYSTEM1_BASE_URL:-}' "tracked dual: System One URL stays local"
+assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_KEY)" \
+  '${IWIKI_SYSTEM1_KEY:-}' "tracked dual: System One key stays local"
+assert_eq "$(python3 -c 'import json,sys; print("env" in json.load(open(sys.argv[1]))["mcpServers"]["iwiki-remote"])' "$DUAL_CFG")" \
+  "False" "tracked dual: hosted server receives no local env"
+
 TD=$(mktemp -d)
 # Fake iwiki-mcp on an absolute PATH entry so `command -v` yields an absolute path.
 mkdir -p "$TD/bin"; printf '#!/bin/sh\n' > "$TD/bin/iwiki-mcp"; chmod +x "$TD/bin/iwiki-mcp"
