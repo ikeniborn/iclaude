@@ -11,6 +11,23 @@ project-root `.iwiki.toml` — no client-side preflight is needed or run.
 ./iclaude.sh
 ```
 
+## System One shadow
+
+The local stdio server can call a separate GPU System One endpoint during
+`wiki_write_page` without changing the write result or stored metadata. Configure it in
+the ignored `.claude_config`:
+
+```text
+ICLAUDE_IWIKI_SYSTEM1_SHADOW="true"
+ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000"
+ICLAUDE_IWIKI_SYSTEM1_KEY="<separate-bearer-key>"
+```
+
+The generic env map removes the `ICLAUDE_` prefix at launch. The tracked local and dual
+MCP JSON files forward the resulting `IWIKI_SYSTEM1_*` values only to the local stdio
+server; the hosted HTTP entry receives none of them. Keep the key in `.claude_config`,
+which is ignored and mode `0600`.
+
 ## Hosted streamable HTTP (external MCP client)
 
 For an already hosted iwiki server, set these in `.claude_config` (see the `IWIKI MCP
