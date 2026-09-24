@@ -9,15 +9,13 @@
   },
   "lspPlugins": {
     "pyright-lsp@claude-plugins-official": "1.0.0",
-    "typescript-lsp@claude-plugins-official": "1.0.0",
-    "gopls-lsp@claude-plugins-official": "1.0.0",
-    "rust-analyzer-lsp@claude-plugins-official": "1.0.0"
+    "gopls-lsp@claude-plugins-official": "1.0.0"
   },
   "statusLineEnabled": true,
   "statusLineScript": "claude-statusline.sh",
   "ohMyPoshVersion": "not installed",
   "ohMyPoshPlatform": "unknown",
   "ohMyPoshInstalledAt": "",
-  "installedAt": "2026-09-24T17:52:05Z",
+  "installedAt": "2026-09-24T18:21:46Z",
   "nvmVersion": "0.39.7"
 }
