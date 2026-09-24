@@ -326,7 +326,7 @@ iclaude itself and is never de-prefixed.
 | `CLAUDE_CODE_NO_CHROME` | false | Disable Chrome |
 | `CLAUDE_CODE_MODEL` | claude-4-5-sonnet | Model |
 | `IWIKI_SYSTEM1_SHADOW` | disabled | Enable evaluation-only page-type observation in the local iwiki server |
-| `IWIKI_SYSTEM1_BASE_URL` | empty | Separate local GPU System One endpoint; required when shadow is enabled |
+| `IWIKI_SYSTEM1_BASE_URL` | empty | Separate local GPU System One API root ending in `/v1`; required when shadow is enabled |
 | `IWIKI_SYSTEM1_KEY` | empty | Separate bearer key; keep it only in `.claude_config` as `ICLAUDE_IWIKI_SYSTEM1_KEY` |
 
 System One settings are forwarded only to local stdio in local or dual iwiki mode. Hosted

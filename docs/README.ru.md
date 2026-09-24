@@ -324,7 +324,7 @@ Claude Code локфайл пинит нативный бинарь по sha256 
 | `CLAUDE_CODE_NO_CHROME` | false | Отключить Chrome |
 | `CLAUDE_CODE_MODEL` | claude-4-5-sonnet | Модель |
 | `IWIKI_SYSTEM1_SHADOW` | выключено | Включить только оценочное наблюдение типа страницы в локальном iwiki-сервере |
-| `IWIKI_SYSTEM1_BASE_URL` | пусто | Отдельный локальный GPU endpoint System One; обязателен при включённом shadow |
+| `IWIKI_SYSTEM1_BASE_URL` | пусто | Корень API отдельного локального GPU System One, оканчивающийся на `/v1`; обязателен при включённом shadow |
 | `IWIKI_SYSTEM1_KEY` | пусто | Отдельный bearer key; хранить только в `.claude_config` как `ICLAUDE_IWIKI_SYSTEM1_KEY` |
 
 Настройки System One передаются только локальному stdio-серверу в local или dual iwiki
