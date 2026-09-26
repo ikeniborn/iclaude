@@ -28,6 +28,10 @@ assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_BASE_URL)" \
   '${IWIKI_SYSTEM1_BASE_URL:-}' "tracked dual: System One URL stays local"
 assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_KEY)" \
   '${IWIKI_SYSTEM1_KEY:-}' "tracked dual: System One key stays local"
+assert_eq "$(json_env_value "$LOCAL_CFG" iwiki IWIKI_SYSTEM1_MODEL)" \
+  '${IWIKI_SYSTEM1_MODEL:-}' "tracked local: System One model placeholder"
+assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_MODEL)" \
+  '${IWIKI_SYSTEM1_MODEL:-}' "tracked dual: System One model stays local"
 assert_eq "$(python3 -c 'import json,sys; print("env" in json.load(open(sys.argv[1]))["mcpServers"]["iwiki-remote"])' "$DUAL_CFG")" \
   "False" "tracked dual: hosted server receives no local env"
 

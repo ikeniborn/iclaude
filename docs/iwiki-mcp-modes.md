@@ -19,14 +19,16 @@ the ignored `.claude_config`:
 
 ```text
 ICLAUDE_IWIKI_SYSTEM1_SHADOW="true"
-ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000"
+ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000/v1"
 ICLAUDE_IWIKI_SYSTEM1_KEY="<separate-bearer-key>"
+ICLAUDE_IWIKI_SYSTEM1_MODEL="laya-iwiki"
 ```
 
 The generic env map removes the `ICLAUDE_` prefix at launch. The tracked local and dual
 MCP JSON files forward the resulting `IWIKI_SYSTEM1_*` values only to the local stdio
 server; the hosted HTTP entry receives none of them. Keep the key in `.claude_config`,
-which is ignored and mode `0600`.
+which is ignored and mode `0600`. The base URL is the API root ending in `/v1`; iwiki
+appends `/systemone`.
 
 ## Hosted streamable HTTP (external MCP client)
 
