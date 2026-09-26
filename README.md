@@ -329,6 +329,9 @@ iclaude itself and is never de-prefixed.
 | `IWIKI_SYSTEM1_BASE_URL` | empty | Separate local GPU System One API root ending in `/v1`; required when shadow is enabled |
 | `IWIKI_SYSTEM1_KEY` | empty | Separate bearer key; keep it only in `.claude_config` as `ICLAUDE_IWIKI_SYSTEM1_KEY` |
 | `IWIKI_SYSTEM1_MODEL` | empty | Optional System One model alias, e.g. `laya-iwiki` (Laya fine-tuned on iwiki page types); empty keeps automatic routing |
+| `IWIKI_SYSTEM1_GUIDANCE` | disabled | Advisory write warning when System One disagrees with an explicit page `type`; never changes the page |
+| `IWIKI_SYSTEM1_SEARCH_BOOST` | `0` | Query-type search boost weight; keep `0` (no measured gain) |
+| `IWIKI_SYSTEM1_MIN_CONFIDENCE` | `0.5` | Minimum System One probability for guidance or boost to act |
 
 System One settings are forwarded only to local stdio in local or dual iwiki mode. Hosted
 inference is configured on the server. See [iwiki MCP modes](docs/iwiki-mcp-modes.md#system-one-shadow).
