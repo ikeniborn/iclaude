@@ -23,6 +23,8 @@ ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000/v1"
 ICLAUDE_IWIKI_SYSTEM1_KEY="<separate-bearer-key>"
 ICLAUDE_IWIKI_SYSTEM1_MODEL="laya-iwiki"
 ICLAUDE_IWIKI_SYSTEM1_GUIDANCE="true"
+ICLAUDE_IWIKI_SYSTEM1_ASSIGN_TYPE="true"
+ICLAUDE_IWIKI_SYSTEM1_DECISION_LOG="/home/<user>/.local/state/iwiki-mcp/system1-decisions.jsonl"
 ```
 
 The generic env map removes the `ICLAUDE_` prefix at launch. The tracked local and dual

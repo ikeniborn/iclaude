@@ -881,6 +881,8 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_SYSTEM1_GUIDANCE="true"             # advisory warning when System One disagrees with an explicit type
 # ICLAUDE_IWIKI_SYSTEM1_SEARCH_BOOST="0"            # query-type search boost weight; keep 0 (no measured gain)
 # ICLAUDE_IWIKI_SYSTEM1_MIN_CONFIDENCE="0.5"        # minimum probability for guidance/boost to act
+# ICLAUDE_IWIKI_SYSTEM1_ASSIGN_TYPE="true"          # System One types pages written without `type`
+# ICLAUDE_IWIKI_SYSTEM1_DECISION_LOG="/home/<user>/.local/state/iwiki-mcp/system1-decisions.jsonl"  # absolute; private JSONL for training
 #
 # Server lifecycle: seconds of MCP inactivity after which the stdio server
 # exits; 0 disables the limit. A later call reconnects and respawns it:

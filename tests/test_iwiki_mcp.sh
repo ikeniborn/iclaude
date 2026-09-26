@@ -32,7 +32,7 @@ assert_eq "$(json_env_value "$LOCAL_CFG" iwiki IWIKI_SYSTEM1_MODEL)" \
   '${IWIKI_SYSTEM1_MODEL:-}' "tracked local: System One model placeholder"
 assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local IWIKI_SYSTEM1_MODEL)" \
   '${IWIKI_SYSTEM1_MODEL:-}' "tracked dual: System One model stays local"
-for name in GUIDANCE SEARCH_BOOST MIN_CONFIDENCE; do
+for name in GUIDANCE SEARCH_BOOST MIN_CONFIDENCE ASSIGN_TYPE DECISION_LOG; do
   assert_eq "$(json_env_value "$LOCAL_CFG" iwiki "IWIKI_SYSTEM1_$name")" \
     "\${IWIKI_SYSTEM1_$name:-}" "tracked local: System One $name placeholder"
   assert_eq "$(json_env_value "$DUAL_CFG" iwiki-local "IWIKI_SYSTEM1_$name")" \

@@ -330,6 +330,8 @@ Claude Code локфайл пинит нативный бинарь по sha256 
 | `IWIKI_SYSTEM1_GUIDANCE` | выключено | Рекомендательное предупреждение при записи, если System One расходится с явным `type`; страницу не меняет |
 | `IWIKI_SYSTEM1_SEARCH_BOOST` | `0` | Вес буста поиска по типу запроса; оставляйте `0` (выигрыша не измерено) |
 | `IWIKI_SYSTEM1_MIN_CONFIDENCE` | `0.5` | Минимальная вероятность System One, при которой guidance или boost действуют |
+| `IWIKI_SYSTEM1_ASSIGN_TYPE` | выключено | System One назначает тип страницам без `type` (явный тип не заменяется) |
+| `IWIKI_SYSTEM1_DECISION_LOG` | пусто | Абсолютный путь приватного журнала решений для оценки предупреждений и будущих обучающих меток |
 
 Настройки System One передаются только локальному stdio-серверу в local или dual iwiki
 mode. Hosted inference настраивается на сервере. Подробнее: [режимы iwiki MCP](iwiki-mcp-modes.md#system-one-shadow).
