@@ -877,6 +877,7 @@ ICLAUDE_DEBUG_LAUNCH=
 # ICLAUDE_IWIKI_SYSTEM1_SHADOW="true"
 # ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000/v1" # API root; iwiki appends /systemone
 # ICLAUDE_IWIKI_SYSTEM1_KEY="..."                   # secret — keep here, not in git
+# ICLAUDE_IWIKI_SYSTEM1_MODEL="laya-iwiki"          # optional System One alias; empty = automatic routing
 #
 # Server lifecycle: seconds of MCP inactivity after which the stdio server
 # exits; 0 disables the limit. A later call reconnects and respawns it:

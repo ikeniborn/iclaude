@@ -21,6 +21,7 @@ the ignored `.claude_config`:
 ICLAUDE_IWIKI_SYSTEM1_SHADOW="true"
 ICLAUDE_IWIKI_SYSTEM1_BASE_URL="http://127.0.0.1:8000/v1"
 ICLAUDE_IWIKI_SYSTEM1_KEY="<separate-bearer-key>"
+ICLAUDE_IWIKI_SYSTEM1_MODEL="laya-iwiki"
 ```
 
 The generic env map removes the `ICLAUDE_` prefix at launch. The tracked local and dual
