@@ -332,6 +332,8 @@ iclaude itself and is never de-prefixed.
 | `IWIKI_SYSTEM1_GUIDANCE` | disabled | Advisory write warning when System One disagrees with an explicit page `type`; never changes the page |
 | `IWIKI_SYSTEM1_SEARCH_BOOST` | `0` | Query-type search boost weight; keep `0` (no measured gain) |
 | `IWIKI_SYSTEM1_MIN_CONFIDENCE` | `0.5` | Minimum System One probability for guidance or boost to act |
+| `IWIKI_SYSTEM1_ASSIGN_TYPE` | disabled | System One types pages written without `type` (explicit types are never replaced) |
+| `IWIKI_SYSTEM1_DECISION_LOG` | empty | Absolute path of the private decision log used to measure warnings and build future training labels |
 
 System One settings are forwarded only to local stdio in local or dual iwiki mode. Hosted
 inference is configured on the server. See [iwiki MCP modes](docs/iwiki-mcp-modes.md#system-one-shadow).
