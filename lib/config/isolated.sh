@@ -116,11 +116,12 @@ acquire_claude_home_lifecycle_lock() {
 }
 
 # Managed shared-asset entries wired from the store into per-project homes (S2).
+# Credentials are handled by the auth persistence layer, never disposable assets.
 # settings.json is deliberately absent (S3: copy-once + managed-region sync);
 # session/state entries are never linked — they stay home-local.
 _ICLAUDE_SHARED_LINK_ENTRIES=(
 	skills hooks commands agents plugins mcp scripts
-	CLAUDE.md .credentials.json router.json
+	CLAUDE.md router.json
 )
 
 #######################################

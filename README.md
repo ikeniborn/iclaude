@@ -245,10 +245,40 @@ Runs Claude Code inside an isolated Firecracker virtual machine with a separate 
 ### OAuth and tokens
 
 ```bash
-./iclaude.sh --refresh-token   # Refresh the OAuth token (~1 year lifetime)
+./iclaude.sh --refresh-token   # Explicitly generate a setup token (prints it; does not persist login)
 ```
 
-The token is stored in `CLAUDE_CONFIG_DIR` and used automatically on launch.
+Isolated native launches use one common account login by default, even with
+per-project configuration directories. No `--shared-config` flag is required.
+Complete the native login and onboarding once in an interactive launcher session;
+unattended launches fail with instructions when common setup is missing.
+
+Only `.claude_config` can select authentication policy:
+
+```bash
+ICLAUDE_AUTH_MODE=shared
+```
+
+An omitted setting also selects `shared`. Set `ICLAUDE_AUTH_MODE=project` in that
+file to keep independent project logins. Environment variables and directory flags
+do not override this policy; project auth requires a separate project directory,
+not `--shared-config`. System and API/router provider flows retain their own auth.
+Subscription persistence is not supported with microVM mode.
+
+The shared store supplies private project subscription snapshots; MCP credentials,
+settings and conversation history remain project-local. A native persisted login
+takes precedence over a legacy configured environment token. Native Claude refreshes
+its credentials; the launcher never treats `setup-token` as persisted renewal.
+Legacy environment-token mode remains available when there is no common native login
+and real onboarding metadata already exists.
+
+Different independent credentials, concurrent divergent changes and logout/deletion
+fail closed without deleting the conflicting artifacts. Backups stay private under
+`.iclaude-auth-backup.*`; `.iclaude-auth-recovery` requires manual recovery after a
+failed rollback. Do not remove these files to force a conflicting login to match.
+An in-session `/login` becomes common only after that native process exits and safe
+publication succeeds; launcher-managed `auth login` targets the common store directly.
+Native exit errors remain visible; reconciliation failure after native success exits 73.
 
 ### Chrome integration
 

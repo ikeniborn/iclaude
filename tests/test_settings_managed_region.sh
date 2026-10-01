@@ -102,8 +102,8 @@ assert_eq "$out" "true" "integration: setup_claude_home seeds settings"
 mkdir -p "$TMP/nvm/.claude-isolated"
 out="$(
   export ICLAUDE_HOME_MODE=shared
-  ISOLATED_NVM_DIR="$TMP/nvm" setup_isolated_config >/dev/null 2>&1 || exit 1
-  [[ -e "$TMP/nvm/.claude-isolated/settings.json" ]] && echo present || echo absent
+  ISOLATED_CONFIG_DIR="$TMP/shared-empty" setup_isolated_config >/dev/null 2>&1 || exit 1
+  [[ -e "$TMP/shared-empty/settings.json" ]] && echo present || echo absent
 )"
 assert_eq "$out" "absent" "shared: no settings created in shared dir"
 

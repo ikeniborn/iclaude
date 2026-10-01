@@ -38,6 +38,8 @@ _in_list() {
 apply_iclaude_env_map() {
     local v name
     for v in ${!ICLAUDE_@}; do
+        # Auth policy is config-only launcher state, never a child environment input.
+        [[ "$v" == ICLAUDE_AUTH_MODE ]] && continue
         if _in_list "$v" "${_ICLAUDE_NATIVE_LIST[@]}"; then
             [[ -n ${!v:-} ]] && export "$v=${!v}"
             continue
@@ -49,6 +51,8 @@ apply_iclaude_env_map() {
             [[ -n ${!v:-} ]] && export "$name=${!v}"
         fi
     done
+    # Skipped/empty settings are successful no-ops, including the last setting.
+    return 0
 }
 
 #######################################
@@ -56,10 +60,24 @@ apply_iclaude_env_map() {
 # Safe to call multiple times (idempotent re-export).
 #######################################
 source_iclaude_config() {
+    # Reset before every load: inherited values and a previous project's selection
+    # must not act as policy when the config omits this setting.
+    unset ICLAUDE_AUTH_MODE
+    ICLAUDE_AUTH_MODE=shared
     if [[ -f "${CREDENTIALS_FILE:-}" ]]; then
-        source "$CREDENTIALS_FILE"
+        source "$CREDENTIALS_FILE" || return
+    fi
+    # Config is intended to contain plain assignments, but even a legacy export
+    # must not make this launcher-only selector visible to native Claude.
+    export -n ICLAUDE_AUTH_MODE
+    case "$ICLAUDE_AUTH_MODE" in
+        shared|project) ;;
+        *) print_error "Invalid ICLAUDE_AUTH_MODE: expected shared or project"; return 1 ;;
+    esac
+    if [[ -f "${CREDENTIALS_FILE:-}" ]]; then
         apply_iclaude_env_map
     fi
+    return 0
 }
 
 #######################################

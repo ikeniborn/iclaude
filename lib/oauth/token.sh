@@ -160,21 +160,10 @@ check_oauth_token() {
         print_info "File: $credentials_file"
         echo ""
 
-        # Try to refresh the token automatically
-        print_info "Attempting to refresh token automatically..."
-        echo ""
-
-        if refresh_oauth_token "$skip_isolated"; then
-            echo ""
-            print_success "Token refreshed successfully!"
-            return 0
-        else
-            echo ""
-            print_warning "Automatic token refresh failed"
-            print_info "Please run '/login' in Claude Code to authenticate"
-            # Don't delete credentials - refreshToken might still be usable by Claude Code
-            return 1
-        fi
+        # Native Claude owns refresh-token renewal. setup-token only prints a
+        # separate long-lived token; treating it as persisted renewal loses login.
+        print_info "Claude Code will refresh native credentials or report the authentication error."
+        return 0
     fi
 
     # Token is valid - show remaining time if less than 1 hour
