@@ -677,7 +677,7 @@ launch_claude() {
 
         if [[ -f "$router_config" ]]; then
             mkdir -p "$ccr_home/.claude-code-router"
-            cp "$router_config" "$ccr_home/.claude-code-router/config.json"
+            prepare_router_config "$router_config" "$ccr_home/.claude-code-router/config.json" "$ISOLATED_CONFIG_DIR" || return 1
             print_info "Using router config: $router_config"
         fi
 

@@ -250,6 +250,12 @@ ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN=
 # В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
 # Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
 
+# Framework GLM 5.3 Cloud: explicit harness identity and 1M input context.
+# Use these together with the GLM router.json profile; not for native Claude.
+# ICLAUDE_ANTHROPIC_MODEL=homelab,ollama-glm-5-3-cloud
+# ICLAUDE_CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
+# ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192
+
 # --- Anthropic API key (для роутинга через CCR) ---
 # Нужен при роутинге через CCR к Anthropic (--router + Anthropic в router.json).
 # В нативном режиме (без --router) Claude Code использует OAuth из .credentials.json — API ключ не нужен.

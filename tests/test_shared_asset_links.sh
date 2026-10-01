@@ -29,6 +29,10 @@ echo '{}' > "$STORE/router.json"
 HOME_DIR="$TMP/home"
 mkdir -p "$HOME_DIR"
 
+# CCR plugins are shared assets; CCR PID/config state remains home-local.
+mkdir -p "$STORE/.claude-code-router/plugins"
+echo 'module.exports = class {};' > "$STORE/.claude-code-router/plugins/probe.js"
+
 # --- fresh home: links created for every existing store entry ---
 link_shared_assets "$HOME_DIR" "$STORE"; rc=$?
 assert_eq "$rc" "0" "link: exit 0 on fresh home"
@@ -40,6 +44,10 @@ printf '%s\n' '{"claudeAiOauth":{"accessToken":"fixture-independent"}}' > "$HOME
 credential_before="$(sha256sum "$HOME_DIR/.credentials.json")"
 link_shared_assets "$HOME_DIR" "$STORE"
 assert_eq "$(sha256sum "$HOME_DIR/.credentials.json")" "$credential_before" "auth: independent credentials preserved"
+
+assert_true '[[ -L "$HOME_DIR/.claude-code-router/plugins" ]]' "CCR plugins linked on fresh home"
+assert_true '[[ -f "$HOME_DIR/.claude-code-router/plugins/probe.js" ]]' "CCR plugin resolves from project home"
+assert_true '[[ ! -L "$HOME_DIR/.claude-code-router" ]]' "CCR state directory remains home-local"
 
 # --- absent store entries are skipped without error, no dangling link ---
 assert_true '[[ ! -e "$HOME_DIR/commands" && ! -L "$HOME_DIR/commands" ]]' "link: absent commands skipped"

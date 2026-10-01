@@ -222,7 +222,30 @@ with `enable: false`, which adds unsupported `thinking`/`enable_thinking` fields
 Native model reasoning stays on the backend; it is not exposed as Claude thinking.
 No Ollama-native transformer, forced-tool prompt or sampling override is needed:
 Framework exposes OpenAI Chat Completions with native function tools.
-The project-id transformer remains enabled; request logging stays disabled.
+The `framework-request` transformer removes CCR's unsupported `reasoning` field,
+including when a session enables thinking. Messages, tools, streaming and output
+limits are preserved. The project-id transformer remains enabled; request logging
+stays disabled. Runtime preparation expands `${CLAUDE_CONFIG_DIR}` in plugin paths;
+CCR 2.0.0 does not expand these paths while registering custom transformers.
+Per-project homes link only `.claude-code-router/plugins` to the shared store;
+CCR config, PID and server state remain local to each home.
+
+For GLM 5.3 Cloud, configure the harness identity and advertised context window:
+
+```bash
+ICLAUDE_ANTHROPIC_MODEL=homelab,ollama-glm-5-3-cloud
+ICLAUDE_CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
+ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192
+```
+
+These settings belong in local `.claude_config` and apply to the GLM router
+profile, not native Claude sessions. The input context window and output cap
+are independent. Do not disable auto-compaction. A 51,084-character global
+CLAUDE.md was verified through its final section without tool reads; the harness
+reported a 1,000,000-token window. Claude Code's large-instruction warning threshold
+scales with its assumed context window; it does not mean this file was truncated.
+This verifies full instruction loading, not a stress test at the full 1M limit.
+Ollama advertises 1M context: https://ollama.com/library/glm-5.3.
 
 If lowercase `no_proxy` is exported by the parent shell, the launcher currently
 overwrites it with a boolean. Remove that inherited variable while preserving
