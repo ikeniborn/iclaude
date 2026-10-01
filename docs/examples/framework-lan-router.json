@@ -1,0 +1,45 @@
+{
+  "_comment": "Framework trusted LAN template; Qwen 27B default, GLM aliases available after capability rollout",
+  "_docs": "https://github.com/musistudio/claude-code-router | docs/functions/ROUTER.md",
+  "PORT": 3456,
+  "HOST": "127.0.0.1",
+  "LOG": false,
+  "LOG_LEVEL": "info",
+  "API_TIMEOUT_MS": 600000,
+  "Providers": [
+    {
+      "name": "framework-lan",
+      "api_base_url": "http://192.168.68.123:8095/v1/chat/completions",
+      "api_key": "lan",
+      "models": [
+        "lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+        "ollama-glm-5-3-cloud",
+        "ollama-glm-5-3-flash-cloud"
+      ],
+      "transformer": {
+        "use": [
+          "cleancache",
+          [
+            "maxtoken",
+            {
+              "max_tokens": 8192
+            }
+          ],
+          "x-project-id"
+        ]
+      }
+    }
+  ],
+  "Router": {
+    "default": "framework-lan,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "background": "framework-lan,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "think": "framework-lan,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "longContext": "framework-lan,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "longContextThreshold": 60000
+  },
+  "transformers": [
+    {
+      "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/x-project-id.js"
+    }
+  ]
+}
