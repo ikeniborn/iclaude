@@ -212,11 +212,14 @@ local `.claude_config` supplies the Framework API root and protected-file key.
 
 Keep `cleancache` enabled to remove unsupported Anthropic `cache_control`.
 `maxtoken` caps requested output at 8192; it does not set the context window.
-`reasoning` adapts returned `reasoning_content` for Claude Code. Keep
+Do not enable the built-in `reasoning` transformer for this profile: a live
+GLM streaming tool call produced `end_turn` instead of `tool_use`, and the
+resulting harness continuation was rejected with HTTP 400 (`messages[]`). Keep
 `ICLAUDE_MAX_THINKING_TOKENS=0`: this disables Claude's request-side thinking
 budget, because Framework does not accept CCR's OpenAI `reasoning` field.
 It does not disable the model's native reasoning. Do not use `reasoning`
 with `enable: false`, which adds unsupported `thinking`/`enable_thinking` fields.
+Native model reasoning stays on the backend; it is not exposed as Claude thinking.
 No Ollama-native transformer, forced-tool prompt or sampling override is needed:
 Framework exposes OpenAI Chat Completions with native function tools.
 The project-id transformer remains enabled; request logging stays disabled.

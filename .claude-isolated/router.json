@@ -24,7 +24,6 @@
               "max_tokens": 8192
             }
           ],
-          "reasoning",
           "x-project-id"
         ]
       }
