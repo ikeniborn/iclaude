@@ -204,17 +204,25 @@ CCR поддерживает `$VAR` и `${VAR}` в любых строковых
 
 ## Framework GPU API
 
-The configured default is `lemonade-qwen38-27b-udq4km-mmf16-no-reasoning`
-(Qwen 27B). The provider uses `${ROUTER_URL}/v1/chat/completions` and
-`${ROUTER_API_KEY}`. Local `.claude_config` maps `ICLAUDE_ROUTER_URL` and
-`ICLAUDE_ROUTER_API_KEY` to those variables; read the HTTPS credential from a
-protected local file rather than embedding it in JSON.
+The configured default is `ollama-glm-5-3-cloud` (Ollama GLM 5.3 Cloud)
+for default, background, think and longContext routes. The Flash alias
+`ollama-glm-5-3-flash-cloud` is available for explicit model selection.
+The provider uses `${ROUTER_URL}/v1/chat/completions` and `${ROUTER_API_KEY}`;
+local `.claude_config` supplies the Framework API root and protected-file key.
 
-Keep CCR `cleancache` enabled: Framework rejects Anthropic `cache_control`
-inside OpenAI message blocks. The configured `maxtoken` transformer caps output
-at 8192, below the local Qwen context limit. Set `ICLAUDE_MAX_THINKING_TOKENS=0`
-for this no-reasoning profile; CCR otherwise forwards Claude thinking as the
-unsupported OpenAI `reasoning` field. Request logging stays disabled.
+Keep `cleancache` enabled to remove unsupported Anthropic `cache_control`.
+`maxtoken` caps requested output at 8192; it does not set the context window.
+Do not enable the built-in `reasoning` transformer for this profile: a live
+GLM streaming tool call produced `end_turn` instead of `tool_use`, and the
+resulting harness continuation was rejected with HTTP 400 (`messages[]`). Keep
+`ICLAUDE_MAX_THINKING_TOKENS=0`: this disables Claude's request-side thinking
+budget, because Framework does not accept CCR's OpenAI `reasoning` field.
+It does not disable the model's native reasoning. Do not use `reasoning`
+with `enable: false`, which adds unsupported `thinking`/`enable_thinking` fields.
+Native model reasoning stays on the backend; it is not exposed as Claude thinking.
+No Ollama-native transformer, forced-tool prompt or sampling override is needed:
+Framework exposes OpenAI Chat Completions with native function tools.
+The project-id transformer remains enabled; request logging stays disabled.
 
 If lowercase `no_proxy` is exported by the parent shell, the launcher currently
 overwrites it with a boolean. Remove that inherited variable while preserving

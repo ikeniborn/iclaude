@@ -1,5 +1,5 @@
 {
-  "_comment": "Claude Code Router v2.0.0 \u2014 Framework Qwen 27B",
+  "_comment": "Claude Code Router v2.0.0 — Framework Ollama GLM 5.3 Cloud",
   "_docs": "https://github.com/musistudio/claude-code-router | docs/functions/ROUTER.md",
   "PORT": 3456,
   "HOST": "127.0.0.1",
@@ -12,7 +12,8 @@
       "api_base_url": "${ROUTER_URL}/v1/chat/completions",
       "api_key": "${ROUTER_API_KEY}",
       "models": [
-        "lemonade-qwen38-27b-udq4km-mmf16-no-reasoning"
+        "ollama-glm-5-3-cloud",
+        "ollama-glm-5-3-flash-cloud"
       ],
       "transformer": {
         "use": [
@@ -29,10 +30,10 @@
     }
   ],
   "Router": {
-    "default": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
-    "background": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
-    "think": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
-    "longContext": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "default": "homelab,ollama-glm-5-3-cloud",
+    "background": "homelab,ollama-glm-5-3-cloud",
+    "think": "homelab,ollama-glm-5-3-cloud",
+    "longContext": "homelab,ollama-glm-5-3-cloud",
     "longContextThreshold": 60000
   },
   "transformers": [
