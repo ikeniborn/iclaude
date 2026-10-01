@@ -211,7 +211,7 @@ The provider uses `${ROUTER_URL}/v1/chat/completions` and `${ROUTER_API_KEY}`;
 local `.claude_config` supplies the Framework API root and protected-file key.
 
 Keep `cleancache` enabled to remove unsupported Anthropic `cache_control`.
-`maxtoken` caps requested output at 8192; it does not set the context window.
+`maxtoken` caps requested output at 128000; it does not set the context window.
 Do not enable the built-in `reasoning` transformer for this profile: a live
 GLM streaming tool call produced `end_turn` instead of `tool_use`, and the
 resulting harness continuation was rejected with HTTP 400 (`messages[]`). Keep
@@ -235,7 +235,7 @@ For GLM 5.3 Cloud, configure the harness identity and advertised context window:
 ```bash
 ICLAUDE_ANTHROPIC_MODEL=homelab,ollama-glm-5-3-cloud
 ICLAUDE_CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
-ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192
+ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
 ```
 
 These settings belong in local `.claude_config` and apply to the GLM router
@@ -772,3 +772,8 @@ ccr restart
 ---
 
 *Основано на: CCR README v2.0.0 (включён в npm-пакет) + Anthropic Official Docs (code.claude.com/docs/en/sub-agents, 2026-02-25)*
+
+The GLM output ceiling is 128000 for the installed Claude Code custom-model
+harness (its upper limit). Framework accepted a short direct probe with
+max_tokens=131072; the client remains the tighter boundary. This verifies
+parameter acceptance, not generation of a maximum-length answer.
