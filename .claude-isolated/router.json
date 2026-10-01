@@ -17,6 +17,7 @@
       ],
       "transformer": {
         "use": [
+          "framework-request",
           "cleancache",
           [
             "maxtoken",
@@ -39,6 +40,9 @@
   "transformers": [
     {
       "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/x-project-id.js"
+    },
+    {
+      "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/framework-request.js"
     }
   ]
 }

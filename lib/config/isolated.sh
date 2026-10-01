@@ -121,7 +121,7 @@ acquire_claude_home_lifecycle_lock() {
 # session/state entries are never linked — they stay home-local.
 _ICLAUDE_SHARED_LINK_ENTRIES=(
 	skills hooks commands agents plugins mcp scripts
-	CLAUDE.md router.json
+	CLAUDE.md router.json .claude-code-router/plugins
 )
 
 #######################################
@@ -153,6 +153,7 @@ link_shared_assets() {
 				rm -rf "$link"
 				print_warning "Replaced materialized '$entry' in per-project home with a shared-store link"
 			fi
+			mkdir -p "$(dirname "$link")" || return 1
 			ln -s "$store" "$link" || return 1
 		elif [[ -L "$link" && "$(readlink "$link")" == "$store_dir"/* ]]; then
 			rm -f "$link"

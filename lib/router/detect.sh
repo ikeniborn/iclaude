@@ -119,3 +119,19 @@ get_ccr_port() {
 	export CCR_HOST CCR_PORT
 	return 0
 }
+
+# Resolve custom plugin paths; CCR 2.0.0 does not expand them during loading.
+# Keep provider credential placeholders untouched in the runtime file.
+prepare_router_config() {
+	python3 - "$1" "$2" "$3" <<'PYTHON'
+import json
+import sys
+from pathlib import Path
+source, destination, config_dir = sys.argv[1:]
+data = json.loads(Path(source).read_text())
+for transformer in data.get("transformers", []):
+    if isinstance(transformer.get("path"), str):
+        transformer["path"] = transformer["path"].replace("${CLAUDE_CONFIG_DIR}", config_dir)
+Path(destination).write_text(json.dumps(data, indent=2) + "\n")
+PYTHON
+}
