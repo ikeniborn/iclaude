@@ -14,6 +14,7 @@
 - [Жизненный цикл CCR-сервера](#жизненный-цикл-ccr-сервера)
 - [Параметры верхнего уровня](#параметры-верхнего-уровня)
 - [Providers — провайдеры моделей](#providers--провайдеры-моделей)
+- [Framework GPU API](#framework-gpu-api)
 - [Transformer — трансформеры](#transformer--трансформеры)
 - [Router — слоты маршрутизации](#router--слоты-маршрутизации)
 - [model в AGENT.md — официальная спецификация](#model-в-agentmd--официальная-спецификация)
@@ -200,6 +201,39 @@ CCR поддерживает `$VAR` и `${VAR}` в любых строковых
 ```
 
 ---
+
+## Framework GPU API
+
+The configured default is `lemonade-qwen38-27b-udq4km-mmf16-no-reasoning`
+(Qwen 27B). The provider uses `${ROUTER_URL}/v1/chat/completions` and
+`${ROUTER_API_KEY}`. Local `.claude_config` maps `ICLAUDE_ROUTER_URL` and
+`ICLAUDE_ROUTER_API_KEY` to those variables; read the HTTPS credential from a
+protected local file rather than embedding it in JSON.
+
+Keep CCR `cleancache` enabled: Framework rejects Anthropic `cache_control`
+inside OpenAI message blocks. The configured `maxtoken` transformer caps output
+at 8192, below the local Qwen context limit. Set `ICLAUDE_MAX_THINKING_TOKENS=0`
+for this no-reasoning profile; CCR otherwise forwards Claude thinking as the
+unsupported OpenAI `reasoning` field. Request logging stays disabled.
+
+If lowercase `no_proxy` is exported by the parent shell, the launcher currently
+overwrites it with a boolean. Remove that inherited variable while preserving
+uppercase `NO_PROXY`:
+
+```bash
+env -u no_proxy ./iclaude.sh --router
+```
+
+The [trusted LAN template](../examples/framework-lan-router.json) uses
+`http://192.168.68.123:8095/v1/chat/completions`. Access is restricted to the
+configured trusted LAN; `lan` is a dummy key, not a credential. HTTPS edge access
+still requires the real token. Keep native Ollama and Runtime Manager listeners
+on loopback. Both boundaries use public aliases, not native backend tags.
+
+The GLM aliases are `ollama-glm-5-3-cloud` and
+`ollama-glm-5-3-flash-cloud`. Their function-tools capability is maintained in
+the Framework production catalog. Changing a router model cannot replace a
+missing server capability declaration.
 
 ## Transformer — трансформеры
 
@@ -513,42 +547,49 @@ module.exports = async function router(req, config) {
 
 ## Примеры конфигурации
 
-### Текущая конфигурация проекта
+### Framework Qwen 27B configuration
 
 ```json
 {
   "PORT": 3456,
-  "PROXY_URL": "https://...",
-  "LOG": true,
-  "LOG_LEVEL": "debug",
+  "HOST": "127.0.0.1",
+  "LOG": false,
+  "LOG_LEVEL": "info",
   "API_TIMEOUT_MS": 600000,
   "Providers": [
     {
-      "name": "deepseek",
-      "api_base_url": "https://...",
-      "api_key": "...",
-      "models": ["deepseek-chat"],
+      "name": "homelab",
+      "api_base_url": "${ROUTER_URL}/v1/chat/completions",
+      "api_key": "${ROUTER_API_KEY}",
+      "models": [
+        "lemonade-qwen38-27b-udq4km-mmf16-no-reasoning"
+      ],
       "transformer": {
-        "use": ["deepseek"],
-        "deepseek-chat": {
-          "use": ["tooluse"]
-        }
+        "use": [
+          "cleancache",
+          [
+            "maxtoken",
+            {
+              "max_tokens": 8192
+            }
+          ],
+          "x-project-id"
+        ]
       }
-    },
-    {
-      "name": "ollama",
-      "api_base_url": "http://localhost:11434/v1/chat/completions",
-      "api_key": "ollama",
-      "models": ["qwen2.5-coder:7b", "llama3.1:8b", "mistral:7b"]
     }
   ],
   "Router": {
-    "default": "deepseek,deepseek-chat",
-    "background": "ollama,qwen2.5-coder:7b",
-    "think": "deepseek,deepseek-chat",
-    "longContext": "deepseek,deepseek-chat",
+    "default": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "background": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "think": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
+    "longContext": "homelab,lemonade-qwen38-27b-udq4km-mmf16-no-reasoning",
     "longContextThreshold": 60000
-  }
+  },
+  "transformers": [
+    {
+      "path": "${CLAUDE_CONFIG_DIR}/.claude-code-router/plugins/x-project-id.js"
+    }
+  ]
 }
 ```
 
