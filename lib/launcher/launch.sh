@@ -731,7 +731,13 @@ launch_claude() {
             # (do NOT return here — need to reach claude binary detection below)
         else
             # Solo router mode: pass isolated HOME so CCR stores state in isolated env
-            HOME="$ccr_home" exec "$ccr_cmd" code "$@"
+            # This exec bypasses native registration below; forward the same MCP
+            # config to Claude through CCR while preserving additional user configs.
+            local -a router_mcp_args=()
+            if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
+                router_mcp_args+=( --mcp-config "$(iwiki_mcp_launch_config)" )
+            fi
+            HOME="$ccr_home" exec "$ccr_cmd" code "${router_mcp_args[@]}" "$@"
         fi
     fi
 
