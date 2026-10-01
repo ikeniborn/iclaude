@@ -254,7 +254,7 @@ ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN=
 # Use these together with the GLM router.json profile; not for native Claude.
 # ICLAUDE_ANTHROPIC_MODEL=homelab,ollama-glm-5-3-cloud
 # ICLAUDE_CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
-# ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192
+# ICLAUDE_CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000
 
 # --- Anthropic API key (для роутинга через CCR) ---
 # Нужен при роутинге через CCR к Anthropic (--router + Anthropic в router.json).
