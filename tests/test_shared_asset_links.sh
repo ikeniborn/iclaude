@@ -32,9 +32,14 @@ mkdir -p "$HOME_DIR"
 # --- fresh home: links created for every existing store entry ---
 link_shared_assets "$HOME_DIR" "$STORE"; rc=$?
 assert_eq "$rc" "0" "link: exit 0 on fresh home"
-for e in skills hooks mcp plugins scripts CLAUDE.md .credentials.json router.json; do
+for e in skills hooks mcp plugins scripts CLAUDE.md router.json; do
   assert_true '[[ -L "$HOME_DIR/'"$e"'" && "$(readlink "$HOME_DIR/'"$e"'")" == "$STORE/'"$e"'" ]]' "link: $e linked to store"
 done
+assert_true '[[ ! -e "$HOME_DIR/.credentials.json" && ! -L "$HOME_DIR/.credentials.json" ]]' "auth: fresh credentials not linked by asset repair"
+printf '%s\n' '{"claudeAiOauth":{"accessToken":"fixture-independent"}}' > "$HOME_DIR/.credentials.json"
+credential_before="$(sha256sum "$HOME_DIR/.credentials.json")"
+link_shared_assets "$HOME_DIR" "$STORE"
+assert_eq "$(sha256sum "$HOME_DIR/.credentials.json")" "$credential_before" "auth: independent credentials preserved"
 
 # --- absent store entries are skipped without error, no dangling link ---
 assert_true '[[ ! -e "$HOME_DIR/commands" && ! -L "$HOME_DIR/commands" ]]' "link: absent commands skipped"
@@ -89,8 +94,8 @@ assert_eq "$out" "$STORE/skills" "integration: setup_claude_home wires links"
 # --- shared mode (explicit since the S5 default flip): no links in shared dir ---
 out="$(
   export ICLAUDE_HOME_MODE=shared
-  ISOLATED_NVM_DIR="$TMP/nvm" setup_isolated_config >/dev/null 2>&1 || exit 1
-  find "$TMP/nvm/.claude-isolated" -maxdepth 1 -type l | wc -l
+  ISOLATED_CONFIG_DIR="$STORE" setup_isolated_config >/dev/null 2>&1 || exit 1
+  find "$STORE" -maxdepth 1 -type l | wc -l
 )"
 assert_eq "$out" "0" "shared: no symlinks created in shared dir"
 

@@ -1,0 +1,60 @@
+schema_version: 1
+topic: per-project-oauth-login-fix
+status: approved
+registry:
+  authority: icodex-shared
+  path: profiles/registry.yaml
+  sha256: 7ef5c802e43fc96ecc23260e0460aa7a0df568c21dd369d86947d8e935d16a92
+context_inputs:
+  - docs/superpowers/intents/2026-10-01-per-project-oauth-login-fix-intent.md
+tasks:
+  - id: intent-profile-selection
+    requirements:
+      capability: strong
+      context: medium
+      latency: medium
+      cost: medium
+      throughput: medium
+    live_remaining_context: false
+    preferred_profiles:
+      - engineering
+  - id: spec-design
+    requirements:
+      capability: strong
+      context: medium
+      latency: medium
+      cost: medium
+      throughput: medium
+    live_remaining_context: false
+    preferred_profiles:
+      - synthesis
+  - id: plan-writing
+    requirements:
+      capability: strong
+      context: medium
+      latency: medium
+      cost: medium
+      throughput: medium
+    live_remaining_context: false
+    preferred_profiles:
+      - synthesis
+  - id: implementation
+    requirements:
+      capability: strong
+      context: medium
+      latency: medium
+      cost: medium
+      throughput: medium
+    live_remaining_context: false
+    preferred_profiles:
+      - engineering
+  - id: result-reconciliation
+    requirements:
+      capability: strong
+      context: medium
+      latency: medium
+      cost: medium
+      throughput: medium
+    live_remaining_context: false
+    preferred_profiles:
+      - engineering

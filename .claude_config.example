@@ -202,6 +202,15 @@ ICLAUDE_DOC_LANG=
 # ============================================================
 #  OAUTH ТОКЕН
 # ============================================================
+# Authentication policy is independent of the project config-directory mode.
+# shared  -- one common native login for all isolated projects (default).
+# project -- independent login in each project home; requires a separate home.
+# Set this only in .claude_config; inherited environment values and CLI flags
+# cannot select auth policy. Missing setting also means shared; empty is invalid.
+# This launcher-only selector is not exported to Claude Code.
+ICLAUDE_AUTH_MODE=shared
+# To opt out of common login, change the line above to ICLAUDE_AUTH_MODE=project.
+
 # OAuth токен для аутентификации Claude Code.
 # Получается после авторизации: claude login → "Store this token securely"
 # или через: claude setup-token

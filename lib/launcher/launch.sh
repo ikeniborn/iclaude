@@ -141,6 +141,14 @@ _should_capture() {
     [[ "${1:-false}" == "true" && "${2:-false}" != "true" ]]
 }
 
+_uses_subscription_auth() {
+    [[ "${1:-false}" != true && "${2:-false}" != true &&
+        -z "${ANTHROPIC_API_KEY:-}" && -z "${ANTHROPIC_AUTH_TOKEN:-}" &&
+        "${CLAUDE_CODE_USE_BEDROCK:-0}" != 1 &&
+        "${CLAUDE_CODE_USE_VERTEX:-0}" != 1 &&
+        "${CLAUDE_CODE_USE_FOUNDRY:-0}" != 1 ]]
+}
+
 launch_claude() {
     local skip_isolated="${1:-false}"
     shift  # Remove first argument, rest are Claude args
@@ -150,8 +158,8 @@ launch_claude() {
     # confuses the Claude-in-Chrome extension into opening Yandex or wrong browser.
     unset CHROME_DESKTOP
 
-    # Check OAuth token expiration before launching
-    check_oauth_token "$skip_isolated"
+    # Native Claude owns subscription refresh; automatic setup-token does not
+    # persist a refreshed login and must not run before source selection.
 
     # Background maintenance: prune stale session-env dirs on every launch
     cleanup_stale_session_env
@@ -191,6 +199,10 @@ launch_claude() {
     # microVM sandbox: run Claude inside Firecracker VM (kernel isolation)
     local use_microvm=false
     if [[ "${USE_MICRO_VM_FLAG:-false}" == "true" ]]; then
+        if _uses_subscription_auth "$skip_isolated" "$use_router"; then
+            print_error "Subscription auth persistence is not supported in microVM mode; use native launcher mode."
+            return 1
+        fi
         if [[ "$skip_isolated" == "true" ]]; then
             print_error "microVM is not supported in --system mode (isolated environment only)"
             print_info "Remove --sandbox-microvm or omit --system to use microVM isolation"
@@ -851,11 +863,23 @@ launch_claude() {
             trap 'stop_pii_proxy_server' EXIT INT TERM
         fi
         # In combined mode trap was already set (stop_pii_proxy_server + stop_ccr_server)
-        "${claude_cmd_arr[@]}" "$@"
-        exit $?
+        local native_status=0
+        if _uses_subscription_auth "$skip_isolated" "$use_router"; then
+            local OAUTH_NATIVE_COMMAND_COUNT=${#claude_cmd_arr[@]}
+            oauth_run_session "$ISOLATED_CONFIG_DIR" "$CLAUDE_CONFIG_DIR" "${claude_cmd_arr[@]}" "$@" || native_status=$?
+        else
+            "${claude_cmd_arr[@]}" "$@" || native_status=$?
+        fi
+        exit "$native_status"
     fi
 
-    # Standard exec path: replace shell process (no cleanup needed)
+    if _uses_subscription_auth "$skip_isolated" "$use_router"; then
+        local native_status=0 OAUTH_NATIVE_COMMAND_COUNT=${#claude_cmd_arr[@]}
+        oauth_run_session "$ISOLATED_CONFIG_DIR" "$CLAUDE_CONFIG_DIR" "${claude_cmd_arr[@]}" "$@" || native_status=$?
+        exit "$native_status"
+    fi
+
+    # Non-subscription/system flows retain the standard exec path.
     exec "${claude_cmd_arr[@]}" "$@"
 }
 

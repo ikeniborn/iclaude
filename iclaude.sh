@@ -103,6 +103,7 @@ fi
 #######################################
 if [[ -d "$LIB_DIR/oauth" ]]; then
     source "${LIB_DIR}/oauth/token.sh"
+    source "${LIB_DIR}/oauth/persistence.sh"
 fi
 
 #######################################
@@ -751,7 +752,9 @@ migrate_isolated_store || exit 1
     # Materialize CLAUDE_CODE_OAUTH_TOKEN to .credentials.json (best-effort, no-op
     # if already present or no env token) — lets statusline rate-limit fetch read
     # the token from disk, since Claude Code doesn't pass env vars to hooks.
-    materialize_oauth_credentials "$CLAUDE_CONFIG_DIR"
+    if ! _uses_subscription_auth "$use_system" "${USE_ROUTER_FLAG:-false}"; then
+        materialize_oauth_credentials "$CLAUDE_CONFIG_DIR"
+    fi
 
     echo ""
     echo "═══════════════════════════════════════"
@@ -775,7 +778,7 @@ migrate_isolated_store || exit 1
         fi
 
         # Check OAuth token expiration
-        check_token_expiration
+        check_token_expiration || true
 
         # Check if lockfile has changed since last environment update
         check_lockfile_changes
@@ -882,7 +885,7 @@ migrate_isolated_store || exit 1
     fi
 
     # Check OAuth token expiration
-    check_token_expiration
+    check_token_expiration || true
 
     # Check if lockfile has changed since last environment update
     check_lockfile_changes

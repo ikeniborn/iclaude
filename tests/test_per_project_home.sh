@@ -19,6 +19,8 @@ assert_match() { if [[ "$1" =~ $2 ]]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+ISOLATED_CONFIG_DIR="$TMP/store"
+mkdir -p "$ISOLATED_CONFIG_DIR"
 
 # --- resolve_project_root ---
 
