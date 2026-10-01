@@ -241,6 +241,29 @@ ICLAUDE_CLAUDE_CODE_OAUTH_TOKEN=
 # В дефолтном router.json.example используются: DeepSeek, OpenRouter, Google.
 # Groq, Volcengine, SiliconFlow — для кастомных конфигураций роутера.
 
+# --- Framework GPU API (current router.json provider: homelab) ---
+# router.json expands ${ROUTER_URL}/v1/chat/completions and ${ROUTER_API_KEY}.
+# ICLAUDE_* names below are exported without the prefix by the config env-map.
+# Use the API root URL, without /v1/chat/completions.
+ICLAUDE_ROUTER_URL=https://homelab.ikeniborn.ru
+ICLAUDE_ROUTER_API_KEY=
+# HTTPS credential example: read a protected local file; never commit its value.
+# ICLAUDE_ROUTER_API_KEY="$(cat /path/to/framework-edge-token.txt)"
+#
+# Required for the configured Qwen 27B no-reasoning alias: otherwise CCR
+# forwards Claude thinking as an unsupported OpenAI reasoning field.
+# Remove this override when returning to native Claude thinking.
+ICLAUDE_MAX_THINKING_TOKENS=0
+#
+# Trusted LAN alternative (no real token required on the approved subnet):
+# ICLAUDE_ROUTER_URL=http://192.168.68.123:8095
+# ICLAUDE_ROUTER_API_KEY=lan
+# Ensure local/Framework traffic bypasses any configured proxy:
+# ICLAUDE_NO_PROXY=localhost,127.0.0.1,homelab.ikeniborn.ru,192.168.68.123
+# If lowercase no_proxy is inherited, launch with:
+# env -u no_proxy ./iclaude.sh --router
+# Model aliases and the 8192 output cap belong in router.json, not env variables.
+
 # --- Anthropic API key (для роутинга через CCR) ---
 # Нужен при роутинге через CCR к Anthropic (--router + Anthropic в router.json).
 # В нативном режиме (без --router) Claude Code использует OAuth из .credentials.json — API ключ не нужен.
