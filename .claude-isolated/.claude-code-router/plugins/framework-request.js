@@ -4,6 +4,13 @@ module.exports = class FrameworkRequest {
 
   transformRequestIn(request) {
     delete request.reasoning;
+    // CCR emits empty descriptions for MCP tools without documentation;
+    // Framework accepts an omitted description but rejects an empty string.
+    for (const tool of request.tools || []) {
+      if (tool.function?.description === '') {
+        delete tool.function.description;
+      }
+    }
     return request;
   }
 };
