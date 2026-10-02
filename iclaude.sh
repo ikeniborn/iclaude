@@ -216,7 +216,7 @@ migrate_isolated_store || exit 1
     show_password=false
     proxy_url=""
     skip_permissions=false  # По умолчанию безопасный режим (БЕЗ --dangerously-skip-permissions)
-    no_proxy=false
+    no_proxy_flag=false
     use_system=false
     use_isolated_config=false
     use_shared_config=false
@@ -320,7 +320,7 @@ migrate_isolated_store || exit 1
                 exit 0
                 ;;
             --no-proxy)
-                no_proxy=true
+                no_proxy_flag=true
                 shift
                 ;;
             --install)
@@ -763,7 +763,7 @@ migrate_isolated_store || exit 1
     echo ""
 
     # Check if --no-proxy flag is set
-    if [[ "$no_proxy" == true ]]; then
+    if [[ "$no_proxy_flag" == true ]]; then
         print_info "Running without proxy"
         echo ""
 
@@ -881,7 +881,7 @@ migrate_isolated_store || exit 1
             restore_git_proxy
         fi
 
-        no_proxy=true
+        no_proxy_flag=true
     fi
 
     # Check OAuth token expiration

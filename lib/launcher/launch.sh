@@ -737,6 +737,12 @@ launch_claude() {
             if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
                 router_mcp_args+=( --mcp-config "$(iwiki_mcp_launch_config)" )
             fi
+            # CCR must keep its isolated HOME, but Claude's tools need the caller's
+            # HOME and proxy exclusions. Adapt CCR's generated --settings at spawn.
+            export ICLAUDE_ROUTER_USER_HOME="$HOME"
+            export ICLAUDE_ROUTER_CLAUDE_COMMAND="${CLAUDE_PATH:-claude}"
+            printf -v CLAUDE_PATH 'python3 %q' "${LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/router/claude-env.py"
+            export CLAUDE_PATH
             HOME="$ccr_home" exec "$ccr_cmd" code "${router_mcp_args[@]}" "$@"
         fi
     fi
