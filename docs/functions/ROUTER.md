@@ -247,13 +247,13 @@ scales with its assumed context window; it does not mean this file was truncated
 This verifies full instruction loading, not a stress test at the full 1M limit.
 Ollama advertises 1M context: https://ollama.com/library/glm-5.3.
 
-If lowercase `no_proxy` is exported by the parent shell, the launcher currently
-overwrites it with a boolean. Remove that inherited variable while preserving
-uppercase `NO_PROXY`:
-
-```bash
-env -u no_proxy ./iclaude.sh --router
-```
+Solo router sessions keep CCR state under its isolated `HOME`, while Claude and
+its tools use the caller's original `HOME`. This preserves access to existing
+GitLab CLI credentials without copying them into the isolated store.
+The launch adapter preserves `NO_PROXY` and `no_proxy`, adds `127.0.0.1` for CCR,
+and overrides CCR's loopback-only exclusion in per-session settings. The shared
+CCR settings cache stays unchanged. The launcher flag `--no-proxy` uses a separate
+variable, so exported lowercase `no_proxy` no longer needs to be removed.
 
 The [trusted LAN template](../examples/framework-lan-router.json) uses
 `http://192.168.68.123:8095/v1/chat/completions`. Access is restricted to the
