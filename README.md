@@ -14,6 +14,19 @@ Claude Code is Anthropic's official CLI for working with the AI assistant direct
 
 ---
 
+## Workflow boundaries
+
+Project policy selects `direct`, `chain`, or `loen` before applying Superpowers skills.
+Superpowers 6.3.0's `Spike`, `Bounded`, and `Architectural` paths do not replace these
+routes. `direct` and `chain/execute` skip brainstorming and reuse authorization for
+unchanged scope. `chain/full` enters `Architectural` without repeating path selection;
+its spec/plan checks and approvals remain required. LoEn keeps its own lifecycle.
+Project instructions do not prescribe models, reasoning levels, or model-switch confirmations.
+The shared [CLAUDE.md](.claude-isolated/CLAUDE.md) defines the complete routing policy.
+Its common policy follows icodex AGENTS.md, with Claude tool and worktree adaptations.
+Task pages are the sole durable status source. Verification evidence is reused while
+relevant inputs remain unchanged. Hosted iwiki carries configured policy through `project_policy`.
+
 ## Problems it solves
 
 ### 1. Corporate networks and proxies

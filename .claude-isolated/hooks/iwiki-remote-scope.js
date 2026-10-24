@@ -35,7 +35,7 @@ process.stdout.write(
   'names before passing them to `wiki_bind`; never pass TOML text, paths, ' +
   '`iwiki_id`, tokens, or other credentials. Call `wiki_bind` with the full ' +
   'normalized `read`, `write`, and `primary` values from `.iwiki.toml`, and pass ' +
-  '`[specifications].mode` as `specification_mode`, before `wiki_status`, ' +
+  'configured hosted policy as described below, before `wiki_status`, ' +
   '`wiki_search`, task-ledger, or any other wiki call.\n\n' +
   'Do not infer, broaden, or replace that scope with a project name, primary ' +
   'domain, or current session scope. `wiki_search` also takes a `scope` ' +
@@ -73,30 +73,51 @@ process.stdout.write(
   'refusal answers `access_denied` whose `data` carries your own `binding_source` ' +
   'and, when the gate can attribute it, a `reason`; for `wiki_spec_resolve` that ' +
   'reason is `invalid_domain`, `primary_not_selected`, `primary_not_writable`, or ' +
-  '`not_bound_primary` — the last one is a binding mismatch, not a missing grant.' +
+  '`not_bound_primary` — the last one means the scenario is outside the bound primary, not a missing grant. Resolve it from its owning project.' +
   '\n\n' +
-  'Specification (Given-When-Then) policy is resolved server-side, but this ' +
-  'transport carries the project tier: the `[specifications] mode` you passed as ' +
-  '`wiki_bind(specification_mode=…)` is gated by the server\'s own ' +
-  '`allow_project_mode` switch and a tighten-only guard. Still take each domain\'s ' +
-  'effective mode from the `specifications` block of `wiki_status`, never from the ' +
-  'project file: precedence is hosted exact override, the carried project mode, ' +
-  'hosted default, then the built-in `optional`, so a `[specifications] mode` in ' +
-  '`.iwiki.toml` counts only when the answer reports `source: project` — a refused ' +
-  'value comes back as `project_mode_suppressed: true`, and a hosted override wins ' +
-  'over it outright. If the bind rejects `specification_mode`, the parameter is ' +
-  'absent, or `wiki_status` reports a looser mode than the project file asked for, ' +
-  'report the mismatch, make no mutating specification call, and retain task ' +
-  'lifecycle `completion-pending`; ordinary Wiki work stays available.\n\n' +
+  'For hosted HTTP, prefer `project_policy`. Map `[specifications].mode` to ' +
+  '`specification_mode` and `[code_graph].max_snapshot_age_seconds` to its same-named ' +
+  'field. Send only explicitly configured fields. Never send `require_session_binding` in ' +
+  'project_policy; it is operator-only. Never send both `project_policy` and the deprecated ' +
+  'top-level `specification_mode` alias. Use the alias only when the live schema lacks ' +
+  '`project_policy` and only specification mode is configured. Resend all configured fields ' +
+  'on every re-bind; a bind replaces the policy in full. Local stdio omits both policy ' +
+  'arguments and reads project configuration.\n' +
+  '\n' +
+  'Read effective values and sources from `wiki_status.policy.domains[]` and report ' +
+  '`suppressed`. Take the effective specification mode per domain from the `specifications` ' +
+  'block of `wiki_status`. The `[specifications] mode` in the project file is not evidence ' +
+  'of effective policy. Precedence per field: exact operator override, tenant-wide ' +
+  'override, carried project value, hosted default, built-in value. `source: project` ' +
+  'confirms the carried value. `source: hosted_override` is legitimate and is not a ' +
+  'mismatch. Report `project_mode_suppressed: true` when a carried mode is refused. Project ' +
+  'values only tighten policy: disabled < optional < strict; a smaller snapshot age is ' +
+  'stricter, with 0 meaning infinity. `allow_project_mode=false` disables both client ' +
+  'policy fields. Never relax freshness checks to accept a stale snapshot.\n' +
+  '\n' +
+  'Report configured policy that cannot be carried or an unaccepted mismatch, and retain ' +
+  '`completion-pending`. For specification-mode mismatches, block specification mutations; ' +
+  'ordinary Wiki work remains available with a trusted binding. After binding, require ' +
+  '`binding_source: session` and the configured primary. A rejected bind, unexpected ' +
+  'session, or substituted primary blocks all mutations until the exact binding is ' +
+  'restored.\n' +
+  '\n' +
+  'For PostgreSQL page mutations, read the current page immediately before writing and pass ' +
+  'its `revision` as `expected_revision`. For section protection, also read the heading and ' +
+  'pass `section_hash` as `expected_section_hash`. Re-read after conflicts. PostgreSQL ' +
+  'writes are durable; do not call Git-only wiki_sync or OKF tools. Hosted domain creation ' +
+  'requires explicit authority; it is unsupported on local PostgreSQL stdio. Never expand ' +
+  'domain grants automatically.\n' +
+  '\n' +
   (dualActive
-    ? 'This session has both transports registered: `wiki_code_index`, ' +
+    ? 'This session has both transports registered: `wiki_code_index`, `wiki_code_status`, ' +
       '`wiki_code_search`, and `wiki_code_context` run on the `iwiki-local` ' +
       'server (it has the repository checkout); every other wiki tool, ' +
       'including `wiki_code_publish_begin`/`_batch`/`_finalize`, runs on ' +
       '`iwiki-remote` as usual. No config switch is needed for either. The ' +
-      '`specification_mode` argument belongs to the hosted bind only — the ' +
+      '`project_policy` argument belongs to the hosted bind only — the ' +
       '`iwiki-local` server reads `.iwiki.toml` itself and rejects a client ' +
-      'binding override with `project_config_manual_edit_required`. ' +
+      'policy override. If the remote server is unreachable, the local server becomes the full server. Record writes to a different local store in the task ledger for later reconciliation. ' +
       'Trust code results only when `wiki_code_status` reports `state: ' +
       '"ready"` and `fresh: true`; otherwise fall back to repository search. ' +
       'A code read served by `iwiki-remote` never returns file source — ' +
