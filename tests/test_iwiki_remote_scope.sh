@@ -132,10 +132,25 @@ t_specification_policy_note() {
     else
       fail "$mode: takes the effective specification mode from wiki_status"
     fi
-    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"wiki_bind(specification_mode"* ]]; then
+    if [[ "$out" == *"[specifications] mode"* && "$out" == *"source: project"* && "$out" == *"project_policy"* && "$out" == *"max_snapshot_age_seconds"* ]]; then
       pass "$mode: gates the project file mode on 'source: project' and carries it on wiki_bind"
     else
       fail "$mode: gates the project file mode on 'source: project' and carries it on wiki_bind"
+    fi
+    if [[ "$out" == *"tenant-wide override"* && "$out" == *"source: hosted_override"* && "$out" == *"not a mismatch"* ]]; then
+      pass "$mode: accepts hosted policy precedence"
+    else
+      fail "$mode: accepts hosted policy precedence"
+    fi
+    if [[ "$out" == *"Never send both"* && "$out" == *"only specification mode is configured"* ]]; then
+      pass "$mode: restricts deprecated alias fallback"
+    else
+      fail "$mode: restricts deprecated alias fallback"
+    fi
+    if [[ "$out" == *"looser mode than the project file"* ]]; then
+      fail "$mode: must not reject a valid hosted override"
+    else
+      pass "$mode: no blanket rejection of hosted overrides"
     fi
     if [[ "$out" == *"project_mode_suppressed"* && "$out" == *"completion-pending"* ]]; then
       pass "$mode: fail-closed on a refused or mismatched specification mode"

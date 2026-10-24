@@ -53,6 +53,10 @@ assert_true '[[ ! -L "$HOME_DIR/.claude-code-router" ]]' "CCR state directory re
 assert_true '[[ ! -e "$HOME_DIR/commands" && ! -L "$HOME_DIR/commands" ]]' "link: absent commands skipped"
 assert_true '[[ ! -e "$HOME_DIR/agents" && ! -L "$HOME_DIR/agents" ]]' "link: absent agents skipped"
 
+# --- updated shipped guidance reaches an existing home through its shared link ---
+cp "$ROOT/.claude-isolated/CLAUDE.md" "$STORE/CLAUDE.md"
+assert_true 'cmp -s "$ROOT/.claude-isolated/CLAUDE.md" "$HOME_DIR/CLAUDE.md"' "guidance: shipped policy update reaches existing home"
+
 # --- correct link untouched, idempotent second run ---
 link_shared_assets "$HOME_DIR" "$STORE"
 assert_eq "$(readlink "$HOME_DIR/skills")" "$STORE/skills" "link: idempotent rerun keeps target"
