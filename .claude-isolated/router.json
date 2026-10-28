@@ -13,7 +13,8 @@
       "api_key": "${ROUTER_API_KEY}",
       "models": [
         "ollama-glm-5-3-cloud",
-        "ollama-glm-5-3-flash-cloud"
+        "ollama-glm-5-3-flash-cloud",
+        "lemonade-qwen38-flash-next-udiq4xs-mmf16"
       ],
       "transformer": {
         "use": [
