@@ -154,7 +154,7 @@ def test_missing_token_is_actionable(monkeypatch, capsys):
 def test_malformed_json_diagnostic_does_not_echo_input(monkeypatch, capsys):
     monkeypatch.setenv('ICLAUDE_SEARCH_MODE', 'disabled')
     monkeypatch.setenv('ICLAUDE_SEARCH_ROUTE_MODES', 'synthetic-secret-invalid-json')
-    monkeypatch.setattr('sys.argv', ['policy.py', 'false', 'false', ''])
+    monkeypatch.setattr('sys.argv', ['policy.py', 'true', 'false', ''])
     assert policy.main() == 1
     assert 'synthetic-secret' not in capsys.readouterr().err
 
@@ -180,3 +180,11 @@ def test_active_user_store_reserved_registration(tmp_path, monkeypatch):
     (active / '.claude.json').write_text('{"mcpServers":{"framework-search":{}}}')
     with pytest.raises(ValueError):
         policy.launch_arguments('disabled', [], '')
+
+
+def test_nonrouted_ignores_malformed_unused_route_map(monkeypatch, capsys):
+    monkeypatch.setenv('ICLAUDE_SEARCH_MODE', 'native')
+    monkeypatch.setenv('ICLAUDE_SEARCH_ROUTE_MODES', 'invalid-unused-map')
+    monkeypatch.setattr('sys.argv', ['policy.py', 'false', 'false', ''])
+    assert policy.main() == 0
+    assert 'native' in capsys.readouterr().out

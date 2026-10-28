@@ -107,7 +107,7 @@ def main():
     from urllib.parse import urlsplit
     routed, microvm, router_config, *args = sys.argv[1:]
     try:
-        route_modes = json.loads(os.environ.get('ICLAUDE_SEARCH_ROUTE_MODES', '{}'))
+        route_modes = json.loads(os.environ.get('ICLAUDE_SEARCH_ROUTE_MODES', '{}')) if routed == 'true' else {}
         pair = selected_model(args, router_config) if routed == 'true' and route_modes else None
         mode = resolve_mode(routed=routed == 'true', native=os.environ.get('ICLAUDE_SEARCH_MODE', 'inherit'),
                             routed_default=os.environ.get('ICLAUDE_ROUTER_SEARCH_MODE', 'inherit'),
