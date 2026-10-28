@@ -17,7 +17,9 @@ for name in ("NO_PROXY", "no_proxy"):
     if "127.0.0.1" not in entries:
         entries.append("127.0.0.1")
     settings["env"][name] = ",".join(entries)
-args[index + 1] = json.dumps(settings)
+# Restore the exact launch arguments before CCR's generated settings so user
+# settings retain their order and the router environment still takes precedence.
+args = json.loads(Path(os.environ.pop("ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE")).read_text()) + ["--settings", json.dumps(settings)]
 os.environ["HOME"] = os.environ.pop("ICLAUDE_ROUTER_USER_HOME")
 command = shlex.split(os.environ.pop("ICLAUDE_ROUTER_CLAUDE_COMMAND"))
 os.environ.pop("CLAUDE_PATH", None)

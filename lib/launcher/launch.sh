@@ -753,11 +753,19 @@ launch_claude() {
             fi
             # CCR must keep its isolated HOME, but Claude's tools need the caller's
             # HOME and proxy exclusions. Adapt CCR's generated --settings at spawn.
+            # CCR 2.0.0 reparses flags and shell-serializes repeated values as arrays.
+            # Keep Claude arguments out of that conversion, including inline MCP JSON.
+            # A detached CCR daemon must not inherit prompts or inline credentials.
+            # Keep the payload in a one-shot pipe, reachable while CCR code runs.
+            unset ICLAUDE_ROUTER_CLAUDE_ARGS ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE
+            local router_args_fd router_args_pid="$BASHPID"
+            exec {router_args_fd}< <(python3 -c 'import json, sys; print(json.dumps(sys.argv[1:]))' "${router_mcp_args[@]}" "$@")
+            export ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE="/proc/$router_args_pid/fd/$router_args_fd"
             export ICLAUDE_ROUTER_USER_HOME="$HOME"
             export ICLAUDE_ROUTER_CLAUDE_COMMAND="${CLAUDE_PATH:-claude}"
             printf -v CLAUDE_PATH 'python3 %q' "${LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/router/claude-env.py"
             export CLAUDE_PATH
-            HOME="$ccr_home" exec "$ccr_cmd" code "${router_mcp_args[@]}" "$@"
+            HOME="$ccr_home" exec "$ccr_cmd" code
         fi
     fi
 

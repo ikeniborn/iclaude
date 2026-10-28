@@ -29,6 +29,7 @@ cat > "$TMP/record" <<'REC'
 #!/usr/bin/env bash
 if [[ "${1:-}" == -v ]]; then echo mock; exit; fi
 printf '%s\0' "$@" > "$CAPTURE"
+if [[ -n "${ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE:-}" ]]; then cat "$ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE" > "$CAPTURE.claude-args"; fi
 printf '%s\0' "${FRAMEWORK_WEBSEARCH_TOKEN:-}" "${ANTHROPIC_API_KEY:-}" "${ANTHROPIC_BASE_URL:-}" > "$CAPTURE.context"
 REC
 chmod +x "$TMP/record"
@@ -50,6 +51,9 @@ import json, pathlib, sys
 capture, path, mode, root = sys.argv[1:]
 args = pathlib.Path(capture).read_bytes().decode().rstrip('\0').split('\0')
 assert (args[0] == 'code') == (path == 'solo'), args
+if path == 'solo':
+    assert args == ['code'], args
+    args = json.loads(pathlib.Path(capture + '.claude-args').read_text())
 assert args[-4:] == ['--print', 'prompt with spaces', '--mcp-config', root + '/project/user.json'], args
 assert root + '/store/mcp/iwiki-remote.json' in args, args
 assert ('--disallowedTools' in args) == (mode in ('disabled', 'framework')), args

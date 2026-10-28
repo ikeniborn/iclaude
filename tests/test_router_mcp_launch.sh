@@ -18,6 +18,7 @@ cat > "$TMP/ccr" <<'SH'
 #!/usr/bin/env bash
 if [[ "$1" == -v ]]; then echo 'mock CCR'; exit 0; fi
 printf '%s\0' "$@" > "$CAPTURE"
+cat "$ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE" > "$CAPTURE.claude-args"
 printf '%s' "${IWIKI_COMMAND:-}" > "$CAPTURE.command"
 SH
 chmod +x "$TMP/ccr"
@@ -25,6 +26,7 @@ export USE_ROUTER_FLAG=true ISOLATED_CONFIG_DIR="$TMP/store"
 export CLAUDE_CONFIG_DIR="$TMP/store" ISOLATED_NVM_DIR="$TMP/nvm"
 export IWIKI_COMMAND=/test/iwiki-mcp IWIKI_LLM_KEY=test-key
 export IWIKI_REMOTE_URL=https://example.invalid/mcp IWIKI_REMOTE_TOKEN=test-token
+unset IWIKI_CODE_GRAPH_MCP_TOKEN IWIKI_CODE_GRAPH_MCP_URL
 export CAPTURE="$TMP/args"
 for mode in dual remote disabled; do
     (
@@ -36,10 +38,12 @@ for mode in dual remote disabled; do
         launch_claude false --print 'prompt with spaces' --mcp-config extra.json
     ) >/dev/null
     python3 - "$CAPTURE" "$TMP/store" "$mode" <<'PY'
-import pathlib, sys
+import json, pathlib, sys
 capture, store, mode = sys.argv[1:]
 args = pathlib.Path(capture).read_bytes().decode().rstrip('\0').split('\0')
-expected = ['code']
+assert args == ['code'], args
+args = json.loads(pathlib.Path(capture + '.claude-args').read_text())
+expected = []
 if mode != 'disabled':
     suffix = 'dual' if mode == 'dual' else 'remote'
     expected += ['--mcp-config', f'{store}/mcp/iwiki-{suffix}.json']
