@@ -537,3 +537,32 @@ Statusline scripts: `.claude-isolated/scripts/`
 | All commands | `docs/functions/CONFIGURATION.md` |
 | Usage scenarios | `docs/functions/USE_CASES.md` |
 | Telemetry | `docs/functions/TELEMETRY.md` |
+
+## Session search selection
+
+`ICLAUDE_SEARCH_MODE` controls non-routed sessions; `ICLAUDE_ROUTER_SEARCH_MODE`
+controls routed sessions. Both default to `inherit`, preserving native WebSearch
+and existing MCP servers. Explicit modes are `native`, `framework`, and `disabled`.
+Framework mode adds the shared installed `framework-websearch-mcp` command and denies
+native WebSearch for that session. Disabled denies native WebSearch without adding
+the integration. Other user tools remain available.
+
+Set `ICLAUDE_SEARCH_ROUTE_MODES` to a JSON object keyed by exact `provider,model`
+pairs for route overrides. An explicit `inherit` cancels the routed default.
+Selection uses `--model`, `ANTHROPIC_MODEL`, then `Router.default`. Unresolved route
+maps fail instead of guessing. Search selection is fixed per process; restart to
+change it after interactive model changes.
+
+Framework mode requires an absolute executable `ICLAUDE_SEARCH_MCP_COMMAND`,
+HTTPS `/v1/websearch` endpoint `ICLAUDE_SEARCH_API_URL`, and
+`ICLAUDE_SEARCH_API_ENV_KEY` naming an exported token variable. Tokens stay in the
+child environment. Install the shared wrapper explicitly; launches never install
+or update it. MCP search queries go directly to Framework and do not receive the
+inference proxy's PII masking. Managed search in microVM mode is unsupported;
+inherit preserves that launch path. Provider errors stay visible without fallback.
+
+Managed modes reject strict MCP configuration, tool/settings overrides, and existing
+`framework-search` registrations in project, user, or supplied MCP configuration.
+Native mode also rejects an existing WebSearch denial. Framework and disabled modes
+merge existing denials. Resolve the reported conflict before launching; persistent
+configuration files are never rewritten.

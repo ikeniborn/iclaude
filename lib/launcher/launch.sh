@@ -170,6 +170,19 @@ launch_claude() {
         use_router=true
     fi
 
+    local search_router_config=""
+    if [[ "$use_router" == true ]]; then
+        if [[ "$skip_isolated" == false && -d "${ISOLATED_NVM_DIR:-}" ]]; then
+            search_router_config="$ISOLATED_CONFIG_DIR/router.json"
+        else
+            search_router_config="$HOME/.claude/router.json"
+        fi
+    fi
+    local -a SEARCH_LAUNCH_ARGS=()
+    if declare -F search_prepare_launch >/dev/null; then
+        search_prepare_launch "$use_router" "${USE_MICRO_VM_FLAG:-false}" "$search_router_config" "$@" || return 1
+    fi
+
     # Langfuse non-router capture: a config-only toggle (.claude_config), suppressed in
     # router mode by _should_capture (LiteLLM already emits to Langfuse there).
     local use_langfuse_capture=false
@@ -734,6 +747,7 @@ launch_claude() {
             # This exec bypasses native registration below; forward the same MCP
             # config to Claude through CCR while preserving additional user configs.
             local -a router_mcp_args=()
+            router_mcp_args+=("${SEARCH_LAUNCH_ARGS[@]}")
             if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
                 router_mcp_args+=( --mcp-config "$(iwiki_mcp_launch_config)" )
             fi
@@ -846,6 +860,7 @@ launch_claude() {
     # Native-binary path is a single word — splits into one-element array.
     local -a claude_cmd_arr
     read -ra claude_cmd_arr <<< "$claude_cmd"
+    claude_cmd_arr+=("${SEARCH_LAUNCH_ARGS[@]}")
 
     # Register the iwiki MCP server(s) from the tracked, secret-free mcp/iwiki*.json
     # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so
