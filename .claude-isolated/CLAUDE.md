@@ -343,7 +343,10 @@ Keep the original private cache, endpoint, primary and bearer. The CLI checks re
 through `wiki_code_publish_inspect` and sends the missing batches. Progress goes to
 stderr. The final JSON on stdout identifies the original attempt's revision.
 Read `wiki_code_status` in the verified hosted session for the current active revision.
-Parsing interrupted before the pin was saved starts again.
+With publisher 0.7.324 or later, repeat the original command after a parsing interruption.
+Keep the local graph cache so the publisher can reuse compatible completed files.
+For local MCP indexing, start a new job after a process exit and poll its new ID.
+Use force only when every selected file must be parsed again. A valid upload pin takes precedence.
 After expiry or conflict, check the active revision before starting another attempt.
 Use `--forget-resume` only to discard the selected local checkpoint.
 Ordinary publication remains available on older servers.
