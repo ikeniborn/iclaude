@@ -323,6 +323,31 @@ Publication tools require hosted HTTP, writable primary, and server-advertised b
 They accept neither client `domain` nor `iwiki_id`.
 Never raise those limits client-side.
 
+### Monitor a local build
+
+Poll `wiki_code_status(job_id=..., job_only=true)` on the originating local MCP session
+for progress counters without reading the active snapshot. Check the returned job ID
+and terminal state. For a CLI upload, monitor stderr and preserve stdout for the final JSON.
+
+### Recover a hosted code graph upload
+
+When the CLI and hosted MCP support recovery (0.7.321 or later, PostgreSQL schema 10),
+run the command from the publishing checkout with `publish_mode = "mcp"`.
+Select recovery on the first upload. Repeat the same command after an interruption.
+
+```bash
+iwiki-mcp code publish --project . --resume --json
+```
+
+Keep the original private cache, endpoint, primary and bearer. The CLI checks receipts
+through `wiki_code_publish_inspect` and sends the missing batches. Progress goes to
+stderr. The final JSON on stdout identifies the original attempt's revision.
+Read `wiki_code_status` in the verified hosted session for the current active revision.
+Parsing interrupted before the pin was saved starts again.
+After expiry or conflict, check the active revision before starting another attempt.
+Use `--forget-resume` only to discard the selected local checkpoint.
+Ordinary publication remains available on older servers.
+
 ### Local build completion
 
 For a local build, `wiki_code_index(wait_seconds=...)` bounds the caller wait, not the
