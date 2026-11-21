@@ -351,6 +351,11 @@ After expiry or conflict, check the active revision before starting another atte
 Use `--forget-resume` only to discard the selected local checkpoint.
 Ordinary publication remains available on older servers.
 
+With publisher 0.7.325 or later, check the optional JSON field `reason` when `error` is `index_failed`.
+If it is `parse_checkpoint_storage_failed`, inspect cache permissions, free space and filesystem health on the publishing machine.
+The CLI also writes this reason to stderr in JSON mode.
+After correcting the storage problem, repeat the original command.
+
 ### Local build completion
 
 For a local build, `wiki_code_index(wait_seconds=...)` bounds the caller wait, not the
