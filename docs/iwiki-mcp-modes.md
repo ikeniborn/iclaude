@@ -167,3 +167,13 @@ With publisher 0.7.325 or later, check the optional JSON field `reason` when `er
 If it is `parse_checkpoint_storage_failed`, inspect cache permissions, free space and filesystem health on the publishing machine.
 The CLI also writes this reason to stderr in JSON mode.
 After correcting the storage problem, repeat the original command.
+
+For hosted publication quotas (server 0.7.326 or later, schema 11), check the CLI JSON
+`code` when `error` is `publication_failed` or `resume_failed`. If `code` is
+`publication_quota_exceeded`, report the returned `resource`: `sessions` counts
+open sessions and `staged_bytes` counts retained batch data. The refusal preserves
+accepted batches and the active snapshot. A refused batch does not renew the lease.
+Keep the checkpoint for a resumable upload. After capacity returns, repeat the original
+command while the lease and recovery deadline are valid. Replaying an accepted batch
+adds no charge. An ordinary retry opens a new session. Treat `busy` as a separate
+lock-contention response.
