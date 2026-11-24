@@ -161,6 +161,12 @@ For local MCP indexing, start a new job after a process exit and poll its new ID
 Use force only when every selected file must be parsed again. A valid upload pin takes precedence.
 After expiry or conflict, check the active revision before starting another attempt.
 Use `--forget-resume` only to discard the selected local checkpoint.
+
+With local publisher 0.7.329 or later, each SQLite export captures one graph revision.
+If a local writer blocks capture, ordinary publication reports `error=publication_failed` with `code=busy`.
+A new resumable capture reports `resume_busy`. Another publisher holding the checkpoint can also cause `resume_busy`.
+A local capture refusal opens no remote session. Keep the checkpoint and retry the original command after the lock clears.
+A valid upload pin continues its original revision even if a newer local graph is active.
 Ordinary publication remains available on older servers.
 
 With publisher 0.7.325 or later, check the optional JSON field `reason` when `error` is `index_failed`.
