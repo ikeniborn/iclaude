@@ -184,6 +184,10 @@ If it is `parse_checkpoint_storage_failed`, inspect cache permissions, free spac
 The CLI also writes this reason to stderr in JSON mode.
 After correcting the storage problem, repeat the original command.
 
+With hosted server 0.7.331 or later, the complete HTTP request body can be up to 16 MiB, including the JSON-RPC envelope.
+After HTTP 413, reduce the request body before retrying in the same MCP session. The selected project binding remains valid.
+For graph publication, also respect the batch limits returned by `wiki_code_publish_begin`.
+
 For hosted publication quotas (server 0.7.326 or later, schema 11), check the CLI JSON
 `code` when `error` is `publication_failed` or `resume_failed`. If `code` is
 `publication_quota_exceeded`, report the returned `resource`: `sessions` counts
