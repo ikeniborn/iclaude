@@ -357,6 +357,16 @@ A local capture refusal opens no remote session. Keep the checkpoint and retry t
 A valid upload pin continues its original revision even if a newer local graph is active.
 Ordinary publication remains available on older servers.
 
+With publisher 0.7.330 or later, hosted Python signatures show defaults as `=...`.
+A type such as `Literal["prod"]` appears as `Literal[…]`. An unresolved call target containing a literal appears as `…`, including in function bodies.
+Use symbol IDs to distinguish overloads with identical displays. Local SQLite retains the original signatures.
+Upgrade the publisher on each publishing machine to apply this policy to new snapshots. Existing hosted snapshots retain their original values.
+
+After upgrading, an unfinished pre-policy checkpoint returns `resume_incompatible` locally and stays on disk.
+Verify the active revision with `wiki_code_status` in the bound hosted session.
+If you choose a fresh upload, explicitly discard the selected checkpoint with `--forget-resume`. Then run the original publication command with `--resume`.
+A completed checkpoint returns its recorded revision locally. A compatible unfinished checkpoint can continue its original upload.
+
 With publisher 0.7.325 or later, check the optional JSON field `reason` when `error` is `index_failed`.
 If it is `parse_checkpoint_storage_failed`, inspect cache permissions, free space and filesystem health on the publishing machine.
 The CLI also writes this reason to stderr in JSON mode.
