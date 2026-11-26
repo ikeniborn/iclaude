@@ -236,5 +236,10 @@ t_idempotent() {
 }
 t_idempotent
 
+scope_note="$(IWIKI_REMOTE_URL="https://iwiki.example.com/mcp" node "$HOOK")"
+for option in 'exclude_tags=["task", "task-history"]' 'lifecycle="all", tags=["task"]' 'superseded_by'; do
+  [[ "$scope_note" == *"$option"* ]] || fail "generated instructions missing $option"
+done
+
 echo "iwiki-remote-scope: FAILED=$FAILED"
 exit "$FAILED"

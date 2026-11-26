@@ -197,3 +197,13 @@ Keep the checkpoint for a resumable upload. After capacity returns, repeat the o
 command while the lease and recovery deadline are valid. Replaying an accepted batch
 adds no charge. An ordinary retry opens a new session. Treat `busy` as a separate
 lock-contention response.
+
+## Document lifecycle and search
+
+Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.
+Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.
+Read the returned page and heading, including when the query used an obsolete name.
+Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`.
+Read the original slug directly to inspect its historical text and declared replacement.
+To retire a page on PostgreSQL, read its revision immediately before the update.
+Pass `status="deprecated"`, the same-bundle `superseded_by` path, and `expected_revision` to `wiki_update_page`.

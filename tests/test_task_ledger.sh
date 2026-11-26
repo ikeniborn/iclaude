@@ -63,7 +63,7 @@ assert_contains 'task_delivery_pending' "$context_body" "context includes pendin
 assert_contains '$CLAUDE_CONFIG_DIR/state/iwiki-task-spool/<project>/<topic>.json' "$context_body" "context checks config-dir spool"
 assert_contains 'even when iwiki is unavailable or the project domain is absent' "$context_body" "context checks spool without iwiki"
 assert_contains 'task_delivery_pending: true when that queue file exists' "$context_body" "context maps queue presence to pending"
-no_domain_branch="$(sed -n '/4\. Если домена проекта нет:/,/ELSE (сервер не подключён):/p' "$context_skill")"
+no_domain_branch="$(sed -n '/4\. Если `primary` пуст/,/ELSE (сервер не подключён):/p' "$context_skill")"
 outage_branch="$(sed -n '/ELSE (сервер не подключён):/,/```/p' "$context_skill")"
 for branch in "$no_domain_branch" "$outage_branch"; do
   assert_contains 'task_delivery_pending: <spool result when topic known; otherwise false>' "$branch" "known-topic outage preserves spool result"
