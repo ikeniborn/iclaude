@@ -32,10 +32,10 @@
     }
   ],
   "Router": {
-    "default": "homelab,ollama-glm-5-3-cloud",
-    "background": "homelab,ollama-glm-5-3-cloud",
-    "think": "homelab,ollama-glm-5-3-cloud",
-    "longContext": "homelab,ollama-glm-5-3-cloud",
+    "default": "homelab,lemonade-qwen38-flash-next-udiq4xs-mmf16",
+    "background": "homelab,lemonade-qwen38-flash-next-udiq4xs-mmf16",
+    "think": "homelab,lemonade-qwen38-flash-next-udiq4xs-mmf16",
+    "longContext": "homelab,lemonade-qwen38-flash-next-udiq4xs-mmf16",
     "longContextThreshold": 60000
   },
   "transformers": [
