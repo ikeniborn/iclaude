@@ -148,6 +148,21 @@ Read `data.reason` when the server provides it.
 An unexpected session identity means the response does not match the session established by the project bind.
 
 
+## Page authorship, verification and review deadlines
+
+For a meaningful edit, pass the editing agent as `author="agent:<producer>/<version>"`.
+Use `author="human:<id>"` only for text written by that identified person.
+On `author_required`, retry with the actual author. A generic MCP host or SDK cannot identify the editor.
+Set `presentation_only=True` only when the edit preserves facts and instructions.
+Read the whole page with `wiki_read_page` and compare its content with the source before calling `wiki_verify_page`.
+Pass `verifier="human:<id>"` only after that person confirms the reviewed text.
+For an automated check, pass the reviewing `agent:<producer>/<version>` or `process:<id>` as the verifier.
+Pass the observed PostgreSQL `revision` as `expected_revision`, or the Git `page_hash` as `expected_page_hash`.
+After a conflict, read and check the current page before retrying verification.
+Read `trust_tier` from the page response. Editing or running lint alone records no verification.
+Set `stale_after` on create or update when a review deadline is known. An empty string clears it on update.
+Check `wiki_lint` → `freshness` for `review_due` and `invalid_stale_after`. Verification preserves the deadline.
+
 ## Document lifecycle and search
 
 Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.

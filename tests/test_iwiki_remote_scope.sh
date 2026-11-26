@@ -241,5 +241,9 @@ for option in 'exclude_tags=["task", "task-history"]' 'lifecycle="all", tags=["t
   [[ "$scope_note" == *"$option"* ]] || fail "generated instructions missing $option"
 done
 
+for option in 'author_required' 'agent:<producer>/<version>' 'presentation_only=True' 'wiki_verify_page' 'expected_revision' 'trust_tier' 'stale_after' 'freshness'; do
+  [[ "$scope_note" == *"$option"* ]] || fail "generated instructions missing $option"
+done
+
 echo "iwiki-remote-scope: FAILED=$FAILED"
 exit "$FAILED"
