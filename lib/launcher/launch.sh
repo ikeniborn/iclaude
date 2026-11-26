@@ -170,6 +170,19 @@ launch_claude() {
         use_router=true
     fi
 
+    local search_router_config=""
+    if [[ "$use_router" == true ]]; then
+        if [[ "$skip_isolated" == false && -d "${ISOLATED_NVM_DIR:-}" ]]; then
+            search_router_config="$ISOLATED_CONFIG_DIR/router.json"
+        else
+            search_router_config="$HOME/.claude/router.json"
+        fi
+    fi
+    local -a SEARCH_LAUNCH_ARGS=()
+    if declare -F search_prepare_launch >/dev/null; then
+        search_prepare_launch "$use_router" "${USE_MICRO_VM_FLAG:-false}" "$search_router_config" "$@" || return 1
+    fi
+
     # Langfuse non-router capture: a config-only toggle (.claude_config), suppressed in
     # router mode by _should_capture (LiteLLM already emits to Langfuse there).
     local use_langfuse_capture=false
@@ -734,16 +747,25 @@ launch_claude() {
             # This exec bypasses native registration below; forward the same MCP
             # config to Claude through CCR while preserving additional user configs.
             local -a router_mcp_args=()
+            router_mcp_args+=("${SEARCH_LAUNCH_ARGS[@]}")
             if declare -f iwiki_mcp_enabled >/dev/null 2>&1 && iwiki_mcp_enabled; then
                 router_mcp_args+=( --mcp-config "$(iwiki_mcp_launch_config)" )
             fi
             # CCR must keep its isolated HOME, but Claude's tools need the caller's
             # HOME and proxy exclusions. Adapt CCR's generated --settings at spawn.
+            # CCR 2.0.0 reparses flags and shell-serializes repeated values as arrays.
+            # Keep Claude arguments out of that conversion, including inline MCP JSON.
+            # A detached CCR daemon must not inherit prompts or inline credentials.
+            # Keep the payload in a one-shot pipe, reachable while CCR code runs.
+            unset ICLAUDE_ROUTER_CLAUDE_ARGS ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE
+            local router_args_fd router_args_pid="$BASHPID"
+            exec {router_args_fd}< <(python3 -c 'import json, sys; print(json.dumps(sys.argv[1:]))' "${router_mcp_args[@]}" "$@")
+            export ICLAUDE_ROUTER_CLAUDE_ARGS_PIPE="/proc/$router_args_pid/fd/$router_args_fd"
             export ICLAUDE_ROUTER_USER_HOME="$HOME"
             export ICLAUDE_ROUTER_CLAUDE_COMMAND="${CLAUDE_PATH:-claude}"
             printf -v CLAUDE_PATH 'python3 %q' "${LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/router/claude-env.py"
             export CLAUDE_PATH
-            HOME="$ccr_home" exec "$ccr_cmd" code "${router_mcp_args[@]}" "$@"
+            HOME="$ccr_home" exec "$ccr_cmd" code
         fi
     fi
 
@@ -846,6 +868,7 @@ launch_claude() {
     # Native-binary path is a single word — splits into one-element array.
     local -a claude_cmd_arr
     read -ra claude_cmd_arr <<< "$claude_cmd"
+    claude_cmd_arr+=("${SEARCH_LAUNCH_ARGS[@]}")
 
     # Register the iwiki MCP server(s) from the tracked, secret-free mcp/iwiki*.json
     # when configured. iwiki_mcp_enabled resolves + exports IWIKI_COMMAND so

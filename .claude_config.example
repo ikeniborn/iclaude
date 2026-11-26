@@ -940,3 +940,11 @@ ICLAUDE_DEBUG_LAUNCH=
 #
 # Optional: override the binary path (default: resolved via `command -v iwiki-mcp`):
 # ICLAUDE_IWIKI_COMMAND=/path/to/iwiki-mcp
+
+# Search selection is session-only; unset preserves existing native search/MCP.
+# ICLAUDE_SEARCH_MODE=inherit
+# ICLAUDE_ROUTER_SEARCH_MODE=inherit
+# ICLAUDE_SEARCH_ROUTE_MODES='{"framework,qwen":"framework"}'
+# ICLAUDE_SEARCH_MCP_COMMAND=/absolute/path/to/framework-websearch-mcp
+# ICLAUDE_SEARCH_API_URL=https://homelab.ikeniborn.ru/v1/websearch
+# ICLAUDE_SEARCH_API_ENV_KEY=FRAMEWORK_EDGE_TOKEN

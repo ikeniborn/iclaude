@@ -1,4 +1,4 @@
-read = ["iclaude", "icodex", "iwiki-mcp", "devops"]
+read = ["iclaude", "icodex", "iwiki-mcp", "devops", "aioperator"]
 write = ["iclaude" ,"devops"]
 primary = "iclaude"
 

@@ -37,6 +37,7 @@ source "${LIB_DIR}/core/validation.sh"
 source "${LIB_DIR}/core/json.sh"
 source "${LIB_DIR}/core/remaining.sh"
 source "${LIB_DIR}/config/env-map.sh"
+source "${LIB_DIR}/search/search.sh"
 # iwiki MCP helper (optional feature): guard the source so a missing lib/iwiki/
 # subtree degrades gracefully instead of aborting boot under set -e.
 if [[ -f "${LIB_DIR}/iwiki/mcp.sh" ]]; then
