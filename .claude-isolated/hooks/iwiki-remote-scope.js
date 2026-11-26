@@ -37,6 +37,14 @@ process.stdout.write(
   'normalized `read`, `write`, and `primary` values from `.iwiki.toml`, and pass ' +
   'configured hosted policy as described below, before `wiki_status`, ' +
   '`wiki_search`, task-ledger, or any other wiki call.\n\n' +
+  'Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.\n' +
+  'Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.\n' +
+  'Read the returned page and heading, including when the query used an obsolete name.\n' +
+  'Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`.\n' +
+  'Read the original slug directly to inspect its historical text and declared replacement.\n' +
+  'To retire a page on PostgreSQL, read its revision immediately before the update.\n' +
+  'Pass `status="deprecated"`, the same-bundle `superseded_by` path, and `expected_revision` to `wiki_update_page`.\n' +
+  '\n' +
   'Do not infer, broaden, or replace that scope with a project name, primary ' +
   'domain, or current session scope. `wiki_search` also takes a `scope` ' +
   'parameter: leave it at its `project` default, because `scope="all"` ignores ' +

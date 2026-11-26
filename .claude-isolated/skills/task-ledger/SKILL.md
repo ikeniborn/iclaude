@@ -5,6 +5,8 @@ description: Use when starting, updating, delegating, completing, or reporting a
 
 # Task Ledger
 
+Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`. Keep the task lifecycle in the page body distinct from document status.
+
 Track every direct, chain, and LoEn task, including read-only work. The parent agent is the sole writer; task state lives on iwiki, never in a repository ledger.
 
 ## Required flow
@@ -56,7 +58,7 @@ Keep complete task history in linked history segments. The task page `Changelog`
 
 The domain changelog is `reference/domain-changelog`. It contains curated domain-level changes such as standards, releases, migrations, and cross-task decisions, with links to affected task pages. Do not add routine task events there and do not use it as a task index.
 
-An `orphans` entry for `reference/tasks/*` or `reference/task-history/*` is an expected orphan advisory: status discovery enumerates task pages with `wiki_list_pages` rather than following an inbound central index. It does not block closure unless `wiki_lint` reports another finding for that task page or its segments.
+An `orphans` entry for `reference/tasks/*` or `reference/task-history/*` is an expected task-page orphan advisory: status discovery enumerates task pages with `wiki_list_pages` rather than following an inbound central index. It does not block closure unless `wiki_lint` reports another finding for that task page or its segments.
 
 `wiki_lint`'s `code_graph` block is likewise advisory for closure: it audits authored `code.*` selectors against the existing snapshot for the bound primary and reports a disabled, missing, or non-ready graph fail-soft. Task pages carry no selectors, so it never blocks `done`; a finding your own change caused still gets fixed before closing.
 

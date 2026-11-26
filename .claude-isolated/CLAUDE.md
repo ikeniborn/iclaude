@@ -147,6 +147,17 @@ If it is `token_default`, restore the binding before interpreting the refusal.
 Read `data.reason` when the server provides it.
 An unexpected session identity means the response does not match the session established by the project bind.
 
+
+## Document lifecycle and search
+
+Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.
+Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.
+Read the returned page and heading, including when the query used an obsolete name.
+Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`.
+Read the original slug directly to inspect its historical text and declared replacement.
+To retire a page on PostgreSQL, read its revision immediately before the update.
+Pass `status="deprecated"`, the same-bundle `superseded_by` path, and `expected_revision` to `wiki_update_page`.
+
 ### Search provenance
 
 Domain-named Markdown tools do not return provenance fields. `wiki_search` does.

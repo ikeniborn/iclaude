@@ -11,6 +11,8 @@ agent: Explore
 
 # Context Awareness
 
+Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.
+
 Автоматическое определение языка, framework, наличия PRD и домена документации iwiki (MCP) для проекта.
 
 ## Когда использовать
@@ -91,12 +93,12 @@ IF MCP-сервер iwiki подключён:
      agent по тому же протоколу. Здесь только чтение.
   3. Если wiki_status вернул непустой `primary` (домен записи проекта):
        - <domain> ← primary
-       - wiki_summary ← wiki_read_page(domain, "overview") (если есть)
-         либо wiki_search('ключевые компоненты и архитектура проекта')
+       - Search the project topic with lifecycle="current" and exclude_tags=["task", "task-history"].
+       - Read the selected page or heading for wiki_summary.
      Добавить в project_context:
        wiki_initialized: true
        wiki_domain: "<domain>"
-       wiki_summary: <обзор страницы overview или результат wiki_search>
+       wiki_summary: <summary of the selected page or heading>
        task_topic: <canonical topic or null>
        task_page_slug: "reference/tasks/<topic>" | null
        task_page_found: true|false
