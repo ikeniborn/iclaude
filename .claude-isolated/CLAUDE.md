@@ -147,6 +147,32 @@ If it is `token_default`, restore the binding before interpreting the refusal.
 Read `data.reason` when the server provides it.
 An unexpected session identity means the response does not match the session established by the project bind.
 
+
+## Page authorship, verification and review deadlines
+
+For a meaningful edit, pass the editing agent as `author="agent:<producer>/<version>"`.
+Use `author="human:<id>"` only for text written by that identified person.
+On `author_required`, retry with the actual author. A generic MCP host or SDK cannot identify the editor.
+Set `presentation_only=True` only when the edit preserves facts and instructions.
+Read the whole page with `wiki_read_page` and compare its content with the source before calling `wiki_verify_page`.
+Pass `verifier="human:<id>"` only after that person confirms the reviewed text.
+For an automated check, pass the reviewing `agent:<producer>/<version>` or `process:<id>` as the verifier.
+Pass the observed PostgreSQL `revision` as `expected_revision`, or the Git `page_hash` as `expected_page_hash`.
+After a conflict, read and check the current page before retrying verification.
+Read `trust_tier` from the page response. Editing or running lint alone records no verification.
+Set `stale_after` on create or update when a review deadline is known. An empty string clears it on update.
+Check `wiki_lint` → `freshness` for `review_due` and `invalid_stale_after`. Verification preserves the deadline.
+
+## Document lifecycle and search
+
+Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.
+Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.
+Read the returned page and heading, including when the query used an obsolete name.
+Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`.
+Read the original slug directly to inspect its historical text and declared replacement.
+To retire a page on PostgreSQL, read its revision immediately before the update.
+Pass `status="deprecated"`, the same-bundle `superseded_by` path, and `expected_revision` to `wiki_update_page`.
+
 ### Search provenance
 
 Domain-named Markdown tools do not return provenance fields. `wiki_search` does.
@@ -322,6 +348,69 @@ Hosted HTTP returns `source_unavailable`; its `wiki_code_status`, `wiki_code_sea
 Publication tools require hosted HTTP, writable primary, and server-advertised batch limits from `wiki_code_publish_begin`.
 They accept neither client `domain` nor `iwiki_id`.
 Never raise those limits client-side.
+
+### Monitor a local build
+
+Poll `wiki_code_status(job_id=..., job_only=true)` on the originating local MCP session
+for progress counters without reading the active snapshot. Check the returned job ID
+and terminal state. For a CLI upload, monitor stderr and preserve stdout for the final JSON.
+
+### Recover a hosted code graph upload
+
+When the CLI and hosted MCP support recovery (0.7.321 or later, PostgreSQL schema 10),
+run the command from the publishing checkout with `publish_mode = "mcp"`.
+Select recovery on the first upload. Repeat the same command after an interruption.
+
+```bash
+iwiki-mcp code publish --project . --resume --json
+```
+
+Keep the original private cache, endpoint, primary and bearer. The CLI checks receipts
+through `wiki_code_publish_inspect` and sends the missing batches. Progress goes to
+stderr. The final JSON on stdout identifies the original attempt's revision.
+Read `wiki_code_status` in the verified hosted session for the current active revision.
+With publisher 0.7.324 or later, repeat the original command after a parsing interruption.
+Keep the local graph cache so the publisher can reuse compatible completed files.
+For local MCP indexing, start a new job after a process exit and poll its new ID.
+Use force only when every selected file must be parsed again. A valid upload pin takes precedence.
+After expiry or conflict, check the active revision before starting another attempt.
+Use `--forget-resume` only to discard the selected local checkpoint.
+
+With local publisher 0.7.329 or later, each SQLite export captures one graph revision.
+If a local writer blocks capture, ordinary publication reports `error=publication_failed` with `code=busy`.
+A new resumable capture reports `resume_busy`. Another publisher holding the checkpoint can also cause `resume_busy`.
+A local capture refusal opens no remote session. Keep the checkpoint and retry the original command after the lock clears.
+A valid upload pin continues its original revision even if a newer local graph is active.
+Ordinary publication remains available on older servers.
+
+With publisher 0.7.330 or later, hosted Python signatures show defaults as `=...`.
+A type such as `Literal["prod"]` appears as `Literal[…]`. An unresolved call target containing a literal appears as `…`, including in function bodies.
+Use symbol IDs to distinguish overloads with identical displays. Local SQLite retains the original signatures.
+Upgrade the publisher on each publishing machine to apply this policy to new snapshots. Existing hosted snapshots retain their original values.
+
+After upgrading, an unfinished pre-policy checkpoint returns `resume_incompatible` locally and stays on disk.
+Verify the active revision with `wiki_code_status` in the bound hosted session.
+If you choose a fresh upload, explicitly discard the selected checkpoint with `--forget-resume`. Then run the original publication command with `--resume`.
+A completed checkpoint returns its recorded revision locally. A compatible unfinished checkpoint can continue its original upload.
+
+With publisher 0.7.325 or later, check the optional JSON field `reason` when `error` is `index_failed`.
+If it is `parse_checkpoint_storage_failed`, inspect cache permissions, free space and filesystem health on the publishing machine.
+The CLI also writes this reason to stderr in JSON mode.
+After correcting the storage problem, repeat the original command.
+
+With hosted server 0.7.331 or later, the complete HTTP request body can be up to 16 MiB, including the JSON-RPC envelope.
+After HTTP 413, reduce the request body before retrying in the same MCP session. The selected project binding remains valid.
+For graph publication, also respect the batch limits returned by `wiki_code_publish_begin`.
+
+For hosted publication quotas (server 0.7.326 or later, schema 11), check the CLI JSON
+`code` when `error` is `publication_failed` or `resume_failed`. If `code` is
+`publication_quota_exceeded`, report the returned `resource`: `sessions` counts
+open sessions and `staged_bytes` counts retained batch data. The refusal preserves
+accepted batches and the active snapshot. A refused batch does not renew the lease.
+Keep the checkpoint for a resumable upload. After capacity returns, repeat the original
+command while the lease and recovery deadline are valid. Replaying an accepted batch
+adds no charge. An ordinary retry opens a new session. Treat `busy` as a separate
+lock-contention response.
 
 ### Local build completion
 

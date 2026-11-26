@@ -37,6 +37,23 @@ process.stdout.write(
   'normalized `read`, `write`, and `primary` values from `.iwiki.toml`, and pass ' +
   'configured hosted policy as described below, before `wiki_status`, ' +
   '`wiki_search`, task-ledger, or any other wiki call.\n\n' +
+  'Check that `tools/list` advertises `wiki_search.lifecycle`, `wiki_search.exclude_tags`, and `wiki_update_page.superseded_by`.\n' +
+  'Search for working guidance with `wiki_search(query=topic, lifecycle="current", exclude_tags=["task", "task-history"])`.\n' +
+  'Read the returned page and heading, including when the query used an obsolete name.\n' +
+  'Find task records with `wiki_search(query=topic, lifecycle="all", tags=["task"])`.\n' +
+  'Read the original slug directly to inspect its historical text and declared replacement.\n' +
+  'To retire a page on PostgreSQL, read its revision immediately before the update.\n' +
+  'Pass `status="deprecated"`, the same-bundle `superseded_by` path, and `expected_revision` to `wiki_update_page`.\n' +
+  '\n' +
+  'If `tools/list` advertises `wiki_verify_page`, use the page authorship and verification workflow.\n' +
+  'For meaningful edits, pass the actual `human:<id>` or `agent:<producer>/<version>` as `author`.\n' +
+  'On `author_required`, retry with the identified editor.\n' +
+  'Use `presentation_only=True` only for edits that preserve facts and instructions.\n' +
+  'Before `wiki_verify_page`, compare the whole page with its source and identify the `verifier`.\n' +
+  'Record a human verifier only after that person confirms the reviewed text.\n' +
+  'Pass the reviewed PostgreSQL `revision` as `expected_revision`. After a conflict, reread and review the page.\n' +
+  'Check the returned `trust_tier` on reads and the `freshness` findings from `wiki_lint` for the explicit `stale_after` deadline.\n' +
+  '\n' +
   'Do not infer, broaden, or replace that scope with a project name, primary ' +
   'domain, or current session scope. `wiki_search` also takes a `scope` ' +
   'parameter: leave it at its `project` default, because `scope="all"` ignores ' +
