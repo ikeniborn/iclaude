@@ -34,7 +34,7 @@ iclaude_with_lock() {
 	fi
 
 	mkdir -p "$(dirname "$lockfile")" 2>/dev/null
-	if ! exec {fd}>"$lockfile" 2>/dev/null; then
+	if ! { exec {fd}>"$lockfile"; } 2>/dev/null; then
 		print_warning "Cannot open lock file $lockfile; running without lock"
 		"$@"
 		return $?
