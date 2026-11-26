@@ -23,6 +23,13 @@ trap 'rm -rf "$TMP"' EXIT
 # --- helper: basic execution + exit-code propagation ---
 iclaude_with_lock "$TMP/basic.lock" 5 true; assert_eq "$?" "0" "lock: exit 0 propagated"
 iclaude_with_lock "$TMP/basic.lock" 5 bash -c 'exit 7'; assert_eq "$?" "7" "lock: exit code propagated"
+stderr_after_lock="$(
+  {
+    iclaude_with_lock "$TMP/basic.lock" 5 true
+    printf 'diagnostic\n' >&2
+  } 2>&1
+)"
+assert_eq "$stderr_after_lock" "diagnostic" "lock: caller stderr remains visible"
 
 # --- helper: mutual exclusion — parallel increments lose nothing ---
 COUNTER="$TMP/counter"; echo 0 > "$COUNTER"
